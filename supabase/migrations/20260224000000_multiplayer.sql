@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION claim_cell(
   p_game_id UUID,
   p_cell_key TEXT,
   p_letter TEXT,
-  p_player_id TEXT,
+  p_player_id UUID,
   p_correct BOOLEAN
 )
 RETURNS BOOLEAN AS $$
