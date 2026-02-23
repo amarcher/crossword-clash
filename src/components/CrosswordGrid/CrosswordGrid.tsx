@@ -7,6 +7,7 @@ interface CrosswordGridProps {
   selectedCell: { row: number; col: number } | null;
   highlightedCells: Set<string>;
   onCellClick: (row: number, col: number) => void;
+  playerColorMap?: Record<string, string>;
 }
 
 export function CrosswordGrid({
@@ -15,6 +16,7 @@ export function CrosswordGrid({
   selectedCell,
   highlightedCells,
   onCellClick,
+  playerColorMap,
 }: CrosswordGridProps) {
   // Fill available viewport: subtract header (~4.5rem) + top/bottom padding (2rem)
   // The main's p-4 provides matching whitespace on all sides
@@ -51,6 +53,7 @@ export function CrosswordGrid({
             }
             isHighlighted={highlightedCells.has(key)}
             onClick={onCellClick}
+            playerColorMap={playerColorMap}
           />
         );
       })}

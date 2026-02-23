@@ -49,6 +49,7 @@ export interface Database {
           puzzle_id: string;
           status: string;
           cells: unknown;
+          short_code: string | null;
           created_at: string;
           completed_at: string | null;
         };
@@ -57,6 +58,7 @@ export interface Database {
           puzzle_id: string;
           status?: string;
           cells?: unknown;
+          short_code?: string | null;
           created_at?: string;
           completed_at?: string | null;
         };
@@ -65,6 +67,7 @@ export interface Database {
           puzzle_id?: string;
           status?: string;
           cells?: unknown;
+          short_code?: string | null;
           created_at?: string;
           completed_at?: string | null;
         };
@@ -102,7 +105,18 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      claim_cell: {
+        Args: {
+          p_game_id: string;
+          p_cell_key: string;
+          p_letter: string;
+          p_player_id: string;
+          p_correct: boolean;
+        };
+        Returns: boolean;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

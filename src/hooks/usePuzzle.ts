@@ -18,7 +18,7 @@ import {
 
 // --- State ---
 
-interface PuzzleState {
+export interface PuzzleState {
   puzzle: Puzzle | null;
   /** Map of "row,col" → CellState */
   playerCells: Record<string, CellState>;
@@ -28,7 +28,7 @@ interface PuzzleState {
   totalWhiteCells: number;
 }
 
-const initialState: PuzzleState = {
+export const initialState: PuzzleState = {
   puzzle: null,
   playerCells: {},
   selectedCell: null,
@@ -39,17 +39,20 @@ const initialState: PuzzleState = {
 
 // --- Actions ---
 
-type PuzzleAction =
+export type PuzzleAction =
   | { type: "LOAD_PUZZLE"; puzzle: Puzzle }
   | { type: "RESET" }
   | { type: "SELECT_CELL"; row: number; col: number }
   | { type: "TOGGLE_DIRECTION" }
   | { type: "SET_DIRECTION"; direction: Direction }
-  | { type: "INPUT_LETTER"; letter: string }
+  | { type: "INPUT_LETTER"; letter: string; playerId?: string }
   | { type: "DELETE_LETTER" }
   | { type: "MOVE_SELECTION"; dr: number; dc: number }
   | { type: "NEXT_WORD" }
-  | { type: "PREV_WORD" };
+  | { type: "PREV_WORD" }
+  | { type: "REMOTE_CELL_CLAIM"; row: number; col: number; letter: string; playerId: string }
+  | { type: "HYDRATE_CELLS"; cells: Record<string, CellState>; score: number }
+  | { type: "ROLLBACK_CELL"; row: number; col: number; playerId: string };
 
 // --- Reducer ---
 
@@ -63,7 +66,7 @@ function countWhiteCells(puzzle: Puzzle): number {
   return count;
 }
 
-function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
+export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
   switch (action.type) {
     case "LOAD_PUZZLE": {
       const puzzle = action.puzzle;
@@ -143,7 +146,7 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
       // Correct letter — place it and advance
       const newCells = {
         ...state.playerCells,
-        [key]: { letter, correct: true },
+        [key]: { letter, correct: true, playerId: action.playerId },
       };
       const newScore = state.score + 1;
       const next = getNextCell(state.puzzle, row, col, state.direction);
@@ -237,6 +240,44 @@ function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
       return { ...state, selectedCell: coord, direction };
     }
 
+    case "REMOTE_CELL_CLAIM": {
+      if (!state.puzzle) return state;
+      const key = `${action.row},${action.col}`;
+      // Already filled locally — ignore
+      if (state.playerCells[key]?.correct) return state;
+      const newCells = {
+        ...state.playerCells,
+        [key]: { letter: action.letter, correct: true, playerId: action.playerId },
+      };
+      return {
+        ...state,
+        playerCells: newCells,
+        score: state.score + 1,
+      };
+    }
+
+    case "HYDRATE_CELLS": {
+      return {
+        ...state,
+        playerCells: action.cells,
+        score: action.score,
+      };
+    }
+
+    case "ROLLBACK_CELL": {
+      const key = `${action.row},${action.col}`;
+      const existing = state.playerCells[key];
+      // Only rollback if it was our optimistic write
+      if (!existing || existing.playerId !== action.playerId) return state;
+      const newCells = { ...state.playerCells };
+      delete newCells[key];
+      return {
+        ...state,
+        playerCells: newCells,
+        score: state.score - 1,
+      };
+    }
+
     default:
       return state;
   }
@@ -287,7 +328,8 @@ export function usePuzzle() {
     [],
   );
   const inputLetter = useCallback(
-    (letter: string) => dispatch({ type: "INPUT_LETTER", letter }),
+    (letter: string, playerId?: string) =>
+      dispatch({ type: "INPUT_LETTER", letter, playerId }),
     [],
   );
   const deleteLetter = useCallback(
@@ -304,6 +346,7 @@ export function usePuzzle() {
 
   return {
     ...state,
+    dispatch,
     highlightedCells,
     activeClue,
     isComplete,

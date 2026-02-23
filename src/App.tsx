@@ -1,13 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
+import { useMultiplayer } from "./hooks/useMultiplayer";
 import { CrosswordGrid, useGridNavigation } from "./components/CrosswordGrid";
 import { CluePanel } from "./components/CluePanel";
 import { GameLayout } from "./components/Layout/GameLayout";
 import { PuzzleImporter } from "./components/PuzzleImporter";
 import { Scoreboard } from "./components/Scoreboard/Scoreboard";
-import { uploadPuzzle, createGame, updateGame } from "./lib/puzzleService";
+import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
+import { GameLobby, JoinGame } from "./components/GameLobby";
+import {
+  uploadPuzzle,
+  createGame,
+  updateGame,
+  joinGame,
+} from "./lib/puzzleService";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
+
+type GameMode = "menu" | "solo" | "host-import" | "host-lobby" | "join" | "playing";
+
+const STORAGE_KEY = "crossword-clash-solo";
+
+function loadSavedSession(): { puzzle: Puzzle; playerCells: Record<string, import("./types/puzzle").CellState>; gameId: string | null } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 function App() {
   const { user } = useSupabase();
@@ -21,6 +43,7 @@ function App() {
     score,
     totalWhiteCells,
     isComplete,
+    dispatch,
     loadPuzzle,
     selectCell,
     toggleDirection,
@@ -33,62 +56,316 @@ function App() {
     reset,
   } = usePuzzle();
 
-  const [gameId, setGameId] = useState<string | null>(null);
+  // Compute initial state from URL params / localStorage (synchronous, no effects)
+  const [gameMode, setGameMode] = useState<GameMode>(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("join")) return "join";
+    const saved = loadSavedSession();
+    if (saved?.puzzle) return "playing";
+    return "menu";
+  });
+  const [gameId, setGameId] = useState<string | null>(() => {
+    const saved = loadSavedSession();
+    return saved?.gameId ?? null;
+  });
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [joinCode, setJoinCode] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("join");
+    if (code && code.length === 6) {
+      window.history.replaceState({}, "", window.location.pathname);
+      return code.toUpperCase();
+    }
+    return null;
+  });
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinLoading, setJoinLoading] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
+  const restoredRef = useRef(false);
+
+  // Restore solo session from localStorage on mount (one-time)
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+
+    // Only restore if we determined gameMode should be "playing" from saved state
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("join")) return;
+
+    const saved = loadSavedSession();
+    if (saved?.puzzle) {
+      loadPuzzle(saved.puzzle);
+      if (saved.playerCells && Object.keys(saved.playerCells).length > 0) {
+        const cellScore = Object.values(saved.playerCells).filter((c) => c.correct).length;
+        dispatch({ type: "HYDRATE_CELLS", cells: saved.playerCells, score: cellScore });
+      }
+    }
+  }, [loadPuzzle, dispatch]);
+
+  // Save solo session to localStorage when state changes
+  useEffect(() => {
+    if (isMultiplayer || !puzzle || gameMode !== "playing") return;
+    const data = { puzzle, playerCells, gameId };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [puzzle, playerCells, gameId, gameMode, isMultiplayer]);
+
+  // Multiplayer hook — only active when we have a multiplayer game
+  const multiplayer = useMultiplayer(
+    isMultiplayer && gameId && puzzle && user
+      ? {
+          gameId,
+          userId: user.id,
+          puzzle,
+          dispatch,
+          playerCells,
+          totalWhiteCells,
+        }
+      : // Pass a dummy config that will short-circuit — the hook won't subscribe
+        {
+          gameId: "",
+          userId: "",
+          puzzle: { cells: [] },
+          dispatch: () => {},
+          playerCells: {},
+          totalWhiteCells: 0,
+        },
+  );
+
+  const multiplayerActive = isMultiplayer && gameId !== null;
+
+  // Build playerColorMap from multiplayer players
+  const playerColorMap = useMemo(() => {
+    if (!multiplayerActive) return undefined;
+    const map: Record<string, string> = {};
+    for (const p of multiplayer.players) {
+      map[p.userId] = p.color;
+    }
+    return map;
+  }, [multiplayerActive, multiplayer.players]);
+
+  // Multiplayer input wrapper: intercepts letter input for server claiming
+  const multiplayerInputLetter = useCallback(
+    (letter: string) => {
+      if (!multiplayerActive || !selectedCell || !puzzle) return;
+      multiplayer.claimCell(selectedCell.row, selectedCell.col, letter);
+    },
+    [multiplayerActive, selectedCell, puzzle, multiplayer],
+  );
 
   const navActions = useMemo(
     () => ({
+      inputLetter: multiplayerActive ? multiplayerInputLetter : inputLetter,
+      deleteLetter: multiplayerActive ? () => {} : deleteLetter, // No deletion in multiplayer
+      moveSelection,
+      nextWord,
+      prevWord,
+      toggleDirection,
+    }),
+    [
+      multiplayerActive,
+      multiplayerInputLetter,
       inputLetter,
       deleteLetter,
       moveSelection,
       nextWord,
       prevWord,
       toggleDirection,
-    }),
-    [inputLetter, deleteLetter, moveSelection, nextWord, prevWord, toggleDirection],
+    ],
   );
 
   useGridNavigation(navActions);
 
-  // Persist game state to Supabase when cells change
+  // Persist game state to Supabase when cells change (solo mode only)
   useEffect(() => {
-    if (!gameId || !user) return;
+    if (!gameId || !user || isMultiplayer) return;
     const status = isComplete ? "completed" : "active";
     updateGame(gameId, playerCells, status, score, user.id);
-  }, [gameId, user, playerCells, score, isComplete]);
+  }, [gameId, user, playerCells, score, isComplete, isMultiplayer]);
 
-  const handlePuzzleLoaded = useCallback(
+  // Solo puzzle loaded
+  const handleSoloPuzzleLoaded = useCallback(
+    async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
+      loadPuzzle(p);
+      fileBufferRef.current = fileBuffer ?? null;
+      setGameMode("playing");
+
+      if (!user) return;
+      const puzzleId = await uploadPuzzle(p, fileBuffer);
+      if (!puzzleId) return;
+      const result = await createGame(puzzleId, user.id);
+      if (result) setGameId(result.gameId);
+    },
+    [loadPuzzle, user],
+  );
+
+  // Host puzzle loaded
+  const handleHostPuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
       loadPuzzle(p);
       fileBufferRef.current = fileBuffer ?? null;
 
       if (!user) return;
-
-      // Upload puzzle to DB
       const puzzleId = await uploadPuzzle(p, fileBuffer);
       if (!puzzleId) return;
-
-      // Create game session
-      const newGameId = await createGame(puzzleId, user.id);
-      setGameId(newGameId);
+      const result = await createGame(puzzleId, user.id, {
+        multiplayer: true,
+        displayName: "Host",
+      });
+      if (result) {
+        setGameId(result.gameId);
+        setIsMultiplayer(true);
+        setGameMode("host-lobby");
+      }
     },
     [loadPuzzle, user],
   );
 
+  // Join game
+  const handleJoin = useCallback(
+    async (code: string, displayName: string) => {
+      if (!user) return;
+      setJoinLoading(true);
+      setJoinError(null);
+
+      const result = await joinGame(code, user.id, displayName);
+      if (!result) {
+        setJoinError("Game not found or not joinable");
+        setJoinLoading(false);
+        return;
+      }
+
+      loadPuzzle(result.puzzle);
+      setGameId(result.gameId);
+      setIsMultiplayer(true);
+      setJoinLoading(false);
+
+      if (result.status === "waiting") {
+        setGameMode("host-lobby");
+      } else {
+        setGameMode("playing");
+      }
+    },
+    [user, loadPuzzle],
+  );
+
+  // Start multiplayer game (host)
+  const handleStartGame = useCallback(async () => {
+    await multiplayer.startGame();
+    setGameMode("playing");
+  }, [multiplayer]);
+
   const handleReset = useCallback(() => {
     reset();
     setGameId(null);
+    setIsMultiplayer(false);
+    setGameMode("menu");
+    setJoinCode(null);
+    setJoinError(null);
     fileBufferRef.current = null;
+    localStorage.removeItem(STORAGE_KEY);
   }, [reset]);
 
+  // Transition from lobby to playing when game starts (for non-host)
+  useEffect(() => {
+    if (gameMode === "host-lobby" && multiplayer.gameStatus === "active") {
+      setGameMode("playing");
+    }
+  }, [gameMode, multiplayer.gameStatus]);
+
+  // --- Render based on gameMode ---
+
+  // Menu screen
+  if (gameMode === "menu") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 p-8">
+        <h1 className="text-3xl font-bold mb-2">Crossword Clash</h1>
+        <p className="text-neutral-500 mb-8">Choose how you want to play</p>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <button
+            onClick={() => setGameMode("solo")}
+            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+          >
+            Play Solo
+          </button>
+          {user && (
+            <>
+              <button
+                onClick={() => setGameMode("host-import")}
+                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                Host Game
+              </button>
+              <button
+                onClick={() => setGameMode("join")}
+                className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors"
+              >
+                Join Game
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Solo import
+  if (gameMode === "solo") {
+    return <PuzzleImporter onPuzzleLoaded={handleSoloPuzzleLoaded} />;
+  }
+
+  // Host import
+  if (gameMode === "host-import") {
+    return <PuzzleImporter onPuzzleLoaded={handleHostPuzzleLoaded} />;
+  }
+
+  // Join game
+  if (gameMode === "join") {
+    return (
+      <JoinGame
+        onJoin={handleJoin}
+        onBack={handleReset}
+        loading={joinLoading}
+        error={joinError}
+        initialCode={joinCode ?? undefined}
+      />
+    );
+  }
+
+  // Host lobby (waiting for players)
+  if (gameMode === "host-lobby") {
+    return (
+      <GameLobby
+        shareCode={multiplayer.shareCode}
+        players={multiplayer.players}
+        isHost={multiplayer.isHost}
+        onStartGame={handleStartGame}
+      />
+    );
+  }
+
+  // Playing (solo or multiplayer)
   if (!puzzle) {
-    return <PuzzleImporter onPuzzleLoaded={handlePuzzleLoaded} />;
+    return <PuzzleImporter onPuzzleLoaded={handleSoloPuzzleLoaded} />;
   }
 
   function handleClueClick(clue: PuzzleClue) {
     selectCell(clue.row, clue.col);
     setDirection(clue.direction);
   }
+
+  const multiplayerIsComplete =
+    multiplayerActive && multiplayer.gameStatus === "completed";
+  const gameComplete = multiplayerActive ? multiplayerIsComplete : isComplete;
+
+  // Get current player's score from multiplayer players list
+  const multiplayerPlayers = multiplayerActive
+    ? multiplayer.players.map((p) => ({
+        ...p,
+        score: Object.values(playerCells).filter(
+          (c) => c.correct && c.playerId === p.userId,
+        ).length,
+      }))
+    : [];
 
   return (
     <GameLayout
@@ -110,10 +387,40 @@ function App() {
               onClick={handleReset}
               className="text-sm px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
             >
-              Load Different Puzzle
+              {multiplayerActive ? "Leave Game" : "Load Different Puzzle"}
             </button>
           </div>
         </div>
+      }
+      sidebar={
+        multiplayerActive ? (
+          <div className="space-y-3">
+            {multiplayer.shareCode && (
+              <div className="text-center">
+                <span className="text-xs text-neutral-400">Code: </span>
+                <span className="font-mono font-bold text-neutral-700">
+                  {multiplayer.shareCode}
+                </span>
+              </div>
+            )}
+            <div className="space-y-1">
+              {multiplayer.players.map((player) => (
+                <div
+                  key={player.userId}
+                  className="flex items-center gap-2 text-xs"
+                >
+                  <div
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: player.color }}
+                  />
+                  <span className="truncate text-neutral-700">
+                    {player.displayName}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : undefined
       }
       grid={
         <CrosswordGrid
@@ -122,15 +429,24 @@ function App() {
           selectedCell={selectedCell}
           highlightedCells={highlightedCells}
           onCellClick={selectCell}
+          playerColorMap={playerColorMap}
         />
       }
       clues={
         <div className="flex flex-col gap-2 h-full">
-          <Scoreboard
-            score={score}
-            totalCells={totalWhiteCells}
-            isComplete={isComplete}
-          />
+          {multiplayerActive ? (
+            <MultiplayerScoreboard
+              players={multiplayerPlayers}
+              totalCells={totalWhiteCells}
+              isComplete={gameComplete}
+            />
+          ) : (
+            <Scoreboard
+              score={score}
+              totalCells={totalWhiteCells}
+              isComplete={isComplete}
+            />
+          )}
           {activeClue && (
             <div className="sm:hidden p-1.5 bg-blue-50 rounded text-xs font-medium text-blue-700">
               {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}

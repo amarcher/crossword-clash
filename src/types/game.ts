@@ -19,4 +19,5 @@ export interface Game {
   cells: Record<string, CellState>;
   players: Player[];
   createdAt: string;
+  shortCode: string;
 }
