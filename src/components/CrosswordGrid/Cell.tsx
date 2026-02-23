@@ -17,7 +17,7 @@ export const Cell = memo(function Cell({
   onClick,
 }: CellProps) {
   if (cell.solution === null) {
-    return <div className="bg-neutral-900" />;
+    return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
   }
 
   let bg = "bg-white";
@@ -26,7 +26,7 @@ export const Cell = memo(function Cell({
 
   return (
     <div
-      className={`${bg} relative border border-neutral-400 cursor-pointer select-none flex items-center justify-center`}
+      className={`${bg} relative cursor-pointer select-none min-h-0 min-w-0 overflow-hidden`}
       onClick={() => onClick(cell.row, cell.col)}
     >
       {cell.number != null && (
@@ -35,7 +35,7 @@ export const Cell = memo(function Cell({
         </span>
       )}
       {cellState?.letter && (
-        <span className="text-lg font-bold leading-none text-neutral-900">
+        <span className="absolute inset-0 flex items-center justify-center text-lg font-bold leading-none text-neutral-900">
           {cellState.letter}
         </span>
       )}

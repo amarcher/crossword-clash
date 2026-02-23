@@ -125,14 +125,14 @@ function App() {
         />
       }
       clues={
-        <div className="space-y-4">
+        <div className="flex flex-col gap-2 h-full">
           <Scoreboard
             score={score}
             totalCells={totalWhiteCells}
             isComplete={isComplete}
           />
           {activeClue && (
-            <div className="sm:hidden p-2 bg-blue-50 rounded text-sm font-medium text-blue-700">
+            <div className="sm:hidden p-1.5 bg-blue-50 rounded text-xs font-medium text-blue-700">
               {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
             </div>
           )}

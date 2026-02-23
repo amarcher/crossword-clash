@@ -12,7 +12,7 @@ export function CluePanel({ clues, activeClue, onClueClick }: CluePanelProps) {
   const downClues = clues.filter((c) => c.direction === "down");
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 overflow-auto max-h-[500px] md:max-h-none">
+    <div className="flex flex-col md:flex-row gap-3 h-full">
       <ClueList
         title="Across"
         clues={acrossClues}
@@ -48,10 +48,10 @@ function ClueList({
 
   return (
     <div className="flex-1 min-w-0">
-      <h3 className="font-bold text-sm uppercase tracking-wide text-neutral-500 mb-1">
+      <h3 className="font-bold text-xs uppercase tracking-wide text-neutral-500 mb-0.5">
         {title}
       </h3>
-      <ul className="space-y-0.5">
+      <ul>
         {clues.map((clue) => {
           const isActive =
             activeClue?.number === clue.number &&
@@ -60,14 +60,14 @@ function ClueList({
             <li
               key={`${clue.direction}-${clue.number}`}
               ref={isActive ? activeRef : undefined}
-              className={`px-2 py-1 rounded text-sm cursor-pointer transition-colors ${
+              className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors ${
                 isActive
                   ? "bg-blue-100 text-blue-900 font-medium"
                   : "hover:bg-neutral-100"
               }`}
               onClick={() => onClueClick(clue)}
             >
-              <span className="font-semibold mr-1.5">{clue.number}.</span>
+              <span className="font-semibold mr-1">{clue.number}.</span>
               {clue.text}
             </li>
           );

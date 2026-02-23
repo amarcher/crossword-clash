@@ -8,15 +8,15 @@ interface GameLayoutProps {
 
 export function GameLayout({ header, grid, clues }: GameLayoutProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      <header className="bg-white border-b border-neutral-200 px-4 py-3">
+    <div className="h-dvh bg-neutral-50 flex flex-col overflow-hidden">
+      <header className="bg-white border-b border-neutral-200 px-4 py-3 shrink-0">
         {header}
       </header>
-      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 max-w-5xl mx-auto w-full">
-        <div className="flex justify-center md:justify-start">
+      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4 min-h-0 w-full items-center">
+        <div className="shrink-0">
           {grid}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 min-h-0 self-stretch">
           {clues}
         </div>
       </main>

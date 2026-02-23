@@ -8,14 +8,14 @@ export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
   const pct = totalCells > 0 ? Math.round((score / totalCells) * 100) : 0;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs">
         <span className="text-neutral-500">
           {score}/{totalCells} cells
         </span>
         <span className="text-neutral-400">{pct}%</span>
       </div>
-      <div className="h-2 rounded-full bg-neutral-200 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-neutral-200 overflow-hidden">
         <div
           className="h-full rounded-full bg-blue-500 transition-all duration-300"
           style={{ width: `${pct}%` }}
