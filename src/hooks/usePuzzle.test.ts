@@ -239,6 +239,73 @@ describe("puzzleReducer", () => {
     });
   });
 
+  describe("TOGGLE_DIRECTION", () => {
+    it("switches from across to down", () => {
+      const state = puzzleReducer(loadedState(), { type: "TOGGLE_DIRECTION" });
+      expect(state.direction).toBe("down");
+    });
+
+    it("switches from down to across", () => {
+      let state = loadedState();
+      state = puzzleReducer(state, { type: "TOGGLE_DIRECTION" });
+      state = puzzleReducer(state, { type: "TOGGLE_DIRECTION" });
+      expect(state.direction).toBe("across");
+    });
+  });
+
+  describe("SET_DIRECTION", () => {
+    it("sets direction to down", () => {
+      const state = puzzleReducer(loadedState(), {
+        type: "SET_DIRECTION",
+        direction: "down",
+      });
+      expect(state.direction).toBe("down");
+    });
+
+    it("sets direction to across", () => {
+      let state = loadedState();
+      state = puzzleReducer(state, { type: "SET_DIRECTION", direction: "down" });
+      state = puzzleReducer(state, { type: "SET_DIRECTION", direction: "across" });
+      expect(state.direction).toBe("across");
+    });
+  });
+
+  describe("NEXT_WORD", () => {
+    it("advances to the next word start", () => {
+      // Starting at 1-Across (0,0), next across is 3-Across (2,0)
+      const state = puzzleReducer(loadedState(), { type: "NEXT_WORD" });
+      expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+      expect(state.direction).toBe("across");
+    });
+
+    it("wraps direction at end of clue list", () => {
+      let state = loadedState();
+      // Move to 3-Across (2,0)
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 2, col: 0 });
+      // Next should wrap to first down clue
+      state = puzzleReducer(state, { type: "NEXT_WORD" });
+      expect(state.direction).toBe("down");
+    });
+  });
+
+  describe("PREV_WORD", () => {
+    it("goes to the previous word start", () => {
+      let state = loadedState();
+      // Move to 3-Across (2,0)
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 2, col: 0 });
+      // Prev should go to 1-Across (0,0)
+      state = puzzleReducer(state, { type: "PREV_WORD" });
+      expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+      expect(state.direction).toBe("across");
+    });
+
+    it("wraps direction at start of clue list", () => {
+      // At 1-Across (0,0), prev should wrap to last down clue
+      const state = puzzleReducer(loadedState(), { type: "PREV_WORD" });
+      expect(state.direction).toBe("down");
+    });
+  });
+
   describe("MOVE_SELECTION", () => {
     it("moves cursor down", () => {
       const state = puzzleReducer(loadedState(), {

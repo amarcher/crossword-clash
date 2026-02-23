@@ -74,6 +74,7 @@ supabase/
   migrations/
     20260223000000_initial_schema.sql  # puzzles, games, players tables
     20260224000000_multiplayer.sql     # claim_cell RPC, short_code column + trigger
+    20260223231555_fix_claim_cell_player_id_type.sql  # Fix p_player_id TEXT→UUID
 ```
 
 ## Code Conventions
@@ -94,6 +95,14 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
 
+## Testing
+
+- `pnpm test` — 68 unit tests across 4 files
+- **gridUtils.test.ts** (29 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, computeCellNumbers
+- **usePuzzle.test.ts** (26 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL)
+- **puzzleNormalizer.test.ts** (9 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers)
+- **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
+
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)
-- Both migrations applied (`npx supabase db push`)
+- All migrations applied (`npx supabase db push`)

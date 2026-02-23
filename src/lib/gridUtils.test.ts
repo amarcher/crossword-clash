@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
+  getCellAt,
   isBlack,
   getWordCells,
+  getClueForCell,
   getNextCell,
   getPrevCell,
+  getNextWordStart,
+  getPrevWordStart,
   computeCellNumbers,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
@@ -45,6 +49,28 @@ function makeTestPuzzle(): Puzzle {
     ],
   };
 }
+
+describe("getCellAt", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("returns the cell at valid coordinates", () => {
+    const cell = getCellAt(puzzle, 0, 0);
+    expect(cell).not.toBeNull();
+    expect(cell!.solution).toBe("C");
+  });
+
+  it("returns null for out-of-bounds coordinates", () => {
+    expect(getCellAt(puzzle, -1, 0)).toBeNull();
+    expect(getCellAt(puzzle, 0, 3)).toBeNull();
+    expect(getCellAt(puzzle, 3, 0)).toBeNull();
+  });
+
+  it("returns black cell (solution null)", () => {
+    const cell = getCellAt(puzzle, 1, 1);
+    expect(cell).not.toBeNull();
+    expect(cell!.solution).toBeNull();
+  });
+});
 
 describe("isBlack", () => {
   const puzzle = makeTestPuzzle();
@@ -130,6 +156,80 @@ describe("getPrevCell", () => {
   it("returns null at start", () => {
     expect(getPrevCell(puzzle, 0, 0, "across")).toBeNull();
     expect(getPrevCell(puzzle, 0, 0, "down")).toBeNull();
+  });
+});
+
+describe("getClueForCell", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("returns the across clue for a cell in an across word", () => {
+    const clue = getClueForCell(puzzle, 0, 1, "across");
+    expect(clue).not.toBeNull();
+    expect(clue!.number).toBe(1);
+    expect(clue!.direction).toBe("across");
+    expect(clue!.text).toBe("Feline");
+  });
+
+  it("returns the down clue for a cell in a down word", () => {
+    const clue = getClueForCell(puzzle, 1, 0, "down");
+    expect(clue).not.toBeNull();
+    expect(clue!.number).toBe(1);
+    expect(clue!.direction).toBe("down");
+    expect(clue!.text).toBe("Taxi");
+  });
+
+  it("returns null for a black cell", () => {
+    expect(getClueForCell(puzzle, 1, 1, "across")).toBeNull();
+  });
+});
+
+describe("getNextWordStart", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("advances to the next clue in the same direction", () => {
+    // 1-Across → 3-Across
+    const result = getNextWordStart(puzzle, 0, 0, "across");
+    expect(result.coord).toEqual({ row: 2, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+
+  it("wraps to other direction at end of clue list", () => {
+    // 3-Across (last across) → 1-Down (first down)
+    const result = getNextWordStart(puzzle, 2, 0, "across");
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("down");
+  });
+
+  it("wraps from last down clue to first across clue", () => {
+    // 2-Down (last down) → 1-Across (first across)
+    const result = getNextWordStart(puzzle, 0, 2, "down");
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+});
+
+describe("getPrevWordStart", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("goes to the previous clue in the same direction", () => {
+    // 3-Across → 1-Across
+    const result = getPrevWordStart(puzzle, 2, 0, "across");
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+
+  it("wraps to other direction at start of clue list", () => {
+    // 1-Across (first across) → last down clue (2-Down)
+    const result = getPrevWordStart(puzzle, 0, 0, "across");
+    expect(result.coord).toEqual({ row: 0, col: 2 });
+    expect(result.direction).toBe("down");
+  });
+
+  it("wraps from first down clue to last across clue", () => {
+    // 1-Down (first down) → 3-Across (last across)
+    const result = getPrevWordStart(puzzle, 0, 0, "down");
+    expect(result.coord).toEqual({ row: 2, col: 0 });
+    expect(result.direction).toBe("across");
   });
 });
 
