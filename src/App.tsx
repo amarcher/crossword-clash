@@ -17,7 +17,7 @@ import {
 } from "./lib/puzzleService";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
-type GameMode = "menu" | "solo" | "host-import" | "host-lobby" | "join" | "playing";
+type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing";
 
 const STORAGE_KEY = "crossword-clash-solo";
 
@@ -78,6 +78,7 @@ function App() {
     }
     return null;
   });
+  const [displayName, setDisplayName] = useState("Player");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
@@ -209,7 +210,7 @@ function App() {
       if (!puzzleId) return;
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
-        displayName: "Host",
+        displayName: displayName.trim() || "Player",
       });
       if (result) {
         setGameId(result.gameId);
@@ -217,7 +218,7 @@ function App() {
         setGameMode("host-lobby");
       }
     },
-    [loadPuzzle, user],
+    [loadPuzzle, user, displayName],
   );
 
   // Join game
@@ -290,7 +291,7 @@ function App() {
           {user && (
             <>
               <button
-                onClick={() => setGameMode("host-import")}
+                onClick={() => setGameMode("host-name")}
                 className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
               >
                 Host Game
@@ -311,6 +312,47 @@ function App() {
   // Solo import
   if (gameMode === "solo") {
     return <PuzzleImporter onPuzzleLoaded={handleSoloPuzzleLoaded} />;
+  }
+
+  // Host name entry
+  if (gameMode === "host-name") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 p-8">
+        <h1 className="text-3xl font-bold mb-2">Host a Game</h1>
+        <p className="text-neutral-500 mb-6">Enter your display name</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (displayName.trim()) setGameMode("host-import");
+          }}
+          className="flex flex-col gap-3 w-full max-w-xs"
+        >
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Your name"
+            maxLength={20}
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={!displayName.trim()}
+            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Choose Puzzle
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="text-sm text-neutral-500 hover:text-neutral-700"
+          >
+            Back
+          </button>
+        </form>
+      </div>
+    );
   }
 
   // Host import

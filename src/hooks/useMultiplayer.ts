@@ -41,28 +41,37 @@ export function useMultiplayer({
   const [players, setPlayers] = useState<Player[]>([]);
   const [gameStatus, setGameStatus] = useState<"waiting" | "active" | "completed">("waiting");
   const [shareCode, setShareCode] = useState<string | null>(null);
+  const [isHost, setIsHost] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
+  const announcedRef = useRef(false);
 
-  // Hydrate state from DB on mount and reconnect
+  // Hydrate state from DB — returns fetched state for callers
   const hydrate = useCallback(async () => {
-    if (!gameId) return;
+    if (!gameId) return null;
     const state = await fetchGameState(gameId);
-    if (!state) return;
+    if (!state) return null;
 
     setPlayers(state.players);
     setGameStatus(state.status as "waiting" | "active" | "completed");
 
+    // Determine host from DB-ordered players (first by created_at)
+    if (state.players.length > 0) {
+      setIsHost(state.players[0].userId === userId);
+    }
+
     const score = Object.values(state.cells).filter((c) => c.correct).length;
     dispatch({ type: "HYDRATE_CELLS", cells: state.cells, score });
-  }, [gameId, dispatch]);
+
+    return state;
+  }, [gameId, userId, dispatch]);
 
   // Subscribe to Broadcast channel
   useEffect(() => {
     if (!supabase || !gameId) return;
 
-    hydrate();
+    announcedRef.current = false;
 
     // Fetch short_code
     supabase
@@ -75,6 +84,7 @@ export function useMultiplayer({
       });
 
     const channel = supabase.channel(`game:${gameId}`);
+    channelRef.current = channel;
 
     channel.on("broadcast", { event: "cell_claimed" }, ({ payload }) => {
       // Ignore our own echoes
@@ -107,8 +117,24 @@ export function useMultiplayer({
       setGameStatus("completed");
     });
 
-    channel.subscribe();
-    channelRef.current = channel;
+    channel.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        const state = await hydrate();
+
+        // Announce presence to other players (once per connection)
+        if (state && !announcedRef.current) {
+          const self = state.players.find((p) => p.userId === userId);
+          if (self) {
+            channel.send({
+              type: "broadcast",
+              event: "player_joined",
+              payload: { player: self },
+            });
+            announcedRef.current = true;
+          }
+        }
+      }
+    });
 
     return () => {
       channel.unsubscribe();
@@ -213,8 +239,6 @@ export function useMultiplayer({
       });
     }
   }, [gameId]);
-
-  const isHost = players.length > 0 && players[0].userId === userId;
 
   return {
     claimCell,
