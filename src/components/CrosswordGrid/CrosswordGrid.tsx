@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import type { Puzzle, CellState } from "../../types/puzzle";
 import { Cell } from "./Cell";
 
@@ -33,6 +33,15 @@ export function CrosswordGrid({
   navigationActions,
 }: CrosswordGridProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the hidden input when the grid first becomes interactive with a
+  // selected cell. On desktop this captures keystrokes immediately; on iOS the
+  // keyboard won't appear without a user gesture, but focus is still set.
+  useEffect(() => {
+    if (interactive && navigationActions && selectedCell && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [interactive, navigationActions, selectedCell !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus the hidden input when a cell is clicked (triggers mobile keyboard).
   // iOS requires .focus() synchronously within the user gesture — no rAF or setTimeout.

@@ -54,7 +54,7 @@ export const Cell = memo(function Cell({
     >
       {cell.number != null && (
         <span
-          className="absolute top-[2cqi] left-[4cqi] leading-none font-medium text-neutral-700"
+          className="absolute top-[2cqi] left-[4cqi] leading-none font-medium text-neutral-800"
           style={{ fontSize: "25cqi" }}
         >
           {cell.number}
@@ -62,7 +62,7 @@ export const Cell = memo(function Cell({
       )}
       {cellState?.letter && (
         <span
-          className="absolute inset-0 flex items-center justify-center font-bold leading-none text-neutral-900"
+          className="absolute inset-0 flex items-center justify-center font-bold leading-none text-black"
           style={{ fontSize: "55cqi" }}
         >
           {cellState.letter}
