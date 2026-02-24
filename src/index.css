@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+.grid-offset-mobile {
+  --grid-h-offset: 10rem;
+}
+@media (min-width: 768px) {
+  .grid-offset-mobile {
+    --grid-h-offset: 6.5rem;
+  }
+}

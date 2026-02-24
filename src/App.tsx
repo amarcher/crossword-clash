@@ -5,6 +5,7 @@ import { useSupabase } from "./hooks/useSupabase";
 import { useMultiplayer } from "./hooks/useMultiplayer";
 import { CrosswordGrid, useGridNavigation } from "./components/CrosswordGrid";
 import { CluePanel } from "./components/CluePanel";
+import { MobileClueBar, MobileClueSheet } from "./components/ClueBar";
 import { GameLayout } from "./components/Layout/GameLayout";
 import { PuzzleImporter } from "./components/PuzzleImporter";
 import { Scoreboard } from "./components/Scoreboard/Scoreboard";
@@ -82,6 +83,7 @@ function App() {
   const [displayName, setDisplayName] = useState("Player");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
+  const [clueSheetOpen, setClueSheetOpen] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);
 
@@ -416,6 +418,7 @@ function App() {
   function handleClueClick(clue: PuzzleClue) {
     selectCell(clue.row, clue.col);
     setDirection(clue.direction);
+    setClueSheetOpen(false);
   }
 
   const multiplayerIsComplete =
@@ -520,6 +523,43 @@ function App() {
           playerColorMap={playerColorMap}
         />
       }
+      mobileClueBar={
+        <>
+          <MobileClueBar
+            activeClue={activeClue}
+            direction={direction}
+            onPrevWord={prevWord}
+            onNextWord={nextWord}
+            onOpenSheet={() => setClueSheetOpen(true)}
+          />
+          <MobileClueSheet
+            open={clueSheetOpen}
+            onClose={() => setClueSheetOpen(false)}
+            scoreboard={
+              multiplayerActive ? (
+                <MultiplayerScoreboard
+                  players={multiplayerPlayers}
+                  totalCells={totalWhiteCells}
+                  isComplete={gameComplete}
+                />
+              ) : (
+                <Scoreboard
+                  score={score}
+                  totalCells={totalWhiteCells}
+                  isComplete={isComplete}
+                />
+              )
+            }
+            cluePanel={
+              <CluePanel
+                clues={puzzle.clues}
+                activeClue={activeClue}
+                onClueClick={handleClueClick}
+              />
+            }
+          />
+        </>
+      }
       clues={
         <div className="flex flex-col gap-2 h-full">
           {multiplayerActive ? (
@@ -534,11 +574,6 @@ function App() {
               totalCells={totalWhiteCells}
               isComplete={isComplete}
             />
-          )}
-          {activeClue && (
-            <div className="sm:hidden p-1.5 bg-blue-50 rounded text-xs font-medium text-blue-700">
-              {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
-            </div>
           )}
           <CluePanel
             clues={puzzle.clues}

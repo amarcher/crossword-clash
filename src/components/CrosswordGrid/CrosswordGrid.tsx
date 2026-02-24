@@ -8,6 +8,7 @@ interface CrosswordGridProps {
   highlightedCells: Set<string>;
   onCellClick: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
+  interactive?: boolean;
 }
 
 export function CrosswordGrid({
@@ -17,10 +18,11 @@ export function CrosswordGrid({
   highlightedCells,
   onCellClick,
   playerColorMap,
+  interactive = true,
 }: CrosswordGridProps) {
   // Fill available viewport: subtract header (~4.5rem) + top/bottom padding (2rem)
   // The main's p-4 provides matching whitespace on all sides
-  const gridSize = `min(calc(100dvh - 6.5rem), calc(100vw - 2rem))`;
+  const gridSize = `min(calc(100dvh - var(--grid-h-offset, 6.5rem)), calc(100vw - 2rem))`;
   const gridWidth =
     puzzle.width >= puzzle.height
       ? gridSize
@@ -49,10 +51,10 @@ export function CrosswordGrid({
             cell={cell}
             cellState={playerCells[key]}
             isSelected={
-              selectedCell?.row === cell.row && selectedCell?.col === cell.col
+              interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
             }
-            isHighlighted={highlightedCells.has(key)}
-            onClick={onCellClick}
+            isHighlighted={interactive && highlightedCells.has(key)}
+            onClick={interactive ? onCellClick : undefined}
             playerColorMap={playerColorMap}
           />
         );

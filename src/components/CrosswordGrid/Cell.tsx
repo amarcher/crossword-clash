@@ -6,7 +6,7 @@ interface CellProps {
   cellState?: CellState;
   isSelected: boolean;
   isHighlighted: boolean;
-  onClick: (row: number, col: number) => void;
+  onClick?: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
 }
 
@@ -39,9 +39,9 @@ export const Cell = memo(function Cell({
 
   return (
     <div
-      className={`${bg} relative cursor-pointer select-none min-h-0 min-w-0 overflow-hidden`}
+      className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden`}
       style={{ containerType: "inline-size", ...style }}
-      onClick={() => onClick(cell.row, cell.col)}
+      onClick={onClick ? () => onClick(cell.row, cell.col) : undefined}
     >
       {cell.number != null && (
         <span
