@@ -24,7 +24,8 @@ export async function uploadPuzzle(
 
   const fileHash = fileBuffer ? await sha256(fileBuffer) : null;
 
-  // Check for existing puzzle with same hash
+  // Check for existing puzzle with same hash — update clues/grid in case
+  // the normalizer has been fixed since the original upload.
   if (fileHash) {
     const { data: existing } = await supabase
       .from("puzzles")
@@ -32,7 +33,13 @@ export async function uploadPuzzle(
       .eq("file_hash", fileHash)
       .single();
 
-    if (existing) return existing.id;
+    if (existing) {
+      await supabase
+        .from("puzzles")
+        .update({ grid: puzzle.cells, clues: puzzle.clues })
+        .eq("id", existing.id);
+      return existing.id;
+    }
   }
 
   const { data, error } = await supabase
