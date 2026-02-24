@@ -20,7 +20,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
       try {
         const buffer = await file.arrayBuffer();
         const parsed = parse(buffer, { filename: file.name });
-        const puzzle = normalizePuzzle(parsed);
+        const puzzle = normalizePuzzle(parsed, file.name);
         onPuzzleLoaded(puzzle, buffer);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to parse puzzle file");

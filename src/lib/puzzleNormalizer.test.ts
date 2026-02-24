@@ -196,6 +196,68 @@ describe("normalizePuzzle", () => {
     expect(down20.answer).toBe("TOT");
   });
 
+  it("re-assigns .puz clue texts using interleaved grid order", () => {
+    // Simulate the parser bug: texts are in interleaved order but split
+    // incorrectly (first N → across, rest → down).
+    //
+    // Grid:  C A T
+    //        A # O
+    //        B E T
+    //
+    // Correct interleaved order: 1-A("Feline"), 1-D("Taxi"), 2-D("Digit"), 3-A("Wager")
+    // Buggy parser puts first 2 in across, last 2 in down:
+    //   across: [{1, "Feline"}, {3, "Taxi"}]
+    //   down:   [{1, "Digit"}, {2, "Wager"}]
+    const input = makeParserOutput();
+    input.clues = {
+      across: [
+        { number: 1, text: "Feline" }, // correct (1-A)
+        { number: 3, text: "Taxi" },   // wrong — should be 1-D
+      ],
+      down: [
+        { number: 1, text: "Digit" },  // wrong — should be 2-D
+        { number: 2, text: "Wager" },  // wrong — should be 3-A
+      ],
+    };
+
+    const puzzle = normalizePuzzle(input, "puzzle.puz");
+
+    const across1 = puzzle.clues.find((c) => c.direction === "across" && c.number === 1)!;
+    expect(across1.text).toBe("Feline");
+
+    const down1 = puzzle.clues.find((c) => c.direction === "down" && c.number === 1)!;
+    expect(down1.text).toBe("Taxi");
+
+    const down2 = puzzle.clues.find((c) => c.direction === "down" && c.number === 2)!;
+    expect(down2.text).toBe("Digit");
+
+    const across3 = puzzle.clues.find((c) => c.direction === "across" && c.number === 3)!;
+    expect(across3.text).toBe("Wager");
+  });
+
+  it("does not re-assign clues for non-.puz files", () => {
+    // Same buggy input, but without .puz filename — texts should pass through as-is
+    const input = makeParserOutput();
+    input.clues = {
+      across: [
+        { number: 1, text: "Feline" },
+        { number: 3, text: "Taxi" },
+      ],
+      down: [
+        { number: 1, text: "Digit" },
+        { number: 2, text: "Wager" },
+      ],
+    };
+
+    const puzzle = normalizePuzzle(input, "puzzle.xd");
+
+    const across3 = puzzle.clues.find((c) => c.direction === "across" && c.number === 3)!;
+    expect(across3.text).toBe("Taxi"); // not re-assigned
+
+    const down1 = puzzle.clues.find((c) => c.direction === "down" && c.number === 1)!;
+    expect(down1.text).toBe("Digit"); // not re-assigned
+  });
+
   it("falls back to computeCellNumbers when parser has no numbers", () => {
     const input = makeParserOutput();
     // Explicitly verify no cells have numbers set
