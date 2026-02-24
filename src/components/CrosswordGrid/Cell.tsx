@@ -2,7 +2,7 @@ import { memo } from "react";
 import type { PuzzleCell, CellState } from "../../types/puzzle";
 
 /** Blend a hex color at given alpha against white, returning an opaque rgb() string. */
-function blendOnWhite(hex: string, alpha: number): string {
+export function blendOnWhite(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
