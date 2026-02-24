@@ -34,12 +34,15 @@ export function CrosswordGrid({
 }: CrosswordGridProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus the hidden input when the grid first becomes interactive with a
-  // selected cell. On desktop this captures keystrokes immediately; on iOS the
-  // keyboard won't appear without a user gesture, but focus is still set.
+  // Auto-focus on desktop so keystrokes are captured immediately.
+  // Skip on touch devices — iOS ignores non-gesture focus anyway, and
+  // focusing can cause unwanted scroll/viewport side effects.
   useEffect(() => {
     if (interactive && navigationActions && selectedCell && inputRef.current) {
-      inputRef.current.focus();
+      const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      if (!isTouch) {
+        inputRef.current.focus();
+      }
     }
   }, [interactive, navigationActions, selectedCell !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
