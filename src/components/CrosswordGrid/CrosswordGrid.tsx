@@ -34,12 +34,12 @@ export function CrosswordGrid({
 }: CrosswordGridProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus the hidden input when a cell is clicked (triggers mobile keyboard)
+  // Focus the hidden input when a cell is clicked (triggers mobile keyboard).
+  // iOS requires .focus() synchronously within the user gesture — no rAF or setTimeout.
   const handleCellClick = useCallback(
     (row: number, col: number) => {
       onCellClick(row, col);
-      // Small delay so the selection state updates before focusing
-      requestAnimationFrame(() => inputRef.current?.focus());
+      inputRef.current?.focus();
     },
     [onCellClick],
   );
@@ -124,8 +124,18 @@ export function CrosswordGrid({
       {interactive && navigationActions && (
         <input
           ref={inputRef}
-          className="absolute opacity-0 w-0 h-0 pointer-events-none"
-          style={{ top: 0, left: 0 }}
+          className="absolute opacity-0"
+          style={{
+            top: "50%",
+            left: "50%",
+            width: "1px",
+            height: "1px",
+            fontSize: "16px",       // prevents iOS auto-zoom on focus
+            caretColor: "transparent",
+            border: "none",
+            padding: 0,
+            margin: 0,
+          }}
           autoCapitalize="characters"
           autoCorrect="off"
           autoComplete="off"
