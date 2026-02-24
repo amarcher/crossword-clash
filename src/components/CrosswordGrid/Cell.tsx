@@ -22,15 +22,15 @@ export const Cell = memo(function Cell({
     return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
   }
 
-  // Player color background (hex + "22" for ~13% opacity)
+  // Player color background (hex + "1a" for ~10% opacity — light tint, high text contrast)
   const playerColor =
     cellState?.playerId && playerColorMap?.[cellState.playerId]
-      ? `${playerColorMap[cellState.playerId]}22`
+      ? `${playerColorMap[cellState.playerId]}1a`
       : undefined;
 
   let bg = "bg-white";
-  if (isSelected) bg = "bg-yellow-300";
-  else if (isHighlighted) bg = "bg-blue-100";
+  if (isSelected) bg = "bg-yellow-200";
+  else if (isHighlighted) bg = "bg-blue-50";
   else if (playerColor) bg = "";
 
   const style = !isSelected && !isHighlighted && playerColor
