@@ -148,6 +148,7 @@ export function CrosswordGrid({
             padding: 0,
             margin: 0,
           }}
+          name="crossword-cell"
           autoCapitalize="characters"
           autoCorrect="off"
           autoComplete="off"
@@ -155,6 +156,9 @@ export function CrosswordGrid({
           enterKeyHint="next"
           inputMode="text"
           aria-label="Crossword input"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore
           onKeyDown={handleKeyDown}
           onBeforeInput={handleBeforeInput}
           onChange={() => {

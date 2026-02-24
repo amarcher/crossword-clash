@@ -20,7 +20,13 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
       try {
         const buffer = await file.arrayBuffer();
         const parsed = parse(buffer, { filename: file.name });
-        const puzzle = normalizePuzzle(parsed, file.name);
+        // Detect .puz from binary magic bytes ("ACROSS&DOWN\0" at offset 2)
+        // rather than filename — iOS Safari may rename uploaded files.
+        const bytes = new Uint8Array(buffer);
+        const isPuz =
+          bytes.length >= 14 &&
+          String.fromCharCode(...bytes.slice(2, 14)) === "ACROSS&DOWN\0";
+        const puzzle = normalizePuzzle(parsed, isPuz ? "puzzle.puz" : file.name);
         onPuzzleLoaded(puzzle, buffer);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to parse puzzle file");
