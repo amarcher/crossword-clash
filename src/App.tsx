@@ -364,6 +364,10 @@ function App() {
             placeholder="Your name"
             maxLength={20}
             className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore
             autoFocus
           />
           <button

@@ -35,6 +35,10 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Enter your name"
             maxLength={20}
+            autoComplete="off"
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore
             className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           />
         </div>
@@ -49,6 +53,13 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
             placeholder="ABC123"
             maxLength={6}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            data-form-type="other"
+            data-lpignore="true"
+            data-1p-ignore
             className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-center font-mono text-2xl tracking-[0.3em] uppercase"
           />
         </div>
