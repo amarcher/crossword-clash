@@ -22,10 +22,10 @@ export const Cell = memo(function Cell({
     return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
   }
 
-  // Player color background (hex + "22" for ~13% opacity)
+  // Player color background (hex + "40" for ~25% opacity)
   const playerColor =
     cellState?.playerId && playerColorMap?.[cellState.playerId]
-      ? `${playerColorMap[cellState.playerId]}22`
+      ? `${playerColorMap[cellState.playerId]}40`
       : undefined;
 
   let bg = "bg-white";

@@ -97,6 +97,19 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         />
       </div>
 
+      <p className="mt-6 text-sm text-neutral-400 max-w-md text-center">
+        Need a .puz file? Use the{" "}
+        <a
+          href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline hover:text-blue-600"
+        >
+          Crossword Scraper
+        </a>{" "}
+        Chrome extension to download puzzles from popular crossword sites.
+      </p>
+
       {error && (
         <p className="mt-4 text-red-600 text-sm max-w-md text-center">
           {error}

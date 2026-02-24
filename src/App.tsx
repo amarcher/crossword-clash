@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "react-qr-code";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
 import { useMultiplayer } from "./hooks/useMultiplayer";
@@ -255,6 +256,20 @@ function App() {
     setGameMode("playing");
   }, [multiplayer]);
 
+  // Close room (host only) — broadcasts room_closed then resets
+  const handleCloseRoom = useCallback(async () => {
+    if (!window.confirm("Close this room? All players will be disconnected.")) return;
+    await multiplayer.closeRoom();
+    reset();
+    setGameId(null);
+    setIsMultiplayer(false);
+    setGameMode("menu");
+    setJoinCode(null);
+    setJoinError(null);
+    fileBufferRef.current = null;
+    localStorage.removeItem(STORAGE_KEY);
+  }, [multiplayer, reset]);
+
   const handleReset = useCallback(() => {
     reset();
     setGameId(null);
@@ -272,6 +287,13 @@ function App() {
       setGameMode("playing");
     }
   }, [gameMode, multiplayer.gameStatus]);
+
+  // Boot non-host players when the host closes the room
+  useEffect(() => {
+    if (multiplayer.isRoomClosed) {
+      handleReset();
+    }
+  }, [multiplayer.isRoomClosed, handleReset]);
 
   // --- Render based on gameMode ---
 
@@ -381,6 +403,7 @@ function App() {
         players={multiplayer.players}
         isHost={multiplayer.isHost}
         onStartGame={handleStartGame}
+        onCloseRoom={handleCloseRoom}
       />
     );
   }
@@ -420,17 +443,40 @@ function App() {
             )}
           </div>
           <div className="flex items-center gap-4">
+            {multiplayerActive && multiplayer.shareCode && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400">Room</span>
+                  <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
+                    {multiplayer.shareCode}
+                  </span>
+                </div>
+                <QRCode
+                  value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
+                  size={48}
+                />
+              </div>
+            )}
             {activeClue && (
               <div className="text-sm font-medium text-blue-700 hidden sm:block">
                 {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
               </div>
             )}
-            <button
-              onClick={handleReset}
-              className="text-sm px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
-            >
-              {multiplayerActive ? "Leave Game" : "Load Different Puzzle"}
-            </button>
+            {multiplayerActive && multiplayer.isHost ? (
+              <button
+                onClick={handleCloseRoom}
+                className="text-sm px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+              >
+                Close Room
+              </button>
+            ) : (
+              <button
+                onClick={handleReset}
+                className="text-sm px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
+              >
+                {multiplayerActive ? "Leave Game" : "Load Different Puzzle"}
+              </button>
+            )}
           </div>
         </div>
       }

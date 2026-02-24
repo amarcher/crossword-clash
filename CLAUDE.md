@@ -25,13 +25,13 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **Supabase client**: Nullable singleton in `src/lib/supabaseClient.ts` — app works fully offline when env vars aren't set (only "Play Solo" available).
 - **Puzzle import**: `@xwordly/xword-parser` parses .puz/.ipuz/.jpz/.xd files, then `src/lib/puzzleNormalizer.ts` converts to internal `Puzzle` type.
 - **Persistence**: Solo mode uses localStorage for puzzle + progress. Supabase handles multiplayer state via `claim_cell` RPC.
-- **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent.
+- **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu.
 
 ## Game Modes
 
 - **Solo**: Import puzzle → play locally → progress saved to localStorage and Supabase (if connected).
-- **Host Game**: Import puzzle → multiplayer game created with 6-char share code → lobby → start when 2+ players joined.
-- **Join Game**: Enter share code → join lobby → play when host starts.
+- **Host Game**: Import puzzle → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen.
+- **Join Game**: Enter share code or scan QR code → join lobby → play when host starts.
 
 ## Multiplayer Input Flow
 
@@ -52,13 +52,13 @@ src/
   components/
     CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav
     CluePanel/      # Clue list with active highlighting
-    GameLobby/      # GameLobby (share code, player list) + JoinGame (code input)
+    GameLobby/      # GameLobby (share code, QR code, player list, close room) + JoinGame (code input)
     Layout/         # GameLayout with optional sidebar slot
     PuzzleImporter/ # File upload/drag-and-drop
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
     usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL)
-    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect
+    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure
     useSupabase.ts  # Anonymous auth + client
   lib/
     gridUtils.ts    # Pure navigation/word boundary functions
@@ -97,11 +97,12 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 68 unit tests across 4 files
+- `pnpm test` — 88 tests across 5 files
 - **gridUtils.test.ts** (29 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, computeCellNumbers
 - **usePuzzle.test.ts** (26 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL)
-- **puzzleNormalizer.test.ts** (9 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers)
+- **puzzleNormalizer.test.ts** (12 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
+- **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)
