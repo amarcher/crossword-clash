@@ -1,6 +1,14 @@
 import { memo } from "react";
 import type { PuzzleCell, CellState } from "../../types/puzzle";
 
+/** Blend a hex color at given alpha against white, returning an opaque rgb() string. */
+function blendOnWhite(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgb(${Math.round(r * alpha + 255 * (1 - alpha))},${Math.round(g * alpha + 255 * (1 - alpha))},${Math.round(b * alpha + 255 * (1 - alpha))})`;
+}
+
 interface CellProps {
   cell: PuzzleCell;
   cellState?: CellState;
@@ -22,19 +30,20 @@ export const Cell = memo(function Cell({
     return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
   }
 
-  // Player color background (hex + "1a" for ~10% opacity — light tint, high text contrast)
-  const playerColor =
+  // Pre-blend player color against white so it doesn't composite against the
+  // grid's black background. 12% tint gives a soft pastel with high text contrast.
+  const playerBg =
     cellState?.playerId && playerColorMap?.[cellState.playerId]
-      ? `${playerColorMap[cellState.playerId]}1a`
+      ? blendOnWhite(playerColorMap[cellState.playerId], 0.12)
       : undefined;
 
   let bg = "bg-white";
   if (isSelected) bg = "bg-yellow-200";
   else if (isHighlighted) bg = "bg-blue-50";
-  else if (playerColor) bg = "";
+  else if (playerBg) bg = "";
 
-  const style = !isSelected && !isHighlighted && playerColor
-    ? { backgroundColor: playerColor }
+  const style = !isSelected && !isHighlighted && playerBg
+    ? { backgroundColor: playerBg }
     : undefined;
 
   return (
