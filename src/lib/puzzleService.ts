@@ -34,10 +34,13 @@ export async function uploadPuzzle(
       .single();
 
     if (existing) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("puzzles")
         .update({ grid: puzzle.cells, clues: puzzle.clues })
         .eq("id", existing.id);
+      if (updateError) {
+        console.error("Failed to update puzzle clues:", updateError);
+      }
       return existing.id;
     }
   }
