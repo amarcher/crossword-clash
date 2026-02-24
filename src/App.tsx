@@ -329,6 +329,12 @@ function App() {
             </>
           )}
         </div>
+        <a
+          href="/host"
+          className="mt-6 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+        >
+          TV / Host View
+        </a>
       </div>
     );
   }
