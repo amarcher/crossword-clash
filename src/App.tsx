@@ -300,7 +300,7 @@ function App() {
   // Menu screen
   if (gameMode === "menu") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 p-8">
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
         <h1 className="text-3xl font-bold mb-2">Crossword Clash</h1>
         <p className="text-neutral-500 mb-8">Choose how you want to play</p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -339,7 +339,7 @@ function App() {
   // Host name entry
   if (gameMode === "host-name") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 p-8">
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
         <h1 className="text-3xl font-bold mb-2">Host a Game</h1>
         <p className="text-neutral-500 mb-6">Enter your display name</p>
         <form

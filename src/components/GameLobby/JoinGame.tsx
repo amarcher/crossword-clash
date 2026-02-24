@@ -20,7 +20,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-50 p-8">
+    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
       <h1 className="text-3xl font-bold mb-2">Join Game</h1>
       <p className="text-neutral-500 mb-8">Enter the 6-character game code</p>
 
