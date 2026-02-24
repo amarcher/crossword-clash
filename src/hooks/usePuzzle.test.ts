@@ -137,6 +137,70 @@ describe("puzzleReducer", () => {
       expect(state.selectedCell).toEqual({ row: 0, col: 1 });
       expect(state.score).toBe(1); // score didn't increase
     });
+
+    it("auto-advances to next word when completing last cell of a word", () => {
+      let state = loadedState();
+      // Place cursor at last cell of 1-Across (T at 0,2)
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 2 });
+      // Type T (correct for (0,2)) — completes 1-Across
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "t" });
+      // Should jump to next word's first empty cell (3-Across starts at (2,0))
+      expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+      expect(state.score).toBe(1);
+    });
+
+    it("skips filled cells when auto-advancing within a word", () => {
+      let state = loadedState();
+      // Fill (0,1) = A in 1-Across
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 1 });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a" });
+      expect(state.score).toBe(1);
+      // Now place C at (0,0)
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c" });
+      // Should skip (0,1) (already filled) and land on (0,2)
+      expect(state.selectedCell).toEqual({ row: 0, col: 2 });
+      expect(state.score).toBe(2);
+    });
+
+    it("switches direction when all same-direction words are complete", () => {
+      let state = loadedState();
+      // Fill all of 1-Across: C, A, T
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "t" });
+      // After completing 1-Across, cursor jumps to 3-Across
+      expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+      expect(state.direction).toBe("across");
+      // Fill all of 3-Across: B, E, T
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "b" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "e" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "t" });
+      // All across words complete — should jump to a down clue
+      expect(state.direction).toBe("down");
+    });
+
+    it("stays on last cell when puzzle is fully complete", () => {
+      let state = loadedState();
+      // Fill entire puzzle: CAT row, then BET row fills remaining down cells too
+      // 1-Across: C, A, T
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "t" });
+      // Jumped to 3-Across: B, E, T
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "b" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "e" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "t" });
+      // Now down clues — only unfilled cell is (1,0)=A and (1,2)=O
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "o" });
+      // All 8 white cells filled — cursor should stay where it is
+      expect(state.score).toBe(8);
+      const lastCell = state.selectedCell;
+      // Try to input on a filled cell — cursor should not change
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "x" });
+      expect(state.selectedCell).toEqual(lastCell);
+    });
   });
 
   describe("DELETE_LETTER", () => {

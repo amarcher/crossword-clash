@@ -444,26 +444,28 @@ function App() {
   return (
     <GameLayout
       header={
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{puzzle.title}</h1>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
             {puzzle.author && (
-              <p className="text-sm text-neutral-500">by {puzzle.author}</p>
+              <p className="hidden md:block text-sm text-neutral-500">by {puzzle.author}</p>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {multiplayerActive && multiplayer.shareCode && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400">Room</span>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-neutral-400 hidden sm:inline">Room</span>
                   <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
                     {multiplayer.shareCode}
                   </span>
                 </div>
-                <QRCode
-                  value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
-                  size={48}
-                />
+                <div className="hidden md:block">
+                  <QRCode
+                    value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
+                    size={48}
+                  />
+                </div>
               </div>
             )}
             {activeClue && (
@@ -474,16 +476,18 @@ function App() {
             {multiplayerActive && multiplayer.isHost ? (
               <button
                 onClick={handleCloseRoom}
-                className="text-sm px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
               >
-                Close Room
+                <span className="md:hidden">Close</span>
+                <span className="hidden md:inline">Close Room</span>
               </button>
             ) : (
               <button
                 onClick={handleReset}
-                className="text-sm px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
+                className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
               >
-                {multiplayerActive ? "Leave Game" : "Load Different Puzzle"}
+                <span className="md:hidden">{multiplayerActive ? "Leave" : "New Puzzle"}</span>
+                <span className="hidden md:inline">{multiplayerActive ? "Leave Game" : "Load Different Puzzle"}</span>
               </button>
             )}
           </div>
@@ -538,6 +542,7 @@ function App() {
             onPrevWord={prevWord}
             onNextWord={nextWord}
             onOpenSheet={() => setClueSheetOpen(true)}
+            onToggleDirection={toggleDirection}
           />
           <MobileClueSheet
             open={clueSheetOpen}

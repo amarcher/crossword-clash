@@ -50,14 +50,15 @@ Keypress → useGridNavigation → wrappedInputLetter
 ```
 src/
   components/
-    CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav
+    CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav + hidden mobile input
+    ClueBar/        # MobileClueBar (prev/next word, direction toggle, active clue display)
     CluePanel/      # Clue list with active highlighting
     GameLobby/      # GameLobby (share code, QR code, player list, close room) + JoinGame (code input)
-    Layout/         # GameLayout with optional sidebar slot
+    Layout/         # GameLayout with optional sidebar slot, mobile clue bar pinned to bottom
     PuzzleImporter/ # File upload/drag-and-drop
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
-    usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL)
+    usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement
     useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure
     useSupabase.ts  # Anonymous auth + client
   lib/
@@ -97,10 +98,10 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 88 tests across 5 files
+- `pnpm test` — 94 tests across 5 files
 - **gridUtils.test.ts** (29 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, computeCellNumbers
-- **usePuzzle.test.ts** (26 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL)
-- **puzzleNormalizer.test.ts** (12 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
+- **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
+- **puzzleNormalizer.test.ts** (14 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
 - **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
 

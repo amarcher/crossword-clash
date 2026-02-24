@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
 .grid-offset-mobile {
-  --grid-h-offset: 10rem;
+  /* Mobile: compact header ~44px + clue bar 48px + main py-2 16px = ~108px */
+  --grid-h-offset: 7rem;
 }
 @media (min-width: 768px) {
   .grid-offset-mobile {
+    /* Desktop: header ~72px + main py-4 32px = ~104px */
     --grid-h-offset: 6.5rem;
   }
 }

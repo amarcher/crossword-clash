@@ -9,7 +9,6 @@ import type {
 import {
   getWordCells,
   getClueForCell,
-  getNextCell,
   getPrevCell,
   getNextWordStart,
   getPrevWordStart,
@@ -53,6 +52,55 @@ export type PuzzleAction =
   | { type: "REMOTE_CELL_CLAIM"; row: number; col: number; letter: string; playerId: string }
   | { type: "HYDRATE_CELLS"; cells: Record<string, CellState>; score: number }
   | { type: "ROLLBACK_CELL"; row: number; col: number; playerId: string };
+
+// --- Helpers ---
+
+/**
+ * After placing or skipping a letter at (row, col), advance the cursor:
+ * 1. Skip to the next empty cell in the current word
+ * 2. If the word is complete, jump to the first empty cell of the next word
+ * Returns null if there's nowhere to advance (puzzle complete).
+ */
+function advanceCursor(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+  row: number,
+  col: number,
+  direction: Direction,
+): { coord: CellCoord; direction: Direction } | null {
+  // Walk forward through the current word, skipping filled cells
+  const wordCells = getWordCells(puzzle, row, col, direction);
+  const currentIdx = wordCells.findIndex((c) => c.row === row && c.col === col);
+  for (let i = currentIdx + 1; i < wordCells.length; i++) {
+    const c = wordCells[i];
+    if (!playerCells[`${c.row},${c.col}`]?.correct) {
+      return { coord: c, direction };
+    }
+  }
+
+  // Current word is complete — find next word with empty cells
+  const allClues = [...puzzle.clues].sort((a, b) => {
+    if (a.direction !== b.direction) return a.direction === direction ? -1 : 1;
+    return a.number - b.number;
+  });
+  const currentClue = getClueForCell(puzzle, row, col, direction);
+  const startIdx = currentClue
+    ? allClues.findIndex(
+        (c) => c.direction === currentClue.direction && c.number === currentClue.number,
+      )
+    : -1;
+
+  for (let offset = 1; offset <= allClues.length; offset++) {
+    const clue = allClues[(startIdx + offset) % allClues.length];
+    const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
+    const firstEmpty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.correct);
+    if (firstEmpty) {
+      return { coord: firstEmpty, direction: clue.direction };
+    }
+  }
+
+  return null;
+}
 
 // --- Reducer ---
 
@@ -130,11 +178,12 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       const key = `${row},${col}`;
       const letter = action.letter.toUpperCase();
 
-      // Already correctly filled — skip
+      // Already correctly filled — advance to next empty cell or next word
       if (state.playerCells[key]?.correct) {
-        // Advance cursor anyway
-        const next = getNextCell(state.puzzle, row, col, state.direction);
-        return next ? { ...state, selectedCell: next } : state;
+        const next = advanceCursor(state.puzzle, state.playerCells, row, col, state.direction);
+        return next
+          ? { ...state, selectedCell: next.coord, direction: next.direction }
+          : state;
       }
 
       const correct = letter === cell.solution;
@@ -149,12 +198,13 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         [key]: { letter, correct: true, playerId: action.playerId },
       };
       const newScore = state.score + 1;
-      const next = getNextCell(state.puzzle, row, col, state.direction);
+      const next = advanceCursor(state.puzzle, newCells, row, col, state.direction);
       return {
         ...state,
         playerCells: newCells,
         score: newScore,
-        selectedCell: next ?? state.selectedCell,
+        selectedCell: next?.coord ?? state.selectedCell,
+        direction: next?.direction ?? state.direction,
       };
     }
 
