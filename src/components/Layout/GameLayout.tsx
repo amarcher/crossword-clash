@@ -16,7 +16,7 @@ export function GameLayout({ header, grid, clues, sidebar, mobileClueBar }: Game
       </header>
       <main className={`flex-1 flex flex-col md:flex-row gap-4 p-4 min-h-0 w-full items-center overflow-hidden ${mobileClueBar ? "grid-offset-mobile" : ""}`}>
         {sidebar && (
-          <div className="shrink-0 w-full md:w-48 min-h-0">
+          <div className="hidden md:block shrink-0 md:w-48 min-h-0">
             {sidebar}
           </div>
         )}

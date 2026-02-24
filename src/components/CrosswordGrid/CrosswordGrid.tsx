@@ -1,5 +1,15 @@
+import { useRef, useCallback } from "react";
 import type { Puzzle, CellState } from "../../types/puzzle";
 import { Cell } from "./Cell";
+
+export interface NavigationActions {
+  inputLetter: (letter: string) => void;
+  deleteLetter: () => void;
+  moveSelection: (dr: number, dc: number) => void;
+  nextWord: () => void;
+  prevWord: () => void;
+  toggleDirection: () => void;
+}
 
 interface CrosswordGridProps {
   puzzle: Puzzle;
@@ -9,6 +19,7 @@ interface CrosswordGridProps {
   onCellClick: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
   interactive?: boolean;
+  navigationActions?: NavigationActions;
 }
 
 export function CrosswordGrid({
@@ -19,7 +30,83 @@ export function CrosswordGrid({
   onCellClick,
   playerColorMap,
   interactive = true,
+  navigationActions,
 }: CrosswordGridProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the hidden input when a cell is clicked (triggers mobile keyboard)
+  const handleCellClick = useCallback(
+    (row: number, col: number) => {
+      onCellClick(row, col);
+      // Small delay so the selection state updates before focusing
+      requestAnimationFrame(() => inputRef.current?.focus());
+    },
+    [onCellClick],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!navigationActions) return;
+      const key = e.key;
+
+      if (/^[a-zA-Z]$/.test(key)) {
+        e.preventDefault();
+        navigationActions.inputLetter(key);
+        return;
+      }
+
+      switch (key) {
+        case "Backspace":
+          e.preventDefault();
+          navigationActions.deleteLetter();
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          navigationActions.moveSelection(-1, 0);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          navigationActions.moveSelection(1, 0);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          navigationActions.moveSelection(0, -1);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          navigationActions.moveSelection(0, 1);
+          break;
+        case "Tab":
+          e.preventDefault();
+          if (e.shiftKey) {
+            navigationActions.prevWord();
+          } else {
+            navigationActions.nextWord();
+          }
+          break;
+        case " ":
+          e.preventDefault();
+          navigationActions.toggleDirection();
+          break;
+      }
+    },
+    [navigationActions],
+  );
+
+  // Fallback for mobile keyboards that don't fire reliable keydown for letters
+  const handleBeforeInput = useCallback(
+    (e: React.FormEvent<HTMLInputElement>) => {
+      if (!navigationActions) return;
+      const nativeEvent = e.nativeEvent as InputEvent;
+      const data = nativeEvent.data;
+      if (data && /^[a-zA-Z]$/.test(data)) {
+        e.preventDefault();
+        navigationActions.inputLetter(data);
+      }
+    },
+    [navigationActions],
+  );
+
   // Fill available viewport: subtract header (~4.5rem) + top/bottom padding (2rem)
   // The main's p-4 provides matching whitespace on all sides
   const gridSize = `min(calc(100dvh - var(--grid-h-offset, 6.5rem)), calc(100vw - 2rem))`;
@@ -33,32 +120,54 @@ export function CrosswordGrid({
       : `calc(${gridSize} * ${puzzle.height} / ${puzzle.width})`;
 
   return (
-    <div
-      className="grid border-2 border-black bg-black"
-      style={{
-        width: gridWidth,
-        height: gridHeight,
-        gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`,
-        gridTemplateRows: `repeat(${puzzle.height}, minmax(0, 1fr))`,
-        gap: "1px",
-      }}
-    >
-      {puzzle.cells.flat().map((cell) => {
-        const key = `${cell.row},${cell.col}`;
-        return (
-          <Cell
-            key={key}
-            cell={cell}
-            cellState={playerCells[key]}
-            isSelected={
-              interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
-            }
-            isHighlighted={interactive && highlightedCells.has(key)}
-            onClick={interactive ? onCellClick : undefined}
-            playerColorMap={playerColorMap}
-          />
-        );
-      })}
+    <div className="relative shrink-0">
+      {interactive && navigationActions && (
+        <input
+          ref={inputRef}
+          className="absolute opacity-0 w-0 h-0 pointer-events-none"
+          style={{ top: 0, left: 0 }}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck={false}
+          enterKeyHint="next"
+          inputMode="text"
+          aria-label="Crossword input"
+          onKeyDown={handleKeyDown}
+          onBeforeInput={handleBeforeInput}
+          onChange={() => {
+            // Clear after any input so backspace always has something to delete
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        />
+      )}
+      <div
+        className="grid border-2 border-black bg-black"
+        style={{
+          width: gridWidth,
+          height: gridHeight,
+          gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${puzzle.height}, minmax(0, 1fr))`,
+          gap: "1px",
+        }}
+      >
+        {puzzle.cells.flat().map((cell) => {
+          const key = `${cell.row},${cell.col}`;
+          return (
+            <Cell
+              key={key}
+              cell={cell}
+              cellState={playerCells[key]}
+              isSelected={
+                interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
+              }
+              isHighlighted={interactive && highlightedCells.has(key)}
+              onClick={interactive ? handleCellClick : undefined}
+              playerColorMap={playerColorMap}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -527,6 +527,7 @@ function App() {
           highlightedCells={highlightedCells}
           onCellClick={selectCell}
           playerColorMap={playerColorMap}
+          navigationActions={navActions}
         />
       }
       mobileClueBar={
