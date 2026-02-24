@@ -356,15 +356,17 @@ function App() {
             if (displayName.trim()) setGameMode("host-import");
           }}
           className="flex flex-col gap-3 w-full max-w-xs"
+          autoComplete="off"
         >
           <input
             type="text"
+            name="xw-handle"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Your name"
             maxLength={20}
             className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoComplete="off"
+            autoComplete="nofill"
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore

@@ -24,18 +24,19 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
       <h1 className="text-3xl font-bold mb-2">Join Game</h1>
       <p className="text-neutral-500 mb-8">Enter the 6-character game code</p>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4" autoComplete="off">
         <div>
           <label className="block text-sm font-medium text-neutral-600 mb-1">
             Your Name
           </label>
           <input
             type="text"
+            name="xw-handle"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Enter your name"
             maxLength={20}
-            autoComplete="off"
+            autoComplete="nofill"
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore
@@ -49,11 +50,12 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
           </label>
           <input
             type="text"
+            name="xw-code"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
             placeholder="ABC123"
             maxLength={6}
-            autoComplete="off"
+            autoComplete="nofill"
             autoCorrect="off"
             autoCapitalize="characters"
             spellCheck={false}

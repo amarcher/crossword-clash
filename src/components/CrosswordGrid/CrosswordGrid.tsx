@@ -151,7 +151,7 @@ export function CrosswordGrid({
           name="crossword-cell"
           autoCapitalize="characters"
           autoCorrect="off"
-          autoComplete="off"
+          autoComplete="nofill"
           spellCheck={false}
           enterKeyHint="next"
           inputMode="text"
