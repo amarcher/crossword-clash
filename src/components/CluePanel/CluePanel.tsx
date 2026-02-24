@@ -40,18 +40,30 @@ function ClueList({
   activeClue: PuzzleClue | null;
   onClueClick: (clue: PuzzleClue) => void;
 }) {
+  const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const el = activeRef.current;
+    const container = listRef.current;
+    if (!el || !container) return;
+    // Scroll within the clue list only — avoid scrollIntoView which can
+    // scroll the entire page on mobile, hiding the grid.
+    const elTop = el.offsetTop - container.offsetTop;
+    const elBottom = elTop + el.offsetHeight;
+    if (elTop < container.scrollTop) {
+      container.scrollTo({ top: elTop, behavior: "smooth" });
+    } else if (elBottom > container.scrollTop + container.clientHeight) {
+      container.scrollTo({ top: elBottom - container.clientHeight, behavior: "smooth" });
+    }
   }, [activeClue]);
 
   return (
-    <div className="flex-1 min-w-0">
-      <h3 className="font-bold text-xs uppercase tracking-wide text-neutral-500 mb-0.5">
+    <div className="flex-1 min-w-0 flex flex-col min-h-0">
+      <h3 className="font-bold text-xs uppercase tracking-wide text-neutral-500 mb-0.5 shrink-0">
         {title}
       </h3>
-      <ul>
+      <ul ref={listRef} className="overflow-y-auto min-h-0">
         {clues.map((clue) => {
           const isActive =
             activeClue?.number === clue.number &&
