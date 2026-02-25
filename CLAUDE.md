@@ -24,14 +24,14 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **State management**: Single `useReducer` in `src/hooks/usePuzzle.ts` — no external state library. Derived values (activeClue, highlightedCells) via `useMemo`.
 - **Supabase client**: Nullable singleton in `src/lib/supabaseClient.ts` — app works fully offline when env vars aren't set (only "Play Solo" available).
 - **Puzzle import**: `@xwordly/xword-parser` parses .puz/.ipuz/.jpz/.xd files, then `src/lib/puzzleNormalizer.ts` converts to internal `Puzzle` type.
-- **Persistence**: Solo mode uses localStorage for puzzle + progress. Supabase handles multiplayer state via `claim_cell` RPC.
+- **Persistence**: Solo mode uses localStorage for puzzle + progress. Multiplayer sessions (`crossword-clash-mp` / `crossword-clash-host`) are persisted to localStorage so players auto-rejoin on page refresh. Supabase handles multiplayer state via `claim_cell` RPC.
 - **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu.
 
 ## Game Modes
 
 - **Solo**: Import puzzle → play locally → progress saved to localStorage and Supabase (if connected).
-- **Host Game**: Import puzzle → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen.
-- **Join Game**: Enter share code or scan QR code → join lobby → play when host starts.
+- **Host Game**: Import puzzle → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen. Refreshing the page auto-rejoins.
+- **Join Game**: Enter share code or scan QR code → join lobby → play when host starts. Refreshing the page auto-rejoins (session persisted to localStorage).
 
 ## Multiplayer Input Flow
 
@@ -65,7 +65,8 @@ src/
     gridUtils.ts    # Pure navigation/word boundary functions
     playerColors.ts # 8-color pool for player assignment
     puzzleNormalizer.ts # Parser output → Puzzle type
-    puzzleService.ts    # Supabase CRUD + multiplayer (claimCellOnServer, joinGame, fetchGameState, startGame)
+    puzzleService.ts    # Supabase CRUD + multiplayer (claimCellOnServer, joinGame, rejoinGame, fetchGameState, startGame)
+    sessionPersistence.ts # MP + host session load/save/clear for rejoin on refresh
     supabaseClient.ts   # Nullable Supabase client singleton
   types/
     puzzle.ts       # Puzzle, CellState, CellCoord types
@@ -76,6 +77,8 @@ supabase/
     20260223000000_initial_schema.sql  # puzzles, games, players tables
     20260224000000_multiplayer.sql     # claim_cell RPC, short_code column + trigger
     20260223231555_fix_claim_cell_player_id_type.sql  # Fix p_player_id TEXT→UUID
+    20260225000000_puzzle_update_policy.sql           # RLS policy for puzzle updates
+    20260225100000_player_unique_constraint.sql       # UNIQUE(game_id, user_id) + 'closed' status
 ```
 
 ## Code Conventions
@@ -98,11 +101,12 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 109 tests across 6 files
+- `pnpm test` — 123 tests across 7 files
 - **gridUtils.test.ts** (29 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (14 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
+- **sessionPersistence.test.ts** (14 tests): MP + host session round-trip, null/missing key, corrupted JSON, missing gameId, clear safety, independence between MP and host sessions
 - **Cell.test.tsx** (15 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
 - **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
 

@@ -319,6 +319,104 @@ export async function fetchGameState(gameId: string): Promise<{
 }
 
 /**
+ * Rejoin a multiplayer game by game ID (for page refresh / reconnect).
+ * Returns null if the game is closed/completed or doesn't exist.
+ */
+export async function rejoinGame(
+  gameId: string,
+  userId: string,
+  displayName: string,
+): Promise<{
+  gameId: string;
+  puzzle: Puzzle;
+  players: Player[];
+  cells: Record<string, CellState>;
+  status: string;
+  shareCode: string | null;
+} | null> {
+  if (!supabase) return null;
+
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .select("id, puzzle_id, status, cells, short_code")
+    .eq("id", gameId)
+    .single();
+
+  if (gameError || !game) return null;
+
+  // Only rejoin waiting or active games
+  if (game.status !== "waiting" && game.status !== "active") return null;
+
+  // Fetch puzzle
+  const { data: puzzleRow, error: puzzleError } = await supabase
+    .from("puzzles")
+    .select("*")
+    .eq("id", game.puzzle_id)
+    .single();
+
+  if (puzzleError || !puzzleRow) return null;
+
+  const puzzle: Puzzle = {
+    title: puzzleRow.title,
+    author: puzzleRow.author,
+    width: puzzleRow.width,
+    height: puzzleRow.height,
+    cells: puzzleRow.grid as Puzzle["cells"],
+    clues: puzzleRow.clues as Puzzle["clues"],
+  };
+
+  // Get current players
+  const { data: existingPlayers } = await supabase
+    .from("players")
+    .select("*")
+    .eq("game_id", game.id)
+    .order("created_at");
+
+  const players = existingPlayers ?? [];
+
+  // Ensure player row exists (handles rare session-loss case where
+  // anonymous auth gave a new user_id)
+  const alreadyJoined = players.find((p) => p.user_id === userId);
+  if (!alreadyJoined) {
+    const color = getPlayerColor(players.length);
+    const { data: newPlayer, error: playerError } = await supabase
+      .from("players")
+      .insert({
+        game_id: game.id,
+        user_id: userId,
+        display_name: displayName,
+        color,
+      })
+      .select("*")
+      .single();
+
+    if (playerError) {
+      console.error("Failed to create player on rejoin:", playerError);
+    } else if (newPlayer) {
+      players.push(newPlayer);
+    }
+  }
+
+  const mappedPlayers: Player[] = players.map((p) => ({
+    id: p.id,
+    gameId: p.game_id,
+    userId: p.user_id,
+    displayName: p.display_name,
+    color: p.color,
+    score: p.score,
+  }));
+
+  return {
+    gameId: game.id,
+    puzzle,
+    players: mappedPlayers,
+    cells: (game.cells as Record<string, CellState>) ?? {},
+    status: game.status,
+    shareCode: game.short_code,
+  };
+}
+
+/**
  * Start a multiplayer game (host only).
  */
 export async function startGame(gameId: string): Promise<boolean> {

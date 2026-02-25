@@ -3,6 +3,7 @@ import type {
   PuzzleCell,
   PuzzleClue,
   CellCoord,
+  CellState,
   Direction,
 } from "../types/puzzle";
 
@@ -197,6 +198,24 @@ export function getPrevWordStart(
 
   const last = cluesInDirection[cluesInDirection.length - 1];
   return { coord: { row: last.row, col: last.col }, direction };
+}
+
+/** Get the set of completed clue keys (e.g. "across-1", "down-3") */
+export function getCompletedClues(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+): Set<string> {
+  const completed = new Set<string>();
+  for (const clue of puzzle.clues) {
+    const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
+    if (
+      cells.length > 0 &&
+      cells.every((c) => playerCells[`${c.row},${c.col}`]?.correct)
+    ) {
+      completed.add(`${clue.direction}-${clue.number}`);
+    }
+  }
+  return completed;
 }
 
 /**

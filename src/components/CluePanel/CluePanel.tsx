@@ -5,9 +5,10 @@ interface CluePanelProps {
   clues: PuzzleClue[];
   activeClue: PuzzleClue | null;
   onClueClick: (clue: PuzzleClue) => void;
+  completedClues?: Set<string>;
 }
 
-export function CluePanel({ clues, activeClue, onClueClick }: CluePanelProps) {
+export function CluePanel({ clues, activeClue, onClueClick, completedClues }: CluePanelProps) {
   const acrossClues = clues.filter((c) => c.direction === "across");
   const downClues = clues.filter((c) => c.direction === "down");
 
@@ -18,12 +19,14 @@ export function CluePanel({ clues, activeClue, onClueClick }: CluePanelProps) {
         clues={acrossClues}
         activeClue={activeClue}
         onClueClick={onClueClick}
+        completedClues={completedClues}
       />
       <ClueList
         title="Down"
         clues={downClues}
         activeClue={activeClue}
         onClueClick={onClueClick}
+        completedClues={completedClues}
       />
     </div>
   );
@@ -34,11 +37,13 @@ function ClueList({
   clues,
   activeClue,
   onClueClick,
+  completedClues,
 }: {
   title: string;
   clues: PuzzleClue[];
   activeClue: PuzzleClue | null;
   onClueClick: (clue: PuzzleClue) => void;
+  completedClues?: Set<string>;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef<HTMLLIElement>(null);
@@ -68,6 +73,7 @@ function ClueList({
           const isActive =
             activeClue?.number === clue.number &&
             activeClue?.direction === clue.direction;
+          const isCompleted = completedClues?.has(`${clue.direction}-${clue.number}`);
           return (
             <li
               key={`${clue.direction}-${clue.number}`}
@@ -75,8 +81,10 @@ function ClueList({
               className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors ${
                 isActive
                   ? "bg-blue-100 text-blue-900 font-medium"
-                  : "hover:bg-neutral-100"
-              }`}
+                  : isCompleted
+                    ? "text-neutral-400"
+                    : "hover:bg-neutral-100"
+              } ${isCompleted ? "line-through" : ""}`}
               onClick={() => onClueClick(clue)}
             >
               <span className="font-semibold mr-1">{clue.number}.</span>

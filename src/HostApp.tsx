@@ -4,13 +4,16 @@ import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
 import { useMultiplayer } from "./hooks/useMultiplayer";
 import { CrosswordGrid } from "./components/CrosswordGrid";
+import { CluePanel } from "./components/CluePanel";
 import { TVLayout } from "./components/Layout/TVLayout";
 import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
-import { uploadPuzzle, createGame } from "./lib/puzzleService";
+import { uploadPuzzle, createGame, rejoinGame } from "./lib/puzzleService";
+import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
+import { getCompletedClues } from "./lib/gridUtils";
 import type { Puzzle } from "./types/puzzle";
 
-type HostMode = "menu" | "name" | "import" | "lobby" | "spectating";
+type HostMode = "menu" | "name" | "import" | "lobby" | "spectating" | "rejoining";
 
 function HostApp() {
   const { user } = useSupabase();
@@ -26,9 +29,11 @@ function HostApp() {
     selectCell,
   } = usePuzzle();
 
-  const [mode, setMode] = useState<HostMode>("menu");
-  const [gameId, setGameId] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("Host");
+  const hostSession = useMemo(() => loadHostSession(), []);
+
+  const [mode, setMode] = useState<HostMode>(() => (hostSession ? "rejoining" : "menu"));
+  const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
+  const [displayName, setDisplayName] = useState(() => hostSession?.displayName ?? "Host");
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
 
   const multiplayer = useMultiplayer(
@@ -50,6 +55,44 @@ function HostApp() {
           totalWhiteCells: 0,
         },
   );
+
+  // Save host session to localStorage
+  useEffect(() => {
+    if (!gameId) return;
+    saveHostSession({ gameId, displayName });
+  }, [gameId, displayName]);
+
+  // Rejoin host game on page refresh
+  useEffect(() => {
+    if (mode !== "rejoining" || !user) return;
+    const session = loadHostSession();
+    if (!session) {
+      setMode("menu");
+      return;
+    }
+
+    rejoinGame(session.gameId, user.id, session.displayName).then((result) => {
+      if (!result) {
+        clearHostSession();
+        setMode("menu");
+        return;
+      }
+
+      loadPuzzle(result.puzzle);
+      if (result.cells && Object.keys(result.cells).length > 0) {
+        const cellScore = Object.values(result.cells).filter((c) => c.correct).length;
+        dispatch({ type: "HYDRATE_CELLS", cells: result.cells, score: cellScore });
+      }
+
+      setGameId(result.gameId);
+
+      if (result.status === "waiting") {
+        setMode("lobby");
+      } else {
+        setMode("spectating");
+      }
+    });
+  }, [mode, user, loadPuzzle, dispatch]);
 
   const handlePuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
@@ -81,6 +124,7 @@ function HostApp() {
     await multiplayer.closeRoom();
     setGameId(null);
     setMode("menu");
+    clearHostSession();
   }, [multiplayer]);
 
   // Transition from lobby to spectating when game starts
@@ -89,6 +133,13 @@ function HostApp() {
       setMode("spectating");
     }
   }, [mode, multiplayer.gameStatus]);
+
+  // Clear host session when game completes
+  useEffect(() => {
+    if (multiplayer.gameStatus === "completed") {
+      clearHostSession();
+    }
+  }, [multiplayer.gameStatus]);
 
   const multiplayerPlayers = useMemo(
     () =>
@@ -109,12 +160,27 @@ function HostApp() {
     return map;
   }, [multiplayer.players]);
 
+  const completedClues = useMemo(
+    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+    [puzzle, playerCells],
+  );
+
   const isComplete =
     totalWhiteCells > 0 && score === totalWhiteCells;
 
   const joinUrl = multiplayer.shareCode
     ? `${window.location.origin}/?join=${multiplayer.shareCode}`
     : null;
+
+  // Reconnecting screen
+  if (mode === "rejoining") {
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
+        <h1 className="text-3xl font-bold mb-2 text-white">Crossword Clash</h1>
+        <p className="text-neutral-400">Reconnecting to game...</p>
+      </div>
+    );
+  }
 
   // Menu
   if (mode === "menu") {
@@ -317,6 +383,16 @@ function HostApp() {
             players={multiplayerPlayers}
             totalCells={totalWhiteCells}
             isComplete={isComplete}
+          />
+        </div>
+      }
+      clues={
+        <div className="bg-white rounded-xl p-4 h-full flex flex-col">
+          <CluePanel
+            clues={puzzle.clues}
+            activeClue={null}
+            onClueClick={() => {}}
+            completedClues={completedClues}
           />
         </div>
       }

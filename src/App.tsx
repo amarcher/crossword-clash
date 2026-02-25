@@ -16,10 +16,13 @@ import {
   createGame,
   updateGame,
   joinGame,
+  rejoinGame,
 } from "./lib/puzzleService";
+import { loadMpSession, saveMpSession, clearMpSession } from "./lib/sessionPersistence";
+import { getCompletedClues } from "./lib/gridUtils";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
-type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing";
+type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining";
 
 const STORAGE_KEY = "crossword-clash-solo";
 
@@ -59,18 +62,22 @@ function App() {
   } = usePuzzle();
 
   // Compute initial state from URL params / localStorage (synchronous, no effects)
+  const mpSession = useMemo(() => loadMpSession(), []);
+
   const [gameMode, setGameMode] = useState<GameMode>(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("join")) return "join";
+    if (mpSession) return "rejoining";
     const saved = loadSavedSession();
     if (saved?.puzzle) return "playing";
     return "menu";
   });
   const [gameId, setGameId] = useState<string | null>(() => {
+    if (mpSession) return mpSession.gameId;
     const saved = loadSavedSession();
     return saved?.gameId ?? null;
   });
-  const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [isMultiplayer, setIsMultiplayer] = useState(() => !!mpSession);
   const [joinCode, setJoinCode] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
@@ -80,7 +87,7 @@ function App() {
     }
     return null;
   });
-  const [displayName, setDisplayName] = useState("Player");
+  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? "Player");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
@@ -136,6 +143,45 @@ function App() {
   );
 
   const multiplayerActive = isMultiplayer && gameId !== null;
+
+  // Save multiplayer session to localStorage
+  useEffect(() => {
+    if (!isMultiplayer || !gameId) return;
+    saveMpSession({ gameId, shareCode: multiplayer.shareCode, displayName });
+  }, [isMultiplayer, gameId, multiplayer.shareCode, displayName]);
+
+  // Rejoin multiplayer game on page refresh
+  useEffect(() => {
+    if (gameMode !== "rejoining" || !user) return;
+    const session = loadMpSession();
+    if (!session) {
+      setGameMode("menu");
+      return;
+    }
+
+    rejoinGame(session.gameId, user.id, session.displayName).then((result) => {
+      if (!result) {
+        clearMpSession();
+        setGameMode("menu");
+        return;
+      }
+
+      loadPuzzle(result.puzzle);
+      if (result.cells && Object.keys(result.cells).length > 0) {
+        const cellScore = Object.values(result.cells).filter((c) => c.correct).length;
+        dispatch({ type: "HYDRATE_CELLS", cells: result.cells, score: cellScore });
+      }
+
+      setGameId(result.gameId);
+      setIsMultiplayer(true);
+
+      if (result.status === "waiting") {
+        setGameMode("host-lobby");
+      } else {
+        setGameMode("playing");
+      }
+    });
+  }, [gameMode, user, loadPuzzle, dispatch]);
 
   // Build playerColorMap from multiplayer players
   const playerColorMap = useMemo(() => {
@@ -270,6 +316,7 @@ function App() {
     setJoinError(null);
     fileBufferRef.current = null;
     localStorage.removeItem(STORAGE_KEY);
+    clearMpSession();
   }, [multiplayer, reset]);
 
   const handleReset = useCallback(() => {
@@ -281,6 +328,7 @@ function App() {
     setJoinError(null);
     fileBufferRef.current = null;
     localStorage.removeItem(STORAGE_KEY);
+    clearMpSession();
   }, [reset]);
 
   // Transition from lobby to playing when game starts (for non-host)
@@ -297,7 +345,24 @@ function App() {
     }
   }, [multiplayer.isRoomClosed, handleReset]);
 
+  // Clear MP session when game completes (no need to rejoin a finished game)
+  useEffect(() => {
+    if (multiplayerActive && multiplayer.gameStatus === "completed") {
+      clearMpSession();
+    }
+  }, [multiplayerActive, multiplayer.gameStatus]);
+
   // --- Render based on gameMode ---
+
+  // Reconnecting screen
+  if (gameMode === "rejoining") {
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
+        <h1 className="text-3xl font-bold mb-2">Crossword Clash</h1>
+        <p className="text-neutral-500">Reconnecting to game...</p>
+      </div>
+    );
+  }
 
   // Menu screen
   if (gameMode === "menu") {
@@ -437,6 +502,11 @@ function App() {
     multiplayerActive && multiplayer.gameStatus === "completed";
   const gameComplete = multiplayerActive ? multiplayerIsComplete : isComplete;
 
+  const completedClues = useMemo(
+    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+    [puzzle, playerCells],
+  );
+
   // Get current player's score from multiplayer players list
   const multiplayerPlayers = multiplayerActive
     ? multiplayer.players.map((p) => ({
@@ -573,6 +643,7 @@ function App() {
                 clues={puzzle.clues}
                 activeClue={activeClue}
                 onClueClick={handleClueClick}
+                completedClues={completedClues}
               />
             }
           />
@@ -597,6 +668,7 @@ function App() {
             clues={puzzle.clues}
             activeClue={activeClue}
             onClueClick={handleClueClick}
+            completedClues={completedClues}
           />
         </div>
       }
