@@ -569,36 +569,6 @@ function App() {
           </div>
         </div>
       }
-      sidebar={
-        multiplayerActive ? (
-          <div className="space-y-3">
-            {multiplayer.shareCode && (
-              <div className="text-center">
-                <span className="text-xs text-neutral-400">Code: </span>
-                <span className="font-mono font-bold text-neutral-700">
-                  {multiplayer.shareCode}
-                </span>
-              </div>
-            )}
-            <div className="space-y-1">
-              {multiplayer.players.map((player) => (
-                <div
-                  key={player.userId}
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <div
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  />
-                  <span className="truncate text-neutral-700">
-                    {player.displayName}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : undefined
-      }
       grid={
         <CrosswordGrid
           puzzle={puzzle}
