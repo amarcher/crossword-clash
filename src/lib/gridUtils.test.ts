@@ -8,6 +8,7 @@ import {
   getPrevCell,
   getNextWordStart,
   getPrevWordStart,
+  getCompletedClues,
   computeCellNumbers,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
@@ -230,6 +231,95 @@ describe("getPrevWordStart", () => {
     const result = getPrevWordStart(puzzle, 0, 0, "down");
     expect(result.coord).toEqual({ row: 2, col: 0 });
     expect(result.direction).toBe("across");
+  });
+});
+
+describe("getCompletedClues", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("returns empty set when no cells are filled", () => {
+    expect(getCompletedClues(puzzle, {}).size).toBe(0);
+  });
+
+  it("returns empty set when word is only partially filled", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+    };
+    const completed = getCompletedClues(puzzle, cells);
+    expect(completed.has("across-1")).toBe(false);
+  });
+
+  it("marks a clue completed when all its cells are correct", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+      "0,2": { letter: "T", correct: true },
+    };
+    const completed = getCompletedClues(puzzle, cells);
+    expect(completed.has("across-1")).toBe(true);
+  });
+
+  it("does not mark clue completed when a cell is incorrect", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "X", correct: false },
+      "0,2": { letter: "T", correct: true },
+    };
+    expect(getCompletedClues(puzzle, cells).has("across-1")).toBe(false);
+  });
+
+  it("detects completed down clues", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "1,0": { letter: "A", correct: true },
+      "2,0": { letter: "B", correct: true },
+    };
+    expect(getCompletedClues(puzzle, cells).has("down-1")).toBe(true);
+  });
+
+  it("handles overlapping across and down words", () => {
+    // Fill all cells for 1-Across (CAT) and 1-Down (CAB) — they share (0,0)
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+      "0,2": { letter: "T", correct: true },
+      "1,0": { letter: "A", correct: true },
+      "2,0": { letter: "B", correct: true },
+    };
+    const completed = getCompletedClues(puzzle, cells);
+    expect(completed.has("across-1")).toBe(true);
+    expect(completed.has("down-1")).toBe(true);
+  });
+
+  it("returns all four clues when entire puzzle is filled", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+      "0,2": { letter: "T", correct: true },
+      "1,0": { letter: "A", correct: true },
+      "1,2": { letter: "O", correct: true },
+      "2,0": { letter: "B", correct: true },
+      "2,1": { letter: "E", correct: true },
+      "2,2": { letter: "T", correct: true },
+    };
+    const completed = getCompletedClues(puzzle, cells);
+    expect(completed.size).toBe(4);
+    expect(completed.has("across-1")).toBe(true);
+    expect(completed.has("across-3")).toBe(true);
+    expect(completed.has("down-1")).toBe(true);
+    expect(completed.has("down-2")).toBe(true);
+  });
+
+  it("uses direction-number key format", () => {
+    const cells = {
+      "2,0": { letter: "B", correct: true },
+      "2,1": { letter: "E", correct: true },
+      "2,2": { letter: "T", correct: true },
+    };
+    const completed = getCompletedClues(puzzle, cells);
+    const keys = [...completed];
+    expect(keys.every((k) => /^(across|down)-\d+$/.test(k))).toBe(true);
   });
 });
 

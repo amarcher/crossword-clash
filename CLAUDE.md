@@ -30,7 +30,8 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 ## Game Modes
 
 - **Solo**: Import puzzle → play locally → progress saved to localStorage and Supabase (if connected).
-- **Host Game**: Import puzzle → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen. Refreshing the page auto-rejoins.
+- **Host Game (Player View)**: Import puzzle → enter display name → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen. Refreshing the page auto-rejoins.
+- **TV / Host View** (`/host`): Read-only spectator display. Creates a game room without joining as a player. Shows grid, clue list with strikethrough for completed words, scoreboard, room code + QR. Host can start game when 2+ players join and close the room at any time.
 - **Join Game**: Enter share code or scan QR code → join lobby → play when host starts. Refreshing the page auto-rejoins (session persisted to localStorage).
 
 ## Multiplayer Input Flow
@@ -52,9 +53,9 @@ src/
   components/
     CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav + hidden mobile input
     ClueBar/        # MobileClueBar (prev/next word, direction toggle, active clue display)
-    CluePanel/      # Clue list with active highlighting
+    CluePanel/      # Clue list with active highlighting + strikethrough for completed words
     GameLobby/      # GameLobby (share code, QR code, player list, close room) + JoinGame (code input)
-    Layout/         # GameLayout with optional sidebar slot, mobile clue bar pinned to bottom
+    Layout/         # GameLayout (responsive, mobile clue list flex-shrinks behind keyboard) + TVLayout (spectator with clue panel)
     PuzzleImporter/ # File upload/drag-and-drop
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
@@ -62,7 +63,7 @@ src/
     useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure
     useSupabase.ts  # Anonymous auth + client
   lib/
-    gridUtils.ts    # Pure navigation/word boundary functions
+    gridUtils.ts    # Pure navigation/word boundary functions + getCompletedClues
     playerColors.ts # 8-color pool for player assignment
     puzzleNormalizer.ts # Parser output → Puzzle type
     puzzleService.ts    # Supabase CRUD + multiplayer (claimCellOnServer, joinGame, rejoinGame, fetchGameState, startGame)
@@ -101,12 +102,13 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 123 tests across 7 files
-- **gridUtils.test.ts** (29 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, computeCellNumbers
+- `pnpm test` — 143 tests across 8 files
+- **gridUtils.test.ts** (37 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (14 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
 - **sessionPersistence.test.ts** (14 tests): MP + host session round-trip, null/missing key, corrupted JSON, missing gameId, clear safety, independence between MP and host sessions
+- **CluePanel.test.tsx** (12 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
 - **Cell.test.tsx** (15 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
 - **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
 
