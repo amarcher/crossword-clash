@@ -352,6 +352,11 @@ function App() {
     }
   }, [multiplayerActive, multiplayer.gameStatus]);
 
+  const completedClues = useMemo(
+    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+    [puzzle, playerCells],
+  );
+
   // --- Render based on gameMode ---
 
   // Reconnecting screen
@@ -501,11 +506,6 @@ function App() {
   const multiplayerIsComplete =
     multiplayerActive && multiplayer.gameStatus === "completed";
   const gameComplete = multiplayerActive ? multiplayerIsComplete : isComplete;
-
-  const completedClues = useMemo(
-    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
-    [puzzle, playerCells],
-  );
 
   // Get current player's score from multiplayer players list
   const multiplayerPlayers = multiplayerActive
