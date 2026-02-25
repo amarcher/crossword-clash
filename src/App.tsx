@@ -95,6 +95,7 @@ function App() {
   const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);
+  const gridInputRef = useRef<HTMLInputElement>(null);
 
   const triggerReject = useCallback((row: number, col: number) => {
     if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
@@ -550,6 +551,7 @@ function App() {
     selectCell(clue.row, clue.col);
     setDirection(clue.direction);
     setClueSheetOpen(false);
+    gridInputRef.current?.focus();
   }
 
   const multiplayerIsComplete =
@@ -628,6 +630,7 @@ function App() {
           playerColorMap={playerColorMap}
           navigationActions={navActions}
           rejectedCell={rejectedCell}
+          inputRef={gridInputRef}
         />
       }
       mobileClueBar={

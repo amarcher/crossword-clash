@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import type { Puzzle, CellState } from "../../types/puzzle";
 import { Cell } from "./Cell";
 
@@ -21,6 +21,7 @@ interface CrosswordGridProps {
   interactive?: boolean;
   navigationActions?: NavigationActions;
   rejectedCell?: string | null;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function CrosswordGrid({
@@ -33,20 +34,32 @@ export function CrosswordGrid({
   interactive = true,
   navigationActions,
   rejectedCell,
+  inputRef: externalInputRef,
 }: CrosswordGridProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = externalInputRef ?? internalInputRef;
+
+  const isTouchDevice = useMemo(
+    () => "ontouchstart" in window || navigator.maxTouchPoints > 0,
+    [],
+  );
+
+  const [inputFocused, setInputFocused] = useState(false);
+
+  // On mobile, only show selection highlights when the hidden input is focused
+  // (i.e., the virtual keyboard is available). Desktop always shows selection.
+  const showSelection = !isTouchDevice || inputFocused;
 
   // Auto-focus on desktop so keystrokes are captured immediately.
   // Skip on touch devices — iOS ignores non-gesture focus anyway, and
   // focusing can cause unwanted scroll/viewport side effects.
   useEffect(() => {
     if (interactive && navigationActions && selectedCell && inputRef.current) {
-      const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-      if (!isTouch) {
+      if (!isTouchDevice) {
         inputRef.current.focus();
       }
     }
-  }, [interactive, navigationActions, selectedCell !== null]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [interactive, navigationActions, selectedCell !== null, isTouchDevice]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus the hidden input when a cell is clicked (triggers mobile keyboard).
   // iOS requires .focus() synchronously within the user gesture — no rAF or setTimeout.
@@ -161,6 +174,8 @@ export function CrosswordGrid({
           data-form-type="other"
           data-lpignore="true"
           data-1p-ignore
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           onKeyDown={handleKeyDown}
           onBeforeInput={handleBeforeInput}
           onChange={() => {
@@ -187,9 +202,9 @@ export function CrosswordGrid({
               cell={cell}
               cellState={playerCells[key]}
               isSelected={
-                interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
+                interactive && showSelection && selectedCell?.row === cell.row && selectedCell?.col === cell.col
               }
-              isHighlighted={interactive && highlightedCells.has(key)}
+              isHighlighted={interactive && showSelection && highlightedCells.has(key)}
               isRejected={key === rejectedCell}
               onClick={interactive ? handleCellClick : undefined}
               playerColorMap={playerColorMap}
