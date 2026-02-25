@@ -60,7 +60,6 @@ describe("MP session persistence", () => {
 describe("Host session persistence", () => {
   const session: HostSession = {
     gameId: "def-456",
-    displayName: "Host",
   };
 
   it("returns null when no session is stored", () => {

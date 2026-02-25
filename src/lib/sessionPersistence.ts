@@ -14,7 +14,6 @@ export interface MpSession {
 
 export interface HostSession {
   gameId: string;
-  displayName: string;
 }
 
 export function loadMpSession(): MpSession | null {

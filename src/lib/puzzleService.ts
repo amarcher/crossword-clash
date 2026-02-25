@@ -75,7 +75,7 @@ export async function uploadPuzzle(
 export async function createGame(
   puzzleId: string,
   userId: string,
-  options?: { multiplayer?: boolean; displayName?: string },
+  options?: { multiplayer?: boolean; displayName?: string; spectator?: boolean },
 ): Promise<{ gameId: string; shortCode: string | null } | null> {
   if (!supabase) return null;
 
@@ -96,15 +96,17 @@ export async function createGame(
     return null;
   }
 
-  const { error: playerError } = await supabase.from("players").insert({
-    game_id: game.id,
-    user_id: userId,
-    display_name: displayName,
-    color: getPlayerColor(0),
-  });
+  if (!options?.spectator) {
+    const { error: playerError } = await supabase.from("players").insert({
+      game_id: game.id,
+      user_id: userId,
+      display_name: displayName,
+      color: getPlayerColor(0),
+    });
 
-  if (playerError) {
-    console.error("Failed to create player:", playerError);
+    if (playerError) {
+      console.error("Failed to create player:", playerError);
+    }
   }
 
   return { gameId: game.id, shortCode: game.short_code };
@@ -326,6 +328,7 @@ export async function rejoinGame(
   gameId: string,
   userId: string,
   displayName: string,
+  options?: { spectator?: boolean },
 ): Promise<{
   gameId: string;
   puzzle: Puzzle;
@@ -375,25 +378,27 @@ export async function rejoinGame(
   const players = existingPlayers ?? [];
 
   // Ensure player row exists (handles rare session-loss case where
-  // anonymous auth gave a new user_id)
-  const alreadyJoined = players.find((p) => p.user_id === userId);
-  if (!alreadyJoined) {
-    const color = getPlayerColor(players.length);
-    const { data: newPlayer, error: playerError } = await supabase
-      .from("players")
-      .insert({
-        game_id: game.id,
-        user_id: userId,
-        display_name: displayName,
-        color,
-      })
-      .select("*")
-      .single();
+  // anonymous auth gave a new user_id). Spectators skip this.
+  if (!options?.spectator) {
+    const alreadyJoined = players.find((p) => p.user_id === userId);
+    if (!alreadyJoined) {
+      const color = getPlayerColor(players.length);
+      const { data: newPlayer, error: playerError } = await supabase
+        .from("players")
+        .insert({
+          game_id: game.id,
+          user_id: userId,
+          display_name: displayName,
+          color,
+        })
+        .select("*")
+        .single();
 
-    if (playerError) {
-      console.error("Failed to create player on rejoin:", playerError);
-    } else if (newPlayer) {
-      players.push(newPlayer);
+      if (playerError) {
+        console.error("Failed to create player on rejoin:", playerError);
+      } else if (newPlayer) {
+        players.push(newPlayer);
+      }
     }
   }
 

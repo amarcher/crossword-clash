@@ -13,7 +13,7 @@ import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessio
 import { getCompletedClues } from "./lib/gridUtils";
 import type { Puzzle } from "./types/puzzle";
 
-type HostMode = "menu" | "name" | "import" | "lobby" | "spectating" | "rejoining";
+type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining";
 
 function HostApp() {
   const { user } = useSupabase();
@@ -33,7 +33,6 @@ function HostApp() {
 
   const [mode, setMode] = useState<HostMode>(() => (hostSession ? "rejoining" : "menu"));
   const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
-  const [displayName, setDisplayName] = useState(() => hostSession?.displayName ?? "Host");
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
 
   const multiplayer = useMultiplayer(
@@ -59,8 +58,8 @@ function HostApp() {
   // Save host session to localStorage
   useEffect(() => {
     if (!gameId) return;
-    saveHostSession({ gameId, displayName });
-  }, [gameId, displayName]);
+    saveHostSession({ gameId });
+  }, [gameId]);
 
   // Rejoin host game on page refresh
   useEffect(() => {
@@ -71,7 +70,7 @@ function HostApp() {
       return;
     }
 
-    rejoinGame(session.gameId, user.id, session.displayName).then((result) => {
+    rejoinGame(session.gameId, user.id, "", { spectator: true }).then((result) => {
       if (!result) {
         clearHostSession();
         setMode("menu");
@@ -104,14 +103,14 @@ function HostApp() {
       if (!puzzleId) return;
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
-        displayName: displayName.trim() || "Host",
+        spectator: true,
       });
       if (result) {
         setGameId(result.gameId);
         setMode("lobby");
       }
     },
-    [loadPuzzle, user, displayName],
+    [loadPuzzle, user],
   );
 
   const handleStartGame = useCallback(async () => {
@@ -191,7 +190,7 @@ function HostApp() {
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {user ? (
             <button
-              onClick={() => setMode("name")}
+              onClick={() => setMode("import")}
               className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               Host Game
@@ -202,53 +201,6 @@ function HostApp() {
             </p>
           )}
         </div>
-      </div>
-    );
-  }
-
-  // Name entry
-  if (mode === "name") {
-    return (
-      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-        <h1 className="text-3xl font-bold mb-2 text-white">Host a Game</h1>
-        <p className="text-neutral-400 mb-6">Enter your display name</p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (displayName.trim()) setMode("import");
-          }}
-          className="flex flex-col gap-3 w-full max-w-xs"
-          autoComplete="off"
-        >
-          <input
-            type="text"
-            name="xw-handle"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
-            maxLength={20}
-            className="px-4 py-2.5 rounded-lg border border-neutral-600 bg-neutral-800 text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoComplete="nofill"
-            data-form-type="other"
-            data-lpignore="true"
-            data-1p-ignore
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={!displayName.trim()}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-700 disabled:cursor-not-allowed transition-colors"
-          >
-            Choose Puzzle
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("menu")}
-            className="text-sm text-neutral-400 hover:text-neutral-200"
-          >
-            Back
-          </button>
-        </form>
       </div>
     );
   }
@@ -367,14 +319,12 @@ function HostApp() {
               </div>
             ))}
           </div>
-          {multiplayer.isHost && (
-            <button
-              onClick={handleCloseRoom}
-              className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
-            >
-              Close Room
-            </button>
-          )}
+          <button
+            onClick={handleCloseRoom}
+            className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+          >
+            Close Room
+          </button>
         </div>
       }
       scoreboard={
