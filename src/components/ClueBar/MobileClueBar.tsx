@@ -25,17 +25,24 @@ export function MobileClueBar({
     const vv = window.visualViewport;
     if (!vv) return;
 
+    let rafId = 0;
+
     const update = () => {
-      if (!barRef.current) return;
-      // When keyboard is open, visualViewport is smaller than the layout viewport.
-      // Position the bar at the bottom of the visible area.
-      const offset = window.innerHeight - vv.height - vv.offsetTop;
-      barRef.current.style.bottom = `${Math.max(0, offset)}px`;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (!barRef.current) return;
+        // Use documentElement.clientHeight (layout viewport) instead of
+        // window.innerHeight which shrinks on iOS Safari when keyboard opens.
+        const layoutHeight = document.documentElement.clientHeight;
+        const offset = layoutHeight - vv.height - vv.offsetTop;
+        barRef.current.style.bottom = `${Math.max(0, offset)}px`;
+      });
     };
 
     vv.addEventListener("resize", update);
     vv.addEventListener("scroll", update);
     return () => {
+      cancelAnimationFrame(rafId);
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
     };
@@ -44,7 +51,7 @@ export function MobileClueBar({
   return (
     <div
       ref={barRef}
-      className="md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-white border-t border-neutral-200 z-50"
+      className="md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-white border-t border-neutral-200 z-50 transition-[bottom] duration-100 ease-out"
     >
       <button
         onClick={onPrevWord}
