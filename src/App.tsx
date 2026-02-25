@@ -19,7 +19,7 @@ import {
   rejoinGame,
 } from "./lib/puzzleService";
 import { loadMpSession, saveMpSession, clearMpSession } from "./lib/sessionPersistence";
-import { getCompletedClues } from "./lib/gridUtils";
+import { getCompletedClues, getCompletedCluesByPlayer } from "./lib/gridUtils";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
 type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining";
@@ -407,6 +407,11 @@ function App() {
     [puzzle, playerCells],
   );
 
+  const completedCluesByPlayer = useMemo(
+    () => (puzzle && multiplayerActive ? getCompletedCluesByPlayer(puzzle, playerCells) : undefined),
+    [puzzle, playerCells, multiplayerActive],
+  );
+
   // --- Render based on gameMode ---
 
   // Reconnecting screen
@@ -667,6 +672,8 @@ function App() {
                 activeClue={activeClue}
                 onClueClick={handleClueClick}
                 completedClues={completedClues}
+                completedCluesByPlayer={completedCluesByPlayer}
+                playerColorMap={playerColorMap}
               />
             }
           />
@@ -692,6 +699,8 @@ function App() {
             activeClue={activeClue}
             onClueClick={handleClueClick}
             completedClues={completedClues}
+            completedCluesByPlayer={completedCluesByPlayer}
+            playerColorMap={playerColorMap}
           />
         </div>
       }

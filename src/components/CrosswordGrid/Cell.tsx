@@ -9,6 +9,14 @@ export function blendOnWhite(hex: string, alpha: number): string {
   return `rgb(${Math.round(r * alpha + 255 * (1 - alpha))},${Math.round(g * alpha + 255 * (1 - alpha))},${Math.round(b * alpha + 255 * (1 - alpha))})`;
 }
 
+/** Convert hex to rgba() string. */
+export function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 interface CellProps {
   cell: PuzzleCell;
   cellState?: CellState;
@@ -17,6 +25,12 @@ interface CellProps {
   isRejected?: boolean;
   onClick?: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
+  /** Triggers a scale-pop entrance animation when the cell is first filled */
+  animateFill?: boolean;
+  /** Triggers a word-completion sweep animation; value is the player's hex color */
+  wordCompleteColor?: string;
+  /** Stagger delay (ms) for the word-completion sweep */
+  wordCompleteDelay?: number;
 }
 
 export const Cell = memo(function Cell({
@@ -27,6 +41,9 @@ export const Cell = memo(function Cell({
   isRejected,
   onClick,
   playerColorMap,
+  animateFill,
+  wordCompleteColor,
+  wordCompleteDelay,
 }: CellProps) {
   if (cell.solution === null) {
     return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
@@ -48,10 +65,23 @@ export const Cell = memo(function Cell({
     ? { backgroundColor: playerBg }
     : undefined;
 
+  // Build animation class + inline style for word-complete sweep
+  let animClass = "";
+  let animStyle: React.CSSProperties | undefined;
+  if (wordCompleteColor) {
+    animClass = " cell-word-complete";
+    animStyle = {
+      "--sweep-color": hexToRgba(wordCompleteColor, 0.35),
+      animationDelay: `${wordCompleteDelay ?? 0}ms`,
+    } as React.CSSProperties;
+  } else if (animateFill) {
+    animClass = " cell-fill";
+  }
+
   return (
     <div
-      className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden${isRejected ? " cell-reject" : ""}`}
-      style={{ containerType: "inline-size", ...style }}
+      className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden${isRejected ? " cell-reject" : ""}${animClass}`}
+      style={{ containerType: "inline-size", ...style, ...animStyle }}
       onClick={onClick ? () => onClick(cell.row, cell.col) : undefined}
     >
       {cell.number != null && (

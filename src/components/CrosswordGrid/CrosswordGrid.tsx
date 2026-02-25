@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
-import type { Puzzle, CellState } from "../../types/puzzle";
+import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
+import { getWordCells, getCompletedClues } from "../../lib/gridUtils";
 import { Cell } from "./Cell";
 
 export interface NavigationActions {
@@ -9,6 +10,16 @@ export interface NavigationActions {
   nextWord: () => void;
   prevWord: () => void;
   toggleDirection: () => void;
+}
+
+/** Info about a word that just completed — used for cascade animation */
+interface WordCompletion {
+  /** Cell keys in order (left→right or top→bottom) */
+  cellKeys: string[];
+  /** Player hex color for the sweep */
+  color: string;
+  /** Timestamp for cleanup */
+  expiresAt: number;
 }
 
 interface CrosswordGridProps {
@@ -49,6 +60,103 @@ export function CrosswordGrid({
   // On mobile, only show selection highlights when the hidden input is focused
   // (i.e., the virtual keyboard is available). Desktop always shows selection.
   const showSelection = !isTouchDevice || inputFocused;
+
+  // --- Cell fill animation tracking ---
+  // Track which cell keys have been seen with a letter so we only animate new fills.
+  const seenCellsRef = useRef<Set<string>>(new Set());
+  const [animatingFills, setAnimatingFills] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const newFills: string[] = [];
+    for (const [key, state] of Object.entries(playerCells)) {
+      if (state.letter && !seenCellsRef.current.has(key)) {
+        seenCellsRef.current.add(key);
+        newFills.push(key);
+      }
+    }
+    if (newFills.length === 0) return;
+
+    setAnimatingFills((prev) => {
+      const next = new Set(prev);
+      for (const k of newFills) next.add(k);
+      return next;
+    });
+
+    const timer = setTimeout(() => {
+      setAnimatingFills((prev) => {
+        const next = new Set(prev);
+        for (const k of newFills) next.delete(k);
+        return next;
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [playerCells]);
+
+  // --- Word completion cascade tracking ---
+  const prevCompletedRef = useRef<Set<string>>(new Set());
+  const [wordCompletions, setWordCompletions] = useState<WordCompletion[]>([]);
+
+  useEffect(() => {
+    const current = getCompletedClues(puzzle, playerCells);
+    const previous = prevCompletedRef.current;
+
+    const newCompletions: WordCompletion[] = [];
+    for (const clueKey of current) {
+      if (previous.has(clueKey)) continue;
+
+      // Parse "across-5" → find the clue
+      const dashIdx = clueKey.lastIndexOf("-");
+      const dir = clueKey.slice(0, dashIdx) as "across" | "down";
+      const num = parseInt(clueKey.slice(dashIdx + 1));
+      const clue: PuzzleClue | undefined = puzzle.clues.find(
+        (c) => c.direction === dir && c.number === num,
+      );
+      if (!clue) continue;
+
+      const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
+      if (cells.length === 0) continue;
+
+      // Determine the completing player (last cell's playerId)
+      const lastCell = cells[cells.length - 1];
+      const lastState = playerCells[`${lastCell.row},${lastCell.col}`];
+      const playerId = lastState?.playerId;
+      const color =
+        playerId && playerColorMap?.[playerId]
+          ? playerColorMap[playerId]
+          : "#3b82f6"; // fallback blue
+
+      newCompletions.push({
+        cellKeys: cells.map((c) => `${c.row},${c.col}`),
+        color,
+        expiresAt: Date.now() + 600 + cells.length * 60,
+      });
+    }
+
+    prevCompletedRef.current = current;
+
+    if (newCompletions.length === 0) return;
+
+    setWordCompletions((prev) => [...prev, ...newCompletions]);
+
+    // Cleanup after the longest animation
+    const maxDuration = Math.max(
+      ...newCompletions.map((wc) => wc.expiresAt - Date.now()),
+    );
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      setWordCompletions((prev) => prev.filter((wc) => wc.expiresAt > now));
+    }, maxDuration + 50);
+
+    return () => clearTimeout(timer);
+  }, [puzzle, playerCells, playerColorMap]);
+
+  // Build a lookup: cellKey → { color, delay } for word completion animations
+  const wordCompleteMap = new Map<string, { color: string; delay: number }>();
+  for (const wc of wordCompletions) {
+    for (let i = 0; i < wc.cellKeys.length; i++) {
+      wordCompleteMap.set(wc.cellKeys[i], { color: wc.color, delay: i * 60 });
+    }
+  }
 
   // Auto-focus on desktop so keystrokes are captured immediately.
   // Skip on touch devices — iOS ignores non-gesture focus anyway, and
@@ -196,6 +304,7 @@ export function CrosswordGrid({
       >
         {puzzle.cells.flat().map((cell) => {
           const key = `${cell.row},${cell.col}`;
+          const wcInfo = wordCompleteMap.get(key);
           return (
             <Cell
               key={key}
@@ -208,6 +317,9 @@ export function CrosswordGrid({
               isRejected={key === rejectedCell}
               onClick={interactive ? handleCellClick : undefined}
               playerColorMap={playerColorMap}
+              animateFill={animatingFills.has(key)}
+              wordCompleteColor={wcInfo?.color}
+              wordCompleteDelay={wcInfo?.delay}
             />
           );
         })}

@@ -9,6 +9,7 @@ import {
   getNextWordStart,
   getPrevWordStart,
   getCompletedClues,
+  getCompletedCluesByPlayer,
   computeCellNumbers,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
@@ -320,6 +321,74 @@ describe("getCompletedClues", () => {
     const completed = getCompletedClues(puzzle, cells);
     const keys = [...completed];
     expect(keys.every((k) => /^(across|down)-\d+$/.test(k))).toBe(true);
+  });
+});
+
+describe("getCompletedCluesByPlayer", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("returns empty map when no cells are filled", () => {
+    const result = getCompletedCluesByPlayer(puzzle, {});
+    expect(result.size).toBe(0);
+  });
+
+  it("credits the last cell's playerId as the completer", () => {
+    // Complete across-3 (BET): cells (2,0), (2,1), (2,2)
+    const cells = {
+      "2,0": { letter: "B", correct: true, playerId: "alice" },
+      "2,1": { letter: "E", correct: true, playerId: "alice" },
+      "2,2": { letter: "T", correct: true, playerId: "bob" },
+    };
+    const result = getCompletedCluesByPlayer(puzzle, cells);
+    expect(result.has("across-3")).toBe(true);
+    // Last cell (2,2) was placed by bob
+    expect(result.get("across-3")?.playerId).toBe("bob");
+  });
+
+  it("credits majority player if last cell has no playerId (solo fill)", () => {
+    const cells = {
+      "2,0": { letter: "B", correct: true, playerId: "alice" },
+      "2,1": { letter: "E", correct: true, playerId: "alice" },
+      "2,2": { letter: "T", correct: true },
+    };
+    const result = getCompletedCluesByPlayer(puzzle, cells);
+    expect(result.has("across-3")).toBe(true);
+    // Last cell with a playerId is alice at (2,1)
+    expect(result.get("across-3")?.playerId).toBe("alice");
+  });
+
+  it("returns empty playerId for solo mode (no playerIds)", () => {
+    const cells = {
+      "2,0": { letter: "B", correct: true },
+      "2,1": { letter: "E", correct: true },
+      "2,2": { letter: "T", correct: true },
+    };
+    const result = getCompletedCluesByPlayer(puzzle, cells);
+    expect(result.has("across-3")).toBe(true);
+    expect(result.get("across-3")?.playerId).toBe("");
+  });
+
+  it("tracks multiple completed clues with different players", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true, playerId: "alice" },
+      "0,1": { letter: "A", correct: true, playerId: "alice" },
+      "0,2": { letter: "T", correct: true, playerId: "alice" },
+      "2,0": { letter: "B", correct: true, playerId: "bob" },
+      "2,1": { letter: "E", correct: true, playerId: "bob" },
+      "2,2": { letter: "T", correct: true, playerId: "bob" },
+    };
+    const result = getCompletedCluesByPlayer(puzzle, cells);
+    expect(result.get("across-1")?.playerId).toBe("alice");
+    expect(result.get("across-3")?.playerId).toBe("bob");
+  });
+
+  it("does not include partially completed clues", () => {
+    const cells = {
+      "2,0": { letter: "B", correct: true, playerId: "alice" },
+      "2,1": { letter: "E", correct: true, playerId: "alice" },
+    };
+    const result = getCompletedCluesByPlayer(puzzle, cells);
+    expect(result.has("across-3")).toBe(false);
   });
 });
 

@@ -219,6 +219,40 @@ export function getCompletedClues(
 }
 
 /**
+ * Like getCompletedClues, but also records which player completed each clue.
+ * The "completing player" is the one who placed the last letter in the word.
+ */
+export function getCompletedCluesByPlayer(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+): Map<string, { playerId: string }> {
+  const completed = new Map<string, { playerId: string }>();
+  for (const clue of puzzle.clues) {
+    const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
+    if (cells.length === 0) continue;
+    if (!cells.every((c) => playerCells[`${c.row},${c.col}`]?.correct)) continue;
+
+    // Find the last cell that has a playerId (the one who "finished" the word)
+    let lastPlayerId: string | undefined;
+    for (const cell of cells) {
+      const state = playerCells[`${cell.row},${cell.col}`];
+      if (state?.playerId) {
+        lastPlayerId = state.playerId;
+      }
+    }
+
+    const key = `${clue.direction}-${clue.number}`;
+    if (lastPlayerId) {
+      completed.set(key, { playerId: lastPlayerId });
+    } else {
+      // Solo mode — no playerId, still mark as completed with empty string
+      completed.set(key, { playerId: "" });
+    }
+  }
+  return completed;
+}
+
+/**
  * Compute cell numbers for a puzzle grid.
  * A cell gets a number if it starts an across word or a down word.
  */

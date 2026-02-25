@@ -1,14 +1,26 @@
 import { useEffect, useRef } from "react";
 import type { PuzzleClue } from "../../types/puzzle";
+import { blendOnWhite } from "../CrosswordGrid/Cell";
 
 interface CluePanelProps {
   clues: PuzzleClue[];
   activeClue: PuzzleClue | null;
   onClueClick: (clue: PuzzleClue) => void;
   completedClues?: Set<string>;
+  /** Map of clue key → completing player info (for player-colored strikethrough) */
+  completedCluesByPlayer?: Map<string, { playerId: string }>;
+  /** Player userId → hex color */
+  playerColorMap?: Record<string, string>;
 }
 
-export function CluePanel({ clues, activeClue, onClueClick, completedClues }: CluePanelProps) {
+export function CluePanel({
+  clues,
+  activeClue,
+  onClueClick,
+  completedClues,
+  completedCluesByPlayer,
+  playerColorMap,
+}: CluePanelProps) {
   const acrossClues = clues.filter((c) => c.direction === "across");
   const downClues = clues.filter((c) => c.direction === "down");
 
@@ -20,6 +32,8 @@ export function CluePanel({ clues, activeClue, onClueClick, completedClues }: Cl
         activeClue={activeClue}
         onClueClick={onClueClick}
         completedClues={completedClues}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
       />
       <ClueList
         title="Down"
@@ -27,6 +41,8 @@ export function CluePanel({ clues, activeClue, onClueClick, completedClues }: Cl
         activeClue={activeClue}
         onClueClick={onClueClick}
         completedClues={completedClues}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
       />
     </div>
   );
@@ -38,12 +54,16 @@ function ClueList({
   activeClue,
   onClueClick,
   completedClues,
+  completedCluesByPlayer,
+  playerColorMap,
 }: {
   title: string;
   clues: PuzzleClue[];
   activeClue: PuzzleClue | null;
   onClueClick: (clue: PuzzleClue) => void;
   completedClues?: Set<string>;
+  completedCluesByPlayer?: Map<string, { playerId: string }>;
+  playerColorMap?: Record<string, string>;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef<HTMLLIElement>(null);
@@ -70,21 +90,39 @@ function ClueList({
       </h3>
       <ul ref={listRef} className="overflow-y-auto min-h-0">
         {clues.map((clue) => {
+          const clueKey = `${clue.direction}-${clue.number}`;
           const isActive =
             activeClue?.number === clue.number &&
             activeClue?.direction === clue.direction;
-          const isCompleted = completedClues?.has(`${clue.direction}-${clue.number}`);
+
+          // Check completion via either prop (completedCluesByPlayer takes precedence)
+          const byPlayerInfo = completedCluesByPlayer?.get(clueKey);
+          const isCompleted = byPlayerInfo !== undefined || completedClues?.has(clueKey);
+
+          // Resolve the player color for completed clues
+          let completedBg: string | undefined;
+          if (isCompleted && byPlayerInfo?.playerId && playerColorMap?.[byPlayerInfo.playerId]) {
+            completedBg = blendOnWhite(playerColorMap[byPlayerInfo.playerId], 0.15);
+          }
+
           return (
             <li
-              key={`${clue.direction}-${clue.number}`}
+              key={clueKey}
               ref={isActive ? activeRef : undefined}
               className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors ${
                 isActive
                   ? "bg-blue-100 text-blue-900 font-medium"
-                  : isCompleted
+                  : isCompleted && !completedBg
                     ? "text-neutral-400"
-                    : "hover:bg-neutral-100"
+                    : isCompleted
+                      ? ""
+                      : "hover:bg-neutral-100"
               } ${isCompleted ? "line-through" : ""}`}
+              style={
+                completedBg && !isActive
+                  ? { backgroundColor: completedBg, color: "#737373" }
+                  : undefined
+              }
               onClick={() => onClueClick(clue)}
             >
               <span className="font-semibold mr-1">{clue.number}.</span>

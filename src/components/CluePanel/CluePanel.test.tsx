@@ -174,3 +174,124 @@ describe("CluePanel strikethrough", () => {
     expect(handler).toHaveBeenCalledWith(clues[0]);
   });
 });
+
+describe("CluePanel player-colored completion", () => {
+  it("renders player color background on completed clue", () => {
+    const clues = makeTestClues();
+    const completedCluesByPlayer = new Map([
+      ["across-1", { playerId: "player-1" }],
+    ]);
+    const playerColorMap = { "player-1": "#3b82f6" };
+
+    const { container } = render(
+      <CluePanel
+        clues={clues}
+        activeClue={null}
+        onClueClick={() => {}}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
+      />,
+    );
+    const items = Array.from(container.querySelectorAll("li"));
+    const feline = items.find((li) => li.textContent?.includes("Feline"));
+    // Should have a player-colored background
+    expect(feline?.style.backgroundColor).toBeTruthy();
+    expect(feline?.className).toContain("line-through");
+  });
+
+  it("does not apply player color when playerColorMap is missing", () => {
+    const clues = makeTestClues();
+    const completedCluesByPlayer = new Map([
+      ["across-1", { playerId: "player-1" }],
+    ]);
+
+    const { container } = render(
+      <CluePanel
+        clues={clues}
+        activeClue={null}
+        onClueClick={() => {}}
+        completedCluesByPlayer={completedCluesByPlayer}
+      />,
+    );
+    const items = Array.from(container.querySelectorAll("li"));
+    const feline = items.find((li) => li.textContent?.includes("Feline"));
+    // Strikethrough yes, but no inline background
+    expect(feline?.className).toContain("line-through");
+    expect(feline?.style.backgroundColor).toBeFalsy();
+  });
+
+  it("active clue styling takes priority over player color background", () => {
+    const clues = makeTestClues();
+    const completedCluesByPlayer = new Map([
+      ["across-1", { playerId: "player-1" }],
+    ]);
+    const playerColorMap = { "player-1": "#3b82f6" };
+
+    const { container } = render(
+      <CluePanel
+        clues={clues}
+        activeClue={clues[0]}
+        onClueClick={() => {}}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
+      />,
+    );
+    const items = Array.from(container.querySelectorAll("li"));
+    const feline = items.find((li) => li.textContent?.includes("Feline"));
+    // Active styling wins
+    expect(feline?.className).toContain("bg-blue-100");
+    // But strikethrough preserved
+    expect(feline?.className).toContain("line-through");
+    // No inline player color when active
+    expect(feline?.style.backgroundColor).toBeFalsy();
+  });
+
+  it("shows different player colors for clues completed by different players", () => {
+    const clues = makeTestClues();
+    const completedCluesByPlayer = new Map([
+      ["across-1", { playerId: "alice" }],
+      ["across-3", { playerId: "bob" }],
+    ]);
+    const playerColorMap = { alice: "#ef4444", bob: "#3b82f6" };
+
+    const { container } = render(
+      <CluePanel
+        clues={clues}
+        activeClue={null}
+        onClueClick={() => {}}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
+      />,
+    );
+    const items = Array.from(container.querySelectorAll("li"));
+    const feline = items.find((li) => li.textContent?.includes("Feline"));
+    const wager = items.find((li) => li.textContent?.includes("Wager"));
+    // Both have backgrounds but they're different colors
+    expect(feline?.style.backgroundColor).toBeTruthy();
+    expect(wager?.style.backgroundColor).toBeTruthy();
+    expect(feline?.style.backgroundColor).not.toBe(wager?.style.backgroundColor);
+  });
+
+  it("player-colored completed clue is still clickable", () => {
+    const clues = makeTestClues();
+    const handler = vi.fn();
+    const completedCluesByPlayer = new Map([
+      ["across-1", { playerId: "player-1" }],
+    ]);
+    const playerColorMap = { "player-1": "#3b82f6" };
+
+    const { container } = render(
+      <CluePanel
+        clues={clues}
+        activeClue={null}
+        onClueClick={handler}
+        completedCluesByPlayer={completedCluesByPlayer}
+        playerColorMap={playerColorMap}
+      />,
+    );
+    const items = Array.from(container.querySelectorAll("li"));
+    const feline = items.find((li) => li.textContent?.includes("Feline"))!;
+    fireEvent.click(feline);
+    expect(handler).toHaveBeenCalledWith(clues[0]);
+  });
+});

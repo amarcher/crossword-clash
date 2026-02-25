@@ -10,7 +10,7 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { uploadPuzzle, createGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
-import { getCompletedClues } from "./lib/gridUtils";
+import { getCompletedCluesByPlayer } from "./lib/gridUtils";
 import type { Puzzle } from "./types/puzzle";
 
 type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining";
@@ -159,8 +159,8 @@ function HostApp() {
     return map;
   }, [multiplayer.players]);
 
-  const completedClues = useMemo(
-    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+  const completedCluesByPlayer = useMemo(
+    () => (puzzle ? getCompletedCluesByPlayer(puzzle, playerCells) : new Map<string, { playerId: string }>()),
     [puzzle, playerCells],
   );
 
@@ -342,7 +342,8 @@ function HostApp() {
             clues={puzzle.clues}
             activeClue={null}
             onClueClick={() => {}}
-            completedClues={completedClues}
+            completedCluesByPlayer={completedCluesByPlayer}
+            playerColorMap={playerColorMap}
           />
         </div>
       }
