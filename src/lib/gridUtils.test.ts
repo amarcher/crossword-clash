@@ -10,6 +10,7 @@ import {
   getPrevWordStart,
   getCompletedClues,
   getCompletedCluesByPlayer,
+  countCluesPerPlayer,
   computeCellNumbers,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
@@ -411,5 +412,35 @@ describe("computeCellNumbers", () => {
   it("does not number cells that don't start words", () => {
     expect(numbers.has("0,1")).toBe(false);
     expect(numbers.has("1,0")).toBe(false);
+  });
+});
+
+describe("countCluesPerPlayer", () => {
+  it("returns empty map for empty input", () => {
+    const result = countCluesPerPlayer(new Map());
+    expect(result.size).toBe(0);
+  });
+
+  it("counts clues for a single player", () => {
+    const completed = new Map([
+      ["across-1", { playerId: "alice" }],
+      ["across-3", { playerId: "alice" }],
+      ["down-1", { playerId: "alice" }],
+    ]);
+    const result = countCluesPerPlayer(completed);
+    expect(result.get("alice")).toBe(3);
+    expect(result.size).toBe(1);
+  });
+
+  it("counts clues for multiple players", () => {
+    const completed = new Map([
+      ["across-1", { playerId: "alice" }],
+      ["across-3", { playerId: "bob" }],
+      ["down-1", { playerId: "alice" }],
+      ["down-2", { playerId: "bob" }],
+    ]);
+    const result = countCluesPerPlayer(completed);
+    expect(result.get("alice")).toBe(2);
+    expect(result.get("bob")).toBe(2);
   });
 });

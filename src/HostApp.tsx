@@ -8,9 +8,11 @@ import { CluePanel } from "./components/CluePanel";
 import { TVLayout } from "./components/Layout/TVLayout";
 import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
-import { uploadPuzzle, createGame, rejoinGame } from "./lib/puzzleService";
+import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
-import { getCompletedCluesByPlayer } from "./lib/gridUtils";
+import { getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
+import { CompletionModal } from "./components/CompletionModal";
+import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle } from "./types/puzzle";
 
 type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining";
@@ -33,6 +35,7 @@ function HostApp() {
 
   const [mode, setMode] = useState<HostMode>(() => (hostSession ? "rejoining" : "menu"));
   const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
+  const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
 
   const multiplayer = useMultiplayer(
@@ -101,16 +104,32 @@ function HostApp() {
       if (!user) return;
       const puzzleId = await uploadPuzzle(p, fileBuffer);
       if (!puzzleId) return;
+
+      // If we have an existing share code, reuse it for the next game
+      if (multiplayer.shareCode) {
+        const result = await createNextGame(puzzleId, user.id, multiplayer.shareCode, {
+          spectator: true,
+        });
+        if (result) {
+          multiplayer.broadcastNewGame(result.gameId);
+          setGameId(result.gameId);
+          setCompletionModalDismissed(false);
+          setMode("lobby");
+          return;
+        }
+      }
+
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
         spectator: true,
       });
       if (result) {
         setGameId(result.gameId);
+        setCompletionModalDismissed(false);
         setMode("lobby");
       }
     },
-    [loadPuzzle, user],
+    [loadPuzzle, user, multiplayer],
   );
 
   const handleStartGame = useCallback(async () => {
@@ -126,19 +145,24 @@ function HostApp() {
     clearHostSession();
   }, [multiplayer]);
 
+  const handleNewPuzzle = useCallback(() => {
+    setCompletionModalDismissed(true);
+    setMode("import");
+  }, []);
+
+  const handleBackToMenu = useCallback(() => {
+    setCompletionModalDismissed(true);
+    setGameId(null);
+    setMode("menu");
+    clearHostSession();
+  }, []);
+
   // Transition from lobby to spectating when game starts
   useEffect(() => {
     if (mode === "lobby" && multiplayer.gameStatus === "active") {
       setMode("spectating");
     }
   }, [mode, multiplayer.gameStatus]);
-
-  // Clear host session when game completes
-  useEffect(() => {
-    if (multiplayer.gameStatus === "completed") {
-      clearHostSession();
-    }
-  }, [multiplayer.gameStatus]);
 
   const multiplayerPlayers = useMemo(
     () =>
@@ -164,8 +188,28 @@ function HostApp() {
     [puzzle, playerCells],
   );
 
+  const clueCountsByPlayer = useMemo(
+    () => countCluesPerPlayer(completedCluesByPlayer),
+    [completedCluesByPlayer],
+  );
+
+  const playerResults: PlayerResult[] = useMemo(
+    () =>
+      multiplayerPlayers.map((p) => ({
+        userId: p.userId,
+        displayName: p.displayName,
+        color: p.color,
+        cellsClaimed: p.score,
+        cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
+      })),
+    [multiplayerPlayers, clueCountsByPlayer],
+  );
+
   const isComplete =
     totalWhiteCells > 0 && score === totalWhiteCells;
+
+  const showCompletionModal =
+    multiplayer.gameStatus === "completed" && !completionModalDismissed;
 
   const joinUrl = multiplayer.shareCode
     ? `${window.location.origin}/?join=${multiplayer.shareCode}`
@@ -273,6 +317,7 @@ function HostApp() {
   if (!puzzle) return null;
 
   return (
+    <>
     <TVLayout
       grid={
         <CrosswordGrid
@@ -348,6 +393,16 @@ function HostApp() {
         </div>
       }
     />
+    <CompletionModal
+      open={showCompletionModal}
+      totalCells={totalWhiteCells}
+      totalClues={puzzle.clues.length}
+      players={playerResults}
+      onNewPuzzle={handleNewPuzzle}
+      onBackToMenu={handleBackToMenu}
+      darkMode
+    />
+    </>
   );
 }
 

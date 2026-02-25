@@ -422,6 +422,56 @@ export async function rejoinGame(
 }
 
 /**
+ * Create a new game in the same room (reuse short_code).
+ * Nulls the old game's short_code, then creates a new game with the same code.
+ */
+export async function createNextGame(
+  puzzleId: string,
+  userId: string,
+  shortCode: string,
+  options?: { displayName?: string; spectator?: boolean },
+): Promise<{ gameId: string; shortCode: string } | null> {
+  if (!supabase) return null;
+
+  // Release the short_code from the old game
+  await supabase
+    .from("games")
+    .update({ short_code: null })
+    .eq("short_code", shortCode);
+
+  // Create new game with the same short_code (trigger preserves explicit codes)
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .insert({
+      puzzle_id: puzzleId,
+      status: "waiting",
+      short_code: shortCode,
+    })
+    .select("id, short_code")
+    .single();
+
+  if (gameError || !game) {
+    console.error("Failed to create next game:", gameError);
+    return null;
+  }
+
+  if (!options?.spectator) {
+    const { error: playerError } = await supabase.from("players").insert({
+      game_id: game.id,
+      user_id: userId,
+      display_name: options?.displayName ?? "Player 1",
+      color: getPlayerColor(0),
+    });
+
+    if (playerError) {
+      console.error("Failed to create player:", playerError);
+    }
+  }
+
+  return { gameId: game.id, shortCode: game.short_code ?? shortCode };
+}
+
+/**
  * Start a multiplayer game (host only).
  */
 export async function startGame(gameId: string): Promise<boolean> {

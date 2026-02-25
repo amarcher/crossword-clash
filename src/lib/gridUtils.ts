@@ -253,6 +253,19 @@ export function getCompletedCluesByPlayer(
 }
 
 /**
+ * Aggregate completed-clues-by-player into per-player clue counts.
+ */
+export function countCluesPerPlayer(
+  completedCluesByPlayer: Map<string, { playerId: string }>,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const { playerId } of completedCluesByPlayer.values()) {
+    counts.set(playerId, (counts.get(playerId) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/**
  * Compute cell numbers for a puzzle grid.
  * A cell gets a number if it starts an across word or a down word.
  */

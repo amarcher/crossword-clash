@@ -25,11 +25,13 @@ interface UseMultiplayerReturn {
   claimCell: (row: number, col: number, letter: string) => void;
   startGame: () => Promise<void>;
   closeRoom: () => Promise<void>;
+  broadcastNewGame: (newGameId: string) => void;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
   isHost: boolean;
   shareCode: string | null;
   isRoomClosed: boolean;
+  newGameId: string | null;
 }
 
 export function useMultiplayer({
@@ -45,6 +47,7 @@ export function useMultiplayer({
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
+  const [newGameId, setNewGameId] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -122,6 +125,10 @@ export function useMultiplayer({
 
     channel.on("broadcast", { event: "room_closed" }, () => {
       setIsRoomClosed(true);
+    });
+
+    channel.on("broadcast", { event: "new_game" }, ({ payload }) => {
+      setNewGameId(payload.gameId);
     });
 
     channel.subscribe(async (status) => {
@@ -247,6 +254,14 @@ export function useMultiplayer({
     }
   }, [gameId]);
 
+  const broadcastNewGame = useCallback((newGameId: string) => {
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "new_game",
+      payload: { gameId: newGameId },
+    });
+  }, []);
+
   const closeRoom = useCallback(async () => {
     if (!supabase || !gameId) return;
     await channelRef.current?.send({
@@ -264,10 +279,12 @@ export function useMultiplayer({
     claimCell,
     startGame,
     closeRoom,
+    broadcastNewGame,
     players,
     gameStatus,
     isHost,
     shareCode,
     isRoomClosed,
+    newGameId,
   };
 }

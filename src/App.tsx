@@ -14,12 +14,15 @@ import { GameLobby, JoinGame } from "./components/GameLobby";
 import {
   uploadPuzzle,
   createGame,
+  createNextGame,
   updateGame,
   joinGame,
   rejoinGame,
 } from "./lib/puzzleService";
 import { loadMpSession, saveMpSession, clearMpSession } from "./lib/sessionPersistence";
-import { getCompletedClues, getCompletedCluesByPlayer } from "./lib/gridUtils";
+import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
+import { CompletionModal } from "./components/CompletionModal";
+import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
 type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining";
@@ -91,6 +94,7 @@ function App() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
+  const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
   const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
@@ -307,6 +311,21 @@ function App() {
       if (!user) return;
       const puzzleId = await uploadPuzzle(p, fileBuffer);
       if (!puzzleId) return;
+
+      // If we have an existing share code, reuse it for the next game
+      if (multiplayer.shareCode) {
+        const result = await createNextGame(puzzleId, user.id, multiplayer.shareCode, {
+          displayName: displayName.trim() || "Player",
+        });
+        if (result) {
+          multiplayer.broadcastNewGame(result.gameId);
+          setGameId(result.gameId);
+          setCompletionModalDismissed(false);
+          setGameMode("host-lobby");
+          return;
+        }
+      }
+
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
         displayName: displayName.trim() || "Player",
@@ -317,7 +336,7 @@ function App() {
         setGameMode("host-lobby");
       }
     },
-    [loadPuzzle, user, displayName],
+    [loadPuzzle, user, displayName, multiplayer],
   );
 
   // Join game
@@ -402,6 +421,29 @@ function App() {
     }
   }, [multiplayerActive, multiplayer.gameStatus]);
 
+  // Handle new_game broadcast for non-host players: auto-transition
+  useEffect(() => {
+    if (!multiplayer.newGameId || multiplayer.isHost) return;
+    // Save the new game ID and transition to rejoining
+    setGameId(multiplayer.newGameId);
+    saveMpSession({ gameId: multiplayer.newGameId, shareCode: multiplayer.shareCode, displayName });
+    setGameMode("rejoining");
+  }, [multiplayer.newGameId, multiplayer.isHost, multiplayer.shareCode, displayName]);
+
+  const handleNewPuzzle = useCallback(() => {
+    setCompletionModalDismissed(true);
+    if (multiplayerActive) {
+      setGameMode("host-import");
+    } else {
+      setGameMode("solo");
+    }
+  }, [multiplayerActive]);
+
+  const handleBackToMenu = useCallback(() => {
+    setCompletionModalDismissed(true);
+    handleReset();
+  }, [handleReset]);
+
   const completedClues = useMemo(
     () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
     [puzzle, playerCells],
@@ -411,6 +453,27 @@ function App() {
     () => (puzzle && multiplayerActive ? getCompletedCluesByPlayer(puzzle, playerCells) : undefined),
     [puzzle, playerCells, multiplayerActive],
   );
+
+  const clueCountsByPlayer = useMemo(
+    () => (completedCluesByPlayer ? countCluesPerPlayer(completedCluesByPlayer) : new Map<string, number>()),
+    [completedCluesByPlayer],
+  );
+
+  const playerResults: PlayerResult[] | undefined = useMemo(() => {
+    if (!multiplayerActive) return undefined;
+    return multiplayer.players.map((p) => {
+      const cellsClaimed = Object.values(playerCells).filter(
+        (c) => c.correct && c.playerId === p.userId,
+      ).length;
+      return {
+        userId: p.userId,
+        displayName: p.displayName,
+        color: p.color,
+        cellsClaimed,
+        cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
+      };
+    });
+  }, [multiplayerActive, multiplayer.players, playerCells, clueCountsByPlayer]);
 
   // --- Render based on gameMode ---
 
@@ -563,6 +626,12 @@ function App() {
     multiplayerActive && multiplayer.gameStatus === "completed";
   const gameComplete = multiplayerActive ? multiplayerIsComplete : isComplete;
 
+  const showCompletionModal =
+    (multiplayerActive ? multiplayerIsComplete : isComplete) && !completionModalDismissed;
+
+  // Only host or solo players get the "new puzzle" button
+  const canChooseNewPuzzle = !multiplayerActive || multiplayer.isHost;
+
   // Get current player's score from multiplayer players list
   const multiplayerPlayers = multiplayerActive
     ? multiplayer.players.map((p) => ({
@@ -574,6 +643,7 @@ function App() {
     : [];
 
   return (
+    <>
     <GameLayout
       header={
         <div className="flex items-center justify-between gap-2">
@@ -705,6 +775,16 @@ function App() {
         </div>
       }
     />
+    <CompletionModal
+      open={showCompletionModal}
+      totalCells={totalWhiteCells}
+      totalClues={puzzle.clues.length}
+      soloScore={!multiplayerActive ? score : undefined}
+      players={playerResults}
+      onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
+      onBackToMenu={handleBackToMenu}
+    />
+    </>
   );
 }
 
