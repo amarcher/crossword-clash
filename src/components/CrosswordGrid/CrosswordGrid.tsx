@@ -20,6 +20,7 @@ interface CrosswordGridProps {
   playerColorMap?: Record<string, string>;
   interactive?: boolean;
   navigationActions?: NavigationActions;
+  rejectedCell?: string | null;
 }
 
 export function CrosswordGrid({
@@ -31,6 +32,7 @@ export function CrosswordGrid({
   playerColorMap,
   interactive = true,
   navigationActions,
+  rejectedCell,
 }: CrosswordGridProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -188,6 +190,7 @@ export function CrosswordGrid({
                 interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
               }
               isHighlighted={interactive && highlightedCells.has(key)}
+              isRejected={key === rejectedCell}
               onClick={interactive ? handleCellClick : undefined}
               playerColorMap={playerColorMap}
             />

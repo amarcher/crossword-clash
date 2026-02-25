@@ -91,8 +91,21 @@ function App() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
+  const [rejectedCell, setRejectedCell] = useState<string | null>(null);
+  const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);
+
+  const triggerReject = useCallback((row: number, col: number) => {
+    if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
+    // Clear first so re-setting the same key re-triggers the animation
+    setRejectedCell(null);
+    requestAnimationFrame(() => {
+      setRejectedCell(`${row},${col}`);
+      navigator.vibrate?.(50);
+      rejectTimerRef.current = setTimeout(() => setRejectedCell(null), 400);
+    });
+  }, []);
 
   // Restore solo session from localStorage on mount (one-time)
   useEffect(() => {
@@ -193,18 +206,54 @@ function App() {
     return map;
   }, [multiplayerActive, multiplayer.players]);
 
+  // Solo input wrapper: reject wrong letters with visual feedback
+  const soloInputLetter = useCallback(
+    (letter: string) => {
+      if (!puzzle || !selectedCell) return;
+      const { row, col } = selectedCell;
+      const cell = puzzle.cells[row]?.[col];
+      if (!cell || cell.solution === null) return;
+
+      // Already filled — let reducer handle cursor advancement
+      if (playerCells[`${row},${col}`]?.correct) {
+        inputLetter(letter);
+        return;
+      }
+
+      if (letter.toUpperCase() !== cell.solution) {
+        triggerReject(row, col);
+        return;
+      }
+      inputLetter(letter);
+    },
+    [puzzle, selectedCell, playerCells, inputLetter, triggerReject],
+  );
+
   // Multiplayer input wrapper: intercepts letter input for server claiming
   const multiplayerInputLetter = useCallback(
     (letter: string) => {
       if (!multiplayerActive || !selectedCell || !puzzle) return;
-      multiplayer.claimCell(selectedCell.row, selectedCell.col, letter);
+      const { row, col } = selectedCell;
+      const cell = puzzle.cells[row]?.[col];
+      if (!cell || cell.solution === null) return;
+
+      if (playerCells[`${row},${col}`]?.correct) {
+        multiplayer.claimCell(row, col, letter);
+        return;
+      }
+
+      if (letter.toUpperCase() !== cell.solution) {
+        triggerReject(row, col);
+        return;
+      }
+      multiplayer.claimCell(row, col, letter);
     },
-    [multiplayerActive, selectedCell, puzzle, multiplayer],
+    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject],
   );
 
   const navActions = useMemo(
     () => ({
-      inputLetter: multiplayerActive ? multiplayerInputLetter : inputLetter,
+      inputLetter: multiplayerActive ? multiplayerInputLetter : soloInputLetter,
       deleteLetter: multiplayerActive ? () => {} : deleteLetter, // No deletion in multiplayer
       moveSelection,
       nextWord,
@@ -214,7 +263,7 @@ function App() {
     [
       multiplayerActive,
       multiplayerInputLetter,
-      inputLetter,
+      soloInputLetter,
       deleteLetter,
       moveSelection,
       nextWord,
@@ -578,6 +627,7 @@ function App() {
           onCellClick={selectCell}
           playerColorMap={playerColorMap}
           navigationActions={navActions}
+          rejectedCell={rejectedCell}
         />
       }
       mobileClueBar={
