@@ -39,9 +39,24 @@ function HostApp() {
 
   const hostSession = useMemo(() => loadHostSession(), []);
 
-  const [urlPuzzle] = useState<Puzzle | null>(() =>
+  const [urlPuzzle, setUrlPuzzle] = useState<Puzzle | null>(() =>
     window.location.hash.startsWith("#puzzle=") ? extractPuzzleFromUrl() : null,
   );
+
+  // Listen for hash changes so a second bookmarklet click overrides the current puzzle
+  useEffect(() => {
+    const onHashChange = () => {
+      if (window.location.hash.startsWith("#puzzle=")) {
+        const puzzle = extractPuzzleFromUrl();
+        if (puzzle) {
+          setUrlPuzzle(puzzle);
+          setMode("puzzle-ready");
+        }
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   const [mode, setMode] = useState<HostMode>(() => {
     if (urlPuzzle) return "puzzle-ready";
