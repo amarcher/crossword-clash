@@ -481,7 +481,10 @@ function App() {
   if (gameMode === "rejoining") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-3xl font-bold mb-2">Crossword Clash</h1>
+        <h1 className="text-center leading-tight mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
+          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
+        </h1>
         <p className="text-neutral-500">Reconnecting to game...</p>
       </div>
     );
@@ -491,38 +494,40 @@ function App() {
   if (gameMode === "menu") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-3xl font-bold mb-2">Crossword Clash</h1>
-        <p className="text-neutral-500 mb-8">Choose how you want to play</p>
+        <h1 className="text-center leading-tight mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
+          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
+        </h1>
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button
-            onClick={() => setGameMode("solo")}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            Play Solo
-          </button>
           {user && (
             <>
+              <button
+                onClick={() => setGameMode("join")}
+                className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                Join Game
+              </button>
               <button
                 onClick={() => setGameMode("host-name")}
                 className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
               >
-                Host Game
+                Host Game as Player
               </button>
-              <button
-                onClick={() => setGameMode("join")}
-                className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors"
+              <a
+                href="/host"
+                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
               >
-                Join Game
-              </button>
+                Host Game as TV
+              </a>
             </>
           )}
+          <button
+            onClick={() => setGameMode("solo")}
+            className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors"
+          >
+            Play Solo
+          </button>
         </div>
-        <a
-          href="/host"
-          className="mt-6 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-        >
-          TV / Host View
-        </a>
       </div>
     );
   }
@@ -536,7 +541,10 @@ function App() {
   if (gameMode === "host-name") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-3xl font-bold mb-2">Host a Game</h1>
+        <h1 className="text-center leading-tight mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
+          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
+        </h1>
         <p className="text-neutral-500 mb-6">Enter your display name</p>
         <form
           onSubmit={(e) => {
