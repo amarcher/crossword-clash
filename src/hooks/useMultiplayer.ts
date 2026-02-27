@@ -19,6 +19,7 @@ interface UseMultiplayerOptions {
   dispatch: Dispatch;
   playerCells: Record<string, CellState>;
   totalWhiteCells: number;
+  onCellClaimed?: (row: number, col: number, letter: string, playerId: string) => void;
 }
 
 interface UseMultiplayerReturn {
@@ -41,6 +42,7 @@ export function useMultiplayer({
   dispatch,
   playerCells,
   totalWhiteCells,
+  onCellClaimed,
 }: UseMultiplayerOptions): UseMultiplayerReturn {
   const [players, setPlayers] = useState<Player[]>([]);
   const [gameStatus, setGameStatus] = useState<"waiting" | "active" | "completed">("waiting");
@@ -51,6 +53,8 @@ export function useMultiplayer({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
+  const onCellClaimedRef = useRef(onCellClaimed);
+  onCellClaimedRef.current = onCellClaimed;
   const announcedRef = useRef(false);
 
   // Hydrate state from DB — returns fetched state for callers
@@ -102,6 +106,7 @@ export function useMultiplayer({
         letter: payload.letter,
         playerId: payload.playerId,
       });
+      onCellClaimedRef.current?.(payload.row, payload.col, payload.letter, payload.playerId);
     });
 
     channel.on("broadcast", { event: "player_joined" }, ({ payload }) => {
@@ -227,6 +232,7 @@ export function useMultiplayer({
           event: "cell_claimed",
           payload: { row, col, letter: letter.toUpperCase(), playerId: userId },
         });
+        onCellClaimedRef.current?.(row, col, letter.toUpperCase(), userId);
       } else {
         // Rollback optimistic write
         dispatch({

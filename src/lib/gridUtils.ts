@@ -266,6 +266,39 @@ export function countCluesPerPlayer(
 }
 
 /**
+ * Given a puzzle, current cell states, and the coordinate of a newly placed cell,
+ * return the clues that this cell just completed (if any).
+ *
+ * A clue is "newly completed" if every *other* cell in its word already has
+ * `correct: true`, meaning this cell was the final piece.
+ */
+export function getNewlyCompletedClues(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+  row: number,
+  col: number,
+): PuzzleClue[] {
+  const completed: PuzzleClue[] = [];
+  for (const direction of ["across", "down"] as const) {
+    const wordCells = getWordCells(puzzle, row, col, direction);
+    if (wordCells.length < 2) continue;
+
+    const clue = getClueForCell(puzzle, row, col, direction);
+    if (!clue) continue;
+
+    const allOthersCorrect = wordCells.every((c) => {
+      if (c.row === row && c.col === col) return true;
+      return playerCells[`${c.row},${c.col}`]?.correct === true;
+    });
+
+    if (allOthersCorrect) {
+      completed.push(clue);
+    }
+  }
+  return completed;
+}
+
+/**
  * Compute cell numbers for a puzzle grid.
  * A cell gets a number if it starts an across word or a down word.
  */

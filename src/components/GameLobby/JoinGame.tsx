@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Title } from "../Title";
 
 interface JoinGameProps {
   onJoin: (code: string, displayName: string) => void;
@@ -21,7 +22,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-      <h1 className="text-3xl font-bold mb-2">Join Game</h1>
+      <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">Enter the 6-character game code</p>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4" autoComplete="off">

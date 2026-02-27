@@ -10,8 +10,8 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
-import { getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
-import { useClueAnnouncer } from "./hooks/useClueAnnouncer";
+import { getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
+import { Title } from "./components/Title";
 import { CompletionModal } from "./components/CompletionModal";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle } from "./types/puzzle";
@@ -39,6 +39,25 @@ function HostApp() {
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
 
+  // Refs for event-driven clue announcements (avoids stale closures)
+  const playerCellsRef = useRef(playerCells);
+  playerCellsRef.current = playerCells;
+  const playersRef = useRef<{ userId: string; displayName: string }[]>([]);
+
+  const handleCellClaimed = useCallback(
+    (row: number, col: number, _letter: string, playerId: string) => {
+      if (!puzzle) return;
+      const completed = getNewlyCompletedClues(puzzle, playerCellsRef.current, row, col);
+      for (const clue of completed) {
+        const player = playersRef.current.find((p) => p.userId === playerId);
+        const playerName = player?.displayName ?? "Unknown";
+        const text = `${playerName} — ${clue.number} ${clue.direction} — ${clue.text} — ${clue.answer.toLowerCase()}`;
+        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+      }
+    },
+    [puzzle],
+  );
+
   const multiplayer = useMultiplayer(
     gameId && puzzle && user
       ? {
@@ -48,6 +67,7 @@ function HostApp() {
           dispatch,
           playerCells,
           totalWhiteCells,
+          onCellClaimed: handleCellClaimed,
         }
       : {
           gameId: "",
@@ -58,6 +78,14 @@ function HostApp() {
           totalWhiteCells: 0,
         },
   );
+
+  // Keep players ref in sync for announcements
+  playersRef.current = multiplayer.players;
+
+  // Auto-advance from menu to import once authenticated
+  useEffect(() => {
+    if (mode === "menu" && user) setMode("import");
+  }, [mode, user]);
 
   // Save host session to localStorage
   useEffect(() => {
@@ -206,13 +234,6 @@ function HostApp() {
     [multiplayerPlayers, clueCountsByPlayer],
   );
 
-  useClueAnnouncer(
-    completedCluesByPlayer,
-    puzzle?.clues ?? [],
-    multiplayer.players,
-    playerCells,
-  );
-
   const isComplete =
     totalWhiteCells > 0 && score === totalWhiteCells;
 
@@ -227,7 +248,7 @@ function HostApp() {
   if (mode === "rejoining") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-        <h1 className="text-3xl font-bold mb-2 text-white">Crossword Clash</h1>
+        <Title variant="dark" className="mb-4" />
         <p className="text-neutral-400">Reconnecting to game...</p>
       </div>
     );
@@ -237,7 +258,7 @@ function HostApp() {
   if (mode === "menu") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-        <h1 className="text-3xl font-bold mb-2 text-white">Crossword Clash</h1>
+        <Title variant="dark" className="mb-2" />
         <p className="text-neutral-400 mb-8">TV / Host View</p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {user ? (
@@ -266,7 +287,8 @@ function HostApp() {
   if (mode === "lobby") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8 gap-8">
-        <h1 className="text-3xl font-bold text-white">Waiting for Players</h1>
+        <Title variant="dark" />
+        <p className="text-2xl font-semibold text-white -mt-4">Waiting for Players</p>
 
         {joinUrl && (
           <div className="flex flex-col items-center gap-4">
