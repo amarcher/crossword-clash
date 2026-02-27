@@ -717,6 +717,7 @@ function App() {
             onNextWord={nextWord}
             onOpenSheet={() => setClueSheetOpen(true)}
             onToggleDirection={toggleDirection}
+            inputRef={gridInputRef}
           />
           <MobileClueSheet
             open={clueSheetOpen}
