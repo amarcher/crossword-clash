@@ -11,6 +11,7 @@ import {
   getCompletedClues,
   getCompletedCluesByPlayer,
   countCluesPerPlayer,
+  getNewlyCompletedClues,
   computeCellNumbers,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
@@ -442,5 +443,74 @@ describe("countCluesPerPlayer", () => {
     const result = countCluesPerPlayer(completed);
     expect(result.get("alice")).toBe(2);
     expect(result.get("bob")).toBe(2);
+  });
+});
+
+describe("getNewlyCompletedClues", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("returns empty when the placed cell does not complete any word", () => {
+    // Place C at (0,0) — rest of 1-Across and 1-Down are empty
+    const cells = {};
+    const result = getNewlyCompletedClues(puzzle, cells, 0, 0);
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns the across clue when cell completes an across word", () => {
+    // 1-Across: C,A,T — (0,0) and (0,1) already filled, placing (0,2)
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+    };
+    const result = getNewlyCompletedClues(puzzle, cells, 0, 2);
+    expect(result).toHaveLength(1);
+    expect(result[0].direction).toBe("across");
+    expect(result[0].number).toBe(1);
+  });
+
+  it("returns the down clue when cell completes a down word", () => {
+    // 1-Down: C,A,B — (0,0) and (1,0) already filled, placing (2,0)
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "1,0": { letter: "A", correct: true },
+    };
+    const result = getNewlyCompletedClues(puzzle, cells, 2, 0);
+    expect(result).toHaveLength(1);
+    expect(result[0].direction).toBe("down");
+    expect(result[0].number).toBe(1);
+  });
+
+  it("returns both clues when cell completes across and down simultaneously", () => {
+    // (0,0) is at the intersection of 1-Across (CAT) and 1-Down (CAB)
+    // Fill everything except (0,0)
+    const cells = {
+      "0,1": { letter: "A", correct: true },
+      "0,2": { letter: "T", correct: true },
+      "1,0": { letter: "A", correct: true },
+      "2,0": { letter: "B", correct: true },
+    };
+    const result = getNewlyCompletedClues(puzzle, cells, 0, 0);
+    expect(result).toHaveLength(2);
+    const directions = result.map((c) => c.direction).sort();
+    expect(directions).toEqual(["across", "down"]);
+  });
+
+  it("does not return a clue when other cells are still missing", () => {
+    // 1-Across: only (0,0) filled, placing (0,1) — (0,2) still missing
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+    };
+    const result = getNewlyCompletedClues(puzzle, cells, 0, 1);
+    expect(result).toHaveLength(0);
+  });
+
+  it("ignores cells that are not correct", () => {
+    // (0,0) filled but not correct — placing (0,2) should not complete 1-Across
+    const cells = {
+      "0,0": { letter: "X", correct: false },
+      "0,1": { letter: "A", correct: true },
+    };
+    const result = getNewlyCompletedClues(puzzle, cells, 0, 2);
+    expect(result).toHaveLength(0);
   });
 });
