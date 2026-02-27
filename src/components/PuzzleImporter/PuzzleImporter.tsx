@@ -108,7 +108,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         <strong className="text-neutral-500">NYT subscriber?</strong>{" "}
         Install the{" "}
         <a
-          href="/install-bookmarklet.html"
+          href="/install-bookmarklet"
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-500 underline hover:text-blue-600"

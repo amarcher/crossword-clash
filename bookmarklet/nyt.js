@@ -252,28 +252,37 @@
     });
   }
 
-  // ---- Extract puzzle date from URL ----
-  function getPuzzleDate() {
+  // ---- Extract puzzle type and date from URL ----
+  function getPuzzleInfo() {
     var match = window.location.pathname.match(
-      /\/crosswords\/game\/daily\/(\d{4})\/(\d{2})\/(\d{2})/,
+      /\/crosswords\/game\/(\w+)\/(\d{4})\/(\d{2})\/(\d{2})/,
     );
     if (match) {
-      return match[1] + "-" + match[2] + "-" + match[3];
+      return {
+        type: match[1],
+        date: match[2] + "-" + match[3] + "-" + match[4],
+      };
     }
-    // Default to today
+    // Check for undated puzzle type pages (e.g. /crosswords/game/mini)
+    var typeMatch = window.location.pathname.match(
+      /\/crosswords\/game\/(\w+)/,
+    );
     var d = new Date();
     var yyyy = d.getFullYear();
     var mm = String(d.getMonth() + 1).padStart(2, "0");
     var dd = String(d.getDate()).padStart(2, "0");
-    return yyyy + "-" + mm + "-" + dd;
+    return {
+      type: typeMatch ? typeMatch[1] : "daily",
+      date: yyyy + "-" + mm + "-" + dd,
+    };
   }
 
   // ---- Fetch and transform puzzle ----
   async function run() {
     try {
-      var date = getPuzzleDate();
+      var info = getPuzzleInfo();
       var resp = await fetch(
-        "/svc/crosswords/v6/puzzle/daily/" + date + ".json",
+        "/svc/crosswords/v6/puzzle/" + info.type + "/" + info.date + ".json",
         { credentials: "include" },
       );
 
@@ -367,7 +376,9 @@
         }
       }
 
-      var title = data.title || "NYT Crossword \u2014 " + date;
+      var typeLabel =
+        info.type.charAt(0).toUpperCase() + info.type.slice(1);
+      var title = data.title || "NYT " + typeLabel + " \u2014 " + info.date;
       var author =
         (data.constructors && data.constructors.join(", ")) ||
         data.editor ||
