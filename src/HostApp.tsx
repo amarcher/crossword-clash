@@ -11,6 +11,7 @@ import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreb
 import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
 import { getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
+import { useClueAnnouncer } from "./hooks/useClueAnnouncer";
 import { CompletionModal } from "./components/CompletionModal";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle } from "./types/puzzle";
@@ -203,6 +204,12 @@ function HostApp() {
         cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
       })),
     [multiplayerPlayers, clueCountsByPlayer],
+  );
+
+  useClueAnnouncer(
+    completedCluesByPlayer,
+    puzzle?.clues ?? [],
+    multiplayer.players,
   );
 
   const isComplete =
