@@ -54,6 +54,14 @@
   }
 }
 
+/* On narrow non-touch (desktop) viewports where the layout is columnar,
+   cap the grid height so the clue list below remains visible. */
+@media (pointer: fine) and (max-width: 767px) {
+  .grid-offset-mobile {
+    --grid-h-max: 50dvh;
+  }
+}
+
 @keyframes cell-reject {
   0%   { box-shadow: inset 0 0 0 0 transparent; transform: translateX(0); }
   10%  { box-shadow: inset 0 0 0 2px rgb(239 68 68); }
