@@ -8,6 +8,7 @@ interface MobileClueBarProps {
   onNextWord: () => void;
   onOpenSheet: () => void;
   onToggleDirection: () => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function MobileClueBar({
@@ -17,6 +18,7 @@ export function MobileClueBar({
   onNextWord,
   onOpenSheet,
   onToggleDirection,
+  inputRef,
 }: MobileClueBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ export function MobileClueBar({
       className="md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-white border-t border-neutral-200 z-50 transition-[bottom] duration-100 ease-out"
     >
       <button
-        onClick={onPrevWord}
+        onClick={() => { onPrevWord(); inputRef?.current?.focus(); }}
         className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0"
         aria-label="Previous clue"
       >
@@ -64,7 +66,7 @@ export function MobileClueBar({
       </button>
 
       <button
-        onClick={onToggleDirection}
+        onClick={() => { onToggleDirection(); inputRef?.current?.focus(); }}
         className="shrink-0 flex items-center justify-center px-1.5 active:bg-neutral-100"
         aria-label={`Direction: ${direction === "across" ? "Across" : "Down"}, tap to toggle`}
       >
@@ -93,7 +95,7 @@ export function MobileClueBar({
       </button>
 
       <button
-        onClick={onNextWord}
+        onClick={() => { onNextWord(); inputRef?.current?.focus(); }}
         className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0"
         aria-label="Next clue"
       >
