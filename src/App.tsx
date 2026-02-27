@@ -646,54 +646,56 @@ function App() {
     <>
     <GameLayout
       header={
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
-            {puzzle.author && (
-              <p className="hidden md:block text-sm text-neutral-500">by {puzzle.author}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            {multiplayerActive && multiplayer.shareCode && (
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-neutral-400 hidden sm:inline">Room</span>
-                  <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
-                    {multiplayer.shareCode}
-                  </span>
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
+              {puzzle.author && (
+                <p className="hidden md:block text-sm text-neutral-500">by {puzzle.author}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+              {multiplayerActive && multiplayer.shareCode && (
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-neutral-400 hidden sm:inline">Room</span>
+                    <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
+                      {multiplayer.shareCode}
+                    </span>
+                  </div>
+                  <div className="hidden md:block">
+                    <QRCode
+                      value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
+                      size={48}
+                    />
+                  </div>
                 </div>
-                <div className="hidden md:block">
-                  <QRCode
-                    value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
-                    size={48}
-                  />
-                </div>
-              </div>
-            )}
-            {activeClue && (
-              <div className="text-sm font-medium text-blue-700 hidden sm:block">
-                {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
-              </div>
-            )}
-            {multiplayerActive && multiplayer.isHost ? (
-              <button
-                onClick={handleCloseRoom}
-                className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-              >
-                <span className="md:hidden">Close</span>
-                <span className="hidden md:inline">Close Room</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleReset}
-                className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
-              >
-                <span className="md:hidden">{multiplayerActive ? "Leave" : "New Puzzle"}</span>
-                <span className="hidden md:inline">{multiplayerActive ? "Leave Game" : "Load Different Puzzle"}</span>
-              </button>
-            )}
+              )}
+              {multiplayerActive && multiplayer.isHost ? (
+                <button
+                  onClick={handleCloseRoom}
+                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                >
+                  <span className="md:hidden">Close</span>
+                  <span className="hidden md:inline">Close Room</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleReset}
+                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
+                >
+                  <span className="md:hidden">{multiplayerActive ? "Leave" : "New Puzzle"}</span>
+                  <span className="hidden md:inline">{multiplayerActive ? "Leave Game" : "Load Different Puzzle"}</span>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+          {activeClue && (
+            <div className="hidden sm:block text-sm font-medium text-blue-700 mt-1 truncate">
+              {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
+            </div>
+          )}
+        </>
       }
       grid={
         <CrosswordGrid
