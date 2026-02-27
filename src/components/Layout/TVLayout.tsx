@@ -6,9 +6,10 @@ interface TVLayoutProps {
   sidebar: ReactNode;
   scoreboard: ReactNode;
   clues?: ReactNode;
+  controls?: ReactNode;
 }
 
-export function TVLayout({ grid, sidebar, scoreboard, clues }: TVLayoutProps) {
+export function TVLayout({ grid, sidebar, scoreboard, clues, controls }: TVLayoutProps) {
   return (
     <div className="h-dvh bg-neutral-900 flex flex-col overflow-hidden">
       <main className="flex-1 flex flex-row gap-6 p-6 min-h-0 items-start justify-center">
@@ -16,6 +17,7 @@ export function TVLayout({ grid, sidebar, scoreboard, clues }: TVLayoutProps) {
           <Title variant="dark" />
           {scoreboard}
           {sidebar}
+          {controls}
         </div>
         <div className="shrink-0" style={{ "--grid-h-offset": "3rem", "--grid-w-offset": clues ? "46rem" : "22rem" } as React.CSSProperties}>
           {grid}
