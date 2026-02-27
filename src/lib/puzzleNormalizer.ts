@@ -185,6 +185,107 @@ function fixPuzClueOrder(
   return { across, down };
 }
 
+/**
+ * Transfer format used for URL-based puzzle import (bookmarklet → app).
+ * Flat arrays, clue strings with "N. text" format.
+ */
+export interface TransferPuzzle {
+  title: string;
+  author: string;
+  size: { rows: number; cols: number };
+  /** Flat row-major, "." = black cell */
+  grid: string[];
+  /** Flat row-major, 0 = no number */
+  gridnums: number[];
+  /** Flat row-major, 0 or 1 (optional) */
+  circles?: number[];
+  clues: { across: string[]; down: string[] };
+  answers: { across: string[]; down: string[] };
+}
+
+/**
+ * Convert a TransferPuzzle (from URL hash) into our internal Puzzle type.
+ */
+export function normalizeTransferPuzzle(transfer: TransferPuzzle): Puzzle {
+  const { size, grid, gridnums, circles, clues, answers } = transfer;
+  const width = size.cols;
+  const height = size.rows;
+
+  if (grid.length !== width * height) {
+    throw new Error(`Grid length ${grid.length} does not match ${width}x${height}`);
+  }
+
+  // Build 2D cell grid from flat arrays
+  const cells: PuzzleCell[][] = [];
+  for (let r = 0; r < height; r++) {
+    const row: PuzzleCell[] = [];
+    for (let c = 0; c < width; c++) {
+      const idx = r * width + c;
+      const isBlack = grid[idx] === ".";
+      const num = gridnums[idx];
+      const circled = circles ? circles[idx] === 1 : undefined;
+      row.push({
+        row: r,
+        col: c,
+        solution: isBlack ? null : grid[idx].toUpperCase(),
+        number: num > 0 ? num : undefined,
+        circled: circled || undefined,
+      });
+    }
+    cells.push(row);
+  }
+
+  const puzzle: Puzzle = {
+    title: transfer.title || "Untitled",
+    author: transfer.author || "",
+    width,
+    height,
+    cells,
+    clues: [],
+  };
+
+  // Parse clue strings ("1. Clue text" → number + text)
+  function parseClueString(s: string): { number: number; text: string } {
+    const match = s.match(/^(\d+)\.\s*(.*)$/);
+    if (!match) return { number: 0, text: s };
+    return { number: parseInt(match[1], 10), text: match[2] };
+  }
+
+  // Build clues with answers from the answers arrays
+  function buildTransferClues(
+    rawClues: string[],
+    rawAnswers: string[],
+    direction: Direction,
+  ): PuzzleClue[] {
+    return rawClues.map((clueStr, i) => {
+      const { number, text } = parseClueString(clueStr);
+      const answer = rawAnswers[i] ?? "";
+      const startCoord = findCellByNumber(puzzle, number);
+
+      if (!startCoord) {
+        return { direction, number, text, row: 0, col: 0, length: answer.length, answer };
+      }
+
+      return {
+        direction,
+        number,
+        text,
+        row: startCoord.row,
+        col: startCoord.col,
+        length: answer.length,
+        answer: answer.toUpperCase(),
+      };
+    });
+  }
+
+  puzzle.clues = [
+    ...buildTransferClues(clues.across, answers.across, "across"),
+    ...buildTransferClues(clues.down, answers.down, "down"),
+  ];
+
+  return puzzle;
+}
+
 function findCellByNumber(
   puzzle: Puzzle,
   number: number,

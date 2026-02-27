@@ -105,6 +105,19 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
       </div>
 
       <p className="mt-6 text-sm text-neutral-400 max-w-md text-center">
+        <strong className="text-neutral-500">NYT subscriber?</strong>{" "}
+        Install the{" "}
+        <a
+          href="/install-bookmarklet.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline hover:text-blue-600"
+        >
+          NYT Bookmarklet
+        </a>{" "}
+        to import today's puzzle in one click.
+      </p>
+      <p className="mt-3 text-sm text-neutral-400 max-w-md text-center">
         Need a .puz file? Use the{" "}
         <a
           href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"

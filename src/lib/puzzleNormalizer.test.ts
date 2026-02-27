@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { normalizePuzzle } from "./puzzleNormalizer";
+import { normalizePuzzle, normalizeTransferPuzzle } from "./puzzleNormalizer";
+import type { TransferPuzzle } from "./puzzleNormalizer";
 
 /**
  * Minimal parser output representing a 3x3 puzzle:
@@ -272,5 +273,95 @@ describe("normalizePuzzle", () => {
     expect(puzzle.cells[0][0].number).toBe(1);
     expect(puzzle.cells[0][2].number).toBe(2);
     expect(puzzle.cells[2][0].number).toBe(3);
+  });
+});
+
+/**
+ * Minimal TransferPuzzle representing a 3x3 puzzle:
+ *   C A T
+ *   A # O
+ *   B E T
+ */
+function makeTransferPuzzle(): TransferPuzzle {
+  return {
+    title: "Transfer Test",
+    author: "Author X",
+    size: { rows: 3, cols: 3 },
+    grid: ["C", "A", "T", "A", ".", "O", "B", "E", "T"],
+    gridnums: [1, 0, 2, 0, 0, 0, 3, 0, 0],
+    clues: {
+      across: ["1. Feline", "3. Wager"],
+      down: ["1. Taxi", "2. Digit"],
+    },
+    answers: {
+      across: ["CAT", "BET"],
+      down: ["CAB", "TOT"],
+    },
+  };
+}
+
+describe("normalizeTransferPuzzle", () => {
+  it("sets title, author, and dimensions", () => {
+    const puzzle = normalizeTransferPuzzle(makeTransferPuzzle());
+    expect(puzzle.title).toBe("Transfer Test");
+    expect(puzzle.author).toBe("Author X");
+    expect(puzzle.width).toBe(3);
+    expect(puzzle.height).toBe(3);
+  });
+
+  it("builds 2D cell grid from flat arrays", () => {
+    const puzzle = normalizeTransferPuzzle(makeTransferPuzzle());
+    expect(puzzle.cells).toHaveLength(3);
+    expect(puzzle.cells[0]).toHaveLength(3);
+    expect(puzzle.cells[0][0].solution).toBe("C");
+    expect(puzzle.cells[0][1].solution).toBe("A");
+    expect(puzzle.cells[2][2].solution).toBe("T");
+  });
+
+  it("maps black cells from '.' to null solution", () => {
+    const puzzle = normalizeTransferPuzzle(makeTransferPuzzle());
+    expect(puzzle.cells[1][1].solution).toBeNull();
+  });
+
+  it("parses clue strings and assigns positions", () => {
+    const puzzle = normalizeTransferPuzzle(makeTransferPuzzle());
+    const across1 = puzzle.clues.find((c) => c.direction === "across" && c.number === 1)!;
+    expect(across1.text).toBe("Feline");
+    expect(across1.row).toBe(0);
+    expect(across1.col).toBe(0);
+    expect(across1.answer).toBe("CAT");
+  });
+
+  it("builds down clues with answers", () => {
+    const puzzle = normalizeTransferPuzzle(makeTransferPuzzle());
+    const down1 = puzzle.clues.find((c) => c.direction === "down" && c.number === 1)!;
+    expect(down1.text).toBe("Taxi");
+    expect(down1.answer).toBe("CAB");
+
+    const down2 = puzzle.clues.find((c) => c.direction === "down" && c.number === 2)!;
+    expect(down2.text).toBe("Digit");
+    expect(down2.answer).toBe("TOT");
+  });
+
+  it("handles circled cells", () => {
+    const tp = makeTransferPuzzle();
+    tp.circles = [1, 0, 0, 0, 0, 0, 0, 0, 1];
+    const puzzle = normalizeTransferPuzzle(tp);
+    expect(puzzle.cells[0][0].circled).toBe(true);
+    expect(puzzle.cells[2][2].circled).toBe(true);
+    expect(puzzle.cells[0][1].circled).toBeUndefined();
+  });
+
+  it("gracefully ignores missing circles", () => {
+    const tp = makeTransferPuzzle();
+    delete tp.circles;
+    const puzzle = normalizeTransferPuzzle(tp);
+    expect(puzzle.cells[0][0].circled).toBeUndefined();
+  });
+
+  it("throws on grid/dimension mismatch", () => {
+    const tp = makeTransferPuzzle();
+    tp.size = { rows: 4, cols: 3 };
+    expect(() => normalizeTransferPuzzle(tp)).toThrow("does not match");
   });
 });
