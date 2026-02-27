@@ -103,7 +103,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 150 tests across 9 files
+- `pnpm test` — 151 tests across 9 files
 - **gridUtils.test.ts** (37 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (14 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -111,7 +111,7 @@ VITE_SUPABASE_ANON_KEY=...
 - **sessionPersistence.test.ts** (14 tests): MP + host session round-trip, null/missing key, corrupted JSON, missing gameId, clear safety, independence between MP and host sessions
 - **CluePanel.test.tsx** (12 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
 - **Cell.test.tsx** (15 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
-- **useClueAnnouncer.test.ts** (7 tests): Initial mount skips announcements, new clue triggers speech, multiple clues announced at once, no re-announcement of previous clues, unknown player fallback, answer lowercased for TTS, empty players list
+- **useClueAnnouncer.test.ts** (8 tests): Initial mount skips announcements, new clue triggers speech, correct completing player attribution (not last positional cell), multiple clues announced at once, no re-announcement of previous clues, unknown player fallback, answer lowercased for TTS, empty players list
 - **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
 
 Supabase project requires:

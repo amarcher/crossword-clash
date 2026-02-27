@@ -210,6 +210,7 @@ function HostApp() {
     completedCluesByPlayer,
     puzzle?.clues ?? [],
     multiplayer.players,
+    playerCells,
   );
 
   const isComplete =
