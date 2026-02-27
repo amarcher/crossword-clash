@@ -13,6 +13,8 @@ import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessio
 import { getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
 import { Title } from "./components/Title";
 import { CompletionModal } from "./components/CompletionModal";
+import { useSpeechSettings } from "./hooks/useSpeechSettings";
+import { TTSMuteButton, TTSSettingsModal } from "./components/TTSControls";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle } from "./types/puzzle";
 
@@ -31,6 +33,8 @@ function HostApp() {
     loadPuzzle,
     selectCell,
   } = usePuzzle();
+
+  const tts = useSpeechSettings();
 
   const hostSession = useMemo(() => loadHostSession(), []);
 
@@ -52,10 +56,10 @@ function HostApp() {
         const player = playersRef.current.find((p) => p.userId === playerId);
         const playerName = player?.displayName ?? "Unknown";
         const text = `${playerName} — ${clue.number} ${clue.direction} — ${clue.text} — ${clue.answer.toLowerCase()}`;
-        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+        tts.speak(text);
       }
     },
-    [puzzle],
+    [puzzle, tts.speak],
   );
 
   const multiplayer = useMultiplayer(
@@ -421,6 +425,23 @@ function HostApp() {
             playerColorMap={playerColorMap}
           />
         </div>
+      }
+      controls={
+        <>
+          <TTSMuteButton muted={tts.muted} toggleMute={tts.toggleMute} openSettings={tts.openSettings} />
+          <TTSSettingsModal
+            settingsOpen={tts.settingsOpen}
+            closeSettings={tts.closeSettings}
+            voices={tts.voices}
+            voiceName={tts.voiceName}
+            setVoiceName={tts.setVoiceName}
+            rate={tts.rate}
+            setRate={tts.setRate}
+            pitch={tts.pitch}
+            setPitch={tts.setPitch}
+            speak={tts.speak}
+          />
+        </>
       }
     />
     <CompletionModal
