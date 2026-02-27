@@ -17,15 +17,15 @@ export function MultiplayerScoreboard({
   const ranked = [...players].sort((a, b) => b.score - a.score);
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-sm">
           <span className="text-neutral-500">
             {totalScore}/{totalCells} cells
           </span>
           <span className="text-neutral-400">{totalPct}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-neutral-200 overflow-hidden flex">
+        <div className="h-2.5 rounded-full bg-neutral-200 overflow-hidden flex">
           {players.map((player) => {
             const pct = totalCells > 0 ? (player.score / totalCells) * 100 : 0;
             return (
@@ -42,20 +42,20 @@ export function MultiplayerScoreboard({
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {ranked.map((player, i) => {
           const pct = totalCells > 0 ? Math.round((player.score / totalCells) * 100) : 0;
           return (
-            <div key={player.userId} className="flex items-center gap-2">
+            <div key={player.userId} className="flex items-center gap-2.5">
               <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
+                className="w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: player.color }}
               />
-              <span className="text-xs font-medium text-neutral-700 flex-1 truncate">
+              <span className="text-sm font-medium text-neutral-700 flex-1 truncate">
                 {isComplete && i === 0 && ranked[0].score > (ranked[1]?.score ?? 0) ? "🏆 " : ""}
                 {player.displayName}
               </span>
-              <span className="text-xs text-neutral-400 tabular-nums">
+              <span className="text-sm text-neutral-400 tabular-nums">
                 {player.score} ({pct}%)
               </span>
             </div>

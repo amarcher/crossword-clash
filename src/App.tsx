@@ -752,6 +752,14 @@ function App() {
       }
       clues={
         <div className="flex flex-col gap-2 h-full">
+          <CluePanel
+            clues={puzzle.clues}
+            activeClue={activeClue}
+            onClueClick={handleClueClick}
+            completedClues={completedClues}
+            completedCluesByPlayer={completedCluesByPlayer}
+            playerColorMap={playerColorMap}
+          />
           {multiplayerActive ? (
             <MultiplayerScoreboard
               players={multiplayerPlayers}
@@ -765,14 +773,6 @@ function App() {
               isComplete={isComplete}
             />
           )}
-          <CluePanel
-            clues={puzzle.clues}
-            activeClue={activeClue}
-            onClueClick={handleClueClick}
-            completedClues={completedClues}
-            completedCluesByPlayer={completedCluesByPlayer}
-            playerColorMap={playerColorMap}
-          />
         </div>
       }
     />

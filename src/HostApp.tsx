@@ -381,7 +381,7 @@ function HostApp() {
         </div>
       }
       scoreboard={
-        <div className="bg-white rounded-xl p-4">
+        <div className="bg-white rounded-xl p-5">
           <MultiplayerScoreboard
             players={multiplayerPlayers}
             totalCells={totalWhiteCells}

@@ -242,9 +242,13 @@ export function CrosswordGrid({
     [navigationActions],
   );
 
-  // Fill available viewport: subtract header (~4.5rem) + top/bottom padding (2rem)
-  // The main's p-4 provides matching whitespace on all sides
-  const gridSize = `min(calc(100dvh - var(--grid-h-offset, 6.5rem)), calc(100vw - 2rem))`;
+  // Fill available viewport: subtract header + padding vertically, and sidebar + padding horizontally.
+  // --grid-h-offset: vertical space reserved for header + padding (default 6.5rem)
+  // --grid-w-offset: horizontal space reserved for sidebar + padding + gap (default 1rem)
+  // --grid-h-max: optional hard cap on grid height (default: none / 100dvh)
+  //   Used on non-touch narrow viewports so clues below the grid remain visible.
+  const hMax = `var(--grid-h-max, 100dvh)`;
+  const gridSize = `min(calc(100dvh - var(--grid-h-offset, 6.5rem)), calc(100vw - var(--grid-w-offset, 1rem)), ${hMax})`;
   const gridWidth =
     puzzle.width >= puzzle.height
       ? gridSize
