@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
+import { render, fireEvent, cleanup, within } from "@testing-library/react";
 import { useRef } from "react";
 import { MobileClueBar } from "./MobileClueBar";
 import type { PuzzleClue } from "../../types/puzzle";
