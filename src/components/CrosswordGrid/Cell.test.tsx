@@ -72,19 +72,25 @@ describe("Cell", () => {
     expect(container.firstElementChild!.className).toContain("bg-yellow-200");
   });
 
-  it("applies blue background when highlighted", () => {
+  it("applies amber background and outline when highlighted", () => {
     const { container } = render(
       <Cell cell={whiteCell()} isSelected={false} isHighlighted={true} />,
     );
-    expect(container.firstElementChild!.className).toContain("bg-blue-50");
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.className).toContain("bg-amber-50");
+    expect(el.style.outline).toBe("2px solid rgba(180,83,9,0.75)");
+    expect(el.style.outlineOffset).toBe("-2px");
   });
 
   it("selected takes priority over highlighted", () => {
     const { container } = render(
       <Cell cell={whiteCell()} isSelected={true} isHighlighted={true} />,
     );
-    expect(container.firstElementChild!.className).toContain("bg-yellow-200");
-    expect(container.firstElementChild!.className).not.toContain("bg-blue-50");
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.className).toContain("bg-yellow-200");
+    expect(el.className).not.toContain("bg-amber-50");
+    expect(el.style.outline).toBe("3px solid #b45309");
+    expect(el.style.outlineOffset).toBe("-3px");
   });
 
   it("applies opaque blended player color as inline style", () => {
@@ -122,6 +128,35 @@ describe("Cell", () => {
     const el = container.firstElementChild as HTMLElement;
     expect(el.className).toContain("bg-yellow-200");
     expect(el.style.backgroundColor).toBe("");
+    expect(el.style.outline).toBe("3px solid #b45309");
+  });
+
+  it("highlighted cell preserves player color background", () => {
+    const state: CellState = { letter: "A", correct: true, playerId: "p1" };
+    const colorMap = { p1: "#3b82f6" };
+    const { container } = render(
+      <Cell
+        cell={whiteCell()}
+        cellState={state}
+        isSelected={false}
+        isHighlighted={true}
+        playerColorMap={colorMap}
+      />,
+    );
+    const el = container.firstElementChild as HTMLElement;
+    // Player color background is preserved (not replaced by amber-50)
+    expect(el.style.backgroundColor).toMatch(/^rgb\(/);
+    expect(el.className).not.toContain("bg-amber-50");
+    // Outline still applied
+    expect(el.style.outline).toBe("2px solid rgba(180,83,9,0.75)");
+  });
+
+  it("non-highlighted non-selected cell has no outline", () => {
+    const { container } = render(
+      <Cell cell={whiteCell()} isSelected={false} isHighlighted={false} />,
+    );
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.style.outline).toBe("");
   });
 
   it("calls onClick with row and col", () => {

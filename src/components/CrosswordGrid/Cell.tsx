@@ -50,20 +50,29 @@ export const Cell = memo(function Cell({
   }
 
   // Pre-blend player color against white so it doesn't composite against the
-  // grid's black background. 12% tint gives a soft pastel with high text contrast.
+  // grid's black background. 18% tint gives a visible pastel with high text contrast.
   const playerBg =
     cellState?.playerId && playerColorMap?.[cellState.playerId]
-      ? blendOnWhite(playerColorMap[cellState.playerId], 0.12)
+      ? blendOnWhite(playerColorMap[cellState.playerId], 0.18)
       : undefined;
 
+  // Background: player color is always visible (only overridden by selected yellow)
   let bg = "bg-white";
   if (isSelected) bg = "bg-yellow-200";
-  else if (isHighlighted) bg = "bg-blue-50";
   else if (playerBg) bg = "";
+  else if (isHighlighted) bg = "bg-amber-50";
 
-  const style = !isSelected && !isHighlighted && playerBg
+  const bgStyle = !isSelected && playerBg
     ? { backgroundColor: playerBg }
     : undefined;
+
+  // Outline for active word / selected cell (never obscures player color)
+  let outlineStyle: React.CSSProperties | undefined;
+  if (isSelected) {
+    outlineStyle = { outline: "3px solid #b45309", outlineOffset: "-3px" };
+  } else if (isHighlighted) {
+    outlineStyle = { outline: "2px solid rgba(180,83,9,0.75)", outlineOffset: "-2px" };
+  }
 
   // Build animation class + inline style for word-complete sweep
   let animClass = "";
@@ -81,7 +90,7 @@ export const Cell = memo(function Cell({
   return (
     <div
       className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden${isRejected ? " cell-reject" : ""}${animClass}`}
-      style={{ containerType: "inline-size", ...style, ...animStyle }}
+      style={{ containerType: "inline-size", ...bgStyle, ...outlineStyle, ...animStyle }}
       onClick={onClick ? () => onClick(cell.row, cell.col) : undefined}
     >
       {cell.number != null && (
