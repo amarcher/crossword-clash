@@ -12,6 +12,7 @@ import { Scoreboard } from "./components/Scoreboard/Scoreboard";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { GameLobby, JoinGame } from "./components/GameLobby";
 import { Title } from "./components/Title";
+import { PuzzleReady } from "./components/PuzzleReady";
 import {
   uploadPuzzle,
   createGame,
@@ -20,13 +21,14 @@ import {
   joinGame,
   rejoinGame,
 } from "./lib/puzzleService";
+import { extractPuzzleFromUrl, compressPuzzleToHash } from "./lib/puzzleUrl";
 import { loadMpSession, saveMpSession, clearMpSession } from "./lib/sessionPersistence";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
 import { CompletionModal } from "./components/CompletionModal";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
-type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining";
+type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining" | "puzzle-ready";
 
 const STORAGE_KEY = "crossword-clash-solo";
 
@@ -68,7 +70,12 @@ function App() {
   // Compute initial state from URL params / localStorage (synchronous, no effects)
   const mpSession = useMemo(() => loadMpSession(), []);
 
+  const [urlPuzzle] = useState<Puzzle | null>(() =>
+    window.location.hash.startsWith("#puzzle=") ? extractPuzzleFromUrl() : null,
+  );
+
   const [gameMode, setGameMode] = useState<GameMode>(() => {
+    if (urlPuzzle) return "puzzle-ready";
     const params = new URLSearchParams(window.location.search);
     if (params.get("join")) return "join";
     if (mpSession) return "rejoining";
@@ -408,6 +415,11 @@ function App() {
     }
   }, [gameMode, multiplayer.gameStatus]);
 
+  // Fallback: if puzzle-ready mode but no puzzle, go to menu
+  useEffect(() => {
+    if (gameMode === "puzzle-ready" && !urlPuzzle) setGameMode("menu");
+  }, [gameMode, urlPuzzle]);
+
   // Boot non-host players when the host closes the room
   useEffect(() => {
     if (multiplayer.isRoomClosed) {
@@ -488,6 +500,25 @@ function App() {
     );
   }
 
+  // Puzzle ready screen (from bookmarklet URL hash)
+  if (gameMode === "puzzle-ready" && urlPuzzle) {
+    return (
+      <PuzzleReady
+        puzzle={urlPuzzle}
+        showHostOptions={!!user}
+        onPlaySolo={() => handleSoloPuzzleLoaded(urlPuzzle)}
+        onHostGame={() => {
+          loadPuzzle(urlPuzzle);
+          setGameMode("host-name");
+        }}
+        onHostOnTV={() => {
+          const hash = compressPuzzleToHash(urlPuzzle);
+          window.location.href = "/host" + hash;
+        }}
+      />
+    );
+  }
+
   // Menu screen
   if (gameMode === "menu") {
     return (
@@ -541,7 +572,12 @@ function App() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (displayName.trim()) setGameMode("host-import");
+            if (!displayName.trim()) return;
+            if (urlPuzzle) {
+              handleHostPuzzleLoaded(urlPuzzle);
+            } else {
+              setGameMode("host-import");
+            }
           }}
           className="flex flex-col gap-3 w-full max-w-xs"
           autoComplete="off"

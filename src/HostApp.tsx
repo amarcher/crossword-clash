@@ -16,9 +16,10 @@ import { CompletionModal } from "./components/CompletionModal";
 import { useSpeechSettings } from "./hooks/useSpeechSettings";
 import { TTSMuteButton, TTSSettingsModal } from "./components/TTSControls";
 import type { PlayerResult } from "./components/CompletionModal";
+import { extractPuzzleFromUrl } from "./lib/puzzleUrl";
 import type { Puzzle } from "./types/puzzle";
 
-type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining";
+type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining" | "puzzle-ready";
 
 function HostApp() {
   const { user } = useSupabase();
@@ -38,7 +39,15 @@ function HostApp() {
 
   const hostSession = useMemo(() => loadHostSession(), []);
 
-  const [mode, setMode] = useState<HostMode>(() => (hostSession ? "rejoining" : "menu"));
+  const [urlPuzzle] = useState<Puzzle | null>(() =>
+    window.location.hash.startsWith("#puzzle=") ? extractPuzzleFromUrl() : null,
+  );
+
+  const [mode, setMode] = useState<HostMode>(() => {
+    if (urlPuzzle) return "puzzle-ready";
+    if (hostSession) return "rejoining";
+    return "menu";
+  });
   const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
@@ -85,6 +94,11 @@ function HostApp() {
 
   // Keep players ref in sync for announcements
   playersRef.current = multiplayer.players;
+
+  // Fallback: if puzzle-ready mode but no puzzle, go to menu
+  useEffect(() => {
+    if (mode === "puzzle-ready" && !urlPuzzle) setMode("menu");
+  }, [mode, urlPuzzle]);
 
   // Auto-advance from menu to import once authenticated
   useEffect(() => {
@@ -254,6 +268,40 @@ function HostApp() {
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
         <Title variant="dark" className="mb-4" />
         <p className="text-neutral-400">Reconnecting to game...</p>
+      </div>
+    );
+  }
+
+  // Puzzle ready screen (from bookmarklet URL hash)
+  if (mode === "puzzle-ready" && urlPuzzle) {
+    const acrossCount = urlPuzzle.clues.filter((c) => c.direction === "across").length;
+    const downCount = urlPuzzle.clues.filter((c) => c.direction === "down").length;
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
+        <Title variant="dark" className="mb-6" />
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-neutral-300">{urlPuzzle.title}</h2>
+          {urlPuzzle.author && (
+            <p className="text-sm text-neutral-400 mt-1">by {urlPuzzle.author}</p>
+          )}
+          <p className="text-sm text-neutral-400 mt-2">
+            {urlPuzzle.width}&times;{urlPuzzle.height} &middot; {acrossCount} across, {downCount} down
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          {user ? (
+            <button
+              onClick={() => handlePuzzleLoaded(urlPuzzle)}
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Host Game
+            </button>
+          ) : (
+            <p className="text-neutral-500 text-center text-sm">
+              Connecting to server...
+            </p>
+          )}
+        </div>
       </div>
     );
   }
