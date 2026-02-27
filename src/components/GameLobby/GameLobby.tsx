@@ -1,5 +1,6 @@
 import { useState } from "react";
 import QRCode from "react-qr-code";
+import { Title } from "../Title";
 import type { Player } from "../../types/game";
 
 interface GameLobbyProps {
@@ -22,7 +23,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8 overflow-auto">
-      <h1 className="text-3xl font-bold mb-2">Game Lobby</h1>
+      <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">Share the code below to invite players</p>
 
       {shareCode && (

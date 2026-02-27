@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import type { Puzzle } from "../../types/puzzle";
@@ -66,10 +67,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-      <h1 className="text-center leading-tight mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-        <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
-        <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
-      </h1>
+      <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">
         Upload a crossword puzzle to get started
       </p>

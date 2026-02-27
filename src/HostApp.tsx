@@ -11,6 +11,7 @@ import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreb
 import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
 import { getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
+import { Title } from "./components/Title";
 import { CompletionModal } from "./components/CompletionModal";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle } from "./types/puzzle";
@@ -247,10 +248,7 @@ function HostApp() {
   if (mode === "rejoining") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-        <h1 className="text-center leading-tight mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-          <span className="block text-5xl font-bold text-white">Crossword</span>
-          <span className="block text-5xl font-bold italic text-amber-400">Clash</span>
-        </h1>
+        <Title variant="dark" className="mb-4" />
         <p className="text-neutral-400">Reconnecting to game...</p>
       </div>
     );
@@ -260,10 +258,7 @@ function HostApp() {
   if (mode === "menu") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-        <h1 className="text-center leading-tight mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-          <span className="block text-5xl font-bold text-white">Crossword</span>
-          <span className="block text-5xl font-bold italic text-amber-400">Clash</span>
-        </h1>
+        <Title variant="dark" className="mb-2" />
         <p className="text-neutral-400 mb-8">TV / Host View</p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {user ? (
@@ -292,7 +287,8 @@ function HostApp() {
   if (mode === "lobby") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8 gap-8">
-        <h1 className="text-3xl font-bold text-white">Waiting for Players</h1>
+        <Title variant="dark" />
+        <p className="text-2xl font-semibold text-white -mt-4">Waiting for Players</p>
 
         {joinUrl && (
           <div className="flex flex-col items-center gap-4">

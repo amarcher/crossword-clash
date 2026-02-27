@@ -11,6 +11,7 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { Scoreboard } from "./components/Scoreboard/Scoreboard";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { GameLobby, JoinGame } from "./components/GameLobby";
+import { Title } from "./components/Title";
 import {
   uploadPuzzle,
   createGame,
@@ -481,10 +482,7 @@ function App() {
   if (gameMode === "rejoining") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-center leading-tight mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
-          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
-        </h1>
+        <Title className="mb-4" />
         <p className="text-neutral-500">Reconnecting to game...</p>
       </div>
     );
@@ -494,10 +492,7 @@ function App() {
   if (gameMode === "menu") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-center leading-tight mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
-          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
-          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
-        </h1>
+        <Title className="mb-8" />
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {user && (
             <>
@@ -541,10 +536,7 @@ function App() {
   if (gameMode === "host-name") {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-        <h1 className="text-center leading-tight mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-          <span className="block text-5xl font-bold text-neutral-900">Crossword</span>
-          <span className="block text-5xl font-bold italic text-amber-500">Clash</span>
-        </h1>
+        <Title className="mb-2" />
         <p className="text-neutral-500 mb-6">Enter your display name</p>
         <form
           onSubmit={(e) => {
