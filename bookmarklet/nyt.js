@@ -396,9 +396,32 @@
 
       var json = JSON.stringify(transfer);
       var compressed = compressToEncodedURIComponent(json);
-      var url = APP_URL + "#puzzle=" + compressed;
 
-      window.open(url, "_blank");
+      // Copy to clipboard as fallback (may fail if user gesture expired)
+      try {
+        navigator.clipboard.writeText(compressed);
+      } catch (ignore) {}
+
+      // Open app with clean URL (no puzzle data in URL to avoid Safe Browsing flags)
+      var appOrigin = APP_URL.replace(/\/$/, "");
+      var appWindow = window.open(APP_URL + "#import", "_blank");
+
+      // Send puzzle data via postMessage when app signals ready
+      var handler = function (event) {
+        if (event.data && event.data.type === "crossword-clash-ready") {
+          appWindow.postMessage(
+            { type: "crossword-clash-puzzle", puzzle: compressed },
+            appOrigin,
+          );
+          window.removeEventListener("message", handler);
+        }
+      };
+      window.addEventListener("message", handler);
+
+      // Clean up listener after 30s
+      setTimeout(function () {
+        window.removeEventListener("message", handler);
+      }, 30000);
     } catch (e) {
       alert("Crossword Clash: " + (e.message || "Unknown error"));
     }

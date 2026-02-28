@@ -16,10 +16,10 @@ import { CompletionModal } from "./components/CompletionModal";
 import { useSpeechSettings } from "./hooks/useSpeechSettings";
 import { TTSMuteButton, TTSSettingsModal } from "./components/TTSControls";
 import type { PlayerResult } from "./components/CompletionModal";
-import { extractPuzzleFromUrl } from "./lib/puzzleUrl";
+import { extractPuzzleFromUrl, hasImportHash, listenForImportedPuzzle, readPuzzleFromClipboard } from "./lib/puzzleUrl";
 import type { Puzzle } from "./types/puzzle";
 
-type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining" | "puzzle-ready";
+type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining" | "puzzle-ready" | "importing";
 
 function HostApp() {
   const { user } = useSupabase();
@@ -52,6 +52,9 @@ function HostApp() {
           setUrlPuzzle(puzzle);
           setMode("puzzle-ready");
         }
+      } else if (hasImportHash()) {
+        setImportFailed(false);
+        setMode("importing");
       }
     };
     window.addEventListener("hashchange", onHashChange);
@@ -60,11 +63,27 @@ function HostApp() {
 
   const [mode, setMode] = useState<HostMode>(() => {
     if (urlPuzzle) return "puzzle-ready";
+    if (hasImportHash()) return "importing";
     if (hostSession) return "rejoining";
     return "menu";
   });
   const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
+  const [importFailed, setImportFailed] = useState(false);
+
+  // Handle puzzle import via postMessage (triggered by bookmarklet)
+  useEffect(() => {
+    if (mode !== "importing") return;
+    listenForImportedPuzzle().then((puzzle) => {
+      if (puzzle) {
+        setUrlPuzzle(puzzle);
+        setMode("puzzle-ready");
+      } else {
+        setImportFailed(true);
+      }
+    });
+  }, [mode]);
+
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
 
   // Refs for event-driven clue announcements (avoids stale closures)
@@ -287,7 +306,47 @@ function HostApp() {
     );
   }
 
-  // Puzzle ready screen (from bookmarklet URL hash)
+  // Importing screen (waiting for puzzle data via postMessage)
+  if (mode === "importing") {
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
+        <Title variant="dark" className="mb-6" />
+        {importFailed ? (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-neutral-400 text-center">
+              Could not receive puzzle automatically.
+              <br />
+              Click below to paste from clipboard.
+            </p>
+            <button
+              onClick={async () => {
+                const puzzle = await readPuzzleFromClipboard();
+                if (puzzle) {
+                  setUrlPuzzle(puzzle);
+                  setMode("puzzle-ready");
+                } else {
+                  alert("No valid puzzle data found in clipboard. Try clicking the bookmarklet again.");
+                }
+              }}
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Paste from Clipboard
+            </button>
+            <button
+              onClick={() => setMode("menu")}
+              className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
+            >
+              Back to menu
+            </button>
+          </div>
+        ) : (
+          <p className="text-neutral-400">Receiving puzzle...</p>
+        )}
+      </div>
+    );
+  }
+
+  // Puzzle ready screen (from bookmarklet)
   if (mode === "puzzle-ready" && urlPuzzle) {
     const acrossCount = urlPuzzle.clues.filter((c) => c.direction === "across").length;
     const downCount = urlPuzzle.clues.filter((c) => c.direction === "down").length;

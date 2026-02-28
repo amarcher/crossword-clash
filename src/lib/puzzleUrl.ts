@@ -4,6 +4,7 @@ import type { TransferPuzzle } from "./puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
 
 const HASH_PREFIX = "#puzzle=";
+const IMPORT_HASH = "#import";
 
 /**
  * Extract a Puzzle from the URL hash fragment (`#puzzle=<compressed>`).
@@ -89,4 +90,88 @@ export function compressPuzzleToHash(puzzle: Puzzle): string {
   const json = JSON.stringify(transfer);
   const compressed = compressToEncodedURIComponent(json);
   return HASH_PREFIX + compressed;
+}
+
+/**
+ * Check if the current URL hash indicates an import is pending (`#import`).
+ */
+export function hasImportHash(): boolean {
+  return window.location.hash === IMPORT_HASH;
+}
+
+/**
+ * Decode compressed puzzle data into a Puzzle object.
+ */
+function decompressPuzzle(compressed: string): Puzzle | null {
+  try {
+    const json = decompressFromEncodedURIComponent(compressed);
+    if (!json) return null;
+    const transfer: TransferPuzzle = JSON.parse(json);
+    return normalizeTransferPuzzle(transfer);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Listen for puzzle data via postMessage from the bookmarklet (cross-origin).
+ * Sends a "ready" signal to window.opener, then waits for puzzle data.
+ * Resolves with the Puzzle on success, or null on timeout.
+ */
+export function listenForImportedPuzzle(timeoutMs = 5000): Promise<Puzzle | null> {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const handler = (event: MessageEvent) => {
+      if (resolved) return;
+      if (event.data?.type === "crossword-clash-puzzle" && typeof event.data.puzzle === "string") {
+        resolved = true;
+        window.removeEventListener("message", handler);
+        clearHash();
+        resolve(decompressPuzzle(event.data.puzzle));
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Signal to the opener that we're ready to receive puzzle data
+    if (window.opener) {
+      try {
+        window.opener.postMessage({ type: "crossword-clash-ready" }, "*");
+      } catch {
+        // opener may be closed or cross-origin restricted
+      }
+    }
+
+    // Timeout fallback
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        window.removeEventListener("message", handler);
+        resolve(null);
+      }
+    }, timeoutMs);
+  });
+}
+
+/**
+ * Read compressed puzzle data from the clipboard (requires user gesture).
+ * Returns the Puzzle on success, or null if clipboard is empty/invalid.
+ */
+export async function readPuzzleFromClipboard(): Promise<Puzzle | null> {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return null;
+    return decompressPuzzle(text.trim());
+  } catch {
+    return null;
+  }
+}
+
+function clearHash() {
+  try {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  } catch {
+    // ignore
+  }
 }
