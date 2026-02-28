@@ -21,14 +21,14 @@ import {
   joinGame,
   rejoinGame,
 } from "./lib/puzzleService";
-import { extractPuzzleFromUrl, compressPuzzleToHash } from "./lib/puzzleUrl";
+import { extractPuzzleFromUrl, compressPuzzleToHash, hasImportHash, listenForImportedPuzzle, readPuzzleFromClipboard } from "./lib/puzzleUrl";
 import { loadMpSession, saveMpSession, clearMpSession } from "./lib/sessionPersistence";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer } from "./lib/gridUtils";
 import { CompletionModal } from "./components/CompletionModal";
 import type { PlayerResult } from "./components/CompletionModal";
 import type { Puzzle, PuzzleClue } from "./types/puzzle";
 
-type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining" | "puzzle-ready";
+type GameMode = "menu" | "solo" | "host-name" | "host-import" | "host-lobby" | "join" | "playing" | "rejoining" | "puzzle-ready" | "importing";
 
 const STORAGE_KEY = "crossword-clash-solo";
 
@@ -83,6 +83,9 @@ function App() {
           setUrlPuzzle(puzzle);
           setGameMode("puzzle-ready");
         }
+      } else if (hasImportHash()) {
+        setImportFailed(false);
+        setGameMode("importing");
       }
     };
     window.addEventListener("hashchange", onHashChange);
@@ -91,6 +94,7 @@ function App() {
 
   const [gameMode, setGameMode] = useState<GameMode>(() => {
     if (urlPuzzle) return "puzzle-ready";
+    if (hasImportHash()) return "importing";
     const params = new URLSearchParams(window.location.search);
     if (params.get("join")) return "join";
     if (mpSession) return "rejoining";
@@ -118,6 +122,21 @@ function App() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
+  const [importFailed, setImportFailed] = useState(false);
+
+  // Handle puzzle import via postMessage (triggered by bookmarklet)
+  useEffect(() => {
+    if (gameMode !== "importing") return;
+    listenForImportedPuzzle().then((puzzle) => {
+      if (puzzle) {
+        setUrlPuzzle(puzzle);
+        setGameMode("puzzle-ready");
+      } else {
+        setImportFailed(true);
+      }
+    });
+  }, [gameMode]);
+
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
   const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
@@ -515,7 +534,47 @@ function App() {
     );
   }
 
-  // Puzzle ready screen (from bookmarklet URL hash)
+  // Importing screen (waiting for puzzle data via postMessage)
+  if (gameMode === "importing") {
+    return (
+      <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
+        <Title className="mb-6" />
+        {importFailed ? (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-neutral-600 text-center">
+              Could not receive puzzle automatically.
+              <br />
+              Click below to paste from clipboard.
+            </p>
+            <button
+              onClick={async () => {
+                const puzzle = await readPuzzleFromClipboard();
+                if (puzzle) {
+                  setUrlPuzzle(puzzle);
+                  setGameMode("puzzle-ready");
+                } else {
+                  alert("No valid puzzle data found in clipboard. Try clicking the bookmarklet again.");
+                }
+              }}
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              Paste from Clipboard
+            </button>
+            <button
+              onClick={() => setGameMode("menu")}
+              className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              Back to menu
+            </button>
+          </div>
+        ) : (
+          <p className="text-neutral-500">Receiving puzzle...</p>
+        )}
+      </div>
+    );
+  }
+
+  // Puzzle ready screen (from bookmarklet)
   if (gameMode === "puzzle-ready" && urlPuzzle) {
     return (
       <PuzzleReady
