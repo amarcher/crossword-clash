@@ -17,6 +17,7 @@ import { useSpeechSettings } from "./hooks/useSpeechSettings";
 import { TTSMuteButton, TTSSettingsModal } from "./components/TTSControls";
 import type { PlayerResult } from "./components/CompletionModal";
 import { extractPuzzleFromUrl, hasImportHash, listenForImportedPuzzle, readPuzzleFromClipboard } from "./lib/puzzleUrl";
+import { TimeoutSelector } from "./components/GameLobby";
 import type { Puzzle } from "./types/puzzle";
 
 type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining" | "puzzle-ready" | "importing";
@@ -70,6 +71,7 @@ function HostApp() {
   const [gameId, setGameId] = useState<string | null>(() => hostSession?.gameId ?? null);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [importFailed, setImportFailed] = useState(false);
+  const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
 
   // Handle puzzle import via postMessage (triggered by bookmarklet)
   useEffect(() => {
@@ -214,9 +216,9 @@ function HostApp() {
   );
 
   const handleStartGame = useCallback(async () => {
-    await multiplayer.startGame();
+    await multiplayer.startGame({ wrongAnswerTimeoutSeconds: wrongAnswerTimeout });
     setMode("spectating");
-  }, [multiplayer]);
+  }, [multiplayer, wrongAnswerTimeout]);
 
   const handleCloseRoom = useCallback(async () => {
     if (!window.confirm("Close this room? All players will be disconnected.")) return;
@@ -449,6 +451,8 @@ function HostApp() {
             </div>
           ))}
         </div>
+
+        <TimeoutSelector value={wrongAnswerTimeout} onChange={setWrongAnswerTimeout} variant="dark" />
 
         <div className="flex gap-3">
           <button

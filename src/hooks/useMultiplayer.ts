@@ -5,9 +5,10 @@ import {
   fetchGameState,
   startGame as startGameOnServer,
 } from "../lib/puzzleService";
-import type { Player } from "../types/game";
+import type { GameSettings, Player } from "../types/game";
 import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { DEFAULT_GAME_SETTINGS } from "../lib/gameSettings";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Dispatch = (action: any) => void;
@@ -24,11 +25,12 @@ interface UseMultiplayerOptions {
 
 interface UseMultiplayerReturn {
   claimCell: (row: number, col: number, letter: string) => void;
-  startGame: () => Promise<void>;
+  startGame: (settings?: GameSettings) => Promise<void>;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
+  gameSettings: GameSettings;
   isHost: boolean;
   shareCode: string | null;
   isRoomClosed: boolean;
@@ -50,6 +52,7 @@ export function useMultiplayer({
   const [isHost, setIsHost] = useState(false);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [newGameId, setNewGameId] = useState<string | null>(null);
+  const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -120,8 +123,11 @@ export function useMultiplayer({
       setPlayers((prev) => prev.filter((p) => p.userId !== payload.userId));
     });
 
-    channel.on("broadcast", { event: "game_started" }, () => {
+    channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
       setGameStatus("active");
+      if (payload?.settings) {
+        setGameSettings(payload.settings);
+      }
     });
 
     channel.on("broadcast", { event: "game_completed" }, () => {
@@ -248,14 +254,16 @@ export function useMultiplayer({
     [gameId, userId, puzzle, dispatch, hydrate],
   );
 
-  const startGame = useCallback(async () => {
+  const startGame = useCallback(async (settings?: GameSettings) => {
     const success = await startGameOnServer(gameId);
     if (success) {
+      const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
+      setGameSettings(resolvedSettings);
       setGameStatus("active");
       channelRef.current?.send({
         type: "broadcast",
         event: "game_started",
-        payload: {},
+        payload: { settings: resolvedSettings },
       });
     }
   }, [gameId]);
@@ -288,6 +296,7 @@ export function useMultiplayer({
     broadcastNewGame,
     players,
     gameStatus,
+    gameSettings,
     isHost,
     shareCode,
     isRoomClosed,

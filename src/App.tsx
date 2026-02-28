@@ -11,6 +11,7 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { Scoreboard } from "./components/Scoreboard/Scoreboard";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { GameLobby, JoinGame } from "./components/GameLobby";
+import { LockoutOverlay } from "./components/LockoutOverlay";
 import { Title } from "./components/Title";
 import { PuzzleReady } from "./components/PuzzleReady";
 import {
@@ -123,6 +124,8 @@ function App() {
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [importFailed, setImportFailed] = useState(false);
+  const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
 
   // Handle puzzle import via postMessage (triggered by bookmarklet)
   useEffect(() => {
@@ -280,6 +283,8 @@ function App() {
   const multiplayerInputLetter = useCallback(
     (letter: string) => {
       if (!multiplayerActive || !selectedCell || !puzzle) return;
+      if (Date.now() < lockedUntil) return;
+
       const { row, col } = selectedCell;
       const cell = puzzle.cells[row]?.[col];
       if (!cell || cell.solution === null) return;
@@ -291,11 +296,15 @@ function App() {
 
       if (letter.toUpperCase() !== cell.solution) {
         triggerReject(row, col);
+        const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
+        if (timeoutMs > 0) {
+          setLockedUntil(Date.now() + timeoutMs);
+        }
         return;
       }
       multiplayer.claimCell(row, col, letter);
     },
-    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject],
+    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil],
   );
 
   const navActions = useMemo(
@@ -411,9 +420,9 @@ function App() {
 
   // Start multiplayer game (host)
   const handleStartGame = useCallback(async () => {
-    await multiplayer.startGame();
+    await multiplayer.startGame({ wrongAnswerTimeoutSeconds: wrongAnswerTimeout });
     setGameMode("playing");
-  }, [multiplayer]);
+  }, [multiplayer, wrongAnswerTimeout]);
 
   // Close room (host only) — broadcasts room_closed then resets
   const handleCloseRoom = useCallback(async () => {
@@ -716,6 +725,8 @@ function App() {
         isHost={multiplayer.isHost}
         onStartGame={handleStartGame}
         onCloseRoom={handleCloseRoom}
+        wrongAnswerTimeout={wrongAnswerTimeout}
+        onWrongAnswerTimeoutChange={setWrongAnswerTimeout}
       />
     );
   }
@@ -808,17 +819,20 @@ function App() {
         </>
       }
       grid={
-        <CrosswordGrid
-          puzzle={puzzle}
-          playerCells={playerCells}
-          selectedCell={selectedCell}
-          highlightedCells={highlightedCells}
-          onCellClick={selectCell}
-          playerColorMap={playerColorMap}
-          navigationActions={navActions}
-          rejectedCell={rejectedCell}
-          inputRef={gridInputRef}
-        />
+        <div className="relative">
+          <CrosswordGrid
+            puzzle={puzzle}
+            playerCells={playerCells}
+            selectedCell={selectedCell}
+            highlightedCells={highlightedCells}
+            onCellClick={selectCell}
+            playerColorMap={playerColorMap}
+            navigationActions={navActions}
+            rejectedCell={rejectedCell}
+            inputRef={gridInputRef}
+          />
+          {multiplayerActive && <LockoutOverlay lockedUntil={lockedUntil} />}
+        </div>
       }
       mobileClueBar={
         <>

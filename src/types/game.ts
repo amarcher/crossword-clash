@@ -2,6 +2,10 @@ import type { CellState } from "./puzzle";
 
 export type GameStatus = "waiting" | "active" | "completed";
 
+export interface GameSettings {
+  wrongAnswerTimeoutSeconds: number;
+}
+
 export interface Player {
   id: string;
   gameId: string;
