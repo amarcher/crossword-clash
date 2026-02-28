@@ -1,7 +1,6 @@
 {
-  "title": {
-    "crossword": "Crucigrama",
-    "clash": "Clash"
+  "common": {
+    "defaultPlayerName": "Jugador"
   },
   "menu": {
     "joinGame": "Unirse a partida",
@@ -18,18 +17,18 @@
   "importer": {
     "subtitle": "Sube un crucigrama para empezar",
     "parsing": "Analizando crucigrama...",
-    "dropHere": "Arrastra un archivo aqui",
+    "dropHere": "Arrastra un archivo aqu\u00ed",
     "orBrowse": "o haz clic para buscar (.puz, .ipuz, .jpz, .xd)",
-    "nytHint": "<strong>Suscriptor del NYT?</strong> Instala el <link>NYT Bookmarklet</link> para importar el crucigrama del dia con un clic.",
-    "scraperHint": "Necesitas un archivo .puz? Usa la extension <link>Crossword Scraper</link> de Chrome para descargar crucigramas de sitios populares."
+    "nytHint": "<strong>\u00bfSuscriptor del NYT?</strong> Instala el <link>NYT Bookmarklet</link> para importar el crucigrama del d\u00eda con un clic.",
+    "scraperHint": "\u00bfNecesitas un archivo .puz? Usa la extensi\u00f3n <link>Crossword Scraper</link> de Chrome para descargar crucigramas de sitios populares."
   },
   "importing": {
     "receiving": "Recibiendo crucigrama...",
-    "failed": "No se pudo recibir el crucigrama automaticamente.",
+    "failed": "No se pudo recibir el crucigrama autom\u00e1ticamente.",
     "pasteHint": "Haz clic abajo para pegar del portapapeles.",
     "pasteButton": "Pegar del portapapeles",
     "pasteError": "No se encontraron datos de crucigrama en el portapapeles. Intenta hacer clic en el bookmarklet de nuevo.",
-    "backToMenu": "Volver al menu"
+    "backToMenu": "Volver al men\u00fa"
   },
   "puzzleReady": {
     "by": "por {{author}}",
@@ -38,25 +37,25 @@
     "connecting": "Conectando al servidor..."
   },
   "lobby": {
-    "shareInvite": "Comparte el codigo para invitar jugadores",
-    "copied": "Copiado!",
+    "shareInvite": "Comparte el c\u00f3digo para invitar jugadores",
+    "copied": "\u00a1Copiado!",
     "clickToCopy": "Clic para copiar",
     "scanToJoin": "Escanea para unirte",
     "players": "Jugadores ({{count}})",
-    "host": "Anfitrion",
+    "host": "Anfitri\u00f3n",
     "waitingForPlayers": "Esperando jugadores...",
     "startGame": "Iniciar partida",
     "closeRoom": "Cerrar sala",
-    "waitingForHost": "Esperando a que el anfitrion inicie la partida...",
+    "waitingForHost": "Esperando a que el anfitri\u00f3n inicie la partida...",
     "waitingForPlayersTitle": "Esperando jugadores"
   },
   "join": {
-    "subtitle": "Ingresa el codigo de 6 caracteres",
+    "subtitle": "Ingresa el c\u00f3digo de 6 caracteres",
     "yourName": "Tu nombre",
     "namePlaceholder": "Ingresa tu nombre",
-    "gameCode": "Codigo de partida",
+    "gameCode": "C\u00f3digo de partida",
     "joinGame": "Unirse",
-    "joining": "Uniendose...",
+    "joining": "Uni\u00e9ndose...",
     "back": "Volver",
     "notFound": "Partida no encontrada o no disponible"
   },
@@ -69,7 +68,7 @@
     "leaveGame": "Salir de partida",
     "newPuzzle": "Nuevo crucigrama",
     "loadDifferent": "Cargar otro crucigrama",
-    "closeRoomConfirm": "Cerrar esta sala? Todos los jugadores seran desconectados.",
+    "closeRoomConfirm": "\u00bfCerrar esta sala? Todos los jugadores ser\u00e1n desconectados.",
     "reconnecting": "Reconectando a la partida..."
   },
   "cluePanel": {
@@ -79,7 +78,7 @@
   "clueBar": {
     "previousClue": "Pista anterior",
     "nextClue": "Siguiente pista",
-    "directionLabel": "Direccion: {{direction}}, toca para cambiar",
+    "directionLabel": "Direcci\u00f3n: {{direction}}, toca para cambiar",
     "tapToStart": "Toca una celda para empezar",
     "directionAbbrevAcross": "\u2192",
     "directionAbbrevDown": "\u2193",
@@ -88,21 +87,21 @@
   },
   "scoreboard": {
     "cells": "{{score}}/{{total}} celdas",
-    "puzzleComplete": "Crucigrama completo!",
-    "wins": "{{name}} gana!",
-    "tie": "Empate!"
+    "puzzleComplete": "\u00a1Crucigrama completo!",
+    "wins": "\u00a1{{name}} gana!",
+    "tie": "\u00a1Empate!"
   },
   "completion": {
-    "puzzleComplete": "Crucigrama completo!",
-    "tie": "Empate!",
-    "wins": "{{name}} gana!",
+    "puzzleComplete": "\u00a1Crucigrama completo!",
+    "tie": "\u00a1Empate!",
+    "wins": "\u00a1{{name}} gana!",
     "player": "Jugador",
     "cells": "Celdas",
     "clues": "Pistas",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} celdas completadas",
     "newPuzzle": "Elegir otro crucigrama",
-    "backToMenu": "Volver al menu",
+    "backToMenu": "Volver al men\u00fa",
     "ariaLabel": "Crucigrama completo"
   },
   "tts": {
@@ -120,14 +119,14 @@
     "done": "Listo"
   },
   "hostView": {
-    "tvHostView": "Vista TV / Anfitrion",
-    "roomCode": "Codigo de sala"
+    "tvHostView": "Vista TV / Anfitri\u00f3n",
+    "roomCode": "C\u00f3digo de sala"
   },
   "grid": {
     "crosswordInput": "Entrada del crucigrama"
   },
   "timeout": {
-    "wrongAnswerPenalty": "Penalizacion por error",
+    "wrongAnswerPenalty": "Penalizaci\u00f3n por error",
     "off": "No"
   }
 }

@@ -122,7 +122,7 @@ function App() {
     }
     return null;
   });
-  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? "Player");
+  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? tStatic('common.defaultPlayerName'));
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
@@ -370,7 +370,7 @@ function App() {
       // If we have an existing share code, reuse it for the next game
       if (multiplayer.shareCode) {
         const result = await createNextGame(puzzleId, user.id, multiplayer.shareCode, {
-          displayName: displayName.trim() || "Player",
+          displayName: displayName.trim() || tStatic('common.defaultPlayerName'),
         });
         if (result) {
           multiplayer.broadcastNewGame(result.gameId);
@@ -383,7 +383,7 @@ function App() {
 
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
-        displayName: displayName.trim() || "Player",
+        displayName: displayName.trim() || tStatic('common.defaultPlayerName'),
       });
       if (result) {
         setGameId(result.gameId);

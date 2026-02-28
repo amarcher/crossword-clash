@@ -73,7 +73,7 @@ describe("i18n", () => {
 
   describe("tStatic", () => {
     it("returns the English translation for a simple key", () => {
-      expect(tStatic("title.crossword")).toBe("Crossword");
+      expect(tStatic("common.defaultPlayerName")).toBe("Player");
     });
 
     it("interpolates variables", () => {
@@ -82,7 +82,7 @@ describe("i18n", () => {
 
     it("follows language changes", () => {
       i18n.changeLanguage("es");
-      expect(tStatic("title.crossword")).toBe("Crucigrama");
+      expect(tStatic("common.defaultPlayerName")).toBe("Jugador");
     });
   });
 
@@ -98,7 +98,7 @@ describe("i18n", () => {
 
     it("falls back to English for unsupported language", () => {
       i18n.changeLanguage("fr");
-      expect(i18n.t("title.clash")).toBe("Clash");
+      expect(i18n.t("menu.playSolo")).toBe("Play Solo");
     });
 
     it("persists language to localStorage", () => {

@@ -1,7 +1,6 @@
 {
-  "title": {
-    "crossword": "Crossword",
-    "clash": "Clash"
+  "common": {
+    "defaultPlayerName": "Player"
   },
   "menu": {
     "joinGame": "Join Game",

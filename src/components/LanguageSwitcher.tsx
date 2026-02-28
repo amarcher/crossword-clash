@@ -4,7 +4,7 @@ import type { SupportedLang } from "../i18n/i18n";
 
 const LANG_LABELS: Record<SupportedLang, string> = {
   en: "English",
-  es: "Espanol",
+  es: "Espa\u00f1ol",
 };
 
 export function LanguageSwitcher() {

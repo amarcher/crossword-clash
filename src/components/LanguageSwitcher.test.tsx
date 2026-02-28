@@ -22,7 +22,7 @@ describe("LanguageSwitcher", () => {
     const options = screen.getAllByRole("option");
     expect(options).toHaveLength(2);
     expect(options[0].textContent).toBe("English");
-    expect(options[1].textContent).toBe("Espanol");
+    expect(options[1].textContent).toBe("Espa\u00f1ol");
   });
 
   it("reflects the current language as selected value", () => {
