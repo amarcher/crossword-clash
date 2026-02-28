@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Confetti } from "./Confetti";
 
 export interface PlayerResult {
@@ -29,6 +30,8 @@ export function CompletionModal({
   onBackToMenu,
   darkMode,
 }: CompletionModalProps) {
+  const { t } = useTranslation();
+
   if (!open) return null;
 
   const isMultiplayer = players && players.length > 0;
@@ -62,7 +65,7 @@ export function CompletionModal({
       <div
         className={`modal-enter relative z-20 w-full max-w-md rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
         role="dialog"
-        aria-label="Puzzle Complete"
+        aria-label={t('completion.ariaLabel')}
       >
         {/* Trophy */}
         <div className="text-center mb-4">
@@ -73,7 +76,7 @@ export function CompletionModal({
 
         {/* Title */}
         <h2 className={`text-2xl font-bold text-center mb-1 ${text}`}>
-          Puzzle Complete!
+          {t('completion.puzzleComplete')}
         </h2>
 
         {isMultiplayer ? (
@@ -81,8 +84,8 @@ export function CompletionModal({
             {/* Winner announcement */}
             <p className={`text-center mb-5 ${textSub}`}>
               {isTie
-                ? "It's a tie!"
-                : `${winner.displayName} wins!`}
+                ? t('completion.tie')
+                : t('completion.wins', { name: winner.displayName })}
             </p>
 
             {/* Player table */}
@@ -91,9 +94,9 @@ export function CompletionModal({
                 <thead>
                   <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
                     <th className="text-left py-2 px-3">#</th>
-                    <th className="text-left py-2 px-3">Player</th>
-                    <th className="text-right py-2 px-3">Cells</th>
-                    <th className="text-right py-2 px-3">Clues</th>
+                    <th className="text-left py-2 px-3">{t('completion.player')}</th>
+                    <th className="text-right py-2 px-3">{t('completion.cells')}</th>
+                    <th className="text-right py-2 px-3">{t('completion.clues')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,7 +125,7 @@ export function CompletionModal({
                 </tbody>
                 <tfoot>
                   <tr className={`text-xs ${tableHeader} border-t ${darkMode ? "border-neutral-600" : "border-neutral-200"}`}>
-                    <td colSpan={2} className="py-2 px-3">Total</td>
+                    <td colSpan={2} className="py-2 px-3">{t('completion.total')}</td>
                     <td className="py-2 px-3 text-right tabular-nums">{totalCells}</td>
                     <td className="py-2 px-3 text-right tabular-nums">{totalClues}</td>
                   </tr>
@@ -134,7 +137,7 @@ export function CompletionModal({
           <>
             {/* Solo stats */}
             <p className={`text-center mb-6 ${textSub}`}>
-              {soloScore ?? totalCells}/{totalCells} cells filled
+              {t('completion.cellsFilled', { score: soloScore ?? totalCells, total: totalCells })}
             </p>
           </>
         )}
@@ -146,7 +149,7 @@ export function CompletionModal({
               onClick={onNewPuzzle}
               className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              Choose a New Puzzle
+              {t('completion.newPuzzle')}
             </button>
           )}
           {onBackToMenu && (
@@ -158,7 +161,7 @@ export function CompletionModal({
                   : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100"
               }`}
             >
-              Back to Menu
+              {t('completion.backToMenu')}
             </button>
           )}
         </div>

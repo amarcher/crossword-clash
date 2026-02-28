@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
@@ -18,11 +19,14 @@ import { TTSMuteButton, TTSSettingsModal } from "./components/TTSControls";
 import type { PlayerResult } from "./components/CompletionModal";
 import { extractPuzzleFromUrl, hasImportHash, listenForImportedPuzzle, readPuzzleFromClipboard } from "./lib/puzzleUrl";
 import { TimeoutSelector } from "./components/GameLobby";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { tStatic } from "./i18n/i18n";
 import type { Puzzle } from "./types/puzzle";
 
 type HostMode = "menu" | "import" | "lobby" | "spectating" | "rejoining" | "puzzle-ready" | "importing";
 
 function HostApp() {
+  const { t } = useTranslation();
   const { user } = useSupabase();
   const {
     puzzle,
@@ -221,7 +225,7 @@ function HostApp() {
   }, [multiplayer, wrongAnswerTimeout]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm("Close this room? All players will be disconnected.")) return;
+    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
     await multiplayer.closeRoom();
     setGameId(null);
     setMode("menu");
@@ -303,7 +307,7 @@ function HostApp() {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
         <Title variant="dark" className="mb-4" />
-        <p className="text-neutral-400">Reconnecting to game...</p>
+        <p className="text-neutral-400">{t('playing.reconnecting')}</p>
       </div>
     );
   }
@@ -316,9 +320,9 @@ function HostApp() {
         {importFailed ? (
           <div className="flex flex-col items-center gap-4">
             <p className="text-neutral-400 text-center">
-              Could not receive puzzle automatically.
+              {t('importing.failed')}
               <br />
-              Click below to paste from clipboard.
+              {t('importing.pasteHint')}
             </p>
             <button
               onClick={async () => {
@@ -327,22 +331,22 @@ function HostApp() {
                   setUrlPuzzle(puzzle);
                   setMode("puzzle-ready");
                 } else {
-                  alert("No valid puzzle data found in clipboard. Try clicking the bookmarklet again.");
+                  alert(tStatic('importing.pasteError'));
                 }
               }}
               className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              Paste from Clipboard
+              {t('importing.pasteButton')}
             </button>
             <button
               onClick={() => setMode("menu")}
               className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
             >
-              Back to menu
+              {t('importing.backToMenu')}
             </button>
           </div>
         ) : (
-          <p className="text-neutral-400">Receiving puzzle...</p>
+          <p className="text-neutral-400">{t('importing.receiving')}</p>
         )}
       </div>
     );
@@ -358,10 +362,10 @@ function HostApp() {
         <div className="text-center mb-6">
           <h2 className="text-xl font-bold text-neutral-300">{urlPuzzle.title}</h2>
           {urlPuzzle.author && (
-            <p className="text-sm text-neutral-400 mt-1">by {urlPuzzle.author}</p>
+            <p className="text-sm text-neutral-400 mt-1">{t('puzzleReady.by', { author: urlPuzzle.author })}</p>
           )}
           <p className="text-sm text-neutral-400 mt-2">
-            {urlPuzzle.width}&times;{urlPuzzle.height} &middot; {acrossCount} across, {downCount} down
+            {t('puzzleReady.dimensions', { width: urlPuzzle.width, height: urlPuzzle.height, acrossCount, downCount })}
           </p>
         </div>
         <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -370,11 +374,11 @@ function HostApp() {
               onClick={() => handlePuzzleLoaded(urlPuzzle)}
               className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              Host Game
+              {t('puzzleReady.hostGame')}
             </button>
           ) : (
             <p className="text-neutral-500 text-center text-sm">
-              Connecting to server...
+              {t('puzzleReady.connecting')}
             </p>
           )}
         </div>
@@ -387,20 +391,23 @@ function HostApp() {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
         <Title variant="dark" className="mb-2" />
-        <p className="text-neutral-400 mb-8">TV / Host View</p>
+        <p className="text-neutral-400 mb-8">{t('hostView.tvHostView')}</p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {user ? (
             <button
               onClick={() => setMode("import")}
               className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              Host Game
+              {t('puzzleReady.hostGame')}
             </button>
           ) : (
             <p className="text-neutral-500 text-center text-sm">
-              Connecting to server...
+              {t('puzzleReady.connecting')}
             </p>
           )}
+        </div>
+        <div className="mt-6">
+          <LanguageSwitcher />
         </div>
       </div>
     );
@@ -416,7 +423,7 @@ function HostApp() {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8 gap-8">
         <Title variant="dark" />
-        <p className="text-2xl font-semibold text-white -mt-4">Waiting for Players</p>
+        <p className="text-2xl font-semibold text-white -mt-4">{t('lobby.waitingForPlayersTitle')}</p>
 
         {joinUrl && (
           <div className="flex flex-col items-center gap-4">
@@ -424,7 +431,7 @@ function HostApp() {
               <QRCode value={joinUrl} size={200} />
             </div>
             <div className="text-center">
-              <p className="text-neutral-400 text-sm mb-1">Room Code</p>
+              <p className="text-neutral-400 text-sm mb-1">{t('hostView.roomCode')}</p>
               <p className="font-mono font-bold text-4xl text-white tracking-widest">
                 {multiplayer.shareCode}
               </p>
@@ -434,7 +441,7 @@ function HostApp() {
 
         <div className="w-full max-w-xs space-y-2">
           <p className="text-neutral-400 text-sm text-center">
-            Players ({multiplayer.players.length})
+            {t('lobby.players', { count: multiplayer.players.length })}
           </p>
           {multiplayer.players.map((player) => (
             <div
@@ -460,13 +467,13 @@ function HostApp() {
             disabled={multiplayer.players.length < 2}
             className="px-8 py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 disabled:bg-neutral-700 disabled:cursor-not-allowed transition-colors"
           >
-            Start Game
+            {t('lobby.startGame')}
           </button>
           <button
             onClick={handleCloseRoom}
             className="px-6 py-3 rounded-lg font-semibold text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
           >
-            Close Room
+            {t('lobby.closeRoom')}
           </button>
         </div>
       </div>
@@ -493,7 +500,7 @@ function HostApp() {
       sidebar={
         <div className="bg-neutral-800 rounded-xl p-4 space-y-4">
           <div className="text-center">
-            <p className="text-neutral-400 text-xs uppercase tracking-wide mb-1">Room Code</p>
+            <p className="text-neutral-400 text-xs uppercase tracking-wide mb-1">{t('hostView.roomCode')}</p>
             <p className="font-mono font-bold text-2xl text-white tracking-widest">
               {multiplayer.shareCode}
             </p>
@@ -507,7 +514,7 @@ function HostApp() {
           )}
           <div className="space-y-1.5">
             <p className="text-neutral-400 text-xs uppercase tracking-wide">
-              Players ({multiplayer.players.length})
+              {t('lobby.players', { count: multiplayer.players.length })}
             </p>
             {multiplayer.players.map((player) => (
               <div
@@ -528,7 +535,7 @@ function HostApp() {
             onClick={handleCloseRoom}
             className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
           >
-            Close Room
+            {t('lobby.closeRoom')}
           </button>
         </div>
       }

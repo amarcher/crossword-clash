@@ -6,7 +6,7 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 
 ## Stack
 
-- **Frontend**: React 19 + TypeScript + Vite 7 + Tailwind CSS v4
+- **Frontend**: React 19 + TypeScript + Vite 7 + Tailwind CSS v4 + i18next/react-i18next
 - **Backend**: Supabase (Postgres + Auth + Realtime Broadcast)
 - **Testing**: Vitest
 - **Package manager**: pnpm
@@ -26,6 +26,7 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **Puzzle import**: `@xwordly/xword-parser` parses .puz/.ipuz/.jpz/.xd files, then `src/lib/puzzleNormalizer.ts` converts to internal `Puzzle` type.
 - **Persistence**: Solo mode uses localStorage for puzzle + progress. Multiplayer sessions (`crossword-clash-mp` / `crossword-clash-host`) are persisted to localStorage so players auto-rejoin on page refresh. Supabase handles multiplayer state via `claim_cell` RPC.
 - **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu.
+- **Internationalization**: i18next + react-i18next with English and Spanish translations in `src/i18n/`. Language detected from localStorage (`crossword-clash:language`) → `navigator.language` → `'en'`. `LanguageSwitcher` component on menu screens. `tStatic()` for non-React contexts (window.confirm, alert). `<Trans>` component for rich text with embedded links. Spanish uses `→`/`↓` arrows instead of Across/Down.
 
 ## Game Modes
 
@@ -62,6 +63,7 @@ src/
     GameLobby/      # GameLobby (share code, QR code, player list, timeout selector, close room) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
     Layout/         # GameLayout (responsive, mobile clue list flex-shrinks behind keyboard) + TVLayout (spectator with clue panel)
     PuzzleImporter/ # File upload/drag-and-drop
+    LanguageSwitcher.tsx # Language select dropdown (English/Spanish)
     LockoutOverlay.tsx # Countdown overlay during wrong answer lockout
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
@@ -69,6 +71,11 @@ src/
     useClueAnnouncer.ts # Web Speech API announcements for completed clues (TV mode only)
     useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure, game settings
     useSupabase.ts  # Anonymous auth + client
+  i18n/
+    i18n.ts         # i18next initialization, detectLanguage(), tStatic(), SUPPORTED_LANGS
+    i18n.d.ts       # TypeScript type declarations for translation key autocomplete
+    en.json         # English translations
+    es.json         # Spanish translations
   lib/
     gameSettings.ts # Wrong answer timeout presets + DEFAULT_GAME_SETTINGS
     gridUtils.ts    # Pure navigation/word boundary functions + getCompletedClues
@@ -110,7 +117,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 453 tests across 28 files
+- `pnpm test` — 471 tests across 30 files
 - **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -123,6 +130,8 @@ VITE_SUPABASE_ANON_KEY=...
 - **TimeoutSelector.test.tsx** (9 tests): All presets rendered, heading, selected option highlighting, unselected styles, onChange callback, dark/light variant styles
 - **LockoutOverlay.test.tsx** (7 tests): Renders nothing when 0 or past, shows countdown, ticks down over time, disappears on expiry, lockout-pulse class, pointer-events-none
 - **gameSettings.test.ts** (6 tests): Option count, Off default, increasing values, non-negative integers, non-empty labels, default settings
+- **i18n.test.ts** (13 tests): SUPPORTED_LANGS includes en/es, resource bundles exist, en↔es key parity (no missing/extra keys), tStatic simple key + interpolation + language change, language switching (default en, switch to es, fallback for unsupported), localStorage persistence, all leaf values non-empty strings
+- **LanguageSwitcher.test.tsx** (5 tests): Renders select element, option for each language, reflects current language, changes language on selection, option values match language codes
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)

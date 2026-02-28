@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
@@ -9,6 +10,7 @@ interface PuzzleImporterProps {
 }
 
 export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -69,7 +71,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
       <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">
-        Upload a crossword puzzle to get started
+        {t('importer.subtitle')}
       </p>
 
       <div
@@ -84,14 +86,14 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         }`}
       >
         {loading ? (
-          <p className="text-neutral-600">Parsing puzzle...</p>
+          <p className="text-neutral-600">{t('importer.parsing')}</p>
         ) : (
           <>
             <p className="text-lg font-medium text-neutral-700 mb-1">
-              Drop a puzzle file here
+              {t('importer.dropHere')}
             </p>
             <p className="text-sm text-neutral-400">
-              or click to browse (.puz, .ipuz, .jpz, .xd)
+              {t('importer.orBrowse')}
             </p>
           </>
         )}
@@ -105,29 +107,35 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
       </div>
 
       <p className="mt-6 text-sm text-neutral-400 max-w-md text-center">
-        <strong className="text-neutral-500">NYT subscriber?</strong>{" "}
-        Install the{" "}
-        <a
-          href="/install-bookmarklet"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 underline hover:text-blue-600"
-        >
-          NYT Bookmarklet
-        </a>{" "}
-        to import today's puzzle in one click.
+        <Trans
+          i18nKey="importer.nytHint"
+          components={{
+            strong: <strong className="text-neutral-500" />,
+            link: (
+              <a
+                href="/install-bookmarklet"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline hover:text-blue-600"
+              />
+            ),
+          }}
+        />
       </p>
       <p className="mt-3 text-sm text-neutral-400 max-w-md text-center">
-        Need a .puz file? Use the{" "}
-        <a
-          href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 underline hover:text-blue-600"
-        >
-          Crossword Scraper
-        </a>{" "}
-        Chrome extension to download puzzles from popular crossword sites.
+        <Trans
+          i18nKey="importer.scraperHint"
+          components={{
+            link: (
+              <a
+                href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline hover:text-blue-600"
+              />
+            ),
+          }}
+        />
       </p>
 
       {error && (

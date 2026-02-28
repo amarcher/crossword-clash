@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { PuzzleClue } from "../../types/puzzle";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
 
@@ -21,13 +22,14 @@ export function CluePanel({
   completedCluesByPlayer,
   playerColorMap,
 }: CluePanelProps) {
+  const { t } = useTranslation();
   const acrossClues = clues.filter((c) => c.direction === "across");
   const downClues = clues.filter((c) => c.direction === "down");
 
   return (
     <div className="flex flex-col md:flex-row gap-3 h-full">
       <ClueList
-        title="Across"
+        title={t('cluePanel.across')}
         clues={acrossClues}
         activeClue={activeClue}
         onClueClick={onClueClick}
@@ -36,7 +38,7 @@ export function CluePanel({
         playerColorMap={playerColorMap}
       />
       <ClueList
-        title="Down"
+        title={t('cluePanel.down')}
         clues={downClues}
         activeClue={activeClue}
         onClueClick={onClueClick}

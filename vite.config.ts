@@ -7,5 +7,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
     environment: "node",
+    setupFiles: ["./src/i18n/i18n.ts"],
   },
 });

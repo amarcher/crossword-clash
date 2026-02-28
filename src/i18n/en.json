@@ -1,0 +1,133 @@
+{
+  "title": {
+    "crossword": "Crossword",
+    "clash": "Clash"
+  },
+  "menu": {
+    "joinGame": "Join Game",
+    "hostAsPlayer": "Host Game as Player",
+    "hostAsTV": "Host Game as TV",
+    "playSolo": "Play Solo"
+  },
+  "hostName": {
+    "enterDisplayName": "Enter your display name",
+    "yourName": "Your name",
+    "choosePuzzle": "Choose Puzzle",
+    "back": "Back"
+  },
+  "importer": {
+    "subtitle": "Upload a crossword puzzle to get started",
+    "parsing": "Parsing puzzle...",
+    "dropHere": "Drop a puzzle file here",
+    "orBrowse": "or click to browse (.puz, .ipuz, .jpz, .xd)",
+    "nytHint": "<strong>NYT subscriber?</strong> Install the <link>NYT Bookmarklet</link> to import today's puzzle in one click.",
+    "scraperHint": "Need a .puz file? Use the <link>Crossword Scraper</link> Chrome extension to download puzzles from popular crossword sites."
+  },
+  "importing": {
+    "receiving": "Receiving puzzle...",
+    "failed": "Could not receive puzzle automatically.",
+    "pasteHint": "Click below to paste from clipboard.",
+    "pasteButton": "Paste from Clipboard",
+    "pasteError": "No valid puzzle data found in clipboard. Try clicking the bookmarklet again.",
+    "backToMenu": "Back to menu"
+  },
+  "puzzleReady": {
+    "by": "by {{author}}",
+    "dimensions": "{{width}}\u00d7{{height}} \u00b7 {{acrossCount}} across, {{downCount}} down",
+    "hostGame": "Host Game",
+    "connecting": "Connecting to server..."
+  },
+  "lobby": {
+    "shareInvite": "Share the code below to invite players",
+    "copied": "Copied!",
+    "clickToCopy": "Click to copy",
+    "scanToJoin": "Scan to join",
+    "players": "Players ({{count}})",
+    "host": "Host",
+    "waitingForPlayers": "Waiting for players...",
+    "startGame": "Start Game",
+    "closeRoom": "Close Room",
+    "waitingForHost": "Waiting for host to start the game...",
+    "waitingForPlayersTitle": "Waiting for Players"
+  },
+  "join": {
+    "subtitle": "Enter the 6-character game code",
+    "yourName": "Your Name",
+    "namePlaceholder": "Enter your name",
+    "gameCode": "Game Code",
+    "joinGame": "Join Game",
+    "joining": "Joining...",
+    "back": "Back",
+    "notFound": "Game not found or not joinable"
+  },
+  "playing": {
+    "by": "by {{author}}",
+    "room": "Room",
+    "close": "Close",
+    "closeRoom": "Close Room",
+    "leave": "Leave",
+    "leaveGame": "Leave Game",
+    "newPuzzle": "New Puzzle",
+    "loadDifferent": "Load Different Puzzle",
+    "closeRoomConfirm": "Close this room? All players will be disconnected.",
+    "reconnecting": "Reconnecting to game..."
+  },
+  "cluePanel": {
+    "across": "Across",
+    "down": "Down"
+  },
+  "clueBar": {
+    "previousClue": "Previous clue",
+    "nextClue": "Next clue",
+    "directionLabel": "Direction: {{direction}}, tap to toggle",
+    "tapToStart": "Tap a cell to start",
+    "directionAbbrevAcross": "A",
+    "directionAbbrevDown": "D",
+    "directionAcross": "Across",
+    "directionDown": "Down"
+  },
+  "scoreboard": {
+    "cells": "{{score}}/{{total}} cells",
+    "puzzleComplete": "Puzzle Complete!",
+    "wins": "{{name}} wins!",
+    "tie": "It's a tie!"
+  },
+  "completion": {
+    "puzzleComplete": "Puzzle Complete!",
+    "tie": "It's a tie!",
+    "wins": "{{name}} wins!",
+    "player": "Player",
+    "cells": "Cells",
+    "clues": "Clues",
+    "total": "Total",
+    "cellsFilled": "{{score}}/{{total}} cells filled",
+    "newPuzzle": "Choose a New Puzzle",
+    "backToMenu": "Back to Menu",
+    "ariaLabel": "Puzzle Complete"
+  },
+  "tts": {
+    "unmute": "Unmute",
+    "mute": "Mute",
+    "settingsAriaLabel": "Voice settings",
+    "settings": "Settings",
+    "voiceSettings": "Voice Settings",
+    "voice": "Voice",
+    "systemDefault": "System Default",
+    "rate": "Rate: {{value}}",
+    "pitch": "Pitch: {{value}}",
+    "testText": "Testing voice settings",
+    "testVoice": "Test Voice",
+    "done": "Done"
+  },
+  "hostView": {
+    "tvHostView": "TV / Host View",
+    "roomCode": "Room Code"
+  },
+  "grid": {
+    "crosswordInput": "Crossword input"
+  },
+  "timeout": {
+    "wrongAnswerPenalty": "Wrong Answer Penalty",
+    "off": "Off"
+  }
+}

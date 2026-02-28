@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { Title } from "../Title";
 import { TimeoutSelector } from "./TimeoutSelector";
@@ -15,6 +16,7 @@ interface GameLobbyProps {
 }
 
 export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, wrongAnswerTimeout, onWrongAnswerTimeoutChange }: GameLobbyProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -27,7 +29,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8 overflow-auto">
       <Title className="mb-2" />
-      <p className="text-neutral-500 mb-8">Share the code below to invite players</p>
+      <p className="text-neutral-500 mb-8">{t('lobby.shareInvite')}</p>
 
       {shareCode && (
         <>
@@ -39,7 +41,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               {shareCode}
             </span>
             <p className="text-xs text-neutral-400 mt-1">
-              {copied ? "Copied!" : "Click to copy"}
+              {copied ? t('lobby.copied') : t('lobby.clickToCopy')}
             </p>
           </button>
 
@@ -50,14 +52,14 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                 size={200}
               />
             </div>
-            <p className="text-xs text-neutral-400 mt-2">Scan to join</p>
+            <p className="text-xs text-neutral-400 mt-2">{t('lobby.scanToJoin')}</p>
           </div>
         </>
       )}
 
       <div className="w-full max-w-sm mb-8">
         <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-3">
-          Players ({players.length})
+          {t('lobby.players', { count: players.length })}
         </h2>
         <div className="space-y-2">
           {players.map((player, i) => (
@@ -73,7 +75,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                 {player.displayName}
               </span>
               {i === 0 && (
-                <span className="text-xs text-neutral-400 ml-auto">Host</span>
+                <span className="text-xs text-neutral-400 ml-auto">{t('lobby.host')}</span>
               )}
             </div>
           ))}
@@ -90,19 +92,19 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             disabled={players.length < 2}
             className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
           >
-            {players.length < 2 ? "Waiting for players..." : "Start Game"}
+            {players.length < 2 ? t('lobby.waitingForPlayers') : t('lobby.startGame')}
           </button>
           <button
             onClick={onCloseRoom}
             className="text-sm text-red-500 hover:text-red-700 transition-colors"
           >
-            Close Room
+            {t('lobby.closeRoom')}
           </button>
         </div>
       )}
 
       {!isHost && (
-        <p className="text-neutral-500 text-sm">Waiting for host to start the game...</p>
+        <p className="text-neutral-500 text-sm">{t('lobby.waitingForHost')}</p>
       )}
     </div>
   );
