@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Player } from "../../types/game";
 
 interface MultiplayerScoreboardProps {
@@ -11,6 +12,7 @@ export function MultiplayerScoreboard({
   totalCells,
   isComplete,
 }: MultiplayerScoreboardProps) {
+  const { t } = useTranslation();
   const totalScore = players.reduce((sum, p) => sum + p.score, 0);
   const totalPct = totalCells > 0 ? Math.round((totalScore / totalCells) * 100) : 0;
 
@@ -21,7 +23,7 @@ export function MultiplayerScoreboard({
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-sm">
           <span className="text-neutral-500">
-            {totalScore}/{totalCells} cells
+            {t('scoreboard.cells', { score: totalScore, total: totalCells })}
           </span>
           <span className="text-neutral-400">{totalPct}%</span>
         </div>
@@ -65,14 +67,14 @@ export function MultiplayerScoreboard({
 
       {isComplete && (
         <div className="text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
-          <p className="text-green-700 font-bold text-lg">Puzzle Complete!</p>
+          <p className="text-green-700 font-bold text-lg">{t('scoreboard.puzzleComplete')}</p>
           {ranked.length > 1 && ranked[0].score > ranked[1].score && (
             <p className="text-green-600 text-sm mt-1">
-              {ranked[0].displayName} wins!
+              {t('scoreboard.wins', { name: ranked[0].displayName })}
             </p>
           )}
           {ranked.length > 1 && ranked[0].score === ranked[1].score && (
-            <p className="text-green-600 text-sm mt-1">It&apos;s a tie!</p>
+            <p className="text-green-600 text-sm mt-1">{t('scoreboard.tie')}</p>
           )}
         </div>
       )}

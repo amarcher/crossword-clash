@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface ScoreboardProps {
   score: number;
   totalCells: number;
@@ -5,13 +7,14 @@ interface ScoreboardProps {
 }
 
 export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
+  const { t } = useTranslation();
   const pct = totalCells > 0 ? Math.round((score / totalCells) * 100) : 0;
 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
         <span className="text-neutral-500">
-          {score}/{totalCells} cells
+          {t('scoreboard.cells', { score, total: totalCells })}
         </span>
         <span className="text-neutral-400">{pct}%</span>
       </div>
@@ -23,7 +26,7 @@ export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
       </div>
       {isComplete && (
         <div className="text-center py-3 px-4 rounded-lg bg-green-50 border border-green-200">
-          <p className="text-green-700 font-bold text-lg">Puzzle Complete!</p>
+          <p className="text-green-700 font-bold text-lg">{t('scoreboard.puzzleComplete')}</p>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
 
 interface JoinGameProps {
@@ -10,6 +11,7 @@ interface JoinGameProps {
 }
 
 export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGameProps) {
+  const { t } = useTranslation();
   const [code, setCode] = useState(initialCode ?? "");
   const [displayName, setDisplayName] = useState("");
 
@@ -23,19 +25,19 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
       <Title className="mb-2" />
-      <p className="text-neutral-500 mb-8">Enter the 6-character game code</p>
+      <p className="text-neutral-500 mb-8">{t('join.subtitle')}</p>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4" autoComplete="off">
         <div>
           <label className="block text-sm font-medium text-neutral-600 mb-1">
-            Your Name
+            {t('join.yourName')}
           </label>
           <input
             type="text"
             name="xw-handle"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Enter your name"
+            placeholder={t('join.namePlaceholder')}
             maxLength={20}
             autoComplete="nofill"
             data-form-type="other"
@@ -47,7 +49,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
 
         <div>
           <label className="block text-sm font-medium text-neutral-600 mb-1">
-            Game Code
+            {t('join.gameCode')}
           </label>
           <input
             type="text"
@@ -76,7 +78,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
           disabled={code.length !== 6 || !displayName.trim() || loading}
           className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Joining..." : "Join Game"}
+          {loading ? t('join.joining') : t('join.joinGame')}
         </button>
 
         <button
@@ -84,7 +86,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
           onClick={onBack}
           className="w-full px-6 py-2 rounded-lg text-neutral-500 hover:text-neutral-700 transition-colors text-sm"
         >
-          Back
+          {t('join.back')}
         </button>
       </form>
     </div>

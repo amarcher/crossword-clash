@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
@@ -14,6 +15,8 @@ import { GameLobby, JoinGame } from "./components/GameLobby";
 import { LockoutOverlay } from "./components/LockoutOverlay";
 import { Title } from "./components/Title";
 import { PuzzleReady } from "./components/PuzzleReady";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { tStatic } from "./i18n/i18n";
 import {
   uploadPuzzle,
   createGame,
@@ -44,6 +47,7 @@ function loadSavedSession(): { puzzle: Puzzle; playerCells: Record<string, impor
 }
 
 function App() {
+  const { t } = useTranslation();
   const { user } = useSupabase();
   const {
     puzzle,
@@ -118,7 +122,7 @@ function App() {
     }
     return null;
   });
-  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? "Player");
+  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? tStatic('common.defaultPlayerName'));
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
@@ -366,7 +370,7 @@ function App() {
       // If we have an existing share code, reuse it for the next game
       if (multiplayer.shareCode) {
         const result = await createNextGame(puzzleId, user.id, multiplayer.shareCode, {
-          displayName: displayName.trim() || "Player",
+          displayName: displayName.trim() || tStatic('common.defaultPlayerName'),
         });
         if (result) {
           multiplayer.broadcastNewGame(result.gameId);
@@ -379,7 +383,7 @@ function App() {
 
       const result = await createGame(puzzleId, user.id, {
         multiplayer: true,
-        displayName: displayName.trim() || "Player",
+        displayName: displayName.trim() || tStatic('common.defaultPlayerName'),
       });
       if (result) {
         setGameId(result.gameId);
@@ -399,7 +403,7 @@ function App() {
 
       const result = await joinGame(code, user.id, displayName);
       if (!result) {
-        setJoinError("Game not found or not joinable");
+        setJoinError(tStatic('join.notFound'));
         setJoinLoading(false);
         return;
       }
@@ -426,7 +430,7 @@ function App() {
 
   // Close room (host only) — broadcasts room_closed then resets
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm("Close this room? All players will be disconnected.")) return;
+    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
     await multiplayer.closeRoom();
     reset();
     setGameId(null);
@@ -538,7 +542,7 @@ function App() {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
         <Title className="mb-4" />
-        <p className="text-neutral-500">Reconnecting to game...</p>
+        <p className="text-neutral-500">{t('playing.reconnecting')}</p>
       </div>
     );
   }
@@ -551,9 +555,9 @@ function App() {
         {importFailed ? (
           <div className="flex flex-col items-center gap-4">
             <p className="text-neutral-600 text-center">
-              Could not receive puzzle automatically.
+              {t('importing.failed')}
               <br />
-              Click below to paste from clipboard.
+              {t('importing.pasteHint')}
             </p>
             <button
               onClick={async () => {
@@ -562,22 +566,22 @@ function App() {
                   setUrlPuzzle(puzzle);
                   setGameMode("puzzle-ready");
                 } else {
-                  alert("No valid puzzle data found in clipboard. Try clicking the bookmarklet again.");
+                  alert(tStatic('importing.pasteError'));
                 }
               }}
               className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              Paste from Clipboard
+              {t('importing.pasteButton')}
             </button>
             <button
               onClick={() => setGameMode("menu")}
               className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
             >
-              Back to menu
+              {t('importing.backToMenu')}
             </button>
           </div>
         ) : (
-          <p className="text-neutral-500">Receiving puzzle...</p>
+          <p className="text-neutral-500">{t('importing.receiving')}</p>
         )}
       </div>
     );
@@ -614,19 +618,19 @@ function App() {
                 onClick={() => setGameMode("join")}
                 className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
-                Join Game
+                {t('menu.joinGame')}
               </button>
               <button
                 onClick={() => setGameMode("host-name")}
                 className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
               >
-                Host Game as Player
+                {t('menu.hostAsPlayer')}
               </button>
               <a
                 href="/host"
                 className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
               >
-                Host Game as TV
+                {t('menu.hostAsTV')}
               </a>
             </>
           )}
@@ -634,8 +638,11 @@ function App() {
             onClick={() => setGameMode("solo")}
             className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors"
           >
-            Play Solo
+            {t('menu.playSolo')}
           </button>
+        </div>
+        <div className="mt-6">
+          <LanguageSwitcher />
         </div>
       </div>
     );
@@ -651,7 +658,7 @@ function App() {
     return (
       <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
         <Title className="mb-2" />
-        <p className="text-neutral-500 mb-6">Enter your display name</p>
+        <p className="text-neutral-500 mb-6">{t('hostName.enterDisplayName')}</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -670,7 +677,7 @@ function App() {
             name="xw-handle"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t('hostName.yourName')}
             maxLength={20}
             className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             autoComplete="nofill"
@@ -684,14 +691,14 @@ function App() {
             disabled={!displayName.trim()}
             className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
           >
-            Choose Puzzle
+            {t('hostName.choosePuzzle')}
           </button>
           <button
             type="button"
             onClick={handleReset}
             className="text-sm text-neutral-500 hover:text-neutral-700"
           >
-            Back
+            {t('hostName.back')}
           </button>
         </form>
       </div>
@@ -772,14 +779,14 @@ function App() {
             <div className="min-w-0">
               <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
               {puzzle.author && (
-                <p className="hidden md:block text-sm text-neutral-500">by {puzzle.author}</p>
+                <p className="hidden md:block text-sm text-neutral-500">{t('playing.by', { author: puzzle.author })}</p>
               )}
             </div>
             <div className="flex items-center gap-2 md:gap-4 shrink-0">
               {multiplayerActive && multiplayer.shareCode && (
                 <div className="flex items-center gap-2 md:gap-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-neutral-400 hidden sm:inline">Room</span>
+                    <span className="text-xs text-neutral-400 hidden sm:inline">{t('playing.room')}</span>
                     <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
                       {multiplayer.shareCode}
                     </span>
@@ -797,23 +804,23 @@ function App() {
                   onClick={handleCloseRoom}
                   className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
                 >
-                  <span className="md:hidden">Close</span>
-                  <span className="hidden md:inline">Close Room</span>
+                  <span className="md:hidden">{t('playing.close')}</span>
+                  <span className="hidden md:inline">{t('playing.closeRoom')}</span>
                 </button>
               ) : (
                 <button
                   onClick={handleReset}
                   className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
                 >
-                  <span className="md:hidden">{multiplayerActive ? "Leave" : "New Puzzle"}</span>
-                  <span className="hidden md:inline">{multiplayerActive ? "Leave Game" : "Load Different Puzzle"}</span>
+                  <span className="md:hidden">{multiplayerActive ? t('playing.leave') : t('playing.newPuzzle')}</span>
+                  <span className="hidden md:inline">{multiplayerActive ? t('playing.leaveGame') : t('playing.loadDifferent')}</span>
                 </button>
               )}
             </div>
           </div>
           {activeClue && (
             <div className="hidden sm:block text-sm font-medium text-blue-700 mt-1 truncate">
-              {activeClue.number}-{direction === "across" ? "A" : "D"}: {activeClue.text}
+              {activeClue.number}-{direction === "across" ? t('clueBar.directionAbbrevAcross') : t('clueBar.directionAbbrevDown')}: {activeClue.text}
             </div>
           )}
         </>

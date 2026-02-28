@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
 import { getWordCells, getCompletedClues } from "../../lib/gridUtils";
 import { Cell } from "./Cell";
@@ -47,6 +48,7 @@ export function CrosswordGrid({
   rejectedCell,
   inputRef: externalInputRef,
 }: CrosswordGridProps) {
+  const { t } = useTranslation();
   const internalInputRef = useRef<HTMLInputElement>(null);
   const inputRef = externalInputRef ?? internalInputRef;
 
@@ -282,7 +284,7 @@ export function CrosswordGrid({
           spellCheck={false}
           enterKeyHint="next"
           inputMode="text"
-          aria-label="Crossword input"
+          aria-label={t('grid.crosswordInput')}
           data-form-type="other"
           data-lpignore="true"
           data-1p-ignore
