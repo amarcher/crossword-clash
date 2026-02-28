@@ -38,13 +38,18 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 
 ```
 Keypress → useGridNavigation → wrappedInputLetter
+  0. Lockout check: Date.now() < lockedUntil? → skip (letter input only; navigation still works)
   1. Local check: cell already filled? → skip
-  2. Correct letter? → no: silent reject
+  2. Correct letter? → no: visual reject + apply lockout timeout (if configured)
   3. Optimistic: dispatch INPUT_LETTER with playerId
   4. Server: claimCellOnServer()
      → success: broadcast cell_claimed to others
      → fail: dispatch ROLLBACK_CELL
 ```
+
+## Wrong Answer Timeout
+
+Host configures a lockout penalty in the lobby before starting (Off, 1s, 2s, 3s, or 5s). Setting is broadcast to all players via `game_started` event payload. When a player enters a wrong letter, all letter input is blocked for the configured duration. A countdown overlay appears on the grid during lockout. Navigation (arrows, tab) still works. Solo mode is unaffected. Settings are defined in `src/lib/gameSettings.ts`, UI in `src/components/GameLobby/TimeoutSelector.tsx`, overlay in `src/components/LockoutOverlay.tsx`.
 
 ## Project Structure
 
@@ -54,16 +59,18 @@ src/
     CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav + hidden mobile input
     ClueBar/        # MobileClueBar (prev/next word, direction toggle, active clue display)
     CluePanel/      # Clue list with active highlighting + strikethrough for completed words
-    GameLobby/      # GameLobby (share code, QR code, player list, close room) + JoinGame (code input)
+    GameLobby/      # GameLobby (share code, QR code, player list, timeout selector, close room) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
     Layout/         # GameLayout (responsive, mobile clue list flex-shrinks behind keyboard) + TVLayout (spectator with clue panel)
     PuzzleImporter/ # File upload/drag-and-drop
+    LockoutOverlay.tsx # Countdown overlay during wrong answer lockout
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
     usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement
     useClueAnnouncer.ts # Web Speech API announcements for completed clues (TV mode only)
-    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure
+    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure, game settings
     useSupabase.ts  # Anonymous auth + client
   lib/
+    gameSettings.ts # Wrong answer timeout presets + DEFAULT_GAME_SETTINGS
     gridUtils.ts    # Pure navigation/word boundary functions + getCompletedClues
     playerColors.ts # 8-color pool for player assignment
     puzzleNormalizer.ts # Parser output → Puzzle type
@@ -72,7 +79,7 @@ src/
     supabaseClient.ts   # Nullable Supabase client singleton
   types/
     puzzle.ts       # Puzzle, CellState, CellCoord types
-    game.ts         # Game, Player, GameStatus types
+    game.ts         # Game, Player, GameStatus, GameSettings types
     supabase.ts     # Database types + claim_cell function
 supabase/
   migrations/
@@ -103,16 +110,19 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 151 tests across 9 files
-- **gridUtils.test.ts** (37 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
+- `pnpm test` — 453 tests across 28 files
+- **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
-- **puzzleNormalizer.test.ts** (14 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
+- **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
 - **sessionPersistence.test.ts** (14 tests): MP + host session round-trip, null/missing key, corrupted JSON, missing gameId, clear safety, independence between MP and host sessions
-- **CluePanel.test.tsx** (12 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
-- **Cell.test.tsx** (15 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
+- **CluePanel.test.tsx** (17 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
+- **Cell.test.tsx** (17 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
 - **useClueAnnouncer.test.ts** (8 tests): Initial mount skips announcements, new clue triggers speech, correct completing player attribution (not last positional cell), multiple clues announced at once, no re-announcement of previous clues, unknown player fallback, answer lowercased for TTS, empty players list
-- **GameLobby.test.tsx** (17 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display. Uses `@testing-library/react` with per-file `jsdom` environment.
+- **GameLobby.test.tsx** (21 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display, timeout selector visibility/callback. Uses `@testing-library/react` with per-file `jsdom` environment.
+- **TimeoutSelector.test.tsx** (9 tests): All presets rendered, heading, selected option highlighting, unselected styles, onChange callback, dark/light variant styles
+- **LockoutOverlay.test.tsx** (7 tests): Renders nothing when 0 or past, shows countdown, ticks down over time, disappears on expiry, lockout-pulse class, pointer-events-none
+- **gameSettings.test.ts** (6 tests): Option count, Off default, increasing values, non-negative integers, non-empty labels, default settings
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)

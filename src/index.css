@@ -122,10 +122,27 @@
   animation: trophy-pulse 1.5s ease-in-out infinite;
 }
 
+/* Lockout countdown pulse */
+@keyframes lockout-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.lockout-pulse {
+  animation: lockout-pulse 600ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-enter,
   .confetti-particle,
-  .trophy-pulse {
+  .trophy-pulse,
+  .lockout-pulse {
     animation: none;
   }
 }

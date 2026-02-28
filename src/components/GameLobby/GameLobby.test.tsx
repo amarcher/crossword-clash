@@ -233,6 +233,68 @@ describe("GameLobby", () => {
     });
   });
 
+  describe("timeout selector", () => {
+    it("shows timeout selector for host when props provided", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={true}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+          wrongAnswerTimeout={0}
+          onWrongAnswerTimeoutChange={() => {}}
+        />,
+      );
+      expect(screen.getByText("Wrong Answer Penalty")).toBeDefined();
+    });
+
+    it("does not show timeout selector when props are omitted", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={true}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+        />,
+      );
+      expect(screen.queryByText("Wrong Answer Penalty")).toBeNull();
+    });
+
+    it("does not show timeout selector for non-host", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={false}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+          wrongAnswerTimeout={0}
+          onWrongAnswerTimeoutChange={() => {}}
+        />,
+      );
+      expect(screen.queryByText("Wrong Answer Penalty")).toBeNull();
+    });
+
+    it("calls onWrongAnswerTimeoutChange when option clicked", () => {
+      const onChange = vi.fn();
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={true}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+          wrongAnswerTimeout={0}
+          onWrongAnswerTimeoutChange={onChange}
+        />,
+      );
+      fireEvent.click(screen.getByText("3s"));
+      expect(onChange).toHaveBeenCalledWith(3);
+    });
+  });
+
   describe("share code", () => {
     it("displays the share code", () => {
       render(

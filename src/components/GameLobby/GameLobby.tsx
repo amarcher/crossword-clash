@@ -1,6 +1,7 @@
 import { useState } from "react";
 import QRCode from "react-qr-code";
 import { Title } from "../Title";
+import { TimeoutSelector } from "./TimeoutSelector";
 import type { Player } from "../../types/game";
 
 interface GameLobbyProps {
@@ -9,9 +10,11 @@ interface GameLobbyProps {
   isHost: boolean;
   onStartGame: () => void;
   onCloseRoom: () => void;
+  wrongAnswerTimeout?: number;
+  onWrongAnswerTimeoutChange?: (value: number) => void;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, wrongAnswerTimeout, onWrongAnswerTimeoutChange }: GameLobbyProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -78,7 +81,10 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
       </div>
 
       {isHost && (
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-4">
+          {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
+            <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
+          )}
           <button
             onClick={onStartGame}
             disabled={players.length < 2}
