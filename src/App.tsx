@@ -802,6 +802,7 @@ function App() {
                     <QRCode
                       value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
                       size={48}
+                      title={t('lobby.qrCodeLabel')}
                     />
                   </div>
                 </div>

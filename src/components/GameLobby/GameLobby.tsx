@@ -50,6 +50,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               <QRCode
                 value={`${window.location.origin}${window.location.pathname}?join=${shareCode}`}
                 size={200}
+                title={t('lobby.qrCodeLabel')}
               />
             </div>
             <p className="text-xs text-neutral-400 mt-2">{t('lobby.scanToJoin')}</p>

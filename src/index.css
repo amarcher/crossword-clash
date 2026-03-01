@@ -38,7 +38,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cell-fill,
-  .cell-word-complete {
+  .cell-word-complete,
+  .cell-reject {
     animation: none;
   }
 }

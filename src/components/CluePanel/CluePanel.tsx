@@ -78,10 +78,13 @@ const ClueList = memo(function ClueList({
     // scroll the entire page on mobile, hiding the grid.
     const elTop = el.offsetTop - container.offsetTop;
     const elBottom = elTop + el.offsetHeight;
+    const prefersReducedMotion = typeof window.matchMedia === "function"
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollBehavior: ScrollBehavior = prefersReducedMotion ? "instant" : "smooth";
     if (elTop < container.scrollTop) {
-      container.scrollTo({ top: elTop, behavior: "smooth" });
+      container.scrollTo({ top: elTop, behavior: scrollBehavior });
     } else if (elBottom > container.scrollTop + container.clientHeight) {
-      container.scrollTo({ top: elBottom - container.clientHeight, behavior: "smooth" });
+      container.scrollTo({ top: elBottom - container.clientHeight, behavior: scrollBehavior });
     }
   }, [activeClue]);
 

@@ -47,7 +47,8 @@
     "startGame": "Start Game",
     "closeRoom": "Close Room",
     "waitingForHost": "Waiting for host to start the game...",
-    "waitingForPlayersTitle": "Waiting for Players"
+    "waitingForPlayersTitle": "Waiting for Players",
+    "qrCodeLabel": "QR code to join game"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",

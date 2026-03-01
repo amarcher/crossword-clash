@@ -47,7 +47,8 @@
     "startGame": "Iniciar partida",
     "closeRoom": "Cerrar sala",
     "waitingForHost": "Esperando a que el anfitri\u00f3n inicie la partida...",
-    "waitingForPlayersTitle": "Esperando jugadores"
+    "waitingForPlayersTitle": "Esperando jugadores",
+    "qrCodeLabel": "Código QR para unirse a la partida"
   },
   "join": {
     "subtitle": "Ingresa el c\u00f3digo de 6 caracteres",

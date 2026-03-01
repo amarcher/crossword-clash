@@ -443,7 +443,7 @@ function HostApp() {
         {joinUrl && (
           <div className="flex flex-col items-center gap-4">
             <div className="bg-white p-4 rounded-xl">
-              <QRCode value={joinUrl} size={200} />
+              <QRCode value={joinUrl} size={200} title={t('lobby.qrCodeLabel')} />
             </div>
             <div className="text-center">
               <p className="text-neutral-400 text-sm mb-1">{t('hostView.roomCode')}</p>
@@ -524,7 +524,7 @@ function HostApp() {
           {joinUrl && (
             <div className="flex justify-center">
               <div className="bg-white p-2 rounded-lg">
-                <QRCode value={joinUrl} size={100} />
+                <QRCode value={joinUrl} size={100} title={t('lobby.qrCodeLabel')} />
               </div>
             </div>
           )}
