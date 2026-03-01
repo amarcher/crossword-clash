@@ -124,20 +124,21 @@ export async function updateGame(
 ): Promise<void> {
   if (!supabase) return;
 
-  await supabase
-    .from("games")
-    .update({
-      cells,
-      status,
-      completed_at: status === "completed" ? new Date().toISOString() : null,
-    })
-    .eq("id", gameId);
-
-  await supabase
-    .from("players")
-    .update({ score })
-    .eq("game_id", gameId)
-    .eq("user_id", userId);
+  await Promise.all([
+    supabase
+      .from("games")
+      .update({
+        cells,
+        status,
+        completed_at: status === "completed" ? new Date().toISOString() : null,
+      })
+      .eq("id", gameId),
+    supabase
+      .from("players")
+      .update({ score })
+      .eq("game_id", gameId)
+      .eq("user_id", userId),
+  ]);
 }
 
 /**
@@ -290,19 +291,23 @@ export async function fetchGameState(gameId: string): Promise<{
 } | null> {
   if (!supabase) return null;
 
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .select("cells, status")
-    .eq("id", gameId)
-    .single();
+  const [gameResult, playersResult] = await Promise.all([
+    supabase
+      .from("games")
+      .select("cells, status")
+      .eq("id", gameId)
+      .single(),
+    supabase
+      .from("players")
+      .select("*")
+      .eq("game_id", gameId)
+      .order("created_at"),
+  ]);
 
+  const { data: game, error: gameError } = gameResult;
   if (gameError || !game) return null;
 
-  const { data: playerRows } = await supabase
-    .from("players")
-    .select("*")
-    .eq("game_id", gameId)
-    .order("created_at");
+  const { data: playerRows } = playersResult;
 
   const players: Player[] = (playerRows ?? []).map((p) => ({
     id: p.id,
@@ -350,14 +355,22 @@ export async function rejoinGame(
   // Only rejoin waiting or active games
   if (game.status !== "waiting" && game.status !== "active") return null;
 
-  // Fetch puzzle
-  const { data: puzzleRow, error: puzzleError } = await supabase
-    .from("puzzles")
-    .select("*")
-    .eq("id", game.puzzle_id)
-    .single();
+  // Fetch puzzle and players in parallel
+  const [puzzleResult, playersResult] = await Promise.all([
+    supabase
+      .from("puzzles")
+      .select("*")
+      .eq("id", game.puzzle_id)
+      .single(),
+    supabase
+      .from("players")
+      .select("*")
+      .eq("game_id", game.id)
+      .order("created_at"),
+  ]);
 
-  if (puzzleError || !puzzleRow) return null;
+  if (puzzleResult.error || !puzzleResult.data) return null;
+  const puzzleRow = puzzleResult.data;
 
   const puzzle: Puzzle = {
     title: puzzleRow.title,
@@ -368,14 +381,7 @@ export async function rejoinGame(
     clues: puzzleRow.clues as Puzzle["clues"],
   };
 
-  // Get current players
-  const { data: existingPlayers } = await supabase
-    .from("players")
-    .select("*")
-    .eq("game_id", game.id)
-    .order("created_at");
-
-  const players = existingPlayers ?? [];
+  const players = playersResult.data ?? [];
 
   // Ensure player row exists (handles rare session-loss case where
   // anonymous auth gave a new user_id). Spectators skip this.

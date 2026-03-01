@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
+
+const NOOP = () => {};
 import { useMultiplayer } from "./hooks/useMultiplayer";
 import { CrosswordGrid } from "./components/CrosswordGrid";
 import { CluePanel } from "./components/CluePanel";
@@ -11,7 +13,7 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
-import { getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
+import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
 import { Title } from "./components/Title";
 import { CompletionModal } from "./components/CompletionModal";
 import { useSpeechSettings } from "./hooks/useSpeechSettings";
@@ -251,15 +253,23 @@ function HostApp() {
     }
   }, [mode, multiplayer.gameStatus]);
 
+  const scoreByPlayer = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of Object.values(playerCells)) {
+      if (c.correct && c.playerId) {
+        counts.set(c.playerId, (counts.get(c.playerId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [playerCells]);
+
   const multiplayerPlayers = useMemo(
     () =>
       multiplayer.players.map((p) => ({
         ...p,
-        score: Object.values(playerCells).filter(
-          (c) => c.correct && c.playerId === p.userId,
-        ).length,
+        score: scoreByPlayer.get(p.userId) ?? 0,
       })),
-    [multiplayer.players, playerCells],
+    [multiplayer.players, scoreByPlayer],
   );
 
   const playerColorMap = useMemo(() => {
@@ -269,6 +279,11 @@ function HostApp() {
     }
     return map;
   }, [multiplayer.players]);
+
+  const completedClues = useMemo(
+    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+    [puzzle, playerCells],
+  );
 
   const completedCluesByPlayer = useMemo(
     () => (puzzle ? getCompletedCluesByPlayer(puzzle, playerCells) : new Map<string, { playerId: string }>()),
@@ -428,7 +443,7 @@ function HostApp() {
         {joinUrl && (
           <div className="flex flex-col items-center gap-4">
             <div className="bg-white p-4 rounded-xl">
-              <QRCode value={joinUrl} size={200} />
+              <QRCode value={joinUrl} size={200} title={t('lobby.qrCodeLabel')} />
             </div>
             <div className="text-center">
               <p className="text-neutral-400 text-sm mb-1">{t('hostView.roomCode')}</p>
@@ -494,6 +509,7 @@ function HostApp() {
           highlightedCells={highlightedCells}
           onCellClick={selectCell}
           playerColorMap={playerColorMap}
+          completedClues={completedClues}
           interactive={false}
         />
       }
@@ -508,7 +524,7 @@ function HostApp() {
           {joinUrl && (
             <div className="flex justify-center">
               <div className="bg-white p-2 rounded-lg">
-                <QRCode value={joinUrl} size={100} />
+                <QRCode value={joinUrl} size={100} title={t('lobby.qrCodeLabel')} />
               </div>
             </div>
           )}
@@ -553,7 +569,7 @@ function HostApp() {
           <CluePanel
             clues={puzzle.clues}
             activeClue={null}
-            onClueClick={() => {}}
+            onClueClick={NOOP}
             completedCluesByPlayer={completedCluesByPlayer}
             playerColorMap={playerColorMap}
           />

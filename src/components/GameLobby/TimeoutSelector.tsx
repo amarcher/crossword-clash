@@ -16,15 +16,19 @@ export function TimeoutSelector({ value, onChange, variant = "light" }: TimeoutS
       <p className={`text-sm font-semibold uppercase tracking-wide mb-2 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
         {t('timeout.wrongAnswerPenalty')}
       </p>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5" role="radiogroup" aria-label={t('timeout.wrongAnswerPenalty')}>
         {WRONG_ANSWER_TIMEOUT_OPTIONS.map((option) => {
           const selected = value === option.value;
           const label = option.value === 0 ? t('timeout.off') : option.label;
           return (
             <button
               key={option.value}
+              role="radio"
+              aria-checked={selected}
               onClick={() => onChange(option.value)}
-              className={`flex-1 px-2 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`flex-1 px-2 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                isDark ? "focus-visible:ring-offset-neutral-900" : ""
+              } ${
                 selected
                   ? isDark
                     ? "bg-blue-600 text-white"

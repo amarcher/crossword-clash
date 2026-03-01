@@ -110,13 +110,14 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         <Trans
           i18nKey="importer.nytHint"
           components={{
-            strong: <strong className="text-neutral-500" />,
-            link: (
+            strong: <strong className="!text-neutral-500" />,
+            anchor: (
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
               <a
                 href="/install-bookmarklet"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline hover:text-blue-600"
+                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               />
             ),
           }}
@@ -126,12 +127,13 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         <Trans
           i18nKey="importer.scraperHint"
           components={{
-            link: (
+            anchor: (
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
               <a
                 href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline hover:text-blue-600"
+                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               />
             ),
           }}

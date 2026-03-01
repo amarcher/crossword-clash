@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
-import { getWordCells, getCompletedClues } from "../../lib/gridUtils";
+import { getWordCells } from "../../lib/gridUtils";
 import { Cell } from "./Cell";
 
 export interface NavigationActions {
@@ -30,6 +30,7 @@ interface CrosswordGridProps {
   highlightedCells: Set<string>;
   onCellClick: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
+  completedClues?: Set<string>;
   interactive?: boolean;
   navigationActions?: NavigationActions;
   rejectedCell?: string | null;
@@ -43,6 +44,7 @@ export function CrosswordGrid({
   highlightedCells,
   onCellClick,
   playerColorMap,
+  completedClues,
   interactive = true,
   navigationActions,
   rejectedCell,
@@ -99,7 +101,7 @@ export function CrosswordGrid({
   const [wordCompletions, setWordCompletions] = useState<WordCompletion[]>([]);
 
   useEffect(() => {
-    const current = getCompletedClues(puzzle, playerCells);
+    const current = completedClues ?? new Set<string>();
     const previous = prevCompletedRef.current;
 
     const newCompletions: WordCompletion[] = [];
@@ -150,15 +152,18 @@ export function CrosswordGrid({
     }, maxDuration + 50);
 
     return () => clearTimeout(timer);
-  }, [puzzle, playerCells, playerColorMap]);
+  }, [completedClues, puzzle, playerCells, playerColorMap]);
 
   // Build a lookup: cellKey → { color, delay } for word completion animations
-  const wordCompleteMap = new Map<string, { color: string; delay: number }>();
-  for (const wc of wordCompletions) {
-    for (let i = 0; i < wc.cellKeys.length; i++) {
-      wordCompleteMap.set(wc.cellKeys[i], { color: wc.color, delay: i * 60 });
+  const wordCompleteMap = useMemo(() => {
+    const map = new Map<string, { color: string; delay: number }>();
+    for (const wc of wordCompletions) {
+      for (let i = 0; i < wc.cellKeys.length; i++) {
+        map.set(wc.cellKeys[i], { color: wc.color, delay: i * 60 });
+      }
     }
-  }
+    return map;
+  }, [wordCompletions]);
 
   // Auto-focus on desktop so keystrokes are captured immediately.
   // Skip on touch devices — iOS ignores non-gesture focus anyway, and
@@ -299,6 +304,8 @@ export function CrosswordGrid({
         />
       )}
       <div
+        role="grid"
+        aria-label={t('grid.crosswordInput')}
         className="grid border-2 border-black bg-black"
         style={{
           width: gridWidth,

@@ -59,7 +59,7 @@ export function MobileClueBar({
     >
       <button
         onClick={() => { onPrevWord(); inputRef?.current?.focus(); }}
-        className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0"
+        className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
         aria-label={t('clueBar.previousClue')}
       >
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
@@ -69,7 +69,7 @@ export function MobileClueBar({
 
       <button
         onClick={() => { onToggleDirection(); inputRef?.current?.focus(); }}
-        className="shrink-0 flex items-center justify-center px-1.5 active:bg-neutral-100"
+        className="shrink-0 flex items-center justify-center px-1.5 active:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
         aria-label={t('clueBar.directionLabel', { direction: direction === "across" ? t('clueBar.directionAcross') : t('clueBar.directionDown') })}
       >
         <span
@@ -85,7 +85,7 @@ export function MobileClueBar({
 
       <button
         onClick={onOpenSheet}
-        className="flex-1 min-w-0 flex items-center text-left px-2 active:bg-blue-50"
+        className="flex-1 min-w-0 flex items-center text-left px-2 active:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
       >
         {activeClue ? (
           <span className="text-sm font-medium text-neutral-800 line-clamp-2 leading-tight">
@@ -98,7 +98,7 @@ export function MobileClueBar({
 
       <button
         onClick={() => { onNextWord(); inputRef?.current?.focus(); }}
-        className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0"
+        className="w-11 flex items-center justify-center text-neutral-500 active:bg-neutral-100 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
         aria-label={t('clueBar.nextClue')}
       >
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">

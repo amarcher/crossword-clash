@@ -26,7 +26,7 @@ export function LockoutOverlay({ lockedUntil }: LockoutOverlayProps) {
   if (remaining <= 0) return null;
 
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none" role="status" aria-live="assertive">
       <div className="bg-red-500/90 text-white font-bold text-lg px-5 py-2 rounded-full lockout-pulse">
         {(remaining / 1000).toFixed(1)}s
       </div>

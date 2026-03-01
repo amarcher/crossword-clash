@@ -519,21 +519,37 @@ function App() {
     [completedCluesByPlayer],
   );
 
+  const scoreByPlayer = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of Object.values(playerCells)) {
+      if (c.correct && c.playerId) {
+        counts.set(c.playerId, (counts.get(c.playerId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [playerCells]);
+
+  const multiplayerPlayers = useMemo(
+    () =>
+      multiplayerActive
+        ? multiplayer.players.map((p) => ({
+            ...p,
+            score: scoreByPlayer.get(p.userId) ?? 0,
+          }))
+        : [],
+    [multiplayerActive, multiplayer.players, scoreByPlayer],
+  );
+
   const playerResults: PlayerResult[] | undefined = useMemo(() => {
     if (!multiplayerActive) return undefined;
-    return multiplayer.players.map((p) => {
-      const cellsClaimed = Object.values(playerCells).filter(
-        (c) => c.correct && c.playerId === p.userId,
-      ).length;
-      return {
-        userId: p.userId,
-        displayName: p.displayName,
-        color: p.color,
-        cellsClaimed,
-        cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
-      };
-    });
-  }, [multiplayerActive, multiplayer.players, playerCells, clueCountsByPlayer]);
+    return multiplayer.players.map((p) => ({
+      userId: p.userId,
+      displayName: p.displayName,
+      color: p.color,
+      cellsClaimed: scoreByPlayer.get(p.userId) ?? 0,
+      cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
+    }));
+  }, [multiplayerActive, multiplayer.players, scoreByPlayer, clueCountsByPlayer]);
 
   // --- Render based on gameMode ---
 
@@ -678,8 +694,9 @@ function App() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={t('hostName.yourName')}
+            aria-label={t('hostName.yourName')}
             maxLength={20}
-            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             autoComplete="nofill"
             data-form-type="other"
             data-lpignore="true"
@@ -760,16 +777,6 @@ function App() {
   // Only host or solo players get the "new puzzle" button
   const canChooseNewPuzzle = !multiplayerActive || multiplayer.isHost;
 
-  // Get current player's score from multiplayer players list
-  const multiplayerPlayers = multiplayerActive
-    ? multiplayer.players.map((p) => ({
-        ...p,
-        score: Object.values(playerCells).filter(
-          (c) => c.correct && c.playerId === p.userId,
-        ).length,
-      }))
-    : [];
-
   return (
     <>
     <GameLayout
@@ -795,6 +802,7 @@ function App() {
                     <QRCode
                       value={`${window.location.origin}${window.location.pathname}?join=${multiplayer.shareCode}`}
                       size={48}
+                      title={t('lobby.qrCodeLabel')}
                     />
                   </div>
                 </div>
@@ -834,6 +842,7 @@ function App() {
             highlightedCells={highlightedCells}
             onCellClick={selectCell}
             playerColorMap={playerColorMap}
+            completedClues={completedClues}
             navigationActions={navActions}
             rejectedCell={rejectedCell}
             inputRef={gridInputRef}

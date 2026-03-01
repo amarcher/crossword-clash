@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PuzzleClue } from "../../types/puzzle";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
@@ -14,7 +14,7 @@ interface CluePanelProps {
   playerColorMap?: Record<string, string>;
 }
 
-export function CluePanel({
+export const CluePanel = memo(function CluePanel({
   clues,
   activeClue,
   onClueClick,
@@ -48,9 +48,9 @@ export function CluePanel({
       />
     </div>
   );
-}
+});
 
-function ClueList({
+const ClueList = memo(function ClueList({
   title,
   clues,
   activeClue,
@@ -78,10 +78,13 @@ function ClueList({
     // scroll the entire page on mobile, hiding the grid.
     const elTop = el.offsetTop - container.offsetTop;
     const elBottom = elTop + el.offsetHeight;
+    const prefersReducedMotion = typeof window.matchMedia === "function"
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollBehavior: ScrollBehavior = prefersReducedMotion ? "instant" : "smooth";
     if (elTop < container.scrollTop) {
-      container.scrollTo({ top: elTop, behavior: "smooth" });
+      container.scrollTo({ top: elTop, behavior: scrollBehavior });
     } else if (elBottom > container.scrollTop + container.clientHeight) {
-      container.scrollTo({ top: elBottom - container.clientHeight, behavior: "smooth" });
+      container.scrollTo({ top: elBottom - container.clientHeight, behavior: scrollBehavior });
     }
   }, [activeClue]);
 
@@ -111,7 +114,10 @@ function ClueList({
             <li
               key={clueKey}
               ref={isActive ? activeRef : undefined}
-              className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors ${
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClueClick(clue); } }}
+              className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 isActive
                   ? "bg-blue-100 text-blue-900 font-medium"
                   : isCompleted && !completedBg
@@ -135,4 +141,4 @@ function ClueList({
       </ul>
     </div>
   );
-}
+});

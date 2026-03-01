@@ -19,8 +19,8 @@
     "parsing": "Parsing puzzle...",
     "dropHere": "Drop a puzzle file here",
     "orBrowse": "or click to browse (.puz, .ipuz, .jpz, .xd)",
-    "nytHint": "<strong>NYT subscriber?</strong> Install the <link>NYT Bookmarklet</link> to import today's puzzle in one click.",
-    "scraperHint": "Need a .puz file? Use the <link>Crossword Scraper</link> Chrome extension to download puzzles from popular crossword sites."
+    "nytHint": "<strong>NYT subscriber?</strong> Install the <anchor>NYT Bookmarklet</anchor> to import today's puzzle in one click.",
+    "scraperHint": "Need a .puz file? Use the <anchor>Crossword Scraper</anchor> Chrome extension to download puzzles from popular crossword sites."
   },
   "importing": {
     "receiving": "Receiving puzzle...",
@@ -47,7 +47,8 @@
     "startGame": "Start Game",
     "closeRoom": "Close Room",
     "waitingForHost": "Waiting for host to start the game...",
-    "waitingForPlayersTitle": "Waiting for Players"
+    "waitingForPlayersTitle": "Waiting for Players",
+    "qrCodeLabel": "QR code to join game"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",
@@ -74,6 +75,9 @@
   "cluePanel": {
     "across": "Across",
     "down": "Down"
+  },
+  "clueSheet": {
+    "ariaLabel": "Clue list"
   },
   "clueBar": {
     "previousClue": "Previous clue",
@@ -124,6 +128,9 @@
   },
   "grid": {
     "crosswordInput": "Crossword input"
+  },
+  "languageSwitcher": {
+    "label": "Language"
   },
   "timeout": {
     "wrongAnswerPenalty": "Wrong Answer Penalty",

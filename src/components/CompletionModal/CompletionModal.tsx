@@ -1,4 +1,6 @@
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Confetti } from "./Confetti";
 
 export interface PlayerResult {
@@ -31,6 +33,13 @@ export function CompletionModal({
   darkMode,
 }: CompletionModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  const handleEscape = useCallback(() => {
+    onBackToMenu?.();
+  }, [onBackToMenu]);
+
+  useFocusTrap(open ? modalRef : { current: null }, handleEscape);
 
   if (!open) return null;
 
@@ -63,8 +72,10 @@ export function CompletionModal({
 
       {/* Modal */}
       <div
+        ref={modalRef}
         className={`modal-enter relative z-20 w-full max-w-md rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
         role="dialog"
+        aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
         {/* Trophy */}
@@ -147,7 +158,7 @@ export function CompletionModal({
           {onNewPuzzle && (
             <button
               onClick={onNewPuzzle}
-              className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              className={`w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`}
             >
               {t('completion.newPuzzle')}
             </button>
@@ -155,9 +166,9 @@ export function CompletionModal({
           {onBackToMenu && (
             <button
               onClick={onBackToMenu}
-              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
+              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                 darkMode
-                  ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700"
+                  ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700 focus-visible:ring-offset-neutral-800"
                   : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100"
               }`}
             >

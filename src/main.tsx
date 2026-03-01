@@ -1,4 +1,4 @@
-import "./i18n/i18n";
+import i18n from "./i18n/i18n";
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
@@ -7,6 +7,12 @@ import "./index.css";
 import App from "./App.tsx";
 
 const HostApp = lazy(() => import("./HostApp.tsx"));
+
+// Keep <html lang> in sync with the active language
+document.documentElement.lang = i18n.language;
+i18n.on("languageChanged", (lng) => {
+  document.documentElement.lang = lng;
+});
 
 const isHost = window.location.pathname === "/host";
 

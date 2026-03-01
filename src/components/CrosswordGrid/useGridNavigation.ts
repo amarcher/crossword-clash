@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface NavigationActions {
   inputLetter: (letter: string) => void;
@@ -10,6 +10,9 @@ interface NavigationActions {
 }
 
 export function useGridNavigation(actions: NavigationActions) {
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Ignore if user is typing in an input/textarea
@@ -20,52 +23,53 @@ export function useGridNavigation(actions: NavigationActions) {
         return;
       }
 
+      const a = actionsRef.current;
       const key = e.key;
 
       // Letter input
       if (/^[a-zA-Z]$/.test(key)) {
         e.preventDefault();
-        actions.inputLetter(key);
+        a.inputLetter(key);
         return;
       }
 
       switch (key) {
         case "Backspace":
           e.preventDefault();
-          actions.deleteLetter();
+          a.deleteLetter();
           break;
         case "ArrowUp":
           e.preventDefault();
-          actions.moveSelection(-1, 0);
+          a.moveSelection(-1, 0);
           break;
         case "ArrowDown":
           e.preventDefault();
-          actions.moveSelection(1, 0);
+          a.moveSelection(1, 0);
           break;
         case "ArrowLeft":
           e.preventDefault();
-          actions.moveSelection(0, -1);
+          a.moveSelection(0, -1);
           break;
         case "ArrowRight":
           e.preventDefault();
-          actions.moveSelection(0, 1);
+          a.moveSelection(0, 1);
           break;
         case "Tab":
           e.preventDefault();
           if (e.shiftKey) {
-            actions.prevWord();
+            a.prevWord();
           } else {
-            actions.nextWord();
+            a.nextWord();
           }
           break;
         case " ":
           e.preventDefault();
-          actions.toggleDirection();
+          a.toggleDirection();
           break;
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [actions]);
+  }, []);
 }

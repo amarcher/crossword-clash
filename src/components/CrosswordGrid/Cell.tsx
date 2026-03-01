@@ -46,8 +46,14 @@ export const Cell = memo(function Cell({
   wordCompleteDelay,
 }: CellProps) {
   if (cell.solution === null) {
-    return <div className="bg-black min-h-0 min-w-0 overflow-hidden" />;
+    return <div className="bg-black min-h-0 min-w-0 overflow-hidden" role="gridcell" aria-hidden="true" />;
   }
+
+  // Build accessible label: "Row 1, Column 3, 5 across, letter A"
+  const parts: string[] = [];
+  if (cell.number != null) parts.push(`${cell.number}`);
+  if (cellState?.letter) parts.push(cellState.letter);
+  const ariaLabel = `Row ${cell.row + 1}, Column ${cell.col + 1}${parts.length ? `, ${parts.join(", ")}` : ""}`;
 
   // Pre-blend player color against white so it doesn't composite against the
   // grid's black background. 18% tint gives a visible pastel with high text contrast.
@@ -89,6 +95,9 @@ export const Cell = memo(function Cell({
 
   return (
     <div
+      role="gridcell"
+      aria-label={ariaLabel}
+      aria-selected={isSelected || undefined}
       className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden${isRejected ? " cell-reject" : ""}${animClass}`}
       style={{ containerType: "inline-size", ...bgStyle, ...outlineStyle, ...animStyle }}
       onClick={onClick ? () => onClick(cell.row, cell.col) : undefined}
