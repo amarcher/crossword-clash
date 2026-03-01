@@ -79,10 +79,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={() => fileInputRef.current?.click()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
-        className={`w-full max-w-md border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+        className={`w-full max-w-md border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
           isDragging
             ? "border-blue-500 bg-blue-50"
             : "border-neutral-300 hover:border-neutral-400 bg-white"
@@ -105,7 +102,6 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           type="file"
           accept=".puz,.ipuz,.jpz,.xd"
           className="hidden"
-          aria-label={t('importer.dropHere')}
           onChange={handleInputChange}
         />
       </div>
@@ -114,13 +110,13 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         <Trans
           i18nKey="importer.nytHint"
           components={{
-            strong: <strong className="text-neutral-500" />,
+            strong: <strong className="!text-neutral-500" />,
             link: (
               <a
                 href="/install-bookmarklet"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               />
             ),
           }}
@@ -135,7 +131,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
                 href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
               />
             ),
           }}
