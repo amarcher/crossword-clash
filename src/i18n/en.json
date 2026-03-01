@@ -75,6 +75,9 @@
     "across": "Across",
     "down": "Down"
   },
+  "clueSheet": {
+    "ariaLabel": "Clue list"
+  },
   "clueBar": {
     "previousClue": "Previous clue",
     "nextClue": "Next clue",

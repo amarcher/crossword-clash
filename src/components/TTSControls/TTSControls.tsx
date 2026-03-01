@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { SpeechSettings } from "../../hooks/useSpeechSettings";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
 
@@ -44,6 +45,13 @@ export function TTSSettingsModal({
   speak,
 }: TTSSettingsModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  const handleEscape = useCallback(() => {
+    closeSettings();
+  }, [closeSettings]);
+
+  useFocusTrap(settingsOpen ? modalRef : { current: null }, handleEscape);
 
   const groupedVoices = useMemo(() => {
     const groups = new Map<string, SpeechSynthesisVoice[]>();
@@ -62,8 +70,10 @@ export function TTSSettingsModal({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeSettings} />
 
       <div
+        ref={modalRef}
         className="relative z-20 w-full max-w-sm rounded-2xl bg-neutral-800 shadow-2xl p-6"
         role="dialog"
+        aria-modal="true"
         aria-label={t('tts.voiceSettings')}
       >
         <h2 className="text-lg font-bold text-white mb-4">{t('tts.voiceSettings')}</h2>

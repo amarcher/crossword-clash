@@ -1,4 +1,6 @@
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Confetti } from "./Confetti";
 
 export interface PlayerResult {
@@ -31,6 +33,13 @@ export function CompletionModal({
   darkMode,
 }: CompletionModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  const handleEscape = useCallback(() => {
+    onBackToMenu?.();
+  }, [onBackToMenu]);
+
+  useFocusTrap(open ? modalRef : { current: null }, handleEscape);
 
   if (!open) return null;
 
@@ -63,8 +72,10 @@ export function CompletionModal({
 
       {/* Modal */}
       <div
+        ref={modalRef}
         className={`modal-enter relative z-20 w-full max-w-md rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
         role="dialog"
+        aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
         {/* Trophy */}

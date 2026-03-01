@@ -75,6 +75,9 @@
     "across": "\u2192",
     "down": "\u2193"
   },
+  "clueSheet": {
+    "ariaLabel": "Lista de pistas"
+  },
   "clueBar": {
     "previousClue": "Pista anterior",
     "nextClue": "Siguiente pista",
