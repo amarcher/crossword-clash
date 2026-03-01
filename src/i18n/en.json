@@ -19,8 +19,8 @@
     "parsing": "Parsing puzzle...",
     "dropHere": "Drop a puzzle file here",
     "orBrowse": "or click to browse (.puz, .ipuz, .jpz, .xd)",
-    "nytHint": "<strong>NYT subscriber?</strong> Install the <link>NYT Bookmarklet</link> to import today's puzzle in one click.",
-    "scraperHint": "Need a .puz file? Use the <link>Crossword Scraper</link> Chrome extension to download puzzles from popular crossword sites."
+    "nytHint": "<strong>NYT subscriber?</strong> Install the <anchor>NYT Bookmarklet</anchor> to import today's puzzle in one click.",
+    "scraperHint": "Need a .puz file? Use the <anchor>Crossword Scraper</anchor> Chrome extension to download puzzles from popular crossword sites."
   },
   "importing": {
     "receiving": "Receiving puzzle...",

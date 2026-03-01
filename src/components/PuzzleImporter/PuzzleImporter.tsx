@@ -111,7 +111,8 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           i18nKey="importer.nytHint"
           components={{
             strong: <strong className="!text-neutral-500" />,
-            link: (
+            anchor: (
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
               <a
                 href="/install-bookmarklet"
                 target="_blank"
@@ -126,7 +127,8 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         <Trans
           i18nKey="importer.scraperHint"
           components={{
-            link: (
+            anchor: (
+              // eslint-disable-next-line jsx-a11y/anchor-has-content
               <a
                 href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
                 target="_blank"
