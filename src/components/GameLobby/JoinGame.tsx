@@ -29,10 +29,11 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4" autoComplete="off">
         <div>
-          <label className="block text-sm font-medium text-neutral-600 mb-1">
+          <label htmlFor="join-display-name" className="block text-sm font-medium text-neutral-600 mb-1">
             {t('join.yourName')}
           </label>
           <input
+            id="join-display-name"
             type="text"
             name="xw-handle"
             value={displayName}
@@ -48,10 +49,11 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-600 mb-1">
+          <label htmlFor="join-game-code" className="block text-sm font-medium text-neutral-600 mb-1">
             {t('join.gameCode')}
           </label>
           <input
+            id="join-game-code"
             type="text"
             name="xw-code"
             value={code}

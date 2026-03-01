@@ -105,6 +105,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           type="file"
           accept=".puz,.ipuz,.jpz,.xd"
           className="hidden"
+          aria-label={t('importer.dropHere')}
           onChange={handleInputChange}
         />
       </div>

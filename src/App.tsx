@@ -694,8 +694,9 @@ function App() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={t('hostName.yourName')}
+            aria-label={t('hostName.yourName')}
             maxLength={20}
-            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             autoComplete="nofill"
             data-form-type="other"
             data-lpignore="true"

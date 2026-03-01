@@ -8,12 +8,13 @@ const LANG_LABELS: Record<SupportedLang, string> = {
 };
 
 export function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   return (
     <select
       value={i18n.language}
       onChange={(e) => i18n.changeLanguage(e.target.value)}
+      aria-label={t('languageSwitcher.label')}
       className="text-sm text-neutral-500 bg-transparent border border-neutral-300 rounded px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
       {SUPPORTED_LANGS.map((lang) => (
