@@ -519,21 +519,37 @@ function App() {
     [completedCluesByPlayer],
   );
 
+  const scoreByPlayer = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of Object.values(playerCells)) {
+      if (c.correct && c.playerId) {
+        counts.set(c.playerId, (counts.get(c.playerId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [playerCells]);
+
+  const multiplayerPlayers = useMemo(
+    () =>
+      multiplayerActive
+        ? multiplayer.players.map((p) => ({
+            ...p,
+            score: scoreByPlayer.get(p.userId) ?? 0,
+          }))
+        : [],
+    [multiplayerActive, multiplayer.players, scoreByPlayer],
+  );
+
   const playerResults: PlayerResult[] | undefined = useMemo(() => {
     if (!multiplayerActive) return undefined;
-    return multiplayer.players.map((p) => {
-      const cellsClaimed = Object.values(playerCells).filter(
-        (c) => c.correct && c.playerId === p.userId,
-      ).length;
-      return {
-        userId: p.userId,
-        displayName: p.displayName,
-        color: p.color,
-        cellsClaimed,
-        cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
-      };
-    });
-  }, [multiplayerActive, multiplayer.players, playerCells, clueCountsByPlayer]);
+    return multiplayer.players.map((p) => ({
+      userId: p.userId,
+      displayName: p.displayName,
+      color: p.color,
+      cellsClaimed: scoreByPlayer.get(p.userId) ?? 0,
+      cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
+    }));
+  }, [multiplayerActive, multiplayer.players, scoreByPlayer, clueCountsByPlayer]);
 
   // --- Render based on gameMode ---
 
@@ -569,13 +585,13 @@ function App() {
                   alert(tStatic('importing.pasteError'));
                 }
               }}
-              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               {t('importing.pasteButton')}
             </button>
             <button
               onClick={() => setGameMode("menu")}
-              className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+              className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
             >
               {t('importing.backToMenu')}
             </button>
@@ -616,19 +632,19 @@ function App() {
             <>
               <button
                 onClick={() => setGameMode("join")}
-                className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
                 {t('menu.joinGame')}
               </button>
               <button
                 onClick={() => setGameMode("host-name")}
-                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors"
               >
                 {t('menu.hostAsPlayer')}
               </button>
               <a
                 href="/host"
-                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
               >
                 {t('menu.hostAsTV')}
               </a>
@@ -636,7 +652,7 @@ function App() {
           )}
           <button
             onClick={() => setGameMode("solo")}
-            className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors"
           >
             {t('menu.playSolo')}
           </button>
@@ -679,7 +695,7 @@ function App() {
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={t('hostName.yourName')}
             maxLength={20}
-            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             autoComplete="nofill"
             data-form-type="other"
             data-lpignore="true"
@@ -689,14 +705,14 @@ function App() {
           <button
             type="submit"
             disabled={!displayName.trim()}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
           >
             {t('hostName.choosePuzzle')}
           </button>
           <button
             type="button"
             onClick={handleReset}
-            className="text-sm text-neutral-500 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+            className="text-sm text-neutral-500 hover:text-neutral-700"
           >
             {t('hostName.back')}
           </button>
@@ -760,16 +776,6 @@ function App() {
   // Only host or solo players get the "new puzzle" button
   const canChooseNewPuzzle = !multiplayerActive || multiplayer.isHost;
 
-  // Get current player's score from multiplayer players list
-  const multiplayerPlayers = multiplayerActive
-    ? multiplayer.players.map((p) => ({
-        ...p,
-        score: Object.values(playerCells).filter(
-          (c) => c.correct && c.playerId === p.userId,
-        ).length,
-      }))
-    : [];
-
   return (
     <>
     <GameLayout
@@ -802,7 +808,7 @@ function App() {
               {multiplayerActive && multiplayer.isHost ? (
                 <button
                   onClick={handleCloseRoom}
-                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
                 >
                   <span className="md:hidden">{t('playing.close')}</span>
                   <span className="hidden md:inline">{t('playing.closeRoom')}</span>
@@ -810,7 +816,7 @@ function App() {
               ) : (
                 <button
                   onClick={handleReset}
-                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
                 >
                   <span className="md:hidden">{multiplayerActive ? t('playing.leave') : t('playing.newPuzzle')}</span>
                   <span className="hidden md:inline">{multiplayerActive ? t('playing.leaveGame') : t('playing.loadDifferent')}</span>

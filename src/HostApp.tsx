@@ -251,15 +251,23 @@ function HostApp() {
     }
   }, [mode, multiplayer.gameStatus]);
 
+  const scoreByPlayer = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of Object.values(playerCells)) {
+      if (c.correct && c.playerId) {
+        counts.set(c.playerId, (counts.get(c.playerId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [playerCells]);
+
   const multiplayerPlayers = useMemo(
     () =>
       multiplayer.players.map((p) => ({
         ...p,
-        score: Object.values(playerCells).filter(
-          (c) => c.correct && c.playerId === p.userId,
-        ).length,
+        score: scoreByPlayer.get(p.userId) ?? 0,
       })),
-    [multiplayer.players, playerCells],
+    [multiplayer.players, scoreByPlayer],
   );
 
   const playerColorMap = useMemo(() => {
@@ -334,13 +342,13 @@ function HostApp() {
                   alert(tStatic('importing.pasteError'));
                 }
               }}
-              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               {t('importing.pasteButton')}
             </button>
             <button
               onClick={() => setMode("menu")}
-              className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 rounded"
+              className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
             >
               {t('importing.backToMenu')}
             </button>
@@ -372,7 +380,7 @@ function HostApp() {
           {user ? (
             <button
               onClick={() => handlePuzzleLoaded(urlPuzzle)}
-              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               {t('puzzleReady.hostGame')}
             </button>
@@ -396,7 +404,7 @@ function HostApp() {
           {user ? (
             <button
               onClick={() => setMode("import")}
-              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               {t('puzzleReady.hostGame')}
             </button>
@@ -465,13 +473,13 @@ function HostApp() {
           <button
             onClick={handleStartGame}
             disabled={multiplayer.players.length < 2}
-            className="px-8 py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 disabled:bg-neutral-700 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+            className="px-8 py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 disabled:bg-neutral-700 disabled:cursor-not-allowed transition-colors"
           >
             {t('lobby.startGame')}
           </button>
           <button
             onClick={handleCloseRoom}
-            className="px-6 py-3 rounded-lg font-semibold text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+            className="px-6 py-3 rounded-lg font-semibold text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
           >
             {t('lobby.closeRoom')}
           </button>
@@ -533,7 +541,7 @@ function HostApp() {
           </div>
           <button
             onClick={handleCloseRoom}
-            className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
+            className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
           >
             {t('lobby.closeRoom')}
           </button>
