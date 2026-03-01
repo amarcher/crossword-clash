@@ -13,7 +13,7 @@ import { PuzzleImporter } from "./components/PuzzleImporter";
 import { MultiplayerScoreboard } from "./components/Scoreboard/MultiplayerScoreboard";
 import { uploadPuzzle, createGame, createNextGame, rejoinGame } from "./lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "./lib/sessionPersistence";
-import { getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
+import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "./lib/gridUtils";
 import { Title } from "./components/Title";
 import { CompletionModal } from "./components/CompletionModal";
 import { useSpeechSettings } from "./hooks/useSpeechSettings";
@@ -280,6 +280,11 @@ function HostApp() {
     return map;
   }, [multiplayer.players]);
 
+  const completedClues = useMemo(
+    () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
+    [puzzle, playerCells],
+  );
+
   const completedCluesByPlayer = useMemo(
     () => (puzzle ? getCompletedCluesByPlayer(puzzle, playerCells) : new Map<string, { playerId: string }>()),
     [puzzle, playerCells],
@@ -504,6 +509,7 @@ function HostApp() {
           highlightedCells={highlightedCells}
           onCellClick={selectCell}
           playerColorMap={playerColorMap}
+          completedClues={completedClues}
           interactive={false}
         />
       }

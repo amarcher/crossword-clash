@@ -841,6 +841,7 @@ function App() {
             highlightedCells={highlightedCells}
             onCellClick={selectCell}
             playerColorMap={playerColorMap}
+            completedClues={completedClues}
             navigationActions={navActions}
             rejectedCell={rejectedCell}
             inputRef={gridInputRef}
