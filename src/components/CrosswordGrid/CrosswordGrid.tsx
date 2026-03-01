@@ -153,12 +153,15 @@ export function CrosswordGrid({
   }, [puzzle, playerCells, playerColorMap]);
 
   // Build a lookup: cellKey → { color, delay } for word completion animations
-  const wordCompleteMap = new Map<string, { color: string; delay: number }>();
-  for (const wc of wordCompletions) {
-    for (let i = 0; i < wc.cellKeys.length; i++) {
-      wordCompleteMap.set(wc.cellKeys[i], { color: wc.color, delay: i * 60 });
+  const wordCompleteMap = useMemo(() => {
+    const map = new Map<string, { color: string; delay: number }>();
+    for (const wc of wordCompletions) {
+      for (let i = 0; i < wc.cellKeys.length; i++) {
+        map.set(wc.cellKeys[i], { color: wc.color, delay: i * 60 });
+      }
     }
-  }
+    return map;
+  }, [wordCompletions]);
 
   // Auto-focus on desktop so keystrokes are captured immediately.
   // Skip on touch devices — iOS ignores non-gesture focus anyway, and

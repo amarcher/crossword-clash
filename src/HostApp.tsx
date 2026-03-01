@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { usePuzzle } from "./hooks/usePuzzle";
 import { useSupabase } from "./hooks/useSupabase";
+
+const NOOP = () => {};
 import { useMultiplayer } from "./hooks/useMultiplayer";
 import { CrosswordGrid } from "./components/CrosswordGrid";
 import { CluePanel } from "./components/CluePanel";
@@ -561,7 +563,7 @@ function HostApp() {
           <CluePanel
             clues={puzzle.clues}
             activeClue={null}
-            onClueClick={() => {}}
+            onClueClick={NOOP}
             completedCluesByPlayer={completedCluesByPlayer}
             playerColorMap={playerColorMap}
           />

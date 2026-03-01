@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PuzzleClue } from "../../types/puzzle";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
@@ -14,7 +14,7 @@ interface CluePanelProps {
   playerColorMap?: Record<string, string>;
 }
 
-export function CluePanel({
+export const CluePanel = memo(function CluePanel({
   clues,
   activeClue,
   onClueClick,
@@ -48,9 +48,9 @@ export function CluePanel({
       />
     </div>
   );
-}
+});
 
-function ClueList({
+const ClueList = memo(function ClueList({
   title,
   clues,
   activeClue,
@@ -138,4 +138,4 @@ function ClueList({
       </ul>
     </div>
   );
-}
+});
