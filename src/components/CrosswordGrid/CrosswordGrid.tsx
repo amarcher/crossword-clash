@@ -304,6 +304,8 @@ export function CrosswordGrid({
         />
       )}
       <div
+        role="grid"
+        aria-label={t('grid.crosswordInput')}
         className="grid border-2 border-black bg-black"
         style={{
           width: gridWidth,

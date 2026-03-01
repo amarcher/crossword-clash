@@ -27,7 +27,7 @@ export function MultiplayerScoreboard({
           </span>
           <span className="text-neutral-400">{totalPct}%</span>
         </div>
-        <div className="h-2.5 rounded-full bg-neutral-200 overflow-hidden flex">
+        <div className="h-2.5 rounded-full bg-neutral-200 overflow-hidden flex" role="progressbar" aria-valuenow={totalPct} aria-valuemin={0} aria-valuemax={100}>
           {players.map((player) => {
             const pct = totalCells > 0 ? (player.score / totalCells) * 100 : 0;
             return (

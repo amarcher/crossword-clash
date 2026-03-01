@@ -18,7 +18,7 @@ export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
         </span>
         <span className="text-neutral-400">{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-neutral-200 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-neutral-200 overflow-hidden" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
         <div
           className="h-full rounded-full bg-blue-500 transition-all duration-300"
           style={{ width: `${pct}%` }}
