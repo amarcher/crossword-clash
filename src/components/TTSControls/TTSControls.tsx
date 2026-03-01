@@ -11,14 +11,14 @@ export function TTSMuteButton({ muted, toggleMute, openSettings }: TTSMuteButton
     <div className="bg-neutral-800 rounded-xl p-3 flex items-center gap-2">
       <button
         onClick={toggleMute}
-        className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors"
+        className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
       >
         {muted ? t('tts.unmute') : t('tts.mute')}
       </button>
       <button
         onClick={openSettings}
         aria-label={t('tts.settingsAriaLabel')}
-        className="text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors"
+        className="text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
       >
         {t('tts.settings')}
       </button>
@@ -74,7 +74,7 @@ export function TTSSettingsModal({
           <select
             value={voiceName ?? ""}
             onChange={(e) => setVoiceName(e.target.value || null)}
-            className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus:outline-none focus:border-blue-500"
+            className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <option value="">{t('tts.systemDefault')}</option>
             {[...groupedVoices.entries()].map(([lang, langVoices]) => (
@@ -121,13 +121,13 @@ export function TTSSettingsModal({
         <div className="flex gap-2">
           <button
             onClick={() => speak(t('tts.testText'))}
-            className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors"
+            className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
           >
             {t('tts.testVoice')}
           </button>
           <button
             onClick={closeSettings}
-            className="flex-1 text-sm px-3 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            className="flex-1 text-sm px-3 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
           >
             {t('tts.done')}
           </button>

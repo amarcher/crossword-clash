@@ -147,7 +147,7 @@ export function CompletionModal({
           {onNewPuzzle && (
             <button
               onClick={onNewPuzzle}
-              className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              className={`w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`}
             >
               {t('completion.newPuzzle')}
             </button>
@@ -155,9 +155,9 @@ export function CompletionModal({
           {onBackToMenu && (
             <button
               onClick={onBackToMenu}
-              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
+              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                 darkMode
-                  ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700"
+                  ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700 focus-visible:ring-offset-neutral-800"
                   : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100"
               }`}
             >

@@ -43,7 +43,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore
-            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           />
         </div>
 
@@ -65,7 +65,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore
-            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-center font-mono text-2xl tracking-[0.3em] uppercase"
+            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none text-center font-mono text-2xl tracking-[0.3em] uppercase"
           />
         </div>
 
@@ -76,7 +76,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
         <button
           type="submit"
           disabled={code.length !== 6 || !displayName.trim() || loading}
-          className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {loading ? t('join.joining') : t('join.joinGame')}
         </button>
@@ -84,7 +84,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
         <button
           type="button"
           onClick={onBack}
-          className="w-full px-6 py-2 rounded-lg text-neutral-500 hover:text-neutral-700 transition-colors text-sm"
+          className="w-full px-6 py-2 rounded-lg text-neutral-500 hover:text-neutral-700 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {t('join.back')}
         </button>

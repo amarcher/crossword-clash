@@ -35,7 +35,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
         <>
           <button
             onClick={handleCopy}
-            className="mb-6 px-8 py-4 bg-white border-2 border-neutral-200 rounded-xl hover:border-neutral-300 transition-colors"
+            className="mb-6 px-8 py-4 bg-white border-2 border-neutral-200 rounded-xl hover:border-neutral-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             <span className="text-4xl font-mono font-bold tracking-[0.3em] text-neutral-800">
               {shareCode}
@@ -90,13 +90,13 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           <button
             onClick={onStartGame}
             disabled={players.length < 2}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             {players.length < 2 ? t('lobby.waitingForPlayers') : t('lobby.startGame')}
           </button>
           <button
             onClick={onCloseRoom}
-            className="text-sm text-red-500 hover:text-red-700 transition-colors"
+            className="text-sm text-red-500 hover:text-red-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 rounded"
           >
             {t('lobby.closeRoom')}
           </button>

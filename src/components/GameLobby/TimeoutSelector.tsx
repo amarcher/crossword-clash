@@ -24,7 +24,9 @@ export function TimeoutSelector({ value, onChange, variant = "light" }: TimeoutS
             <button
               key={option.value}
               onClick={() => onChange(option.value)}
-              className={`flex-1 px-2 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`flex-1 px-2 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                isDark ? "focus-visible:ring-offset-neutral-900" : ""
+              } ${
                 selected
                   ? isDark
                     ? "bg-blue-600 text-white"

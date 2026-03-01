@@ -14,7 +14,7 @@ export function LanguageSwitcher() {
     <select
       value={i18n.language}
       onChange={(e) => i18n.changeLanguage(e.target.value)}
-      className="text-sm text-neutral-500 bg-transparent border border-neutral-300 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="text-sm text-neutral-500 bg-transparent border border-neutral-300 rounded px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
       {SUPPORTED_LANGS.map((lang) => (
         <option key={lang} value={lang}>

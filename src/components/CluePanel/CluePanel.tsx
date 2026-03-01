@@ -111,7 +111,10 @@ function ClueList({
             <li
               key={clueKey}
               ref={isActive ? activeRef : undefined}
-              className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors ${
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClueClick(clue); } }}
+              className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 isActive
                   ? "bg-blue-100 text-blue-900 font-medium"
                   : isCompleted && !completedBg
