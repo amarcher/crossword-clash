@@ -1,12 +1,11 @@
 import i18n from "./i18n/i18n";
-import { StrictMode, lazy, Suspense } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { RouterProvider } from "react-router";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
-import App from "./App.tsx";
-
-const HostApp = lazy(() => import("./HostApp.tsx"));
+import { router } from "./router";
 
 // Keep <html lang> in sync with the active language
 document.documentElement.lang = i18n.language;
@@ -14,17 +13,9 @@ i18n.on("languageChanged", (lng) => {
   document.documentElement.lang = lng;
 });
 
-const isHost = window.location.pathname === "/host";
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {isHost ? (
-      <Suspense fallback={<div className="flex items-center justify-center h-dvh bg-neutral-900 text-white">Loading...</div>}>
-        <HostApp />
-      </Suspense>
-    ) : (
-      <App />
-    )}
+    <RouterProvider router={router} />
     <Analytics />
     <SpeedInsights />
   </StrictMode>,
