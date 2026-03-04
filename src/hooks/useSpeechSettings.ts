@@ -50,8 +50,9 @@ function fetchElevenLabsAudio(
   voiceId: string,
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
   const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey || !gate) {
     return Promise.reject(new Error("ElevenLabs not configured"));
   }
 
@@ -59,7 +60,9 @@ function fetchElevenLabsAudio(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${gate.token}`,
+      Authorization: `Bearer ${supabaseAnonKey}`,
+      apikey: supabaseAnonKey,
+      "x-gate-token": gate.token,
     },
     body: JSON.stringify({ text, voice_id: voiceId }),
   }).then((res) => {
