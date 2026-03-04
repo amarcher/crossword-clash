@@ -11,8 +11,6 @@ export function LobbyScreen() {
   const game = useGame();
   const mp = useMultiplayerContext();
 
-  if (!game.puzzle) return <Navigate to="/" replace />;
-
   // Transition from lobby to playing when game starts (for non-host)
   useEffect(() => {
     if (mp.gameStatus === "active" && game.gameId) {
@@ -37,6 +35,8 @@ export function LobbyScreen() {
     clearMpSession();
     navigate("/");
   }, [mp, game, navigate]);
+
+  if (!game.puzzle) return <Navigate to="/" replace />;
 
   return (
     <GameLobby
