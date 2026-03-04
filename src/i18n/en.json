@@ -47,6 +47,7 @@
     "startGame": "Start Game",
     "closeRoom": "Close Room",
     "waitingForHost": "Waiting for host to start the game...",
+    "leaveLobby": "Leave",
     "waitingForPlayersTitle": "Waiting for Players",
     "qrCodeLabel": "QR code to join game"
   },

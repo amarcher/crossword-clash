@@ -7,6 +7,7 @@ import { TVLayout } from "../../components/Layout/TVLayout";
 import { MultiplayerScoreboard } from "../../components/Scoreboard/MultiplayerScoreboard";
 import { CompletionModal } from "../../components/CompletionModal";
 import { TTSMuteButton, TTSSettingsModal } from "../../components/TTSControls";
+import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useHostContext } from "../../layouts/HostLayout";
 
 const NOOP = () => {};
@@ -36,7 +37,13 @@ export function HostSpectateScreen() {
     handleBackToMenu,
   } = host;
 
+  useBeforeUnload(multiplayer.gameStatus === "active");
+
   if (!puzzle) return <Navigate to="/host" replace />;
+
+  if (host.multiplayer.gameStatus === "waiting" && host.multiplayer.hydrated && host.gameId) {
+    return <Navigate to={`/host/lobby/${host.gameId}`} replace />;
+  }
 
   return (
     <>

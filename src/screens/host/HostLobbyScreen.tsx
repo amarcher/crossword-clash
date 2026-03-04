@@ -3,12 +3,15 @@ import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
 import { Title } from "../../components/Title";
 import { TimeoutSelector } from "../../components/GameLobby";
+import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useHostContext } from "../../layouts/HostLayout";
 
 export function HostLobbyScreen() {
   const { t } = useTranslation();
   const host = useHostContext();
   const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom } = host;
+
+  useBeforeUnload(true);
 
   if (!host.puzzle) return <Navigate to="/host" replace />;
 

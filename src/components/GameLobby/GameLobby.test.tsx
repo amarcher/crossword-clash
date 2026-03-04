@@ -295,6 +295,51 @@ describe("GameLobby", () => {
     });
   });
 
+  describe("leave button", () => {
+    it("shows Leave button for non-host when onLeave is provided", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={false}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+          onLeave={() => {}}
+        />,
+      );
+      expect(screen.getByText("Leave")).toBeDefined();
+    });
+
+    it("does not show Leave button when onLeave is undefined", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={false}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+        />,
+      );
+      expect(screen.queryByText("Leave")).toBeNull();
+    });
+
+    it("calls onLeave when Leave button is clicked", () => {
+      const onLeave = vi.fn();
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={false}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+          onLeave={onLeave}
+        />,
+      );
+      fireEvent.click(screen.getByText("Leave"));
+      expect(onLeave).toHaveBeenCalledOnce();
+    });
+  });
+
   describe("share code", () => {
     it("displays the share code", () => {
       render(

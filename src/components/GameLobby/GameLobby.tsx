@@ -11,11 +11,12 @@ interface GameLobbyProps {
   isHost: boolean;
   onStartGame: () => void;
   onCloseRoom: () => void;
+  onLeave?: () => void;
   wrongAnswerTimeout?: number;
   onWrongAnswerTimeoutChange?: (value: number) => void;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, wrongAnswerTimeout, onWrongAnswerTimeoutChange }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
@@ -105,7 +106,17 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
       )}
 
       {!isHost && (
-        <p className="text-neutral-500 text-sm">{t('lobby.waitingForHost')}</p>
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-neutral-500 text-sm">{t('lobby.waitingForHost')}</p>
+          {onLeave && (
+            <button
+              onClick={onLeave}
+              className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              {t('lobby.leaveLobby')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

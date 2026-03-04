@@ -25,7 +25,8 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **Supabase client**: Nullable singleton in `src/lib/supabaseClient.ts` — app works fully offline when env vars aren't set (only "Play Solo" available).
 - **Puzzle import**: `@xwordly/xword-parser` parses .puz/.ipuz/.jpz/.xd files, then `src/lib/puzzleNormalizer.ts` converts to internal `Puzzle` type.
 - **Persistence**: Solo mode uses localStorage for puzzle + progress. Multiplayer sessions (`crossword-clash-mp` / `crossword-clash-host`) are persisted to localStorage so players auto-rejoin on page refresh. Supabase handles multiplayer state via `claim_cell` RPC.
-- **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu.
+- **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu. Players leaving intentionally broadcast `player_left` so others see them disappear immediately.
+- **Exit warnings**: `useBeforeUnload` hook adds browser-native "Leave site?" dialog during active multiplayer sessions (lobby + playing screens for both player and host/TV views). Prevents accidental tab closure during games.
 - **Internationalization**: i18next + react-i18next with English and Spanish translations in `src/i18n/`. Language detected from localStorage (`crossword-clash:language`) → `navigator.language` → `'en'`. `LanguageSwitcher` component on menu screens. `tStatic()` for non-React contexts (window.confirm, alert). `<Trans>` component for rich text with embedded links. Spanish uses `→`/`↓` arrows instead of Across/Down.
 - **Routing**: React Router with `createBrowserRouter`. `IndexRedirect` and `HostIndexRedirect` components determine initial route based on context state, URL params, and localStorage. **Important**: `extractPuzzleFromUrl()` clears `window.location.hash` as a side effect, so `GameProvider`/`HostLayout` call it during `useState` init and store the result as `urlPuzzle`. Route redirects must check `urlPuzzle` from context, never `window.location.hash`. Deep-linked screens (lobby, spectate, play) redirect to the index route when puzzle is null (triggers rejoin flow).
 
@@ -61,7 +62,7 @@ src/
     CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav + hidden mobile input
     ClueBar/        # MobileClueBar (prev/next word, direction toggle, active clue display)
     CluePanel/      # Clue list with active highlighting + strikethrough for completed words
-    GameLobby/      # GameLobby (share code, QR code, player list, timeout selector, close room) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
+    GameLobby/      # GameLobby (share code, QR code, player list, timeout selector, close room, non-host leave) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
     Layout/         # GameLayout (responsive, mobile clue list flex-shrinks behind keyboard) + TVLayout (spectator with clue panel)
     PuzzleImporter/ # File upload/drag-and-drop
     LanguageSwitcher.tsx # Language select dropdown (English/Spanish)
@@ -69,8 +70,9 @@ src/
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
     usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement
+    useBeforeUnload.ts # Browser "Leave site?" dialog for active multiplayer sessions
     useClueAnnouncer.ts # Web Speech API announcements for completed clues (TV mode only)
-    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure, game settings
+    useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure, leave game, game settings
     useSupabase.ts  # Anonymous auth + client
   i18n/
     i18n.ts         # i18next initialization, detectLanguage(), tStatic(), SUPPORTED_LANGS
@@ -118,7 +120,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 343 tests across 24 files
+- `pnpm test` — 351 tests across 25 files
 - **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -127,13 +129,14 @@ VITE_SUPABASE_ANON_KEY=...
 - **CluePanel.test.tsx** (17 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
 - **Cell.test.tsx** (17 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
 - **useClueAnnouncer.test.ts** (8 tests): Initial mount skips announcements, new clue triggers speech, correct completing player attribution (not last positional cell), multiple clues announced at once, no re-announcement of previous clues, unknown player fallback, answer lowercased for TTS, empty players list
-- **GameLobby.test.tsx** (21 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, player list, share code display, timeout selector visibility/callback. Uses `@testing-library/react` with per-file `jsdom` environment.
+- **GameLobby.test.tsx** (24 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, non-host leave button (visibility + callback), player list, share code display, timeout selector visibility/callback. Uses `@testing-library/react` with per-file `jsdom` environment.
 - **TimeoutSelector.test.tsx** (9 tests): All presets rendered, heading, selected option highlighting, unselected styles, onChange callback, dark/light variant styles
 - **LockoutOverlay.test.tsx** (7 tests): Renders nothing when 0 or past, shows countdown, ticks down over time, disappears on expiry, lockout-pulse class, pointer-events-none
 - **gameSettings.test.ts** (6 tests): Option count, Off default, increasing values, non-negative integers, non-empty labels, default settings
 - **i18n.test.ts** (13 tests): SUPPORTED_LANGS includes en/es, resource bundles exist, en↔es key parity (no missing/extra keys), tStatic simple key + interpolation + language change, language switching (default en, switch to es, fallback for unsupported), localStorage persistence, all leaf values non-empty strings
 - **LanguageSwitcher.test.tsx** (5 tests): Renders select element, option for each language, reflects current language, changes language on selection, option values match language codes
 - **router.test.tsx** (14 tests): IndexRedirect + HostIndexRedirect routing logic. Bookmarklet regression (urlPuzzle from context, not window.location.hash), import hash redirect, multiplayer/host session rejoin, solo session restore, fallback to menu, redirect priority ordering. Uses mocked contexts + MemoryRouter.
+- **useBeforeUnload.test.ts** (5 tests): Adds/removes beforeunload listener based on active flag, cleanup on unmount, toggles on prop change, calls preventDefault on event
 - **puzzleUrl.test.ts** (10 tests): Hash extraction, compression round-trip, hash clearing after extraction, corrupted/invalid data handling, regression test documenting hash consumption timing (extractPuzzleFromUrl clears hash, so callers must store the returned puzzle before any subsequent hash check)
 
 Supabase project requires:

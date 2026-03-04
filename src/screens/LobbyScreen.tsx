@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router";
 import { GameLobby } from "../components/GameLobby";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
+import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
 
@@ -10,6 +11,8 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+
+  useBeforeUnload(true);
 
   // Transition from lobby to playing when game starts (for non-host)
   useEffect(() => {
@@ -36,6 +39,16 @@ export function LobbyScreen() {
     navigate("/");
   }, [mp, game, navigate]);
 
+  const handleLeave = useCallback(() => {
+    mp.leaveGame();
+    game.reset();
+    game.setGameId(null);
+    game.setIsMultiplayer(false);
+    localStorage.removeItem(STORAGE_KEY);
+    clearMpSession();
+    navigate("/");
+  }, [mp, game, navigate]);
+
   if (!game.puzzle) return <Navigate to="/" replace />;
 
   return (
@@ -45,6 +58,7 @@ export function LobbyScreen() {
       isHost={mp.isHost}
       onStartGame={handleStartGame}
       onCloseRoom={handleCloseRoom}
+      onLeave={handleLeave}
       wrongAnswerTimeout={game.wrongAnswerTimeout}
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
     />

@@ -13,6 +13,7 @@ interface MultiplayerContextValue {
   startGame: (settings?: GameSettings) => Promise<void>;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
+  leaveGame: () => void;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
   gameSettings: GameSettings;
@@ -20,6 +21,7 @@ interface MultiplayerContextValue {
   shareCode: string | null;
   isRoomClosed: boolean;
   newGameId: string | null;
+  hydrated: boolean;
 
   // Derived values
   multiplayerActive: boolean;

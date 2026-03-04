@@ -28,6 +28,7 @@ interface UseMultiplayerReturn {
   startGame: (settings?: GameSettings) => Promise<void>;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
+  leaveGame: () => void;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
   gameSettings: GameSettings;
@@ -35,6 +36,7 @@ interface UseMultiplayerReturn {
   shareCode: string | null;
   isRoomClosed: boolean;
   newGameId: string | null;
+  hydrated: boolean;
 }
 
 export function useMultiplayer({
@@ -53,6 +55,7 @@ export function useMultiplayer({
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [hydrated, setHydrated] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -84,6 +87,7 @@ export function useMultiplayer({
   useEffect(() => {
     if (!supabase || !gameId) return;
 
+    setHydrated(false);
     announcedRef.current = false;
 
     // Fetch short_code
@@ -119,6 +123,7 @@ export function useMultiplayer({
       });
     });
 
+    // NOTE: No code currently sends player_left. Pre-wired for future use.
     channel.on("broadcast", { event: "player_left" }, ({ payload }) => {
       setPlayers((prev) => prev.filter((p) => p.userId !== payload.userId));
     });
@@ -145,6 +150,7 @@ export function useMultiplayer({
     channel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
         const state = await hydrate();
+        setHydrated(true);
 
         // Announce presence to other players (once per connection)
         if (state && !announcedRef.current) {
@@ -289,11 +295,20 @@ export function useMultiplayer({
       .eq("id", gameId);
   }, [gameId]);
 
+  const leaveGame = useCallback(() => {
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "player_left",
+      payload: { userId },
+    });
+  }, [userId]);
+
   return {
     claimCell,
     startGame,
     closeRoom,
     broadcastNewGame,
+    leaveGame,
     players,
     gameStatus,
     gameSettings,
@@ -301,5 +316,6 @@ export function useMultiplayer({
     shareCode,
     isRoomClosed,
     newGameId,
+    hydrated,
   };
 }

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import QRCode from "react-qr-code";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
 import { CluePanel } from "../components/CluePanel";
@@ -57,6 +58,8 @@ export function MultiplayerPlayScreen() {
     gameStatus,
   } = mp;
 
+  useBeforeUnload(gameStatus === "active");
+
   const gridInputRef = useRef<HTMLInputElement>(null);
 
   const navActions = useMemo(
@@ -74,13 +77,14 @@ export function MultiplayerPlayScreen() {
   useGridNavigation(navActions);
 
   const handleReset = useCallback(() => {
+    mp.leaveGame();
     reset();
     game.setGameId(null);
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
     navigate("/");
-  }, [reset, game, navigate]);
+  }, [mp, reset, game, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
     if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
@@ -107,6 +111,10 @@ export function MultiplayerPlayScreen() {
 
   if (!puzzle) {
     return <Navigate to="/" replace />;
+  }
+
+  if (gameStatus === "waiting" && mp.hydrated && game.gameId) {
+    return <Navigate to={`/lobby/${game.gameId}`} replace />;
   }
 
   const multiplayerIsComplete = multiplayerActive && gameStatus === "completed";

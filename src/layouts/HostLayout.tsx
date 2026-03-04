@@ -52,6 +52,7 @@ export interface HostContextValue {
     startGame: (settings?: GameSettings) => Promise<void>;
     closeRoom: () => Promise<void>;
     broadcastNewGame: (newGameId: string) => void;
+    leaveGame: () => void;
     players: Player[];
     gameStatus: "waiting" | "active" | "completed";
     gameSettings: GameSettings;
@@ -59,6 +60,7 @@ export interface HostContextValue {
     shareCode: string | null;
     isRoomClosed: boolean;
     newGameId: string | null;
+    hydrated: boolean;
   };
 
   // TTS
@@ -209,6 +211,15 @@ export function HostLayout() {
       }
     }
   }, [multiplayer.gameStatus, gameId, navigate]);
+
+  // Boot spectator view when room is closed (mirrors RootLayout pattern)
+  useEffect(() => {
+    if (multiplayer.isRoomClosed) {
+      setGameId(null);
+      clearHostSession();
+      navigate("/host");
+    }
+  }, [multiplayer.isRoomClosed, navigate]);
 
   const handlePuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
