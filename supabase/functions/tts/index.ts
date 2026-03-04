@@ -9,9 +9,8 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Validate gate token
-  const auth = req.headers.get("authorization");
-  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  // Validate gate token (sent via custom header to avoid conflicting with Supabase JWT auth)
+  const token = req.headers.get("x-gate-token");
 
   if (!ELEVENLABS_GATE_TOKEN || token !== ELEVENLABS_GATE_TOKEN) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
