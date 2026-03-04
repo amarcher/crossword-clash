@@ -27,6 +27,8 @@ import { HostRejoinScreen } from "./screens/host/HostRejoinScreen";
 // Initial route resolver utilities
 import { loadMpSession, loadHostSession } from "./lib/sessionPersistence";
 import { hasImportHash } from "./lib/puzzleUrl";
+import { useGame } from "./contexts/GameContext";
+import { useHostContext } from "./layouts/HostLayout";
 
 const STORAGE_KEY = "crossword-clash-solo";
 
@@ -35,8 +37,10 @@ const STORAGE_KEY = "crossword-clash-solo";
  * This replicates the old App.tsx initial state computation.
  */
 function IndexRedirect() {
-  // Check for URL puzzle hash
-  if (window.location.hash.startsWith("#puzzle=")) {
+  const game = useGame();
+
+  // Check for URL puzzle (hash already consumed by GameProvider init)
+  if (game.urlPuzzle) {
     return <Navigate to="/puzzle-ready" replace />;
   }
 
@@ -77,8 +81,10 @@ function IndexRedirect() {
  * Determine the initial redirect target for the /host route.
  */
 function HostIndexRedirect() {
-  // Check for URL puzzle hash
-  if (window.location.hash.startsWith("#puzzle=")) {
+  const host = useHostContext();
+
+  // Check for URL puzzle (hash already consumed by HostLayout init)
+  if (host.urlPuzzle) {
     return <Navigate to="/host/puzzle-ready" replace />;
   }
 

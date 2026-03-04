@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { GameLobby } from "../components/GameLobby";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -10,6 +10,8 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+
+  if (!game.puzzle) return <Navigate to="/" replace />;
 
   // Transition from lobby to playing when game starts (for non-host)
   useEffect(() => {

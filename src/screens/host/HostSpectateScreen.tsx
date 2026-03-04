@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
 import { CrosswordGrid } from "../../components/CrosswordGrid";
 import { CluePanel } from "../../components/CluePanel";
@@ -35,7 +36,7 @@ export function HostSpectateScreen() {
     handleBackToMenu,
   } = host;
 
-  if (!puzzle) return null;
+  if (!puzzle) return <Navigate to="/host" replace />;
 
   return (
     <>

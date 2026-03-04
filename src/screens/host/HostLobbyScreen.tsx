@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
 import { Title } from "../../components/Title";
 import { TimeoutSelector } from "../../components/GameLobby";
@@ -8,6 +9,8 @@ export function HostLobbyScreen() {
   const { t } = useTranslation();
   const host = useHostContext();
   const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom } = host;
+
+  if (!host.puzzle) return <Navigate to="/host" replace />;
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8 gap-8">
