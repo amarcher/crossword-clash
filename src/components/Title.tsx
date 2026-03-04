@@ -9,7 +9,7 @@ export function Title({ className = "" }: TitleProps) {
       <img
         src="/logo.png"
         alt="Crossword Clash"
-        className="h-20 mx-auto"
+        className="h-36 mx-auto"
       />
     </div>
   );
