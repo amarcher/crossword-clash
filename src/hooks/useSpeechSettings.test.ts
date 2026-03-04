@@ -215,8 +215,8 @@ describe("useSpeechSettings", () => {
 
   it("exposes elevenLabsVoices list", () => {
     const { result } = renderHook(() => useSpeechSettings());
-    expect(result.current.elevenLabsVoices.length).toBe(6);
-    expect(result.current.elevenLabsVoices[0].name).toBe("Rachel");
+    expect(result.current.elevenLabsVoices.length).toBe(7);
+    expect(result.current.elevenLabsVoices[0].name).toBe("Andrew");
   });
 
   it("speak does not call speechSynthesis when engine is elevenlabs and gate is set", () => {

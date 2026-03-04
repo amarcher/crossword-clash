@@ -11,8 +11,8 @@ beforeEach(() => {
 });
 
 describe("ELEVENLABS_VOICES", () => {
-  it("has 6 curated voices", () => {
-    expect(ELEVENLABS_VOICES).toHaveLength(6);
+  it("has 7 voices", () => {
+    expect(ELEVENLABS_VOICES).toHaveLength(7);
   });
 
   it("each voice has id, name, and description", () => {

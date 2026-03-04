@@ -7,6 +7,7 @@ export interface ElevenLabsVoice {
 }
 
 export const ELEVENLABS_VOICES: ElevenLabsVoice[] = [
+  { id: "6Ac71viMXq5tLn2bwYdz", name: "Andrew", description: "Fatherly voice" },
   { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", description: "Calm, young female" },
   { id: "pNInz6obpgDQGcFmaJgB", name: "Adam", description: "Deep, middle-aged male" },
   { id: "ErXwobaYiN019PkySvjV", name: "Antoni", description: "Well-rounded, young male" },
