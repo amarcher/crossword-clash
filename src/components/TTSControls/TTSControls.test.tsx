@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { TTSMuteButton, TTSSettingsModal } from "./TTSControls";
+import { ELEVENLABS_VOICES } from "../../lib/elevenLabsClient";
 
 afterEach(cleanup);
 
@@ -43,6 +44,12 @@ describe("TTSSettingsModal", () => {
     pitch: 1.0,
     setPitch: vi.fn(),
     speak: vi.fn(),
+    engine: "browser" as "browser" | "elevenlabs",
+    setEngine: vi.fn(),
+    elevenLabsAvailable: false,
+    elevenLabsVoiceId: null as string | null,
+    setElevenLabsVoiceId: vi.fn(),
+    elevenLabsVoices: ELEVENLABS_VOICES,
   });
 
   it("renders nothing when closed", () => {
@@ -102,5 +109,58 @@ describe("TTSSettingsModal", () => {
     expect(optgroups.length).toBe(2);
     expect(optgroups[0].getAttribute("label")).toBe("en-US");
     expect(optgroups[1].getAttribute("label")).toBe("fr-FR");
+  });
+
+  it("does not show engine toggle when elevenLabsAvailable is false", () => {
+    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={false} />);
+    expect(screen.queryByText("Engine")).toBeNull();
+  });
+
+  it("shows engine toggle when elevenLabsAvailable is true", () => {
+    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} />);
+    expect(screen.getByText("Engine")).toBeTruthy();
+  });
+
+  it("shows browser voice controls in browser mode", () => {
+    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} engine="browser" />);
+    expect(screen.getByText("Voice")).toBeTruthy();
+    expect(screen.getByText("Rate: 1.0")).toBeTruthy();
+    expect(screen.getByText("Pitch: 1.0")).toBeTruthy();
+  });
+
+  it("shows ElevenLabs voice dropdown in elevenlabs mode", () => {
+    render(
+      <TTSSettingsModal
+        {...baseProps()}
+        elevenLabsAvailable={true}
+        engine="elevenlabs"
+      />,
+    );
+    expect(screen.getByText("ElevenLabs Voice")).toBeTruthy();
+    expect(screen.getByText("Rachel (default)")).toBeTruthy();
+    // Rate/pitch sliders should not be shown
+    expect(screen.queryByText("Rate: 1.0")).toBeNull();
+    expect(screen.queryByText("Pitch: 1.0")).toBeNull();
+  });
+
+  it("calls setEngine when engine is changed", () => {
+    const props = baseProps();
+    props.elevenLabsAvailable = true;
+    render(<TTSSettingsModal {...props} />);
+
+    const engineSelect = screen.getByDisplayValue("Browser TTS");
+    fireEvent.change(engineSelect, { target: { value: "elevenlabs" } });
+    expect(props.setEngine).toHaveBeenCalledWith("elevenlabs");
+  });
+
+  it("calls setElevenLabsVoiceId when voice is changed", () => {
+    const props = baseProps();
+    props.elevenLabsAvailable = true;
+    props.engine = "elevenlabs";
+    render(<TTSSettingsModal {...props} />);
+
+    const voiceSelect = screen.getByDisplayValue("Rachel (default)");
+    fireEvent.change(voiceSelect, { target: { value: ELEVENLABS_VOICES[1].id } });
+    expect(props.setElevenLabsVoiceId).toHaveBeenCalledWith(ELEVENLABS_VOICES[1].id);
   });
 });

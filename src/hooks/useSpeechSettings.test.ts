@@ -57,10 +57,19 @@ describe("useSpeechSettings", () => {
     expect(result.current.voiceName).toBeNull();
     expect(result.current.rate).toBe(1.0);
     expect(result.current.pitch).toBe(1.0);
+    expect(result.current.engine).toBe("browser");
+    expect(result.current.elevenLabsVoiceId).toBeNull();
   });
 
   it("loads persisted settings", () => {
-    const saved: TTSSettings = { muted: true, voiceName: "TestVoice", rate: 1.5, pitch: 0.8 };
+    const saved: TTSSettings = {
+      muted: true,
+      voiceName: "TestVoice",
+      rate: 1.5,
+      pitch: 0.8,
+      engine: "browser",
+      elevenLabsVoiceId: null,
+    };
     saveTTSSettings(saved);
     const { result } = renderHook(() => useSpeechSettings());
     expect(result.current.muted).toBe(true);
@@ -85,11 +94,18 @@ describe("useSpeechSettings", () => {
     expect(stored.rate).toBe(1.8);
   });
 
-  it("speak calls speechSynthesis.speak with correct settings", () => {
+  it("speak calls speechSynthesis.speak with correct settings in browser mode", () => {
     const mockVoice = { name: "TestVoice" } as SpeechSynthesisVoice;
     mockGetVoices.mockReturnValue([mockVoice]);
 
-    saveTTSSettings({ muted: false, voiceName: "TestVoice", rate: 1.5, pitch: 0.8 });
+    saveTTSSettings({
+      muted: false,
+      voiceName: "TestVoice",
+      rate: 1.5,
+      pitch: 0.8,
+      engine: "browser",
+      elevenLabsVoiceId: null,
+    });
     const { result } = renderHook(() => useSpeechSettings());
 
     act(() => result.current.speak("Hello"));
@@ -103,7 +119,14 @@ describe("useSpeechSettings", () => {
   });
 
   it("speak does nothing when muted", () => {
-    saveTTSSettings({ muted: true, voiceName: null, rate: 1.0, pitch: 1.0 });
+    saveTTSSettings({
+      muted: true,
+      voiceName: null,
+      rate: 1.0,
+      pitch: 1.0,
+      engine: "browser",
+      elevenLabsVoiceId: null,
+    });
     const { result } = renderHook(() => useSpeechSettings());
 
     act(() => result.current.speak("Hello"));
@@ -158,5 +181,70 @@ describe("useSpeechSettings", () => {
     expect(result.current.pitch).toBe(1.3);
     const stored = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
     expect(stored.pitch).toBe(1.3);
+  });
+
+  it("setEngine updates engine and persists", () => {
+    const { result } = renderHook(() => useSpeechSettings());
+    act(() => result.current.setEngine("elevenlabs"));
+    expect(result.current.engine).toBe("elevenlabs");
+    const stored = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
+    expect(stored.engine).toBe("elevenlabs");
+  });
+
+  it("setElevenLabsVoiceId updates and persists", () => {
+    const { result } = renderHook(() => useSpeechSettings());
+    act(() => result.current.setElevenLabsVoiceId("21m00Tcm4TlvDq8ikWAM"));
+    expect(result.current.elevenLabsVoiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+    const stored = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
+    expect(stored.elevenLabsVoiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+  });
+
+  it("elevenLabsAvailable is false when no gate is set", () => {
+    const { result } = renderHook(() => useSpeechSettings());
+    expect(result.current.elevenLabsAvailable).toBe(false);
+  });
+
+  it("elevenLabsAvailable is true when gate is set", () => {
+    localStorage.setItem(
+      "crossword-clash-elevenlabs",
+      JSON.stringify({ enabled: true, token: "test-token" }),
+    );
+    const { result } = renderHook(() => useSpeechSettings());
+    expect(result.current.elevenLabsAvailable).toBe(true);
+  });
+
+  it("exposes elevenLabsVoices list", () => {
+    const { result } = renderHook(() => useSpeechSettings());
+    expect(result.current.elevenLabsVoices.length).toBe(6);
+    expect(result.current.elevenLabsVoices[0].name).toBe("Rachel");
+  });
+
+  it("speak does not call speechSynthesis when engine is elevenlabs and gate is set", () => {
+    localStorage.setItem(
+      "crossword-clash-elevenlabs",
+      JSON.stringify({ enabled: true, token: "test-token" }),
+    );
+    saveTTSSettings({
+      muted: false,
+      voiceName: null,
+      rate: 1.0,
+      pitch: 1.0,
+      engine: "elevenlabs",
+      elevenLabsVoiceId: null,
+    });
+
+    // Mock fetch to prevent actual network call
+    const mockFetch = vi.fn(() =>
+      Promise.resolve(new Response(new ArrayBuffer(8))),
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const { result } = renderHook(() => useSpeechSettings());
+    act(() => result.current.speak("Hello"));
+
+    // Should NOT call browser speechSynthesis.speak
+    expect(mockSpeak).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
   });
 });

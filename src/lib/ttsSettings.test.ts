@@ -22,6 +22,8 @@ describe("TTS settings persistence", () => {
       voiceName: "Google UK English Male",
       rate: 1.5,
       pitch: 0.8,
+      engine: "browser",
+      elevenLabsVoiceId: null,
     };
     saveTTSSettings(settings);
     expect(loadTTSSettings()).toEqual(settings);
@@ -77,5 +79,49 @@ describe("TTS settings persistence", () => {
       JSON.stringify({ voiceName: 42 }),
     );
     expect(loadTTSSettings().voiceName).toBeNull();
+  });
+
+  it("defaults engine to browser when not set", () => {
+    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS });
+    // Simulate old settings without engine field
+    const raw = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
+    delete raw.engine;
+    localStorage.setItem("crossword-clash-tts", JSON.stringify(raw));
+    expect(loadTTSSettings().engine).toBe("browser");
+  });
+
+  it("loads engine elevenlabs when saved", () => {
+    const settings: TTSSettings = { ...DEFAULT_TTS_SETTINGS, engine: "elevenlabs" };
+    saveTTSSettings(settings);
+    expect(loadTTSSettings().engine).toBe("elevenlabs");
+  });
+
+  it("defaults engine to browser for unknown value", () => {
+    localStorage.setItem(
+      "crossword-clash-tts",
+      JSON.stringify({ ...DEFAULT_TTS_SETTINGS, engine: "unknown" }),
+    );
+    expect(loadTTSSettings().engine).toBe("browser");
+  });
+
+  it("defaults elevenLabsVoiceId to null when not set", () => {
+    expect(loadTTSSettings().elevenLabsVoiceId).toBeNull();
+  });
+
+  it("round-trips elevenLabsVoiceId", () => {
+    const settings: TTSSettings = {
+      ...DEFAULT_TTS_SETTINGS,
+      elevenLabsVoiceId: "21m00Tcm4TlvDq8ikWAM",
+    };
+    saveTTSSettings(settings);
+    expect(loadTTSSettings().elevenLabsVoiceId).toBe("21m00Tcm4TlvDq8ikWAM");
+  });
+
+  it("uses null for non-string elevenLabsVoiceId", () => {
+    localStorage.setItem(
+      "crossword-clash-tts",
+      JSON.stringify({ ...DEFAULT_TTS_SETTINGS, elevenLabsVoiceId: 123 }),
+    );
+    expect(loadTTSSettings().elevenLabsVoiceId).toBeNull();
   });
 });
