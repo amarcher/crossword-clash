@@ -128,6 +128,12 @@ export function HostSpectateScreen() {
               pitch={tts.pitch}
               setPitch={tts.setPitch}
               speak={tts.speak}
+              engine={tts.engine}
+              setEngine={tts.setEngine}
+              elevenLabsAvailable={tts.elevenLabsAvailable}
+              elevenLabsVoiceId={tts.elevenLabsVoiceId}
+              setElevenLabsVoiceId={tts.setElevenLabsVoiceId}
+              elevenLabsVoices={tts.elevenLabsVoices}
             />
           </>
         }

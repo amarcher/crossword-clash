@@ -120,7 +120,11 @@
     "pitch": "Pitch: {{value}}",
     "testText": "Testing voice settings",
     "testVoice": "Test Voice",
-    "done": "Done"
+    "done": "Done",
+    "engineLabel": "Engine",
+    "engineBrowser": "Browser TTS",
+    "engineElevenLabs": "ElevenLabs",
+    "elevenLabsVoice": "ElevenLabs Voice"
   },
   "hostView": {
     "tvHostView": "TV / Host View",

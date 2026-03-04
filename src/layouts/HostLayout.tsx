@@ -132,11 +132,14 @@ export function HostLayout() {
       for (const clue of completed) {
         const player = playersRef.current.find((p) => p.userId === playerId);
         const playerName = player?.displayName ?? "Unknown";
-        const text = `${playerName} -- ${clue.number} ${clue.direction} -- ${clue.text} -- ${clue.answer.toLowerCase()}`;
+        const text =
+          tts.engine === "elevenlabs"
+            ? `${playerName} completed ${clue.number} ${clue.direction}: ${clue.answer.toLowerCase()}`
+            : `${playerName} -- ${clue.number} ${clue.direction} -- ${clue.text} -- ${clue.answer.toLowerCase()}`;
         tts.speak(text);
       }
     },
-    [puzzle, tts.speak],
+    [puzzle, tts.speak, tts.engine],
   );
 
   const multiplayer = useMultiplayer(

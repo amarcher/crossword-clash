@@ -120,7 +120,11 @@
     "pitch": "Tono: {{value}}",
     "testText": "Probando ajustes de voz",
     "testVoice": "Probar voz",
-    "done": "Listo"
+    "done": "Listo",
+    "engineLabel": "Motor",
+    "engineBrowser": "TTS del navegador",
+    "engineElevenLabs": "ElevenLabs",
+    "elevenLabsVoice": "Voz de ElevenLabs"
   },
   "hostView": {
     "tvHostView": "Vista TV / Anfitri\u00f3n",
