@@ -102,6 +102,9 @@ function HostIndexRedirect() {
   return <HostMenuScreen />;
 }
 
+// Exported for testing
+export { IndexRedirect, HostIndexRedirect };
+
 export const router = createBrowserRouter([
   {
     path: "/",

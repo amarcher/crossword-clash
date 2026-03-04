@@ -27,6 +27,7 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **Persistence**: Solo mode uses localStorage for puzzle + progress. Multiplayer sessions (`crossword-clash-mp` / `crossword-clash-host`) are persisted to localStorage so players auto-rejoin on page refresh. Supabase handles multiplayer state via `claim_cell` RPC.
 - **Multiplayer**: Supabase Broadcast channels for real-time cell claims. Conflict resolution: local check → server `claim_cell` RPC with row lock → broadcast. No deletion in multiplayer — correct letters are permanent. Host can close the room via `room_closed` broadcast, which boots all players back to the menu.
 - **Internationalization**: i18next + react-i18next with English and Spanish translations in `src/i18n/`. Language detected from localStorage (`crossword-clash:language`) → `navigator.language` → `'en'`. `LanguageSwitcher` component on menu screens. `tStatic()` for non-React contexts (window.confirm, alert). `<Trans>` component for rich text with embedded links. Spanish uses `→`/`↓` arrows instead of Across/Down.
+- **Routing**: React Router with `createBrowserRouter`. `IndexRedirect` and `HostIndexRedirect` components determine initial route based on context state, URL params, and localStorage. **Important**: `extractPuzzleFromUrl()` clears `window.location.hash` as a side effect, so `GameProvider`/`HostLayout` call it during `useState` init and store the result as `urlPuzzle`. Route redirects must check `urlPuzzle` from context, never `window.location.hash`. Deep-linked screens (lobby, spectate, play) redirect to the index route when puzzle is null (triggers rejoin flow).
 
 ## Game Modes
 
@@ -117,7 +118,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 471 tests across 30 files
+- `pnpm test` — 343 tests across 24 files
 - **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -132,6 +133,8 @@ VITE_SUPABASE_ANON_KEY=...
 - **gameSettings.test.ts** (6 tests): Option count, Off default, increasing values, non-negative integers, non-empty labels, default settings
 - **i18n.test.ts** (13 tests): SUPPORTED_LANGS includes en/es, resource bundles exist, en↔es key parity (no missing/extra keys), tStatic simple key + interpolation + language change, language switching (default en, switch to es, fallback for unsupported), localStorage persistence, all leaf values non-empty strings
 - **LanguageSwitcher.test.tsx** (5 tests): Renders select element, option for each language, reflects current language, changes language on selection, option values match language codes
+- **router.test.tsx** (14 tests): IndexRedirect + HostIndexRedirect routing logic. Bookmarklet regression (urlPuzzle from context, not window.location.hash), import hash redirect, multiplayer/host session rejoin, solo session restore, fallback to menu, redirect priority ordering. Uses mocked contexts + MemoryRouter.
+- **puzzleUrl.test.ts** (10 tests): Hash extraction, compression round-trip, hash clearing after extraction, corrupted/invalid data handling, regression test documenting hash consumption timing (extractPuzzleFromUrl clears hash, so callers must store the returned puzzle before any subsequent hash check)
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)
