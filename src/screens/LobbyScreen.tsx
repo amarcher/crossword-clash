@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { GameLobby } from "../components/GameLobby";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -35,6 +35,8 @@ export function LobbyScreen() {
     clearMpSession();
     navigate("/");
   }, [mp, game, navigate]);
+
+  if (!game.puzzle) return <Navigate to="/" replace />;
 
   return (
     <GameLobby

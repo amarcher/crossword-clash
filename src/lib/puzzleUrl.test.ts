@@ -88,6 +88,27 @@ describe("extractPuzzleFromUrl", () => {
     expect(puzzle).toBeNull();
     expect(window.location.hash).toBe("");
   });
+
+  it("returns puzzle AND clears hash — callers must store the result before checking hash", () => {
+    // Regression test: GameProvider/HostLayout call extractPuzzleFromUrl() during
+    // state initialization, which clears the hash. Any code that subsequently checks
+    // window.location.hash (e.g. route redirects) will NOT find "#puzzle=".
+    // The fix: route redirects check the stored urlPuzzle from context instead.
+    const transfer = makeTransferPuzzle();
+    const compressed = compressToEncodedURIComponent(JSON.stringify(transfer));
+    setHash("#puzzle=" + compressed);
+
+    // Simulates what GameProvider/HostLayout do during useState initializer
+    const puzzle = extractPuzzleFromUrl();
+
+    // Puzzle is returned successfully
+    expect(puzzle).not.toBeNull();
+    expect(puzzle!.title).toBe("Test Puzzle");
+
+    // But the hash is gone — any subsequent hash check fails
+    expect(window.location.hash).toBe("");
+    expect(window.location.hash.startsWith("#puzzle=")).toBe(false);
+  });
 });
 
 describe("puzzleToTransferFormat", () => {
