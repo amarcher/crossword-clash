@@ -3,17 +3,14 @@ interface TitleProps {
   className?: string;
 }
 
-export function Title({ variant = "light", className = "" }: TitleProps) {
-  const topColor = variant === "dark" ? "text-white" : "text-neutral-900";
-  const bottomColor = variant === "dark" ? "text-amber-400" : "text-amber-500";
-
+export function Title({ className = "" }: TitleProps) {
   return (
-    <h1
-      className={`text-center leading-tight ${className}`}
-      style={{ fontFamily: "'Playfair Display', serif" }}
-    >
-      <span className={`block text-5xl font-bold ${topColor}`}>Crossword</span>
-      <span className={`block text-5xl font-bold italic ${bottomColor}`}>Clash</span>
-    </h1>
+    <div className={`text-center ${className}`}>
+      <img
+        src="/logo.png"
+        alt="Crossword Clash"
+        className="h-36 mx-auto"
+      />
+    </div>
   );
 }
