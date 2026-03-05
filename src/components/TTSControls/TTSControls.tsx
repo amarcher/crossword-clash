@@ -105,16 +105,21 @@ export function TTSSettingsModal({
             <span className="text-sm text-neutral-400 block mb-1">{t('tts.engineLabel')}</span>
             <select
               value={engine}
-              onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs")}
+              onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs" | "agent")}
               className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="browser">{t('tts.engineBrowser')}</option>
               <option value="elevenlabs">{t('tts.engineElevenLabs')}</option>
+              <option value="agent">{t('tts.engineAgent')}</option>
             </select>
           </label>
         )}
 
-        {engine === "elevenlabs" && elevenLabsAvailable ? (
+        {engine === "agent" && elevenLabsAvailable ? (
+          <p className="text-xs text-neutral-400 mb-4">
+            {t('tts.engineAgent')} — AI gameshow host provides live commentary. Voice and personality are configured in the ElevenLabs dashboard.
+          </p>
+        ) : engine === "elevenlabs" && elevenLabsAvailable ? (
           /* ElevenLabs voice select */
           <label className="block mb-4">
             <span className="text-sm text-neutral-400 block mb-1">{t('tts.elevenLabsVoice')}</span>

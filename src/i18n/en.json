@@ -125,7 +125,11 @@
     "engineLabel": "Engine",
     "engineBrowser": "Browser TTS",
     "engineElevenLabs": "ElevenLabs",
-    "elevenLabsVoice": "ElevenLabs Voice"
+    "elevenLabsVoice": "ElevenLabs Voice",
+    "engineAgent": "AI Host",
+    "agentConnected": "Connected",
+    "agentConnecting": "Connecting...",
+    "agentError": "Connection error"
   },
   "hostView": {
     "tvHostView": "TV / Host View",

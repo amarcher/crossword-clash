@@ -219,6 +219,20 @@ describe("useSpeechSettings", () => {
     expect(result.current.elevenLabsVoices[0].name).toBe("Andrew");
   });
 
+  it("speak is a no-op when engine is agent", () => {
+    saveTTSSettings({
+      muted: false,
+      voiceName: null,
+      rate: 1.0,
+      pitch: 1.0,
+      engine: "agent",
+      elevenLabsVoiceId: null,
+    });
+    const { result } = renderHook(() => useSpeechSettings());
+    act(() => result.current.speak("Hello"));
+    expect(mockSpeak).not.toHaveBeenCalled();
+  });
+
   it("speak does not call speechSynthesis when engine is elevenlabs and gate is set", () => {
     localStorage.setItem(
       "crossword-clash-elevenlabs",
