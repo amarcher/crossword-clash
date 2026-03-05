@@ -141,6 +141,9 @@ export function buildGameCompletedEvent(
   };
 }
 
+/** How long after the agent finishes speaking before we auto-disconnect (ms) */
+const IDLE_DISCONNECT_MS = 30_000;
+
 export class AgentNarrator {
   private conversation: Conversation | null = null;
   private eventQueue: AgentGameEvent[] = [];
@@ -149,6 +152,8 @@ export class AgentNarrator {
   private intentionalDisconnect = false;
   private _connectionError: string | null = null;
   private onConnectionErrorChange: (() => void) | null = null;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private hasPendingEvents = false;
 
   get isConnected(): boolean {
     return this.conversation !== null;
@@ -172,6 +177,7 @@ export class AgentNarrator {
         signedUrl,
         onDisconnect: () => {
           this.conversation = null;
+          this.clearIdleTimer();
           // Don't reconnect if we intentionally disconnected
           if (this.intentionalDisconnect) return;
           if (!this.reconnectAttempted) {
@@ -185,18 +191,28 @@ export class AgentNarrator {
             this.onConnectionErrorChange?.();
           }
         },
+        onModeChange: (mode) => {
+          // When agent finishes speaking and switches to listening,
+          // start idle timer. If no new events arrive, disconnect.
+          if (mode.mode === "listening" && !this.hasPendingEvents) {
+            this.resetIdleTimer();
+          } else if (mode.mode === "speaking") {
+            this.clearIdleTimer();
+          }
+        },
         onError: (message) => {
           console.error("[AgentNarrator] Error:", message);
         },
       });
 
-      // Immediately mute mic — we only send text input
-      await this.conversation.setVolume({ volume: 1 });
+      // Immediately mute mic — we only send text input, not voice
+      this.conversation.setMicMuted(true);
 
       // Flush queued events
       for (const event of this.eventQueue) {
         this.conversation.sendUserMessage(formatEvent(event));
       }
+      this.hasPendingEvents = this.eventQueue.length > 0;
       this.eventQueue = [];
     } catch (err) {
       this._connectionError =
@@ -211,6 +227,7 @@ export class AgentNarrator {
     this.intentionalDisconnect = true;
     this.connecting = false;
     this.reconnectAttempted = false;
+    this.clearIdleTimer();
     if (this.conversation) {
       try {
         await this.conversation.endSession();
@@ -225,6 +242,9 @@ export class AgentNarrator {
   sendEvent(event: AgentGameEvent): void {
     const text = formatEvent(event);
     console.log("[AgentNarrator] Sending:", text);
+    this.hasPendingEvents = true;
+    // Reset idle timer — we have new content for the agent
+    this.clearIdleTimer();
     if (!this.conversation) {
       this.eventQueue.push(event);
       return;
@@ -238,5 +258,22 @@ export class AgentNarrator {
 
   setOnConnectionErrorChange(cb: (() => void) | null): void {
     this.onConnectionErrorChange = cb;
+  }
+
+  private resetIdleTimer(): void {
+    this.clearIdleTimer();
+    this.idleTimer = setTimeout(() => {
+      console.log("[AgentNarrator] Idle timeout — disconnecting");
+      this.disconnect();
+      this.onConnectionErrorChange?.();
+    }, IDLE_DISCONNECT_MS);
+  }
+
+  private clearIdleTimer(): void {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+    this.hasPendingEvents = false;
   }
 }
