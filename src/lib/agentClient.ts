@@ -146,6 +146,7 @@ export class AgentNarrator {
   private eventQueue: AgentGameEvent[] = [];
   private connecting = false;
   private reconnectAttempted = false;
+  private intentionalDisconnect = false;
   private _connectionError: string | null = null;
   private onConnectionErrorChange: (() => void) | null = null;
 
@@ -160,6 +161,7 @@ export class AgentNarrator {
   async connect(): Promise<void> {
     if (this.conversation || this.connecting) return;
     this.connecting = true;
+    this.intentionalDisconnect = false;
     this._connectionError = null;
     this.onConnectionErrorChange?.();
 
@@ -170,6 +172,8 @@ export class AgentNarrator {
         signedUrl,
         onDisconnect: () => {
           this.conversation = null;
+          // Don't reconnect if we intentionally disconnected
+          if (this.intentionalDisconnect) return;
           if (!this.reconnectAttempted) {
             this.reconnectAttempted = true;
             this.connect().catch(() => {
@@ -204,19 +208,28 @@ export class AgentNarrator {
   }
 
   async disconnect(): Promise<void> {
+    this.intentionalDisconnect = true;
+    this.connecting = false;
+    this.reconnectAttempted = false;
     if (this.conversation) {
-      await this.conversation.endSession();
+      try {
+        await this.conversation.endSession();
+      } catch {
+        // Ignore errors during teardown
+      }
       this.conversation = null;
     }
     this.eventQueue = [];
   }
 
   sendEvent(event: AgentGameEvent): void {
+    const text = formatEvent(event);
+    console.log("[AgentNarrator] Sending:", text);
     if (!this.conversation) {
       this.eventQueue.push(event);
       return;
     }
-    this.conversation.sendUserMessage(formatEvent(event));
+    this.conversation.sendUserMessage(text);
   }
 
   setVolume(volume: number): void {

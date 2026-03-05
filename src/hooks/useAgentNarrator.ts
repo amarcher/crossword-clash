@@ -32,8 +32,8 @@ export function useAgentNarrator({
   const narratorRef = useRef<AgentNarrator | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const hasConnectedRef = useRef(false);
   const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameCompletedSentRef = useRef(false);
 
   // Stable ref for latest values
   const playersRef = useRef(players);
@@ -42,15 +42,18 @@ export function useAgentNarrator({
   puzzleRef.current = puzzle;
   const playerScoresRef = useRef(playerScores);
   playerScoresRef.current = playerScores;
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
-  // Connect when enabled && active
+  // Connect when enabled && active (once per mount)
   useEffect(() => {
     if (!enabled || gameStatus !== "active") return;
-    if (hasConnectedRef.current) return;
+    // Already have an active narrator — don't create another
+    if (narratorRef.current) return;
 
     const narrator = new AgentNarrator();
     narratorRef.current = narrator;
-    hasConnectedRef.current = true;
+    gameCompletedSentRef.current = false;
 
     narrator.setOnConnectionErrorChange(() => {
       setConnectionError(narrator.connectionError);
@@ -69,50 +72,68 @@ export function useAgentNarrator({
       }
     });
 
-    return () => {
-      narrator.setOnConnectionErrorChange(null);
-      narrator.disconnect();
-      narratorRef.current = null;
-      hasConnectedRef.current = false;
-    };
+    // No cleanup here — we manage disconnect explicitly via
+    // the gameStatus === "completed" and enabled === false effects below.
+    // This prevents the effect re-running on gameStatus change from
+    // tearing down the connection before GAME_COMPLETED can be sent.
   }, [enabled, gameStatus]);
 
   // Send GAME_COMPLETED and disconnect after delay
   useEffect(() => {
-    if (gameStatus !== "completed" || !narratorRef.current) return;
+    if (gameStatus !== "completed") return;
+    if (!narratorRef.current || gameCompletedSentRef.current) return;
 
+    gameCompletedSentRef.current = true;
     const narrator = narratorRef.current;
     const scores = playerScoresRef.current;
-    const puzzle = puzzleRef.current;
-    if (!puzzle) return;
+    const p = puzzleRef.current;
+    if (!p) return;
 
-    const totalClues = puzzle.clues.length;
+    const totalClues = p.clues.length;
     const sorted = [...scores].sort((a, b) => b.score - a.score);
     const winner = sorted[0]?.name ?? "Unknown";
 
     narrator.sendEvent(buildGameCompletedEvent(winner, scores, totalClues));
 
+    // Give the agent time to speak the final announcement, then disconnect
     disconnectTimerRef.current = setTimeout(() => {
-      narrator.disconnect();
-      setIsConnected(false);
-    }, 10_000);
+      disconnectNarrator();
+    }, 15_000);
 
     return () => {
       if (disconnectTimerRef.current) {
         clearTimeout(disconnectTimerRef.current);
+        disconnectTimerRef.current = null;
       }
     };
   }, [gameStatus]);
 
-  // Cleanup on enabled → false
+  // Disconnect immediately when enabled → false (muted, engine changed, room closed)
   useEffect(() => {
-    if (!enabled && narratorRef.current) {
-      narratorRef.current.disconnect();
-      narratorRef.current = null;
-      hasConnectedRef.current = false;
-      setIsConnected(false);
+    if (!enabled) {
+      disconnectNarrator();
     }
   }, [enabled]);
+
+  // Cleanup on unmount — always disconnect
+  useEffect(() => {
+    return () => {
+      disconnectNarrator();
+    };
+  }, []);
+
+  function disconnectNarrator() {
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
+    }
+    if (narratorRef.current) {
+      narratorRef.current.setOnConnectionErrorChange(null);
+      narratorRef.current.disconnect();
+      narratorRef.current = null;
+      setIsConnected(false);
+    }
+  }
 
   const sendEvent = useCallback((event: AgentGameEvent) => {
     narratorRef.current?.sendEvent(event);
