@@ -34,7 +34,7 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 
 - **Solo**: Import puzzle → play locally → progress saved to localStorage and Supabase (if connected).
 - **Host Game (Player View)**: Import puzzle → enter display name → multiplayer game created with 6-char share code → lobby (with QR code for easy joining) → start when 2+ players joined. Host can close the room at any time from lobby or playing screen. Refreshing the page auto-rejoins.
-- **TV / Host View** (`/host`): Read-only spectator display. Creates a game room without joining as a player. Shows grid, clue list with strikethrough for completed words, scoreboard, room code + QR. Host can start game when 2+ players join and close the room at any time. Speech announcements via Web Speech API announce each completed clue (player name, clue number/direction, clue text, answer).
+- **TV / Host View** (`/host`): Read-only spectator display. Creates a game room without joining as a player. Shows grid, clue list with strikethrough for completed words, scoreboard, room code + QR. Host can start game when 2+ players join and close the room at any time. Speech announcements via Web Speech API or ElevenLabs TTS announce each completed clue (player name, clue number/direction, clue text, answer). Optional "AI Host" mode uses an ElevenLabs Conversational AI agent as a snarky gameshow narrator.
 - **Join Game**: Enter share code or scan QR code → join lobby → play when host starts. Refreshing the page auto-rejoins (session persisted to localStorage).
 
 ## Multiplayer Input Flow
@@ -54,6 +54,16 @@ Keypress → useGridNavigation → wrappedInputLetter
 
 Host configures a lockout penalty in the lobby before starting (Off, 1s, 2s, 3s, or 5s). Setting is broadcast to all players via `game_started` event payload. When a player enters a wrong letter, all letter input is blocked for the configured duration. A countdown overlay appears on the grid during lockout. Navigation (arrows, tab) still works. Solo mode is unaffected. Settings are defined in `src/lib/gameSettings.ts`, UI in `src/components/GameLobby/TimeoutSelector.tsx`, overlay in `src/components/LockoutOverlay.tsx`.
 
+## AI Host (Agent Narrator)
+
+TV/Host view supports three TTS engines: Browser TTS, ElevenLabs TTS, and "AI Host" (ElevenLabs Conversational AI agent). The AI Host receives structured game events and generates its own snarky gameshow commentary — it does NOT receive pre-formatted text like the other engines.
+
+- **Gating**: Requires ElevenLabs localStorage gate (`crossword-clash-elevenlabs`) and `engine: "agent"` in TTS settings. Only available in TV/Host view (`/host` routes via `HostLayout`). Never spawned for player or host-as-player views.
+- **Edge function**: `supabase/functions/agent-auth/index.ts` returns a signed WebSocket URL. Requires `ELEVENLABS_AGENT_ID` and `ELEVENLABS_API_KEY` env vars with `convai_write` permission.
+- **Session lifecycle**: `AgentNarrator` class (`src/lib/agentClient.ts`) manages connection. Mic is muted immediately via `setMicMuted(true)` — all input is text via `sendUserMessage()`. Connection starts when game becomes active, stays alive through game completion so agent can react to the winner. Auto-disconnects after 30s of idle (no events + agent done speaking) via `onModeChange` callback. Immediately disconnects on room close, back to menu, new puzzle, engine change, mute, or unmount.
+- **Events**: `GAME_STARTED` (puzzle metadata + player names), `CLUE_COMPLETED` (player, clue details, scores, remaining), `LEAD_CHANGE` (new/previous leader + scores), `GAME_COMPLETED` (winner + final scores). Event builders are pure functions in `agentClient.ts`.
+- **Agent config**: System prompt, voice, and personality are configured in the ElevenLabs dashboard (not in code). Agent ID is `ELEVENLABS_AGENT_ID` env var on Supabase edge functions.
+
 ## Project Structure
 
 ```
@@ -70,6 +80,7 @@ src/
     Scoreboard/     # Solo Scoreboard + MultiplayerScoreboard (per-player colored bars)
   hooks/
     usePuzzle.ts    # Core game state reducer (LOAD_PUZZLE, INPUT_LETTER, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement
+    useAgentNarrator.ts # ElevenLabs Conversational AI agent lifecycle (connect/disconnect/send events)
     useBeforeUnload.ts # Browser "Leave site?" dialog for active multiplayer sessions
     useClueAnnouncer.ts # Web Speech API announcements for completed clues (TV mode only)
     useMultiplayer.ts # Broadcast channel, cell claiming, player tracking, reconnect, room closure, leave game, game settings
@@ -80,6 +91,7 @@ src/
     en.json         # English translations
     es.json         # Spanish translations
   lib/
+    agentClient.ts  # AgentNarrator class + event builders for Conversational AI agent
     gameSettings.ts # Wrong answer timeout presets + DEFAULT_GAME_SETTINGS
     gridUtils.ts    # Pure navigation/word boundary functions + getCompletedClues
     playerColors.ts # 8-color pool for player assignment
@@ -120,7 +132,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 351 tests across 25 files
+- `pnpm test` — 360 tests across 26 files
 - **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -138,6 +150,7 @@ VITE_SUPABASE_ANON_KEY=...
 - **router.test.tsx** (14 tests): IndexRedirect + HostIndexRedirect routing logic. Bookmarklet regression (urlPuzzle from context, not window.location.hash), import hash redirect, multiplayer/host session rejoin, solo session restore, fallback to menu, redirect priority ordering. Uses mocked contexts + MemoryRouter.
 - **useBeforeUnload.test.ts** (5 tests): Adds/removes beforeunload listener based on active flag, cleanup on unmount, toggles on prop change, calls preventDefault on event
 - **puzzleUrl.test.ts** (10 tests): Hash extraction, compression round-trip, hash clearing after extraction, corrupted/invalid data handling, regression test documenting hash consumption timing (extractPuzzleFromUrl clears hash, so callers must store the returned puzzle before any subsequent hash check)
+- **agentClient.test.ts** (7 tests): Event builder functions — GAME_STARTED (player names, puzzle metadata, clue counts), CLUE_COMPLETED (clue details, scores, remaining), LEAD_CHANGE (leader names, scores), GAME_COMPLETED (winner, final scores)
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)
