@@ -125,7 +125,11 @@
     "engineLabel": "Motor",
     "engineBrowser": "TTS del navegador",
     "engineElevenLabs": "ElevenLabs",
-    "elevenLabsVoice": "Voz de ElevenLabs"
+    "elevenLabsVoice": "Voz de ElevenLabs",
+    "engineAgent": "Presentador IA",
+    "agentConnected": "Conectado",
+    "agentConnecting": "Conectando...",
+    "agentError": "Error de conexi\u00f3n"
   },
   "hostView": {
     "tvHostView": "Vista TV / Anfitri\u00f3n",

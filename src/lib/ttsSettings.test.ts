@@ -96,6 +96,12 @@ describe("TTS settings persistence", () => {
     expect(loadTTSSettings().engine).toBe("elevenlabs");
   });
 
+  it("loads engine agent when saved", () => {
+    const settings: TTSSettings = { ...DEFAULT_TTS_SETTINGS, engine: "agent" };
+    saveTTSSettings(settings);
+    expect(loadTTSSettings().engine).toBe("agent");
+  });
+
   it("defaults engine to browser for unknown value", () => {
     localStorage.setItem(
       "crossword-clash-tts",

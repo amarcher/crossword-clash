@@ -149,6 +149,9 @@ export function useSpeechSettings(): SpeechSettings {
     (text: string) => {
       if (settingsRef.current.muted) return;
 
+      // Agent engine gets events via sendEvent(), not speak()
+      if (settingsRef.current.engine === "agent") return;
+
       if (settingsRef.current.engine === "elevenlabs" && elAvailable) {
         getAudioQueue().enqueue(text);
         return;

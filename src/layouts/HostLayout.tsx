@@ -4,6 +4,7 @@ import { useSupabase } from "../hooks/useSupabase";
 import { usePuzzle } from "../hooks/usePuzzle";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { useSpeechSettings } from "../hooks/useSpeechSettings";
+import { useAgentNarrator } from "../hooks/useAgentNarrator";
 import {
   uploadPuzzle,
   createGame,
@@ -12,6 +13,7 @@ import {
 import { loadHostSession, saveHostSession, clearHostSession } from "../lib/sessionPersistence";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "../lib/gridUtils";
+import { buildClueCompletedEvent, buildLeadChangeEvent } from "../lib/agentClient";
 import { tStatic } from "../i18n/i18n";
 import { createContext, useContext } from "react";
 import type { Puzzle, CellState } from "../types/puzzle";
@@ -65,6 +67,12 @@ export interface HostContextValue {
 
   // TTS
   tts: SpeechSettings;
+
+  // Agent narrator
+  agentNarrator: {
+    isConnected: boolean;
+    connectionError: string | null;
+  };
 
   // Derived
   playerColorMap: Record<string, string>;
@@ -126,19 +134,70 @@ export function HostLayout() {
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
   const playersRef = useRef<{ userId: string; displayName: string }[]>([]);
+  const agentSendEventRef = useRef<((event: import("../lib/agentClient").AgentGameEvent) => void) | null>(null);
+  const previousLeaderRef = useRef<string | null>(null);
 
   const handleCellClaimed = useCallback(
     (row: number, col: number, _letter: string, playerId: string) => {
       if (!puzzle) return;
       const completed = getNewlyCompletedClues(puzzle, playerCellsRef.current, row, col);
-      for (const clue of completed) {
-        const player = playersRef.current.find((p) => p.userId === playerId);
-        const playerName = player?.displayName ?? "Unknown";
-        const text =
-          tts.engine === "elevenlabs"
-            ? `${playerName} completed ${clue.number} ${clue.direction}: ${clue.answer.toLowerCase()}`
-            : `${playerName} -- ${clue.number} ${clue.direction} -- ${clue.text} -- ${clue.answer.toLowerCase()}`;
-        tts.speak(text);
+
+      if (tts.engine === "agent" && agentSendEventRef.current && completed.length > 0) {
+        // Build per-player clue scores for agent
+        const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCellsRef.current);
+        const clueScores = countCluesPerPlayer(cluesByPlayer);
+        const totalClues = puzzle.clues.length;
+        const playerScores = playersRef.current.map((p) => ({
+          name: p.displayName,
+          score: clueScores.get(p.userId) ?? 0,
+        }));
+
+        for (const clue of completed) {
+          const player = playersRef.current.find((p) => p.userId === playerId);
+          const playerName = player?.displayName ?? "Unknown";
+          agentSendEventRef.current(
+            buildClueCompletedEvent(
+              playerName,
+              clue.number,
+              clue.direction,
+              clue.text,
+              clue.answer,
+              playerScores,
+              totalClues,
+            ),
+          );
+        }
+
+        // Lead-change detection
+        const sorted = [...playerScores].sort((a, b) => b.score - a.score);
+        const currentLeader = sorted[0]?.score > 0 && sorted[0].score > (sorted[1]?.score ?? 0)
+          ? sorted[0].name
+          : null;
+        if (
+          currentLeader &&
+          previousLeaderRef.current &&
+          currentLeader !== previousLeaderRef.current
+        ) {
+          agentSendEventRef.current(
+            buildLeadChangeEvent(
+              currentLeader,
+              previousLeaderRef.current,
+              playerScores,
+              totalClues,
+            ),
+          );
+        }
+        previousLeaderRef.current = currentLeader;
+      } else {
+        for (const clue of completed) {
+          const player = playersRef.current.find((p) => p.userId === playerId);
+          const playerName = player?.displayName ?? "Unknown";
+          const text =
+            tts.engine === "elevenlabs"
+              ? `${playerName} completed ${clue.number} ${clue.direction}: ${clue.answer.toLowerCase()}`
+              : `${playerName} -- ${clue.number} ${clue.direction} -- ${clue.text} -- ${clue.answer.toLowerCase()}`;
+          tts.speak(text);
+        }
       }
     },
     [puzzle, tts.speak, tts.engine],
@@ -166,6 +225,27 @@ export function HostLayout() {
   );
 
   playersRef.current = multiplayer.players;
+
+  // Agent narrator — compute clue-based scores for the agent
+  const agentPlayerScores = useMemo(() => {
+    if (!puzzle) return [];
+    const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCells);
+    const clueScores = countCluesPerPlayer(cluesByPlayer);
+    return multiplayer.players.map((p) => ({
+      name: p.displayName,
+      score: clueScores.get(p.userId) ?? 0,
+    }));
+  }, [puzzle, playerCells, multiplayer.players]);
+
+  const agentNarrator = useAgentNarrator({
+    enabled: tts.engine === "agent" && tts.elevenLabsAvailable && !tts.muted,
+    gameStatus: multiplayer.gameStatus,
+    players: multiplayer.players,
+    puzzle,
+    playerScores: agentPlayerScores,
+  });
+
+  agentSendEventRef.current = agentNarrator.sendEvent;
 
   // Listen for hash changes
   useEffect(() => {
@@ -368,6 +448,10 @@ export function HostLayout() {
     setCompletionModalDismissed,
     multiplayer,
     tts,
+    agentNarrator: {
+      isConnected: agentNarrator.isConnected,
+      connectionError: agentNarrator.connectionError,
+    },
     playerColorMap,
     completedClues,
     completedCluesByPlayer,

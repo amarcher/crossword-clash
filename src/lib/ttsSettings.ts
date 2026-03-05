@@ -5,7 +5,7 @@
 
 const TTS_STORAGE_KEY = "crossword-clash-tts";
 
-export type TTSEngine = "browser" | "elevenlabs";
+export type TTSEngine = "browser" | "elevenlabs" | "agent";
 
 export interface TTSSettings {
   muted: boolean;
@@ -39,7 +39,7 @@ export function loadTTSSettings(): TTSSettings {
       voiceName: typeof parsed.voiceName === "string" ? parsed.voiceName : null,
       rate: typeof parsed.rate === "number" ? clamp(parsed.rate, 0.5, 2.0) : DEFAULT_TTS_SETTINGS.rate,
       pitch: typeof parsed.pitch === "number" ? clamp(parsed.pitch, 0.5, 2.0) : DEFAULT_TTS_SETTINGS.pitch,
-      engine: parsed.engine === "elevenlabs" ? "elevenlabs" : "browser",
+      engine: parsed.engine === "elevenlabs" || parsed.engine === "agent" ? parsed.engine : "browser",
       elevenLabsVoiceId: typeof parsed.elevenLabsVoiceId === "string" ? parsed.elevenLabsVoiceId : null,
     };
   } catch {
