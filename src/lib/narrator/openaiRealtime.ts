@@ -72,18 +72,26 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
 
     try {
       const token = await fetchEphemeralToken();
+      console.log("[OpenAIRealtime] Got ephemeral token, connecting WebSocket...");
 
       this.audioContext = new AudioContext({ sampleRate: 24000 });
       this.nextPlayTime = 0;
 
-      this.ws = new WebSocket(
-        "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview",
-        ["realtime", `openai-insecure-api-key.${token}`],
-      );
+      const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview";
+      this.ws = new WebSocket(url, [
+        "realtime",
+        `openai-insecure-api-key.${token}`,
+      ]);
 
       await new Promise<void>((resolve, reject) => {
         const ws = this.ws!;
+        const timeout = setTimeout(() => {
+          reject(new Error("WebSocket connection timed out"));
+        }, 10_000);
+
         ws.onopen = () => {
+          clearTimeout(timeout);
+          console.log("[OpenAIRealtime] WebSocket connected, sending session config...");
           // Send session config
           ws.send(
             JSON.stringify({
@@ -100,10 +108,16 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           );
           resolve();
         };
-        ws.onerror = () => reject(new Error("WebSocket connection failed"));
-        ws.onclose = () => {
+        ws.onerror = (e) => {
+          clearTimeout(timeout);
+          console.error("[OpenAIRealtime] WebSocket error:", e);
+          reject(new Error("WebSocket connection failed"));
+        };
+        ws.onclose = (e) => {
+          clearTimeout(timeout);
+          console.log("[OpenAIRealtime] WebSocket closed:", e.code, e.reason);
           if (!this.intentionalDisconnect) {
-            this._connectionError = "Agent disconnected";
+            this._connectionError = `Agent disconnected (${e.code})`;
             this.onStateChange?.();
           }
           this.ws = null;
@@ -118,6 +132,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       }
       this.eventQueue = [];
     } catch (err) {
+      console.error("[OpenAIRealtime] Connection error:", err);
       this._connectionError =
         err instanceof Error ? err.message : "Connection failed";
       this.onStateChange?.();
@@ -178,8 +193,12 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
   }
 
   private sendUserTurn(text: string): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn("[OpenAIRealtime] sendUserTurn called but WS not open, state:", this.ws?.readyState);
+      return;
+    }
 
+    console.log("[OpenAIRealtime] Sending user turn:", text.slice(0, 80));
     this.ws.send(
       JSON.stringify({
         type: "conversation.item.create",
@@ -198,7 +217,13 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       const data = JSON.parse(msg.data as string);
 
       switch (data.type) {
+        case "session.created":
+        case "session.updated":
+          console.log("[OpenAIRealtime]", data.type);
+          break;
+
         case "response.created":
+          console.log("[OpenAIRealtime] Response started");
           this.isResponding = true;
           break;
 
@@ -207,6 +232,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         case "response.done":
+          console.log("[OpenAIRealtime] Response done");
           this.isResponding = false;
           // Process any events that arrived during the response
           if (this.pendingDuringResponse.length > 0) {
@@ -222,6 +248,13 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
 
         case "error":
           console.error("[OpenAIRealtime] Error:", data.error);
+          break;
+
+        default:
+          // Log unexpected message types during debugging
+          if (!data.type?.startsWith("response.audio") && !data.type?.startsWith("response.text")) {
+            console.log("[OpenAIRealtime] Message:", data.type);
+          }
           break;
       }
     } catch {
