@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createNarratorBackend } from "../lib/narrator/factory";
 import { buildGameStartedEvent, buildGameCompletedEvent } from "../lib/narrator/events";
+import { ClaudeNarratorBackend } from "../lib/narrator/claudeNarrator";
 import type { NarratorBackend, AgentGameEvent, NarratorEngine } from "../lib/narrator/types";
 import type { Puzzle } from "../types/puzzle";
 import type { Player } from "../types/game";
@@ -8,6 +9,10 @@ import type { Player } from "../types/game";
 interface UseNarratorOptions {
   narratorEngine: NarratorEngine;
   ttsEngine?: "browser" | "elevenlabs";
+  voiceName?: string | null;
+  rate?: number;
+  pitch?: number;
+  elevenLabsVoiceId?: string | null;
   enabled: boolean;
   gameStatus: "waiting" | "active" | "completed";
   players: Player[];
@@ -24,6 +29,10 @@ interface UseNarratorResult {
 export function useNarrator({
   narratorEngine,
   ttsEngine,
+  voiceName,
+  rate,
+  pitch,
+  elevenLabsVoiceId,
   enabled,
   gameStatus,
   players,
@@ -71,7 +80,7 @@ export function useNarrator({
     // Already connected with the right config
     if (narratorRef.current) return;
 
-    const narrator = createNarratorBackend(narratorEngine, { ttsEngine });
+    const narrator = createNarratorBackend(narratorEngine, { ttsEngine, voiceName, rate, pitch, elevenLabsVoiceId });
     if (!narrator) return;
 
     narratorRef.current = narrator;
@@ -98,6 +107,13 @@ export function useNarrator({
     // This prevents gameStatus changing from "active" → "completed"
     // from tearing down the connection before GAME_COMPLETED is sent.
   }, [enabled, gameStatus, narratorEngine, ttsEngine]);
+
+  // Sync voice settings to Claude narrator without reconnecting
+  useEffect(() => {
+    if (narratorRef.current instanceof ClaudeNarratorBackend) {
+      narratorRef.current.setVoiceSettings({ voiceName, rate, pitch, elevenLabsVoiceId });
+    }
+  }, [voiceName, rate, pitch, elevenLabsVoiceId]);
 
   // Send GAME_COMPLETED when game ends, then disconnect after narrator finishes speaking
   useEffect(() => {

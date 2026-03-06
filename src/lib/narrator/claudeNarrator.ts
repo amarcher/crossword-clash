@@ -91,11 +91,19 @@ export type TTSEngine = "browser" | "elevenlabs";
 
 export interface ClaudeNarratorOptions {
   ttsEngine?: TTSEngine;
+  voiceName?: string | null;
+  rate?: number;
+  pitch?: number;
+  elevenLabsVoiceId?: string | null;
 }
 
 export class ClaudeNarratorBackend implements NarratorBackend {
   readonly name = "claude";
   private ttsEngine: TTSEngine;
+  private voiceName: string | null;
+  private rate: number;
+  private pitch: number;
+  private elevenLabsVoiceId: string | null;
   private messages: Message[] = [];
   private _isConnected = false;
   private _connectionError: string | null = null;
@@ -112,6 +120,17 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
   constructor(options?: ClaudeNarratorOptions) {
     this.ttsEngine = options?.ttsEngine ?? "elevenlabs";
+    this.voiceName = options?.voiceName ?? null;
+    this.rate = options?.rate ?? 1;
+    this.pitch = options?.pitch ?? 1;
+    this.elevenLabsVoiceId = options?.elevenLabsVoiceId ?? null;
+  }
+
+  setVoiceSettings(opts: Pick<ClaudeNarratorOptions, "voiceName" | "rate" | "pitch" | "elevenLabsVoiceId">): void {
+    if (opts.voiceName !== undefined) this.voiceName = opts.voiceName ?? null;
+    if (opts.rate !== undefined) this.rate = opts.rate;
+    if (opts.pitch !== undefined) this.pitch = opts.pitch;
+    if (opts.elevenLabsVoiceId !== undefined) this.elevenLabsVoiceId = opts.elevenLabsVoiceId ?? null;
   }
 
   get isConnected(): boolean {
@@ -248,6 +267,12 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     await new Promise<void>((resolve) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.volume = this._volume;
+      utterance.rate = this.rate;
+      utterance.pitch = this.pitch;
+      if (this.voiceName) {
+        const voice = speechSynthesis.getVoices().find((v) => v.name === this.voiceName);
+        if (voice) utterance.voice = voice;
+      }
       utterance.onend = () => resolve();
       utterance.onerror = () => resolve();
       speechSynthesis.speak(utterance);
@@ -263,7 +288,8 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     }
 
     try {
-      const audioData = await fetchTTSAudio(text, DEFAULT_VOICE_ID);
+      const voiceId = this.elevenLabsVoiceId || DEFAULT_VOICE_ID;
+      const audioData = await fetchTTSAudio(text, voiceId);
       if (this.intentionalDisconnect || !this.audioContext) return;
 
       const audioBuffer = await this.audioContext.decodeAudioData(audioData);
