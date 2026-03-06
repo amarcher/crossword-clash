@@ -98,7 +98,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
             JSON.stringify({
               type: "session.update",
               session: {
-                type: "conversation",
+                type: "realtime",
                 modalities: ["text", "audio"],
                 instructions: SYSTEM_PROMPT,
                 voice: "shimmer",
