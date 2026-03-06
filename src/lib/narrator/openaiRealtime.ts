@@ -239,6 +239,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         case "response.audio.delta":
+        case "response.output_audio.delta":
           this.playAudioDelta(data.delta);
           break;
 
@@ -263,10 +264,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         default:
-          // Log unexpected message types during debugging
-          if (!data.type?.startsWith("response.audio") && !data.type?.startsWith("response.text")) {
-            console.log("[OpenAIRealtime] Message:", data.type);
-          }
+          console.log("[OpenAIRealtime] Message:", data.type);
           break;
       }
     } catch {
