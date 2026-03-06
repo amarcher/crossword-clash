@@ -84,7 +84,7 @@ export function useNarrator({
     // from tearing down the connection before GAME_COMPLETED is sent.
   }, [enabled, gameStatus, narratorEngine]);
 
-  // Send GAME_COMPLETED when game ends (but keep connection alive for narrator to react)
+  // Send GAME_COMPLETED when game ends, then disconnect after narrator finishes speaking
   useEffect(() => {
     if (gameStatus !== "completed") return;
     if (!narratorRef.current || gameCompletedSentRef.current) return;
@@ -97,6 +97,11 @@ export function useNarrator({
     const totalClues = p.clues.length;
     const sorted = [...scores].sort((a, b) => b.score - a.score);
     const winner = sorted[0]?.name ?? "Unknown";
+
+    // Disconnect once the narrator finishes speaking the completion message
+    narratorRef.current.setOnIdle(() => {
+      disconnectNarrator();
+    });
 
     narratorRef.current.sendEvent(buildGameCompletedEvent(winner, scores, totalClues));
   }, [gameStatus]);

@@ -41,6 +41,7 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
   private intentionalDisconnect = false;
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
+  private onIdle: (() => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private hasPendingEvents = false;
   private agentMode: "speaking" | "listening" = "listening";
@@ -96,6 +97,7 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
               );
             } else if (!this.hasPendingEvents) {
               this.resetIdleTimer();
+              this.onIdle?.();
             }
           } else if (mode.mode === "speaking") {
             this.agentMode = "speaking";
@@ -169,6 +171,10 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
 
   setOnStateChange(cb: (() => void) | null): void {
     this.onStateChange = cb;
+  }
+
+  setOnIdle(cb: (() => void) | null): void {
+    this.onIdle = cb;
   }
 
   private resetIdleTimer(): void {

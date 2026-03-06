@@ -49,6 +49,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
   private intentionalDisconnect = false;
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
+  private onIdle: (() => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private audioContext: AudioContext | null = null;
   private isResponding = false;
@@ -192,6 +193,10 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
     this.onStateChange = cb;
   }
 
+  setOnIdle(cb: (() => void) | null): void {
+    this.onIdle = cb;
+  }
+
   private sendUserTurn(text: string): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.warn("[OpenAIRealtime] sendUserTurn called but WS not open, state:", this.ws?.readyState);
@@ -243,6 +248,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
             this.sendUserTurn(batch);
           } else {
             this.resetIdleTimer();
+            this.onIdle?.();
           }
           break;
 

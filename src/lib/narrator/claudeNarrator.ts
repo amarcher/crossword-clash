@@ -85,6 +85,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private _isConnected = false;
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
+  private onIdle: (() => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private processing = false;
   private eventQueue: AgentGameEvent[] = [];
@@ -160,10 +161,15 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.onStateChange = cb;
   }
 
+  setOnIdle(cb: (() => void) | null): void {
+    this.onIdle = cb;
+  }
+
   private async processQueue(): Promise<void> {
     if (this.eventQueue.length === 0 || !this._isConnected) {
       this.processing = false;
       this.resetIdleTimer();
+      this.onIdle?.();
       return;
     }
 

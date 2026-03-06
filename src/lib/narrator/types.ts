@@ -22,6 +22,8 @@ export interface NarratorBackend {
   sendEvent(event: AgentGameEvent): void;
   setVolume(volume: number): void;
   setOnStateChange(cb: (() => void) | null): void;
+  /** Called once when the narrator finishes speaking and has no pending events. */
+  setOnIdle(cb: (() => void) | null): void;
 }
 
 export type { Puzzle, Player };
