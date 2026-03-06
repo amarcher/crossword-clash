@@ -120,7 +120,7 @@
 }
 
 .trophy-pulse {
-  animation: trophy-pulse 1.5s ease-in-out infinite;
+  animation: trophy-pulse 1.5s ease-in-out 3;
 }
 
 /* Lockout countdown pulse */
