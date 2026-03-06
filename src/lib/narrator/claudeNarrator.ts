@@ -212,6 +212,12 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       const audioData = await fetchTTSAudio(text, DEFAULT_VOICE_ID);
       if (this.intentionalDisconnect) return;
 
+      console.log("[ClaudeNarrator] TTS audio size:", audioData.byteLength, "bytes");
+      if (audioData.byteLength === 0) {
+        console.error("[ClaudeNarrator] TTS returned empty audio");
+        return;
+      }
+
       const blob = new Blob([audioData], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
 
@@ -225,12 +231,14 @@ export class ClaudeNarratorBackend implements NarratorBackend {
           this.currentAudio = null;
           resolve();
         };
-        audio.onerror = () => {
+        audio.onerror = (e) => {
+          console.error("[ClaudeNarrator] Audio playback error:", e, "networkState:", audio.networkState, "error:", audio.error);
           URL.revokeObjectURL(url);
           this.currentAudio = null;
           resolve();
         };
-        audio.play().catch(() => {
+        audio.play().catch((err) => {
+          console.error("[ClaudeNarrator] Audio play() rejected:", err);
           URL.revokeObjectURL(url);
           this.currentAudio = null;
           resolve();
