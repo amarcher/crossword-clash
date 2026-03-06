@@ -32,9 +32,6 @@ async function fetchSignedUrl(): Promise<string> {
 /** How long after the agent finishes speaking before we auto-disconnect (ms) */
 const IDLE_DISCONNECT_MS = 30_000;
 
-/** How long of silence in listening mode before we send a contextual reminder (ms) */
-const QUIET_REMINDER_MS = 10_000;
-
 export class ElevenLabsAgentBackend implements NarratorBackend {
   readonly name = "elevenlabs-agent";
   private conversation: Conversation | null = null;
@@ -45,7 +42,6 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
-  private quietReminderTimer: ReturnType<typeof setTimeout> | null = null;
   private hasPendingEvents = false;
   private agentMode: "speaking" | "listening" = "listening";
   private pendingContextUpdates: AgentGameEvent[] = [];
@@ -73,7 +69,6 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
         onDisconnect: () => {
           this.conversation = null;
           this.clearIdleTimer();
-          this.clearQuietReminderTimer();
           if (this.intentionalDisconnect) return;
           if (!this.reconnectAttempted) {
             this.reconnectAttempted = true;
@@ -96,18 +91,15 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
               this.pendingContextUpdates = [];
               this.hasPendingEvents = true;
               this.clearIdleTimer();
-              this.clearQuietReminderTimer();
               this.conversation?.sendUserMessage(
                 "Please comment on the recent events.",
               );
             } else if (!this.hasPendingEvents) {
               this.resetIdleTimer();
-              this.resetQuietReminderTimer();
             }
           } else if (mode.mode === "speaking") {
             this.agentMode = "speaking";
             this.clearIdleTimer();
-            this.clearQuietReminderTimer();
           }
         },
         onError: (message) => {
@@ -138,7 +130,6 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
     this.connecting = false;
     this.reconnectAttempted = false;
     this.clearIdleTimer();
-    this.clearQuietReminderTimer();
     if (this.conversation) {
       try {
         await this.conversation.endSession();
@@ -157,7 +148,6 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
     console.log("[ElevenLabsAgent] Sending:", text);
     this.hasPendingEvents = true;
     this.clearIdleTimer();
-    this.clearQuietReminderTimer();
 
     if (!this.conversation) {
       this.eventQueue.push(event);
@@ -198,29 +188,4 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
     this.hasPendingEvents = false;
   }
 
-  // Fix 1: Send contextual update during long pauses to prevent "are you still there?"
-  private resetQuietReminderTimer(): void {
-    this.clearQuietReminderTimer();
-    this.quietReminderTimer = setTimeout(() => {
-      if (
-        this.conversation &&
-        this.agentMode === "listening" &&
-        !this.hasPendingEvents
-      ) {
-        console.log("[ElevenLabsAgent] Sending quiet reminder");
-        this.conversation.sendContextualUpdate(
-          "Game in progress. Waiting for next event.",
-        );
-        // Re-arm the timer in case the pause continues
-        this.resetQuietReminderTimer();
-      }
-    }, QUIET_REMINDER_MS);
-  }
-
-  private clearQuietReminderTimer(): void {
-    if (this.quietReminderTimer) {
-      clearTimeout(this.quietReminderTimer);
-      this.quietReminderTimer = null;
-    }
-  }
 }

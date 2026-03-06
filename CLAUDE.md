@@ -88,7 +88,7 @@ Requires ElevenLabs localStorage gate (`crossword-clash-elevenlabs`). Only avail
 ### ElevenLabs Agent Specifics
 
 - Mic muted via `setMicMuted(true)` — all input is text.
-- **Idle chatter prevention**: `sendContextualUpdate("Game in progress...")` sent every 10s of silence to prevent "are you still there?" prompts. Dashboard system prompt should also include "NEVER initiate conversation unprompted."
+- **Idle chatter prevention**: Dashboard system prompt must include "NEVER ask if the user is still there. NEVER initiate conversation unprompted. Only speak when you receive a game event."
 - **Speech interruption prevention**: Events arriving while agent is speaking use `sendContextualUpdate()` instead of `sendUserMessage()` to avoid cutting off the agent. When agent returns to listening, accumulated context is prompted with `sendUserMessage("Please comment on the recent events.")`.
 
 ## Project Structure
