@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENAI_API_KEY}`,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          model: "gpt-4o-realtime-preview",
+        }),
       },
     );
 

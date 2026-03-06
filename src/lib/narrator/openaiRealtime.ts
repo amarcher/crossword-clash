@@ -199,6 +199,9 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       return;
     }
 
+    // Mark responding immediately to prevent concurrent response.create calls
+    this.isResponding = true;
+
     console.log("[OpenAIRealtime] Sending user turn:", text.slice(0, 80));
     this.ws.send(
       JSON.stringify({
@@ -210,7 +213,14 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
         },
       }),
     );
-    this.ws.send(JSON.stringify({ type: "response.create" }));
+    this.ws.send(
+      JSON.stringify({
+        type: "response.create",
+        response: {
+          output_modalities: ["audio"],
+        },
+      }),
+    );
   }
 
   private handleMessage(msg: MessageEvent): void {
