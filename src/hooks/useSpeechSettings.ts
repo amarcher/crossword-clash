@@ -4,7 +4,7 @@ import {
   saveTTSSettings,
   DEFAULT_TTS_SETTINGS,
 } from "../lib/ttsSettings";
-import type { TTSSettings, TTSEngine } from "../lib/ttsSettings";
+import type { TTSSettings, TTSEngine, NarratorEngine } from "../lib/ttsSettings";
 import {
   ELEVENLABS_VOICES,
   loadElevenLabsGate,
@@ -21,6 +21,7 @@ export interface SpeechSettings {
   voices: SpeechSynthesisVoice[];
   settingsOpen: boolean;
   engine: TTSEngine;
+  narratorEngine: NarratorEngine;
   elevenLabsAvailable: boolean;
   elevenLabsVoiceId: string | null;
   elevenLabsVoices: ElevenLabsVoice[];
@@ -30,6 +31,7 @@ export interface SpeechSettings {
   setRate: (rate: number) => void;
   setPitch: (pitch: number) => void;
   setEngine: (engine: TTSEngine) => void;
+  setNarratorEngine: (engine: NarratorEngine) => void;
   setElevenLabsVoiceId: (id: string | null) => void;
   speak: (text: string) => void;
   openSettings: () => void;
@@ -141,6 +143,10 @@ export function useSpeechSettings(): SpeechSettings {
     setSettings((prev) => ({ ...prev, engine }));
   }, []);
 
+  const setNarratorEngine = useCallback((narratorEngine: NarratorEngine) => {
+    setSettings((prev) => ({ ...prev, narratorEngine }));
+  }, []);
+
   const setElevenLabsVoiceId = useCallback((elevenLabsVoiceId: string | null) => {
     setSettings((prev) => ({ ...prev, elevenLabsVoiceId }));
   }, []);
@@ -149,8 +155,8 @@ export function useSpeechSettings(): SpeechSettings {
     (text: string) => {
       if (settingsRef.current.muted) return;
 
-      // Agent engine gets events via sendEvent(), not speak()
-      if (settingsRef.current.engine === "agent") return;
+      // When a narrator engine is active, it handles all commentary — speak() is a no-op
+      if (settingsRef.current.narratorEngine !== null) return;
 
       if (settingsRef.current.engine === "elevenlabs" && elAvailable) {
         getAudioQueue().enqueue(text);
@@ -183,6 +189,7 @@ export function useSpeechSettings(): SpeechSettings {
     voices,
     settingsOpen,
     engine: settings.engine,
+    narratorEngine: settings.narratorEngine,
     elevenLabsAvailable: elAvailable,
     elevenLabsVoiceId: settings.elevenLabsVoiceId,
     elevenLabsVoices: ELEVENLABS_VOICES,
@@ -192,6 +199,7 @@ export function useSpeechSettings(): SpeechSettings {
     setRate,
     setPitch,
     setEngine,
+    setNarratorEngine,
     setElevenLabsVoiceId,
     speak,
     openSettings,

@@ -4,7 +4,7 @@ import { useSupabase } from "../hooks/useSupabase";
 import { usePuzzle } from "../hooks/usePuzzle";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { useSpeechSettings } from "../hooks/useSpeechSettings";
-import { useAgentNarrator } from "../hooks/useAgentNarrator";
+import { useNarrator } from "../hooks/useNarrator";
 import {
   uploadPuzzle,
   createGame,
@@ -13,7 +13,7 @@ import {
 import { loadHostSession, saveHostSession, clearHostSession } from "../lib/sessionPersistence";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "../lib/gridUtils";
-import { buildClueCompletedEvent, buildLeadChangeEvent } from "../lib/agentClient";
+import { buildClueCompletedEvent, buildLeadChangeEvent } from "../lib/narrator/events";
 import { tStatic } from "../i18n/i18n";
 import { createContext, useContext } from "react";
 import type { Puzzle, CellState } from "../types/puzzle";
@@ -21,6 +21,7 @@ import type { Player, GameSettings } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
 import type { SpeechSettings } from "../hooks/useSpeechSettings";
 import type { PuzzleAction } from "../hooks/usePuzzle";
+import type { AgentGameEvent } from "../lib/narrator/types";
 
 export interface HostContextValue {
   // Auth
@@ -68,8 +69,8 @@ export interface HostContextValue {
   // TTS
   tts: SpeechSettings;
 
-  // Agent narrator
-  agentNarrator: {
+  // Narrator
+  narrator: {
     isConnected: boolean;
     connectionError: string | null;
   };
@@ -134,7 +135,7 @@ export function HostLayout() {
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
   const playersRef = useRef<{ userId: string; displayName: string }[]>([]);
-  const agentSendEventRef = useRef<((event: import("../lib/agentClient").AgentGameEvent) => void) | null>(null);
+  const narratorSendEventRef = useRef<((event: AgentGameEvent) => void) | null>(null);
   const previousLeaderRef = useRef<string | null>(null);
 
   const handleCellClaimed = useCallback(
@@ -142,8 +143,8 @@ export function HostLayout() {
       if (!puzzle) return;
       const completed = getNewlyCompletedClues(puzzle, playerCellsRef.current, row, col);
 
-      if (tts.engine === "agent" && agentSendEventRef.current && completed.length > 0) {
-        // Build per-player clue scores for agent
+      if (tts.narratorEngine !== null && narratorSendEventRef.current && completed.length > 0) {
+        // Build per-player clue scores for narrator
         const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCellsRef.current);
         const clueScores = countCluesPerPlayer(cluesByPlayer);
         const totalClues = puzzle.clues.length;
@@ -155,7 +156,7 @@ export function HostLayout() {
         for (const clue of completed) {
           const player = playersRef.current.find((p) => p.userId === playerId);
           const playerName = player?.displayName ?? "Unknown";
-          agentSendEventRef.current(
+          narratorSendEventRef.current(
             buildClueCompletedEvent(
               playerName,
               clue.number,
@@ -178,7 +179,7 @@ export function HostLayout() {
           previousLeaderRef.current &&
           currentLeader !== previousLeaderRef.current
         ) {
-          agentSendEventRef.current(
+          narratorSendEventRef.current(
             buildLeadChangeEvent(
               currentLeader,
               previousLeaderRef.current,
@@ -200,7 +201,7 @@ export function HostLayout() {
         }
       }
     },
-    [puzzle, tts.speak, tts.engine],
+    [puzzle, tts.speak, tts.engine, tts.narratorEngine],
   );
 
   const multiplayer = useMultiplayer(
@@ -226,8 +227,8 @@ export function HostLayout() {
 
   playersRef.current = multiplayer.players;
 
-  // Agent narrator — compute clue-based scores for the agent
-  const agentPlayerScores = useMemo(() => {
+  // Narrator — compute clue-based scores
+  const narratorPlayerScores = useMemo(() => {
     if (!puzzle) return [];
     const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCells);
     const clueScores = countCluesPerPlayer(cluesByPlayer);
@@ -237,15 +238,16 @@ export function HostLayout() {
     }));
   }, [puzzle, playerCells, multiplayer.players]);
 
-  const agentNarrator = useAgentNarrator({
-    enabled: tts.engine === "agent" && tts.elevenLabsAvailable && !tts.muted,
+  const narrator = useNarrator({
+    narratorEngine: tts.narratorEngine,
+    enabled: tts.elevenLabsAvailable && !tts.muted,
     gameStatus: multiplayer.gameStatus,
     players: multiplayer.players,
     puzzle,
-    playerScores: agentPlayerScores,
+    playerScores: narratorPlayerScores,
   });
 
-  agentSendEventRef.current = agentNarrator.sendEvent;
+  narratorSendEventRef.current = narrator.sendEvent;
 
   // Listen for hash changes
   useEffect(() => {
@@ -448,9 +450,9 @@ export function HostLayout() {
     setCompletionModalDismissed,
     multiplayer,
     tts,
-    agentNarrator: {
-      isConnected: agentNarrator.isConnected,
-      connectionError: agentNarrator.connectionError,
+    narrator: {
+      isConnected: narrator.isConnected,
+      connectionError: narrator.connectionError,
     },
     playerColorMap,
     completedClues,

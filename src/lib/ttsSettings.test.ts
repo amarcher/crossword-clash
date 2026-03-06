@@ -24,6 +24,7 @@ describe("TTS settings persistence", () => {
       pitch: 0.8,
       engine: "browser",
       elevenLabsVoiceId: null,
+      narratorEngine: null,
     };
     saveTTSSettings(settings);
     expect(loadTTSSettings()).toEqual(settings);
@@ -96,10 +97,15 @@ describe("TTS settings persistence", () => {
     expect(loadTTSSettings().engine).toBe("elevenlabs");
   });
 
-  it("loads engine agent when saved", () => {
-    const settings: TTSSettings = { ...DEFAULT_TTS_SETTINGS, engine: "agent" };
-    saveTTSSettings(settings);
-    expect(loadTTSSettings().engine).toBe("agent");
+  it("migrates legacy engine agent to narratorEngine elevenlabs-agent", () => {
+    // Simulate old settings with engine: "agent"
+    localStorage.setItem(
+      "crossword-clash-tts",
+      JSON.stringify({ ...DEFAULT_TTS_SETTINGS, engine: "agent" }),
+    );
+    const loaded = loadTTSSettings();
+    expect(loaded.engine).toBe("browser");
+    expect(loaded.narratorEngine).toBe("elevenlabs-agent");
   });
 
   it("defaults engine to browser for unknown value", () => {
@@ -129,5 +135,32 @@ describe("TTS settings persistence", () => {
       JSON.stringify({ ...DEFAULT_TTS_SETTINGS, elevenLabsVoiceId: 123 }),
     );
     expect(loadTTSSettings().elevenLabsVoiceId).toBeNull();
+  });
+
+  it("defaults narratorEngine to null when not set", () => {
+    expect(loadTTSSettings().narratorEngine).toBeNull();
+  });
+
+  it("round-trips narratorEngine elevenlabs-agent", () => {
+    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "elevenlabs-agent" });
+    expect(loadTTSSettings().narratorEngine).toBe("elevenlabs-agent");
+  });
+
+  it("round-trips narratorEngine openai-agent", () => {
+    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "openai-agent" });
+    expect(loadTTSSettings().narratorEngine).toBe("openai-agent");
+  });
+
+  it("round-trips narratorEngine claude", () => {
+    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "claude" });
+    expect(loadTTSSettings().narratorEngine).toBe("claude");
+  });
+
+  it("defaults narratorEngine for unknown value", () => {
+    localStorage.setItem(
+      "crossword-clash-tts",
+      JSON.stringify({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "unknown" }),
+    );
+    expect(loadTTSSettings().narratorEngine).toBeNull();
   });
 });

@@ -46,6 +46,8 @@ describe("TTSSettingsModal", () => {
     speak: vi.fn(),
     engine: "browser" as "browser" | "elevenlabs",
     setEngine: vi.fn(),
+    narratorEngine: null as "elevenlabs-agent" | "openai-agent" | "claude" | null,
+    setNarratorEngine: vi.fn(),
     elevenLabsAvailable: false,
     elevenLabsVoiceId: null as string | null,
     setElevenLabsVoiceId: vi.fn(),
@@ -111,18 +113,18 @@ describe("TTSSettingsModal", () => {
     expect(optgroups[1].getAttribute("label")).toBe("fr-FR");
   });
 
-  it("does not show engine toggle when elevenLabsAvailable is false", () => {
+  it("does not show narrator toggle when elevenLabsAvailable is false", () => {
     render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={false} />);
-    expect(screen.queryByText("Engine")).toBeNull();
+    expect(screen.queryByText("AI Host")).toBeNull();
   });
 
-  it("shows engine toggle when elevenLabsAvailable is true", () => {
+  it("shows narrator toggle when elevenLabsAvailable is true", () => {
     render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} />);
-    expect(screen.getByText("Engine")).toBeTruthy();
+    expect(screen.getByText("AI Host")).toBeTruthy();
   });
 
-  it("shows browser voice controls in browser mode", () => {
-    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} engine="browser" />);
+  it("shows browser voice controls when narrator is off", () => {
+    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} engine="browser" narratorEngine={null} />);
     expect(screen.getByText("Voice")).toBeTruthy();
     expect(screen.getByText("Rate: 1.0")).toBeTruthy();
     expect(screen.getByText("Pitch: 1.0")).toBeTruthy();
@@ -134,6 +136,7 @@ describe("TTSSettingsModal", () => {
         {...baseProps()}
         elevenLabsAvailable={true}
         engine="elevenlabs"
+        narratorEngine={null}
       />,
     );
     expect(screen.getByText("ElevenLabs Voice")).toBeTruthy();
@@ -162,5 +165,29 @@ describe("TTSSettingsModal", () => {
     const voiceSelect = screen.getByDisplayValue("Rachel (default)");
     fireEvent.change(voiceSelect, { target: { value: ELEVENLABS_VOICES[1].id } });
     expect(props.setElevenLabsVoiceId).toHaveBeenCalledWith(ELEVENLABS_VOICES[1].id);
+  });
+
+  it("hides TTS engine controls when narrator agent is active", () => {
+    render(
+      <TTSSettingsModal
+        {...baseProps()}
+        elevenLabsAvailable={true}
+        narratorEngine="elevenlabs-agent"
+      />,
+    );
+    // Should not show engine dropdown or voice controls
+    expect(screen.queryByText("Engine")).toBeNull();
+    expect(screen.queryByText("Voice")).toBeNull();
+    expect(screen.queryByText("Rate: 1.0")).toBeNull();
+  });
+
+  it("calls setNarratorEngine when narrator engine is changed", () => {
+    const props = baseProps();
+    props.elevenLabsAvailable = true;
+    render(<TTSSettingsModal {...props} />);
+
+    const narratorSelect = screen.getByDisplayValue("Off (per-clue announcements)");
+    fireEvent.change(narratorSelect, { target: { value: "elevenlabs-agent" } });
+    expect(props.setNarratorEngine).toHaveBeenCalledWith("elevenlabs-agent");
   });
 });

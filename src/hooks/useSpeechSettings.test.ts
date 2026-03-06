@@ -58,6 +58,7 @@ describe("useSpeechSettings", () => {
     expect(result.current.rate).toBe(1.0);
     expect(result.current.pitch).toBe(1.0);
     expect(result.current.engine).toBe("browser");
+    expect(result.current.narratorEngine).toBeNull();
     expect(result.current.elevenLabsVoiceId).toBeNull();
   });
 
@@ -69,6 +70,7 @@ describe("useSpeechSettings", () => {
       pitch: 0.8,
       engine: "browser",
       elevenLabsVoiceId: null,
+      narratorEngine: null,
     };
     saveTTSSettings(saved);
     const { result } = renderHook(() => useSpeechSettings());
@@ -105,6 +107,7 @@ describe("useSpeechSettings", () => {
       pitch: 0.8,
       engine: "browser",
       elevenLabsVoiceId: null,
+      narratorEngine: null,
     });
     const { result } = renderHook(() => useSpeechSettings());
 
@@ -126,6 +129,7 @@ describe("useSpeechSettings", () => {
       pitch: 1.0,
       engine: "browser",
       elevenLabsVoiceId: null,
+      narratorEngine: null,
     });
     const { result } = renderHook(() => useSpeechSettings());
 
@@ -191,6 +195,14 @@ describe("useSpeechSettings", () => {
     expect(stored.engine).toBe("elevenlabs");
   });
 
+  it("setNarratorEngine updates and persists", () => {
+    const { result } = renderHook(() => useSpeechSettings());
+    act(() => result.current.setNarratorEngine("elevenlabs-agent"));
+    expect(result.current.narratorEngine).toBe("elevenlabs-agent");
+    const stored = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
+    expect(stored.narratorEngine).toBe("elevenlabs-agent");
+  });
+
   it("setElevenLabsVoiceId updates and persists", () => {
     const { result } = renderHook(() => useSpeechSettings());
     act(() => result.current.setElevenLabsVoiceId("21m00Tcm4TlvDq8ikWAM"));
@@ -219,14 +231,15 @@ describe("useSpeechSettings", () => {
     expect(result.current.elevenLabsVoices[0].name).toBe("Andrew");
   });
 
-  it("speak is a no-op when engine is agent", () => {
+  it("speak is a no-op when narratorEngine is active", () => {
     saveTTSSettings({
       muted: false,
       voiceName: null,
       rate: 1.0,
       pitch: 1.0,
-      engine: "agent",
+      engine: "browser",
       elevenLabsVoiceId: null,
+      narratorEngine: "elevenlabs-agent",
     });
     const { result } = renderHook(() => useSpeechSettings());
     act(() => result.current.speak("Hello"));
@@ -245,6 +258,7 @@ describe("useSpeechSettings", () => {
       pitch: 1.0,
       engine: "elevenlabs",
       elevenLabsVoiceId: null,
+      narratorEngine: null,
     });
 
     // Mock fetch to prevent actual network call

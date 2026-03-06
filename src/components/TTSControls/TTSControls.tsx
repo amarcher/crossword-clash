@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { SpeechSettings } from "../../hooks/useSpeechSettings";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import type { NarratorEngine } from "../../lib/ttsSettings";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
 
@@ -41,6 +42,8 @@ type TTSSettingsModalProps = Pick<
   | "speak"
   | "engine"
   | "setEngine"
+  | "narratorEngine"
+  | "setNarratorEngine"
   | "elevenLabsAvailable"
   | "elevenLabsVoiceId"
   | "setElevenLabsVoiceId"
@@ -60,6 +63,8 @@ export function TTSSettingsModal({
   speak,
   engine,
   setEngine,
+  narratorEngine,
+  setNarratorEngine,
   elevenLabsAvailable,
   elevenLabsVoiceId,
   setElevenLabsVoiceId,
@@ -86,6 +91,8 @@ export function TTSSettingsModal({
 
   if (!settingsOpen) return null;
 
+  const hasNarrator = narratorEngine !== null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeSettings} />
@@ -99,93 +106,122 @@ export function TTSSettingsModal({
       >
         <h2 className="text-lg font-bold text-white mb-4">{t('tts.voiceSettings')}</h2>
 
-        {/* Engine toggle — only shown when ElevenLabs gate is set */}
+        {/* Narrator engine selector — only shown when ElevenLabs gate is set */}
         {elevenLabsAvailable && (
           <label className="block mb-4">
-            <span className="text-sm text-neutral-400 block mb-1">{t('tts.engineLabel')}</span>
+            <span className="text-sm text-neutral-400 block mb-1">{t('tts.narratorLabel')}</span>
             <select
-              value={engine}
-              onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs" | "agent")}
+              value={narratorEngine ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNarratorEngine(val === "" ? null : val as NarratorEngine);
+              }}
               className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <option value="browser">{t('tts.engineBrowser')}</option>
-              <option value="elevenlabs">{t('tts.engineElevenLabs')}</option>
-              <option value="agent">{t('tts.engineAgent')}</option>
+              <option value="">{t('tts.narratorNone')}</option>
+              <option value="elevenlabs-agent">{t('tts.narratorElevenLabs')}</option>
+              <option value="openai-agent">{t('tts.narratorOpenAI')}</option>
+              <option value="claude">{t('tts.narratorClaude')}</option>
             </select>
           </label>
         )}
 
-        {engine === "agent" && elevenLabsAvailable ? (
+        {/* Narrator description */}
+        {hasNarrator && elevenLabsAvailable && (
           <p className="text-xs text-neutral-400 mb-4">
-            {t('tts.engineAgent')} — AI gameshow host provides live commentary. Voice and personality are configured in the ElevenLabs dashboard.
+            {narratorEngine === "elevenlabs-agent" && t('tts.narratorElevenLabsDesc')}
+            {narratorEngine === "openai-agent" && t('tts.narratorOpenAIDesc')}
+            {narratorEngine === "claude" && t('tts.narratorClaudeDesc')}
           </p>
-        ) : engine === "elevenlabs" && elevenLabsAvailable ? (
-          /* ElevenLabs voice select */
-          <label className="block mb-4">
-            <span className="text-sm text-neutral-400 block mb-1">{t('tts.elevenLabsVoice')}</span>
-            <select
-              value={elevenLabsVoiceId ?? ""}
-              onChange={(e) => setElevenLabsVoiceId(e.target.value || null)}
-              className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <option value="">Rachel (default)</option>
-              {elevenLabsVoices.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} — {v.description}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
+        )}
+
+        {/* TTS voice controls — only shown when narrator is NOT active (Claude narrator uses its own TTS) */}
+        {(!hasNarrator || narratorEngine === "claude") && (
           <>
-            {/* Browser voice select */}
-            <label className="block mb-4">
-              <span className="text-sm text-neutral-400 block mb-1">{t('tts.voice')}</span>
-              <select
-                value={voiceName ?? ""}
-                onChange={(e) => setVoiceName(e.target.value || null)}
-                className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                <option value="">{t('tts.systemDefault')}</option>
-                {[...groupedVoices.entries()].map(([lang, langVoices]) => (
-                  <optgroup key={lang} label={lang}>
-                    {langVoices.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.name}
-                      </option>
+            {/* Engine toggle — only shown when ElevenLabs gate is set and no agent narrator */}
+            {elevenLabsAvailable && !hasNarrator && (
+              <label className="block mb-4">
+                <span className="text-sm text-neutral-400 block mb-1">{t('tts.engineLabel')}</span>
+                <select
+                  value={engine}
+                  onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs")}
+                  className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <option value="browser">{t('tts.engineBrowser')}</option>
+                  <option value="elevenlabs">{t('tts.engineElevenLabs')}</option>
+                </select>
+              </label>
+            )}
+
+            {engine === "elevenlabs" && elevenLabsAvailable ? (
+              /* ElevenLabs voice select */
+              <label className="block mb-4">
+                <span className="text-sm text-neutral-400 block mb-1">{t('tts.elevenLabsVoice')}</span>
+                <select
+                  value={elevenLabsVoiceId ?? ""}
+                  onChange={(e) => setElevenLabsVoiceId(e.target.value || null)}
+                  className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <option value="">Rachel (default)</option>
+                  {elevenLabsVoices.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} — {v.description}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                {/* Browser voice select */}
+                <label className="block mb-4">
+                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.voice')}</span>
+                  <select
+                    value={voiceName ?? ""}
+                    onChange={(e) => setVoiceName(e.target.value || null)}
+                    className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <option value="">{t('tts.systemDefault')}</option>
+                    {[...groupedVoices.entries()].map(([lang, langVoices]) => (
+                      <optgroup key={lang} label={lang}>
+                        {langVoices.map((v) => (
+                          <option key={v.name} value={v.name}>
+                            {v.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
+                  </select>
+                </label>
 
-            {/* Rate slider */}
-            <label className="block mb-4">
-              <span className="text-sm text-neutral-400 block mb-1">{t('tts.rate', { value: rate.toFixed(1) })}</span>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.1}
-                value={rate}
-                onChange={(e) => setRate(parseFloat(e.target.value))}
-                className="w-full accent-blue-500"
-              />
-            </label>
+                {/* Rate slider */}
+                <label className="block mb-4">
+                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.rate', { value: rate.toFixed(1) })}</span>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.0}
+                    step={0.1}
+                    value={rate}
+                    onChange={(e) => setRate(parseFloat(e.target.value))}
+                    className="w-full accent-blue-500"
+                  />
+                </label>
 
-            {/* Pitch slider */}
-            <label className="block mb-4">
-              <span className="text-sm text-neutral-400 block mb-1">{t('tts.pitch', { value: pitch.toFixed(1) })}</span>
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.1}
-                value={pitch}
-                onChange={(e) => setPitch(parseFloat(e.target.value))}
-                className="w-full accent-blue-500"
-              />
-            </label>
+                {/* Pitch slider */}
+                <label className="block mb-4">
+                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.pitch', { value: pitch.toFixed(1) })}</span>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={2.0}
+                    step={0.1}
+                    value={pitch}
+                    onChange={(e) => setPitch(parseFloat(e.target.value))}
+                    className="w-full accent-blue-500"
+                  />
+                </label>
+              </>
+            )}
           </>
         )}
 
