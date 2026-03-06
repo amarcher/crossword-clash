@@ -97,9 +97,11 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private processing = false;
   private eventQueue: AgentGameEvent[] = [];
-  private currentAudio: HTMLAudioElement | null = null;
+  private audioContext: AudioContext | null = null;
+  private currentSource: AudioBufferSourceNode | null = null;
   private intentionalDisconnect = false;
   private _volume = 1;
+  private gainNode: GainNode | null = null;
 
   get isConnected(): boolean {
     return this._isConnected;
@@ -115,13 +117,17 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this._connectionError = null;
     this.messages = [];
 
-    // Validate that the edge function is reachable
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const gate = loadElevenLabsGate();
       if (!supabaseUrl || !gate) {
         throw new Error("Claude narrator not configured");
       }
+      // Create AudioContext now (during user interaction) so it's unlocked
+      this.audioContext = new AudioContext();
+      this.gainNode = this.audioContext.createGain();
+      this.gainNode.gain.value = this._volume;
+      this.gainNode.connect(this.audioContext.destination);
       this._isConnected = true;
       this.onStateChange?.();
     } catch (err) {
@@ -138,9 +144,14 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.eventQueue = [];
     this.processing = false;
     this.clearIdleTimer();
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
+    if (this.currentSource) {
+      this.currentSource.stop();
+      this.currentSource = null;
+    }
+    if (this.audioContext) {
+      await this.audioContext.close().catch(() => {});
+      this.audioContext = null;
+      this.gainNode = null;
     }
     this.onStateChange?.();
   }
@@ -160,8 +171,8 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
   setVolume(volume: number): void {
     this._volume = volume;
-    if (this.currentAudio) {
-      this.currentAudio.volume = volume;
+    if (this.gainNode) {
+      this.gainNode.gain.value = volume;
     }
   }
 
@@ -206,43 +217,26 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   }
 
   private async speakText(text: string): Promise<void> {
-    if (this.intentionalDisconnect) return;
+    if (this.intentionalDisconnect || !this.audioContext || !this.gainNode) return;
 
     try {
       const audioData = await fetchTTSAudio(text, DEFAULT_VOICE_ID);
-      if (this.intentionalDisconnect) return;
+      if (this.intentionalDisconnect || !this.audioContext) return;
 
-      console.log("[ClaudeNarrator] TTS audio size:", audioData.byteLength, "bytes");
-      if (audioData.byteLength === 0) {
-        console.error("[ClaudeNarrator] TTS returned empty audio");
-        return;
-      }
-
-      const blob = new Blob([audioData], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
+      const audioBuffer = await this.audioContext.decodeAudioData(audioData);
+      if (this.intentionalDisconnect || !this.audioContext) return;
 
       await new Promise<void>((resolve) => {
-        const audio = new Audio(url);
-        audio.volume = this._volume;
-        this.currentAudio = audio;
+        const source = this.audioContext!.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(this.gainNode!);
+        this.currentSource = source;
 
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          this.currentAudio = null;
+        source.onended = () => {
+          this.currentSource = null;
           resolve();
         };
-        audio.onerror = (e) => {
-          console.error("[ClaudeNarrator] Audio playback error:", e, "networkState:", audio.networkState, "error:", audio.error);
-          URL.revokeObjectURL(url);
-          this.currentAudio = null;
-          resolve();
-        };
-        audio.play().catch((err) => {
-          console.error("[ClaudeNarrator] Audio play() rejected:", err);
-          URL.revokeObjectURL(url);
-          this.currentAudio = null;
-          resolve();
-        });
+        source.start();
       });
     } catch (err) {
       console.error("[ClaudeNarrator] TTS failed:", err);
