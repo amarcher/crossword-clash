@@ -52,9 +52,16 @@ export function useNarrator({
     }
   }
 
-  // Connect when enabled && game is active (once per session)
+  // Connect when enabled && game is active; reconnect when engine changes
   useEffect(() => {
     if (!enabled || !narratorEngine || gameStatus !== "active") return;
+
+    // If engine changed, disconnect the old one first
+    if (narratorRef.current && activeEngineRef.current !== narratorEngine) {
+      disconnectNarrator();
+    }
+
+    // Already connected to the right engine
     if (narratorRef.current) return;
 
     const narrator = createNarratorBackend(narratorEngine);
