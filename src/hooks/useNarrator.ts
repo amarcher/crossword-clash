@@ -35,6 +35,7 @@ export function useNarrator({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const gameCompletedSentRef = useRef(false);
   const activeEngineRef = useRef<NarratorEngine>(null);
+  const activeTtsEngineRef = useRef<string | undefined>(undefined);
 
   // Stable ref for latest values
   const playersRef = useRef(players);
@@ -50,6 +51,7 @@ export function useNarrator({
       narratorRef.current.disconnect();
       narratorRef.current = null;
       activeEngineRef.current = null;
+      activeTtsEngineRef.current = undefined;
       setIsConnected(false);
     }
   }
@@ -58,12 +60,15 @@ export function useNarrator({
   useEffect(() => {
     if (!enabled || !narratorEngine || gameStatus !== "active") return;
 
-    // If engine changed, disconnect the old one first
-    if (narratorRef.current && activeEngineRef.current !== narratorEngine) {
+    // If engine or ttsEngine changed, disconnect the old one first
+    if (
+      narratorRef.current &&
+      (activeEngineRef.current !== narratorEngine || activeTtsEngineRef.current !== ttsEngine)
+    ) {
       disconnectNarrator();
     }
 
-    // Already connected to the right engine
+    // Already connected with the right config
     if (narratorRef.current) return;
 
     const narrator = createNarratorBackend(narratorEngine, { ttsEngine });
@@ -71,6 +76,7 @@ export function useNarrator({
 
     narratorRef.current = narrator;
     activeEngineRef.current = narratorEngine;
+    activeTtsEngineRef.current = ttsEngine;
     gameCompletedSentRef.current = false;
 
     narrator.setOnStateChange(() => {
