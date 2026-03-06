@@ -67,8 +67,16 @@ function fetchTTSAudio(
       "x-gate-token": gate.token,
     },
     body: JSON.stringify({ text, voice_id: voiceId }),
-  }).then((res) => {
-    if (!res.ok) throw new Error(`TTS request failed: ${res.status}`);
+  }).then(async (res) => {
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      throw new Error(`TTS request failed: ${res.status} ${errBody}`);
+    }
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("audio")) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`TTS returned non-audio response (${ct}): ${body}`);
+    }
     return res.arrayBuffer();
   });
 }
@@ -184,6 +192,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       const commentary = await fetchCommentary(this.messages);
       if (this.intentionalDisconnect) return;
 
+      console.log("[ClaudeNarrator] Commentary:", commentary);
       this.messages.push({ role: "assistant", content: commentary });
 
       // Speak the commentary via ElevenLabs TTS
@@ -227,8 +236,8 @@ export class ClaudeNarratorBackend implements NarratorBackend {
           resolve();
         });
       });
-    } catch {
-      // TTS failed — skip
+    } catch (err) {
+      console.error("[ClaudeNarrator] TTS failed:", err);
     }
   }
 
