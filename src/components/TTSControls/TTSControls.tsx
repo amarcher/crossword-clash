@@ -138,8 +138,8 @@ export function TTSSettingsModal({
         {/* TTS voice controls — only shown when narrator is NOT active (Claude narrator uses its own TTS) */}
         {(!hasNarrator || narratorEngine === "claude") && (
           <>
-            {/* Engine toggle — only shown when ElevenLabs gate is set and no agent narrator */}
-            {elevenLabsAvailable && !hasNarrator && (
+            {/* Engine toggle — only shown when ElevenLabs gate is set and no agent narrator (Claude narrator also uses TTS) */}
+            {elevenLabsAvailable && (!hasNarrator || narratorEngine === "claude") && (
               <label className="block mb-4">
                 <span className="text-sm text-neutral-400 block mb-1">{t('tts.engineLabel')}</span>
                 <select
@@ -227,12 +227,15 @@ export function TTSSettingsModal({
 
         {/* Buttons */}
         <div className="flex gap-2">
-          <button
-            onClick={() => speak(t('tts.testText'))}
-            className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
-          >
-            {t('tts.testVoice')}
-          </button>
+          {/* Test Voice — hidden for agent narrators that handle their own audio */}
+          {narratorEngine !== "elevenlabs-agent" && narratorEngine !== "openai-agent" && (
+            <button
+              onClick={() => speak(t('tts.testText'))}
+              className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
+            >
+              {t('tts.testVoice')}
+            </button>
+          )}
           <button
             onClick={closeSettings}
             className="flex-1 text-sm px-3 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"

@@ -7,6 +7,7 @@ import type { Player } from "../types/game";
 
 interface UseNarratorOptions {
   narratorEngine: NarratorEngine;
+  ttsEngine?: "browser" | "elevenlabs";
   enabled: boolean;
   gameStatus: "waiting" | "active" | "completed";
   players: Player[];
@@ -22,6 +23,7 @@ interface UseNarratorResult {
 
 export function useNarrator({
   narratorEngine,
+  ttsEngine,
   enabled,
   gameStatus,
   players,
@@ -64,7 +66,7 @@ export function useNarrator({
     // Already connected to the right engine
     if (narratorRef.current) return;
 
-    const narrator = createNarratorBackend(narratorEngine);
+    const narrator = createNarratorBackend(narratorEngine, { ttsEngine });
     if (!narrator) return;
 
     narratorRef.current = narrator;
@@ -89,7 +91,7 @@ export function useNarrator({
     // No cleanup — disconnect is managed by the effects below.
     // This prevents gameStatus changing from "active" → "completed"
     // from tearing down the connection before GAME_COMPLETED is sent.
-  }, [enabled, gameStatus, narratorEngine]);
+  }, [enabled, gameStatus, narratorEngine, ttsEngine]);
 
   // Send GAME_COMPLETED when game ends, then disconnect after narrator finishes speaking
   useEffect(() => {

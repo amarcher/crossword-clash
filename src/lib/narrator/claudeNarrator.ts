@@ -87,8 +87,15 @@ const DEFAULT_VOICE_ID = "TxGEqnHWrfWFTfGW9XjX"; // Josh — deep, young male
 /** How long after the last commentary before we auto-disconnect (ms) */
 const IDLE_DISCONNECT_MS = 30_000;
 
+export type TTSEngine = "browser" | "elevenlabs";
+
+export interface ClaudeNarratorOptions {
+  ttsEngine?: TTSEngine;
+}
+
 export class ClaudeNarratorBackend implements NarratorBackend {
   readonly name = "claude";
+  private ttsEngine: TTSEngine;
   private messages: Message[] = [];
   private _isConnected = false;
   private _connectionError: string | null = null;
@@ -102,6 +109,10 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private intentionalDisconnect = false;
   private _volume = 1;
   private gainNode: GainNode | null = null;
+
+  constructor(options?: ClaudeNarratorOptions) {
+    this.ttsEngine = options?.ttsEngine ?? "elevenlabs";
+  }
 
   get isConnected(): boolean {
     return this._isConnected;
@@ -123,11 +134,13 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       if (!supabaseUrl || !gate) {
         throw new Error("Claude narrator not configured");
       }
-      // Create AudioContext now (during user interaction) so it's unlocked
-      this.audioContext = new AudioContext();
-      this.gainNode = this.audioContext.createGain();
-      this.gainNode.gain.value = this._volume;
-      this.gainNode.connect(this.audioContext.destination);
+      // Create AudioContext for ElevenLabs TTS (during user interaction so it's unlocked)
+      if (this.ttsEngine === "elevenlabs") {
+        this.audioContext = new AudioContext();
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.gain.value = this._volume;
+        this.gainNode.connect(this.audioContext.destination);
+      }
       this._isConnected = true;
       this.onStateChange?.();
     } catch (err) {
@@ -152,6 +165,9 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       await this.audioContext.close().catch(() => {});
       this.audioContext = null;
       this.gainNode = null;
+    }
+    if (typeof speechSynthesis !== "undefined") {
+      speechSynthesis.cancel();
     }
     this.onStateChange?.();
   }
@@ -217,7 +233,29 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   }
 
   private async speakText(text: string): Promise<void> {
-    if (this.intentionalDisconnect || !this.audioContext || !this.gainNode) return;
+    if (this.intentionalDisconnect) return;
+
+    if (this.ttsEngine === "browser") {
+      await this.speakBrowser(text);
+    } else {
+      await this.speakElevenLabs(text);
+    }
+  }
+
+  private async speakBrowser(text: string): Promise<void> {
+    if (typeof speechSynthesis === "undefined") return;
+
+    await new Promise<void>((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.volume = this._volume;
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      speechSynthesis.speak(utterance);
+    });
+  }
+
+  private async speakElevenLabs(text: string): Promise<void> {
+    if (!this.audioContext || !this.gainNode) return;
 
     // Resume AudioContext if suspended (browser autoplay policy)
     if (this.audioContext.state === "suspended") {

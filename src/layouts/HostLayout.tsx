@@ -240,6 +240,7 @@ export function HostLayout() {
 
   const narrator = useNarrator({
     narratorEngine: tts.narratorEngine,
+    ttsEngine: tts.engine,
     enabled: tts.elevenLabsAvailable && !tts.muted,
     gameStatus: multiplayer.gameStatus,
     players: multiplayer.players,
