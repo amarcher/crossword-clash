@@ -99,9 +99,9 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
               type: "session.update",
               session: {
                 type: "realtime",
-                modalities: ["text", "audio"],
-                instructions: SYSTEM_PROMPT,
+                model: "gpt-4o-realtime-preview",
                 voice: "shimmer",
+                instructions: SYSTEM_PROMPT,
                 turn_detection: null,
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
@@ -254,7 +254,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         case "error":
-          console.error("[OpenAIRealtime] Error:", data.error);
+          console.error("[OpenAIRealtime] Error:", JSON.stringify(data.error ?? data));
           break;
 
         default:
