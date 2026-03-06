@@ -98,11 +98,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
             JSON.stringify({
               type: "session.update",
               session: {
-                type: "realtime",
-                model: "gpt-4o-realtime-preview",
                 instructions: SYSTEM_PROMPT,
-                turn_detection: null,
-                input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
               },
             }),
