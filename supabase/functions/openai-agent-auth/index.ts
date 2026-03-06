@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
   try {
     const response = await fetch(
-      "https://api.openai.com/v1/realtime/sessions",
+      "https://api.openai.com/v1/realtime/client_secrets",
       {
         method: "POST",
         headers: {
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
     return new Response(
-      JSON.stringify({ token: data.client_secret?.value ?? data.token }),
+      JSON.stringify({ token: data.client_secret?.value ?? data.value }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
