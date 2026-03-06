@@ -75,7 +75,9 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       const token = await fetchEphemeralToken();
       console.log("[OpenAIRealtime] Got ephemeral token, connecting WebSocket...");
 
-      this.audioContext = new AudioContext({ sampleRate: 24000 });
+      if (!this.audioContext || this.audioContext.state === "closed") {
+        this.audioContext = new AudioContext({ sampleRate: 24000 });
+      }
       this.nextPlayTime = 0;
 
       const url = "wss://api.openai.com/v1/realtime?model=gpt-realtime";
@@ -163,12 +165,19 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
   }
 
   sendEvent(event: AgentGameEvent): void {
+    if (this.intentionalDisconnect) return;
+
     const text = formatEvent(event);
     console.log("[OpenAIRealtime] Sending:", text);
     this.clearIdleTimer();
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       this.eventQueue.push(event);
+      // Auto-reconnect after idle disconnect
+      if (!this.connecting) {
+        console.log("[OpenAIRealtime] Reconnecting after idle disconnect...");
+        this.connect();
+      }
       return;
     }
 
@@ -306,12 +315,25 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
     this.nextPlayTime = startTime + buffer.duration;
   }
 
+  /** Soft close — tears down the WebSocket but allows reconnection on next sendEvent */
+  private idleDisconnect(): void {
+    console.log("[OpenAIRealtime] Idle timeout — closing WebSocket (will reconnect on next event)");
+    this.clearIdleTimer();
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.isResponding = false;
+    this.pendingDuringResponse = [];
+    this.nextPlayTime = 0;
+    // Note: intentionalDisconnect stays false, audioContext stays alive
+    this.onStateChange?.();
+  }
+
   private resetIdleTimer(): void {
     this.clearIdleTimer();
     this.idleTimer = setTimeout(() => {
-      console.log("[OpenAIRealtime] Idle timeout — disconnecting");
-      this.disconnect();
-      this.onStateChange?.();
+      this.idleDisconnect();
     }, IDLE_DISCONNECT_MS);
   }
 
