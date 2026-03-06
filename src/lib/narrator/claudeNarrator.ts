@@ -254,6 +254,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async speakText(text: string): Promise<void> {
     if (this.intentionalDisconnect) return;
 
+    console.log("[ClaudeNarrator] speakText engine:", this.ttsEngine, "voice:", this.voiceName, "elevenLabsVoiceId:", this.elevenLabsVoiceId);
     if (this.ttsEngine === "browser") {
       await this.speakBrowser(text);
     } else {
