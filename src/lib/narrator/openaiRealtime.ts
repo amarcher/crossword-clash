@@ -78,7 +78,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       this.audioContext = new AudioContext({ sampleRate: 24000 });
       this.nextPlayTime = 0;
 
-      const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview";
+      const url = "wss://api.openai.com/v1/realtime?model=gpt-realtime";
       this.ws = new WebSocket(url, [
         "realtime",
         `openai-insecure-api-key.${token}`,
