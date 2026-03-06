@@ -242,7 +242,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         case "response.done":
-          console.log("[OpenAIRealtime] Response done", JSON.stringify(data.response?.output ?? [], null, 2));
+          console.log("[OpenAIRealtime] Response done", JSON.stringify(data.response ?? data, null, 2));
           this.isResponding = false;
           // Process any events that arrived during the response
           if (this.pendingDuringResponse.length > 0) {
