@@ -230,7 +230,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       switch (data.type) {
         case "session.created":
         case "session.updated":
-          console.log("[OpenAIRealtime]", data.type);
+          console.log("[OpenAIRealtime]", data.type, JSON.stringify(data.session ?? data, null, 2));
           break;
 
         case "response.created":
@@ -244,7 +244,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
           break;
 
         case "response.done":
-          console.log("[OpenAIRealtime] Response done");
+          console.log("[OpenAIRealtime] Response done", JSON.stringify(data.response?.output ?? [], null, 2));
           this.isResponding = false;
           // Process any events that arrived during the response
           if (this.pendingDuringResponse.length > 0) {
