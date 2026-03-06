@@ -100,7 +100,6 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
               session: {
                 type: "realtime",
                 model: "gpt-4o-realtime-preview",
-                voice: "shimmer",
                 instructions: SYSTEM_PROMPT,
                 turn_detection: null,
                 input_audio_format: "pcm16",
