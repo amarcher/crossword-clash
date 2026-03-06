@@ -100,6 +100,11 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
               session: {
                 type: "realtime",
                 instructions: SYSTEM_PROMPT,
+                audio: {
+                  input: {
+                    turn_detection: null,
+                  },
+                },
               },
             }),
           );
@@ -213,14 +218,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
         },
       }),
     );
-    this.ws.send(
-      JSON.stringify({
-        type: "response.create",
-        response: {
-          output_modalities: ["audio"],
-        },
-      }),
-    );
+    this.ws.send(JSON.stringify({ type: "response.create" }));
   }
 
   private handleMessage(msg: MessageEvent): void {
