@@ -219,6 +219,11 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async speakText(text: string): Promise<void> {
     if (this.intentionalDisconnect || !this.audioContext || !this.gainNode) return;
 
+    // Resume AudioContext if suspended (browser autoplay policy)
+    if (this.audioContext.state === "suspended") {
+      await this.audioContext.resume();
+    }
+
     try {
       const audioData = await fetchTTSAudio(text, DEFAULT_VOICE_ID);
       if (this.intentionalDisconnect || !this.audioContext) return;

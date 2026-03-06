@@ -271,6 +271,9 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
 
   private playAudioDelta(base64: string): void {
     if (!this.audioContext) return;
+    if (this.audioContext.state === "suspended") {
+      this.audioContext.resume();
+    }
 
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
