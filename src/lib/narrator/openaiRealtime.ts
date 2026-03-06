@@ -100,7 +100,6 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
               session: {
                 type: "realtime",
                 instructions: SYSTEM_PROMPT,
-                output_audio_format: "pcm16",
               },
             }),
           );
