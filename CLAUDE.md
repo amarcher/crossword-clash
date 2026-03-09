@@ -174,9 +174,9 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 375 tests across 27 files
-- **gridUtils.test.ts** (52 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart, getCompletedClues, computeCellNumbers
-- **usePuzzle.test.ts** (30 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete)
+- `pnpm test` — 389 tests across 27 files
+- **gridUtils.test.ts** (59 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart (including skip-completed-clues behavior), getCompletedClues, computeCellNumbers
+- **usePuzzle.test.ts** (32 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete) + NEXT_WORD/PREV_WORD skip completed clues
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
 - **playerColors.test.ts** (4 tests): Color pool distinctness, wrapping, hex format
 - **sessionPersistence.test.ts** (14 tests): MP + host session round-trip, null/missing key, corrupted JSON, missing gameId, clear safety, independence between MP and host sessions
@@ -192,7 +192,7 @@ VITE_SUPABASE_ANON_KEY=...
 - **router.test.tsx** (14 tests): IndexRedirect + HostIndexRedirect routing logic. Bookmarklet regression (urlPuzzle from context, not window.location.hash), import hash redirect, multiplayer/host session rejoin, solo session restore, fallback to menu, redirect priority ordering. Uses mocked contexts + MemoryRouter.
 - **useBeforeUnload.test.ts** (5 tests): Adds/removes beforeunload listener based on active flag, cleanup on unmount, toggles on prop change, calls preventDefault on event
 - **puzzleUrl.test.ts** (10 tests): Hash extraction, compression round-trip, hash clearing after extraction, corrupted/invalid data handling, regression test documenting hash consumption timing (extractPuzzleFromUrl clears hash, so callers must store the returned puzzle before any subsequent hash check)
-- **narrator/events.test.ts** (7 tests): Event builder functions — GAME_STARTED (player names, puzzle metadata, clue counts), CLUE_COMPLETED (clue details, scores, remaining), LEAD_CHANGE (leader names, scores), GAME_COMPLETED (winner, final scores)
+- **narrator/events.test.ts** (12 tests): formatEvent output format (EVENT/SCORES two-line structure, pipe-separated scores, unambiguous player attribution), event builder functions — GAME_STARTED (player names, puzzle metadata, clue counts), CLUE_COMPLETED (clue details, scores, remaining), LEAD_CHANGE (leader names, scores), GAME_COMPLETED (winner, final scores)
 - **agentClient.test.ts** (7 tests): Re-export backwards compat — same event builder tests via agentClient re-exports
 - **ttsSettings.test.ts** (23 tests): Default values, round-trip, clamping, corrupted JSON, engine persistence, narratorEngine persistence + migration from legacy `engine: "agent"`, unknown value defaults
 - **TTSControls.test.tsx** (20 tests): Mute/unmute buttons, modal open/close, voice grouping, engine toggle, narrator engine toggle, ElevenLabs voice dropdown, controls hidden when narrator active

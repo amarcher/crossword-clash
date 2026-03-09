@@ -112,6 +112,7 @@ export function getNextWordStart(
   row: number,
   col: number,
   direction: Direction,
+  completedClues?: Set<string>,
 ): { coord: CellCoord; direction: Direction } {
   const cluesInDirection = puzzle.clues
     .filter((c) => c.direction === direction)
@@ -130,26 +131,44 @@ export function getNextWordStart(
   const idx = cluesInDirection.findIndex(
     (c) => c.number === currentClue.number,
   );
-  if (idx < cluesInDirection.length - 1) {
-    const next = cluesInDirection[idx + 1];
-    return { coord: { row: next.row, col: next.col }, direction };
+
+  // Search forward in same direction, skipping completed clues
+  for (let i = idx + 1; i < cluesInDirection.length; i++) {
+    const clue = cluesInDirection[i];
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction };
+    }
   }
 
-  // Wrap to other direction
+  // Wrap to other direction, skipping completed
   const otherDir: Direction = direction === "across" ? "down" : "across";
   const otherClues = puzzle.clues
     .filter((c) => c.direction === otherDir)
     .sort((a, b) => a.number - b.number);
 
-  if (otherClues.length > 0) {
-    const first = otherClues[0];
-    return {
-      coord: { row: first.row, col: first.col },
-      direction: otherDir,
-    };
+  for (const clue of otherClues) {
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction: otherDir };
+    }
   }
 
-  // Wrap to first clue in same direction
+  // Wrap back to same direction from the beginning
+  for (let i = 0; i <= idx; i++) {
+    const clue = cluesInDirection[i];
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction };
+    }
+  }
+
+  // All clues complete — fall back to sequential behavior
+  if (idx < cluesInDirection.length - 1) {
+    const next = cluesInDirection[idx + 1];
+    return { coord: { row: next.row, col: next.col }, direction };
+  }
+  if (otherClues.length > 0) {
+    const first = otherClues[0];
+    return { coord: { row: first.row, col: first.col }, direction: otherDir };
+  }
   const first = cluesInDirection[0];
   return { coord: { row: first.row, col: first.col }, direction };
 }
@@ -160,6 +179,7 @@ export function getPrevWordStart(
   row: number,
   col: number,
   direction: Direction,
+  completedClues?: Set<string>,
 ): { coord: CellCoord; direction: Direction } {
   const cluesInDirection = puzzle.clues
     .filter((c) => c.direction === direction)
@@ -177,25 +197,45 @@ export function getPrevWordStart(
   const idx = cluesInDirection.findIndex(
     (c) => c.number === currentClue.number,
   );
-  if (idx > 0) {
-    const prev = cluesInDirection[idx - 1];
-    return { coord: { row: prev.row, col: prev.col }, direction };
+
+  // Search backward in same direction, skipping completed clues
+  for (let i = idx - 1; i >= 0; i--) {
+    const clue = cluesInDirection[i];
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction };
+    }
   }
 
-  // Wrap to other direction
+  // Wrap to other direction (from the end), skipping completed
   const otherDir: Direction = direction === "across" ? "down" : "across";
   const otherClues = puzzle.clues
     .filter((c) => c.direction === otherDir)
     .sort((a, b) => a.number - b.number);
 
-  if (otherClues.length > 0) {
-    const last = otherClues[otherClues.length - 1];
-    return {
-      coord: { row: last.row, col: last.col },
-      direction: otherDir,
-    };
+  for (let i = otherClues.length - 1; i >= 0; i--) {
+    const clue = otherClues[i];
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction: otherDir };
+    }
   }
 
+  // Wrap back to same direction from the end
+  for (let i = cluesInDirection.length - 1; i >= idx; i--) {
+    const clue = cluesInDirection[i];
+    if (!completedClues?.has(`${clue.direction}-${clue.number}`)) {
+      return { coord: { row: clue.row, col: clue.col }, direction };
+    }
+  }
+
+  // All clues complete — fall back to sequential behavior
+  if (idx > 0) {
+    const prev = cluesInDirection[idx - 1];
+    return { coord: { row: prev.row, col: prev.col }, direction };
+  }
+  if (otherClues.length > 0) {
+    const last = otherClues[otherClues.length - 1];
+    return { coord: { row: last.row, col: last.col }, direction: otherDir };
+  }
   const last = cluesInDirection[cluesInDirection.length - 1];
   return { coord: { row: last.row, col: last.col }, direction };
 }

@@ -92,6 +92,8 @@
   },
   "scoreboard": {
     "cells": "{{score}}/{{total}} celdas",
+    "clues": "{{score}}/{{total}} pistas",
+    "playerStats": "{{cells}} celdas, {{clues}} pistas",
     "puzzleComplete": "\u00a1Crucigrama completo!",
     "wins": "\u00a1{{name}} gana!",
     "tie": "\u00a1Empate!"

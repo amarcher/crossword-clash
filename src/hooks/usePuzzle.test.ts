@@ -350,6 +350,22 @@ describe("puzzleReducer", () => {
       state = puzzleReducer(state, { type: "NEXT_WORD" });
       expect(state.direction).toBe("down");
     });
+
+    it("skips completed clues", () => {
+      // Complete 3-Across (BET) so NEXT_WORD from 1-Across should skip it
+      let state = loadedState();
+      // Fill in BET at row 2
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 2, col: 0 });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "B" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "E" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "T" });
+      // Go back to 1-Across
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+      state = puzzleReducer(state, { type: "SET_DIRECTION", direction: "across" });
+      // NEXT_WORD should skip 3-Across and go to a down clue
+      state = puzzleReducer(state, { type: "NEXT_WORD" });
+      expect(state.direction).toBe("down");
+    });
   });
 
   describe("PREV_WORD", () => {
@@ -366,6 +382,21 @@ describe("puzzleReducer", () => {
     it("wraps direction at start of clue list", () => {
       // At 1-Across (0,0), prev should wrap to last down clue
       const state = puzzleReducer(loadedState(), { type: "PREV_WORD" });
+      expect(state.direction).toBe("down");
+    });
+
+    it("skips completed clues", () => {
+      // Complete 1-Across (CAT) so PREV_WORD from 3-Across should skip it
+      let state = loadedState();
+      // Fill in CAT at row 0
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "C" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "A" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "T" });
+      // Go to 3-Across
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 2, col: 0 });
+      state = puzzleReducer(state, { type: "SET_DIRECTION", direction: "across" });
+      // PREV_WORD should skip 1-Across and go to a down clue
+      state = puzzleReducer(state, { type: "PREV_WORD" });
       expect(state.direction).toBe("down");
     });
   });

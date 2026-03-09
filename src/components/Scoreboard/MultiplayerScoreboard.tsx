@@ -5,16 +5,24 @@ interface MultiplayerScoreboardProps {
   players: Player[];
   totalCells: number;
   isComplete: boolean;
+  clueCountsByPlayer?: Map<string, number>;
+  totalClues?: number;
 }
 
 export function MultiplayerScoreboard({
   players,
   totalCells,
   isComplete,
+  clueCountsByPlayer,
+  totalClues,
 }: MultiplayerScoreboardProps) {
   const { t } = useTranslation();
   const totalScore = players.reduce((sum, p) => sum + p.score, 0);
   const totalPct = totalCells > 0 ? Math.round((totalScore / totalCells) * 100) : 0;
+  const showClues = clueCountsByPlayer && totalClues != null && totalClues > 0;
+  const totalCluesClaimed = showClues
+    ? players.reduce((sum, p) => sum + (clueCountsByPlayer.get(p.userId) ?? 0), 0)
+    : 0;
 
   const ranked = [...players].sort((a, b) => b.score - a.score);
 
@@ -24,6 +32,9 @@ export function MultiplayerScoreboard({
         <div className="flex items-center justify-between text-sm">
           <span className="text-neutral-500">
             {t('scoreboard.cells', { score: totalScore, total: totalCells })}
+            {showClues && (
+              <> · {t('scoreboard.clues', { score: totalCluesClaimed, total: totalClues })}</>
+            )}
           </span>
           <span className="text-neutral-400">{totalPct}%</span>
         </div>
@@ -47,6 +58,7 @@ export function MultiplayerScoreboard({
       <div className="space-y-2">
         {ranked.map((player, i) => {
           const pct = totalCells > 0 ? Math.round((player.score / totalCells) * 100) : 0;
+          const playerClues = clueCountsByPlayer?.get(player.userId) ?? 0;
           return (
             <div key={player.userId} className="flex items-center gap-2.5">
               <div
@@ -58,7 +70,9 @@ export function MultiplayerScoreboard({
                 {player.displayName}
               </span>
               <span className="text-sm text-neutral-400 tabular-nums">
-                {player.score} ({pct}%)
+                {showClues
+                  ? t('scoreboard.playerStats', { cells: player.score, clues: playerClues })
+                  : `${player.score} (${pct}%)`}
               </span>
             </div>
           );

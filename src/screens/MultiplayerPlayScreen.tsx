@@ -50,6 +50,7 @@ export function MultiplayerPlayScreen() {
     playerColorMap,
     completedClues,
     completedCluesByPlayer,
+    clueCountsByPlayer,
     multiplayerPlayers,
     playerResults,
     rejectedCell,
@@ -214,6 +215,8 @@ export function MultiplayerPlayScreen() {
                   players={multiplayerPlayers}
                   totalCells={totalWhiteCells}
                   isComplete={gameComplete}
+                  clueCountsByPlayer={clueCountsByPlayer}
+                  totalClues={puzzle.clues.length}
                 />
               }
               cluePanel={

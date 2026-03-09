@@ -27,6 +27,7 @@ export function HostSpectateScreen() {
     playerColorMap,
     completedClues,
     completedCluesByPlayer,
+    clueCountsByPlayer,
     multiplayerPlayers,
     playerResults,
     isComplete,
@@ -108,6 +109,8 @@ export function HostSpectateScreen() {
               players={multiplayerPlayers}
               totalCells={totalWhiteCells}
               isComplete={isComplete}
+              clueCountsByPlayer={clueCountsByPlayer}
+              totalClues={puzzle.clues.length}
             />
           </div>
         }

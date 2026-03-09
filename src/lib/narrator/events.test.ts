@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatEvent,
   buildGameStartedEvent,
   buildClueCompletedEvent,
   buildLeadChangeEvent,
@@ -26,6 +27,66 @@ const makePlayers = (): Player[] => [
   { id: "p1", gameId: "g1", userId: "u1", displayName: "Alice", color: "#ff0000", score: 0 },
   { id: "p2", gameId: "g1", userId: "u2", displayName: "Bob", color: "#0000ff", score: 0 },
 ];
+
+describe("formatEvent", () => {
+  it("formats GAME_STARTED as a single line", () => {
+    const event = buildGameStartedEvent(makePuzzle(), makePlayers());
+    const text = formatEvent(event);
+    expect(text).toContain("GAME_STARTED:");
+    expect(text).toContain("Alice, Bob");
+  });
+
+  it("formats CLUE_COMPLETED with EVENT and SCORES on separate lines", () => {
+    const event = buildClueCompletedEvent(
+      "Alice", 1, "Across", "Capital of France", "PARIS",
+      [{ name: "Alice", score: 2 }, { name: "Bob", score: 1 }],
+      3,
+    );
+    const text = formatEvent(event);
+    const lines = text.split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/^EVENT: Alice completed/);
+    expect(lines[1]).toMatch(/^SCORES:/);
+    // Player name appears only once in EVENT line (not ambiguous)
+    expect(lines[0]).not.toContain("Bob");
+  });
+
+  it("formats LEAD_CHANGE with EVENT and SCORES on separate lines", () => {
+    const event = buildLeadChangeEvent(
+      "Bob", "Alice",
+      [{ name: "Alice", score: 4 }, { name: "Bob", score: 5 }],
+      10,
+    );
+    const text = formatEvent(event);
+    const lines = text.split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/^EVENT: Bob takes the lead/);
+    expect(lines[1]).toMatch(/^SCORES:/);
+  });
+
+  it("formats GAME_COMPLETED with EVENT and FINAL SCORES", () => {
+    const event = buildGameCompletedEvent(
+      "Alice",
+      [{ name: "Alice", score: 7 }, { name: "Bob", score: 3 }],
+      10,
+    );
+    const text = formatEvent(event);
+    const lines = text.split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/^EVENT: Alice wins!/);
+    expect(lines[1]).toMatch(/^FINAL SCORES:/);
+  });
+
+  it("uses pipe separators in scores for unambiguous parsing", () => {
+    const event = buildClueCompletedEvent(
+      "Alice", 1, "Across", "Clue", "ANS",
+      [{ name: "Alice", score: 3 }, { name: "Bob", score: 1 }],
+      10,
+    );
+    const text = formatEvent(event);
+    expect(text).toContain("Alice: 3/10 | Bob: 1/10");
+  });
+});
 
 describe("buildGameStartedEvent", () => {
   it("includes player names and puzzle metadata", () => {
@@ -80,7 +141,7 @@ describe("buildClueCompletedEvent", () => {
       [{ name: "Alice", score: 3 }, { name: "Bob", score: 1 }],
       10,
     );
-    expect(event.data.scores).toBe("Alice 3/10, Bob 1/10");
+    expect(event.data.scores).toBe("Alice: 3/10 | Bob: 1/10");
   });
 });
 
@@ -95,7 +156,7 @@ describe("buildLeadChangeEvent", () => {
     expect(event.type).toBe("LEAD_CHANGE");
     expect(event.data.newLeader).toBe("Bob");
     expect(event.data.previousLeader).toBe("Alice");
-    expect(event.data.scores).toBe("Alice 4/10, Bob 5/10");
+    expect(event.data.scores).toBe("Alice: 4/10 | Bob: 5/10");
   });
 });
 
@@ -108,6 +169,6 @@ describe("buildGameCompletedEvent", () => {
     );
     expect(event.type).toBe("GAME_COMPLETED");
     expect(event.data.winner).toBe("Alice");
-    expect(event.data.scores).toBe("Alice 7/10, Bob 3/10");
+    expect(event.data.scores).toBe("Alice: 7/10 | Bob: 3/10");
   });
 });
