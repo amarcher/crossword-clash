@@ -68,11 +68,13 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
       this.conversation = await Conversation.startSession({
         signedUrl,
         onDisconnect: () => {
+          console.log(`[ElevenLabsAgent] onDisconnect: intentional=${this.intentionalDisconnect}`);
           this.conversation = null;
           this.clearIdleTimer();
           if (this.intentionalDisconnect) return;
           if (!this.reconnectAttempted) {
             this.reconnectAttempted = true;
+            console.log("[ElevenLabsAgent] Attempting reconnect...");
             this.connect().catch(() => {
               this._connectionError = "Agent disconnected";
               this.onStateChange?.();
@@ -83,12 +85,14 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
           }
         },
         onModeChange: (mode) => {
+          console.log(`[ElevenLabsAgent] onModeChange: ${this.agentMode} → ${mode.mode}, pendingContextUpdates=${this.pendingContextUpdates.length}`);
           if (mode.mode === "listening") {
             this.agentMode = "listening";
 
             // If we accumulated context updates while agent was speaking,
             // prompt the agent to address them now
             if (this.pendingContextUpdates.length > 0) {
+              console.log(`[ElevenLabsAgent] Flushing ${this.pendingContextUpdates.length} pending context updates`);
               this.pendingContextUpdates = [];
               this.hasPendingEvents = true;
               this.clearIdleTimer();
@@ -111,6 +115,7 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
 
       // Immediately mute mic — we only send text input, not voice
       this.conversation.setMicMuted(true);
+      console.log(`[ElevenLabsAgent] Connected, flushing ${this.eventQueue.length} queued events`);
 
       // Flush queued events
       for (const event of this.eventQueue) {
@@ -147,20 +152,23 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
 
   sendEvent(event: AgentGameEvent): void {
     const text = formatEvent(event);
-    console.log("[ElevenLabsAgent] Sending:", text);
+    console.log(`[ElevenLabsAgent] sendEvent: connected=${this.isConnected}, mode=${this.agentMode}, type=${event.type}`);
     this.hasPendingEvents = true;
     this.clearIdleTimer();
 
     if (!this.conversation) {
+      console.log(`[ElevenLabsAgent] No conversation — queuing event (queue size: ${this.eventQueue.length + 1})`);
       this.eventQueue.push(event);
       return;
     }
 
-    // Fix 2: If agent is speaking, use sendContextualUpdate to avoid interruption
+    // If agent is speaking, use sendContextualUpdate to avoid interruption
     if (this.agentMode === "speaking") {
+      console.log(`[ElevenLabsAgent] Agent speaking — using contextual update (pending: ${this.pendingContextUpdates.length + 1})`);
       this.conversation.sendContextualUpdate(text);
       this.pendingContextUpdates.push(event);
     } else {
+      console.log("[ElevenLabsAgent] Agent listening — sending as user message");
       this.conversation.sendUserMessage(text);
     }
   }

@@ -9,16 +9,16 @@ export function formatEvent(event: AgentGameEvent): string {
     }
     case "CLUE_COMPLETED": {
       const scores = data.scores as string;
-      return `CLUE_COMPLETED: ${data.playerName} got ${data.clueNumber}-${data.clueDirection} '${data.clueText}' (${data.answer}). Scores: ${scores}. ${data.remaining} clues remaining.`;
+      return `EVENT: ${data.playerName} completed ${data.clueNumber}-${data.clueDirection} "${data.clueText}" (answer: ${data.answer})\nSCORES: ${scores} — ${data.remaining} remaining`;
     }
     case "LEAD_CHANGE": {
-      return `LEAD_CHANGE: ${data.newLeader} takes the lead from ${data.previousLeader}! ${data.scores}`;
+      return `EVENT: ${data.newLeader} takes the lead from ${data.previousLeader}!\nSCORES: ${data.scores}`;
     }
     case "PLAYER_LEFT": {
-      return `PLAYER_LEFT: ${data.playerName} has left the game.`;
+      return `EVENT: ${data.playerName} has left the game.`;
     }
     case "GAME_COMPLETED": {
-      return `GAME_COMPLETED: ${data.winner} wins! Final: ${data.scores}`;
+      return `EVENT: ${data.winner} wins!\nFINAL SCORES: ${data.scores}`;
     }
   }
 }
@@ -56,8 +56,8 @@ export function buildClueCompletedEvent(
   totalClues: number,
 ): AgentGameEvent {
   const scores = playerScores
-    .map((p) => `${p.name} ${p.score}/${totalClues}`)
-    .join(", ");
+    .map((p) => `${p.name}: ${p.score}/${totalClues}`)
+    .join(" | ");
   const totalCompleted = playerScores.reduce((sum, p) => sum + p.score, 0);
   return {
     type: "CLUE_COMPLETED",
@@ -80,8 +80,8 @@ export function buildLeadChangeEvent(
   totalClues: number,
 ): AgentGameEvent {
   const scores = playerScores
-    .map((p) => `${p.name} ${p.score}/${totalClues}`)
-    .join(", ");
+    .map((p) => `${p.name}: ${p.score}/${totalClues}`)
+    .join(" | ");
   return {
     type: "LEAD_CHANGE",
     data: { newLeader, previousLeader, scores },
@@ -94,8 +94,8 @@ export function buildGameCompletedEvent(
   totalClues: number,
 ): AgentGameEvent {
   const scores = playerScores
-    .map((p) => `${p.name} ${p.score}/${totalClues}`)
-    .join(", ");
+    .map((p) => `${p.name}: ${p.score}/${totalClues}`)
+    .join(" | ");
   return {
     type: "GAME_COMPLETED",
     data: { winner, scores },

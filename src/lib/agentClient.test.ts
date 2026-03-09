@@ -80,7 +80,7 @@ describe("buildClueCompletedEvent", () => {
       [{ name: "Alice", score: 3 }, { name: "Bob", score: 1 }],
       10,
     );
-    expect(event.data.scores).toBe("Alice 3/10, Bob 1/10");
+    expect(event.data.scores).toBe("Alice: 3/10 | Bob: 1/10");
   });
 });
 
@@ -95,7 +95,7 @@ describe("buildLeadChangeEvent", () => {
     expect(event.type).toBe("LEAD_CHANGE");
     expect(event.data.newLeader).toBe("Bob");
     expect(event.data.previousLeader).toBe("Alice");
-    expect(event.data.scores).toBe("Alice 4/10, Bob 5/10");
+    expect(event.data.scores).toBe("Alice: 4/10 | Bob: 5/10");
   });
 });
 
@@ -108,6 +108,6 @@ describe("buildGameCompletedEvent", () => {
     );
     expect(event.type).toBe("GAME_COMPLETED");
     expect(event.data.winner).toBe("Alice");
-    expect(event.data.scores).toBe("Alice 7/10, Bob 3/10");
+    expect(event.data.scores).toBe("Alice: 7/10 | Bob: 3/10");
   });
 });

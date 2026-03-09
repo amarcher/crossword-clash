@@ -237,6 +237,65 @@ describe("getPrevWordStart", () => {
   });
 });
 
+describe("getNextWordStart with completedClues", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("skips completed clue and goes to next incomplete one", () => {
+    // Complete 3-Across, so from 1-Across it should skip 3-Across → go to 1-Down
+    const completed = new Set(["across-3"]);
+    const result = getNextWordStart(puzzle, 0, 0, "across", completed);
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("down");
+  });
+
+  it("wraps to other direction when all same-direction clues after current are complete", () => {
+    // Complete all across clues except 1-Across
+    const completed = new Set(["across-3"]);
+    const result = getNextWordStart(puzzle, 0, 0, "across", completed);
+    expect(result.direction).toBe("down");
+  });
+
+  it("falls back to sequential when all clues are complete", () => {
+    const completed = new Set(["across-1", "across-3", "down-1", "down-2"]);
+    const result = getNextWordStart(puzzle, 0, 0, "across", completed);
+    // Should behave like the original sequential: 1-Across → 3-Across
+    expect(result.coord).toEqual({ row: 2, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+
+  it("works without completedClues (backwards compatible)", () => {
+    const result = getNextWordStart(puzzle, 0, 0, "across");
+    expect(result.coord).toEqual({ row: 2, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+});
+
+describe("getPrevWordStart with completedClues", () => {
+  const puzzle = makeTestPuzzle();
+
+  it("skips completed clue and goes to previous incomplete one", () => {
+    // Complete 1-Across, so from 3-Across going back should skip 1-Across → go to 2-Down
+    const completed = new Set(["across-1"]);
+    const result = getPrevWordStart(puzzle, 2, 0, "across", completed);
+    expect(result.coord).toEqual({ row: 0, col: 2 });
+    expect(result.direction).toBe("down");
+  });
+
+  it("falls back to sequential when all clues are complete", () => {
+    const completed = new Set(["across-1", "across-3", "down-1", "down-2"]);
+    const result = getPrevWordStart(puzzle, 2, 0, "across", completed);
+    // Should behave like the original sequential: 3-Across → 1-Across
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+
+  it("works without completedClues (backwards compatible)", () => {
+    const result = getPrevWordStart(puzzle, 2, 0, "across");
+    expect(result.coord).toEqual({ row: 0, col: 0 });
+    expect(result.direction).toBe("across");
+  });
+});
+
 describe("getCompletedClues", () => {
   const puzzle = makeTestPuzzle();
 

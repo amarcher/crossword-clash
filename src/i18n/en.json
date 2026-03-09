@@ -92,6 +92,8 @@
   },
   "scoreboard": {
     "cells": "{{score}}/{{total}} cells",
+    "clues": "{{score}}/{{total}} clues",
+    "playerStats": "{{cells}} cells, {{clues}} clues",
     "puzzleComplete": "Puzzle Complete!",
     "wins": "{{name}} wins!",
     "tie": "It's a tie!"

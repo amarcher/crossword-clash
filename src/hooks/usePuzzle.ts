@@ -12,6 +12,7 @@ import {
   getPrevCell,
   getNextWordStart,
   getPrevWordStart,
+  getCompletedClues,
   isBlack,
 } from "../lib/gridUtils";
 
@@ -270,22 +271,26 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
     case "NEXT_WORD": {
       if (!state.puzzle || !state.selectedCell) return state;
+      const completed = getCompletedClues(state.puzzle, state.playerCells);
       const { coord, direction } = getNextWordStart(
         state.puzzle,
         state.selectedCell.row,
         state.selectedCell.col,
         state.direction,
+        completed,
       );
       return { ...state, selectedCell: coord, direction };
     }
 
     case "PREV_WORD": {
       if (!state.puzzle || !state.selectedCell) return state;
+      const completed = getCompletedClues(state.puzzle, state.playerCells);
       const { coord, direction } = getPrevWordStart(
         state.puzzle,
         state.selectedCell.row,
         state.selectedCell.col,
         state.direction,
+        completed,
       );
       return { ...state, selectedCell: coord, direction };
     }

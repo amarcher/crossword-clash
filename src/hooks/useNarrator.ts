@@ -74,6 +74,7 @@ export function useNarrator({
       narratorRef.current &&
       (activeEngineRef.current !== narratorEngine || activeTtsEngineRef.current !== ttsEngine)
     ) {
+      console.log(`[useNarrator] Engine changed: ${activeEngineRef.current} → ${narratorEngine}, reconnecting`);
       disconnectNarrator();
     }
 
@@ -166,6 +167,7 @@ export function useNarrator({
   }, []);
 
   const sendEvent = useCallback((event: AgentGameEvent) => {
+    console.log(`[useNarrator] sendEvent: narrator=${!!narratorRef.current}, type=${event.type}`);
     narratorRef.current?.sendEvent(event);
   }, []);
 
