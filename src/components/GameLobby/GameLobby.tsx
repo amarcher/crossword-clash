@@ -28,7 +28,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8 overflow-auto">
+    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8 overflow-auto">
       <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">{t('lobby.shareInvite')}</p>
 

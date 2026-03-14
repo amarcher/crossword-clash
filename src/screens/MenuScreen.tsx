@@ -9,7 +9,7 @@ export function MenuScreen() {
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
+    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
       <Title className="mb-8" />
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {user && (
