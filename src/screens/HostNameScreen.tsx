@@ -72,7 +72,7 @@ export function HostNameScreen() {
   );
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
+    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
       <Title className="mb-2" />
       <p className="text-neutral-500 mb-6">{t('hostName.enterDisplayName')}</p>
       <form

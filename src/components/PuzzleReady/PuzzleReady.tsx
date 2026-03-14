@@ -25,7 +25,7 @@ export function PuzzleReady({
   const acrossCount = puzzle.clues.filter((c) => c.direction === "across").length;
   const downCount = puzzle.clues.filter((c) => c.direction === "down").length;
 
-  const bg = darkMode ? "bg-neutral-900" : "bg-neutral-50";
+  const bg = darkMode ? "bg-neutral-900" : "crossword-bg";
   const subtitleColor = darkMode ? "text-neutral-400" : "text-neutral-500";
   const metaColor = darkMode ? "text-neutral-300" : "text-neutral-700";
 
