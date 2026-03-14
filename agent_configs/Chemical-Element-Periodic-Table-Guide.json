@@ -1,0 +1,412 @@
+{
+    "name": "Chemical Element Periodic Table Guide",
+    "conversation_config": {
+        "asr": {
+            "quality": "high",
+            "provider": "scribe_realtime",
+            "user_input_audio_format": "pcm_16000",
+            "keywords": []
+        },
+        "turn": {
+            "turn_timeout": 7,
+            "silence_end_call_timeout": -1,
+            "soft_timeout_config": {
+                "timeout_seconds": -1,
+                "message": "Hhmmmm...yeah.",
+                "use_llm_generated_message": false
+            },
+            "mode": "turn",
+            "turn_eagerness": "normal",
+            "spelling_patience": "auto",
+            "speculative_turn": true,
+            "turn_model": "turn_v2"
+        },
+        "tts": {
+            "model_id": "eleven_flash_v2",
+            "voice_id": "6Ac71viMXq5tLn2bwYdz",
+            "supported_voices": [],
+            "expressive_mode": false,
+            "suggested_audio_tags": [],
+            "agent_output_audio_format": "pcm_16000",
+            "optimize_streaming_latency": 3,
+            "stability": 0.72,
+            "speed": 1.07,
+            "similarity_boost": 0.79,
+            "text_normalisation_type": "system_prompt",
+            "pronunciation_dictionary_locators": []
+        },
+        "conversation": {
+            "text_only": false,
+            "max_duration_seconds": 600,
+            "client_events": [
+                "audio",
+                "interruption",
+                "user_transcript",
+                "agent_response",
+                "agent_response_correction"
+            ],
+            "monitoring_enabled": false,
+            "monitoring_events": [
+                "user_transcript",
+                "agent_response",
+                "agent_response_correction"
+            ]
+        },
+        "language_presets": {},
+        "vad": {
+            "background_voice_detection": false
+        },
+        "agent": {
+            "first_message": "Hey there, young explorer! I'm your science buddy! See all those colorful squares? Each one is a different element! Tap on one and I'll tell you all about it!",
+            "language": "en",
+            "hinglish_mode": false,
+            "dynamic_variables": {
+                "dynamicVariablePlaceholders": {
+                    "element_name": "Hydrogen",
+                    "element_symbol": "H",
+                    "atomic_number": "1",
+                    "category": "Alkaline Earth Metal",
+                    "fun_facts": "Lightest element",
+                    "summary": "This is the lightest element",
+                    "appearance": "Gas"
+                }
+            },
+            "disable_first_message_interruptions": false,
+            "prompt": {
+                "prompt": "You are a friendly, enthusiastic science buddy talking to a young child (not able to read yet) who is looking at an interactive Periodic Table of the elements.\nEncourage them to click on elements.\n\nWhen a child does, you'll get a contextual update that they've clicked on an element and are now seeing some info and graphics about the element named:{{element_name}} (element symbol: {{element_symbol}}, atomic number: {{atomic_number}}). It is a {{category}}.\n  Here are fun facts about this element: {{fun_facts}}\n  Here is a summary: {{summary}}\n  Its appearance: {{appearance}}\n\nWhen a child closes the current element view (by pressing Escape) you'll get a contextual update that they've closed the element. Tell them to click on another element to learn more about it.\n\nYou can navigate the app for the child:\n  - If they ask about a different element (e.g. \"tell me about gold\", \"show me Ca\"), use the navigate_to_element tool to open it.\n  - If they want to go back to the full periodic table, use the go_back_to_table tool. You can also offer this option when they seem done exploring an element.\n\n  Rules:\n  - Be super enthusiastic (indulge their curiosity), and be warm — like a favorite teacher\n  - Use comparisons to things kids know (toys, animals, food, weather)\n  - If the child asks a question, answer and consider giving a fun follow-up to keep them engaged\n  - If they're idle for >10s prompt them to ask a question about {{element_name}}, ask if they'd like to explore a different element, or let them know they can press Escape to go back to the periodic table\n  - Start by sharing the chemicals name, element symbol (read letter by letter e.g. He = H. E.), atomic number, and category and most exciting fact about this element",
+                "llm": "gemini-2.5-flash",
+                "thinking_budget": 0,
+                "temperature": 0.2,
+                "max_tokens": -1,
+                "tool_ids": [
+                    "tool_4201kkn9qd6sfe28yvdrrvttr0ez",
+                    "tool_6301kkn9qhkzf37agzr0aq37h9qb"
+                ],
+                "built_in_tools": {
+                    "memory_entry_search": null,
+                    "memory_entry_create": null,
+                    "memory_entry_update": null,
+                    "memory_entry_delete": null,
+                    "agent_prompt_change": null
+                },
+                "enable_parallel_tool_calls": false,
+                "mcp_server_ids": [],
+                "native_mcp_server_ids": [],
+                "knowledge_base": [],
+                "ignore_default_personality": false,
+                "rag": {
+                    "enabled": false,
+                    "embedding_model": "e5_mistral_7b_instruct",
+                    "max_vector_distance": 0.6,
+                    "max_documents_length": 50000,
+                    "max_retrieved_rag_chunks_count": 20,
+                    "num_candidates": null
+                },
+                "backup_llm_config": {
+                    "preference": "default"
+                },
+                "cascade_timeout_seconds": 8,
+                "tools": [
+                    {
+                        "type": "client",
+                        "name": "navigate_to_element",
+                        "description": "Navigate the periodic table app to show details about a specific element. Call this when the user asks about a different element or wants to see one.",
+                        "response_timeout_secs": 30,
+                        "disable_interruptions": false,
+                        "force_pre_tool_speech": false,
+                        "assignments": [],
+                        "tool_call_sound_behavior": "auto",
+                        "tool_error_handling_mode": "auto",
+                        "parameters": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "description": "Parameters for the client tool",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The element name (e.g. 'Calcium') or symbol (e.g. 'Ca')",
+                                    "is_system_provided": false,
+                                    "dynamic_variable": "",
+                                    "constant_value": ""
+                                }
+                            }
+                        },
+                        "expects_response": true,
+                        "dynamic_variables": {
+                            "dynamicVariablePlaceholders": {}
+                        },
+                        "execution_mode": "immediate"
+                    },
+                    {
+                        "type": "client",
+                        "name": "go_back_to_table",
+                        "description": "Close the current element detail view and return to the periodic table grid. Call this when the user wants to go back or see the full table.",
+                        "response_timeout_secs": 30,
+                        "disable_interruptions": false,
+                        "force_pre_tool_speech": false,
+                        "assignments": [],
+                        "tool_call_sound_behavior": "auto",
+                        "tool_error_handling_mode": "auto",
+                        "parameters": {
+                            "type": "object",
+                            "required": [],
+                            "description": "Parameters for the client tool",
+                            "properties": {}
+                        },
+                        "expects_response": true,
+                        "dynamic_variables": {
+                            "dynamicVariablePlaceholders": {}
+                        },
+                        "execution_mode": "immediate"
+                    }
+                ]
+            }
+        }
+    },
+    "platform_settings": {
+        "evaluation": {
+            "criteria": []
+        },
+        "widget": {
+            "variant": "full",
+            "placement": "bottom-right",
+            "expandable": "never",
+            "avatar": {
+                "type": "orb",
+                "color1": "#2792dc",
+                "color2": "#9ce6e6"
+            },
+            "feedback_mode": "during",
+            "end_feedback": {
+                "type": "rating"
+            },
+            "bg_color": "#ffffff",
+            "text_color": "#000000",
+            "btn_color": "#000000",
+            "btn_text_color": "#ffffff",
+            "border_color": "#e1e1e1",
+            "focus_color": "#000000",
+            "shareable_page_show_terms": true,
+            "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
+            "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
+            "show_avatar_when_collapsed": false,
+            "disable_banner": false,
+            "markdown_link_allowed_hosts": [],
+            "markdown_link_include_www": true,
+            "markdown_link_allow_http": true,
+            "mic_muting_enabled": false,
+            "transcript_enabled": false,
+            "text_input_enabled": true,
+            "conversation_mode_toggle_enabled": false,
+            "default_expanded": false,
+            "always_expanded": false,
+            "dismissible": false,
+            "show_agent_status": false,
+            "show_conversation_id": true,
+            "strip_audio_tags": true,
+            "syntax_highlight_theme": null,
+            "text_contents": {
+                "send_message": null,
+                "text_mode": null,
+                "voice_mode": null,
+                "switched_to_text_mode": null,
+                "switched_to_voice_mode": null,
+                "copy": null,
+                "download": null,
+                "wrap": null,
+                "agent_working": null,
+                "agent_done": null,
+                "agent_error": null
+            },
+            "styles": {},
+            "language_selector": false,
+            "supports_text_only": true,
+            "language_presets": {}
+        },
+        "data_collection": {},
+        "overrides": {
+            "conversation_config_override": {
+                "turn": {
+                    "soft_timeout_config": {
+                        "message": false
+                    }
+                },
+                "tts": {
+                    "voice_id": false,
+                    "stability": false,
+                    "speed": false,
+                    "similarity_boost": false
+                },
+                "conversation": {
+                    "text_only": true
+                },
+                "agent": {
+                    "first_message": false,
+                    "language": false,
+                    "prompt": {
+                        "prompt": false,
+                        "llm": false,
+                        "native_mcp_server_ids": false
+                    }
+                }
+            },
+            "custom_llm_extra_body": false,
+            "enable_conversation_initiation_client_data_from_webhook": false
+        },
+        "workspace_overrides": {
+            "webhooks": {
+                "events": [
+                    "transcript"
+                ],
+                "send_audio": false
+            }
+        },
+        "testing": {
+            "attached_tests": [],
+            "referenced_tests_ids": []
+        },
+        "archived": false,
+        "guardrails": {
+            "version": "1",
+            "focus": {
+                "is_enabled": false
+            },
+            "prompt_injection": {
+                "is_enabled": false
+            },
+            "content": {
+                "execution_mode": "streaming",
+                "config": {
+                    "sexual": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "violence": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "harassment": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "self_harm": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "profanity": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "religion_or_politics": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    },
+                    "medical_and_legal_information": {
+                        "is_enabled": false,
+                        "threshold": "medium"
+                    }
+                }
+            },
+            "moderation": {
+                "execution_mode": "streaming",
+                "config": {
+                    "sexual": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "violence": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "violence_graphic": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "harassment": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "harassment_threatening": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "hate": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "hate_threatening": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "self_harm_instructions": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "self_harm": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "self_harm_intent": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    },
+                    "sexual_minors": {
+                        "is_enabled": false,
+                        "threshold": 0.3
+                    }
+                }
+            },
+            "custom": {
+                "config": {
+                    "configs": []
+                }
+            }
+        },
+        "summary_language": null,
+        "auth": {
+            "enable_auth": false,
+            "allowlist": [],
+            "require_origin_header": true
+        },
+        "call_limits": {
+            "agent_concurrency_limit": -1,
+            "daily_limit": 100000,
+            "bursting_enabled": true
+        },
+        "ban": null,
+        "privacy": {
+            "record_voice": false,
+            "retention_days": 1,
+            "delete_transcript_and_pii": false,
+            "delete_audio": false,
+            "apply_to_existing_conversations": false,
+            "zero_retention_mode": false,
+            "conversation_history_redaction": {
+                "enabled": false,
+                "entities": []
+            }
+        },
+        "safety": {
+            "is_blocked_ivc": false,
+            "is_blocked_non_ivc": false,
+            "ignore_safety_evaluation": false
+        }
+    },
+    "tags": [],
+    "workflow": {
+        "edges": {},
+        "nodes": {
+            "start_node": {
+                "type": "start",
+                "position": {
+                    "x": 0,
+                    "y": 0
+                },
+                "edge_order": []
+            }
+        },
+        "prevent_subagent_loops": false
+    }
+}

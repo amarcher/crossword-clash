@@ -10,3 +10,8 @@ supabase/.temp/
 .claude/
 skills/
 skills-lock.json
+
+# ElevenLabs CLI (agent IDs are secrets)
+agents.json
+tools.json
+tests.json
