@@ -1,4 +1,3 @@
-import { loadElevenLabsGate } from "../elevenLabsClient";
 import { formatEvent } from "./events";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
@@ -23,8 +22,7 @@ async function fetchCommentary(
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !supabaseAnonKey || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Claude narrator not configured");
   }
 
@@ -34,7 +32,6 @@ async function fetchCommentary(
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
       apikey: supabaseAnonKey,
-      "x-gate-token": gate.token,
     },
     body: JSON.stringify({ messages, systemPrompt: SYSTEM_PROMPT }),
   });
@@ -53,8 +50,7 @@ function fetchTTSAudio(
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !supabaseAnonKey || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     return Promise.reject(new Error("TTS not configured"));
   }
 
@@ -64,7 +60,6 @@ function fetchTTSAudio(
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
       apikey: supabaseAnonKey,
-      "x-gate-token": gate.token,
     },
     body: JSON.stringify({ text, voice_id: voiceId }),
   }).then(async (res) => {
@@ -149,8 +144,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const gate = loadElevenLabsGate();
-      if (!supabaseUrl || !gate) {
+      if (!supabaseUrl) {
         throw new Error("Claude narrator not configured");
       }
       // Create AudioContext for ElevenLabs TTS (during user interaction so it's unlocked)

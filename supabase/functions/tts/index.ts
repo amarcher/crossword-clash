@@ -1,22 +1,10 @@
 import { corsHeaders } from "../_shared/cors.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-const ELEVENLABS_GATE_TOKEN = Deno.env.get("ELEVENLABS_GATE_TOKEN");
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
-  }
-
-  // Validate gate token (sent via custom header to avoid conflicting with Supabase JWT auth)
-  const token = req.headers.get("x-gate-token");
-
-  if (!ELEVENLABS_GATE_TOKEN || token !== ELEVENLABS_GATE_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   }
 
   if (!ELEVENLABS_API_KEY) {

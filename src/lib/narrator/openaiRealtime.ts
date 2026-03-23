@@ -1,4 +1,3 @@
-import { loadElevenLabsGate } from "../elevenLabsClient";
 import { formatEvent } from "./events";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
@@ -15,8 +14,7 @@ Rules:
 async function fetchEphemeralToken(): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !supabaseAnonKey || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("OpenAI agent auth not configured");
   }
 
@@ -26,7 +24,6 @@ async function fetchEphemeralToken(): Promise<string> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
       apikey: supabaseAnonKey,
-      "x-gate-token": gate.token,
     },
   });
 

@@ -7,7 +7,6 @@ import {
 import type { TTSSettings, TTSEngine, NarratorEngine } from "../lib/ttsSettings";
 import {
   ELEVENLABS_VOICES,
-  loadElevenLabsGate,
   isElevenLabsAvailable,
 } from "../lib/elevenLabsClient";
 import type { ElevenLabsVoice } from "../lib/elevenLabsClient";
@@ -53,8 +52,7 @@ function fetchElevenLabsAudio(
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !supabaseAnonKey || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     return Promise.reject(new Error("ElevenLabs not configured"));
   }
 
@@ -64,7 +62,6 @@ function fetchElevenLabsAudio(
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
       apikey: supabaseAnonKey,
-      "x-gate-token": gate.token,
     },
     body: JSON.stringify({ text, voice_id: voiceId }),
   }).then((res) => {
