@@ -1,13 +1,11 @@
 import { Conversation } from "@elevenlabs/client";
-import { loadElevenLabsGate } from "../elevenLabsClient";
 import { formatEvent } from "./events";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
 async function fetchSignedUrl(): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const gate = loadElevenLabsGate();
-  if (!supabaseUrl || !supabaseAnonKey || !gate) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Agent auth not configured");
   }
 
@@ -17,7 +15,6 @@ async function fetchSignedUrl(): Promise<string> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${supabaseAnonKey}`,
       apikey: supabaseAnonKey,
-      "x-gate-token": gate.token,
     },
   });
 
