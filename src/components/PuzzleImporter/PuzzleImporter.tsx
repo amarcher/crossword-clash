@@ -3,6 +3,7 @@ import { useTranslation, Trans } from "react-i18next";
 import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
+import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
 import type { Puzzle } from "../../types/puzzle";
 
 interface PuzzleImporterProps {
@@ -14,6 +15,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [demosOpen, setDemosOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -67,13 +69,19 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
     [handleFile],
   );
 
+  const acrossCount = (p: Puzzle) =>
+    p.clues.filter((c) => c.direction === "across").length;
+  const downCount = (p: Puzzle) =>
+    p.clues.filter((c) => c.direction === "down").length;
+
   return (
     <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
       <Title className="mb-2" />
-      <p className="text-neutral-500 mb-8">
+      <p className="text-neutral-500 mb-6">
         {t('importer.subtitle')}
       </p>
 
+      {/* File upload */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -139,6 +147,37 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           }}
         />
       </p>
+
+      {/* Demo puzzles — collapsed by default */}
+      <details
+        className="mt-6 w-full max-w-md"
+        open={demosOpen}
+        onToggle={(e) => setDemosOpen((e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-500 transition-colors select-none text-center">
+          {t('importer.demoPuzzles')}
+        </summary>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {SAMPLE_PUZZLES.map((sp) => (
+            <button
+              key={sp.id}
+              type="button"
+              onClick={() => onPuzzleLoaded(sp.puzzle)}
+              className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 transition-colors"
+            >
+              <span className="block text-sm font-medium text-neutral-700">
+                {sp.puzzle.title}
+              </span>
+              <span className="block text-xs text-neutral-400">
+                {sp.puzzle.width}&times;{sp.puzzle.height}
+                {" · "}
+                {acrossCount(sp.puzzle) + downCount(sp.puzzle)}{" "}
+                {t('importer.sampleClues')}
+              </span>
+            </button>
+          ))}
+        </div>
+      </details>
 
       {error && (
         <p className="mt-4 text-red-600 text-sm max-w-md text-center">

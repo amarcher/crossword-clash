@@ -19,6 +19,8 @@
     "parsing": "Analizando crucigrama...",
     "dropHere": "Arrastra un archivo aqu\u00ed",
     "orBrowse": "o haz clic para buscar (.puz, .ipuz, .jpz, .xd)",
+    "sampleClues": "pistas",
+    "demoPuzzles": "O prueba un crucigrama de demo",
     "nytHint": "<strong>\u00bfSuscriptor del NYT?</strong> Instala el <anchor>NYT Bookmarklet</anchor> para importar el crucigrama del d\u00eda con un clic.",
     "scraperHint": "\u00bfNecesitas un archivo .puz? Usa la extensi\u00f3n <anchor>Crossword Scraper</anchor> de Chrome para descargar crucigramas de sitios populares."
   },
