@@ -22,13 +22,13 @@ export function MenuScreen() {
             </Link>
             <Link
               to="/host-game/name"
-              className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
+              className="px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
             >
               {t('menu.hostAsPlayer')}
             </Link>
             <Link
               to="/host"
-              className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
+              className="px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
             >
               {t('menu.hostAsTV')}
             </Link>
@@ -36,7 +36,7 @@ export function MenuScreen() {
         )}
         <Link
           to="/solo/import"
-          className="px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors text-center"
+          className="px-6 py-3 rounded-lg font-semibold text-neutral-600 bg-white border-2 border-neutral-300 hover:bg-neutral-100 transition-colors text-center"
         >
           {t('menu.playSolo')}
         </Link>
