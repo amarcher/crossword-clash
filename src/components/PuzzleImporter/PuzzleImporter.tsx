@@ -4,6 +4,8 @@ import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
+import { NytRecommendation } from "../NytRecommendation";
+import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
 
 interface PuzzleImporterProps {
@@ -148,6 +150,11 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         />
       </p>
 
+      {/* NYT affiliate recommendation */}
+      <div className="mt-5">
+        <NytRecommendation variant="card" />
+      </div>
+
       {/* Demo puzzles — collapsed by default */}
       <details
         className="mt-6 w-full max-w-md"
@@ -184,6 +191,10 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           {error}
         </p>
       )}
+
+      <div className="mt-4">
+        <AdSlot placement="import-bottom" />
+      </div>
     </div>
   );
 }

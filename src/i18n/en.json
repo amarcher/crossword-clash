@@ -140,7 +140,8 @@
     "narratorClaudeDesc": "AI gameshow host via Claude. Generates commentary text, then speaks via ElevenLabs TTS.",
     "agentConnected": "Connected",
     "agentConnecting": "Connecting...",
-    "agentError": "Connection error"
+    "agentError": "Connection error",
+    "rateLimited": "Narrator limit reached. Falling back to browser voice."
   },
   "hostView": {
     "tvHostView": "TV / Host View",
@@ -155,5 +156,11 @@
   "timeout": {
     "wrongAnswerPenalty": "Wrong Answer Penalty",
     "off": "Off"
+  },
+  "nyt": {
+    "cardText": "Looking for puzzles? The NYT Crossword has thousands of puzzles from easy to expert.",
+    "cardCta": "Try NYT Crossword \u2192",
+    "inlineText": "Want more puzzles?",
+    "inlineCta": "Try the NYT Crossword"
   }
 }

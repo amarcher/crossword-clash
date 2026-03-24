@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
+import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
 
 interface PuzzleReadyProps {
@@ -66,6 +67,9 @@ export function PuzzleReady({
         >
           {t('menu.playSolo')}
         </button>
+      </div>
+      <div className="mt-4">
+        <AdSlot placement="puzzle-ready-bottom" darkMode={darkMode} />
       </div>
     </div>
   );

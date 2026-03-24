@@ -36,6 +36,11 @@ async function fetchCommentary(
     body: JSON.stringify({ messages, systemPrompt: SYSTEM_PROMPT }),
   });
 
+  if (res.status === 429) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
+  }
+
   if (!res.ok) {
     throw new Error(`Claude narrator failed: ${res.status}`);
   }
@@ -239,6 +244,13 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       await this.speakText(commentary);
     } catch (err) {
       console.error("[ClaudeNarrator] Error:", err);
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.startsWith("rate_limited:")) {
+        this._connectionError = "Narrator limit reached. Falling back to browser voice.";
+        this._isConnected = false;
+        this.onStateChange?.();
+        return;
+      }
     }
 
     // Process any events that arrived while we were fetching/speaking
