@@ -27,6 +27,11 @@ async function fetchEphemeralToken(): Promise<string> {
     },
   });
 
+  if (res.status === 429) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
+  }
+
   if (!res.ok) {
     throw new Error(`OpenAI agent auth failed: ${res.status}`);
   }
@@ -134,8 +139,10 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       this.eventQueue = [];
     } catch (err) {
       console.error("[OpenAIRealtime] Connection error:", err);
-      this._connectionError =
-        err instanceof Error ? err.message : "Connection failed";
+      const msg = err instanceof Error ? err.message : "Connection failed";
+      this._connectionError = msg.startsWith("rate_limited:")
+        ? "Narrator limit reached. Falling back to browser voice."
+        : msg;
       this.onStateChange?.();
       this.ws = null;
     } finally {

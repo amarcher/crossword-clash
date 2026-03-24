@@ -2,6 +2,8 @@ import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Confetti } from "./Confetti";
+import { AdSlot } from "../AdSlot";
+import { NytRecommendation } from "../NytRecommendation";
 
 export interface PlayerResult {
   userId: string;
@@ -153,6 +155,11 @@ export function CompletionModal({
           </>
         )}
 
+        {/* Ad */}
+        <div className="flex justify-center mb-4">
+          <AdSlot placement="completion-footer" darkMode={darkMode} />
+        </div>
+
         {/* Buttons */}
         <div className="flex flex-col gap-2">
           {onNewPuzzle && (
@@ -175,6 +182,11 @@ export function CompletionModal({
               {t('completion.backToMenu')}
             </button>
           )}
+        </div>
+
+        {/* NYT affiliate */}
+        <div className="mt-4">
+          <NytRecommendation variant="inline" darkMode={darkMode} />
         </div>
       </div>
     </div>

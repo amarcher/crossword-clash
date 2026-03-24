@@ -1,4 +1,5 @@
 import { corsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 const ELEVENLABS_AGENT_ID = Deno.env.get("ELEVENLABS_AGENT_ID");
@@ -7,6 +8,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const rateLimitResponse = await checkRateLimit(req, "agent-auth");
+  if (rateLimitResponse) return rateLimitResponse;
 
   if (!ELEVENLABS_API_KEY) {
     return new Response(

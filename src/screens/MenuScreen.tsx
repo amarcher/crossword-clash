@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { AdSlot } from "../components/AdSlot";
 import { useAuth } from "../contexts/AuthContext";
 
 export function MenuScreen() {
@@ -43,6 +44,9 @@ export function MenuScreen() {
       </div>
       <div className="mt-6">
         <LanguageSwitcher />
+      </div>
+      <div className="mt-4">
+        <AdSlot placement="menu-bottom" />
       </div>
     </div>
   );

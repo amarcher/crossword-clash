@@ -140,7 +140,8 @@
     "narratorClaudeDesc": "Presentador IA v\u00eda Claude. Genera comentarios de texto y los reproduce con ElevenLabs TTS.",
     "agentConnected": "Conectado",
     "agentConnecting": "Conectando...",
-    "agentError": "Error de conexi\u00f3n"
+    "agentError": "Error de conexi\u00f3n",
+    "rateLimited": "L\u00edmite de narrador alcanzado. Usando voz del navegador."
   },
   "hostView": {
     "tvHostView": "Vista TV / Anfitri\u00f3n",
@@ -155,5 +156,11 @@
   "timeout": {
     "wrongAnswerPenalty": "Penalizaci\u00f3n por error",
     "off": "No"
+  },
+  "nyt": {
+    "cardText": "\u00bfBuscas crucigramas? El NYT Crossword tiene miles de crucigramas de f\u00e1cil a experto.",
+    "cardCta": "Prueba NYT Crossword \u2192",
+    "inlineText": "\u00bfQuieres m\u00e1s crucigramas?",
+    "inlineCta": "Prueba el NYT Crossword"
   }
 }
