@@ -200,7 +200,8 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
       if (!cell || cell.solution === null) return;
 
       if (playerCells[`${row},${col}`]?.correct) {
-        multiplayer.claimCell(row, col, letter);
+        // Cell already claimed (e.g. by another player) — just advance cursor
+        inputLetter(letter);
         return;
       }
 
@@ -214,7 +215,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
       }
       multiplayer.claimCell(row, col, letter);
     },
-    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil, setLockedUntil],
+    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
   );
 
   // Suppress lint warnings for derived values that are consumed downstream
