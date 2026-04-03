@@ -15,7 +15,7 @@ export function LanguageSwitcher() {
       value={i18n.language}
       onChange={(e) => i18n.changeLanguage(e.target.value)}
       aria-label={t('languageSwitcher.label')}
-      className="text-sm text-neutral-500 bg-transparent border border-neutral-300 rounded px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="text-sm text-neutral-500 bg-white border border-neutral-300 rounded px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
       {SUPPORTED_LANGS.map((lang) => (
         <option key={lang} value={lang}>

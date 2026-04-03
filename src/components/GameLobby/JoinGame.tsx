@@ -44,7 +44,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore
-            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 bg-white focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           />
         </div>
 
@@ -67,7 +67,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
             data-form-type="other"
             data-lpignore="true"
             data-1p-ignore
-            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none text-center font-mono text-2xl tracking-[0.3em] uppercase"
+            className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 bg-white focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none text-center font-mono text-2xl tracking-[0.3em] uppercase"
           />
         </div>
 

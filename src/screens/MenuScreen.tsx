@@ -7,29 +7,32 @@ import { useAuth } from "../contexts/AuthContext";
 
 export function MenuScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
       <Title className="mb-8" />
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        {user && (
+        {(user || loading) && (
           <>
             <Link
               to="/join"
-              className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors text-center"
+              aria-disabled={loading}
+              className={`px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 transition-colors text-center ${loading ? "opacity-50 pointer-events-none" : "hover:bg-blue-700"}`}
             >
               {t('menu.joinGame')}
             </Link>
             <Link
               to="/host-game/name"
-              className="px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
+              aria-disabled={loading}
+              className={`px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 transition-colors text-center ${loading ? "opacity-50 pointer-events-none" : "hover:bg-blue-50"}`}
             >
               {t('menu.hostAsPlayer')}
             </Link>
             <Link
               to="/host"
-              className="px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 transition-colors text-center"
+              aria-disabled={loading}
+              className={`px-6 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 transition-colors text-center ${loading ? "opacity-50 pointer-events-none" : "hover:bg-blue-50"}`}
             >
               {t('menu.hostAsTV')}
             </Link>
