@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { logUsage } from "../_shared/usageLog.ts";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
@@ -64,6 +65,13 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
+    if (data.usage) {
+      logUsage("anthropic", "narrator-claude", {
+        tokensIn: data.usage.input_tokens,
+        tokensOut: data.usage.output_tokens,
+        model: "claude-sonnet-4-20250514",
+      });
+    }
     const text = data.content?.[0]?.text ?? "";
 
     return new Response(JSON.stringify({ text }), {
