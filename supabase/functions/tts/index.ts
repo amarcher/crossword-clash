@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { logUsage } from "../_shared/usageLog.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 
@@ -63,6 +64,8 @@ Deno.serve(async (req) => {
         },
       );
     }
+
+    logUsage("elevenlabs", "tts", { characters: text.length });
 
     return new Response(response.body, {
       headers: {
