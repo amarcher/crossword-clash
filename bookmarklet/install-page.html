@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Install NYT Bookmarklet — Crossword Clash</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    color: #333;
+    min-height: 100dvh;
+    background-color: rgb(250 250 249);
+  }
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  p { margin: 0.75rem 0; }
+  .intro { color: #4b5563; }
+  .bookmarklet-link {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    cursor: grab;
+  }
+  .bookmarklet-link:active { cursor: grabbing; }
+  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  .steps { padding-left: 1.2em; }
+  .steps li { margin-bottom: 0.5em; }
+  .note { color: #6b7280; font-size: 0.9em; }
+  a[href^="http"], a[href^="/"] { color: #2563eb; }
+  .disclosure {
+    background: #f9fafb;
+    border-left: 3px solid #d1d5db;
+    padding: 12px 16px;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #4b5563;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>NYT → Crossword Clash Bookmarklet</h1>
+<p class="intro">
+  A bookmarklet that imports the New York Times crossword you're currently viewing
+  into <a href="https://crosswordclash.com">Crossword Clash</a> so you can play it
+  head-to-head with friends.
+</p>
+
+<div class="disclosure">
+  <strong>What this does:</strong> When clicked on a NYT crossword page, the bookmarklet
+  fetches the puzzle from the NYT crossword API using your existing subscription cookie,
+  converts it to Crossword Clash's format, and opens a new tab at crosswordclash.com with
+  the puzzle loaded. It does not send your credentials anywhere else and requires an
+  active NYT Crossword subscription. Full source is available on
+  <a href="https://github.com/amarcher/crossword-clash/blob/main/bookmarklet/nyt.js" target="_blank" rel="noopener">GitHub</a>.
+</div>
+
+<h2>Install</h2>
+<p>Drag this button to your bookmarks bar:</p>
+<p><a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}">NYT → Crossword Clash</a></p>
+<p class="note">Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).</p>
+
+<h2>Usage</h2>
+<ol class="steps">
+  <li>Visit a NYT crossword page — <a href="https://www.nytimes.com/crosswords/game/daily" target="_blank" rel="noopener">Daily</a>, <a href="https://www.nytimes.com/crosswords/game/mini" target="_blank" rel="noopener">Mini</a>, or any other puzzle — while logged into your NYT Crossword subscription.</li>
+  <li>Click the bookmarklet in your bookmarks bar.</li>
+  <li>Crossword Clash opens in a new tab with the puzzle pre-loaded.</li>
+</ol>
+
+<h2>How it works</h2>
+<ul>
+  <li>Reads puzzle data from <code>nytimes.com/svc/crosswords/v6/puzzle/...</code> using the session cookie already in your browser.</li>
+  <li>Converts the puzzle into Crossword Clash's internal format and compresses it with <a href="https://github.com/pieroxy/lz-string" target="_blank" rel="noopener">lz-string</a>.</li>
+  <li>Opens a new tab to crosswordclash.com and transfers the puzzle via <code>window.postMessage</code>.</li>
+  <li>No data is sent to any third-party server — the transfer is entirely between your two browser tabs.</li>
+</ul>
+</div>
+</body>
+</html>

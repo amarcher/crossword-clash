@@ -397,11 +397,6 @@
       var json = JSON.stringify(transfer);
       var compressed = compressToEncodedURIComponent(json);
 
-      // Copy to clipboard as fallback (may fail if user gesture expired)
-      try {
-        navigator.clipboard.writeText(compressed);
-      } catch (ignore) {}
-
       // Open app with clean URL (no puzzle data in URL to avoid Safe Browsing flags)
       var appOrigin = APP_URL.replace(/\/$/, "");
       var appWindow = window.open(APP_URL + "#import", "_blank");
