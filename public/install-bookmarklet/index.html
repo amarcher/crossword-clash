@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Install Bookmarklet - Crossword Clash</title>
+<meta name="robots" content="noindex, nofollow">
+<title>Install NYT Bookmarklet — Crossword Clash</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -13,29 +14,16 @@
     color: #333;
     min-height: 100dvh;
     background-color: rgb(250 250 249);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect width='160' height='160' fill='none'/%3E%3Cg stroke='%23000' stroke-opacity='0.04' stroke-width='0.5'%3E%3Cline x1='0' y1='0' x2='160' y2='0'/%3E%3Cline x1='0' y1='20' x2='160' y2='20'/%3E%3Cline x1='0' y1='40' x2='160' y2='40'/%3E%3Cline x1='0' y1='60' x2='160' y2='60'/%3E%3Cline x1='0' y1='80' x2='160' y2='80'/%3E%3Cline x1='0' y1='100' x2='160' y2='100'/%3E%3Cline x1='0' y1='120' x2='160' y2='120'/%3E%3Cline x1='0' y1='140' x2='160' y2='140'/%3E%3Cline x1='0' y1='160' x2='160' y2='160'/%3E%3Cline x1='0' y1='0' x2='0' y2='160'/%3E%3Cline x1='20' y1='0' x2='20' y2='160'/%3E%3Cline x1='40' y1='0' x2='40' y2='160'/%3E%3Cline x1='60' y1='0' x2='60' y2='160'/%3E%3Cline x1='80' y1='0' x2='80' y2='160'/%3E%3Cline x1='100' y1='0' x2='100' y2='160'/%3E%3Cline x1='120' y1='0' x2='120' y2='160'/%3E%3Cline x1='140' y1='0' x2='140' y2='160'/%3E%3Cline x1='160' y1='0' x2='160' y2='160'/%3E%3C/g%3E%3Cg fill='%23000' fill-opacity='0.04'%3E%3Crect x='60' y='0' width='20' height='20'/%3E%3Crect x='120' y='0' width='20' height='20'/%3E%3Crect x='0' y='20' width='20' height='20'/%3E%3Crect x='80' y='20' width='20' height='20'/%3E%3Crect x='40' y='40' width='20' height='20'/%3E%3Crect x='140' y='40' width='20' height='20'/%3E%3Crect x='20' y='60' width='20' height='20'/%3E%3Crect x='100' y='60' width='20' height='20'/%3E%3Crect x='0' y='80' width='20' height='20'/%3E%3Crect x='60' y='80' width='20' height='20'/%3E%3Crect x='140' y='80' width='20' height='20'/%3E%3Crect x='40' y='100' width='20' height='20'/%3E%3Crect x='120' y='100' width='20' height='20'/%3E%3Crect x='80' y='120' width='20' height='20'/%3E%3Crect x='20' y='120' width='20' height='20'/%3E%3Crect x='0' y='140' width='20' height='20'/%3E%3Crect x='60' y='140' width='20' height='20'/%3E%3Crect x='100' y='140' width='20' height='20'/%3E%3C/g%3E%3C/svg%3E");
-    background-repeat: repeat;
   }
   .container {
-    max-width: 600px;
+    max-width: 640px;
     margin: 0 auto;
     padding: 40px 20px;
   }
-  h1 { font-size: 1.5rem; }
-  h2 { font-size: 1.2rem; margin-top: 2rem; }
-  .drag-section {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin: 16px 0;
-  }
-  .drag-instruction {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
-  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  p { margin: 0.75rem 0; }
+  .intro { color: #4b5563; }
   .bookmarklet-link {
     display: inline-block;
     padding: 12px 24px;
@@ -44,116 +32,63 @@
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     cursor: grab;
-    position: relative;
-    z-index: 1;
   }
   .bookmarklet-link:active { cursor: grabbing; }
-  .arrow-hint {
-    position: absolute;
-    top: -48px;
-    left: 80px;
-    pointer-events: none;
-    animation: bounce-up 1.5s ease-in-out infinite;
-  }
-  .arrow-hint svg {
-    width: 48px;
-    height: 48px;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
-  }
-  @keyframes bounce-up {
-    0%, 100% { transform: translateY(0); opacity: 0.9; }
-    50% { transform: translateY(-10px); opacity: 1; }
-  }
   code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
   .steps { padding-left: 1.2em; }
   .steps li { margin-bottom: 0.5em; }
-  textarea {
-    width: 100%;
-    font-size: 10px;
-    font-family: monospace;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    padding: 8px;
-    background: white;
-    box-sizing: border-box;
-  }
-  button {
-    padding: 8px 16px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  button:hover { background: #1d4ed8; }
   .note { color: #6b7280; font-size: 0.9em; }
-  a[href^="http"] { color: #2563eb; }
+  a[href^="http"], a[href^="/"] { color: #2563eb; }
+  .disclosure {
+    background: #f9fafb;
+    border-left: 3px solid #d1d5db;
+    padding: 12px 16px;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #4b5563;
+  }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Crossword Clash - NYT Bookmarklet</h1>
+<h1>NYT → Crossword Clash Bookmarklet</h1>
+<p class="intro">
+  A bookmarklet that imports the New York Times crossword you're currently viewing
+  into <a href="https://crosswordclash.com">Crossword Clash</a> so you can play it
+  head-to-head with friends.
+</p>
 
-<h2>Option 1: Drag to bookmarks bar</h2>
-<div class="drag-section">
-  <span class="drag-instruction">Drag this button to your bookmarks bar:</span>
-  <div style="position: relative; display: inline-block;">
-    <span id="link-container"></span>
-    <span class="arrow-hint">
-      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M24 42V10" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-        <path d="M12 22L24 10L36 22" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </span>
-  </div>
+<div class="disclosure">
+  <strong>What this does:</strong> When clicked on a NYT crossword page, the bookmarklet
+  fetches the puzzle from the NYT crossword API using your existing subscription cookie,
+  converts it to Crossword Clash's format, and opens a new tab at crosswordclash.com with
+  the puzzle loaded. It does not send your credentials anywhere else and requires an
+  active NYT Crossword subscription. Full source is available on
+  <a href="https://github.com/amarcher/crossword-clash/blob/main/bookmarklet/nyt.js" target="_blank" rel="noopener">GitHub</a>.
 </div>
-<p class="note">Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).</p>
 
-<h2>Option 2: Manual install</h2>
-<ol class="steps">
-  <li>Right-click your bookmarks bar and choose "Add Page..." or "Add Bookmark..."</li>
-  <li>Name: <code>NYT &rarr; Crossword Clash</code></li>
-  <li>URL: Click "Copy" below, then paste into the URL field</li>
-</ol>
-<textarea id="url-box" rows="4" readonly></textarea>
-<br><br>
-<button id="copy-btn">Copy to clipboard</button>
+<h2>Install</h2>
+<p>Drag this button to your bookmarks bar:</p>
+<p><a class="bookmarklet-link" href="javascript:void%20(function()%7B%22use%20strict%22;var%20M=%22https://crosswordclash.com/%22,E=%22ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$%22;function%20N(i,s,o)%7Bif(i==null)return%22%22;var%20r,t,f=%7B%7D,h=%7B%7D,v=%22%22,u=%22%22,n=%22%22,p=2,w=3,c=2,l=%5B%5D,e=0,a=0,d;for(d=0;d%3Ci.length;d+=1)if(v=i.charAt(d),Object.prototype.hasOwnProperty.call(f,v)%7C%7C(f%5Bv%5D=w++,h%5Bv%5D=!0),u=n+v,Object.prototype.hasOwnProperty.call(f,u))n=u;else%7Bif(Object.prototype.hasOwnProperty.call(h,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cc;r++)e=e%3C%3C1,a==s-1?(a=0,l.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cc;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1%7Dp--,p==0&amp;&amp;(p=Math.pow(2,c),c++),delete%20h%5Bn%5D%7Delse%20for(t=f%5Bn%5D,r=0;r%3Cc;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1;p--,p==0&amp;&amp;(p=Math.pow(2,c),c++),f%5Bu%5D=w++,n=String(v)%7Dif(n!==%22%22)%7Bif(Object.prototype.hasOwnProperty.call(h,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cc;r++)e=e%3C%3C1,a==s-1?(a=0,l.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cc;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1%7Dp--,p==0&amp;&amp;(p=Math.pow(2,c),c++),delete%20h%5Bn%5D%7Delse%20for(t=f%5Bn%5D,r=0;r%3Cc;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1;p--,p==0&amp;&amp;(p=Math.pow(2,c),c++)%7Dfor(t=2,r=0;r%3Cc;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,l.push(o(e)),e=0):a++,t=t%3E%3E1;for(;;)if(e=e%3C%3C1,a==s-1)%7Bl.push(o(e));break%7Delse%20a++;return%20l.join(%22%22)%7Dfunction%20Y(i)%7Breturn%20i==null?%22%22:N(i,6,function(s)%7Breturn%20E.charAt(s)%7D)%7Dfunction%20D()%7Bvar%20i=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)%5C/(%5Cd%7B4%7D)%5C/(%5Cd%7B2%7D)%5C/(%5Cd%7B2%7D)/);if(i)return%7Btype:i%5B1%5D,date:i%5B2%5D+%22-%22+i%5B3%5D+%22-%22+i%5B4%5D%7D;var%20s=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)/),o=new%20Date,r=o.getFullYear(),t=String(o.getMonth()+1).padStart(2,%220%22),f=String(o.getDate()).padStart(2,%220%22);return%7Btype:s?s%5B1%5D:%22daily%22,date:r+%22-%22+t+%22-%22+f%7D%7Dasync%20function%20B()%7Btry%7Bvar%20i=D(),s=await%20fetch(%22/svc/crosswords/v6/puzzle/%22+i.type+%22/%22+i.date+%22.json%22,%7Bcredentials:%22include%22%7D);if(!s.ok)%7Bs.status===403%7C%7Cs.status===401?alert(%22Crossword%20Clash:%20Could%20not%20fetch%20puzzle.%20Make%20sure%20you're%20logged%20in%20to%20NYT%20with%20an%20active%20crossword%20subscription.%22):alert(%22Crossword%20Clash:%20API%20error%20%22+s.status);return%7Dvar%20o=await%20s.json(),r=o.body&amp;&amp;o.body%5B0%5D?o.body%5B0%5D:o,t=r.cells;if(!t%7C%7C!t.length)%7Balert(%22Crossword%20Clash:%20Could%20not%20parse%20puzzle%20data.%20The%20NYT%20API%20format%20may%20have%20changed.%22);return%7Dfor(var%20f=r.dimensions,h=f.height,v=f.width,u=%5B%5D,n=%5B%5D,p=0;p%3Ct.length;p++)%7Bvar%20w=t%5Bp%5D;w.answer?(u.push(w.answer.toUpperCase()),n.push(w.label&amp;&amp;parseInt(w.label,10)%7C%7C0)):(u.push(%22.%22),n.push(0))%7Dfor(var%20c=r.clues,l=r.clueLists,e=%5B%5D,a=%5B%5D,d=%5B%5D,T=%5B%5D,m=0;m%3Cl.length;m++)for(var%20U=l%5Bm%5D,J=U.name.toLowerCase().indexOf(%22across%22)!==-1,j=U.clues,x=0;x%3Cj.length;x++)%7Bvar%20y=c%5BString(j%5Bx%5D)%5D;if(y)%7Bvar%20R=y.label,_=%22%22;y.text&amp;&amp;y.text.length%3E0&amp;&amp;(_=y.text%5B0%5D.plain%7C%7Cy.text%5B0%5D%7C%7C%22%22),_=_.replace(/%3C%5B%5E%3E%5D*%3E/g,%22%22);for(var%20L=R+%22.%20%22+_,A=%22%22,k=y.cells%7C%7C%5B%5D,O=0;O%3Ck.length;O++)%7Bvar%20g=k%5BO%5D;g%3E=0&amp;&amp;g%3Ct.length&amp;&amp;t%5Bg%5D.answer&amp;&amp;(A+=t%5Bg%5D.answer.toUpperCase())%7DJ?(e.push(L),d.push(A)):(a.push(L),T.push(A))%7D%7Dvar%20$=i.type.charAt(0).toUpperCase()+i.type.slice(1),q=o.title%7C%7C%22NYT%20%22+$+%22%20%5Cu2014%20%22+i.date,G=o.constructors&amp;&amp;o.constructors.join(%22,%20%22)%7C%7Co.editor%7C%7C%22%22,H=%7Btitle:q,author:G,size:%7Brows:h,cols:v%7D,grid:u,gridnums:n,clues:%7Bacross:e,down:a%7D,answers:%7Bacross:d,down:T%7D%7D,K=JSON.stringify(H),Q=Y(K),V=M.replace(/%5C/$/,%22%22),W=window.open(M+%22#import%22,%22_blank%22),S=function(z)%7Bz.data&amp;&amp;z.data.type===%22crossword-clash-ready%22&amp;&amp;(W.postMessage(%7Btype:%22crossword-clash-puzzle%22,puzzle:Q%7D,V),window.removeEventListener(%22message%22,S))%7D;window.addEventListener(%22message%22,S),setTimeout(function()%7Bwindow.removeEventListener(%22message%22,S)%7D,3e4)%7Dcatch(z)%7Balert(%22Crossword%20Clash:%20%22+(z.message%7C%7C%22Unknown%20error%22))%7D%7DB()%7D)();">NYT → Crossword Clash</a></p>
+<p class="note">Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).</p>
 
 <h2>Usage</h2>
 <ol class="steps">
-  <li>Go to any NYT crossword page — <a href="https://www.nytimes.com/crosswords/game/daily" target="_blank">Daily</a>, <a href="https://www.nytimes.com/crosswords/game/mini" target="_blank">Mini</a>, or other puzzle types (must be logged in with crossword subscription)</li>
-  <li>Click the bookmarklet in your bookmarks bar</li>
-  <li>Crossword Clash opens in a new tab with the puzzle loaded</li>
+  <li>Visit a NYT crossword page — <a href="https://www.nytimes.com/crosswords/game/daily" target="_blank" rel="noopener">Daily</a>, <a href="https://www.nytimes.com/crosswords/game/mini" target="_blank" rel="noopener">Mini</a>, or any other puzzle — while logged into your NYT Crossword subscription.</li>
+  <li>Click the bookmarklet in your bookmarks bar.</li>
+  <li>Crossword Clash opens in a new tab with the puzzle pre-loaded.</li>
 </ol>
+
+<h2>How it works</h2>
+<ul>
+  <li>Reads puzzle data from <code>nytimes.com/svc/crosswords/v6/puzzle/...</code> using the session cookie already in your browser.</li>
+  <li>Converts the puzzle into Crossword Clash's internal format and compresses it with <a href="https://github.com/pieroxy/lz-string" target="_blank" rel="noopener">lz-string</a>.</li>
+  <li>Opens a new tab to crosswordclash.com and transfers the puzzle via <code>window.postMessage</code>.</li>
+  <li>No data is sent to any third-party server — the transfer is entirely between your two browser tabs.</li>
+</ul>
 </div>
-
-<script>
-var BOOKMARKLET_SRC = "(function () { \"use strict\"; var APP_URL = \"__APP_URL__\"; var keyStrUriSafe = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$\"; function _compress(uncompressed, bitsPerChar, getCharFromInt) { if (uncompressed == null) return \"\"; var i, value, context_dictionary = {}, context_dictionaryToCreate = {}, context_c = \"\", context_wc = \"\", context_w = \"\", context_enlargeIn = 2, context_dictSize = 3, context_numBits = 2, context_data = [], context_data_val = 0, context_data_position = 0, ii; for (ii = 0; ii < uncompressed.length; ii += 1) { context_c = uncompressed.charAt(ii); if ( !Object.prototype.hasOwnProperty.call(context_dictionary, context_c) ) { context_dictionary[context_c] = context_dictSize++; context_dictionaryToCreate[context_c] = true; } context_wc = context_w + context_c; if ( Object.prototype.hasOwnProperty.call(context_dictionary, context_wc) ) { context_w = context_wc; } else { if ( Object.prototype.hasOwnProperty.call( context_dictionaryToCreate, context_w, ) ) { if (context_w.charCodeAt(0) < 256) { for (i = 0; i < context_numBits; i++) { context_data_val = context_data_val << 1; if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } } value = context_w.charCodeAt(0); for (i = 0; i < 8; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } else { value = 1; for (i = 0; i < context_numBits; i++) { context_data_val = (context_data_val << 1) | value; if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = 0; } value = context_w.charCodeAt(0); for (i = 0; i < 16; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } context_enlargeIn--; if (context_enlargeIn == 0) { context_enlargeIn = Math.pow(2, context_numBits); context_numBits++; } delete context_dictionaryToCreate[context_w]; } else { value = context_dictionary[context_w]; for (i = 0; i < context_numBits; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } context_enlargeIn--; if (context_enlargeIn == 0) { context_enlargeIn = Math.pow(2, context_numBits); context_numBits++; } context_dictionary[context_wc] = context_dictSize++; context_w = String(context_c); } } if (context_w !== \"\") { if ( Object.prototype.hasOwnProperty.call( context_dictionaryToCreate, context_w, ) ) { if (context_w.charCodeAt(0) < 256) { for (i = 0; i < context_numBits; i++) { context_data_val = context_data_val << 1; if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } } value = context_w.charCodeAt(0); for (i = 0; i < 8; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } else { value = 1; for (i = 0; i < context_numBits; i++) { context_data_val = (context_data_val << 1) | value; if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = 0; } value = context_w.charCodeAt(0); for (i = 0; i < 16; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } context_enlargeIn--; if (context_enlargeIn == 0) { context_enlargeIn = Math.pow(2, context_numBits); context_numBits++; } delete context_dictionaryToCreate[context_w]; } else { value = context_dictionary[context_w]; for (i = 0; i < context_numBits; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } } context_enlargeIn--; if (context_enlargeIn == 0) { context_enlargeIn = Math.pow(2, context_numBits); context_numBits++; } } value = 2; for (i = 0; i < context_numBits; i++) { context_data_val = (context_data_val << 1) | (value & 1); if (context_data_position == bitsPerChar - 1) { context_data_position = 0; context_data.push(getCharFromInt(context_data_val)); context_data_val = 0; } else { context_data_position++; } value = value >> 1; } while (true) { context_data_val = context_data_val << 1; if (context_data_position == bitsPerChar - 1) { context_data.push(getCharFromInt(context_data_val)); break; } else context_data_position++; } return context_data.join(\"\"); } function compressToEncodedURIComponent(input) { if (input == null) return \"\"; return _compress(input, 6, function (a) { return keyStrUriSafe.charAt(a); }); } function getPuzzleInfo() { var match = window.location.pathname.match( /\\/crosswords\\/game\\/(\\w+)\\/(\\d{4})\\/(\\d{2})\\/(\\d{2})/, ); if (match) { return { type: match[1], date: match[2] + \"-\" + match[3] + \"-\" + match[4] }; } var typeMatch = window.location.pathname.match( /\\/crosswords\\/game\\/(\\w+)/, ); var d = new Date(); var yyyy = d.getFullYear(); var mm = String(d.getMonth() + 1).padStart(2, \"0\"); var dd = String(d.getDate()).padStart(2, \"0\"); return { type: typeMatch ? typeMatch[1] : \"daily\", date: yyyy + \"-\" + mm + \"-\" + dd }; } async function run() { try { var info = getPuzzleInfo(); var resp = await fetch( \"/svc/crosswords/v6/puzzle/\" + info.type + \"/\" + info.date + \".json\", { credentials: \"include\" }, ); if (!resp.ok) { if (resp.status === 403 || resp.status === 401) { alert( \"Crossword Clash: Could not fetch puzzle. Make sure you're logged in to NYT with an active crossword subscription.\", ); } else { alert(\"Crossword Clash: API error \" + resp.status); } return; } var data = await resp.json(); var body = data.body && data.body[0] ? data.body[0] : data; var cells = body.cells; if (!cells || !cells.length) { alert( \"Crossword Clash: Could not parse puzzle data. The NYT API format may have changed.\", ); return; } var dims = body.dimensions; var rows = dims.height; var cols = dims.width; var grid = []; var gridnums = []; for (var i = 0; i < cells.length; i++) { var cell = cells[i]; if (!cell.answer) { grid.push(\".\"); gridnums.push(0); } else { grid.push(cell.answer.toUpperCase()); gridnums.push(cell.label ? parseInt(cell.label, 10) || 0 : 0); } } var clueMap = body.clues; var clueLists = body.clueLists; var acrossClues = []; var downClues = []; var acrossAnswers = []; var downAnswers = []; for (var g = 0; g < clueLists.length; g++) { var group = clueLists[g]; var isAcross = group.name.toLowerCase().indexOf(\"across\") !== -1; var clueIndices = group.clues; for (var j = 0; j < clueIndices.length; j++) { var clue = clueMap[String(clueIndices[j])]; if (!clue) continue; var num = clue.label; var text = \"\"; if (clue.text && clue.text.length > 0) { text = clue.text[0].plain || clue.text[0] || \"\"; } text = text.replace(/<[^>]*>/g, \"\"); var clueStr = num + \". \" + text; var answer = \"\"; var cellRefs = clue.cells || []; for (var k = 0; k < cellRefs.length; k++) { var idx = cellRefs[k]; if (idx >= 0 && idx < cells.length && cells[idx].answer) { answer += cells[idx].answer.toUpperCase(); } } if (isAcross) { acrossClues.push(clueStr); acrossAnswers.push(answer); } else { downClues.push(clueStr); downAnswers.push(answer); } } } var typeLabel = info.type.charAt(0).toUpperCase() + info.type.slice(1); var title = data.title || \"NYT \" + typeLabel + \" \\u2014 \" + info.date; var author = (data.constructors && data.constructors.join(\", \")) || data.editor || \"\"; var transfer = { title: title, author: author, size: { rows: rows, cols: cols }, grid: grid, gridnums: gridnums, clues: { across: acrossClues, down: downClues }, answers: { across: acrossAnswers, down: downAnswers }, }; var json = JSON.stringify(transfer); var compressed = compressToEncodedURIComponent(json); try { navigator.clipboard.writeText(compressed); } catch (ignore) {} var appOrigin = APP_URL.replace(/\\/$/, \"\"); var appWindow = window.open(APP_URL + \"#import\", \"_blank\"); var handler = function (event) { if (event.data && event.data.type === \"crossword-clash-ready\") { appWindow.postMessage({ type: \"crossword-clash-puzzle\", puzzle: compressed }, appOrigin); window.removeEventListener(\"message\", handler); } }; window.addEventListener(\"message\", handler); setTimeout(function () { window.removeEventListener(\"message\", handler); }, 30000); } catch (e) { alert(\"Crossword Clash: \" + (e.message || \"Unknown error\")); } } run(); })();";
-
-// Replace APP_URL placeholder with current origin
-var src = BOOKMARKLET_SRC.replace('__APP_URL__', window.location.origin + '/');
-var url = 'javascript:void%20' + encodeURI(src);
-
-// Create drag-to-bookmarks link
-var a = document.createElement('a');
-a.href = url;
-a.textContent = 'NYT \u2192 Crossword Clash';
-a.className = 'bookmarklet-link';
-document.getElementById('link-container').appendChild(a);
-
-// Fill textarea
-document.getElementById('url-box').value = url;
-
-// Copy button
-document.getElementById('copy-btn').addEventListener('click', function() {
-  navigator.clipboard.writeText(url).then(function() {
-    document.getElementById('copy-btn').textContent = 'Copied!';
-    setTimeout(function() { document.getElementById('copy-btn').textContent = 'Copy to clipboard'; }, 2000);
-  });
-});
-</script>
 </body>
 </html>
