@@ -20,7 +20,14 @@ type Listener = (toast: Toast) => void;
 const listeners = new Set<Listener>();
 
 export function emitToast(toast: Toast): void {
-  for (const l of listeners) l(toast);
+  // Defer to a microtask so callers can safely emit during render
+  // (e.g., extractPuzzleFromUrl runs inside a useState lazy initializer
+  // in GameContext/HostLayout). Synchronous dispatch would call
+  // setToasts on ToastViewport while another component is still
+  // rendering, triggering React's "update during render" warning.
+  queueMicrotask(() => {
+    for (const l of listeners) l(toast);
+  });
 }
 
 export function subscribeToasts(cb: Listener): () => void {

@@ -84,6 +84,9 @@ export async function createGame(
     .insert({
       puzzle_id: puzzleId,
       status: isMultiplayer ? "waiting" : "active",
+      // host_user_id lets a TV-spectator host (no player row) still update
+      // their own game under the post-ITEM-002 RLS policy.
+      host_user_id: userId,
     })
     .select("id, short_code")
     .single();
@@ -453,6 +456,7 @@ export async function createNextGame(
       puzzle_id: puzzleId,
       status: "waiting",
       short_code: shortCode,
+      host_user_id: userId,
     })
     .select("id, short_code")
     .single();

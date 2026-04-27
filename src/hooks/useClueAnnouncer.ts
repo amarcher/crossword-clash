@@ -59,7 +59,12 @@ export function useClueAnnouncer({
     const completedByPlayer = getCompletedCluesByPlayer(puzzle, playerCells);
 
     // First pass on mount: record what's already done without speaking.
+    // Defer until we've seen actual cell data — on rejoin, the puzzle
+    // arrives one render before HYDRATE_CELLS populates `playerCells`,
+    // and initializing against an empty map would re-announce every
+    // pre-completed clue when the cells finally arrive.
     if (!initializedRef.current) {
+      if (Object.keys(playerCells).length === 0) return;
       initializedRef.current = true;
       for (const [clueKey] of completedByPlayer) {
         announcedRef.current.add(clueKey);

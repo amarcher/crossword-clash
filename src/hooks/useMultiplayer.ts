@@ -109,6 +109,10 @@ export function useMultiplayer({
   const onWrongLetterRef = useRef(onWrongLetter);
   onWrongLetterRef.current = onWrongLetter;
   const announcedRef = useRef(false);
+  // Flips true the first time presence sync delivers a non-empty roster.
+  // Once warmed, we trust empty syncs (legitimately "all players left")
+  // — before that, an empty sync just means our own track() hasn't landed.
+  const presenceWarmedRef = useRef(false);
 
   // Hydrate state from DB — returns fetched state for callers
   const hydrate = useCallback(async () => {
@@ -147,6 +151,7 @@ export function useMultiplayer({
 
     setHydrated(false);
     announcedRef.current = false;
+    presenceWarmedRef.current = false;
 
     // Fetch short_code
     supabase
@@ -199,12 +204,16 @@ export function useMultiplayer({
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState<TrackedPresence>();
       const fromPresence = presenceStateToPlayers(state, gameId);
-      // Only adopt presence as truth after it has at least one entry.
-      // Empty state right after subscribe (before anyone has tracked)
-      // would otherwise momentarily blank the lobby.
       if (fromPresence.length > 0) {
+        presenceWarmedRef.current = true;
         setPlayers(fromPresence);
+      } else if (presenceWarmedRef.current) {
+        // Already warmed — an empty sync now means everyone legitimately
+        // left. Trust it (don't keep stale players visible forever).
+        setPlayers([]);
       }
+      // Else: still warming up (our own track hasn't landed), keep the
+      // initial DB hydrate roster in place to avoid a blank-then-fill flash.
     });
 
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
@@ -280,11 +289,13 @@ export function useMultiplayer({
           })
           .eq("id", gameId)
           .then(() => {
-            channelRef.current?.send({
-              type: "broadcast",
-              event: "game_completed",
-              payload: {},
-            });
+            void channelRef.current
+              ?.send({
+                type: "broadcast",
+                event: "game_completed",
+                payload: {},
+              })
+              .catch(() => {});
           });
       }
     }
@@ -318,12 +329,16 @@ export function useMultiplayer({
       );
 
       if (success) {
-        // Broadcast to others
-        channelRef.current?.send({
-          type: "broadcast",
-          event: "cell_claimed",
-          payload: { row, col, letter: letter.toUpperCase(), playerId: userId },
-        });
+        // Broadcast to others. State is already authoritative in DB; the
+        // broadcast just speeds up other clients' view, so swallow any
+        // ack-timeout rejection rather than fail the local claim.
+        void channelRef.current
+          ?.send({
+            type: "broadcast",
+            event: "cell_claimed",
+            payload: { row, col, letter: letter.toUpperCase(), playerId: userId },
+          })
+          .catch(() => {});
         onCellClaimedRef.current?.(row, col, letter.toUpperCase(), userId);
       } else {
         // Rollback optimistic write. The reducer no-ops if a remote
@@ -353,18 +368,23 @@ export function useMultiplayer({
 
   const broadcastWrongLetter = useCallback(
     (row: number, col: number, expected: string, attempted: string, direction: "across" | "down") => {
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "wrong_letter",
-        payload: {
-          row,
-          col,
-          expected: expected.toUpperCase(),
-          attempted: attempted.toUpperCase(),
-          direction,
-          playerId: userId,
-        },
-      });
+      // Channel-wide ack:true makes send() return a Promise that may reject
+      // on timeout. Wrong-letter is best-effort flavor for the narrator —
+      // swallow the rejection rather than surfacing as unhandled.
+      void channelRef.current
+        ?.send({
+          type: "broadcast",
+          event: "wrong_letter",
+          payload: {
+            row,
+            col,
+            expected: expected.toUpperCase(),
+            attempted: attempted.toUpperCase(),
+            direction,
+            playerId: userId,
+          },
+        })
+        .catch(() => {});
     },
     [userId],
   );
@@ -375,20 +395,24 @@ export function useMultiplayer({
     if (success) {
       setGameSettings(resolvedSettings);
       setGameStatus("active");
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "game_started",
-        payload: { settings: resolvedSettings },
-      });
+      void channelRef.current
+        ?.send({
+          type: "broadcast",
+          event: "game_started",
+          payload: { settings: resolvedSettings },
+        })
+        .catch(() => {});
     }
   }, [gameId]);
 
   const broadcastNewGame = useCallback((newGameId: string) => {
-    channelRef.current?.send({
-      type: "broadcast",
-      event: "new_game",
-      payload: { gameId: newGameId },
-    });
+    void channelRef.current
+      ?.send({
+        type: "broadcast",
+        event: "new_game",
+        payload: { gameId: newGameId },
+      })
+      .catch(() => {});
   }, []);
 
   const closeRoom = useCallback(async () => {

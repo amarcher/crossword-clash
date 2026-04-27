@@ -79,9 +79,12 @@ describe("useClueAnnouncer", () => {
   it("announces a clue completed after mount", () => {
     const speak = vi.fn();
     const puzzle = makePuzzle();
+    // First render with one cell already placed marks the init pass —
+    // matches the realistic flow where the user types one letter before
+    // any clue is complete.
     const props = {
       puzzle,
-      playerCells: {} as Record<string, CellState>,
+      playerCells: correctCells([[0, 0, "C", "u-alice"]]),
       players: [ALICE, BOB],
       speak,
       enabled: true,
@@ -140,7 +143,7 @@ describe("useClueAnnouncer", () => {
     ]);
     const props = {
       puzzle,
-      playerCells: {} as Record<string, CellState>,
+      playerCells: correctCells([[0, 0, "C", "u-alice"]]),
       players: [ALICE, BOB],
       speak,
       enabled: true,
@@ -157,7 +160,7 @@ describe("useClueAnnouncer", () => {
     const puzzle = makePuzzle();
     const props = {
       puzzle,
-      playerCells: {} as Record<string, CellState>,
+      playerCells: correctCells([[0, 0, "C", "u-bob"]]),
       players: [ALICE], // Bob not in the list
       speak,
       enabled: true,
@@ -181,7 +184,7 @@ describe("useClueAnnouncer", () => {
     const puzzle = makePuzzle();
     const props = {
       puzzle,
-      playerCells: {} as Record<string, CellState>,
+      playerCells: correctCells([[0, 0, "C", "u-alice"]]),
       players: [ALICE],
       speak,
       enabled: true,
@@ -255,5 +258,49 @@ describe("useClueAnnouncer", () => {
       }),
     );
     expect(speak).not.toHaveBeenCalled();
+  });
+
+  it("rejoin: HYDRATE_CELLS arriving after puzzle does not re-announce existing completions", () => {
+    const speak = vi.fn();
+    const puzzle = makePuzzle();
+    // Initial render: puzzle is loaded but playerCells haven't hydrated yet
+    // (mirrors the rejoin flow — useMultiplayer.hydrate fires HYDRATE_CELLS
+    // a render after loadPuzzle).
+    const props = {
+      puzzle,
+      playerCells: {} as Record<string, CellState>,
+      players: [ALICE],
+      speak,
+      enabled: true,
+    };
+    const { rerender } = renderHook((p) => useClueAnnouncer(p), { initialProps: props });
+
+    // Hydrate arrives populating already-completed clues. These were not
+    // "newly completed" — they completed in a previous session — so they
+    // must not be announced now.
+    rerender({
+      ...props,
+      playerCells: correctCells([
+        [0, 0, "C", "u-alice"],
+        [0, 1, "A", "u-alice"],
+        [0, 2, "T", "u-alice"],
+      ]),
+    });
+    expect(speak).not.toHaveBeenCalled();
+
+    // After init, a NEW completion should still announce normally.
+    rerender({
+      ...props,
+      playerCells: correctCells([
+        [0, 0, "C", "u-alice"],
+        [0, 1, "A", "u-alice"],
+        [0, 2, "T", "u-alice"],
+        [2, 0, "B", "u-alice"],
+        [2, 1, "E", "u-alice"],
+        [2, 2, "T", "u-alice"],
+      ]),
+    });
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith("4 across by Alice");
   });
 });
