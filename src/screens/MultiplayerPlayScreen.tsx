@@ -12,13 +12,17 @@ import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
-import { clearMpSession } from "../lib/sessionPersistence";
+import { useAuth } from "../contexts/AuthContext";
+import { createNextGame } from "../lib/puzzleService";
+import { supabase } from "../lib/supabaseClient";
+import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
 import type { PuzzleClue } from "../types/puzzle";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const game = useGame();
   const mp = useMultiplayerContext();
 
@@ -77,8 +81,8 @@ export function MultiplayerPlayScreen() {
 
   useGridNavigation(navActions);
 
-  const handleReset = useCallback(() => {
-    mp.leaveGame();
+  const handleReset = useCallback(async () => {
+    await mp.leaveGame();
     reset();
     game.setGameId(null);
     game.setIsMultiplayer(false);
@@ -97,6 +101,31 @@ export function MultiplayerPlayScreen() {
     setCompletionModalDismissed(true);
     navigate("/host-game/import");
   }, [setCompletionModalDismissed, navigate]);
+
+  const handleRematch = useCallback(async () => {
+    if (!user || !supabase || !shareCode || !game.gameId) return;
+    const { data: prev } = await supabase
+      .from("games")
+      .select("puzzle_id")
+      .eq("id", game.gameId)
+      .single();
+    if (!prev?.puzzle_id) return;
+
+    const result = await createNextGame(prev.puzzle_id, user.id, shareCode, {
+      displayName: game.displayName,
+    });
+    if (!result) return;
+
+    mp.broadcastNewGame(result.gameId);
+    game.setGameId(result.gameId);
+    saveMpSession({
+      gameId: result.gameId,
+      shareCode: result.shortCode,
+      displayName: game.displayName,
+    });
+    setCompletionModalDismissed(true);
+    navigate(`/lobby/${result.gameId}`);
+  }, [user, shareCode, game, mp, setCompletionModalDismissed, navigate]);
 
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
@@ -255,6 +284,7 @@ export function MultiplayerPlayScreen() {
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         players={playerResults}
+        onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
       />

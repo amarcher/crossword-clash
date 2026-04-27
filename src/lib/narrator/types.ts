@@ -7,7 +7,10 @@ export interface AgentGameEvent {
     | "CLUE_COMPLETED"
     | "LEAD_CHANGE"
     | "PLAYER_LEFT"
-    | "GAME_COMPLETED";
+    | "GAME_COMPLETED"
+    | "WRONG_LETTER"
+    | "NEAR_MISS"
+    | "STALL";
   data: Record<string, unknown>;
 }
 

@@ -20,6 +20,7 @@ interface CompletionModalProps {
   soloScore?: number;
   players?: PlayerResult[];
   onNewPuzzle?: () => void;
+  onRematch?: () => void;
   onBackToMenu?: () => void;
   darkMode?: boolean;
 }
@@ -31,6 +32,7 @@ export function CompletionModal({
   soloScore,
   players,
   onNewPuzzle,
+  onRematch,
   onBackToMenu,
   darkMode,
 }: CompletionModalProps) {
@@ -162,10 +164,24 @@ export function CompletionModal({
 
         {/* Buttons */}
         <div className="flex flex-col gap-2">
+          {onRematch && (
+            <button
+              onClick={onRematch}
+              className={`w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`}
+            >
+              {t('completion.playAgain')}
+            </button>
+          )}
           {onNewPuzzle && (
             <button
               onClick={onNewPuzzle}
-              className={`w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`}
+              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                onRematch
+                  ? darkMode
+                    ? "text-white bg-neutral-700 hover:bg-neutral-600 focus-visible:ring-offset-neutral-800"
+                    : "text-blue-700 bg-blue-50 hover:bg-blue-100"
+                  : `text-white bg-blue-600 hover:bg-blue-700 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`
+              }`}
             >
               {t('completion.newPuzzle')}
             </button>

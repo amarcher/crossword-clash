@@ -71,6 +71,7 @@ describe("useSpeechSettings", () => {
       engine: "browser",
       elevenLabsVoiceId: null,
       narratorEngine: null,
+      spokenEvents: false,
     };
     saveTTSSettings(saved);
     const { result } = renderHook(() => useSpeechSettings());
@@ -108,6 +109,7 @@ describe("useSpeechSettings", () => {
       engine: "browser",
       elevenLabsVoiceId: null,
       narratorEngine: null,
+      spokenEvents: false,
     });
     const { result } = renderHook(() => useSpeechSettings());
 
@@ -130,6 +132,7 @@ describe("useSpeechSettings", () => {
       engine: "browser",
       elevenLabsVoiceId: null,
       narratorEngine: null,
+      spokenEvents: false,
     });
     const { result } = renderHook(() => useSpeechSettings());
 
@@ -232,6 +235,7 @@ describe("useSpeechSettings", () => {
       engine: "browser",
       elevenLabsVoiceId: null,
       narratorEngine: "elevenlabs-agent",
+      spokenEvents: false,
     });
     const { result } = renderHook(() => useSpeechSettings());
     act(() => result.current.speak("Hello"));
@@ -247,6 +251,7 @@ describe("useSpeechSettings", () => {
       engine: "elevenlabs",
       elevenLabsVoiceId: null,
       narratorEngine: null,
+      spokenEvents: false,
     });
 
     // Mock fetch to prevent actual network call

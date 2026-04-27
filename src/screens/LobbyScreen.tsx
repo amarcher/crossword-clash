@@ -39,8 +39,8 @@ export function LobbyScreen() {
     navigate("/");
   }, [mp, game, navigate]);
 
-  const handleLeave = useCallback(() => {
-    mp.leaveGame();
+  const handleLeave = useCallback(async () => {
+    await mp.leaveGame();
     game.reset();
     game.setGameId(null);
     game.setIsMultiplayer(false);

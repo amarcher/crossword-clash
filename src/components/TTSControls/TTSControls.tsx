@@ -44,6 +44,8 @@ type TTSSettingsModalProps = Pick<
   | "setEngine"
   | "narratorEngine"
   | "setNarratorEngine"
+  | "spokenEvents"
+  | "setSpokenEvents"
   | "elevenLabsAvailable"
   | "elevenLabsVoiceId"
   | "setElevenLabsVoiceId"
@@ -65,6 +67,8 @@ export function TTSSettingsModal({
   setEngine,
   narratorEngine,
   setNarratorEngine,
+  spokenEvents,
+  setSpokenEvents,
   elevenLabsAvailable,
   elevenLabsVoiceId,
   setElevenLabsVoiceId,
@@ -133,6 +137,27 @@ export function TTSSettingsModal({
             {narratorEngine === "openai-agent" && t('tts.narratorOpenAIDesc')}
             {narratorEngine === "claude" && t('tts.narratorClaudeDesc')}
           </p>
+        )}
+
+        {/* Per-clue announcer toggle — only meaningful when no AI narrator
+            is active (the narrator already handles commentary). */}
+        {!hasNarrator && (
+          <label className="flex items-start gap-2 mb-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={spokenEvents}
+              onChange={(e) => setSpokenEvents(e.target.checked)}
+              className="mt-1 accent-blue-500"
+            />
+            <span>
+              <span className="text-sm text-neutral-200 block">
+                {t("tts.spokenEvents")}
+              </span>
+              <span className="text-xs text-neutral-400 block">
+                {t("tts.spokenEventsHint")}
+              </span>
+            </span>
+          </label>
         )}
 
         {/* TTS voice controls — only shown when narrator is NOT active (Claude narrator uses its own TTS) */}

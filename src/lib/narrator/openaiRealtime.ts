@@ -1,15 +1,8 @@
 import { formatEvent } from "./events";
+import { BASE_SYSTEM_PROMPT } from "./prompts";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
-const SYSTEM_PROMPT = `You are a snarky, entertaining gameshow host narrating a real-time multiplayer crossword puzzle competition. You receive structured game events and provide witty, energetic commentary.
-
-Rules:
-- NEVER ask if anyone is there or initiate unprompted conversation
-- Only speak when you receive a game event
-- Keep commentary brief (1-3 sentences per event)
-- Be playful and competitive — celebrate big plays, tease rivalries
-- Use wordplay and puns when relevant to crossword answers
-- Build excitement as the game progresses toward completion`;
+const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT;
 
 async function fetchEphemeralToken(): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
@@ -57,6 +50,8 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
   private isResponding = false;
   private pendingDuringResponse: AgentGameEvent[] = [];
   private nextPlayTime = 0;
+  private responseTimer: ReturnType<typeof setTimeout> | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   get isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
@@ -81,6 +76,21 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
         this.audioContext = new AudioContext({ sampleRate: 24000 });
       }
       this.nextPlayTime = 0;
+      // Mobile Safari auto-suspends backgrounded AudioContexts. Without
+      // explicit handling, queued audio chunks accumulate and either
+      // blast on resume or get silently dropped depending on browser.
+      // Drop the queue while hidden; resume cleanly on return.
+      if (!this.visibilityHandler) {
+        this.visibilityHandler = () => {
+          if (document.visibilityState === "hidden") {
+            this.audioContext?.suspend().catch(() => {});
+            this.nextPlayTime = 0;
+          } else {
+            this.audioContext?.resume().catch(() => {});
+          }
+        };
+        document.addEventListener("visibilitychange", this.visibilityHandler);
+      }
 
       const url = "wss://api.openai.com/v1/realtime?model=gpt-realtime";
       this.ws = new WebSocket(url, [
@@ -117,6 +127,10 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
         ws.onerror = (e) => {
           clearTimeout(timeout);
           console.error("[OpenAIRealtime] WebSocket error:", e);
+          // A WS error mid-response would otherwise leave isResponding=true
+          // forever and wedge the queue.
+          this.isResponding = false;
+          this.clearResponseTimer();
           reject(new Error("WebSocket connection failed"));
         };
         ws.onclose = (e) => {
@@ -127,6 +141,8 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
             this.onStateChange?.();
           }
           this.ws = null;
+          this.isResponding = false;
+          this.clearResponseTimer();
           this.clearIdleTimer();
         };
         ws.onmessage = (msg) => this.handleMessage(msg);
@@ -154,6 +170,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
     this.intentionalDisconnect = true;
     this.connecting = false;
     this.clearIdleTimer();
+    this.clearResponseTimer();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -161,6 +178,10 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
     if (this.audioContext) {
       await this.audioContext.close().catch(() => {});
       this.audioContext = null;
+    }
+    if (this.visibilityHandler) {
+      document.removeEventListener("visibilitychange", this.visibilityHandler);
+      this.visibilityHandler = null;
     }
     this.eventQueue = [];
     this.pendingDuringResponse = [];
@@ -217,9 +238,6 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       return;
     }
 
-    // Mark responding immediately to prevent concurrent response.create calls
-    this.isResponding = true;
-
     console.log("[OpenAIRealtime] Sending user turn:", text.slice(0, 80));
     this.ws.send(
       JSON.stringify({
@@ -232,6 +250,30 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
       }),
     );
     this.ws.send(JSON.stringify({ type: "response.create" }));
+    // isResponding is set when the server confirms via `response.created`
+    // (see handleMessage). A 30s safety timer recovers from a missing
+    // `response.done` (silent server-side failure) so the queue isn't
+    // wedged forever.
+    this.clearResponseTimer();
+    this.responseTimer = setTimeout(() => {
+      console.warn("[OpenAIRealtime] response.done timeout — flushing queue");
+      this.isResponding = false;
+      this.responseTimer = null;
+      if (this.pendingDuringResponse.length > 0) {
+        const batch = this.pendingDuringResponse
+          .map((e) => formatEvent(e))
+          .join("\n");
+        this.pendingDuringResponse = [];
+        this.sendUserTurn(batch);
+      }
+    }, 30_000);
+  }
+
+  private clearResponseTimer(): void {
+    if (this.responseTimer) {
+      clearTimeout(this.responseTimer);
+      this.responseTimer = null;
+    }
   }
 
   private handleMessage(msg: MessageEvent): void {
@@ -257,6 +299,7 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
         case "response.done":
           console.log("[OpenAIRealtime] Response done", JSON.stringify(data.response ?? data, null, 2));
           this.isResponding = false;
+          this.clearResponseTimer();
           // Process any events that arrived during the response
           if (this.pendingDuringResponse.length > 0) {
             const batch = this.pendingDuringResponse
@@ -323,14 +366,26 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
   private idleDisconnect(): void {
     console.log("[OpenAIRealtime] Idle timeout — closing WebSocket (will reconnect on next event)");
     this.clearIdleTimer();
+    this.clearResponseTimer();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    // Close the AudioContext too — Chrome caps active contexts (~6) and
+    // long-lived TV sessions previously leaked one per idle cycle.
+    // connect() will recreate on next event.
+    if (this.audioContext) {
+      this.audioContext.close().catch(() => {});
+      this.audioContext = null;
+    }
+    if (this.visibilityHandler) {
+      document.removeEventListener("visibilitychange", this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
     this.isResponding = false;
     this.pendingDuringResponse = [];
     this.nextPlayTime = 0;
-    // Note: intentionalDisconnect stays false, audioContext stays alive
+    // Note: intentionalDisconnect stays false so reconnect on next event works.
     this.onStateChange?.();
   }
 

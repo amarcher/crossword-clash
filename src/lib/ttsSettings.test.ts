@@ -25,6 +25,7 @@ describe("TTS settings persistence", () => {
       engine: "browser",
       elevenLabsVoiceId: null,
       narratorEngine: null,
+      spokenEvents: false,
     };
     saveTTSSettings(settings);
     expect(loadTTSSettings()).toEqual(settings);

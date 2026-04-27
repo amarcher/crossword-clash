@@ -5,6 +5,9 @@ import {
   buildClueCompletedEvent,
   buildLeadChangeEvent,
   buildGameCompletedEvent,
+  buildWrongLetterEvent,
+  buildNearMissEvent,
+  buildStallEvent,
 } from "./events";
 import type { Puzzle } from "../../types/puzzle";
 import type { Player } from "../../types/game";
@@ -32,7 +35,9 @@ describe("formatEvent", () => {
   it("formats GAME_STARTED as a single line", () => {
     const event = buildGameStartedEvent(makePuzzle(), makePlayers());
     const text = formatEvent(event);
-    expect(text).toContain("GAME_STARTED:");
+    // All events now share the "EVENT:" prefix; GAME_STARTED switched
+    // from its own "GAME_STARTED:" label to match (ITEM-013).
+    expect(text).toContain("EVENT:");
     expect(text).toContain("Alice, Bob");
   });
 
@@ -170,5 +175,61 @@ describe("buildGameCompletedEvent", () => {
     expect(event.type).toBe("GAME_COMPLETED");
     expect(event.data.winner).toBe("Alice");
     expect(event.data.scores).toBe("Alice: 7/10 | Bob: 3/10");
+  });
+});
+
+describe("buildWrongLetterEvent", () => {
+  it("uppercases letters and carries clue context", () => {
+    const event = buildWrongLetterEvent("Alice", 7, "across", "p", "x", 1);
+    expect(event.type).toBe("WRONG_LETTER");
+    expect(event.data.playerName).toBe("Alice");
+    expect(event.data.clueNumber).toBe(7);
+    expect(event.data.clueDirection).toBe("across");
+    expect(event.data.expected).toBe("P");
+    expect(event.data.attempted).toBe("X");
+    expect(event.data.attemptCountThisCell).toBe(1);
+  });
+
+  it("formatEvent produces a single EVENT line with attempted vs expected", () => {
+    const text = formatEvent(buildWrongLetterEvent("Alice", 7, "across", "P", "X", 2));
+    expect(text).toContain("WRONG_LETTER" === text ? "" : "Alice");
+    expect(text).toContain("'X'");
+    expect(text).toContain("'P'");
+    expect(text).toContain("7-across");
+    expect(text).toContain("Attempt 2");
+  });
+});
+
+describe("buildNearMissEvent", () => {
+  it("includes player, clue, and wrong streak", () => {
+    const event = buildNearMissEvent("Bob", 12, 3);
+    expect(event.type).toBe("NEAR_MISS");
+    expect(event.data.playerName).toBe("Bob");
+    expect(event.data.clueNumber).toBe(12);
+    expect(event.data.wrongStreak).toBe(3);
+  });
+
+  it("formatEvent describes the close call", () => {
+    const text = formatEvent(buildNearMissEvent("Bob", 12, 3));
+    expect(text).toContain("Bob");
+    expect(text).toContain("12");
+    expect(text).toContain("3 wrong");
+  });
+});
+
+describe("buildStallEvent", () => {
+  it("includes seconds and leader (or null for no leader)", () => {
+    const withLeader = buildStallEvent(45, "Alice");
+    expect(withLeader.type).toBe("STALL");
+    expect(withLeader.data.secondsSinceLastClaim).toBe(45);
+    expect(withLeader.data.leaderName).toBe("Alice");
+
+    const noLeader = buildStallEvent(45, null);
+    expect(noLeader.data.leaderName).toBeNull();
+  });
+
+  it("formatEvent reports leader or 'no leader yet' fallback", () => {
+    expect(formatEvent(buildStallEvent(45, "Alice"))).toContain("Alice leading");
+    expect(formatEvent(buildStallEvent(45, null))).toContain("no leader yet");
   });
 });

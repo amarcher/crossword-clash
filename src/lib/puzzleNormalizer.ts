@@ -215,6 +215,18 @@ export function normalizeTransferPuzzle(transfer: TransferPuzzle): Puzzle {
     throw new Error(`Grid length ${grid.length} does not match ${width}x${height}`);
   }
 
+  // Reject pathological grids that downstream code (cursor advance,
+  // completion detection) cannot handle. extractPuzzleFromUrl swallows
+  // these throws and returns null; the import flow surfaces the error.
+  if (width * height <= 1) {
+    throw new Error("Puzzle is too small to play (need at least 2 cells)");
+  }
+  const acrossCount = clues.across?.length ?? 0;
+  const downCount = clues.down?.length ?? 0;
+  if (acrossCount + downCount === 0) {
+    throw new Error("Puzzle has no clues");
+  }
+
   // Build 2D cell grid from flat arrays
   const cells: PuzzleCell[][] = [];
   for (let r = 0; r < height; r++) {

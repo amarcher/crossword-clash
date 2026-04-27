@@ -17,6 +17,12 @@ export interface TTSSettings {
   engine: TTSEngine;
   elevenLabsVoiceId: string | null; // null = default (Rachel)
   narratorEngine: NarratorEngine; // null = no narrator (use per-clue TTS)
+  /**
+   * Per-clue TTS announcer toggle. Default off — used to be implicit
+   * whenever narratorEngine was null, but ITEM-024 split them so silent
+   * TV is now the default (see CLAUDE.md AI Narrator section).
+   */
+  spokenEvents: boolean;
 }
 
 export const DEFAULT_TTS_SETTINGS: TTSSettings = {
@@ -27,6 +33,7 @@ export const DEFAULT_TTS_SETTINGS: TTSSettings = {
   engine: "browser",
   elevenLabsVoiceId: null,
   narratorEngine: null,
+  spokenEvents: false,
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -69,6 +76,7 @@ export function loadTTSSettings(): TTSSettings {
       engine,
       elevenLabsVoiceId: typeof parsed.elevenLabsVoiceId === "string" ? parsed.elevenLabsVoiceId : null,
       narratorEngine,
+      spokenEvents: typeof parsed.spokenEvents === "boolean" ? parsed.spokenEvents : DEFAULT_TTS_SETTINGS.spokenEvents,
     };
   } catch {
     return { ...DEFAULT_TTS_SETTINGS };

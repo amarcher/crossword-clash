@@ -50,6 +50,7 @@ export interface Database {
           status: string;
           cells: unknown;
           short_code: string | null;
+          settings: unknown;
           created_at: string;
           completed_at: string | null;
         };
@@ -59,6 +60,7 @@ export interface Database {
           status?: string;
           cells?: unknown;
           short_code?: string | null;
+          settings?: unknown;
           created_at?: string;
           completed_at?: string | null;
         };
@@ -68,6 +70,7 @@ export interface Database {
           status?: string;
           cells?: unknown;
           short_code?: string | null;
+          settings?: unknown;
           created_at?: string;
           completed_at?: string | null;
         };

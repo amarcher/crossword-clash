@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
@@ -17,7 +17,6 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [demosOpen, setDemosOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -77,123 +76,129 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
     p.clues.filter((c) => c.direction === "down").length;
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
-      <Title className="mb-2" />
-      <p className="text-neutral-500 mb-6">
-        {t('importer.subtitle')}
-      </p>
-
-      {/* File upload */}
-      <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={() => fileInputRef.current?.click()}
-        className={`w-full max-w-md border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-          isDragging
-            ? "border-blue-500 bg-blue-50"
-            : "border-neutral-300 hover:border-neutral-400 bg-white"
-        }`}
-      >
-        {loading ? (
-          <p className="text-neutral-600">{t('importer.parsing')}</p>
-        ) : (
-          <>
-            <p className="text-lg font-medium text-neutral-700 mb-1">
-              {t('importer.dropHere')}
-            </p>
-            <p className="text-sm text-neutral-400">
-              {t('importer.orBrowse')}
-            </p>
-          </>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".puz,.ipuz,.jpz,.xd"
-          className="hidden"
-          onChange={handleInputChange}
-        />
-      </div>
-
-      <p className="mt-6 text-sm text-neutral-400 max-w-md text-center">
-        <Trans
-          i18nKey="importer.nytHint"
-          components={{
-            strong: <strong className="!text-neutral-500" />,
-            anchor: (
-              // eslint-disable-next-line jsx-a11y/anchor-has-content
-              <a
-                href="/install-bookmarklet"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-              />
-            ),
-          }}
-        />
-      </p>
-      <p className="mt-3 text-sm text-neutral-400 max-w-md text-center">
-        <Trans
-          i18nKey="importer.scraperHint"
-          components={{
-            anchor: (
-              // eslint-disable-next-line jsx-a11y/anchor-has-content
-              <a
-                href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="!text-blue-500 !underline hover:!text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-              />
-            ),
-          }}
-        />
-      </p>
-
-      {/* NYT affiliate recommendation */}
-      <div className="mt-5">
-        <NytRecommendation variant="card" />
-      </div>
-
-      {/* Demo puzzles — collapsed by default */}
-      <details
-        className="mt-6 w-full max-w-md"
-        open={demosOpen}
-        onToggle={(e) => setDemosOpen((e.target as HTMLDetailsElement).open)}
-      >
-        <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-500 transition-colors select-none text-center">
-          {t('importer.demoPuzzles')}
-        </summary>
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          {SAMPLE_PUZZLES.map((sp) => (
-            <button
-              key={sp.id}
-              type="button"
-              onClick={() => onPuzzleLoaded(sp.puzzle)}
-              className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 transition-colors"
-            >
-              <span className="block text-sm font-medium text-neutral-700">
-                {sp.puzzle.title}
-              </span>
-              <span className="block text-xs text-neutral-400">
-                {sp.puzzle.width}&times;{sp.puzzle.height}
-                {" · "}
-                {acrossCount(sp.puzzle) + downCount(sp.puzzle)}{" "}
-                {t('importer.sampleClues')}
-              </span>
-            </button>
-          ))}
-        </div>
-      </details>
-
-      {error && (
-        <p className="mt-4 text-red-600 text-sm max-w-md text-center">
-          {error}
+    <div className="min-h-dvh crossword-bg p-6 sm:p-8">
+      <div className="max-w-3xl mx-auto flex flex-col items-center">
+        <Title className="mb-2" />
+        <h2 className="text-xl font-semibold text-neutral-700 mt-2">
+          {t("importer.hubTitle")}
+        </h2>
+        <p className="text-neutral-500 text-center max-w-md mt-1 mb-6">
+          {t("importer.hubSubtitle")}
         </p>
-      )}
 
-      <div className="mt-4">
-        <AdSlot placement="import-bottom" />
+        {/* Primary tile — NYT bookmarklet */}
+        <a
+          href="/install-bookmarklet"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full max-w-md rounded-xl bg-white border-2 border-blue-500 p-5 mb-3 hover:bg-blue-50 transition-colors block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-neutral-800">
+                {t("importer.tileNytTitle")}
+              </h3>
+              <p className="text-sm text-neutral-500 mt-1">
+                {t("importer.tileNytDesc")}
+              </p>
+            </div>
+            <span className="shrink-0 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold">
+              {t("importer.tileNytCta")}
+            </span>
+          </div>
+        </a>
+
+        {/* Two secondary tiles side-by-side on desktop */}
+        <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <a
+            href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl bg-white border border-neutral-300 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <h3 className="font-semibold text-neutral-800 text-sm">
+              {t("importer.tileScraperTitle")}
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1 mb-2">
+              {t("importer.tileScraperDesc")}
+            </p>
+            <span className="text-xs font-semibold text-blue-600">
+              {t("importer.tileScraperCta")} →
+            </span>
+          </a>
+
+          <button
+            type="button"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => fileInputRef.current?.click()}
+            className={`rounded-xl border-2 border-dashed p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              isDragging
+                ? "border-blue-500 bg-blue-50"
+                : "border-neutral-300 hover:border-blue-400 hover:bg-blue-50 bg-white"
+            }`}
+          >
+            <h3 className="font-semibold text-neutral-800 text-sm">
+              {loading ? t("importer.parsing") : t("importer.tileFileTitle")}
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1 mb-2">
+              {t("importer.tileFileDesc")}
+            </p>
+            <span className="text-xs font-semibold text-blue-600">
+              {t("importer.dropHere")} ↓
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".puz,.ipuz,.jpz,.xd"
+              className="hidden"
+              onChange={handleInputChange}
+            />
+          </button>
+        </div>
+
+        {/* Samples — open by default */}
+        <details
+          className="w-full max-w-md mt-2"
+          open
+        >
+          <summary className="text-sm text-neutral-500 cursor-pointer hover:text-neutral-700 transition-colors select-none">
+            {t("importer.tileSampleTitle")}
+          </summary>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {SAMPLE_PUZZLES.map((sp) => (
+              <button
+                key={sp.id}
+                type="button"
+                onClick={() => onPuzzleLoaded(sp.puzzle)}
+                className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <span className="block text-sm font-medium text-neutral-700">
+                  {sp.puzzle.title}
+                </span>
+                <span className="block text-xs text-neutral-400">
+                  {sp.puzzle.width}&times;{sp.puzzle.height}
+                  {" · "}
+                  {acrossCount(sp.puzzle) + downCount(sp.puzzle)}{" "}
+                  {t("importer.sampleClues")}
+                </span>
+              </button>
+            ))}
+          </div>
+        </details>
+
+        {error && (
+          <p className="mt-4 text-red-600 text-sm max-w-md text-center">{error}</p>
+        )}
+
+        <div className="mt-6">
+          <NytRecommendation variant="card" />
+        </div>
+
+        <div className="mt-4">
+          <AdSlot placement="import-bottom" />
+        </div>
       </div>
     </div>
   );

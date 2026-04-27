@@ -120,8 +120,9 @@ export function getNextWordStart(
 
   const currentClue = getClueForCell(puzzle, row, col, direction);
   if (!currentClue) {
-    // Fallback: return first clue
+    // Fallback: return first clue (or current cell if puzzle has no clues)
     const first = cluesInDirection[0] ?? puzzle.clues[0];
+    if (!first) return { coord: { row, col }, direction };
     return {
       coord: { row: first.row, col: first.col },
       direction: first.direction,
@@ -188,6 +189,7 @@ export function getPrevWordStart(
   const currentClue = getClueForCell(puzzle, row, col, direction);
   if (!currentClue) {
     const last = cluesInDirection[cluesInDirection.length - 1] ?? puzzle.clues[0];
+    if (!last) return { coord: { row, col }, direction };
     return {
       coord: { row: last.row, col: last.col },
       direction: last.direction,

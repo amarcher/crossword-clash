@@ -143,7 +143,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      const btn = screen.getByText("Waiting for players...") as HTMLButtonElement;
+      const btn = screen.getByText("Need 1 more player") as HTMLButtonElement;
       expect(btn.disabled).toBe(true);
     });
 

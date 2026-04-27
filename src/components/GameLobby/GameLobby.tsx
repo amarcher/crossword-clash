@@ -94,7 +94,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             disabled={players.length < 2}
             className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
-            {players.length < 2 ? t('lobby.waitingForPlayers') : t('lobby.startGame')}
+            {players.length < 2
+              ? t('lobby.needMorePlayers', { count: 2 - players.length })
+              : t('lobby.startGame')}
           </button>
           <button
             onClick={onCloseRoom}

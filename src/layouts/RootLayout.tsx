@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { AuthProvider } from "../contexts/AuthContext";
 import { GameProvider } from "../contexts/GameContext";
 import { MultiplayerProvider } from "../contexts/MultiplayerContext";
@@ -9,6 +10,7 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { loadMpSession, clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { rejoinGame } from "../lib/puzzleService";
+import { ToastViewport } from "../components/ToastViewport";
 
 /**
  * Inner component that handles routing side effects:
@@ -23,6 +25,7 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+  const [showRoomClosedModal, setShowRoomClosedModal] = useState(false);
 
   // Handle #puzzle= hash changes
   useEffect(() => {
@@ -42,9 +45,30 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [navigate, game]);
 
-  // Boot non-host players when the host closes the room
+  // When host closes the room: show explanatory modal to non-hosts before
+  // teleporting them to the menu. Hosts navigate themselves via their UI;
+  // we only pop the modal for players who didn't initiate the close.
+  // Session is preserved until the user acknowledges, so a refresh during
+  // the modal does not strand them.
   useEffect(() => {
-    if (mp.isRoomClosed) {
+    if (mp.isRoomClosed && !mp.isHost) {
+      setShowRoomClosedModal(true);
+    }
+  }, [mp.isRoomClosed, mp.isHost]);
+
+  const dismissRoomClosed = useCallback(() => {
+    setShowRoomClosedModal(false);
+    game.reset();
+    game.setGameId(null);
+    game.setIsMultiplayer(false);
+    localStorage.removeItem("crossword-clash-solo");
+    clearMpSession();
+    navigate("/");
+  }, [game, navigate]);
+
+  // Host's own room close still navigates immediately (host owns the action).
+  useEffect(() => {
+    if (mp.isRoomClosed && mp.isHost) {
       game.reset();
       game.setGameId(null);
       game.setIsMultiplayer(false);
@@ -52,7 +76,7 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
       clearMpSession();
       navigate("/");
     }
-  }, [mp.isRoomClosed, game, navigate]);
+  }, [mp.isRoomClosed, mp.isHost, game, navigate]);
 
   // Handle new_game broadcast for non-host players
   useEffect(() => {
@@ -62,7 +86,39 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     navigate("/rejoin");
   }, [mp.newGameId, mp.isHost, mp.shareCode, game, navigate]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {showRoomClosedModal && <RoomClosedModal onDismiss={dismissRoomClosed} />}
+    </>
+  );
+}
+
+function RoomClosedModal({ onDismiss }: { onDismiss: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="room-closed-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div className="absolute inset-0 bg-black/60" onClick={onDismiss} />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 sm:p-8 text-center">
+        <h2 id="room-closed-title" className="text-xl font-bold mb-2 text-neutral-900">
+          {t("lobby.roomClosedTitle")}
+        </h2>
+        <p className="text-neutral-600 mb-6">{t("lobby.roomClosedNotice")}</p>
+        <button
+          autoFocus
+          onClick={onDismiss}
+          className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        >
+          {t("lobby.roomClosedAction")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -116,6 +172,7 @@ export function RootLayout() {
           <RoutingEffects>
             <Outlet />
           </RoutingEffects>
+          <ToastViewport />
         </MultiplayerProvider>
       </GameProvider>
     </AuthProvider>

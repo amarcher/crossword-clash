@@ -15,16 +15,34 @@ interface UseNarratorOptions {
   elevenLabsVoiceId?: string | null;
   enabled: boolean;
   gameStatus: "waiting" | "active" | "completed";
+  /** Force-disconnect when the host closes the room mid-game. */
+  isRoomClosed?: boolean;
   players: Player[];
   puzzle: Puzzle | null;
+  /**
+   * Per-player scores in the *same units* as the on-screen scoreboard
+   * (cells claimed). The narrator events report `score/totalScore` so
+   * the LLM, the scoreboard, and the DB players.score column all match.
+   */
   playerScores: { name: string; score: number }[];
+  totalScore: number;
 }
 
 interface UseNarratorResult {
   sendEvent: (event: AgentGameEvent) => void;
   isConnected: boolean;
   connectionError: string | null;
+  /** Backend currently in use — may differ from settings if fallback cascaded. */
+  currentEngine: NarratorEngine;
+  /** Engine the user picked, surfaced for UIs that want to indicate fallback. */
+  requestedEngine: NarratorEngine;
 }
+
+const FALLBACK_CHAIN: Exclude<NarratorEngine, null>[] = [
+  "elevenlabs-agent",
+  "openai-agent",
+  "claude",
+];
 
 export function useNarrator({
   narratorEngine,
@@ -35,9 +53,11 @@ export function useNarrator({
   elevenLabsVoiceId,
   enabled,
   gameStatus,
+  isRoomClosed,
   players,
   puzzle,
   playerScores,
+  totalScore,
 }: UseNarratorOptions): UseNarratorResult {
   const narratorRef = useRef<NarratorBackend | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -46,6 +66,33 @@ export function useNarrator({
   const activeEngineRef = useRef<NarratorEngine>(null);
   const activeTtsEngineRef = useRef<string | undefined>(undefined);
 
+  // currentEngine starts at the user's pick but cascades through the
+  // fallback chain on connection failure. Reset to the user's pick on
+  // any explicit settings change.
+  const [currentEngine, setCurrentEngine] = useState<NarratorEngine>(narratorEngine);
+  const triedEnginesRef = useRef<Set<NarratorEngine>>(new Set());
+
+  useEffect(() => {
+    setCurrentEngine(narratorEngine);
+    triedEnginesRef.current = new Set();
+    setConnectionError(null);
+  }, [narratorEngine]);
+
+  // Cascade on connection error: pick next backend in FALLBACK_CHAIN.
+  // When all backends have failed, settle on null and stop trying.
+  useEffect(() => {
+    if (!connectionError || !currentEngine) return;
+    triedEnginesRef.current.add(currentEngine);
+    const next = FALLBACK_CHAIN.find((e) => !triedEnginesRef.current.has(e));
+    if (!next) {
+      setCurrentEngine(null);
+      return;
+    }
+    console.warn(`[useNarrator] ${currentEngine} failed, falling back to ${next}`);
+    setCurrentEngine(next);
+    setConnectionError(null);
+  }, [connectionError, currentEngine]);
+
   // Stable ref for latest values
   const playersRef = useRef(players);
   playersRef.current = players;
@@ -53,6 +100,8 @@ export function useNarrator({
   puzzleRef.current = puzzle;
   const playerScoresRef = useRef(playerScores);
   playerScoresRef.current = playerScores;
+  const totalScoreRef = useRef(totalScore);
+  totalScoreRef.current = totalScore;
 
   function disconnectNarrator() {
     if (narratorRef.current) {
@@ -67,25 +116,25 @@ export function useNarrator({
 
   // Connect when enabled && game is active; reconnect when engine changes
   useEffect(() => {
-    if (!enabled || !narratorEngine || gameStatus !== "active") return;
+    if (!enabled || !currentEngine || gameStatus !== "active") return;
 
     // If engine or ttsEngine changed, disconnect the old one first
     if (
       narratorRef.current &&
-      (activeEngineRef.current !== narratorEngine || activeTtsEngineRef.current !== ttsEngine)
+      (activeEngineRef.current !== currentEngine || activeTtsEngineRef.current !== ttsEngine)
     ) {
-      console.log(`[useNarrator] Engine changed: ${activeEngineRef.current} → ${narratorEngine}, reconnecting`);
+      console.log(`[useNarrator] Engine changed: ${activeEngineRef.current} → ${currentEngine}, reconnecting`);
       disconnectNarrator();
     }
 
     // Already connected with the right config
     if (narratorRef.current) return;
 
-    const narrator = createNarratorBackend(narratorEngine, { ttsEngine, voiceName, rate, pitch, elevenLabsVoiceId });
+    const narrator = createNarratorBackend(currentEngine, { ttsEngine, voiceName, rate, pitch, elevenLabsVoiceId });
     if (!narrator) return;
 
     narratorRef.current = narrator;
-    activeEngineRef.current = narratorEngine;
+    activeEngineRef.current = currentEngine;
     activeTtsEngineRef.current = ttsEngine;
     gameCompletedSentRef.current = false;
 
@@ -107,7 +156,7 @@ export function useNarrator({
     // No cleanup — disconnect is managed by the effects below.
     // This prevents gameStatus changing from "active" → "completed"
     // from tearing down the connection before GAME_COMPLETED is sent.
-  }, [enabled, gameStatus, narratorEngine, ttsEngine]);
+  }, [enabled, gameStatus, currentEngine, ttsEngine]);
 
   // Sync voice settings to Claude narrator without reconnecting
   useEffect(() => {
@@ -126,7 +175,6 @@ export function useNarrator({
     const p = puzzleRef.current;
     if (!p) return;
 
-    const totalClues = p.clues.length;
     const sorted = [...scores].sort((a, b) => b.score - a.score);
     const winner = sorted[0]?.name ?? "Unknown";
 
@@ -135,7 +183,9 @@ export function useNarrator({
       disconnectNarrator();
     });
 
-    narratorRef.current.sendEvent(buildGameCompletedEvent(winner, scores, totalClues));
+    narratorRef.current.sendEvent(
+      buildGameCompletedEvent(winner, scores, totalScoreRef.current),
+    );
   }, [gameStatus]);
 
   // Fix 3: Disconnect when gameStatus goes back to "waiting" (back to menu)
@@ -145,6 +195,15 @@ export function useNarrator({
     }
   }, [gameStatus]);
 
+  // Disconnect immediately when host closes the room. gameStatus stays
+  // "active" until HostLayout unmounts via navigate; without this hook
+  // the narrator could speak briefly after the room is dead.
+  useEffect(() => {
+    if (isRoomClosed && narratorRef.current) {
+      disconnectNarrator();
+    }
+  }, [isRoomClosed]);
+
   // Disconnect immediately when enabled → false (muted, engine changed, room closed)
   useEffect(() => {
     if (!enabled) {
@@ -152,12 +211,12 @@ export function useNarrator({
     }
   }, [enabled]);
 
-  // Disconnect when narrator engine changes
+  // Disconnect when the effective engine changes (user pick OR fallback cascade)
   useEffect(() => {
-    if (narratorRef.current && activeEngineRef.current !== narratorEngine) {
+    if (narratorRef.current && activeEngineRef.current !== currentEngine) {
       disconnectNarrator();
     }
-  }, [narratorEngine]);
+  }, [currentEngine]);
 
   // Cleanup on unmount — always disconnect
   useEffect(() => {
@@ -171,5 +230,11 @@ export function useNarrator({
     narratorRef.current?.sendEvent(event);
   }, []);
 
-  return { sendEvent, isConnected, connectionError };
+  return {
+    sendEvent,
+    isConnected,
+    connectionError,
+    currentEngine,
+    requestedEngine: narratorEngine,
+  };
 }

@@ -15,3 +15,5 @@ skills-lock.json
 agents.json
 tools.json
 tests.json
+.vercel
+.agent-team/

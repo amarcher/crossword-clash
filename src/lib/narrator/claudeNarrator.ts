@@ -1,16 +1,8 @@
 import { formatEvent } from "./events";
+import { CLAUDE_SYSTEM_PROMPT } from "./prompts";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
-const SYSTEM_PROMPT = `You are a snarky, entertaining gameshow host narrating a real-time multiplayer crossword puzzle competition. You receive structured game events and provide witty, energetic commentary.
-
-Rules:
-- NEVER ask if anyone is there or initiate unprompted conversation
-- Only speak when you receive a game event
-- Keep commentary brief (1-3 sentences per event)
-- Be playful and competitive — celebrate big plays, tease rivalries
-- Use wordplay and puns when relevant to crossword answers
-- Build excitement as the game progresses toward completion
-- Respond with ONLY the spoken commentary text — no stage directions, no asterisks, no parentheticals`;
+const SYSTEM_PROMPT = CLAUDE_SYSTEM_PROMPT;
 
 interface Message {
   role: "user" | "assistant";
@@ -117,6 +109,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private intentionalDisconnect = false;
   private _volume = 1;
   private gainNode: GainNode | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   constructor(options?: ClaudeNarratorOptions) {
     this.ttsEngine = options?.ttsEngine ?? "elevenlabs";
@@ -158,6 +151,18 @@ export class ClaudeNarratorBackend implements NarratorBackend {
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.value = this._volume;
         this.gainNode.connect(this.audioContext.destination);
+        // Suspend on tab background so we don't queue speech that arrives
+        // while hidden (browser-dependent: blast on resume vs silent drop).
+        if (!this.visibilityHandler) {
+          this.visibilityHandler = () => {
+            if (document.visibilityState === "hidden") {
+              this.audioContext?.suspend().catch(() => {});
+            } else {
+              this.audioContext?.resume().catch(() => {});
+            }
+          };
+          document.addEventListener("visibilitychange", this.visibilityHandler);
+        }
       }
       this._isConnected = true;
       this.onStateChange?.();
@@ -183,6 +188,10 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       await this.audioContext.close().catch(() => {});
       this.audioContext = null;
       this.gainNode = null;
+    }
+    if (this.visibilityHandler) {
+      document.removeEventListener("visibilitychange", this.visibilityHandler);
+      this.visibilityHandler = null;
     }
     if (typeof speechSynthesis !== "undefined") {
       speechSynthesis.cancel();
@@ -253,7 +262,9 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       }
     }
 
-    // Process any events that arrived while we were fetching/speaking
+    // Process any events that arrived while we were fetching/speaking.
+    // Bail if disconnect happened during the in-flight call/speak.
+    if (this.intentionalDisconnect) return;
     this.processQueue();
   }
 

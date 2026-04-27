@@ -13,6 +13,7 @@ import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../typ
 import type { PuzzleAction } from "../hooks/usePuzzle";
 
 const STORAGE_KEY = "crossword-clash-solo";
+const LOCKOUT_STORAGE_KEY = "crossword-clash:lockedUntil";
 
 function loadSavedSession(): { puzzle: Puzzle; playerCells: Record<string, CellState>; gameId: string | null } | null {
   try {
@@ -112,7 +113,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState(0);
+
+  // Persisted to sessionStorage so a refresh during an active lockout
+  // cannot bypass the penalty. sessionStorage (not localStorage) keeps it
+  // scoped to this tab — opening a new tab is a fresh start.
+  const [lockedUntil, setLockedUntilState] = useState<number>(() => {
+    if (typeof sessionStorage === "undefined") return 0;
+    const stored = sessionStorage.getItem(LOCKOUT_STORAGE_KEY);
+    if (!stored) return 0;
+    const parsed = parseInt(stored, 10);
+    return Number.isFinite(parsed) && parsed > Date.now() ? parsed : 0;
+  });
+  const setLockedUntil = useCallback((v: number) => {
+    setLockedUntilState(v);
+    if (typeof sessionStorage === "undefined") return;
+    if (v > Date.now()) {
+      sessionStorage.setItem(LOCKOUT_STORAGE_KEY, String(v));
+    } else {
+      sessionStorage.removeItem(LOCKOUT_STORAGE_KEY);
+    }
+  }, []);
 
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);

@@ -21,6 +21,7 @@ export interface SpeechSettings {
   settingsOpen: boolean;
   engine: TTSEngine;
   narratorEngine: NarratorEngine;
+  spokenEvents: boolean;
   elevenLabsAvailable: boolean;
   elevenLabsVoiceId: string | null;
   elevenLabsVoices: ElevenLabsVoice[];
@@ -31,6 +32,7 @@ export interface SpeechSettings {
   setPitch: (pitch: number) => void;
   setEngine: (engine: TTSEngine) => void;
   setNarratorEngine: (engine: NarratorEngine) => void;
+  setSpokenEvents: (v: boolean) => void;
   setElevenLabsVoiceId: (id: string | null) => void;
   speak: (text: string) => void;
   openSettings: () => void;
@@ -144,6 +146,10 @@ export function useSpeechSettings(): SpeechSettings {
     setSettings((prev) => ({ ...prev, narratorEngine }));
   }, []);
 
+  const setSpokenEvents = useCallback((spokenEvents: boolean) => {
+    setSettings((prev) => ({ ...prev, spokenEvents }));
+  }, []);
+
   const setElevenLabsVoiceId = useCallback((elevenLabsVoiceId: string | null) => {
     setSettings((prev) => ({ ...prev, elevenLabsVoiceId }));
   }, []);
@@ -189,6 +195,7 @@ export function useSpeechSettings(): SpeechSettings {
     settingsOpen,
     engine: settings.engine,
     narratorEngine: settings.narratorEngine,
+    spokenEvents: settings.spokenEvents,
     elevenLabsAvailable: elAvailable,
     elevenLabsVoiceId: settings.elevenLabsVoiceId,
     elevenLabsVoices: ELEVENLABS_VOICES,
@@ -199,6 +206,7 @@ export function useSpeechSettings(): SpeechSettings {
     setPitch,
     setEngine,
     setNarratorEngine,
+    setSpokenEvents,
     setElevenLabsVoiceId,
     speak,
     openSettings,

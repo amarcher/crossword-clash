@@ -87,6 +87,10 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
           }
         },
         onModeChange: (mode) => {
+          // Late callbacks can fire after disconnect() has begun teardown.
+          // Without this guard we'd call sendUserMessage on a defunct
+          // conversation instance.
+          if (this.intentionalDisconnect) return;
           console.log(`[ElevenLabsAgent] onModeChange: ${this.agentMode} → ${mode.mode}, pendingContextUpdates=${this.pendingContextUpdates.length}`);
           if (mode.mode === "listening") {
             this.agentMode = "listening";
