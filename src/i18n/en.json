@@ -4,9 +4,14 @@
   },
   "menu": {
     "joinGame": "Join Game",
+    "joinGameSubtitle": "Enter a code to join someone's room",
     "hostAsPlayer": "Host Game as Player",
+    "hostAsPlayerSubtitle": "Play with friends from this device",
     "hostAsTV": "Host Game as TV",
-    "playSolo": "Play Solo"
+    "hostAsTVSubtitle": "Display the game on a shared screen — no playing",
+    "playSolo": "Play Solo",
+    "playSoloSubtitle": "Just you, on this device",
+    "importPuzzle": "Browse puzzles"
   },
   "hostName": {
     "enterDisplayName": "Enter your display name",
@@ -22,7 +27,18 @@
     "sampleClues": "clues",
     "demoPuzzles": "Or try a demo puzzle",
     "nytHint": "<strong>NYT subscriber?</strong> Install the <anchor>NYT Bookmarklet</anchor> to import today's puzzle in one click.",
-    "scraperHint": "Need a .puz file? Use the <anchor>Crossword Scraper</anchor> Chrome extension to download puzzles from popular crossword sites."
+    "scraperHint": "Need a .puz file? Use the <anchor>Crossword Scraper</anchor> Chrome extension to download puzzles from popular crossword sites.",
+    "hubTitle": "Get a puzzle",
+    "hubSubtitle": "Pick a source. NYT subscribers get one-click import; everyone can drop a file or try a sample.",
+    "tileNytTitle": "Today's NYT puzzle",
+    "tileNytDesc": "One-click bookmarklet for Daily, Mini, and Bonus crosswords. Active NYT subscription required.",
+    "tileNytCta": "Install bookmarklet",
+    "tileScraperTitle": "From any crossword site",
+    "tileScraperDesc": "Crossword Scraper Chrome extension — Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
+    "tileScraperCta": "Get the extension",
+    "tileFileTitle": "Drop a file",
+    "tileFileDesc": ".puz, .ipuz, .jpz, .xd from AVCX, Lollapuzzoola, BEQ, anywhere.",
+    "tileSampleTitle": "Try a sample"
   },
   "importing": {
     "receiving": "Receiving puzzle...",
@@ -31,6 +47,26 @@
     "pasteButton": "Paste from Clipboard",
     "pasteError": "No valid puzzle data found in clipboard. Try clicking the bookmarklet again.",
     "backToMenu": "Back to menu"
+  },
+  "bookmarklet": {
+    "pageTitle": "Crossword Clash — NYT Bookmarklet",
+    "option1Heading": "Option 1: Drag to bookmarks bar",
+    "option1Instruction": "Drag this button to your bookmarks bar:",
+    "buttonLabel": "NYT → Crossword Clash",
+    "bookmarksBarHint": "Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).",
+    "option2Heading": "Option 2: Manual install",
+    "option2Step1": "Right-click your bookmarks bar and choose \"Add Page…\" or \"Add Bookmark…\".",
+    "option2Step2": "Name: NYT → Crossword Clash",
+    "option2Step3": "URL: Click \"Copy\" below, then paste into the URL field.",
+    "copy": "Copy to clipboard",
+    "copied": "Copied!",
+    "usageHeading": "Usage",
+    "usageStep1": "Go to any NYT crossword page — <daily>Daily</daily>, <mini>Mini</mini>, or other puzzle types (must be logged in with a crossword subscription).",
+    "usageStep2": "Click the bookmarklet in your bookmarks bar.",
+    "usageStep3": "Crossword Clash opens in a new tab with the puzzle loaded.",
+    "back": "← Back to Crossword Clash",
+    "disclosureHeading": "About this bookmarklet",
+    "disclosureText": "It runs only on your NYT crossword tab when you click it, and sends puzzle data only to your second Clash tab — no third-party servers. We believe a one-click bookmarklet acting on a page you're already viewing falls within personal-use precedent, but NYT's terms restrict automated tools that circumvent access. Use only with an active NYT subscription. If NYT objects, we'll remove this feature."
   },
   "puzzleReady": {
     "by": "by {{author}}",
@@ -46,12 +82,17 @@
     "players": "Players ({{count}})",
     "host": "Host",
     "waitingForPlayers": "Waiting for players...",
+    "needMorePlayers_one": "Need 1 more player",
+    "needMorePlayers_other": "Need {{count}} more players",
     "startGame": "Start Game",
     "closeRoom": "Close Room",
     "waitingForHost": "Waiting for host to start the game...",
     "leaveLobby": "Leave",
     "waitingForPlayersTitle": "Waiting for Players",
-    "qrCodeLabel": "QR code to join game"
+    "qrCodeLabel": "QR code to join game",
+    "roomClosedTitle": "Room closed",
+    "roomClosedNotice": "The host closed this room.",
+    "roomClosedAction": "Back to menu"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",
@@ -110,6 +151,7 @@
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} cells filled",
     "newPuzzle": "Choose a New Puzzle",
+    "playAgain": "Play Again",
     "backToMenu": "Back to Menu",
     "ariaLabel": "Puzzle Complete"
   },
@@ -141,7 +183,11 @@
     "agentConnected": "Connected",
     "agentConnecting": "Connecting...",
     "agentError": "Connection error",
-    "rateLimited": "Narrator limit reached. Falling back to browser voice."
+    "rateLimited": "Narrator limit reached. Falling back to browser voice.",
+    "fallbackSwitched": "Narrator switched to {{engine}} ({{from}} unavailable)",
+    "fallbackExhausted": "Narrator unavailable — all backends failed.",
+    "spokenEvents": "Speak completed clues",
+    "spokenEventsHint": "Short \"5 across by Alice\" announcements when no AI host is active. Off by default."
   },
   "hostView": {
     "tvHostView": "TV / Host View",

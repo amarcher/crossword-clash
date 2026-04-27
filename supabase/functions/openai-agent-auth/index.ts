@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { logUsage } from "../_shared/usageLog.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
@@ -46,6 +47,10 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
+    // Mark a session-issued row for the dashboard. OpenAI Realtime bills
+    // per audio-token; without true usage we log session-creations and
+    // multiply by an assumed-max in the dashboard.
+    logUsage("openai", "openai-agent-auth", { model: "gpt-realtime" });
     return new Response(
       JSON.stringify({ token: data.client_secret?.value ?? data.value }),
       {

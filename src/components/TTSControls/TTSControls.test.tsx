@@ -48,6 +48,8 @@ describe("TTSSettingsModal", () => {
     setEngine: vi.fn(),
     narratorEngine: null as "elevenlabs-agent" | "openai-agent" | "claude" | null,
     setNarratorEngine: vi.fn(),
+    spokenEvents: false,
+    setSpokenEvents: vi.fn(),
     elevenLabsAvailable: false,
     elevenLabsVoiceId: null as string | null,
     setElevenLabsVoiceId: vi.fn(),

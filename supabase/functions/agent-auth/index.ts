@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { logUsage } from "../_shared/usageLog.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 const ELEVENLABS_AGENT_ID = Deno.env.get("ELEVENLABS_AGENT_ID");
@@ -55,6 +56,10 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
+    // Mark a session-issued row in the dashboard ledger. ElevenLabs Convai
+    // bills per session-minute; the dashboard multiplies this row count by
+    // an assumed-max minutes × per-minute rate to estimate spend.
+    logUsage("elevenlabs", "agent-auth", { model: "convai" });
     return new Response(JSON.stringify({ signed_url: data.signed_url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

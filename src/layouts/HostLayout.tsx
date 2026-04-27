@@ -5,15 +5,29 @@ import { usePuzzle } from "../hooks/usePuzzle";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { useSpeechSettings } from "../hooks/useSpeechSettings";
 import { useNarrator } from "../hooks/useNarrator";
+import { useClueAnnouncer } from "../hooks/useClueAnnouncer";
 import {
   uploadPuzzle,
   createGame,
   createNextGame,
 } from "../lib/puzzleService";
+import { supabase } from "../lib/supabaseClient";
 import { loadHostSession, saveHostSession, clearHostSession } from "../lib/sessionPersistence";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
-import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer, getNewlyCompletedClues } from "../lib/gridUtils";
-import { buildClueCompletedEvent, buildLeadChangeEvent } from "../lib/narrator/events";
+import {
+  getCompletedClues,
+  getCompletedCluesByPlayer,
+  countCluesPerPlayer,
+  getNewlyCompletedClues,
+  getClueForCell,
+} from "../lib/gridUtils";
+import {
+  buildClueCompletedEvent,
+  buildLeadChangeEvent,
+  buildWrongLetterEvent,
+  buildNearMissEvent,
+  buildStallEvent,
+} from "../lib/narrator/events";
 import { tStatic } from "../i18n/i18n";
 import { createContext, useContext } from "react";
 import type { Puzzle, CellState } from "../types/puzzle";
@@ -21,7 +35,7 @@ import type { Player, GameSettings } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
 import type { SpeechSettings } from "../hooks/useSpeechSettings";
 import type { PuzzleAction } from "../hooks/usePuzzle";
-import type { AgentGameEvent } from "../lib/narrator/types";
+import type { AgentGameEvent, NarratorEngine } from "../lib/narrator/types";
 
 export interface HostContextValue {
   // Auth
@@ -52,10 +66,17 @@ export interface HostContextValue {
   // Multiplayer
   multiplayer: {
     claimCell: (row: number, col: number, letter: string) => void;
+    broadcastWrongLetter: (
+      row: number,
+      col: number,
+      expected: string,
+      attempted: string,
+      direction: "across" | "down",
+    ) => void;
     startGame: (settings?: GameSettings) => Promise<void>;
     closeRoom: () => Promise<void>;
     broadcastNewGame: (newGameId: string) => void;
-    leaveGame: () => void;
+    leaveGame: () => Promise<void>;
     players: Player[];
     gameStatus: "waiting" | "active" | "completed";
     gameSettings: GameSettings;
@@ -73,6 +94,8 @@ export interface HostContextValue {
   narrator: {
     isConnected: boolean;
     connectionError: string | null;
+    currentEngine: NarratorEngine;
+    requestedEngine: NarratorEngine;
   };
 
   // Derived
@@ -92,6 +115,7 @@ export interface HostContextValue {
   handleStartGame: () => Promise<void>;
   handleCloseRoom: () => Promise<void>;
   handleNewPuzzle: () => void;
+  handleRematch: () => Promise<void>;
   handleBackToMenu: () => void;
 }
 
@@ -137,20 +161,49 @@ export function HostLayout() {
   const playersRef = useRef<{ userId: string; displayName: string }[]>([]);
   const narratorSendEventRef = useRef<((event: AgentGameEvent) => void) | null>(null);
   const previousLeaderRef = useRef<string | null>(null);
+  const totalWhiteCellsRef = useRef(totalWhiteCells);
+  totalWhiteCellsRef.current = totalWhiteCells;
+  // Tracks how many wrong letters were attempted at each cell key ("row,col"),
+  // across all players. Reset to 0 on successful claim so NEAR_MISS only fires
+  // when *this* attempt streak ended in success.
+  const wrongCountByCellRef = useRef<Map<string, number>>(new Map());
 
   const handleCellClaimed = useCallback(
     (row: number, col: number, _letter: string, playerId: string) => {
       if (!puzzle) return;
+      const cellKey = `${row},${col}`;
+      const wrongStreak = wrongCountByCellRef.current.get(cellKey) ?? 0;
+      wrongCountByCellRef.current.delete(cellKey);
+
+      // Fire NEAR_MISS *before* any clue completion event so the narrator
+      // colors the moment ("close call!") before announcing the score.
+      if (wrongStreak >= 1 && tts.narratorEngine !== null && narratorSendEventRef.current) {
+        const player = playersRef.current.find((p) => p.userId === playerId);
+        const playerName = player?.displayName ?? "Unknown";
+        const acrossClue = getClueForCell(puzzle, row, col, "across");
+        const downClue = getClueForCell(puzzle, row, col, "down");
+        const clueNumber = acrossClue?.number ?? downClue?.number ?? 0;
+        if (clueNumber > 0) {
+          narratorSendEventRef.current(
+            buildNearMissEvent(playerName, clueNumber, wrongStreak),
+          );
+        }
+      }
+
       const completed = getNewlyCompletedClues(puzzle, playerCellsRef.current, row, col);
 
       if (tts.narratorEngine !== null && narratorSendEventRef.current && completed.length > 0) {
-        // Build per-player clue scores for narrator
-        const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCellsRef.current);
-        const clueScores = countCluesPerPlayer(cluesByPlayer);
-        const totalClues = puzzle.clues.length;
+        // Cell-based scores so narrator output matches the on-screen scoreboard.
+        const cellCounts = new Map<string, number>();
+        for (const c of Object.values(playerCellsRef.current)) {
+          if (c.correct && c.playerId) {
+            cellCounts.set(c.playerId, (cellCounts.get(c.playerId) ?? 0) + 1);
+          }
+        }
+        const totalCells = totalWhiteCellsRef.current;
         const playerScores = playersRef.current.map((p) => ({
           name: p.displayName,
-          score: clueScores.get(p.userId) ?? 0,
+          score: cellCounts.get(p.userId) ?? 0,
         }));
 
         for (const clue of completed) {
@@ -164,7 +217,7 @@ export function HostLayout() {
               clue.text,
               clue.answer,
               playerScores,
-              totalClues,
+              totalCells,
             ),
           );
         }
@@ -184,24 +237,49 @@ export function HostLayout() {
               currentLeader,
               previousLeaderRef.current,
               playerScores,
-              totalClues,
+              totalCells,
             ),
           );
         }
         previousLeaderRef.current = currentLeader;
-      } else {
-        for (const clue of completed) {
-          const player = playersRef.current.find((p) => p.userId === playerId);
-          const playerName = player?.displayName ?? "Unknown";
-          const text =
-            tts.engine === "elevenlabs"
-              ? `${playerName} completed ${clue.number} ${clue.direction}: ${clue.answer.toLowerCase()}`
-              : `${playerName} -- ${clue.number} ${clue.direction} -- ${clue.text} -- ${clue.answer.toLowerCase()}`;
-          tts.speak(text);
-        }
       }
+      // Per-clue spoken announcements live in useClueAnnouncer (below) so
+      // they share the rate-cap / dedupe machinery with future surfaces.
     },
-    [puzzle, tts.speak, tts.engine, tts.narratorEngine],
+    [puzzle, tts.narratorEngine],
+  );
+
+  const handleWrongLetter = useCallback(
+    (
+      row: number,
+      col: number,
+      expected: string,
+      attempted: string,
+      direction: "across" | "down",
+      playerId: string,
+    ) => {
+      if (!puzzle) return;
+      const cellKey = `${row},${col}`;
+      const newCount = (wrongCountByCellRef.current.get(cellKey) ?? 0) + 1;
+      wrongCountByCellRef.current.set(cellKey, newCount);
+
+      if (tts.narratorEngine === null || !narratorSendEventRef.current) return;
+      const clue = getClueForCell(puzzle, row, col, direction);
+      if (!clue) return;
+      const player = playersRef.current.find((p) => p.userId === playerId);
+      const playerName = player?.displayName ?? "Unknown";
+      narratorSendEventRef.current(
+        buildWrongLetterEvent(
+          playerName,
+          clue.number,
+          direction,
+          expected,
+          attempted,
+          newCount,
+        ),
+      );
+    },
+    [puzzle, tts.narratorEngine],
   );
 
   const multiplayer = useMultiplayer(
@@ -214,6 +292,7 @@ export function HostLayout() {
           playerCells,
           totalWhiteCells,
           onCellClaimed: handleCellClaimed,
+          onWrongLetter: handleWrongLetter,
         }
       : {
           gameId: "",
@@ -227,16 +306,21 @@ export function HostLayout() {
 
   playersRef.current = multiplayer.players;
 
-  // Narrator — compute clue-based scores
+  // Narrator — cell-based scores so the LLM hears the same numbers as the
+  // on-screen scoreboard. (Matches DB players.score, which the claim_cell
+  // RPC also increments per cell.)
   const narratorPlayerScores = useMemo(() => {
-    if (!puzzle) return [];
-    const cluesByPlayer = getCompletedCluesByPlayer(puzzle, playerCells);
-    const clueScores = countCluesPerPlayer(cluesByPlayer);
+    const counts = new Map<string, number>();
+    for (const c of Object.values(playerCells)) {
+      if (c.correct && c.playerId) {
+        counts.set(c.playerId, (counts.get(c.playerId) ?? 0) + 1);
+      }
+    }
     return multiplayer.players.map((p) => ({
       name: p.displayName,
-      score: clueScores.get(p.userId) ?? 0,
+      score: counts.get(p.userId) ?? 0,
     }));
-  }, [puzzle, playerCells, multiplayer.players]);
+  }, [playerCells, multiplayer.players]);
 
   const narrator = useNarrator({
     narratorEngine: tts.narratorEngine,
@@ -247,12 +331,41 @@ export function HostLayout() {
     elevenLabsVoiceId: tts.elevenLabsVoiceId,
     enabled: tts.elevenLabsAvailable && !tts.muted,
     gameStatus: multiplayer.gameStatus,
+    isRoomClosed: multiplayer.isRoomClosed,
     players: multiplayer.players,
     puzzle,
     playerScores: narratorPlayerScores,
+    totalScore: totalWhiteCells,
   });
 
   narratorSendEventRef.current = narrator.sendEvent;
+
+  // Optional per-clue audio announcer. Off by default; only fires when
+  // the user has explicitly enabled `spokenEvents` AND no AI narrator is
+  // active (the narrator handles its own commentary).
+  useClueAnnouncer({
+    puzzle,
+    playerCells,
+    players: multiplayer.players,
+    speak: tts.speak,
+    enabled: tts.spokenEvents && tts.narratorEngine === null && !tts.muted,
+  });
+
+  // STALL: 45s without any cell claim during an active game emits a
+  // narrator-prompting event so the gameshow host can fill dead air.
+  // The effect re-arms the timer on every playerCells change, so steady
+  // play never trips it.
+  useEffect(() => {
+    if (multiplayer.gameStatus !== "active" || tts.narratorEngine === null) return;
+    const STALL_MS = 45_000;
+    const timer = setTimeout(() => {
+      if (!narratorSendEventRef.current) return;
+      const sorted = [...narratorPlayerScores].sort((a, b) => b.score - a.score);
+      const leader = sorted[0]?.score > 0 ? sorted[0].name : null;
+      narratorSendEventRef.current(buildStallEvent(STALL_MS / 1000, leader));
+    }, STALL_MS);
+    return () => clearTimeout(timer);
+  }, [playerCells, multiplayer.gameStatus, tts.narratorEngine, narratorPlayerScores]);
 
   // Listen for hash changes
   useEffect(() => {
@@ -363,6 +476,27 @@ export function HostLayout() {
     navigate("/host/import");
   }, [navigate]);
 
+  const handleRematch = useCallback(async () => {
+    if (!user || !supabase || !multiplayer.shareCode || !gameId) return;
+    const { data: prev } = await supabase
+      .from("games")
+      .select("puzzle_id")
+      .eq("id", gameId)
+      .single();
+    if (!prev?.puzzle_id) return;
+
+    const result = await createNextGame(prev.puzzle_id, user.id, multiplayer.shareCode, {
+      spectator: true,
+    });
+    if (!result) return;
+
+    multiplayer.broadcastNewGame(result.gameId);
+    setGameId(result.gameId);
+    saveHostSession({ gameId: result.gameId });
+    setCompletionModalDismissed(true);
+    navigate(`/host/lobby/${result.gameId}`);
+  }, [user, multiplayer, gameId, navigate]);
+
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
     setGameId(null);
@@ -458,6 +592,8 @@ export function HostLayout() {
     narrator: {
       isConnected: narrator.isConnected,
       connectionError: narrator.connectionError,
+      currentEngine: narrator.currentEngine,
+      requestedEngine: narrator.requestedEngine,
     },
     playerColorMap,
     completedClues,
@@ -473,6 +609,7 @@ export function HostLayout() {
     handleStartGame,
     handleCloseRoom,
     handleNewPuzzle,
+    handleRematch,
     handleBackToMenu,
   };
 

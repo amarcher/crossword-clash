@@ -10,10 +10,17 @@ import type { PlayerResult } from "../components/CompletionModal";
 interface MultiplayerContextValue {
   // Core multiplayer hook return
   claimCell: (row: number, col: number, letter: string) => void;
+  broadcastWrongLetter: (
+    row: number,
+    col: number,
+    expected: string,
+    attempted: string,
+    direction: "across" | "down",
+  ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
-  leaveGame: () => void;
+  leaveGame: () => Promise<void>;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
   gameSettings: GameSettings;
@@ -50,6 +57,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     puzzle,
     playerCells,
     selectedCell,
+    direction,
     totalWhiteCells,
     isComplete,
     dispatch,
@@ -207,15 +215,17 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
 
       if (letter.toUpperCase() !== cell.solution) {
         triggerReject(row, col);
+        multiplayer.broadcastWrongLetter(row, col, cell.solution, letter, direction);
         const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
         if (timeoutMs > 0) {
-          setLockedUntil(Date.now() + timeoutMs);
+          // Math.max so a second wrong letter cannot shorten an active lockout.
+          setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
         }
         return;
       }
       multiplayer.claimCell(row, col, letter);
     },
-    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
+    [multiplayerActive, selectedCell, puzzle, playerCells, direction, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
   );
 
   // Suppress lint warnings for derived values that are consumed downstream

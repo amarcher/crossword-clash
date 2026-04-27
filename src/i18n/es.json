@@ -4,9 +4,14 @@
   },
   "menu": {
     "joinGame": "Unirse a partida",
+    "joinGameSubtitle": "Ingresa un código para unirte a una sala",
     "hostAsPlayer": "Crear partida como jugador",
-    "hostAsTV": "Crear partida como TV",
-    "playSolo": "Jugar solo"
+    "hostAsPlayerSubtitle": "Juega con amigos desde este dispositivo",
+    "hostAsTV": "Modo TV",
+    "hostAsTVSubtitle": "Muestra la partida en una pantalla compartida — sin jugar",
+    "playSolo": "Jugar solo",
+    "playSoloSubtitle": "Solo tú, en este dispositivo",
+    "importPuzzle": "Buscar crucigramas"
   },
   "hostName": {
     "enterDisplayName": "Ingresa tu nombre",
@@ -22,7 +27,18 @@
     "sampleClues": "pistas",
     "demoPuzzles": "O prueba un crucigrama de demo",
     "nytHint": "<strong>\u00bfSuscriptor del NYT?</strong> Instala el <anchor>NYT Bookmarklet</anchor> para importar el crucigrama del d\u00eda con un clic.",
-    "scraperHint": "\u00bfNecesitas un archivo .puz? Usa la extensi\u00f3n <anchor>Crossword Scraper</anchor> de Chrome para descargar crucigramas de sitios populares."
+    "scraperHint": "\u00bfNecesitas un archivo .puz? Usa la extensi\u00f3n <anchor>Crossword Scraper</anchor> de Chrome para descargar crucigramas de sitios populares.",
+    "hubTitle": "Consigue un crucigrama",
+    "hubSubtitle": "Elige una fuente. Suscriptores del NYT pueden importar con un clic; cualquiera puede subir un archivo o probar una muestra.",
+    "tileNytTitle": "Crucigrama del NYT de hoy",
+    "tileNytDesc": "Bookmarklet de un clic para Daily, Mini y Bonus. Requiere suscripci\u00f3n activa al NYT.",
+    "tileNytCta": "Instalar bookmarklet",
+    "tileScraperTitle": "Desde cualquier sitio de crucigramas",
+    "tileScraperDesc": "Extensi\u00f3n Crossword Scraper de Chrome \u2014 Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
+    "tileScraperCta": "Obtener la extensi\u00f3n",
+    "tileFileTitle": "Subir un archivo",
+    "tileFileDesc": ".puz, .ipuz, .jpz, .xd de AVCX, Lollapuzzoola, BEQ, donde sea.",
+    "tileSampleTitle": "Probar una muestra"
   },
   "importing": {
     "receiving": "Recibiendo crucigrama...",
@@ -31,6 +47,26 @@
     "pasteButton": "Pegar del portapapeles",
     "pasteError": "No se encontraron datos de crucigrama en el portapapeles. Intenta hacer clic en el bookmarklet de nuevo.",
     "backToMenu": "Volver al men\u00fa"
+  },
+  "bookmarklet": {
+    "pageTitle": "Crossword Clash \u2014 Bookmarklet del NYT",
+    "option1Heading": "Opci\u00f3n 1: Arrastra a la barra de marcadores",
+    "option1Instruction": "Arrastra este bot\u00f3n a tu barra de marcadores:",
+    "buttonLabel": "NYT \u2192 Crossword Clash",
+    "bookmarksBarHint": "Aseg\u00farate de que tu barra de marcadores est\u00e9 visible (Cmd+Shift+B en Mac, Ctrl+Shift+B en Windows).",
+    "option2Heading": "Opci\u00f3n 2: Instalaci\u00f3n manual",
+    "option2Step1": "Haz clic derecho en la barra de marcadores y elige \"Agregar p\u00e1gina\u2026\" o \"Agregar marcador\u2026\".",
+    "option2Step2": "Nombre: NYT \u2192 Crossword Clash",
+    "option2Step3": "URL: Haz clic en \"Copiar\" abajo y pega en el campo de URL.",
+    "copy": "Copiar al portapapeles",
+    "copied": "\u00a1Copiado!",
+    "usageHeading": "Uso",
+    "usageStep1": "Ve a cualquier p\u00e1gina de crucigrama del NYT \u2014 <daily>Daily</daily>, <mini>Mini</mini>, u otros tipos (debes haber iniciado sesi\u00f3n con suscripci\u00f3n a crucigramas).",
+    "usageStep2": "Haz clic en el bookmarklet en tu barra de marcadores.",
+    "usageStep3": "Crossword Clash se abre en una pesta\u00f1a nueva con el crucigrama cargado.",
+    "back": "\u2190 Volver a Crossword Clash",
+    "disclosureHeading": "Sobre este bookmarklet",
+    "disclosureText": "Solo se ejecuta en tu pesta\u00f1a del crucigrama del NYT cuando haces clic, y env\u00eda los datos solo a tu segunda pesta\u00f1a de Clash \u2014 sin servidores de terceros. Creemos que un bookmarklet de un clic actuando sobre una p\u00e1gina que ya est\u00e1s viendo cae dentro del precedente de uso personal, pero los t\u00e9rminos del NYT restringen herramientas automatizadas que evaden el acceso. \u00dasalo \u00fanicamente con una suscripci\u00f3n activa al NYT. Si el NYT se opone, eliminaremos esta funci\u00f3n."
   },
   "puzzleReady": {
     "by": "por {{author}}",
@@ -46,12 +82,17 @@
     "players": "Jugadores ({{count}})",
     "host": "Anfitri\u00f3n",
     "waitingForPlayers": "Esperando jugadores...",
+    "needMorePlayers_one": "Falta 1 jugador",
+    "needMorePlayers_other": "Faltan {{count}} jugadores",
     "startGame": "Iniciar partida",
     "closeRoom": "Cerrar sala",
     "waitingForHost": "Esperando a que el anfitri\u00f3n inicie la partida...",
     "leaveLobby": "Salir",
     "waitingForPlayersTitle": "Esperando jugadores",
-    "qrCodeLabel": "Código QR para unirse a la partida"
+    "qrCodeLabel": "Código QR para unirse a la partida",
+    "roomClosedTitle": "Sala cerrada",
+    "roomClosedNotice": "El anfitrión cerró esta sala.",
+    "roomClosedAction": "Volver al menú"
   },
   "join": {
     "subtitle": "Ingresa el c\u00f3digo de 6 caracteres",
@@ -110,6 +151,7 @@
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} celdas completadas",
     "newPuzzle": "Elegir otro crucigrama",
+    "playAgain": "Jugar de nuevo",
     "backToMenu": "Volver al men\u00fa",
     "ariaLabel": "Crucigrama completo"
   },
@@ -141,7 +183,11 @@
     "agentConnected": "Conectado",
     "agentConnecting": "Conectando...",
     "agentError": "Error de conexi\u00f3n",
-    "rateLimited": "L\u00edmite de narrador alcanzado. Usando voz del navegador."
+    "rateLimited": "L\u00edmite de narrador alcanzado. Usando voz del navegador.",
+    "fallbackSwitched": "Presentador cambiado a {{engine}} ({{from}} no disponible)",
+    "fallbackExhausted": "Presentador no disponible \u2014 todos los backends fallaron.",
+    "spokenEvents": "Anunciar pistas completadas",
+    "spokenEventsHint": "Anuncios cortos como \"5 horizontal por Alice\" cuando no hay presentador IA. Desactivado por defecto."
   },
   "hostView": {
     "tvHostView": "Vista TV / Anfitri\u00f3n",

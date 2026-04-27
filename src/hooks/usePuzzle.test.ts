@@ -301,6 +301,45 @@ describe("puzzleReducer", () => {
       expect(state.playerCells["0,0"]).toBeDefined();
       expect(state.score).toBe(1);
     });
+
+    it("race-loss recovery: cursor restores and rollback no-ops cleanly", () => {
+      // Scenario per ITEM-026: B types correct letter, A's broadcast wins,
+      // B's claim returns false. useMultiplayer issues:
+      //   ROLLBACK_CELL (no-op because cell now belongs to A) +
+      //   SELECT_CELL (cursor returns to contested cell).
+      // hydrate() then reconciles via REMOTE_CELL_CLAIM-equivalent state.
+      let state = loadedState();
+      // B's optimistic write (cursor advances to (0,1))
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c", playerId: "B" });
+      expect(state.selectedCell).toEqual({ row: 0, col: 1 });
+
+      // A's broadcast arrives FIRST: REMOTE_CELL_CLAIM no-ops because
+      // cell is already correct=true (B's optimistic write).
+      state = puzzleReducer(state, {
+        type: "REMOTE_CELL_CLAIM",
+        row: 0,
+        col: 0,
+        letter: "C",
+        playerId: "A",
+      });
+      // Cell still shows B's claim (will be reconciled by hydrate IRL).
+      expect(state.playerCells["0,0"]?.playerId).toBe("B");
+
+      // useMultiplayer dispatches rollback when claim_cell returns false.
+      // Rollback removes B's cell because playerId B still matches.
+      state = puzzleReducer(state, {
+        type: "ROLLBACK_CELL",
+        row: 0,
+        col: 0,
+        playerId: "B",
+      });
+      expect(state.playerCells["0,0"]).toBeUndefined();
+      expect(state.score).toBe(0);
+
+      // Cursor restore (the new dispatch added in this item).
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+      expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+    });
   });
 
   describe("TOGGLE_DIRECTION", () => {

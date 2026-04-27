@@ -1,5 +1,6 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { normalizeTransferPuzzle } from "./puzzleNormalizer";
+import { emitToast } from "./toastBus";
 import type { TransferPuzzle } from "./puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
 
@@ -30,7 +31,11 @@ export function extractPuzzleFromUrl(): Puzzle | null {
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
     return puzzle;
-  } catch {
+  } catch (err) {
+    // Surface the failure (corrupt hash, mismatched grid, no clues, etc.)
+    // so the user sees a toast instead of being silently dropped on the menu.
+    const message = err instanceof Error ? err.message : "Could not import puzzle from URL.";
+    emitToast({ message, severity: "error" });
     // Clear hash even on failure
     try {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);

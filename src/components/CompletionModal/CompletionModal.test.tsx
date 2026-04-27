@@ -115,4 +115,20 @@ describe("CompletionModal", () => {
     const particles = container.querySelectorAll(".confetti-particle");
     expect(particles.length).toBeGreaterThan(0);
   });
+
+  it("renders Play Again button when onRematch is provided", () => {
+    const onRematch = vi.fn();
+    const { getByText } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} onRematch={onRematch} />,
+    );
+    fireEvent.click(getByText("Play Again"));
+    expect(onRematch).toHaveBeenCalledOnce();
+  });
+
+  it("hides Play Again button when onRematch is undefined", () => {
+    const { queryByText } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} />,
+    );
+    expect(queryByText("Play Again")).toBeNull();
+  });
 });

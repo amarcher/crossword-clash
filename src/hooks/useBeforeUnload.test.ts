@@ -55,4 +55,19 @@ describe("useBeforeUnload", () => {
     window.dispatchEvent(event);
     expect(spy).toHaveBeenCalled();
   });
+
+  it("sets returnValue so Chrome/Safari surface the leave dialog", () => {
+    renderHook(() => useBeforeUnload(true));
+    // jsdom's legacy Event.returnValue getter returns a boolean, so override
+    // with a custom setter to capture the assigned value.
+    const event = new Event("beforeunload", { cancelable: true });
+    let assigned: unknown;
+    Object.defineProperty(event, "returnValue", {
+      get() { return assigned; },
+      set(v) { assigned = v; },
+      configurable: true,
+    });
+    window.dispatchEvent(event);
+    expect(assigned).toBe("");
+  });
 });

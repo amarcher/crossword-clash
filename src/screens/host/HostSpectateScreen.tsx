@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
@@ -35,10 +36,25 @@ export function HostSpectateScreen() {
     joinUrl,
     handleCloseRoom,
     handleNewPuzzle,
+    handleRematch,
     handleBackToMenu,
+    narrator,
   } = host;
 
   useBeforeUnload(multiplayer.gameStatus === "active");
+
+  // Show a transient banner when the narrator falls back to another backend.
+  // Auto-dismisses after 8s; the user can click to dismiss sooner.
+  const [bannerHidden, setBannerHidden] = useState(false);
+  const fellBack =
+    narrator.requestedEngine !== null && narrator.currentEngine !== narrator.requestedEngine;
+  const exhausted = narrator.requestedEngine !== null && narrator.currentEngine === null;
+  useEffect(() => {
+    if (!fellBack && !exhausted) return;
+    setBannerHidden(false);
+    const timer = setTimeout(() => setBannerHidden(true), 8000);
+    return () => clearTimeout(timer);
+  }, [fellBack, exhausted, narrator.currentEngine]);
 
   if (!puzzle) return <Navigate to="/host" replace />;
 
@@ -46,8 +62,25 @@ export function HostSpectateScreen() {
     return <Navigate to={`/host/lobby/${host.gameId}`} replace />;
   }
 
+  const showFallbackBanner = (fellBack || exhausted) && !bannerHidden;
+  const fallbackMessage = exhausted
+    ? t("tts.fallbackExhausted")
+    : t("tts.fallbackSwitched", {
+        engine: narrator.currentEngine ?? "",
+        from: narrator.requestedEngine ?? "",
+      });
+
   return (
     <>
+      {showFallbackBanner && (
+        <button
+          type="button"
+          onClick={() => setBannerHidden(true)}
+          className="fixed top-2 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-lg bg-amber-500/95 text-white text-sm shadow-lg hover:bg-amber-600 transition-colors"
+        >
+          {fallbackMessage}
+        </button>
+      )}
       <TVLayout
         grid={
           <CrosswordGrid
@@ -65,7 +98,7 @@ export function HostSpectateScreen() {
           <div className="bg-neutral-800 rounded-xl p-4 space-y-4">
             <div className="text-center">
               <p className="text-neutral-400 text-xs uppercase tracking-wide mb-1">{t('hostView.roomCode')}</p>
-              <p className="font-mono font-bold text-2xl text-white tracking-widest">
+              <p className="font-mono font-bold text-4xl text-white tracking-widest">
                 {multiplayer.shareCode}
               </p>
             </div>
@@ -89,7 +122,7 @@ export function HostSpectateScreen() {
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: player.color }}
                   />
-                  <span className="text-sm text-neutral-200 truncate">
+                  <span className="text-lg text-neutral-200 truncate">
                     {player.displayName}
                   </span>
                 </div>
@@ -143,6 +176,8 @@ export function HostSpectateScreen() {
               setEngine={tts.setEngine}
               narratorEngine={tts.narratorEngine}
               setNarratorEngine={tts.setNarratorEngine}
+              spokenEvents={tts.spokenEvents}
+              setSpokenEvents={tts.setSpokenEvents}
               elevenLabsAvailable={tts.elevenLabsAvailable}
               elevenLabsVoiceId={tts.elevenLabsVoiceId}
               setElevenLabsVoiceId={tts.setElevenLabsVoiceId}
@@ -156,6 +191,7 @@ export function HostSpectateScreen() {
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         players={playerResults}
+        onRematch={handleRematch}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
         darkMode

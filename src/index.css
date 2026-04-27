@@ -45,8 +45,10 @@
 }
 
 .grid-offset-mobile {
-  /* Mobile: compact header ~44px + clue bar 48px + main py-2 16px = ~108px */
-  --grid-h-offset: 7rem;
+  /* Mobile: header (~44px) + clue bar (48px) + main pb-14 (56px) + breathing
+     room. Previous 7rem (112px) cut into the bar; 9rem (144px) keeps the
+     full grid visible above MobileClueBar before the keyboard summons. */
+  --grid-h-offset: 9rem;
 }
 @media (min-width: 768px) {
   .grid-offset-mobile {

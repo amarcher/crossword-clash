@@ -7,8 +7,37 @@ import {
 } from "../lib/puzzleService";
 import type { GameSettings, Player } from "../types/game";
 import type { CellState } from "../types/puzzle";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
 import { DEFAULT_GAME_SETTINGS } from "../lib/gameSettings";
+
+interface TrackedPresence {
+  user_id: string;
+  display_name: string;
+  color: string;
+}
+
+function presenceStateToPlayers(
+  state: RealtimePresenceState<TrackedPresence>,
+  gameId: string,
+): Player[] {
+  const out: Player[] = [];
+  const seen = new Set<string>();
+  for (const presences of Object.values(state)) {
+    for (const p of presences) {
+      if (seen.has(p.user_id)) continue;
+      seen.add(p.user_id);
+      out.push({
+        id: p.user_id,
+        gameId,
+        userId: p.user_id,
+        displayName: p.display_name,
+        color: p.color,
+        score: 0,
+      });
+    }
+  }
+  return out;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Dispatch = (action: any) => void;
@@ -21,14 +50,29 @@ interface UseMultiplayerOptions {
   playerCells: Record<string, CellState>;
   totalWhiteCells: number;
   onCellClaimed?: (row: number, col: number, letter: string, playerId: string) => void;
+  onWrongLetter?: (
+    row: number,
+    col: number,
+    expected: string,
+    attempted: string,
+    direction: "across" | "down",
+    playerId: string,
+  ) => void;
 }
 
 interface UseMultiplayerReturn {
   claimCell: (row: number, col: number, letter: string) => void;
+  broadcastWrongLetter: (
+    row: number,
+    col: number,
+    expected: string,
+    attempted: string,
+    direction: "across" | "down",
+  ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
-  leaveGame: () => void;
+  leaveGame: () => Promise<void>;
   players: Player[];
   gameStatus: "waiting" | "active" | "completed";
   gameSettings: GameSettings;
@@ -47,6 +91,7 @@ export function useMultiplayer({
   playerCells,
   totalWhiteCells,
   onCellClaimed,
+  onWrongLetter,
 }: UseMultiplayerOptions): UseMultiplayerReturn {
   const [players, setPlayers] = useState<Player[]>([]);
   const [gameStatus, setGameStatus] = useState<"waiting" | "active" | "completed">("waiting");
@@ -61,7 +106,13 @@ export function useMultiplayer({
   playerCellsRef.current = playerCells;
   const onCellClaimedRef = useRef(onCellClaimed);
   onCellClaimedRef.current = onCellClaimed;
+  const onWrongLetterRef = useRef(onWrongLetter);
+  onWrongLetterRef.current = onWrongLetter;
   const announcedRef = useRef(false);
+  // Flips true the first time presence sync delivers a non-empty roster.
+  // Once warmed, we trust empty syncs (legitimately "all players left")
+  // — before that, an empty sync just means our own track() hasn't landed.
+  const presenceWarmedRef = useRef(false);
 
   // Hydrate state from DB — returns fetched state for callers
   const hydrate = useCallback(async () => {
@@ -70,7 +121,18 @@ export function useMultiplayer({
     if (!state) return null;
 
     setPlayers(state.players);
-    setGameStatus(state.status as "waiting" | "active" | "completed");
+    // The DB stores 'closed' as a separate status; surface it as
+    // isRoomClosed so backgrounded players who missed the broadcast
+    // recover correctly. Other statuses pass through to gameStatus.
+    if (state.status === "closed") {
+      setIsRoomClosed(true);
+    } else {
+      setGameStatus(state.status as "waiting" | "active" | "completed");
+    }
+
+    if (state.settings && typeof state.settings.wrongAnswerTimeoutSeconds === "number") {
+      setGameSettings({ wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds });
+    }
 
     // Determine host from DB-ordered players (first by created_at)
     if (state.players.length > 0) {
@@ -89,6 +151,7 @@ export function useMultiplayer({
 
     setHydrated(false);
     announcedRef.current = false;
+    presenceWarmedRef.current = false;
 
     // Fetch short_code
     supabase
@@ -100,7 +163,13 @@ export function useMultiplayer({
         if (data?.short_code) setShareCode(data.short_code);
       });
 
-    const channel = supabase.channel(`game:${gameId}`);
+    // ack:true gives `await channel.send(...)` real meaning — the promise
+    // resolves on server acknowledgment instead of immediately. Adds one
+    // round-trip per send (~50-100ms); acceptable because cell_claimed is
+    // optimistic on the client and falls back to hydrate() on rollback.
+    const channel = supabase.channel(`game:${gameId}`, {
+      config: { broadcast: { ack: true } },
+    });
     channelRef.current = channel;
 
     channel.on("broadcast", { event: "cell_claimed" }, ({ payload }) => {
@@ -116,16 +185,35 @@ export function useMultiplayer({
       onCellClaimedRef.current?.(payload.row, payload.col, payload.letter, payload.playerId);
     });
 
-    channel.on("broadcast", { event: "player_joined" }, ({ payload }) => {
-      setPlayers((prev) => {
-        if (prev.find((p) => p.userId === payload.player.userId)) return prev;
-        return [...prev, payload.player];
-      });
+    channel.on("broadcast", { event: "wrong_letter" }, ({ payload }) => {
+      if (payload.playerId === userId) return;
+      onWrongLetterRef.current?.(
+        payload.row,
+        payload.col,
+        payload.expected,
+        payload.attempted,
+        payload.direction,
+        payload.playerId,
+      );
     });
 
-    // NOTE: No code currently sends player_left. Pre-wired for future use.
-    channel.on("broadcast", { event: "player_left" }, ({ payload }) => {
-      setPlayers((prev) => prev.filter((p) => p.userId !== payload.userId));
+    // Presence drives the live player roster. Each player calls
+    // channel.track() with their display info; sync/join/leave keep us
+    // in step. DB hydrate is the bootstrap fallback while presence warms.
+    // Spectators (host-as-TV) never call track and so don't appear.
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState<TrackedPresence>();
+      const fromPresence = presenceStateToPlayers(state, gameId);
+      if (fromPresence.length > 0) {
+        presenceWarmedRef.current = true;
+        setPlayers(fromPresence);
+      } else if (presenceWarmedRef.current) {
+        // Already warmed — an empty sync now means everyone legitimately
+        // left. Trust it (don't keep stale players visible forever).
+        setPlayers([]);
+      }
+      // Else: still warming up (our own track hasn't landed), keep the
+      // initial DB hydrate roster in place to avoid a blank-then-fill flash.
     });
 
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
@@ -152,15 +240,16 @@ export function useMultiplayer({
         const state = await hydrate();
         setHydrated(true);
 
-        // Announce presence to other players (once per connection)
+        // Track our presence so other clients see us live. Spectators
+        // (no DB player row) skip tracking and remain invisible.
         if (state && !announcedRef.current) {
           const self = state.players.find((p) => p.userId === userId);
           if (self) {
-            channel.send({
-              type: "broadcast",
-              event: "player_joined",
-              payload: { player: self },
-            });
+            await channel.track({
+              user_id: userId,
+              display_name: self.displayName,
+              color: self.color,
+            } satisfies TrackedPresence);
             announcedRef.current = true;
           }
         }
@@ -200,11 +289,13 @@ export function useMultiplayer({
           })
           .eq("id", gameId)
           .then(() => {
-            channelRef.current?.send({
-              type: "broadcast",
-              event: "game_completed",
-              payload: {},
-            });
+            void channelRef.current
+              ?.send({
+                type: "broadcast",
+                event: "game_completed",
+                payload: {},
+              })
+              .catch(() => {});
           });
       }
     }
@@ -238,48 +329,90 @@ export function useMultiplayer({
       );
 
       if (success) {
-        // Broadcast to others
-        channelRef.current?.send({
-          type: "broadcast",
-          event: "cell_claimed",
-          payload: { row, col, letter: letter.toUpperCase(), playerId: userId },
-        });
+        // Broadcast to others. State is already authoritative in DB; the
+        // broadcast just speeds up other clients' view, so swallow any
+        // ack-timeout rejection rather than fail the local claim.
+        void channelRef.current
+          ?.send({
+            type: "broadcast",
+            event: "cell_claimed",
+            payload: { row, col, letter: letter.toUpperCase(), playerId: userId },
+          })
+          .catch(() => {});
         onCellClaimedRef.current?.(row, col, letter.toUpperCase(), userId);
       } else {
-        // Rollback optimistic write
+        // Rollback optimistic write. The reducer no-ops if a remote
+        // cell_claimed already overwrote the cell with the winner's
+        // playerId, so we always follow up with hydrate() to make the
+        // DB the source of truth.
         dispatch({
           type: "ROLLBACK_CELL",
           row,
           col,
           playerId: userId,
         });
-        // Re-hydrate to get the winner's state
+        // Restore the cursor to the contested cell. INPUT_LETTER had
+        // advanced it; without this the user's selection is past the
+        // cell they were trying to claim.
+        dispatch({
+          type: "SELECT_CELL",
+          row,
+          col,
+        });
+        // Re-hydrate to get the winner's state.
         hydrate();
       }
     },
     [gameId, userId, puzzle, dispatch, hydrate],
   );
 
+  const broadcastWrongLetter = useCallback(
+    (row: number, col: number, expected: string, attempted: string, direction: "across" | "down") => {
+      // Channel-wide ack:true makes send() return a Promise that may reject
+      // on timeout. Wrong-letter is best-effort flavor for the narrator —
+      // swallow the rejection rather than surfacing as unhandled.
+      void channelRef.current
+        ?.send({
+          type: "broadcast",
+          event: "wrong_letter",
+          payload: {
+            row,
+            col,
+            expected: expected.toUpperCase(),
+            attempted: attempted.toUpperCase(),
+            direction,
+            playerId: userId,
+          },
+        })
+        .catch(() => {});
+    },
+    [userId],
+  );
+
   const startGame = useCallback(async (settings?: GameSettings) => {
-    const success = await startGameOnServer(gameId);
+    const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
+    const success = await startGameOnServer(gameId, resolvedSettings);
     if (success) {
-      const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
       setGameSettings(resolvedSettings);
       setGameStatus("active");
-      channelRef.current?.send({
-        type: "broadcast",
-        event: "game_started",
-        payload: { settings: resolvedSettings },
-      });
+      void channelRef.current
+        ?.send({
+          type: "broadcast",
+          event: "game_started",
+          payload: { settings: resolvedSettings },
+        })
+        .catch(() => {});
     }
   }, [gameId]);
 
   const broadcastNewGame = useCallback((newGameId: string) => {
-    channelRef.current?.send({
-      type: "broadcast",
-      event: "new_game",
-      payload: { gameId: newGameId },
-    });
+    void channelRef.current
+      ?.send({
+        type: "broadcast",
+        event: "new_game",
+        payload: { gameId: newGameId },
+      })
+      .catch(() => {});
   }, []);
 
   const closeRoom = useCallback(async () => {
@@ -295,16 +428,35 @@ export function useMultiplayer({
       .eq("id", gameId);
   }, [gameId]);
 
-  const leaveGame = useCallback(() => {
-    channelRef.current?.send({
-      type: "broadcast",
-      event: "player_left",
-      payload: { userId },
-    });
-  }, [userId]);
+  // Untrack presence on intentional leave; Supabase fires presence.leave
+  // on other clients within ~1s. Channel teardown happens in the
+  // subscribe effect's cleanup.
+  const leaveGame = useCallback(async () => {
+    await channelRef.current?.untrack();
+  }, []);
+
+  // Defense-in-depth on tab close: force untrack early so other clients
+  // GC us faster than Supabase's own dead-socket detection. Fire-and-forget
+  // because the page is dying.
+  useEffect(() => {
+    if (!gameId) return;
+    function fireUntrack() {
+      channelRef.current?.untrack();
+    }
+    function handleVisibility() {
+      if (document.visibilityState === "hidden") fireUntrack();
+    }
+    window.addEventListener("pagehide", fireUntrack);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("pagehide", fireUntrack);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [gameId]);
 
   return {
     claimCell,
+    broadcastWrongLetter,
     startGame,
     closeRoom,
     broadcastNewGame,

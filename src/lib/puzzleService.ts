@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { emitToast } from "./toastBus";
 import { getPlayerColor } from "./playerColors";
 import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player } from "../types/game";
@@ -24,8 +25,10 @@ export async function uploadPuzzle(
 
   const fileHash = fileBuffer ? await sha256(fileBuffer) : null;
 
-  // Check for existing puzzle with same hash — update clues/grid in case
-  // the normalizer has been fixed since the original upload.
+  // Reuse existing puzzle row when the same file is re-uploaded.
+  // Re-normalize-on-upload was removed alongside the puzzles RLS lockdown
+  // (migration 20260426000002); apply normalizer fixes via a service-role
+  // backfill if needed.
   if (fileHash) {
     const { data: existing } = await supabase
       .from("puzzles")
@@ -34,13 +37,6 @@ export async function uploadPuzzle(
       .single();
 
     if (existing) {
-      const { error: updateError } = await supabase
-        .from("puzzles")
-        .update({ grid: puzzle.cells, clues: puzzle.clues })
-        .eq("id", existing.id);
-      if (updateError) {
-        console.error("Failed to update puzzle clues:", updateError);
-      }
       return existing.id;
     }
   }
@@ -61,6 +57,7 @@ export async function uploadPuzzle(
 
   if (error) {
     console.error("Failed to upload puzzle:", error);
+    emitToast({ message: "Could not save puzzle to the server.", severity: "error" });
     return null;
   }
 
@@ -87,6 +84,9 @@ export async function createGame(
     .insert({
       puzzle_id: puzzleId,
       status: isMultiplayer ? "waiting" : "active",
+      // host_user_id lets a TV-spectator host (no player row) still update
+      // their own game under the post-ITEM-002 RLS policy.
+      host_user_id: userId,
     })
     .select("id, short_code")
     .single();
@@ -197,11 +197,13 @@ export async function joinGame(
 
   if (gameError || !game) {
     console.error("Game not found:", gameError);
+    emitToast({ message: `No game found with code ${shortCode.toUpperCase()}.`, severity: "error" });
     return null;
   }
 
   if (game.status !== "waiting" && game.status !== "active") {
     console.error("Game is not joinable, status:", game.status);
+    emitToast({ message: "That game has already finished or been closed.", severity: "error" });
     return null;
   }
 
@@ -288,13 +290,14 @@ export async function fetchGameState(gameId: string): Promise<{
   cells: Record<string, CellState>;
   players: Player[];
   status: string;
+  settings: { wrongAnswerTimeoutSeconds?: number } | null;
 } | null> {
   if (!supabase) return null;
 
   const [gameResult, playersResult] = await Promise.all([
     supabase
       .from("games")
-      .select("cells, status")
+      .select("cells, status, settings")
       .eq("id", gameId)
       .single(),
     supabase
@@ -322,6 +325,7 @@ export async function fetchGameState(gameId: string): Promise<{
     cells: (game.cells as Record<string, CellState>) ?? {},
     players,
     status: game.status,
+    settings: (game.settings as { wrongAnswerTimeoutSeconds?: number } | null) ?? null,
   };
 }
 
@@ -452,6 +456,7 @@ export async function createNextGame(
       puzzle_id: puzzleId,
       status: "waiting",
       short_code: shortCode,
+      host_user_id: userId,
     })
     .select("id, short_code")
     .single();
@@ -480,12 +485,20 @@ export async function createNextGame(
 /**
  * Start a multiplayer game (host only).
  */
-export async function startGame(gameId: string): Promise<boolean> {
+export async function startGame(
+  gameId: string,
+  settings?: { wrongAnswerTimeoutSeconds: number },
+): Promise<boolean> {
   if (!supabase) return false;
+
+  // Persist settings so reconnecting players recover the lockout duration
+  // even if they missed the broadcast (see ITEM-011).
+  const update: { status: string; settings?: object } = { status: "active" };
+  if (settings) update.settings = settings;
 
   const { error } = await supabase
     .from("games")
-    .update({ status: "active" })
+    .update(update)
     .eq("id", gameId);
 
   if (error) {

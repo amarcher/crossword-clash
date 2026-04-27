@@ -7,8 +7,11 @@ interface RateLimitConfig {
 }
 
 const LIMITS: Record<string, RateLimitConfig> = {
-  "agent-auth": { windowMs: 3_600_000, maxRequests: 3 },
-  "openai-agent-auth": { windowMs: 3_600_000, maxRequests: 3 },
+  // Raised from 3 → 10 (ITEM-016). Combined with cost instrumentation
+  // in the auth endpoints (logUsage with model:"convai"/"gpt-realtime"),
+  // the dashboard can now spot a runaway IP before they accumulate cost.
+  "agent-auth": { windowMs: 3_600_000, maxRequests: 10 },
+  "openai-agent-auth": { windowMs: 3_600_000, maxRequests: 10 },
   "narrator-claude": { windowMs: 3_600_000, maxRequests: 60 },
   tts: { windowMs: 3_600_000, maxRequests: 30 },
 };
