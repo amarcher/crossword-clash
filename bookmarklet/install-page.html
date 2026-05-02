@@ -1,3 +1,15 @@
+<!--
+  SOURCE OF TRUTH for /install-bookmarklet.
+
+  This template is rendered by scripts/build-bookmarklet.mjs into
+  public/install-bookmarklet/index.html, which Vite/Vercel serve at
+  /install-bookmarklet (taking precedence over any React route).
+
+  The page is INTENTIONALLY static HTML — see PR #36 for the Safe
+  Browsing rationale (a runtime-assembled javascript: URL in the SPA
+  bundle was getting flagged as deceptive). Do NOT reintroduce a React
+  version. Edit this file and re-run `pnpm build:bookmarklet`.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,6 +62,14 @@
     font-size: 0.95rem;
     color: #4b5563;
   }
+  .primer {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #000;
+    display: block;
+  }
 </style>
 </head>
 <body>
@@ -74,6 +94,9 @@
 <p>Drag this button to your bookmarks bar:</p>
 <p><a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}">NYT → Crossword Clash</a></p>
 <p class="note">Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).</p>
+
+<h2>See it in action</h2>
+<video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata"></video>
 
 <h2>Usage</h2>
 <ol class="steps">

@@ -48,26 +48,6 @@
     "pasteError": "No se encontraron datos de crucigrama en el portapapeles. Intenta hacer clic en el bookmarklet de nuevo.",
     "backToMenu": "Volver al men\u00fa"
   },
-  "bookmarklet": {
-    "pageTitle": "Crossword Clash \u2014 Bookmarklet del NYT",
-    "option1Heading": "Opci\u00f3n 1: Arrastra a la barra de marcadores",
-    "option1Instruction": "Arrastra este bot\u00f3n a tu barra de marcadores:",
-    "buttonLabel": "NYT \u2192 Crossword Clash",
-    "bookmarksBarHint": "Aseg\u00farate de que tu barra de marcadores est\u00e9 visible (Cmd+Shift+B en Mac, Ctrl+Shift+B en Windows).",
-    "option2Heading": "Opci\u00f3n 2: Instalaci\u00f3n manual",
-    "option2Step1": "Haz clic derecho en la barra de marcadores y elige \"Agregar p\u00e1gina\u2026\" o \"Agregar marcador\u2026\".",
-    "option2Step2": "Nombre: NYT \u2192 Crossword Clash",
-    "option2Step3": "URL: Haz clic en \"Copiar\" abajo y pega en el campo de URL.",
-    "copy": "Copiar al portapapeles",
-    "copied": "\u00a1Copiado!",
-    "usageHeading": "Uso",
-    "usageStep1": "Ve a cualquier p\u00e1gina de crucigrama del NYT \u2014 <daily>Daily</daily>, <mini>Mini</mini>, u otros tipos (debes haber iniciado sesi\u00f3n con suscripci\u00f3n a crucigramas).",
-    "usageStep2": "Haz clic en el bookmarklet en tu barra de marcadores.",
-    "usageStep3": "Crossword Clash se abre en una pesta\u00f1a nueva con el crucigrama cargado.",
-    "back": "\u2190 Volver a Crossword Clash",
-    "disclosureHeading": "Sobre este bookmarklet",
-    "disclosureText": "Solo se ejecuta en tu pesta\u00f1a del crucigrama del NYT cuando haces clic, y env\u00eda los datos solo a tu segunda pesta\u00f1a de Clash \u2014 sin servidores de terceros. Creemos que un bookmarklet de un clic actuando sobre una p\u00e1gina que ya est\u00e1s viendo cae dentro del precedente de uso personal, pero los t\u00e9rminos del NYT restringen herramientas automatizadas que evaden el acceso. \u00dasalo \u00fanicamente con una suscripci\u00f3n activa al NYT. Si el NYT se opone, eliminaremos esta funci\u00f3n."
-  },
   "puzzleReady": {
     "by": "por {{author}}",
     "dimensions": "{{width}}\u00d7{{height}} \u00b7 {{acrossCount}} \u2192, {{downCount}} \u2193",

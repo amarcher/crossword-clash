@@ -15,9 +15,6 @@ import { PuzzleReadyScreen } from "./screens/PuzzleReadyScreen";
 import { ImportingScreen } from "./screens/ImportingScreen";
 import { RejoinScreen } from "./screens/RejoinScreen";
 
-// Standalone screens
-import { InstallBookmarkletScreen } from "./screens/InstallBookmarkletScreen";
-
 // Host/TV screens
 import { HostMenuScreen } from "./screens/host/HostMenuScreen";
 import { HostImportScreen as HostTVImportScreen } from "./screens/host/HostImportScreen";
@@ -108,8 +105,12 @@ function HostIndexRedirect() {
 // Exported for testing
 export { IndexRedirect, HostIndexRedirect };
 
+// Note: /install-bookmarklet is served by the static file at
+// public/install-bookmarklet/index.html (generated from
+// bookmarklet/install-page.html by scripts/build-bookmarklet.mjs).
+// It is intentionally NOT a React route — see PR #36 for the Safe
+// Browsing rationale. Edit the HTML template, not React.
 export const router = createBrowserRouter([
-  { path: "/install-bookmarklet", Component: InstallBookmarkletScreen },
   {
     path: "/",
     Component: RootLayout,
