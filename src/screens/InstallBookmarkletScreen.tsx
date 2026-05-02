@@ -26,6 +26,21 @@ export function InstallBookmarkletScreen() {
           <LanguageSwitcher />
         </div>
 
+        <h2 className="text-lg font-semibold text-neutral-700 mb-3">
+          {t("bookmarklet.videoHeading")}
+        </h2>
+        <video
+          src="/cc-primer.mp4"
+          poster="/cc-primer-poster.jpg"
+          controls
+          playsInline
+          preload="metadata"
+          className="w-full rounded-lg shadow-sm border border-neutral-200 bg-black aspect-video"
+        />
+        <p className="text-sm text-neutral-500 mt-2">
+          {t("bookmarklet.videoCaption")}
+        </p>
+
         <h2 className="text-lg font-semibold text-neutral-700 mt-8 mb-3">
           {t("bookmarklet.option1Heading")}
         </h2>

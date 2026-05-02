@@ -50,6 +50,8 @@
   },
   "bookmarklet": {
     "pageTitle": "Crossword Clash \u2014 Bookmarklet del NYT",
+    "videoHeading": "C\u00f3mo funciona",
+    "videoCaption": "Un recorrido de 20 segundos.",
     "option1Heading": "Opci\u00f3n 1: Arrastra a la barra de marcadores",
     "option1Instruction": "Arrastra este bot\u00f3n a tu barra de marcadores:",
     "buttonLabel": "NYT \u2192 Crossword Clash",

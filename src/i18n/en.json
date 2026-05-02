@@ -50,6 +50,8 @@
   },
   "bookmarklet": {
     "pageTitle": "Crossword Clash — NYT Bookmarklet",
+    "videoHeading": "How it works",
+    "videoCaption": "A 20-second walkthrough.",
     "option1Heading": "Option 1: Drag to bookmarks bar",
     "option1Instruction": "Drag this button to your bookmarks bar:",
     "buttonLabel": "NYT → Crossword Clash",
