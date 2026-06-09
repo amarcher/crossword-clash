@@ -2,8 +2,7 @@ import i18n from "./i18n/i18n";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
+import { DeferredAnalytics } from "./components/DeferredAnalytics";
 import "./index.css";
 import { router } from "./router";
 
@@ -16,7 +15,6 @@ i18n.on("languageChanged", (lng) => {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RouterProvider router={router} />
-    <Analytics />
-    <SpeedInsights />
+    <DeferredAnalytics />
   </StrictMode>,
 );

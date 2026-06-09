@@ -2,27 +2,12 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
 
-// Player screens
+// MenuScreen + HostMenuScreen are imported statically because the index-route
+// resolvers below render them inline as the fallback. Every other screen is
+// code-split via route-level `lazy` (see the route config) so visiting the menu
+// doesn't download the entire app (game grid, importer, narrator, etc.).
 import { MenuScreen } from "./screens/MenuScreen";
-import { SoloImportScreen } from "./screens/SoloImportScreen";
-import { SoloPlayScreen } from "./screens/SoloPlayScreen";
-import { JoinScreen } from "./screens/JoinScreen";
-import { HostNameScreen } from "./screens/HostNameScreen";
-import { HostImportScreen } from "./screens/HostImportScreen";
-import { LobbyScreen } from "./screens/LobbyScreen";
-import { MultiplayerPlayScreen } from "./screens/MultiplayerPlayScreen";
-import { PuzzleReadyScreen } from "./screens/PuzzleReadyScreen";
-import { ImportingScreen } from "./screens/ImportingScreen";
-import { RejoinScreen } from "./screens/RejoinScreen";
-
-// Host/TV screens
 import { HostMenuScreen } from "./screens/host/HostMenuScreen";
-import { HostImportScreen as HostTVImportScreen } from "./screens/host/HostImportScreen";
-import { HostLobbyScreen } from "./screens/host/HostLobbyScreen";
-import { HostSpectateScreen } from "./screens/host/HostSpectateScreen";
-import { HostPuzzleReadyScreen } from "./screens/host/HostPuzzleReadyScreen";
-import { HostImportingScreen } from "./screens/host/HostImportingScreen";
-import { HostRejoinScreen } from "./screens/host/HostRejoinScreen";
 
 // Initial route resolver utilities
 import { loadMpSession, loadHostSession } from "./lib/sessionPersistence";
@@ -117,16 +102,16 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: IndexRedirect },
       { path: "menu", Component: MenuScreen },
-      { path: "solo/import", Component: SoloImportScreen },
-      { path: "solo/play", Component: SoloPlayScreen },
-      { path: "join", Component: JoinScreen },
-      { path: "host-game/name", Component: HostNameScreen },
-      { path: "host-game/import", Component: HostImportScreen },
-      { path: "lobby/:gameId", Component: LobbyScreen },
-      { path: "play/:gameId", Component: MultiplayerPlayScreen },
-      { path: "puzzle-ready", Component: PuzzleReadyScreen },
-      { path: "importing", Component: ImportingScreen },
-      { path: "rejoin", Component: RejoinScreen },
+      { path: "solo/import", lazy: () => import("./screens/SoloImportScreen").then((m) => ({ Component: m.SoloImportScreen })) },
+      { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
+      { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },
+      { path: "host-game/name", lazy: () => import("./screens/HostNameScreen").then((m) => ({ Component: m.HostNameScreen })) },
+      { path: "host-game/import", lazy: () => import("./screens/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
+      { path: "lobby/:gameId", lazy: () => import("./screens/LobbyScreen").then((m) => ({ Component: m.LobbyScreen })) },
+      { path: "play/:gameId", lazy: () => import("./screens/MultiplayerPlayScreen").then((m) => ({ Component: m.MultiplayerPlayScreen })) },
+      { path: "puzzle-ready", lazy: () => import("./screens/PuzzleReadyScreen").then((m) => ({ Component: m.PuzzleReadyScreen })) },
+      { path: "importing", lazy: () => import("./screens/ImportingScreen").then((m) => ({ Component: m.ImportingScreen })) },
+      { path: "rejoin", lazy: () => import("./screens/RejoinScreen").then((m) => ({ Component: m.RejoinScreen })) },
     ],
   },
   {
@@ -134,12 +119,12 @@ export const router = createBrowserRouter([
     Component: HostLayout,
     children: [
       { index: true, Component: HostIndexRedirect },
-      { path: "import", Component: HostTVImportScreen },
-      { path: "lobby/:gameId", Component: HostLobbyScreen },
-      { path: "spectate/:gameId", Component: HostSpectateScreen },
-      { path: "puzzle-ready", Component: HostPuzzleReadyScreen },
-      { path: "importing", Component: HostImportingScreen },
-      { path: "rejoin", Component: HostRejoinScreen },
+      { path: "import", lazy: () => import("./screens/host/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
+      { path: "lobby/:gameId", lazy: () => import("./screens/host/HostLobbyScreen").then((m) => ({ Component: m.HostLobbyScreen })) },
+      { path: "spectate/:gameId", lazy: () => import("./screens/host/HostSpectateScreen").then((m) => ({ Component: m.HostSpectateScreen })) },
+      { path: "puzzle-ready", lazy: () => import("./screens/host/HostPuzzleReadyScreen").then((m) => ({ Component: m.HostPuzzleReadyScreen })) },
+      { path: "importing", lazy: () => import("./screens/host/HostImportingScreen").then((m) => ({ Component: m.HostImportingScreen })) },
+      { path: "rejoin", lazy: () => import("./screens/host/HostRejoinScreen").then((m) => ({ Component: m.HostRejoinScreen })) },
     ],
   },
 ]);
