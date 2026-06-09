@@ -35,13 +35,25 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
 
   useEffect(() => {
     if (!isAdsEnabled() || pushed.current) return;
-    injectAdSenseScript();
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-      pushed.current = true;
-    } catch {
-      // AdSense not ready yet — will retry on next mount
-    }
+    // Defer the AdSense script + push to browser idle so it doesn't compete
+    // with the app's initial render/paint.
+    const load = () => {
+      injectAdSenseScript();
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        pushed.current = true;
+      } catch {
+        // AdSense not ready yet — will retry on next mount
+      }
+    };
+    const hasRIC = typeof window.requestIdleCallback === "function";
+    const id = hasRIC
+      ? window.requestIdleCallback(load, { timeout: 2500 })
+      : window.setTimeout(load, 1500);
+    return () => {
+      if (hasRIC) window.cancelIdleCallback(id as number);
+      else window.clearTimeout(id as number);
+    };
   }, []);
 
   if (!isAdsEnabled()) return null;

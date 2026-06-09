@@ -12,12 +12,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@elevenlabs/client": "^1.8.1",
+    "@elevenlabs/client": "^1.10.0",
     "@supabase/supabase-js": "^2.97.0",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "@xwordly/xword-parser": "^1.0.5",
     "i18next": "^25.8.13",
+    "lottie-react": "^2.4.1",
     "lz-string": "^1.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

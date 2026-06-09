@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@elevenlabs/client':
-        specifier: ^1.8.1
-        version: 1.8.1(@types/dom-mediacapture-record@1.0.22)
+        specifier: ^1.10.0
+        version: 1.10.0(@types/dom-mediacapture-record@1.0.22)
       '@supabase/supabase-js':
         specifier: ^2.97.0
         version: 2.97.0
@@ -26,6 +26,9 @@ importers:
       i18next:
         specifier: ^25.8.13
         version: 25.8.13(typescript@5.9.3)
+      lottie-react:
+        specifier: ^2.4.1
+        version: 2.4.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -219,8 +222,8 @@ packages:
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
 
-  '@elevenlabs/client@1.8.1':
-    resolution: {integrity: sha512-2TL2aNh+CYRXKU2kOfduDYazE7QoHPevKKNjcM5YXodODfYR6jfUEb6dcnQ8XqGhrHK34BQ9TUhCvzl9STV4DA==}
+  '@elevenlabs/client@1.10.0':
+    resolution: {integrity: sha512-a8OIuULCwpodN//aIV5G/eS9r0AFTJmrrt2a1G0rnRkxs0Kh9lha00lGLfURsYec7litrBerEznQvkMuKw3fGA==}
 
   '@elevenlabs/types@0.14.0':
     resolution: {integrity: sha512-CfpxFyNtTq9Iwm1/Hfxk+FK0QlFgsHpXcNM9jMPYrjP/kAYMFi9rgFoosdJcBGYbgkvzUL7hwT9I6WzHyNyxDg==}
@@ -1284,6 +1287,15 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
+  lottie-react@2.4.1:
+    resolution: {integrity: sha512-LQrH7jlkigIIv++wIyrOYFLHSKQpEY4zehPicL9bQsrt1rnoKRYCYgpCUe5maqylNtacy58/sQDZTkwMcTRxZw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lottie-web@5.13.0:
+    resolution: {integrity: sha512-+gfBXl6sxXMPe8tKQm7qzLnUy5DUPJPKIyRHwtpCpyUEYjHYRJC/5gjUvdkuO2c3JllrPtHXH5UJJK8LRYl5yQ==}
+
   lru-cache@11.2.6:
     resolution: {integrity: sha512-ESL2CrkS/2wTPfuend7Zhkzo2u0daGJ/A2VucJOgQ/C48S/zB8MMeMHSGKYpXhIjbPxfuezITkaBH1wqv00DDQ==}
     engines: {node: 20 || >=22}
@@ -1810,7 +1822,7 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.0': {}
 
-  '@elevenlabs/client@1.8.1(@types/dom-mediacapture-record@1.0.22)':
+  '@elevenlabs/client@1.10.0(@types/dom-mediacapture-record@1.0.22)':
     dependencies:
       '@elevenlabs/types': 0.14.0
       livekit-client: 2.16.1(@types/dom-mediacapture-record@1.0.22)
@@ -2633,6 +2645,14 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lottie-react@2.4.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      lottie-web: 5.13.0
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+
+  lottie-web@5.13.0: {}
 
   lru-cache@11.2.6: {}
 

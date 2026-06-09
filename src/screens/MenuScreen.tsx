@@ -41,7 +41,8 @@ export function MenuScreen() {
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
-      <Title className="mb-8" />
+      {/* The wordmark constructs via a one-shot Lottie on every menu visit. */}
+      <Title animate className="mb-8" />
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {(user || loading) && (
           <>
