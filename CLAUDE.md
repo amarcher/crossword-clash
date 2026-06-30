@@ -76,7 +76,15 @@ Three backends implement the `NarratorBackend` interface (`src/lib/narrator/type
 
 ### Gating
 
-Requires ElevenLabs localStorage gate (`crossword-clash-elevenlabs`). Only available in TV/Host view (`/host` routes via `HostLayout`). Never spawned for player or host-as-player views.
+No devtools localStorage gate — a regular visitor on `/host` can turn the narrator on from the TTS settings modal (shown whenever Supabase is configured, i.e. `isElevenLabsAvailable()`). Only available in TV/Host view (`/host` routes via `HostLayout`); never spawned for player or host-as-player views.
+
+### Cost control (owner budget cap)
+
+- **Pure math**: `src/lib/narratorBudget.ts` (typechecked + unit-tested) prices `api_usage` ledger rows into a month-to-date USD estimate and an over/under-cap boolean. Mirrored for Deno in `supabase/functions/_shared/narratorBudget.ts` — keep the two in sync.
+- **Server guard**: `supabase/functions/_shared/budgetGuard.ts` queries rolling month-to-date spend from the Neon `api_usage` table (via the existing `DASHBOARD_DATABASE_URL`) and, once estimated combined Anthropic+ElevenLabs+OpenAI spend reaches `NARRATOR_MONTHLY_USD_CAP` (default 20), refuses every narrator/TTS auth endpoint with HTTP 402 `{error:'narrator_unavailable', reason:'budget'}`. Fails open only when spend genuinely can't be measured.
+- **Graceful client**: backends throw the `narrator_unavailable:budget` sentinel; `useNarrator` surfaces `budgetExhausted` (no cascade/retry loop) and `HostSpectateScreen` shows a friendly "taking a break" banner (`tts.narratorBudgetPaused`). Narrator stays off.
+- **Demo allowance**: first-time TV hosts get a few sampled events (`src/lib/narratorDemo.ts`, metered in localStorage) on the cheapest Claude path even while over budget; the server independently caps demo grants per IP via the `narrator_usage` table.
+- **Rate limiting**: per-IP via `_shared/rateLimit.ts` on all narrator auth endpoints.
 
 ### Session Lifecycle
 

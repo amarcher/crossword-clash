@@ -1,5 +1,7 @@
 import { formatEvent } from "./events";
 import { CLAUDE_SYSTEM_PROMPT } from "./prompts";
+import { NARRATOR_UNAVAILABLE_BUDGET } from "../narratorBudget";
+import { consumeNarratorDemo } from "../narratorDemo";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
 const SYSTEM_PROMPT = CLAUDE_SYSTEM_PROMPT;
@@ -11,6 +13,7 @@ interface Message {
 
 async function fetchCommentary(
   messages: Message[],
+  demo = false,
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -18,7 +21,8 @@ async function fetchCommentary(
     throw new Error("Claude narrator not configured");
   }
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/narrator-claude`, {
+  const url = `${supabaseUrl}/functions/v1/narrator-claude${demo ? "?demo=1" : ""}`;
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -33,12 +37,39 @@ async function fetchCommentary(
     throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
   }
 
+  // Owner monthly budget cap reached — surface a clean, machine-readable signal
+  // so the hook can degrade gracefully instead of erroring/retrying in a loop.
+  if (res.status === 402) {
+    throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
+  }
+
   if (!res.ok) {
     throw new Error(`Claude narrator failed: ${res.status}`);
   }
 
   const data = await res.json();
   return data.text;
+}
+
+/**
+ * Request commentary, transparently spending one demo allowance to sample the
+ * narrator when the budget cap is hit. Cheapest path only — this backend is the
+ * single demo-eligible narrator. Returns `demo: true` when the response came
+ * from the demo allowance so the caller can keep demo cost minimal (browser
+ * voice instead of paid TTS).
+ */
+async function requestCommentary(
+  messages: Message[],
+): Promise<{ text: string; demo: boolean }> {
+  try {
+    return { text: await fetchCommentary(messages, false), demo: false };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET) && consumeNarratorDemo()) {
+      return { text: await fetchCommentary(messages, true), demo: true };
+    }
+    throw err;
+  }
 }
 
 function fetchTTSAudio(
@@ -243,19 +274,28 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.messages.push({ role: "user", content: userText });
 
     try {
-      const commentary = await fetchCommentary(this.messages);
+      const { text: commentary, demo } = await requestCommentary(this.messages);
       if (this.intentionalDisconnect) return;
 
       console.log("[ClaudeNarrator] Commentary:", commentary);
       this.messages.push({ role: "assistant", content: commentary });
 
-      // Speak the commentary via ElevenLabs TTS
-      await this.speakText(commentary);
+      // Speak the commentary. During an over-budget demo, force browser voice
+      // so the sample never spends a second (paid) ElevenLabs TTS demo grant.
+      await this.speakText(commentary, demo);
     } catch (err) {
       console.error("[ClaudeNarrator] Error:", err);
       const msg = err instanceof Error ? err.message : "";
       if (msg.startsWith("rate_limited:")) {
         this._connectionError = "Narrator limit reached. Falling back to browser voice.";
+        this._isConnected = false;
+        this.onStateChange?.();
+        return;
+      }
+      // Monthly budget cap reached (and any demo allowance spent). Surface the
+      // machine-readable sentinel so the hook shows the "taking a break" state.
+      if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+        this._connectionError = NARRATOR_UNAVAILABLE_BUDGET;
         this._isConnected = false;
         this.onStateChange?.();
         return;
@@ -268,10 +308,10 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.processQueue();
   }
 
-  private async speakText(text: string): Promise<void> {
+  private async speakText(text: string, demo = false): Promise<void> {
     if (this.intentionalDisconnect) return;
 
-    if (this.ttsEngine === "browser") {
+    if (this.ttsEngine === "browser" || demo) {
       await this.speakBrowser(text);
     } else {
       await this.speakElevenLabs(text);

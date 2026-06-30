@@ -1,5 +1,6 @@
 import { Conversation } from "@elevenlabs/client";
 import { formatEvent } from "./events";
+import { NARRATOR_UNAVAILABLE_BUDGET } from "../narratorBudget";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
 async function fetchSignedUrl(): Promise<string> {
@@ -21,6 +22,11 @@ async function fetchSignedUrl(): Promise<string> {
   if (res.status === 429) {
     const data = await res.json().catch(() => ({}));
     throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
+  }
+
+  // Owner monthly budget cap reached — surface the machine-readable signal.
+  if (res.status === 402) {
+    throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
   }
 
   if (!res.ok) {
@@ -131,9 +137,13 @@ export class ElevenLabsAgentBackend implements NarratorBackend {
       this.eventQueue = [];
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Connection failed";
-      this._connectionError = msg.startsWith("rate_limited:")
-        ? "Narrator limit reached. Falling back to browser voice."
-        : msg;
+      if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+        this._connectionError = NARRATOR_UNAVAILABLE_BUDGET;
+      } else if (msg.startsWith("rate_limited:")) {
+        this._connectionError = "Narrator limit reached. Falling back to browser voice.";
+      } else {
+        this._connectionError = msg;
+      }
       this.onStateChange?.();
     } finally {
       this.connecting = false;

@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { checkNarratorBudget } from "../_shared/budgetGuard.ts";
 import { logUsage } from "../_shared/usageLog.ts";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -11,6 +12,9 @@ Deno.serve(async (req) => {
 
   const rateLimitResponse = await checkRateLimit(req, "narrator-claude");
   if (rateLimitResponse) return rateLimitResponse;
+
+  const budgetResponse = await checkNarratorBudget(req, "narrator-claude");
+  if (budgetResponse) return budgetResponse;
 
   if (!ANTHROPIC_API_KEY) {
     return new Response(

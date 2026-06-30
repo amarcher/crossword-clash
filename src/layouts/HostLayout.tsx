@@ -98,6 +98,7 @@ export interface HostContextValue {
     connectionError: string | null;
     currentEngine: NarratorEngine;
     requestedEngine: NarratorEngine;
+    budgetExhausted: boolean;
   };
 
   // Derived
@@ -619,6 +620,7 @@ export function HostLayout() {
       connectionError: narrator.connectionError,
       currentEngine: narrator.currentEngine,
       requestedEngine: narrator.requestedEngine,
+      budgetExhausted: narrator.budgetExhausted,
     },
     playerColorMap,
     completedClues,

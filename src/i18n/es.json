@@ -166,6 +166,7 @@
     "rateLimited": "L\u00edmite de narrador alcanzado. Usando voz del navegador.",
     "fallbackSwitched": "Presentador cambiado a {{engine}} ({{from}} no disponible)",
     "fallbackExhausted": "Presentador no disponible \u2014 todos los backends fallaron.",
+    "narratorBudgetPaused": "El presentador con IA se toma un breve descanso para controlar los costes. \u00a1Vuelve pronto!",
     "spokenEvents": "Anunciar pistas completadas",
     "spokenEventsHint": "Anuncios cortos como \"5 horizontal por Alice\" cuando no hay presentador IA. Desactivado por defecto."
   },
