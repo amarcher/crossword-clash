@@ -7,6 +7,7 @@ import {
   updateGame,
 } from "../lib/puzzleService";
 import { tStatic } from "../i18n/i18n";
+import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { loadMpSession } from "../lib/sessionPersistence";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
@@ -189,6 +190,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
       loadPuzzle(p);
       fileBufferRef.current = fileBuffer ?? null;
+
+      // fileBuffer present ⇒ came from a real file upload (SoloImportScreen).
+      // The URL/deep-link path passes no buffer and is reported in
+      // PuzzleReadyScreen, so this avoids double-counting.
+      if (fileBuffer) {
+        track("puzzle_imported", {
+          source: "file",
+          title: p.title,
+          size: `${p.width}x${p.height}`,
+        });
+      }
 
       if (!user) return;
       const puzzleId = await uploadPuzzle(p, fileBuffer);

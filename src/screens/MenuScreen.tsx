@@ -4,16 +4,20 @@ import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { useAuth } from "../contexts/AuthContext";
+import { track } from "../lib/analytics";
+
+type GameMode = "join" | "host" | "tv" | "solo" | "import";
 
 interface MenuTileProps {
   to: string;
   title: string;
   subtitle: string;
   variant: "primary" | "outline";
+  mode: GameMode;
   disabled?: boolean;
 }
 
-function MenuTile({ to, title, subtitle, variant, disabled }: MenuTileProps) {
+function MenuTile({ to, title, subtitle, variant, mode, disabled }: MenuTileProps) {
   const base =
     "block px-5 py-3 rounded-lg text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
   const styles =
@@ -21,7 +25,12 @@ function MenuTile({ to, title, subtitle, variant, disabled }: MenuTileProps) {
       ? `${base} text-white bg-blue-600 ${disabled ? "opacity-50 pointer-events-none" : "hover:bg-blue-700"}`
       : `${base} text-blue-600 bg-white border-2 border-blue-600 ${disabled ? "opacity-50 pointer-events-none" : "hover:bg-blue-50"}`;
   return (
-    <Link to={to} aria-disabled={disabled} className={styles}>
+    <Link
+      to={to}
+      aria-disabled={disabled}
+      className={styles}
+      onClick={() => track("mode_selected", { mode })}
+    >
       <span className="block font-semibold leading-tight">{title}</span>
       <span
         className={`block text-xs mt-0.5 ${
@@ -51,6 +60,7 @@ export function MenuScreen() {
               title={t("menu.joinGame")}
               subtitle={t("menu.joinGameSubtitle")}
               variant="primary"
+              mode="join"
               disabled={disabled}
             />
             <MenuTile
@@ -58,6 +68,7 @@ export function MenuScreen() {
               title={t("menu.hostAsPlayer")}
               subtitle={t("menu.hostAsPlayerSubtitle")}
               variant="outline"
+              mode="host"
               disabled={disabled}
             />
             <MenuTile
@@ -65,12 +76,14 @@ export function MenuScreen() {
               title={t("menu.hostAsTV")}
               subtitle={t("menu.hostAsTVSubtitle")}
               variant="outline"
+              mode="tv"
               disabled={disabled}
             />
           </>
         )}
         <Link
           to="/solo/import"
+          onClick={() => track("mode_selected", { mode: "solo" })}
           className="block px-5 py-3 rounded-lg text-center font-semibold text-neutral-600 bg-white border-2 border-neutral-300 hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <span className="block leading-tight">{t("menu.playSolo")}</span>
@@ -80,6 +93,7 @@ export function MenuScreen() {
         </Link>
         <Link
           to="/solo/import"
+          onClick={() => track("mode_selected", { mode: "import" })}
           className="px-4 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 transition-colors text-center"
         >
           {t("menu.importPuzzle")}

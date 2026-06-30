@@ -11,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { loadMpSession, clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { rejoinGame } from "../lib/puzzleService";
 import { ToastViewport } from "../components/ToastViewport";
+import { usePageViews } from "../hooks/usePageViews";
 
 /**
  * Inner component that handles routing side effects:
@@ -26,6 +27,7 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
   const game = useGame();
   const mp = useMultiplayerContext();
   const [showRoomClosedModal, setShowRoomClosedModal] = useState(false);
+  usePageViews();
 
   // Handle #puzzle= hash changes
   useEffect(() => {

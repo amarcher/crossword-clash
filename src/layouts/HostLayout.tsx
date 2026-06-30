@@ -29,6 +29,8 @@ import {
   buildStallEvent,
 } from "../lib/narrator/events";
 import { tStatic } from "../i18n/i18n";
+import { usePageViews } from "../hooks/usePageViews";
+import { track } from "../lib/analytics";
 import { createContext, useContext } from "react";
 import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player, GameSettings } from "../types/game";
@@ -129,6 +131,7 @@ export function useHostContext(): HostContextValue {
 
 export function HostLayout() {
   const navigate = useNavigate();
+  usePageViews();
   const { user } = useSupabase();
   const {
     puzzle,
@@ -412,6 +415,22 @@ export function HostLayout() {
     }
   }, [multiplayer.gameStatus, gameId, navigate]);
 
+  // Report game completion to analytics once per finished game.
+  const completionReportedRef = useRef(false);
+  useEffect(() => {
+    if (multiplayer.gameStatus !== "completed") {
+      completionReportedRef.current = false;
+      return;
+    }
+    if (completionReportedRef.current) return;
+    completionReportedRef.current = true;
+    track("puzzle_completed", {
+      mode: "tv",
+      player_count: multiplayer.players.length,
+      narrator: tts.narratorEngine ?? "none",
+    });
+  }, [multiplayer.gameStatus, multiplayer.players.length, tts.narratorEngine]);
+
   // Boot spectator view when room is closed (mirrors RootLayout pattern)
   useEffect(() => {
     if (multiplayer.isRoomClosed) {
@@ -457,6 +476,12 @@ export function HostLayout() {
   );
 
   const handleStartGame = useCallback(async () => {
+    track("game_started", {
+      mode: "tv",
+      player_count: multiplayer.players.length,
+      lockout: wrongAnswerTimeout,
+      narrator: tts.narratorEngine ?? "none",
+    });
     await multiplayer.startGame({ wrongAnswerTimeoutSeconds: wrongAnswerTimeout });
     if (gameId) {
       navigate(`/host/spectate/${gameId}`);
