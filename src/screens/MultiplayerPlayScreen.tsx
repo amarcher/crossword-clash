@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useBeforeUnload } from "../hooks/useBeforeUnload";
@@ -17,6 +17,7 @@ import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
+import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 
 export function MultiplayerPlayScreen() {
@@ -80,6 +81,22 @@ export function MultiplayerPlayScreen() {
   );
 
   useGridNavigation(navActions);
+
+  // Report multiplayer completion once per finished game (per client).
+  const completionReportedRef = useRef(false);
+  useEffect(() => {
+    if (gameStatus !== "completed") {
+      completionReportedRef.current = false;
+      return;
+    }
+    if (completionReportedRef.current) return;
+    completionReportedRef.current = true;
+    track("puzzle_completed", {
+      mode: "multiplayer",
+      role: isHost ? "host" : "player",
+      player_count: multiplayerPlayers.length,
+    });
+  }, [gameStatus, isHost, multiplayerPlayers.length]);
 
   const handleReset = useCallback(async () => {
     await mp.leaveGame();

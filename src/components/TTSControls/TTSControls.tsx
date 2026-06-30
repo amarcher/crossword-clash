@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { SpeechSettings } from "../../hooks/useSpeechSettings";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { track } from "../../lib/analytics";
 import type { NarratorEngine } from "../../lib/ttsSettings";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
@@ -118,7 +119,9 @@ export function TTSSettingsModal({
               value={narratorEngine ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                setNarratorEngine(val === "" ? null : val as NarratorEngine);
+                const next = val === "" ? null : (val as NarratorEngine);
+                if (next) track("narrator_enabled", { engine: next });
+                setNarratorEngine(next);
               }}
               className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
             >

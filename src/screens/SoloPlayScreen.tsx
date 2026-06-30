@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
@@ -10,6 +10,7 @@ import { CompletionModal } from "../components/CompletionModal";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { clearMpSession } from "../lib/sessionPersistence";
+import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 
 export function SoloPlayScreen() {
@@ -59,6 +60,18 @@ export function SoloPlayScreen() {
   );
 
   useGridNavigation(navActions);
+
+  // Report solo completion once (isComplete latches true once the grid fills).
+  const completionReportedRef = useRef(false);
+  useEffect(() => {
+    if (!isComplete || completionReportedRef.current) return;
+    completionReportedRef.current = true;
+    track("puzzle_completed", {
+      mode: "solo",
+      size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined,
+      cells: totalWhiteCells,
+    });
+  }, [isComplete, puzzle, totalWhiteCells]);
 
   const handleReset = useCallback(() => {
     reset();

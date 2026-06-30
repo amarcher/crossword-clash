@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { SUPPORTED_LANGS } from "../i18n/i18n";
 import type { SupportedLang } from "../i18n/i18n";
+import { track } from "../lib/analytics";
 
 const LANG_LABELS: Record<SupportedLang, string> = {
   en: "English",
@@ -13,7 +14,10 @@ export function LanguageSwitcher() {
   return (
     <select
       value={i18n.language}
-      onChange={(e) => i18n.changeLanguage(e.target.value)}
+      onChange={(e) => {
+        track("language_changed", { lang: e.target.value });
+        i18n.changeLanguage(e.target.value);
+      }}
       aria-label={t('languageSwitcher.label')}
       className="text-sm text-neutral-500 bg-white border border-neutral-300 rounded px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
