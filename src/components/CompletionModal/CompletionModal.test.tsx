@@ -110,10 +110,34 @@ describe("CompletionModal", () => {
     expect(dialog?.className).toContain("bg-white");
   });
 
-  it("renders confetti particles", () => {
-    const { container } = render(<CompletionModal {...SOLO_PROPS} />);
-    const particles = container.querySelectorAll(".confetti-particle");
-    expect(particles.length).toBeGreaterThan(0);
+  it("does NOT fire confetti when mounted already-complete (reload)", () => {
+    // Modal open on first render => a finished puzzle restored on reload, not a
+    // fresh win. No celebration should occur.
+    const { queryByTestId } = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(queryByTestId("confetti-canvas")).toBeNull();
+  });
+
+  it("fires confetti once on the transition into completion", () => {
+    const { queryByTestId, rerender } = render(
+      <CompletionModal {...SOLO_PROPS} open={false} />,
+    );
+    expect(queryByTestId("confetti-canvas")).toBeNull();
+    // Transition closed -> open simulates the puzzle being solved live.
+    rerender(<CompletionModal {...SOLO_PROPS} open={true} />);
+    expect(queryByTestId("confetti-canvas")).toBeTruthy();
+  });
+
+  it("does not re-fire confetti on incidental re-renders", () => {
+    const { queryByTestId, rerender } = render(
+      <CompletionModal {...SOLO_PROPS} open={false} />,
+    );
+    rerender(<CompletionModal {...SOLO_PROPS} open={true} />);
+    const first = queryByTestId("confetti-canvas");
+    expect(first).toBeTruthy();
+    // A no-op re-render must not spawn a second confetti instance.
+    rerender(<CompletionModal {...SOLO_PROPS} open={true} soloScore={8} />);
+    const canvases = document.querySelectorAll("[data-testid='confetti-canvas']");
+    expect(canvases.length).toBe(1);
   });
 
   it("renders Play Again button when onRematch is provided", () => {
