@@ -53,10 +53,12 @@ async function fetchCommentary(
 
 /**
  * Request commentary, transparently spending one demo allowance to sample the
- * narrator when the budget cap is hit. Cheapest path only — this backend is the
- * single demo-eligible narrator. Returns `demo: true` when the response came
- * from the demo allowance so the caller can keep demo cost minimal (browser
- * voice instead of paid TTS).
+ * narrator when the budget cap is hit. This backend (Claude text + ElevenLabs
+ * TTS) is the single demo-eligible narrator. Returns `demo: true` when the
+ * response came from the demo allowance, so the caller speaks it via a likewise
+ * bounded, fail-closed TTS demo grant — the sample plays in the real premium
+ * voice (the feature's appeal) while the expensive realtime backends stay
+ * hard-capped with no demo grace.
  */
 async function requestCommentary(
   messages: Message[],
@@ -75,6 +77,7 @@ async function requestCommentary(
 function fetchTTSAudio(
   text: string,
   voiceId: string,
+  demo = false,
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -82,7 +85,9 @@ function fetchTTSAudio(
     return Promise.reject(new Error("TTS not configured"));
   }
 
-  return fetch(`${supabaseUrl}/functions/v1/tts`, {
+  // During an over-budget demo, ask the tts function to spend one bounded,
+  // fail-closed demo grant so the sample plays in the real premium voice.
+  return fetch(`${supabaseUrl}/functions/v1/tts${demo ? "?demo=1" : ""}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -91,6 +96,11 @@ function fetchTTSAudio(
     },
     body: JSON.stringify({ text, voice_id: voiceId }),
   }).then(async (res) => {
+    // Owner monthly budget cap reached (demo grants spent too) — surface the
+    // machine-readable sentinel so the narrator degrades gracefully.
+    if (res.status === 402) {
+      throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
+    }
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
       throw new Error(`TTS request failed: ${res.status} ${errBody}`);
@@ -280,8 +290,9 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       console.log("[ClaudeNarrator] Commentary:", commentary);
       this.messages.push({ role: "assistant", content: commentary });
 
-      // Speak the commentary. During an over-budget demo, force browser voice
-      // so the sample never spends a second (paid) ElevenLabs TTS demo grant.
+      // Speak the commentary. A demo sample plays in the host's configured
+      // voice (the premium ElevenLabs voice IS the feature's appeal), spending
+      // one bounded, fail-closed TTS demo grant — see fetchTTSAudio.
       await this.speakText(commentary, demo);
     } catch (err) {
       console.error("[ClaudeNarrator] Error:", err);
@@ -311,10 +322,10 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async speakText(text: string, demo = false): Promise<void> {
     if (this.intentionalDisconnect) return;
 
-    if (this.ttsEngine === "browser" || demo) {
+    if (this.ttsEngine === "browser") {
       await this.speakBrowser(text);
     } else {
-      await this.speakElevenLabs(text);
+      await this.speakElevenLabs(text, demo);
     }
   }
 
@@ -336,7 +347,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     });
   }
 
-  private async speakElevenLabs(text: string): Promise<void> {
+  private async speakElevenLabs(text: string, demo = false): Promise<void> {
     if (!this.audioContext || !this.gainNode) return;
 
     // Resume AudioContext if suspended (browser autoplay policy)
@@ -346,7 +357,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
     try {
       const voiceId = this.elevenLabsVoiceId || DEFAULT_VOICE_ID;
-      const audioData = await fetchTTSAudio(text, voiceId);
+      const audioData = await fetchTTSAudio(text, voiceId, demo);
       if (this.intentionalDisconnect || !this.audioContext) return;
 
       const audioBuffer = await this.audioContext.decodeAudioData(audioData);
@@ -365,6 +376,12 @@ export class ClaudeNarratorBackend implements NarratorBackend {
         source.start();
       });
     } catch (err) {
+      // A budget/demo-exhaustion signal must propagate so processQueue can
+      // settle the narrator into the "taking a break" state; any other TTS
+      // failure is non-fatal and shouldn't kill the narrator.
+      if (err instanceof Error && err.message.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+        throw err;
+      }
       console.error("[ClaudeNarrator] TTS failed:", err);
     }
   }
