@@ -9,7 +9,7 @@ Andrew can read this anytime to see how the panel sees the app evolving. Read it
 ## Shipped ledger (append-only)
 One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + tally (one-line why) · #PR [state]`.
 <!-- the loop appends here -->
-2026-06-30 · F5 · winner = candidate A (product approach) · 2-0 (judge-correctness + judge-simplicity for A; judge-product delivered no verdict — went idle without transmitting JSON despite repeated requests) · gated PR (billing-sensitive, awaiting owner approval). Applied steal: service-level pricing fallback so model-id drift can't zero out the cap.
+2026-06-30 · F5 · winner = candidate A (product approach) · 2-1 (correctness + simplicity for A on fail-closed billing safety; product dissented for B because A's demo uses the FREE browser voice, not the premium ElevenLabs voice that is the feature's whole appeal) · gated PR #44 (billing-sensitive, awaiting owner approval). Applied steal: service-level pricing fallback so model-id drift can't zero out the cap. OPEN PRODUCT QUESTION surfaced to owner: should the free demo use the premium (paid, bounded by the fail-closed per-IP counter) voice or the free browser voice?
 
 ---
 
@@ -29,7 +29,7 @@ One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + ta
 
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
-- 2026-06-30 · F5 · (no verdict transmitted this round — the product lens went unrepresented; follow up on why the agent idled without sending. Restore product-feel coverage next iteration.)
+- 2026-06-30 · F5 · When a feature's magic is a premium AI voice, the demo MUST use that voice — protect the wallet on the expensive paths and let the cheap taste sing; a "wallet-safest" demo that downgrades to robot TTS defeats the feature's purpose. (Dissented for B 2-1; verdict arrived late after a SendMessage-delivery hiccup.)
 
 ---
 
