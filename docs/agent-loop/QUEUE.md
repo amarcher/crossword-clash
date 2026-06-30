@@ -55,7 +55,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 
 ### Backlog (ready, not yet queued — promote into Open next increment)
 
-- [review: #45] F3 — Solo timer + personal best + streak · slug:solo-timer-streak · winner=A(product) 2-0 · auto-merges on green
+- [done: #45] F3 — Solo timer + personal best + streak · slug:solo-timer-streak · winner=A(product) 3-0 · MERGED
       outcome: Solo play has stakes and a reason to return — an elapsed timer, a per-puzzle best
         time, and a daily-play streak, all persisted and surfaced on the completion modal + menu.
       done-when: timer visible while solving; best time (per puzzle hash) and daily streak persist
@@ -71,7 +71,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
       constraints: depends on F3 (time on the card). Don't block if F3 unshipped — degrade to a
         no-time card.
 
-- [ ] F6 — Completion celebration polish · slug:completion-celebration
+- [review: #46] F6 — Completion celebration polish · slug:completion-celebration · winner=B(product) 2-1 · auto-merges on green
       outcome: Finishing a puzzle feels like a win — confetti + a short sound, with "Play again /
         Rematch" as the prominent next action.
       done-when: celebration fires once per completion; respects prefers-reduced-motion and the
