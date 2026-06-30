@@ -17,3 +17,6 @@ tools.json
 tests.json
 .vercel
 .agent-team/
+
+# Simple agent loop — runtime coordination (wait records), not source
+/.agents/
