@@ -133,7 +133,17 @@
     "newPuzzle": "Elegir otro crucigrama",
     "playAgain": "Jugar de nuevo",
     "backToMenu": "Volver al men\u00fa",
-    "ariaLabel": "Crucigrama completo"
+    "ariaLabel": "Crucigrama completo",
+    "share": "Compartir resultado",
+    "sharing": "Preparando\u2026",
+    "linkCopied": "\u00a1Enlace copiado!",
+    "imageSaved": "Imagen guardada",
+    "cardHeading": "\u00a1Resuelto!",
+    "shareTag": "crosswordclash.com",
+    "shareCaptionSolo": "Resolv\u00ed \"{{title}}\" en {{time}} en Crossword Clash \ud83c\udfc6 {{url}}",
+    "shareCaptionSoloNoTime": "Resolv\u00ed \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
+    "shareCaptionWin": "{{name}} gan\u00f3 \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
+    "shareCaptionTie": "\"{{title}}\" termin\u00f3 en empate en Crossword Clash \ud83c\udfc6 {{url}}"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",
