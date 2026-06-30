@@ -37,6 +37,12 @@ export interface SoloCompletionResult {
   bestSeconds: number;
   /** True when this finish set a new personal record. */
   isNewBest: boolean;
+  /**
+   * The best time that was on record *before* this finish, or null if this was
+   * the first solve of this puzzle. Lets the UI show the beaten time and avoid
+   * a hollow "New best!" on a best-of-one.
+   */
+  previousBest: number | null;
   /** Streak state after counting today's play. */
   streak: StreakState;
 }
@@ -266,6 +272,7 @@ export function recordSoloCompletion(
 ): SoloCompletionResult {
   const finishSeconds = Math.max(0, Math.floor(durationSec));
   const stats = loadSoloStats();
+  const previousBest = stats.bestTimes[key] ?? null;
   const { bestTimes, best, isNewBest: beat } = applyBestTime(
     stats.bestTimes,
     key,
@@ -273,7 +280,7 @@ export function recordSoloCompletion(
   );
   const streak = rollStreak(stats.streak, dayKey(now));
   saveSoloStats({ version: 1, bestTimes, streak });
-  return { finishSeconds, bestSeconds: best, isNewBest: beat, streak };
+  return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak };
 }
 
 /**
@@ -292,6 +299,7 @@ export function describeRecordedCompletion(
     finishSeconds,
     bestSeconds: best,
     isNewBest: false,
+    previousBest: null,
     streak: { ...stats.streak, current: effectiveStreak(stats.streak, dayKey(now)) },
   };
 }

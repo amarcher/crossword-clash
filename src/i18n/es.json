@@ -139,6 +139,7 @@
     "timerLabel": "Tiempo transcurrido",
     "bestTime": "mejor: {{time}}",
     "newBest": "\u00a1Nuevo r\u00e9cord! \ud83c\udf89",
+    "newBestBeat": "\u00a1Nuevo r\u00e9cord! \ud83c\udf89 superaste {{time}}",
     "streakDays": "\ud83d\udd25 Racha de {{count}} d\u00edas"
   },
   "tts": {

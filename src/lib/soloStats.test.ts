@@ -258,6 +258,20 @@ describe("persistence (localStorage)", () => {
     expect(res.streak.current).toBe(2); // consecutive day
   });
 
+  it("exposes previousBest: null on first solve, the beaten time on a record", () => {
+    const first = recordSoloCompletion("k", 272, new Date(2026, 5, 30));
+    expect(first.isNewBest).toBe(true);
+    expect(first.previousBest).toBeNull(); // best-of-one — UI must not celebrate
+
+    const beat = recordSoloCompletion("k", 238, new Date(2026, 6, 1));
+    expect(beat.isNewBest).toBe(true);
+    expect(beat.previousBest).toBe(272); // the time that was beaten
+
+    const slower = recordSoloCompletion("k", 300, new Date(2026, 6, 2));
+    expect(slower.isNewBest).toBe(false);
+    expect(slower.previousBest).toBe(238);
+  });
+
   it("keeps the prior best on a slower completion", () => {
     recordSoloCompletion("k", 238, new Date(2026, 5, 30));
     const res = recordSoloCompletion("k", 300, new Date(2026, 6, 1));

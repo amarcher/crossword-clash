@@ -218,6 +218,7 @@ export function SoloPlayScreen() {
         finishSeconds={soloResult?.finishSeconds}
         bestSeconds={soloResult?.bestSeconds}
         isNewBest={soloResult?.isNewBest}
+        previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
