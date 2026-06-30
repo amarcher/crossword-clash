@@ -10,6 +10,7 @@ Andrew can read this anytime to see how the panel sees the app evolving. Read it
 One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + tally (one-line why) · #PR [state]`.
 <!-- the loop appends here -->
 2026-06-30 · F5 · winner = candidate A (product approach) · 2-1 (correctness + simplicity for A on fail-closed billing safety; product dissented for B because A's demo uses the FREE browser voice, not the premium ElevenLabs voice that is the feature's whole appeal) · gated PR #44 (billing-sensitive, awaiting owner approval). Applied steal: service-level pricing fallback so model-id drift can't zero out the cap. OPEN PRODUCT QUESTION surfaced to owner: should the free demo use the premium (paid, bounded by the fail-closed per-IP counter) voice or the free browser voice?
+2026-06-30 · F3 · winner = candidate A (product approach) · 2-0 (simplicity + product for A; correctness verdict still pending at ship time — append when it lands) · PR #45 [auto-merge on green]. A's full-solution-grid identity + accumulated-elapsed timer beat B's title+dims identity (best-time bleed across daily minis) and now−startedAt timer (lies after an overnight tab). Applied steal: previousBest → modal shows the beaten time and skips the hollow first-solve "New best!".
 
 ---
 
@@ -30,6 +31,7 @@ One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + ta
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
 - 2026-06-30 · F5 · When a feature's magic is a premium AI voice, the demo MUST use that voice — protect the wallet on the expensive paths and let the cheap taste sing; a "wallet-safest" demo that downgrades to robot TTS defeats the feature's purpose. (Dissented for B 2-1; verdict arrived late after a SendMessage-delivery hiccup.)
+- 2026-06-30 · F3 · For return-driven features (timer/streak/best), judge the away-and-back scenarios first: a title+size-only identity bleeds daily-mini bests and a startedAt-delta timer lies after a closed tab — robustness in the return path outweighs a smaller diff. Also: don't celebrate a best-of-one; show the time the player beat so the win reads earned.
 
 ---
 
@@ -40,3 +42,4 @@ One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + ta
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
 - 2026-06-30 · F5 · Billing-sensitive briefs invert my default: the larger diff wins when its extra bulk is the required fail-closed wallet guard the smaller one skipped — "no simpler" beats "smaller" when real money leaks through the cut corner.
+- 2026-06-30 · F3 · Data-correctness corners (best-time bleed from a too-weak identity key) behave like billing: the smaller diff loses when it's small because it weakened the key, not because it found real economy.

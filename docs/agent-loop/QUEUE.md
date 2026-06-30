@@ -16,7 +16,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 ### Open
 <!-- loop pulls the topmost [ ] feature; append new features below this comment -->
 
-- [review: #44] F5 — Make the AI gameshow narrator accessible with owner cost controls · slug:narrator-access-budget · winner=A(product) 2-0 · GATED: awaiting Andrew's approval (wait:pr-44-approval)
+- [done: #44] F5 — Make the AI gameshow narrator accessible with owner cost controls · slug:narrator-access-budget · winner=A(product) 2-1 · MERGED (needs `supabase functions deploy` + optional NARRATOR_MONTHLY_USD_CAP to enforce in prod)
       outcome: A normal visitor on /host can turn the AI narrator on through clear UI (no hidden
         localStorage devtools gate), and the owner has a hard, env-configurable monthly spend
         ceiling that auto-disables it. Crossword Clash's best feature stops being invisible while
@@ -55,7 +55,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 
 ### Backlog (ready, not yet queued — promote into Open next increment)
 
-- [ ] F3 — Solo timer + personal best + streak · slug:solo-timer-streak
+- [review: #45] F3 — Solo timer + personal best + streak · slug:solo-timer-streak · winner=A(product) 2-0 · auto-merges on green
       outcome: Solo play has stakes and a reason to return — an elapsed timer, a per-puzzle best
         time, and a daily-play streak, all persisted and surfaced on the completion modal + menu.
       done-when: timer visible while solving; best time (per puzzle hash) and daily streak persist
