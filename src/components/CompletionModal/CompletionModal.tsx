@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { formatDuration } from "../../lib/soloStats";
 import { Confetti } from "./Confetti";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
@@ -18,6 +19,14 @@ interface CompletionModalProps {
   totalCells: number;
   totalClues: number;
   soloScore?: number;
+  /** Solo finish time in seconds (omit to hide the time row). */
+  finishSeconds?: number;
+  /** Best solo time on record for this puzzle, in seconds. */
+  bestSeconds?: number;
+  /** Whether this finish set a new personal record. */
+  isNewBest?: boolean;
+  /** Current daily-play streak (omit/0 to hide the streak row). */
+  streakCount?: number;
   players?: PlayerResult[];
   onNewPuzzle?: () => void;
   onRematch?: () => void;
@@ -30,6 +39,10 @@ export function CompletionModal({
   totalCells,
   totalClues,
   soloScore,
+  finishSeconds,
+  bestSeconds,
+  isNewBest,
+  streakCount,
   players,
   onNewPuzzle,
   onRematch,
@@ -151,9 +164,46 @@ export function CompletionModal({
         ) : (
           <>
             {/* Solo stats */}
-            <p className={`text-center mb-6 ${textSub}`}>
+            <p className={`text-center mb-4 ${textSub}`}>
               {t('completion.cellsFilled', { score: soloScore ?? totalCells, total: totalCells })}
             </p>
+
+            {finishSeconds !== undefined && (
+              <div
+                className={`mb-4 rounded-xl px-4 py-3 text-center ${
+                  isNewBest
+                    ? darkMode
+                      ? "bg-amber-500/15 border border-amber-500/40"
+                      : "bg-amber-50 border border-amber-200"
+                    : tableBg
+                }`}
+              >
+                <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                  {formatDuration(finishSeconds)}
+                </div>
+                <div
+                  className={`mt-0.5 text-sm font-medium ${
+                    isNewBest
+                      ? darkMode
+                        ? "text-amber-300"
+                        : "text-amber-600"
+                      : textSub
+                  }`}
+                >
+                  {isNewBest
+                    ? t('soloStats.newBest')
+                    : bestSeconds !== undefined
+                      ? t('soloStats.bestTime', { time: formatDuration(bestSeconds) })
+                      : t('soloStats.timerLabel')}
+                </div>
+              </div>
+            )}
+
+            {streakCount !== undefined && streakCount > 0 && (
+              <p className={`text-center mb-6 text-sm font-semibold ${text}`}>
+                {t('soloStats.streakDays', { count: streakCount })}
+              </p>
+            )}
           </>
         )}
 

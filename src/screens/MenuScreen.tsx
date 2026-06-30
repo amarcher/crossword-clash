@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Title } from "../components/Title";
@@ -5,6 +6,7 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { useAuth } from "../contexts/AuthContext";
 import { track } from "../lib/analytics";
+import { getDisplayStreak } from "../lib/soloStats";
 
 type GameMode = "join" | "host" | "tv" | "solo" | "import";
 
@@ -47,11 +49,17 @@ export function MenuScreen() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
   const disabled = loading;
+  const streak = useMemo(() => getDisplayStreak(), []);
 
   return (
     <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
       {/* The wordmark constructs via a one-shot Lottie on every menu visit. */}
       <Title animate className="mb-8" />
+      {streak > 0 && (
+        <div className="mb-6 -mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-sm font-semibold text-amber-700">
+          {t("soloStats.streakDays", { count: streak })}
+        </div>
+      )}
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {(user || loading) && (
           <>

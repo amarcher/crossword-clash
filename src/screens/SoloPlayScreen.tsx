@@ -7,9 +7,12 @@ import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
 import { Scoreboard } from "../components/Scoreboard/Scoreboard";
 import { CompletionModal } from "../components/CompletionModal";
+import { SoloTimer } from "../components/SoloTimer";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { clearMpSession } from "../lib/sessionPersistence";
+import { clearSoloTimer } from "../lib/soloStats";
+import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 
@@ -61,6 +64,12 @@ export function SoloPlayScreen() {
 
   useGridNavigation(navActions);
 
+  // Elapsed timer + personal-best / streak tracking (solo only).
+  const { getElapsedSeconds, running: timerRunning, result: soloResult } = useSoloTimer(
+    puzzle,
+    isComplete,
+  );
+
   // Report solo completion once (isComplete latches true once the grid fills).
   const completionReportedRef = useRef(false);
   useEffect(() => {
@@ -70,8 +79,9 @@ export function SoloPlayScreen() {
       mode: "solo",
       size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined,
       cells: totalWhiteCells,
+      duration_seconds: getElapsedSeconds(),
     });
-  }, [isComplete, puzzle, totalWhiteCells]);
+  }, [isComplete, puzzle, totalWhiteCells, getElapsedSeconds]);
 
   const handleReset = useCallback(() => {
     reset();
@@ -79,6 +89,7 @@ export function SoloPlayScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
+    clearSoloTimer();
     navigate("/");
   }, [reset, game, navigate]);
 
@@ -119,6 +130,7 @@ export function SoloPlayScreen() {
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
                 <button
                   onClick={handleReset}
                   className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
@@ -203,6 +215,10 @@ export function SoloPlayScreen() {
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         soloScore={score}
+        finishSeconds={soloResult?.finishSeconds}
+        bestSeconds={soloResult?.bestSeconds}
+        isNewBest={soloResult?.isNewBest}
+        streakCount={soloResult?.streak.current}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
       />
