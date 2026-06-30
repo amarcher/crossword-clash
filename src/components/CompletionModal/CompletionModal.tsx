@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { formatDuration } from "../../lib/soloStats";
 import { Confetti } from "./Confetti";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
@@ -18,6 +19,16 @@ interface CompletionModalProps {
   totalCells: number;
   totalClues: number;
   soloScore?: number;
+  /** Solo finish time in seconds (omit to hide the time row). */
+  finishSeconds?: number;
+  /** Best solo time on record for this puzzle, in seconds. */
+  bestSeconds?: number;
+  /** Whether this finish set a new personal record. */
+  isNewBest?: boolean;
+  /** Best on record *before* this finish (null on the first-ever solve). */
+  previousBest?: number | null;
+  /** Current daily-play streak (omit/0 to hide the streak row). */
+  streakCount?: number;
   players?: PlayerResult[];
   onNewPuzzle?: () => void;
   onRematch?: () => void;
@@ -30,6 +41,11 @@ export function CompletionModal({
   totalCells,
   totalClues,
   soloScore,
+  finishSeconds,
+  bestSeconds,
+  isNewBest,
+  previousBest,
+  streakCount,
   players,
   onNewPuzzle,
   onRematch,
@@ -151,9 +167,54 @@ export function CompletionModal({
         ) : (
           <>
             {/* Solo stats */}
-            <p className={`text-center mb-6 ${textSub}`}>
+            <p className={`text-center mb-4 ${textSub}`}>
               {t('completion.cellsFilled', { score: soloScore ?? totalCells, total: totalCells })}
             </p>
+
+            {finishSeconds !== undefined && (() => {
+              // Celebrate only a genuine record — beating a time that was
+              // already on record. The first-ever solve is a best-of-one, not
+              // an achievement, so it reads as a plain "your time".
+              const celebrateBest = isNewBest === true && previousBest != null;
+              return (
+                <div
+                  className={`mb-4 rounded-xl px-4 py-3 text-center ${
+                    celebrateBest
+                      ? darkMode
+                        ? "bg-amber-500/15 border border-amber-500/40"
+                        : "bg-amber-50 border border-amber-200"
+                      : tableBg
+                  }`}
+                >
+                  <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                    {formatDuration(finishSeconds)}
+                  </div>
+                  <div
+                    className={`mt-0.5 text-sm font-medium ${
+                      celebrateBest
+                        ? darkMode
+                          ? "text-amber-300"
+                          : "text-amber-600"
+                        : textSub
+                    }`}
+                  >
+                    {celebrateBest
+                      ? t('soloStats.newBestBeat', { time: formatDuration(previousBest as number) })
+                      : isNewBest
+                        ? t('soloStats.timerLabel')
+                        : bestSeconds !== undefined
+                          ? t('soloStats.bestTime', { time: formatDuration(bestSeconds) })
+                          : t('soloStats.timerLabel')}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {streakCount !== undefined && streakCount > 0 && (
+              <p className={`text-center mb-6 text-sm font-semibold ${text}`}>
+                {t('soloStats.streakDays', { count: streakCount })}
+              </p>
+            )}
           </>
         )}
 

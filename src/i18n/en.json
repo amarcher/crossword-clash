@@ -135,6 +135,13 @@
     "backToMenu": "Back to Menu",
     "ariaLabel": "Puzzle Complete"
   },
+  "soloStats": {
+    "timerLabel": "Elapsed time",
+    "bestTime": "best: {{time}}",
+    "newBest": "New best! 🎉",
+    "newBestBeat": "New best! 🎉 beat {{time}}",
+    "streakDays": "🔥 {{count}}-day streak"
+  },
   "tts": {
     "unmute": "Unmute",
     "mute": "Mute",
