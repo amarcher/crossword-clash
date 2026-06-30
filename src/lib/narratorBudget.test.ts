@@ -59,6 +59,22 @@ describe("narratorBudget", () => {
       expect(estimateRowCostUsd({ model: "mystery-model", tokensIn: 1000 })).toBe(0);
       expect(estimateRowCostUsd({ model: "claude-sonnet-4-20250514", tokensIn: -50 })).toBe(0);
     });
+
+    it("falls back to service-level pricing on model-id drift (cap can't silently fail open)", () => {
+      // A newer Claude than the exact-keyed one: unknown model id, but the
+      // anthropic service fallback still prices it by token instead of $0.
+      const drifted: UsageRow = {
+        service: "anthropic",
+        model: "claude-sonnet-5-future",
+        tokensIn: 1_000_000,
+        tokensOut: 1_000_000,
+      };
+      expect(estimateRowCostUsd(drifted)).toBeCloseTo(18, 6); // $3 + $15, not $0
+      // An unrecognized OpenAI model still costs a Realtime session.
+      expect(estimateRowCostUsd({ service: "openai", model: "gpt-next", rows: 2 })).toBeCloseTo(3.0, 6);
+      // Unknown model AND unknown service genuinely prices to $0 (nothing to bill).
+      expect(estimateRowCostUsd({ service: "acme", model: "whatever", tokensIn: 1000 })).toBe(0);
+    });
   });
 
   describe("estimateMonthlySpendUsd", () => {

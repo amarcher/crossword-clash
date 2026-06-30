@@ -71,6 +71,25 @@ export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
   "elevenlabs:tts": { characterUsd: 0.00015 },
 };
 
+/**
+ * Service-level fallback pricing, keyed by `service`. Used when a row's exact
+ * rate key (model id, or `service:endpoint`) isn't in {@link DEFAULT_NARRATOR_PRICING}.
+ *
+ * This is the safety net for model-id drift: provider model ids rotate (e.g. a
+ * newer Claude than `claude-sonnet-4-20250514`), and without a fallback such a
+ * row would price at $0 and silently let month-to-date spend sail past the cap.
+ * Each service falls back to its primary billing unit, priced at the same
+ * conservative rates as the exact entries above.
+ */
+export const SERVICE_FALLBACK_PRICING: NarratorPricing = {
+  // Any Anthropic row: price by token even if the model id is unrecognized.
+  anthropic: { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
+  // Any OpenAI narrator row is a Realtime session — charge the session rate.
+  openai: { sessionUsd: 1.5 },
+  // Any unrecognized ElevenLabs row: price by character (TTS default).
+  elevenlabs: { characterUsd: 0.00015 },
+};
+
 /** Default monthly spend ceiling (USD) when NARRATOR_MONTHLY_USD_CAP is unset. */
 export const DEFAULT_MONTHLY_CAP_USD = 20;
 
@@ -89,12 +108,18 @@ function nonNegative(n: number | null | undefined): number {
   return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Estimated USD cost of a single usage row under the given pricing. */
+/**
+ * Estimated USD cost of a single usage row under the given pricing. Resolution:
+ * exact rate key → service-level fallback (guards against model-id drift) → $0.
+ */
 export function estimateRowCostUsd(
   row: UsageRow,
   pricing: NarratorPricing = DEFAULT_NARRATOR_PRICING,
 ): number {
-  const rate = pricing[rateKeyForRow(row)] ?? {};
+  const rate =
+    pricing[rateKeyForRow(row)] ??
+    (row.service ? SERVICE_FALLBACK_PRICING[row.service] : undefined) ??
+    {};
   const rows = nonNegative(row.rows) || 1;
   return (
     nonNegative(row.tokensIn) * (rate.inputTokenUsd ?? 0) +

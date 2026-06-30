@@ -36,6 +36,16 @@ export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
   "elevenlabs:tts": { characterUsd: 0.00015 },
 };
 
+// Service-level fallback used when a row's exact rate key isn't in
+// DEFAULT_NARRATOR_PRICING — guards against provider model-id drift, which
+// would otherwise price an unrecognized row at $0 and let spend pass the cap.
+// Mirror of src/lib/narratorBudget.ts SERVICE_FALLBACK_PRICING; keep in sync.
+export const SERVICE_FALLBACK_PRICING: NarratorPricing = {
+  anthropic: { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
+  openai: { sessionUsd: 1.5 },
+  elevenlabs: { characterUsd: 0.00015 },
+};
+
 export const DEFAULT_MONTHLY_CAP_USD = 20;
 export const DEFAULT_DEMO_GRANT_LIMIT = 2;
 export const DEMO_ELIGIBLE_ENDPOINTS = ["narrator-claude", "tts"];
@@ -59,7 +69,10 @@ export function estimateRowCostUsd(
   row: UsageRow,
   pricing: NarratorPricing = DEFAULT_NARRATOR_PRICING,
 ): number {
-  const rate = pricing[rateKeyForRow(row)] ?? {};
+  const rate =
+    pricing[rateKeyForRow(row)] ??
+    (row.service ? SERVICE_FALLBACK_PRICING[row.service] : undefined) ??
+    {};
   const rows = nonNegative(row.rows) || 1;
   return (
     nonNegative(row.tokensIn) * (rate.inputTokenUsd ?? 0) +
