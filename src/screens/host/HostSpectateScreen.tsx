@@ -46,15 +46,24 @@ export function HostSpectateScreen() {
   // Show a transient banner when the narrator falls back to another backend.
   // Auto-dismisses after 8s; the user can click to dismiss sooner.
   const [bannerHidden, setBannerHidden] = useState(false);
+  // Budget cap reached (and any demo spent): the narrator is intentionally
+  // paused. Distinguish this from an all-backends-failed exhaustion so we can
+  // show a friendly "taking a break" message rather than an error.
+  const budgetPaused = narrator.budgetExhausted;
   const fellBack =
-    narrator.requestedEngine !== null && narrator.currentEngine !== narrator.requestedEngine;
-  const exhausted = narrator.requestedEngine !== null && narrator.currentEngine === null;
+    !budgetPaused &&
+    narrator.requestedEngine !== null &&
+    narrator.currentEngine !== narrator.requestedEngine;
+  const exhausted =
+    !budgetPaused &&
+    narrator.requestedEngine !== null &&
+    narrator.currentEngine === null;
   useEffect(() => {
-    if (!fellBack && !exhausted) return;
+    if (!fellBack && !exhausted && !budgetPaused) return;
     setBannerHidden(false);
     const timer = setTimeout(() => setBannerHidden(true), 8000);
     return () => clearTimeout(timer);
-  }, [fellBack, exhausted, narrator.currentEngine]);
+  }, [fellBack, exhausted, budgetPaused, narrator.currentEngine]);
 
   if (!puzzle) return <Navigate to="/host" replace />;
 
@@ -62,13 +71,15 @@ export function HostSpectateScreen() {
     return <Navigate to={`/host/lobby/${host.gameId}`} replace />;
   }
 
-  const showFallbackBanner = (fellBack || exhausted) && !bannerHidden;
-  const fallbackMessage = exhausted
-    ? t("tts.fallbackExhausted")
-    : t("tts.fallbackSwitched", {
-        engine: narrator.currentEngine ?? "",
-        from: narrator.requestedEngine ?? "",
-      });
+  const showFallbackBanner = (fellBack || exhausted || budgetPaused) && !bannerHidden;
+  const fallbackMessage = budgetPaused
+    ? t("tts.narratorBudgetPaused")
+    : exhausted
+      ? t("tts.fallbackExhausted")
+      : t("tts.fallbackSwitched", {
+          engine: narrator.currentEngine ?? "",
+          from: narrator.requestedEngine ?? "",
+        });
 
   return (
     <>

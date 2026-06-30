@@ -166,6 +166,7 @@
     "rateLimited": "Narrator limit reached. Falling back to browser voice.",
     "fallbackSwitched": "Narrator switched to {{engine}} ({{from}} unavailable)",
     "fallbackExhausted": "Narrator unavailable — all backends failed.",
+    "narratorBudgetPaused": "The AI host is taking a short break to keep costs in check. It'll be back soon!",
     "spokenEvents": "Speak completed clues",
     "spokenEventsHint": "Short \"5 across by Alice\" announcements when no AI host is active. Off by default."
   },

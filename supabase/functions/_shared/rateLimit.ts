@@ -87,3 +87,61 @@ export async function checkRateLimit(
 
   return null;
 }
+
+// Demo grants are tracked in the same narrator_usage table under a synthetic
+// "<endpoint>:demo" key, rolling over a 30-day window. This bounds how many
+// free over-budget samples a single IP can receive without a schema change.
+const DEMO_WINDOW_MS = 30 * 24 * 3_600_000;
+
+function demoEndpointKey(endpoint: string): string {
+  return `${endpoint}:demo`;
+}
+
+/**
+ * Count how many over-budget demo grants this IP has already received for the
+ * endpoint within the demo window. Fails CLOSED — on any error or missing
+ * config it returns a huge number so callers will refuse the demo (cost-safe).
+ */
+export async function countDemoGrants(
+  req: Request,
+  endpoint: string,
+): Promise<number> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return Number.MAX_SAFE_INTEGER;
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const clientIp = getClientIp(req);
+  const windowStart = new Date(Date.now() - DEMO_WINDOW_MS).toISOString();
+
+  const { count, error } = await supabase
+    .from("narrator_usage")
+    .select("*", { count: "exact", head: true })
+    .eq("client_ip", clientIp)
+    .eq("endpoint", demoEndpointKey(endpoint))
+    .gte("created_at", windowStart);
+
+  if (error) {
+    console.error("Demo grant count failed:", error);
+    return Number.MAX_SAFE_INTEGER; // fail closed — don't hand out free demos
+  }
+  return count ?? 0;
+}
+
+/** Record that this IP consumed one over-budget demo grant for the endpoint. */
+export async function recordDemoGrant(
+  req: Request,
+  endpoint: string,
+): Promise<void> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return;
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const clientIp = getClientIp(req);
+  const { error } = await supabase
+    .from("narrator_usage")
+    .insert({ client_ip: clientIp, endpoint: demoEndpointKey(endpoint) });
+
+  if (error) console.error("Demo grant insert failed:", error);
+}

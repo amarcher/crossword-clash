@@ -16,7 +16,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 ### Open
 <!-- loop pulls the topmost [ ] feature; append new features below this comment -->
 
-- [ ] F5 — Make the AI gameshow narrator accessible with owner cost controls · slug:narrator-access-budget
+- [review: #44] F5 — Make the AI gameshow narrator accessible with owner cost controls · slug:narrator-access-budget · winner=A(product) 2-0 · GATED: awaiting Andrew's approval (wait:pr-44-approval)
       outcome: A normal visitor on /host can turn the AI narrator on through clear UI (no hidden
         localStorage devtools gate), and the owner has a hard, env-configurable monthly spend
         ceiling that auto-disables it. Crossword Clash's best feature stops being invisible while

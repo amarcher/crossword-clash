@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createNarratorBackend } from "../lib/narrator/factory";
 import { buildGameStartedEvent, buildGameCompletedEvent } from "../lib/narrator/events";
 import { ClaudeNarratorBackend } from "../lib/narrator/claudeNarrator";
+import { NARRATOR_UNAVAILABLE_BUDGET } from "../lib/narratorBudget";
+import { hasNarratorDemoRemaining } from "../lib/narratorDemo";
 import type { NarratorBackend, AgentGameEvent, NarratorEngine } from "../lib/narrator/types";
 import type { Puzzle } from "../types/puzzle";
 import type { Player } from "../types/game";
@@ -36,12 +38,19 @@ interface UseNarratorResult {
   currentEngine: NarratorEngine;
   /** Engine the user picked, surfaced for UIs that want to indicate fallback. */
   requestedEngine: NarratorEngine;
+  /**
+   * True when the owner's monthly budget cap is reached and any demo allowance
+   * is spent: the narrator is intentionally paused (not a connection error).
+   */
+  budgetExhausted: boolean;
 }
 
+// Cheapest path first: on a connection failure we cascade toward the least
+// costly backend so cost-favoring is preserved even during fallback.
 const FALLBACK_CHAIN: Exclude<NarratorEngine, null>[] = [
+  "claude",
   "elevenlabs-agent",
   "openai-agent",
-  "claude",
 ];
 
 export function useNarrator({
@@ -71,17 +80,44 @@ export function useNarrator({
   // any explicit settings change.
   const [currentEngine, setCurrentEngine] = useState<NarratorEngine>(narratorEngine);
   const triedEnginesRef = useRef<Set<NarratorEngine>>(new Set());
+  const [budgetExhausted, setBudgetExhausted] = useState(false);
+  // Ensures the one-time "sample via Claude" demo switch happens at most once
+  // per user selection, so budget exhaustion can never loop through backends.
+  const budgetDemoTriedRef = useRef(false);
 
   useEffect(() => {
     setCurrentEngine(narratorEngine);
     triedEnginesRef.current = new Set();
     setConnectionError(null);
+    setBudgetExhausted(false);
+    budgetDemoTriedRef.current = false;
   }, [narratorEngine]);
 
   // Cascade on connection error: pick next backend in FALLBACK_CHAIN.
   // When all backends have failed, settle on null and stop trying.
   useEffect(() => {
     if (!connectionError || !currentEngine) return;
+
+    // Monthly budget cap reached. Do NOT cascade — every backend would hit the
+    // same ceiling. Instead, offer a one-time cheap sample via Claude (which
+    // owns the demo allowance) if the user hasn't sampled yet and isn't already
+    // on it; otherwise settle into the paused state.
+    if (connectionError.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+      setConnectionError(null);
+      if (
+        !budgetDemoTriedRef.current &&
+        currentEngine !== "claude" &&
+        hasNarratorDemoRemaining()
+      ) {
+        budgetDemoTriedRef.current = true;
+        setCurrentEngine("claude");
+        return;
+      }
+      setBudgetExhausted(true);
+      setCurrentEngine(null);
+      return;
+    }
+
     triedEnginesRef.current.add(currentEngine);
     const next = FALLBACK_CHAIN.find((e) => !triedEnginesRef.current.has(e));
     if (!next) {
@@ -236,5 +272,6 @@ export function useNarrator({
     connectionError,
     currentEngine,
     requestedEngine: narratorEngine,
+    budgetExhausted,
   };
 }
