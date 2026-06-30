@@ -9,7 +9,7 @@ Andrew can read this anytime to see how the panel sees the app evolving. Read it
 ## Shipped ledger (append-only)
 One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + tally (one-line why) · #PR [state]`.
 <!-- the loop appends here -->
-_(empty — no features judged yet)_
+2026-06-30 · F5 · winner = candidate A (product approach) · 2-0 (judge-correctness + judge-simplicity for A; judge-product delivered no verdict — went idle without transmitting JSON despite repeated requests) · gated PR (billing-sensitive, awaiting owner approval). Applied steal: service-level pricing fallback so model-id drift can't zero out the cap.
 
 ---
 
@@ -19,6 +19,7 @@ _(empty — no features judged yet)_
 
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
+- 2026-06-30 · F5 · A hard spend ceiling is only as strong as its softest bypass: a server-side, fail-closed, localStorage-proof demo bound beat a smaller, cleaner diff whose demo grace trusted a client header — but it taught me to also distrust exact-model-key pricing, which can silently fail the cap fully open (→ applied the service-fallback steal).
 
 ---
 
@@ -28,6 +29,7 @@ _(empty — no features judged yet)_
 
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
+- 2026-06-30 · F5 · (no verdict transmitted this round — the product lens went unrepresented; follow up on why the agent idled without sending. Restore product-feel coverage next iteration.)
 
 ---
 
@@ -37,3 +39,4 @@ _(empty — no features judged yet)_
 
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
+- 2026-06-30 · F5 · Billing-sensitive briefs invert my default: the larger diff wins when its extra bulk is the required fail-closed wallet guard the smaller one skipped — "no simpler" beats "smaller" when real money leaks through the cut corner.
