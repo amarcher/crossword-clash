@@ -196,6 +196,13 @@ describe("rollStreak", () => {
     const next = rollStreak(EMPTY_STREAK, "2026-06-30");
     expect(next).toEqual({ current: 1, longest: 1, lastPlayedDay: "2026-06-30" });
   });
+
+  it("leaves the streak untouched on a backward clock skew or bad date", () => {
+    // Clock moved back a day (today < lastPlayedDay) — must NOT nuke to 1.
+    expect(rollStreak(base, "2026-06-28")).toEqual(base);
+    // Unparseable day key — degrade safely, keep the streak.
+    expect(rollStreak(base, "not-a-date")).toEqual(base);
+  });
 });
 
 describe("effectiveStreak", () => {

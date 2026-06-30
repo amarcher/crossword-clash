@@ -10,7 +10,7 @@ Andrew can read this anytime to see how the panel sees the app evolving. Read it
 One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + tally (one-line why) · #PR [state]`.
 <!-- the loop appends here -->
 2026-06-30 · F5 · winner = candidate A (product approach) · 2-1 (correctness + simplicity for A on fail-closed billing safety; product dissented for B because A's demo uses the FREE browser voice, not the premium ElevenLabs voice that is the feature's whole appeal) · gated PR #44 (billing-sensitive, awaiting owner approval). Applied steal: service-level pricing fallback so model-id drift can't zero out the cap. OPEN PRODUCT QUESTION surfaced to owner: should the free demo use the premium (paid, bounded by the fail-closed per-IP counter) voice or the free browser voice?
-2026-06-30 · F3 · winner = candidate A (product approach) · 2-0 (simplicity + product for A; correctness verdict still pending at ship time — append when it lands) · PR #45 [auto-merge on green]. A's full-solution-grid identity + accumulated-elapsed timer beat B's title+dims identity (best-time bleed across daily minis) and now−startedAt timer (lies after an overnight tab). Applied steal: previousBest → modal shows the beaten time and skips the hollow first-solve "New best!".
+2026-06-30 · F3 · winner = candidate A (product approach) · 3-0 UNANIMOUS (correctness arrived after ship, confirming A) · PR #45 [auto-merge on green]. A's full-solution-grid identity + accumulated-elapsed timer beat B's title+dims identity (best-time bleed across daily minis) and now−startedAt timer (lies after an overnight tab). Applied steals: previousBest → modal shows the beaten time + skips the hollow first-solve "New best!"; and B's gap<=0 clock-skew guard in rollStreak so a backward clock change can't nuke a streak.
 
 ---
 
@@ -21,6 +21,7 @@ One line per judged feature: `YYYY-MM-DD · <feature-id> · winner approach + ta
 **Observations (append-only)**
 <!-- append: YYYY-MM-DD · feature-id · what this taught me -->
 - 2026-06-30 · F5 · A hard spend ceiling is only as strong as its softest bypass: a server-side, fail-closed, localStorage-proof demo bound beat a smaller, cleaner diff whose demo grace trusted a client header — but it taught me to also distrust exact-model-key pricing, which can silently fail the cap fully open (→ applied the service-fallback steal).
+- 2026-06-30 · F3 · Persistence correctness beat a smaller diff: identity must include the solution grid (title+size collide on daily minis), resume must store accumulated active time not startedAt, and the double-count guard must survive reload via a persisted flag — and tests only count when they cover the impure orchestrator, not just the pure helpers. (Caught the rollStreak backward-clock-skew reset → grafted the gap<=0 guard.)
 
 ---
 

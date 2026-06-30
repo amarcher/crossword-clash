@@ -168,6 +168,8 @@ export function daysBetween(aKey: string, bKey: string): number {
  * - Same day as the last play → unchanged (no double-count).
  * - Exactly one day after → increment.
  * - Any larger gap (or first play ever) → reset to 1.
+ * - A non-positive or unparseable gap (clock skewed backward, corrupt data)
+ *   leaves the streak untouched — never punish the player for a clock change.
  */
 export function rollStreak(prev: StreakState, todayKey: string): StreakState {
   if (prev.lastPlayedDay === todayKey) {
@@ -178,6 +180,9 @@ export function rollStreak(prev: StreakState, todayKey: string): StreakState {
     current = 1;
   } else {
     const gap = daysBetween(prev.lastPlayedDay, todayKey);
+    if (Number.isNaN(gap) || gap <= 0) {
+      return prev;
+    }
     current = gap === 1 ? prev.current + 1 : 1;
   }
   return {
