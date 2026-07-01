@@ -11,8 +11,11 @@ import { playWinSound } from "../../lib/winSound";
 import { computeViewerStanding } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import { ChallengeFriendButton } from "./ChallengeFriendButton";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
+import type { Puzzle } from "../../types/puzzle";
+import type { ChallengeComparison } from "../../lib/challenge";
 
 export interface PlayerResult {
   userId: string;
@@ -45,6 +48,18 @@ interface CompletionModalProps {
    * card brags this viewer's own standing; absent (spectator) → winner card.
    */
   currentUserId?: string;
+  /**
+   * The full puzzle, used to build a "Challenge a friend" link (solo path). The
+   * button is shown only when a puzzle and a finish time are both present.
+   */
+  challengePuzzle?: Puzzle;
+  /** The finisher's display name, embedded as the challenger in the link. */
+  challengerName?: string;
+  /**
+   * When the finisher was themselves racing an incoming challenge, the verdict
+   * against the challenger's ghost — drives the personal outcome banner.
+   */
+  challengeOutcome?: ChallengeComparison & { challengerName: string };
   onNewPuzzle?: () => void;
   onRematch?: () => void;
   onBackToMenu?: () => void;
@@ -64,6 +79,9 @@ export function CompletionModal({
   streakCount,
   players,
   currentUserId,
+  challengePuzzle,
+  challengerName,
+  challengeOutcome,
   onNewPuzzle,
   onRematch,
   onBackToMenu,
@@ -259,6 +277,36 @@ export function CompletionModal({
                 {t('soloStats.streakDays', { count: streakCount })}
               </p>
             )}
+
+            {challengeOutcome && (
+              <div
+                className={`mb-6 rounded-xl px-4 py-3 text-center text-base font-bold ${
+                  challengeOutcome.outcome === "beat"
+                    ? darkMode
+                      ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-300"
+                      : "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                    : challengeOutcome.outcome === "lost"
+                      ? darkMode
+                        ? "bg-rose-500/15 border border-rose-500/40 text-rose-300"
+                        : "bg-rose-50 border border-rose-200 text-rose-700"
+                      : darkMode
+                        ? "bg-neutral-700/60 border border-neutral-600 text-neutral-200"
+                        : "bg-neutral-100 border border-neutral-200 text-neutral-700"
+                }`}
+              >
+                {challengeOutcome.outcome === "beat"
+                  ? t("challenge.resultBeat", {
+                      name: challengeOutcome.challengerName,
+                      delta: formatDuration(challengeOutcome.deltaSeconds),
+                    })
+                  : challengeOutcome.outcome === "lost"
+                    ? t("challenge.resultLost", {
+                        name: challengeOutcome.challengerName,
+                        delta: formatDuration(challengeOutcome.deltaSeconds),
+                      })
+                    : t("challenge.resultTied", { name: challengeOutcome.challengerName })}
+              </div>
+            )}
           </>
         )}
 
@@ -280,6 +328,14 @@ export function CompletionModal({
             viewerStanding={viewerStanding ?? undefined}
             darkMode={darkMode}
           />
+          {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
+            <ChallengeFriendButton
+              puzzle={challengePuzzle}
+              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+              finishSeconds={finishSeconds}
+              darkMode={darkMode}
+            />
+          )}
           {(() => {
             const ringOffset = darkMode
               ? "focus-visible:ring-offset-neutral-800"

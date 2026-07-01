@@ -158,6 +158,20 @@
     "newBestBeat": "\u00a1Nuevo r\u00e9cord! \ud83c\udf89 superaste {{time}}",
     "streakDays": "\ud83d\udd25 Racha de {{count}} d\u00edas"
   },
+  "challenge": {
+    "heading": "\u00a1{{name}} te desaf\u00eda!",
+    "subtitle": "Resuelve \"{{title}}\" y compite contra su tiempo.",
+    "targetTime": "{{name}} lo resolvi\u00f3 en {{time}}",
+    "accept": "Aceptar desaf\u00edo",
+    "beatTarget": "supera {{time}}",
+    "challengeFriend": "\ud83c\udfc1 Desafiar a un amigo",
+    "sharing": "Preparando\u2026",
+    "linkCopied": "\u00a1Enlace de desaf\u00edo copiado!",
+    "shareCaption": "Resolv\u00ed este crucigrama en {{time}} en Crossword Clash, \u00bfpuedes superarme? {{url}}",
+    "resultBeat": "\u00a1Superaste a {{name}} por {{delta}}! \ud83c\udf89",
+    "resultLost": "{{name}} fue m\u00e1s r\u00e1pido por {{delta}}",
+    "resultTied": "\u00a1Empate t\u00e9cnico con {{name}}!"
+  },
   "tts": {
     "unmute": "Activar sonido",
     "mute": "Silenciar",

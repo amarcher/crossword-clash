@@ -158,6 +158,20 @@
     "newBestBeat": "New best! 🎉 beat {{time}}",
     "streakDays": "🔥 {{count}}-day streak"
   },
+  "challenge": {
+    "heading": "{{name}} challenges you!",
+    "subtitle": "Solve \"{{title}}\" and race their time.",
+    "targetTime": "{{name}} solved it in {{time}}",
+    "accept": "Accept Challenge",
+    "beatTarget": "beat {{time}}",
+    "challengeFriend": "🏁 Challenge a Friend",
+    "sharing": "Preparing…",
+    "linkCopied": "Challenge link copied!",
+    "shareCaption": "I solved this crossword in {{time}} on Crossword Clash — can you beat me? {{url}}",
+    "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
+    "resultLost": "{{name}} was faster by {{delta}}",
+    "resultTied": "Dead heat with {{name}}!"
+  },
   "tts": {
     "unmute": "Unmute",
     "mute": "Mute",
