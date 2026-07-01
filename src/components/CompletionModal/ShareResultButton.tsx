@@ -119,6 +119,13 @@ export function ShareResultButton(props: ShareResultButtonProps) {
   const buildCaption = useCallback((): string => {
     const title = (input.puzzleTitle ?? "").trim() || "Crossword";
     if (input.mode === "multiplayer") {
+      const standing = input.viewerStanding;
+      if (standing) {
+        const vars = { title, rank: standing.rank, total: standing.total, url: SHARE_URL };
+        if (standing.won) return t("completion.shareCaptionStandingWin", vars);
+        if (standing.tiedForFirst) return t("completion.shareCaptionStandingTie", vars);
+        return t("completion.shareCaptionStandingRank", vars);
+      }
       return input.isTie
         ? t("completion.shareCaptionTie", { title, url: SHARE_URL })
         : t("completion.shareCaptionWin", {
@@ -152,6 +159,19 @@ export function ShareResultButton(props: ShareResultButtonProps) {
             : "",
         winner: t("completion.wins", { name: input.winnerName ?? "" }),
         tie: t("completion.tie"),
+        standing: input.viewerStanding
+          ? t(
+              input.viewerStanding.won
+                ? "completion.cardStandingWin"
+                : input.viewerStanding.tiedForFirst
+                  ? "completion.cardStandingTie"
+                  : "completion.cardStandingRank",
+              {
+                rank: input.viewerStanding.rank,
+                total: input.viewerStanding.total,
+              },
+            )
+          : undefined,
       });
       const caption = buildCaption();
       const filename = buildResultFilename(input.puzzleTitle);

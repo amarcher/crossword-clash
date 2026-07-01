@@ -50,6 +50,50 @@ export function buildResultFilename(puzzleTitle: string | undefined): string {
   return slug ? `crossword-clash-${slug}.png` : "crossword-clash-result.png";
 }
 
+/** Minimal shape needed to rank a player — a scored entry from the scoreboard. */
+export interface StandingPlayer {
+  userId: string;
+  cellsClaimed: number;
+}
+
+/** The viewing player's own placement, derived from the ranked scoreboard. */
+export interface ViewerStanding {
+  /** 1-based placement using standard competition ranking ("1224"). */
+  rank: number;
+  /** Total number of players in the game. */
+  total: number;
+  /** Sole leader — finished strictly ahead of everyone else. */
+  won: boolean;
+  /** Co-leader — shares the top score with at least one other player. */
+  tiedForFirst: boolean;
+}
+
+/**
+ * Compute the viewing player's standing from the SAME scored players the
+ * scoreboard shows. Uses standard competition ranking, so a co-leader always
+ * reads rank 1 (never 2). Returns `null` when the viewer isn't among the
+ * players (e.g. a TV/host spectator) so callers fall back to the winner card.
+ */
+export function computeViewerStanding(
+  players: readonly StandingPlayer[],
+  currentUserId: string | undefined | null,
+): ViewerStanding | null {
+  if (!currentUserId) return null;
+  const me = players.find((p) => p.userId === currentUserId);
+  if (!me) return null;
+
+  const higher = players.filter((p) => p.cellsClaimed > me.cellsClaimed).length;
+  const sameTop = players.filter((p) => p.cellsClaimed === me.cellsClaimed).length;
+  const rank = higher + 1;
+
+  return {
+    rank,
+    total: players.length,
+    won: rank === 1 && sameTop === 1,
+    tiedForFirst: rank === 1 && sameTop > 1,
+  };
+}
+
 export interface ResultCardInput {
   mode: ShareMode;
   puzzleTitle?: string;
@@ -63,6 +107,12 @@ export interface ResultCardInput {
   winnerName?: string;
   /** Multiplayer: whether the game ended tied. */
   isTie?: boolean;
+  /**
+   * Multiplayer: the viewing player's own standing. When present, the card and
+   * caption brag this personal placement instead of naming the winner. Absent
+   * for spectators, who keep the winner/tie card.
+   */
+  viewerStanding?: ViewerStanding;
 }
 
 /**
@@ -82,6 +132,11 @@ export interface ResultCardLabels {
   winner: string;
   /** Tie line, e.g. "It's a tie!". */
   tie: string;
+  /**
+   * Already-interpolated personal standing line, e.g. "Victory! #1 of 4" or
+   * "Finished #3 of 5". Used when `viewerStanding` is set on the input.
+   */
+  standing?: string;
 }
 
 export interface ResultCardText {
@@ -104,12 +159,13 @@ export function composeCardText(
   const title = (input.puzzleTitle ?? "").trim() || "Crossword";
 
   if (input.mode === "multiplayer") {
-    return {
-      heading: labels.heading,
-      title,
-      metric: input.isTie ? labels.tie : labels.winner,
-      tag: labels.tag,
-    };
+    const metric =
+      input.viewerStanding && labels.standing
+        ? labels.standing
+        : input.isTie
+          ? labels.tie
+          : labels.winner;
+    return { heading: labels.heading, title, metric, tag: labels.tag };
   }
 
   const metric =
