@@ -90,9 +90,9 @@ const ClueList = memo(function ClueList({
 
   return (
     <div className="flex-1 min-w-0 flex flex-col min-h-0">
-      <h3 className="font-bold text-xs uppercase tracking-wide text-neutral-500 mb-0.5 shrink-0">
+      <h2 className="font-bold text-xs uppercase tracking-wide text-neutral-500 mb-0.5 shrink-0">
         {title}
-      </h3>
+      </h2>
       <ul ref={listRef} className="overflow-y-auto min-h-0">
         {clues.map((clue) => {
           const clueKey = `${clue.direction}-${clue.number}`;
@@ -115,7 +115,6 @@ const ClueList = memo(function ClueList({
               key={clueKey}
               ref={isActive ? activeRef : undefined}
               tabIndex={0}
-              role="button"
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClueClick(clue); } }}
               className={`px-1 py-px rounded text-xs leading-tight cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 isActive

@@ -18,7 +18,7 @@ describe("CluePanel", () => {
     const { container } = render(
       <CluePanel clues={makeTestClues()} activeClue={null} onClueClick={() => {}} />,
     );
-    const headings = container.querySelectorAll("h3");
+    const headings = container.querySelectorAll("h2");
     expect(headings).toHaveLength(2);
     expect(headings[0].textContent).toBe("Across");
     expect(headings[1].textContent).toBe("Down");
