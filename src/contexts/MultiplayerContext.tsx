@@ -4,7 +4,8 @@ import { useGame } from "./GameContext";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer } from "../lib/gridUtils";
 import { saveMpSession, clearMpSession } from "../lib/sessionPersistence";
-import type { Player, GameSettings } from "../types/game";
+import { resolveRaceMode } from "../lib/gameSettings";
+import type { Player, GameSettings, RaceMode } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
 
 interface MultiplayerContextValue {
@@ -29,6 +30,16 @@ interface MultiplayerContextValue {
   isRoomClosed: boolean;
   newGameId: string | null;
   hydrated: boolean;
+  /** Shared race time in whole seconds once the game completes, else null. */
+  raceSeconds: number | null;
+  /** ms epoch when the host released the players, or null while waiting. */
+  raceStartedAt: number | null;
+  /** Async mode: userId → finish seconds for players who finished. */
+  raceFinishTimes: Record<string, number>;
+  /** Async mode: record + broadcast the local player's finish. */
+  finishRace: () => number | null;
+  /** The room's play mode (defaults to "versus" for legacy games). */
+  raceMode: RaceMode;
 
   // Derived values
   multiplayerActive: boolean;
@@ -46,6 +57,12 @@ interface MultiplayerContextValue {
   // Input wrappers
   soloInputLetter: (letter: string) => void;
   multiplayerInputLetter: (letter: string) => void;
+  /**
+   * Async ("time trial") input: validates against the local copy only — no
+   * server claim, no broadcast. Honors the wrong-answer lockout so the host's
+   * penalty setting stays fair across modes.
+   */
+  asyncInputLetter: (letter: string) => void;
 }
 
 const MultiplayerContext = createContext<MultiplayerContextValue | null>(null);
@@ -228,11 +245,45 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     [multiplayerActive, selectedCell, puzzle, playerCells, direction, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
   );
 
+  // Async ("time trial") input: exactly the shared-grid flow minus the server
+  // claim/broadcast — the grid is the local player's own copy. Wrong letters
+  // still reject + apply the host's lockout penalty, and are NOT broadcast
+  // (nobody else can see this grid).
+  const asyncInputLetter = useCallback(
+    (letter: string) => {
+      if (!multiplayerActive || !selectedCell || !puzzle) return;
+      if (Date.now() < lockedUntil) return;
+
+      const { row, col } = selectedCell;
+      const cell = puzzle.cells[row]?.[col];
+      if (!cell || cell.solution === null) return;
+
+      if (playerCells[`${row},${col}`]?.correct) {
+        // Already solved locally — just advance the cursor.
+        inputLetter(letter);
+        return;
+      }
+
+      if (letter.toUpperCase() !== cell.solution) {
+        triggerReject(row, col);
+        const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
+        if (timeoutMs > 0) {
+          setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
+        }
+        return;
+      }
+      // Tag with the local user id so the fill renders in the player's color.
+      inputLetter(letter, user?.id);
+    },
+    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter, user],
+  );
+
   // Suppress lint warnings for derived values that are consumed downstream
   void isComplete;
 
   const value: MultiplayerContextValue = {
     ...multiplayer,
+    raceMode: resolveRaceMode(multiplayer.gameSettings),
     multiplayerActive,
     playerColorMap,
     completedClues,
@@ -246,6 +297,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     triggerReject,
     soloInputLetter,
     multiplayerInputLetter,
+    asyncInputLetter,
   };
 
   return (

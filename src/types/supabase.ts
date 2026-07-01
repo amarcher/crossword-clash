@@ -53,6 +53,7 @@ export interface Database {
           settings: unknown;
           host_user_id: string | null;
           created_at: string;
+          started_at: string | null;
           completed_at: string | null;
         };
         Insert: {
@@ -64,6 +65,7 @@ export interface Database {
           settings?: unknown;
           host_user_id?: string | null;
           created_at?: string;
+          started_at?: string | null;
           completed_at?: string | null;
         };
         Update: {
@@ -75,6 +77,7 @@ export interface Database {
           settings?: unknown;
           host_user_id?: string | null;
           created_at?: string;
+          started_at?: string | null;
           completed_at?: string | null;
         };
         Relationships: [];
@@ -87,6 +90,7 @@ export interface Database {
           display_name: string;
           color: string;
           score: number;
+          race_seconds: number | null;
           created_at: string;
         };
         Insert: {
@@ -96,6 +100,7 @@ export interface Database {
           display_name?: string;
           color?: string;
           score?: number;
+          race_seconds?: number | null;
           created_at?: string;
         };
         Update: {
@@ -105,6 +110,40 @@ export interface Database {
           display_name?: string;
           color?: string;
           score?: number;
+          race_seconds?: number | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      daily_results: {
+        Row: {
+          id: string;
+          day: string;
+          user_id: string;
+          display_name: string;
+          mode: string;
+          seconds: number;
+          game_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          day: string;
+          user_id: string;
+          display_name?: string;
+          mode: string;
+          seconds: number;
+          game_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          day?: string;
+          user_id?: string;
+          display_name?: string;
+          mode?: string;
+          seconds?: number;
+          game_id?: string | null;
           created_at?: string;
         };
         Relationships: [];

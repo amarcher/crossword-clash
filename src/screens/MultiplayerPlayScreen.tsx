@@ -16,6 +16,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
+import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { recordDailyPlay, formatDuration } from "../lib/soloStats";
+import { rankRaceStandings } from "../lib/raceResults";
 import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
@@ -42,6 +45,7 @@ export function MultiplayerPlayScreen() {
     nextWord,
     prevWord,
     reset,
+    isComplete,
     lockedUntil,
     clueSheetOpen,
     setClueSheetOpen,
@@ -52,6 +56,7 @@ export function MultiplayerPlayScreen() {
   const {
     multiplayerActive,
     multiplayerInputLetter,
+    asyncInputLetter,
     playerColorMap,
     completedClues,
     completedCluesByPlayer,
@@ -62,7 +67,14 @@ export function MultiplayerPlayScreen() {
     isHost,
     shareCode,
     gameStatus,
+    raceSeconds,
+    raceMode,
+    raceFinishTimes,
+    finishRace,
   } = mp;
+
+  const isAsync = raceMode === "async";
+  const isCoop = raceMode === "coop";
 
   useBeforeUnload(gameStatus === "active");
 
@@ -70,17 +82,35 @@ export function MultiplayerPlayScreen() {
 
   const navActions = useMemo(
     () => ({
-      inputLetter: multiplayerInputLetter,
+      // Async: validate against the LOCAL copy only (no claims/broadcasts) —
+      // one player's letters never appear on another's grid.
+      inputLetter: isAsync ? asyncInputLetter : multiplayerInputLetter,
       deleteLetter: () => {}, // No deletion in multiplayer
       moveSelection,
       nextWord,
       prevWord,
       toggleDirection,
     }),
-    [multiplayerInputLetter, moveSelection, nextWord, prevWord, toggleDirection],
+    [isAsync, asyncInputLetter, multiplayerInputLetter, moveSelection, nextWord, prevWord, toggleDirection],
   );
 
   useGridNavigation(navActions);
+
+  // Async: filling my own copy IS my finish — record + broadcast it once.
+  const myFinishSeconds = user ? raceFinishTimes[user.id] : undefined;
+  const raceFinishedRef = useRef(false);
+  useEffect(() => {
+    if (!isAsync || !isComplete || raceFinishedRef.current) return;
+    if (gameStatus !== "active" && gameStatus !== "completed") return;
+    raceFinishedRef.current = true;
+    finishRace();
+  }, [isAsync, isComplete, gameStatus, finishRace]);
+
+  // Async standings, ranked by finish time (still-solving players trail).
+  const raceStandings = useMemo(
+    () => (isAsync ? rankRaceStandings(multiplayerPlayers, raceFinishTimes) : undefined),
+    [isAsync, multiplayerPlayers, raceFinishTimes],
+  );
 
   // Report multiplayer completion once per finished game (per client).
   const completionReportedRef = useRef(false);
@@ -93,10 +123,39 @@ export function MultiplayerPlayScreen() {
     completionReportedRef.current = true;
     track("puzzle_completed", {
       mode: "multiplayer",
+      race_mode: raceMode,
       role: isHost ? "host" : "player",
       player_count: multiplayerPlayers.length,
+      duration_seconds: (isAsync ? myFinishSeconds : raceSeconds) ?? undefined,
     });
-  }, [gameStatus, isHost, multiplayerPlayers.length]);
+  }, [gameStatus, isHost, multiplayerPlayers.length, raceSeconds, raceMode, isAsync, myFinishSeconds]);
+
+  // Daily-mini return loop. Async race times are the leaderboard's currency:
+  // each finisher posts their OWN time. Shared-grid modes (versus/coop) roll
+  // the streak but do NOT post times — a team-shared grid time isn't
+  // comparable to individual solves.
+  const isDaily = useMemo(() => isTodaysDaily(puzzle), [puzzle]);
+  const dailySubmittedRef = useRef(false);
+  useEffect(() => {
+    if (dailySubmittedRef.current || !isDaily || !user) return;
+    if (isAsync) {
+      if (myFinishSeconds === undefined) return;
+      dailySubmittedRef.current = true;
+      recordDailyPlay();
+      void submitDailyResult({
+        day: todayKey(),
+        userId: user.id,
+        displayName: game.displayName,
+        mode: "race",
+        seconds: myFinishSeconds,
+        gameId: game.gameId,
+      });
+      return;
+    }
+    if (gameStatus !== "completed") return;
+    dailySubmittedRef.current = true;
+    recordDailyPlay();
+  }, [gameStatus, isDaily, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
 
   const handleReset = useCallback(async () => {
     await mp.leaveGame();
@@ -166,8 +225,35 @@ export function MultiplayerPlayScreen() {
 
   const multiplayerIsComplete = multiplayerActive && gameStatus === "completed";
   const gameComplete = multiplayerIsComplete;
-  const showCompletionModal = multiplayerIsComplete && !completionModalDismissed;
+  // Async: your race ends when YOU finish — show your result immediately and
+  // let the standings update live as others come in.
+  const showCompletionModal =
+    (isAsync
+      ? multiplayerActive && myFinishSeconds !== undefined
+      : multiplayerIsComplete) && !completionModalDismissed;
   const canChooseNewPuzzle = isHost;
+
+  // Async sidebar: live standings instead of the cells-claimed scoreboard
+  // (other players' grids are invisible, so cell counts are meaningless).
+  const raceStatusPanel = raceStandings && (
+    <div className="space-y-2">
+      <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+        {t('completion.standings')}
+      </h2>
+      {raceStandings.map((row) => (
+        <div
+          key={row.userId}
+          className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg border border-neutral-200 text-sm"
+        >
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
+          <span className="font-medium text-neutral-700 truncate flex-1">{row.displayName}</span>
+          <span className="tabular-nums text-neutral-500">
+            {row.seconds != null ? formatDuration(row.seconds) : t('completion.solving')}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -258,13 +344,17 @@ export function MultiplayerPlayScreen() {
               open={clueSheetOpen}
               onClose={() => setClueSheetOpen(false)}
               scoreboard={
-                <MultiplayerScoreboard
-                  players={multiplayerPlayers}
-                  totalCells={totalWhiteCells}
-                  isComplete={gameComplete}
-                  clueCountsByPlayer={clueCountsByPlayer}
-                  totalClues={puzzle.clues.length}
-                />
+                isAsync ? (
+                  raceStatusPanel
+                ) : (
+                  <MultiplayerScoreboard
+                    players={multiplayerPlayers}
+                    totalCells={totalWhiteCells}
+                    isComplete={gameComplete}
+                    clueCountsByPlayer={clueCountsByPlayer}
+                    totalClues={puzzle.clues.length}
+                  />
+                )
               }
               cluePanel={
                 <CluePanel
@@ -289,11 +379,15 @@ export function MultiplayerPlayScreen() {
               completedCluesByPlayer={completedCluesByPlayer}
               playerColorMap={playerColorMap}
             />
-            <MultiplayerScoreboard
-              players={multiplayerPlayers}
-              totalCells={totalWhiteCells}
-              isComplete={gameComplete}
-            />
+            {isAsync ? (
+              raceStatusPanel
+            ) : (
+              <MultiplayerScoreboard
+                players={multiplayerPlayers}
+                totalCells={totalWhiteCells}
+                isComplete={gameComplete}
+              />
+            )}
           </div>
         }
       />
@@ -304,6 +398,10 @@ export function MultiplayerPlayScreen() {
         totalClues={puzzle.clues.length}
         players={playerResults}
         currentUserId={user?.id}
+        raceSeconds={isAsync ? myFinishSeconds ?? null : raceSeconds}
+        raceStandings={raceStandings}
+        coop={isCoop}
+        onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}

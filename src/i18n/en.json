@@ -15,6 +15,8 @@
     "dailyMiniEyebrow": "Daily Mini",
     "playDailyMini": "Play Today's Mini",
     "dailyMiniTheme": "Today's theme: {{theme}}",
+    "raceFriends": "Race friends",
+    "dailyLeaderboard": "Leaderboard",
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
     "nudgeDismiss": "Got it"
   },
@@ -64,6 +66,13 @@
   },
   "lobby": {
     "shareInvite": "Share the code below to invite players",
+    "modeHeading": "Game mode",
+    "modeVersus": "Compete",
+    "modeVersusDesc": "One shared grid \u2014 race to claim the most squares.",
+    "modeCoop": "Co-op",
+    "modeCoopDesc": "One shared grid \u2014 fill it together as a team.",
+    "modeAsync": "Time trial",
+    "modeAsyncDesc": "Everyone gets their own copy \u2014 fastest solve wins.",
     "copied": "Copied!",
     "clickToCopy": "Click to copy",
     "scanToJoin": "Scan to join",
@@ -161,7 +170,29 @@
     "cardStandingRank": "Finished #{{rank}} of {{total}}",
     "shareCaptionStandingWin": "I won \"{{title}}\" — #{{rank}} of {{total}} on Crossword Clash 🏆 {{url}}",
     "shareCaptionStandingTie": "I tied for 1st in \"{{title}}\" on Crossword Clash 🤝 {{url}}",
-    "shareCaptionStandingRank": "I finished #{{rank}} of {{total}} in \"{{title}}\" on Crossword Clash 🧩 {{url}}"
+    "shareCaptionStandingRank": "I finished #{{rank}} of {{total}} in \"{{title}}\" on Crossword Clash 🧩 {{url}}",
+    "raceTime": "Race time",
+    "yourTime": "Your time",
+    "time": "Time",
+    "solving": "Solving\u2026",
+    "waitingOthers": "Waiting for the others to finish\u2026",
+    "coopSolved": "Solved together!",
+    "standings": "Standings",
+    "shareCaptionCoop": "We solved \"{{title}}\" together in {{time}} on Crossword Clash \ud83e\udd1d {{url}}",
+    "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash \ud83e\udd1d {{url}}",
+    "viewLeaderboard": "Daily leaderboard"
+  },
+  "leaderboard": {
+    "title": "Daily Leaderboard",
+    "loading": "Loading…",
+    "empty": "No results yet today — be the first!",
+    "offline": "Connect to see the global board — your streak is safe on this device.",
+    "you": "You",
+    "time": "Time",
+    "modeSolo": "Solo",
+    "modeRace": "Race",
+    "playToday": "Play Today's Mini",
+    "raceFriends": "Race friends live"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",

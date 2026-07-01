@@ -62,7 +62,7 @@ export function MenuScreen() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { handleSoloPuzzleLoaded, setSoloTheme } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const disabled = loading;
   const streak = useMemo(() => getDisplayStreak(), []);
 
@@ -88,6 +88,15 @@ export function MenuScreen() {
     setSoloTheme(dailyMini.theme);
     navigate("/solo/play");
   }, [dailyMini, handleSoloPuzzleLoaded, setSoloTheme, navigate]);
+
+  const raceDailyMini = useCallback(() => {
+    track("mode_selected", { mode: "daily-race" });
+    // Hand today's mini to the existing host flow (name → lobby with share
+    // code/QR) — everyone is released into the SAME puzzle at the same instant
+    // when the host starts. Same lobby mechanic as any imported puzzle.
+    setUrlPuzzle(dailyMini.puzzle);
+    navigate("/host-game/name");
+  }, [dailyMini, setUrlPuzzle, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
@@ -117,6 +126,27 @@ export function MenuScreen() {
             {t("menu.dailyMiniTheme", { theme: dailyMini.theme })}
           </span>
         </button>
+
+        {/* Daily race + leaderboard — the return loop under the front door. */}
+        <div className="flex gap-2 -mt-1">
+          {(user || loading) && (
+            <button
+              type="button"
+              onClick={raceDailyMini}
+              disabled={disabled}
+              className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              ⚔️ {t("menu.raceFriends")}
+            </button>
+          )}
+          <Link
+            to="/daily/leaderboard"
+            onClick={() => track("mode_selected", { mode: "leaderboard" })}
+            className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-center text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            🏅 {t("menu.dailyLeaderboard")}
+          </Link>
+        </div>
 
         {showNudge && (
           <div

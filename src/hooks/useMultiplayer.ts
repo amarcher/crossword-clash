@@ -3,12 +3,13 @@ import { supabase } from "../lib/supabaseClient";
 import {
   claimCellOnServer,
   fetchGameState,
+  recordRaceFinish,
   startGame as startGameOnServer,
 } from "../lib/puzzleService";
 import type { GameSettings, Player } from "../types/game";
 import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
-import { DEFAULT_GAME_SETTINGS } from "../lib/gameSettings";
+import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
 
 interface TrackedPresence {
   user_id: string;
@@ -81,6 +82,22 @@ interface UseMultiplayerReturn {
   isRoomClosed: boolean;
   newGameId: string | null;
   hydrated: boolean;
+  /**
+   * Shared race time in whole seconds (game start → grid complete), or null
+   * while the game is unstarted/in progress. Derived from the host's
+   * game_started timestamp + the completion moment, backed by the DB's
+   * started_at/completed_at for rejoiners.
+   */
+  raceSeconds: number | null;
+  /** ms epoch when the host released the players, or null while waiting. */
+  raceStartedAt: number | null;
+  /** Async mode: userId → finish time (whole seconds) for finished players. */
+  raceFinishTimes: Record<string, number>;
+  /**
+   * Async mode: record + broadcast the local player's finish. Returns the
+   * elapsed seconds it recorded (or null when the race clock is unknown).
+   */
+  finishRace: () => number | null;
 }
 
 export function useMultiplayer({
@@ -101,6 +118,12 @@ export function useMultiplayer({
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
+  // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
+  // by the DB's started_at/completed_at on hydrate, so refreshes keep the time.
+  const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
+  const [completedAtMs, setCompletedAtMs] = useState<number | null>(null);
+  // Async ("time trial") mode: per-player finish times, userId → seconds.
+  const [raceFinishTimes, setRaceFinishTimes] = useState<Record<string, number>>({});
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -131,8 +154,24 @@ export function useMultiplayer({
     }
 
     if (state.settings && typeof state.settings.wrongAnswerTimeoutSeconds === "number") {
-      setGameSettings({ wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds });
+      setGameSettings({
+        wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds,
+        raceMode: resolveRaceMode(state.settings as GameSettings),
+      });
     }
+
+    // DB timestamps are authoritative for the race clock (rejoin/refresh).
+    if (state.startedAt != null) setStartedAtMs(state.startedAt);
+    if (state.completedAt != null) setCompletedAtMs(state.completedAt);
+
+    // Async mode: persisted finish times cover rejoiners / missed broadcasts.
+    setRaceFinishTimes((prev) => {
+      const next = { ...prev };
+      for (const p of state.players) {
+        if (typeof p.raceSeconds === "number") next[p.userId] = p.raceSeconds;
+      }
+      return next;
+    });
 
     // Determine host from DB-ordered players (first by created_at)
     if (state.players.length > 0) {
@@ -221,10 +260,25 @@ export function useMultiplayer({
       if (payload?.settings) {
         setGameSettings(payload.settings);
       }
+      // The host's clock anchors the shared race time for everyone.
+      setStartedAtMs(typeof payload?.startedAt === "number" ? payload.startedAt : Date.now());
     });
 
-    channel.on("broadcast", { event: "game_completed" }, () => {
+    channel.on("broadcast", { event: "game_completed" }, ({ payload }) => {
       setGameStatus("completed");
+      setCompletedAtMs((prev) =>
+        prev ?? (typeof payload?.completedAt === "number" ? payload.completedAt : Date.now()),
+      );
+    });
+
+    // Async mode: another player finished their own copy of the puzzle.
+    channel.on("broadcast", { event: "race_finished" }, ({ payload }) => {
+      if (typeof payload?.playerId !== "string" || typeof payload?.seconds !== "number") return;
+      setRaceFinishTimes((prev) =>
+        prev[payload.playerId] !== undefined && prev[payload.playerId] <= payload.seconds
+          ? prev
+          : { ...prev, [payload.playerId]: payload.seconds },
+      );
     });
 
     channel.on("broadcast", { event: "room_closed" }, () => {
@@ -273,19 +327,24 @@ export function useMultiplayer({
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [hydrate]);
 
-  // Check completion when cells change
+  // Check completion when cells change (shared-grid modes only — in async
+  // mode each client's local grid is their own copy, so a full local grid
+  // means a PERSONAL finish, not the game's end; see finishRace()).
   useEffect(() => {
     if (gameStatus !== "active") return;
+    if (resolveRaceMode(gameSettings) === "async") return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
     if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
+      const completedAt = Date.now();
       setGameStatus("completed");
+      setCompletedAtMs((prev) => prev ?? completedAt);
       // Update DB
       if (supabase) {
         supabase
           .from("games")
           .update({
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: new Date(completedAt).toISOString(),
           })
           .eq("id", gameId)
           .then(() => {
@@ -293,13 +352,60 @@ export function useMultiplayer({
               ?.send({
                 type: "broadcast",
                 event: "game_completed",
-                payload: {},
+                payload: { completedAt },
               })
               .catch(() => {});
           });
       }
     }
-  }, [playerCells, totalWhiteCells, gameStatus, gameId]);
+  }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings]);
+
+  // Async mode: the game is over when every player has a finish time.
+  useEffect(() => {
+    if (gameStatus !== "active") return;
+    if (resolveRaceMode(gameSettings) !== "async") return;
+    if (players.length === 0) return;
+    const allFinished = players.every((p) => raceFinishTimes[p.userId] !== undefined);
+    if (!allFinished) return;
+    const completedAt = Date.now();
+    setGameStatus("completed");
+    setCompletedAtMs((prev) => prev ?? completedAt);
+    // Idempotent — whichever client observes the final finish first wins;
+    // duplicates just rewrite the same status.
+    if (supabase) {
+      supabase
+        .from("games")
+        .update({ status: "completed", completed_at: new Date(completedAt).toISOString() })
+        .eq("id", gameId)
+        .then(() => {
+          void channelRef.current
+            ?.send({ type: "broadcast", event: "game_completed", payload: { completedAt } })
+            .catch(() => {});
+        });
+    }
+  }, [gameStatus, gameSettings, players, raceFinishTimes, gameId]);
+
+  /**
+   * Async mode: the local player just filled their own copy. Compute the
+   * elapsed time from the shared start, record it locally, broadcast it, and
+   * persist it on our player row for rejoiners.
+   */
+  const finishRace = useCallback((): number | null => {
+    if (startedAtMs == null) return null;
+    const seconds = Math.max(0, Math.round((Date.now() - startedAtMs) / 1000));
+    setRaceFinishTimes((prev) =>
+      prev[userId] !== undefined ? prev : { ...prev, [userId]: seconds },
+    );
+    void channelRef.current
+      ?.send({
+        type: "broadcast",
+        event: "race_finished",
+        payload: { playerId: userId, seconds },
+      })
+      .catch(() => {});
+    void recordRaceFinish(gameId, userId, seconds);
+    return seconds;
+  }, [startedAtMs, userId, gameId]);
 
   const claimCell = useCallback(
     async (row: number, col: number, letter: string) => {
@@ -393,13 +499,15 @@ export function useMultiplayer({
     const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
     const success = await startGameOnServer(gameId, resolvedSettings);
     if (success) {
+      const startedAt = Date.now();
       setGameSettings(resolvedSettings);
       setGameStatus("active");
+      setStartedAtMs(startedAt);
       void channelRef.current
         ?.send({
           type: "broadcast",
           event: "game_started",
-          payload: { settings: resolvedSettings },
+          payload: { settings: resolvedSettings, startedAt },
         })
         .catch(() => {});
     }
@@ -454,6 +562,11 @@ export function useMultiplayer({
     };
   }, [gameId]);
 
+  const raceSeconds =
+    startedAtMs != null && completedAtMs != null && completedAtMs >= startedAtMs
+      ? Math.round((completedAtMs - startedAtMs) / 1000)
+      : null;
+
   return {
     claimCell,
     broadcastWrongLetter,
@@ -469,5 +582,9 @@ export function useMultiplayer({
     isRoomClosed,
     newGameId,
     hydrated,
+    raceSeconds,
+    raceStartedAt: startedAtMs,
+    raceFinishTimes,
+    finishRace,
   };
 }

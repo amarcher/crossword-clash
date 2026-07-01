@@ -22,11 +22,14 @@ export function LobbyScreen() {
   }, [mp.gameStatus, game.gameId, navigate]);
 
   const handleStartGame = useCallback(async () => {
-    await mp.startGame({ wrongAnswerTimeoutSeconds: game.wrongAnswerTimeout });
+    await mp.startGame({
+      wrongAnswerTimeoutSeconds: game.wrongAnswerTimeout,
+      raceMode: game.raceMode,
+    });
     if (game.gameId) {
       navigate(`/play/${game.gameId}`);
     }
-  }, [mp, game.wrongAnswerTimeout, game.gameId, navigate]);
+  }, [mp, game.wrongAnswerTimeout, game.raceMode, game.gameId, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
     if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
@@ -61,6 +64,8 @@ export function LobbyScreen() {
       onLeave={handleLeave}
       wrongAnswerTimeout={game.wrongAnswerTimeout}
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
+      raceMode={game.raceMode}
+      onRaceModeChange={game.setRaceMode}
     />
   );
 }

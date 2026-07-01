@@ -17,6 +17,7 @@ import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
 import type { Puzzle } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
+import type { RaceStandingRow } from "../../lib/raceResults";
 
 export interface PlayerResult {
   userId: string;
@@ -43,6 +44,24 @@ interface CompletionModalProps {
   previousBest?: number | null;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
+  /**
+   * Multiplayer: the shared race time in whole seconds (host start → grid
+   * complete). Shown as the headline time and stamped on the share card.
+   */
+  raceSeconds?: number | null;
+  /**
+   * Shown as a "Daily leaderboard" action when the finished puzzle is today's
+   * daily mini — routes the finisher to the cross-day board.
+   */
+  onViewLeaderboard?: () => void;
+  /**
+   * Async ("time trial") mode: per-player standings ranked by finish time.
+   * When present the player table shows times instead of cells/clues, and
+   * still-solving players read as "Solving…".
+   */
+  raceStandings?: RaceStandingRow[];
+  /** Co-op mode: frame the result as a team finish (no winner ranking). */
+  coop?: boolean;
   players?: PlayerResult[];
   /**
    * The viewing player's Supabase user id. When it matches a player, the share
@@ -87,6 +106,10 @@ export function CompletionModal({
   isNewBest,
   previousBest,
   streakCount,
+  raceSeconds,
+  onViewLeaderboard,
+  raceStandings,
+  coop,
   players,
   currentUserId,
   challengePuzzle,
@@ -133,18 +156,40 @@ export function CompletionModal({
 
   if (!open) return null;
 
-  const isMultiplayer = players && players.length > 0;
-  const ranked = isMultiplayer
+  const isAsync = !!raceStandings && raceStandings.length > 0;
+  const isMultiplayer = (players && players.length > 0) || isAsync;
+  const ranked = players && players.length > 0
     ? [...players].sort((a, b) => b.cellsClaimed - a.cellsClaimed)
     : [];
 
   const winner = ranked[0];
   const isTie =
     ranked.length > 1 && ranked[0].cellsClaimed === ranked[1].cellsClaimed;
-  // Personal standing for the share card — derived from the same ranked list.
-  const viewerStanding = isMultiplayer
-    ? computeViewerStanding(ranked, currentUserId)
-    : null;
+
+  // Async standings: fastest finisher leads; unfinished players trail.
+  const asyncFinished = isAsync ? raceStandings.filter((r) => r.seconds != null) : [];
+  const asyncAllDone = isAsync && asyncFinished.length === raceStandings.length;
+  const asyncWinner = asyncFinished[0];
+  const asyncTie =
+    asyncFinished.length > 1 && asyncFinished[0].seconds === asyncFinished[1].seconds;
+  const viewerAsyncRow = isAsync
+    ? raceStandings.find((r) => r.userId === currentUserId)
+    : undefined;
+
+  // Personal standing for the share card. Async derives from finish times;
+  // shared-grid modes keep the cells-claimed ranking. Co-op has no ranking.
+  const viewerStanding = isAsync
+    ? viewerAsyncRow?.rank != null
+      ? {
+          rank: viewerAsyncRow.rank,
+          total: raceStandings.length,
+          won: viewerAsyncRow.rank === 1 && !asyncTie,
+          tiedForFirst: viewerAsyncRow.rank === 1 && asyncTie,
+        }
+      : null
+    : isMultiplayer && !coop
+      ? computeViewerStanding(ranked, currentUserId)
+      : null;
 
   const bg = darkMode ? "bg-neutral-800" : "bg-white";
   const text = darkMode ? "text-white" : "text-neutral-900";
@@ -186,57 +231,111 @@ export function CompletionModal({
 
         {isMultiplayer ? (
           <>
-            {/* Winner announcement */}
+            {/* Outcome line: async → fastest finisher (or waiting), co-op →
+                team finish, versus → most cells claimed. */}
             <p className={`text-center mb-5 ${textSub}`}>
-              {isTie
-                ? t('completion.tie')
-                : t('completion.wins', { name: winner.displayName })}
+              {isAsync
+                ? asyncAllDone
+                  ? asyncTie
+                    ? t('completion.tie')
+                    : t('completion.wins', { name: asyncWinner?.displayName ?? '' })
+                  : t('completion.waitingOthers')
+                : coop
+                  ? t('completion.coopSolved')
+                  : isTie
+                    ? t('completion.tie')
+                    : t('completion.wins', { name: winner.displayName })}
             </p>
 
-            {/* Player table */}
-            <div className={`rounded-xl overflow-hidden ${tableBg} mb-6`}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
-                    <th className="text-left py-2 px-3">#</th>
-                    <th className="text-left py-2 px-3">{t('completion.player')}</th>
-                    <th className="text-right py-2 px-3">{t('completion.cells')}</th>
-                    <th className="text-right py-2 px-3">{t('completion.clues')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranked.map((player, i) => (
-                    <tr key={player.userId} className={tableText}>
-                      <td className="py-2 px-3 font-medium">{i + 1}</td>
-                      <td className="py-2 px-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: player.color }}
-                          />
-                          <span className="font-medium truncate">
-                            {player.displayName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2 px-3 text-right tabular-nums">
-                        {player.cellsClaimed}
-                      </td>
-                      <td className="py-2 px-3 text-right tabular-nums">
-                        {player.cluesCompleted}
-                      </td>
+            {/* Headline time: your own finish (async) or the shared race time. */}
+            {raceSeconds != null && (
+              <div className={`mb-5 rounded-xl px-4 py-3 text-center ${tableBg}`}>
+                <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                  {formatDuration(raceSeconds)}
+                </div>
+                <div className={`mt-0.5 text-sm font-medium ${textSub}`}>
+                  {isAsync ? t('completion.yourTime') : t('completion.raceTime')}
+                </div>
+              </div>
+            )}
+
+            {/* Standings table */}
+            {isAsync ? (
+              <div className={`rounded-xl overflow-hidden ${tableBg} mb-6`}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
+                      <th className="text-left py-2 px-3">#</th>
+                      <th className="text-left py-2 px-3">{t('completion.player')}</th>
+                      <th className="text-right py-2 px-3">{t('completion.time')}</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className={`text-xs ${tableHeader} border-t ${darkMode ? "border-neutral-600" : "border-neutral-200"}`}>
-                    <td colSpan={2} className="py-2 px-3">{t('completion.total')}</td>
-                    <td className="py-2 px-3 text-right tabular-nums">{totalCells}</td>
-                    <td className="py-2 px-3 text-right tabular-nums">{totalClues}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {raceStandings.map((row) => (
+                      <tr key={row.userId} className={tableText}>
+                        <td className="py-2 px-3 font-medium">{row.rank ?? "–"}</td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: row.color }}
+                            />
+                            <span className="font-medium truncate">{row.displayName}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-right tabular-nums">
+                          {row.seconds != null ? formatDuration(row.seconds) : t('completion.solving')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={`rounded-xl overflow-hidden ${tableBg} mb-6`}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
+                      <th className="text-left py-2 px-3">#</th>
+                      <th className="text-left py-2 px-3">{t('completion.player')}</th>
+                      <th className="text-right py-2 px-3">{t('completion.cells')}</th>
+                      <th className="text-right py-2 px-3">{t('completion.clues')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ranked.map((player, i) => (
+                      <tr key={player.userId} className={tableText}>
+                        <td className="py-2 px-3 font-medium">{coop ? "•" : i + 1}</td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: player.color }}
+                            />
+                            <span className="font-medium truncate">
+                              {player.displayName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-right tabular-nums">
+                          {player.cellsClaimed}
+                        </td>
+                        <td className="py-2 px-3 text-right tabular-nums">
+                          {player.cluesCompleted}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className={`text-xs ${tableHeader} border-t ${darkMode ? "border-neutral-600" : "border-neutral-200"}`}>
+                      <td colSpan={2} className="py-2 px-3">{t('completion.total')}</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{totalCells}</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{totalClues}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -332,11 +431,12 @@ export function CompletionModal({
           <ShareResultButton
             mode={isMultiplayer ? "multiplayer" : "solo"}
             puzzleTitle={puzzleTitle}
-            finishSeconds={finishSeconds}
+            finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
             bestSeconds={bestSeconds}
             isNewBest={isNewBest}
-            winnerName={winner?.displayName}
-            isTie={isTie}
+            winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
+            isTie={isAsync ? asyncTie : isTie}
+            coop={coop}
             viewerStanding={viewerStanding ?? undefined}
             darkMode={darkMode}
           />
@@ -384,6 +484,11 @@ export function CompletionModal({
 
             return (
               <>
+                {onViewLeaderboard && (
+                  <button onClick={onViewLeaderboard} className={secondarySolid}>
+                    🏅 {t('completion.viewLeaderboard')}
+                  </button>
+                )}
                 {onRematch && (
                   <button onClick={onRematch} className={primaryClass} autoFocus>
                     {t('completion.playAgain')}

@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { Title } from "../Title";
 import { TimeoutSelector } from "./TimeoutSelector";
-import type { Player } from "../../types/game";
+import { RaceModeSelector } from "./RaceModeSelector";
+import type { Player, RaceMode } from "../../types/game";
 
 interface GameLobbyProps {
   shareCode: string | null;
@@ -14,9 +15,11 @@ interface GameLobbyProps {
   onLeave?: () => void;
   wrongAnswerTimeout?: number;
   onWrongAnswerTimeoutChange?: (value: number) => void;
+  raceMode?: RaceMode;
+  onRaceModeChange?: (value: RaceMode) => void;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
@@ -86,6 +89,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
 
       {isHost && (
         <div className="flex flex-col items-center gap-4">
+          {raceMode !== undefined && onRaceModeChange && (
+            <RaceModeSelector value={raceMode} onChange={onRaceModeChange} />
+          )}
           {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
             <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
           )}

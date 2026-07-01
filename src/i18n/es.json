@@ -15,6 +15,8 @@
     "dailyMiniEyebrow": "Mini del día",
     "playDailyMini": "Jugar el Mini de hoy",
     "dailyMiniTheme": "Tema de hoy: {{theme}}",
+    "raceFriends": "Compite con amigos",
+    "dailyLeaderboard": "Clasificación",
     "nudge": "Compite con amigos para llenar un crucigrama — o resuelve el Mini de hoy solo.",
     "nudgeDismiss": "Entendido"
   },
@@ -64,6 +66,13 @@
   },
   "lobby": {
     "shareInvite": "Comparte el c\u00f3digo para invitar jugadores",
+    "modeHeading": "Modo de juego",
+    "modeVersus": "Competir",
+    "modeVersusDesc": "Una cuadr\u00edcula compartida \u2014 compite por reclamar m\u00e1s casillas.",
+    "modeCoop": "Cooperativo",
+    "modeCoopDesc": "Una cuadr\u00edcula compartida \u2014 ll\u00e9nenla juntos en equipo.",
+    "modeAsync": "Contrarreloj",
+    "modeAsyncDesc": "Cada uno con su propia copia \u2014 gana el tiempo m\u00e1s r\u00e1pido.",
     "copied": "\u00a1Copiado!",
     "clickToCopy": "Clic para copiar",
     "scanToJoin": "Escanea para unirte",
@@ -161,7 +170,29 @@
     "cardStandingRank": "Termin\u00e9 #{{rank}} de {{total}}",
     "shareCaptionStandingWin": "Gan\u00e9 \"{{title}}\" \u2014 #{{rank}} de {{total}} en Crossword Clash \ud83c\udfc6 {{url}}",
     "shareCaptionStandingTie": "Empat\u00e9 en el 1.\u00ba en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
-    "shareCaptionStandingRank": "Termin\u00e9 #{{rank}} de {{total}} en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}"
+    "shareCaptionStandingRank": "Termin\u00e9 #{{rank}} de {{total}} en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
+    "raceTime": "Tiempo de carrera",
+    "yourTime": "Tu tiempo",
+    "time": "Tiempo",
+    "solving": "Resolviendo\u2026",
+    "waitingOthers": "Esperando a que terminen los dem\u00e1s\u2026",
+    "coopSolved": "\u00a1Resuelto en equipo!",
+    "standings": "Clasificaci\u00f3n",
+    "shareCaptionCoop": "Resolvimos \"{{title}}\" juntos en {{time}} en Crossword Clash \ud83e\udd1d {{url}}",
+    "shareCaptionCoopNoTime": "Resolvimos \"{{title}}\" juntos en Crossword Clash \ud83e\udd1d {{url}}",
+    "viewLeaderboard": "Clasificaci\u00f3n diaria"
+  },
+  "leaderboard": {
+    "title": "Clasificaci\u00f3n diaria",
+    "loading": "Cargando\u2026",
+    "empty": "A\u00fan no hay resultados hoy \u2014 \u00a1s\u00e9 el primero!",
+    "offline": "Con\u00e9ctate para ver la clasificaci\u00f3n global \u2014 tu racha est\u00e1 guardada en este dispositivo.",
+    "you": "T\u00fa",
+    "time": "Tiempo",
+    "modeSolo": "Solo",
+    "modeRace": "Carrera",
+    "playToday": "Jugar el Mini de hoy",
+    "raceFriends": "Carrera en vivo con amigos"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",

@@ -50,6 +50,8 @@ export function HostNameScreen() {
             mp.broadcastNewGame(result.gameId);
             game.setGameId(result.gameId);
             game.setCompletionModalDismissed(false);
+            // Consumed — a stale urlPuzzle must not hijack later "/" visits.
+            game.setUrlPuzzle(null);
             navigate(`/lobby/${result.gameId}`);
             return;
           }
@@ -62,6 +64,8 @@ export function HostNameScreen() {
         if (result) {
           game.setGameId(result.gameId);
           game.setIsMultiplayer(true);
+          // Consumed — a stale urlPuzzle must not hijack later "/" visits.
+          game.setUrlPuzzle(null);
           navigate(`/lobby/${result.gameId}`);
         }
       } else {

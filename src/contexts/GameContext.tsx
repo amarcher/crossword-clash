@@ -12,6 +12,7 @@ import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
+import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
 
 const STORAGE_KEY = "crossword-clash-solo";
@@ -72,6 +73,9 @@ interface GameContextValue {
   urlChallenge: ChallengePayload | null;
   wrongAnswerTimeout: number;
   setWrongAnswerTimeout: (v: number) => void;
+  /** Lobby-chosen play mode; rides the game_started settings broadcast. */
+  raceMode: RaceMode;
+  setRaceMode: (v: RaceMode) => void;
   lockedUntil: number;
   setLockedUntil: (v: number) => void;
   completionModalDismissed: boolean;
@@ -134,6 +138,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
+  const [raceMode, setRaceMode] = useState<RaceMode>("versus");
 
   // Persisted to sessionStorage so a refresh during an active lockout
   // cannot bypass the penalty. sessionStorage (not localStorage) keeps it
@@ -249,6 +254,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     urlChallenge,
     wrongAnswerTimeout,
     setWrongAnswerTimeout,
+    raceMode,
+    setRaceMode,
     lockedUntil,
     setLockedUntil,
     completionModalDismissed,

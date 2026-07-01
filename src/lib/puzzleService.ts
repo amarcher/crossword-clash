@@ -239,6 +239,7 @@ export async function joinGame(
       display_name: displayName,
       color,
       score: 0,
+      race_seconds: null,
       created_at: new Date().toISOString(),
     });
   }
@@ -290,14 +291,20 @@ export async function fetchGameState(gameId: string): Promise<{
   cells: Record<string, CellState>;
   players: Player[];
   status: string;
-  settings: { wrongAnswerTimeoutSeconds?: number } | null;
+  settings: { wrongAnswerTimeoutSeconds?: number; raceMode?: string } | null;
+  /** ms epoch when the host started the game, or null (still waiting). */
+  startedAt: number | null;
+  /** ms epoch when the grid was completed, or null. */
+  completedAt: number | null;
 } | null> {
   if (!supabase) return null;
 
   const [gameResult, playersResult] = await Promise.all([
+    // select("*") tolerates schema drift: started_at ships in migration
+    // 20260701000000 and simply reads as undefined until it's applied.
     supabase
       .from("games")
-      .select("cells, status, settings")
+      .select("*")
       .eq("id", gameId)
       .single(),
     supabase
@@ -319,14 +326,38 @@ export async function fetchGameState(gameId: string): Promise<{
     displayName: p.display_name,
     color: p.color,
     score: p.score,
+    // Undefined before the 20260701 migration is applied — read as null.
+    raceSeconds: typeof p.race_seconds === "number" ? p.race_seconds : null,
   }));
 
   return {
     cells: (game.cells as Record<string, CellState>) ?? {},
     players,
     status: game.status,
-    settings: (game.settings as { wrongAnswerTimeoutSeconds?: number } | null) ?? null,
+    settings:
+      (game.settings as { wrongAnswerTimeoutSeconds?: number; raceMode?: string } | null) ?? null,
+    startedAt: game.started_at ? Date.parse(game.started_at) : null,
+    completedAt: game.completed_at ? Date.parse(game.completed_at) : null,
   };
+}
+
+/**
+ * Persist an async-race finish time on the caller's own player row.
+ * Best-effort: live clients get the time via broadcast; this write covers
+ * rejoiners/late viewers. Never throws.
+ */
+export async function recordRaceFinish(
+  gameId: string,
+  userId: string,
+  seconds: number,
+): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("players")
+    .update({ race_seconds: Math.max(0, Math.floor(seconds)) })
+    .eq("game_id", gameId)
+    .eq("user_id", userId);
+  if (error) console.warn("Race finish not persisted:", error.message);
 }
 
 /**
@@ -505,6 +536,17 @@ export async function startGame(
     console.error("Failed to start game:", error);
     return false;
   }
+
+  // Anchor the shared race clock for rejoiners. Separate, best-effort write so
+  // starting a game can never fail on a DB that hasn't applied the
+  // 20260701000000 migration yet — live clients get the clock via broadcast.
+  void supabase
+    .from("games")
+    .update({ started_at: new Date().toISOString() })
+    .eq("id", gameId)
+    .then(({ error: raceClockError }) => {
+      if (raceClockError) console.warn("Race clock not persisted:", raceClockError.message);
+    });
 
   return true;
 }
