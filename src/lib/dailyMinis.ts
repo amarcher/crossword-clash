@@ -2,13 +2,15 @@ import { buildPuzzle, type GridSpec } from "./samplePuzzles";
 import type { Puzzle } from "../types/puzzle";
 
 /**
- * Themed 5x5 daily minis — a different theme each day.
+ * Themed daily minis — a different theme each day, in mixed sizes (5×5 and
+ * 7×7 today; the pipeline supports any N×N with symmetric black squares).
  *
  * Original content: fill generated from a public-domain / permissively-licensed
- * word list (ENABLE + a top-frequency list) and validated so every across/down
- * entry is a real word and no answer repeats; clues written for Crossword Clash.
- * 100% original — zero third-party puzzle-copyright. Regenerate/expand with
- * scripts/mini-generator/ (see that dir's README). Grids use "#" for black cells.
+ * word list (ENABLE + a top-frequency list), validated (every across/down entry
+ * a real word, no answer repeats) and quality-audited (no obscure crosswordese,
+ * clue quality, grid symmetry/connectivity) via scripts/mini-generator/; clues
+ * written for Crossword Clash. 100% original — zero third-party
+ * puzzle-copyright. Grids use "#" for black cells.
  */
 export interface DailyMini {
   /** One-word theme for the day, shown to the player. */
@@ -236,6 +238,150 @@ const SPECS: (GridSpec & { theme: string })[] = [
       RIGHT: "Opposite of left",
       ACHES: "Dull pains",
       BETS: "Casino wagers",
+    },
+  },
+  {
+    theme: "Robot",
+    title: "Gear Up",
+    grid: ["#prop", "crops", "robes", "abort", "beta#"],
+    clueTexts: {
+      PROP: "Stage-play set piece",
+      CROPS: "Corn and wheat, e.g.",
+      ROBES: "Wizard wardrobe staples",
+      ABORT: "Cancel mid-mission",
+      BETA: "App version for testers",
+      CRAB: "Sideways-walking beach dweller",
+      PROBE: "Deep-space explorer craft",
+      ROBOT: "Vacuum that roams the house solo, e.g.",
+      OPERA: "Show full of arias",
+      PSST: 'Whispered "over here!"',
+    },
+  },
+  {
+    theme: "Magic",
+    title: "Now You See It",
+    grid: ["#maps", "magic", "arena", "linen", "eats#"],
+    clueTexts: {
+      MAPS: "Phone app with turn-by-turn directions",
+      MAGIC: "Rabbit-from-a-hat stuff",
+      ARENA: "Big concert venue",
+      LINEN: "Crisp summer fabric",
+      EATS: "Grub, informally",
+      MALE: "Buck or bull",
+      MARIA: "The moon's dark plains",
+      AGENT: "Spy, e.g.",
+      PINES: "Longs (for)",
+      SCAN: "Do to a QR code",
+    },
+  },
+  {
+    theme: "Disco",
+    title: "Mirror Ball",
+    grid: ["#fast", "disco", "union", "madly", "bled#"],
+    clueTexts: {
+      FAST: "Like lightning",
+      DISCO: "Genre danced under a mirror ball",
+      UNION: "Workers' organization",
+      MADLY: "How the head-over-heels fall in love",
+      BLED: "Needed a bandage, maybe",
+      DUMB: "Not the sharpest",
+      FINAL: "Exam at semester's end",
+      ASIDE: "Stage whisper to the audience",
+      SCOLD: "Give a stern talking-to",
+      TONY: "Broadway's big award",
+    },
+  },
+  {
+    theme: "Movie",
+    title: "Now Showing",
+    grid: ["#more", "dozen", "avoid", "rings", "teen#"],
+    clueTexts: {
+      MORE: "Oliver Twist's famous request",
+      DOZEN: "Baker's ___ (thirteen)",
+      AVOID: "Steer clear of",
+      RINGS: "Saturn's claim to fame",
+      TEEN: "High schooler, usually",
+      DART: "Pub-game projectile",
+      MOVIE: "Popcorn-and-previews outing",
+      OZONE: "Protective atmospheric layer",
+      REIGN: "Monarch's rule",
+      ENDS: "They justify the means, some say",
+    },
+  },
+  {
+    theme: "Comet",
+    title: "Tail Blazer",
+    grid: ["#snip", "shade", "comet", "areas", "ness#"],
+    clueTexts: {
+      SNIP: "Quick scissors cut",
+      SHADE: "Sly disrespect, in slang",
+      COMET: "Icy space wanderer with a tail",
+      AREAS: "Zones",
+      NESS: "Loch ___ monster",
+      SCAN: "Look over quickly",
+      SHORE: "Where the waves break",
+      NAMES: "Roll-call list",
+      IDEAS: "Brainstorm output",
+      PETS: "Goldfish and gerbils, e.g.",
+    },
+  },
+  // 7×7s — bigger boards, same daily rotation.
+  {
+    theme: "Weekend",
+    title: "TGIF",
+    grid: ["saw#gag", "ole#ego", "blessed", "##kit##", "presume", "ran#ray", "odd#ere"],
+    clueTexts: {
+      SAW: "Toolbox cutter",
+      GAG: "Running joke",
+      OLE: "Bullring cheer",
+      EGO: "Sense of self",
+      BLESSED: "Extremely fortunate",
+      KIT: "First-aid ___",
+      PRESUME: '"Dr. Livingstone, I ___?"',
+      RAN: "Went for a jog",
+      RAY: "Beam of sunshine",
+      ODD: "Like 3, 5 and 7",
+      ERE: "Before, poetically",
+      SOB: "Tearful gasp",
+      PRO: "Seasoned expert",
+      ALL: "The whole enchilada",
+      RAD: "Totally awesome, '80s-style",
+      WEEKEND: "Saturday and Sunday, together",
+      SIS: "Brother's counterpart, familiarly",
+      GESTURE: "Wave or nod",
+      AGE: "Number of candles on the cake",
+      MAR: "Scratch up",
+      GOD: "Zeus or Odin",
+      EYE: "Storm's calm center",
+    },
+  },
+  {
+    theme: "Cookies",
+    title: "Fresh Batch",
+    grid: ["ifs#coy", "dot#owe", "seasons", "##yak##", "initial", "can#eta", "egg#sew"],
+    clueTexts: {
+      IFS: "No ___, ands, or buts",
+      COY: "Playfully evasive",
+      DOT: "The i's little topper",
+      OWE: "Be in debt",
+      SEASONS: "Winter, spring, summer and fall",
+      YAK: "Shaggy Himalayan ox",
+      INITIAL: "Like first impressions",
+      CAN: "Soda container",
+      ETA: "Arrival time, for short",
+      EGG: "Dozen-carton item",
+      SEW: "Use a needle and thread",
+      IDS: "Bouncer's requests",
+      ICE: "Rink surface",
+      FOE: "Adversary",
+      NAG: "Pester nonstop",
+      STAYING: "Not going anywhere",
+      SAT: "Took a seat",
+      COOKIES: "Fresh-from-the-oven batch, often chocolate chip",
+      OWN: "Have the deed to",
+      ATE: "Polished off dinner",
+      YES: "Enthusiastic RSVP",
+      LAW: "What attorneys practice",
     },
   },
 ];
