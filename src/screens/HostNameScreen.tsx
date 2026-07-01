@@ -78,7 +78,10 @@ export function HostNameScreen() {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
       <Title className="mb-2" />
-      <p className="text-neutral-500 mb-6">{t('hostName.enterDisplayName')}</p>
+      <h1 className="text-lg font-semibold text-neutral-700 mb-1">{t('hostName.heading')}</h1>
+      <p className="text-neutral-500 mb-6 text-sm text-center max-w-xs">
+        {game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
+      </p>
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-3 w-full max-w-xs"
@@ -104,7 +107,7 @@ export function HostNameScreen() {
           disabled={!game.displayName.trim()}
           className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
         >
-          {t('hostName.choosePuzzle')}
+          {game.urlPuzzle ? t('hostName.createRoom') : t('hostName.choosePuzzle')}
         </button>
         <button
           type="button"
