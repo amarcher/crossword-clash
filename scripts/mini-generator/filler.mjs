@@ -38,18 +38,32 @@ const SIZE = Number(flags.size || 5);
 if (!Number.isInteger(SIZE) || SIZE < 5 || SIZE > 15) { console.error("--size must be 5..15"); process.exit(1); }
 const POOL_N = Number(flags.pool || 20000);
 const MIN_LEN = SIZE >= 7 ? 3 : 2; // 2-letter entries only acceptable on 5×5
-const TIME_MS = Number(flags["time-ms"] || (SIZE <= 5 ? 1200 : SIZE <= 7 ? 10000 : 30000));
-const STEP_CAP = SIZE <= 5 ? 15000 : SIZE <= 7 ? 60000 : 250000;
-const PATTERN_TRIES = 8; // auto mode: how many fresh patterns to try before giving up
+const TIME_MS = Number(flags["time-ms"] || (SIZE <= 5 ? 1200 : 10000));
+// Steps per attempt before a randomized restart (a bad early word is best
+// escaped by restarting rather than searching deeper).
+const STEP_CAP = Number(flags.steps || (SIZE <= 5 ? 15000 : SIZE <= 7 ? 60000 : 250000));
+const PATTERN_TRIES = SIZE <= 7 ? 8 : 24; // auto mode: fresh patterns to try — some patterns
+// simply won't fill, so on big grids sampling many beats searching one longer
 
 // ---- Word pool: top-POOL_N frequency words ∩ ENABLE ----
 const EN = new Set(readFileSync(`${SP}/enable1.txt`, "utf8").split("\n").map((w) => w.trim().toLowerCase()));
 const freqFile = existsSync(`${SP}/freq50k.txt`) ? `${SP}/freq50k.txt` : `${SP}/freq20k.txt`;
 const COMMON = readFileSync(freqFile, "utf8").split("\n").map((w) => w.trim().toLowerCase()).filter(Boolean).slice(0, POOL_N);
-// Subtitle-corpus artifacts that rank deceptively high — keep in sync with audit-mini.mjs JUNK.
+// Words we never want in fresh fill (names, interjections, dialect, crude) —
+// a superset of the audit-mini.mjs JUNK gate (the filler is stricter so new
+// grids stay clean; the audit stays lenient enough for already-shipped fill).
 const JUNK = new Set([
-  "ain", "tae", "rin", "naw", "ana", "hae", "dae", "yer", "oot", "ye",
-  "da", "ne", "wanna", "gonna", "gotta", "outta", "kinda", "sorta",
+  // dialect / archaic
+  "ain", "tae", "rin", "naw", "hae", "dae", "yer", "oot", "ye", "da", "ne",
+  "thy", "cor", "sen", "sri", "tel", "dah", "cee", "ami", "dag", "kat", "reg",
+  "wanna", "gonna", "gotta", "outta", "kinda", "sorta",
+  // names that sneak into ENABLE as obscure common nouns
+  "ana", "ava", "raj", "taj", "dee", "del", "pam", "mel", "lin", "mae", "lex",
+  "hun", "dos", "ken", "sal", "las", "sha", "sim", "dex", "lam", "nan",
+  // interjections
+  "aah", "umm", "heh", "yeh", "wha", "rah", "yip", "shh", "pfft", "psst",
+  // family-friendly fill only
+  "ass", "arse", "pee", "loo", "dui", "scum", "scumbag", "sex", "sexy",
 ]);
 const pool = [...new Set(COMMON.filter((w) => EN.has(w) && /^[a-z]+$/.test(w) && !JUNK.has(w)))];
 const poolSet = new Set(pool);
@@ -196,9 +210,18 @@ function fillPattern(patternRows) {
 
   let solution = null;
   let steps = 0;
+  let deadline = Infinity;
+  // Fill across slots in row-major order: rows above are always complete, so
+  // every down slot's placed letters form a contiguous prefix — which is what
+  // makes downPrefixOK() a strong pruner. (A most-constrained-first order was
+  // tried and performs far worse here: it scatters letters, gaps break the
+  // prefix pruning, and the search space explodes.)
   function solve(ai) {
     if (solution) return true;
     if (steps++ > STEP_CAP) return false; // bail this attempt; outer loop retries
+    // wall-clock check inside the recursion too — one attempt on a big grid
+    // can otherwise blow far past the cap between attempt-loop checks
+    if ((steps & 255) === 0 && Date.now() > deadline) { steps = STEP_CAP + 1; return false; }
     if (ai === across.length) {
       if (!downPrefixOK()) return false;
       solution = grid.map((row) => row.map((x) => (x === "#" ? "#" : x)).join(""));
@@ -217,7 +240,10 @@ function fillPattern(patternRows) {
     return false;
   }
 
-  function reset() { for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!black.has(`${r},${c}`)) grid[r][c] = null; solution = null; }
+  function reset() {
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!black.has(`${r},${c}`)) grid[r][c] = null;
+    solution = null;
+  }
   function allWords() {
     return [...across, ...downByStart.values()].map((cells) => cells.map(([r, c]) => grid[r][c]).join(""));
   }
@@ -229,6 +255,7 @@ function fillPattern(patternRows) {
   // retry until we get a dup-free one or the wall-clock cap expires.
   function tryFill(seedCells) {
     const t0 = Date.now();
+    deadline = t0 + TIME_MS;
     for (let attempt = 0; attempt < 5000; attempt++) {
       if (Date.now() - t0 > TIME_MS) return false; // wall-clock cap
       reset();

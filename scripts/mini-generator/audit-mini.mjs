@@ -44,8 +44,17 @@ const rankOf = (w) => RANK.get(w.toLowerCase()) ?? Infinity;
 // Subtitle-corpus artifacts: names/dialect that rank high in the frequency
 // list but are junk fill in a crossword. Extend as new ones slip through.
 const JUNK = new Set([
-  "ain", "tae", "rin", "naw", "ana", "hae", "dae", "yer", "oot", "ye",
-  "da", "ne", "wanna", "gonna", "gotta", "outta", "kinda", "sorta",
+  // dialect / archaic
+  "ain", "tae", "rin", "naw", "hae", "dae", "yer", "oot", "ye", "da", "ne",
+  "thy", "cor", "sen", "sri", "tel", "dah", "cee", "ami", "dag", "kat", "reg",
+  "wanna", "gonna", "gotta", "outta", "kinda", "sorta",
+  // names that sneak into ENABLE as obscure common nouns
+  "ava", "raj", "taj", "dee", "del", "pam", "mel", "lin", "mae", "lex",
+  "hun", "dos", "sal", "las", "sha", "sim", "dex", "nan",
+  // interjections
+  "aah", "umm", "heh", "yeh", "wha", "rah", "yip",
+  // family-friendly fill only
+  "ass", "arse", "dui", "scum", "scumbag",
 ]);
 
 function entries(grid) {
