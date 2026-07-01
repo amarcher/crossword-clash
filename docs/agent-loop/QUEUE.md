@@ -93,5 +93,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
         small placeholder set and flag the sourcing as a follow-up rather than committing
         unlicensed content.
 
+- [review: #48] F2b — Per-viewer multiplayer standing on the share card · slug:share-card-mp-standing · winner=A(minimalist) 2-1 · auto-merges on green
+
 ### Done (most recent first; trimmed periodically)
 _(none yet)_
