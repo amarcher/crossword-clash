@@ -52,10 +52,13 @@
   },
   "importing": {
     "receiving": "Receiving puzzle...",
-    "failed": "Could not receive puzzle automatically.",
-    "pasteHint": "Click below to paste from clipboard.",
+    "failed": "Didn't receive the puzzle automatically.",
+    "failedReason": "This can happen if a pop-up was blocked or the connection was slow.",
+    "tryAgain": "Try Again",
+    "pasteHint": "The puzzle was also copied to your clipboard as a backup.",
     "pasteButton": "Paste from Clipboard",
-    "pasteError": "No valid puzzle data found in clipboard. Try clicking the bookmarklet again.",
+    "pasteError": "No valid puzzle data found in clipboard. Go back to the NYT tab and click the bookmarklet again.",
+    "retryHint": "Still stuck? Switch back to the NYT tab and click the bookmarklet again — it opens a fresh tab each time.",
     "backToMenu": "Back to menu"
   },
   "puzzleReady": {

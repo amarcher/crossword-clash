@@ -52,10 +52,13 @@
   },
   "importing": {
     "receiving": "Recibiendo crucigrama...",
-    "failed": "No se pudo recibir el crucigrama autom\u00e1ticamente.",
-    "pasteHint": "Haz clic abajo para pegar del portapapeles.",
+    "failed": "No se recibi\u00f3 el crucigrama autom\u00e1ticamente.",
+    "failedReason": "Esto puede pasar si una ventana emergente fue bloqueada o la conexi\u00f3n fue lenta.",
+    "tryAgain": "Intentar de nuevo",
+    "pasteHint": "El crucigrama tambi\u00e9n se copi\u00f3 a tu portapapeles como respaldo.",
     "pasteButton": "Pegar del portapapeles",
-    "pasteError": "No se encontraron datos de crucigrama en el portapapeles. Intenta hacer clic en el bookmarklet de nuevo.",
+    "pasteError": "No se encontraron datos de crucigrama en el portapapeles. Vuelve a la pesta\u00f1a del NYT y haz clic en el bookmarklet de nuevo.",
+    "retryHint": "\u00bfSigue sin funcionar? Vuelve a la pesta\u00f1a del NYT y haz clic en el bookmarklet de nuevo \u2014 abre una pesta\u00f1a nueva cada vez.",
     "backToMenu": "Volver al men\u00fa"
   },
   "puzzleReady": {
