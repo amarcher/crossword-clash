@@ -18,7 +18,10 @@ export function HostMenuScreen() {
   return (
     <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
       <Title variant="dark" className="mb-2" />
-      <p className="text-neutral-400 mb-8">{t('hostView.tvHostView')}</p>
+      <p className="text-neutral-400 mb-1">{t('hostView.tvHostView')}</p>
+      <p className="text-neutral-500 text-sm text-center max-w-xs mb-8">
+        {t('hostView.tvHostViewHint')}
+      </p>
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {user ? (
           <button
