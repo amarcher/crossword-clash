@@ -38,7 +38,7 @@
     "hubTitle": "Consigue un crucigrama",
     "hubSubtitle": "Elige una fuente. Suscriptores del NYT pueden importar con un clic; cualquiera puede subir un archivo o probar una muestra.",
     "tileNytTitle": "Crucigrama del NYT de hoy",
-    "tileNytDesc": "Bookmarklet de un clic para Daily, Mini y Bonus. Requiere suscripci\u00f3n activa al NYT.",
+    "tileNytDesc": "Bookmarklet de un clic para Daily, Mini y Bonus. Requiere un navegador de escritorio y una suscripci\u00f3n activa al NYT.",
     "tileNytCta": "Instalar bookmarklet",
     "tileScraperTitle": "Desde cualquier sitio de crucigramas",
     "tileScraperDesc": "Extensi\u00f3n Crossword Scraper de Chrome \u2014 Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
@@ -62,6 +62,7 @@
     "backToMenu": "Volver al men\u00fa"
   },
   "puzzleReady": {
+    "importedBadge": "Crucigrama importado",
     "by": "por {{author}}",
     "dimensions": "{{width}}\u00d7{{height}} \u00b7 {{acrossCount}} \u2192, {{downCount}} \u2193",
     "hostGame": "Crear partida",

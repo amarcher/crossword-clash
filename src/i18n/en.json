@@ -38,7 +38,7 @@
     "hubTitle": "Get a puzzle",
     "hubSubtitle": "Pick a source. NYT subscribers get one-click import; everyone can drop a file or try a sample.",
     "tileNytTitle": "Today's NYT puzzle",
-    "tileNytDesc": "One-click bookmarklet for Daily, Mini, and Bonus crosswords. Active NYT subscription required.",
+    "tileNytDesc": "One-click bookmarklet for Daily, Mini, and Bonus crosswords. Desktop browser and an active NYT subscription required.",
     "tileNytCta": "Install bookmarklet",
     "tileScraperTitle": "From any crossword site",
     "tileScraperDesc": "Crossword Scraper Chrome extension — Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
@@ -62,6 +62,7 @@
     "backToMenu": "Back to menu"
   },
   "puzzleReady": {
+    "importedBadge": "Puzzle imported",
     "by": "by {{author}}",
     "dimensions": "{{width}}\u00d7{{height}} \u00b7 {{acrossCount}} across, {{downCount}} down",
     "hostGame": "Host Game",
