@@ -66,6 +66,13 @@
   },
   "lobby": {
     "shareInvite": "Share the code below to invite players",
+    "modeHeading": "Game mode",
+    "modeVersus": "Compete",
+    "modeVersusDesc": "One shared grid \u2014 race to claim the most squares.",
+    "modeCoop": "Co-op",
+    "modeCoopDesc": "One shared grid \u2014 fill it together as a team.",
+    "modeAsync": "Time trial",
+    "modeAsyncDesc": "Everyone gets their own copy \u2014 fastest solve wins.",
     "copied": "Copied!",
     "clickToCopy": "Click to copy",
     "scanToJoin": "Scan to join",
@@ -165,6 +172,14 @@
     "shareCaptionStandingTie": "I tied for 1st in \"{{title}}\" on Crossword Clash 🤝 {{url}}",
     "shareCaptionStandingRank": "I finished #{{rank}} of {{total}} in \"{{title}}\" on Crossword Clash 🧩 {{url}}",
     "raceTime": "Race time",
+    "yourTime": "Your time",
+    "time": "Time",
+    "solving": "Solving\u2026",
+    "waitingOthers": "Waiting for the others to finish\u2026",
+    "coopSolved": "Solved together!",
+    "standings": "Standings",
+    "shareCaptionCoop": "We solved \"{{title}}\" together in {{time}} on Crossword Clash \ud83e\udd1d {{url}}",
+    "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash \ud83e\udd1d {{url}}",
     "viewLeaderboard": "Daily leaderboard"
   },
   "leaderboard": {

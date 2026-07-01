@@ -66,6 +66,13 @@
   },
   "lobby": {
     "shareInvite": "Comparte el c\u00f3digo para invitar jugadores",
+    "modeHeading": "Modo de juego",
+    "modeVersus": "Competir",
+    "modeVersusDesc": "Una cuadr\u00edcula compartida \u2014 compite por reclamar m\u00e1s casillas.",
+    "modeCoop": "Cooperativo",
+    "modeCoopDesc": "Una cuadr\u00edcula compartida \u2014 ll\u00e9nenla juntos en equipo.",
+    "modeAsync": "Contrarreloj",
+    "modeAsyncDesc": "Cada uno con su propia copia \u2014 gana el tiempo m\u00e1s r\u00e1pido.",
     "copied": "\u00a1Copiado!",
     "clickToCopy": "Clic para copiar",
     "scanToJoin": "Escanea para unirte",
@@ -165,6 +172,14 @@
     "shareCaptionStandingTie": "Empat\u00e9 en el 1.\u00ba en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
     "shareCaptionStandingRank": "Termin\u00e9 #{{rank}} de {{total}} en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
     "raceTime": "Tiempo de carrera",
+    "yourTime": "Tu tiempo",
+    "time": "Tiempo",
+    "solving": "Resolviendo\u2026",
+    "waitingOthers": "Esperando a que terminen los dem\u00e1s\u2026",
+    "coopSolved": "\u00a1Resuelto en equipo!",
+    "standings": "Clasificaci\u00f3n",
+    "shareCaptionCoop": "Resolvimos \"{{title}}\" juntos en {{time}} en Crossword Clash \ud83e\udd1d {{url}}",
+    "shareCaptionCoopNoTime": "Resolvimos \"{{title}}\" juntos en Crossword Clash \ud83e\udd1d {{url}}",
     "viewLeaderboard": "Clasificaci\u00f3n diaria"
   },
   "leaderboard": {

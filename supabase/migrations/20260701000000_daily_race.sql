@@ -9,6 +9,10 @@
 
 ALTER TABLE games ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
 
+-- Async ("time trial") race mode: each player's own finish time, persisted so
+-- rejoiners and late finishers see the standings.
+ALTER TABLE players ADD COLUMN IF NOT EXISTS race_seconds INTEGER;
+
 CREATE TABLE IF NOT EXISTS daily_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   -- Local calendar day of the daily mini, "YYYY-MM-DD" (matches the client's

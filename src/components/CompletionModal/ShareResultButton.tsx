@@ -119,6 +119,15 @@ export function ShareResultButton(props: ShareResultButtonProps) {
   const buildCaption = useCallback((): string => {
     const title = (input.puzzleTitle ?? "").trim() || "Crossword";
     if (input.mode === "multiplayer") {
+      if (input.coop) {
+        return input.finishSeconds !== undefined
+          ? t("completion.shareCaptionCoop", {
+              title,
+              time: formatDuration(input.finishSeconds),
+              url: SHARE_URL,
+            })
+          : t("completion.shareCaptionCoopNoTime", { title, url: SHARE_URL });
+      }
       const standing = input.viewerStanding;
       if (standing) {
         const vars = { title, rank: standing.rank, total: standing.total, url: SHARE_URL };
@@ -159,6 +168,7 @@ export function ShareResultButton(props: ShareResultButtonProps) {
             : "",
         winner: t("completion.wins", { name: input.winnerName ?? "" }),
         tie: t("completion.tie"),
+        coop: t("completion.coopSolved"),
         standing: input.viewerStanding
           ? t(
               input.viewerStanding.won

@@ -113,6 +113,8 @@ export interface ResultCardInput {
    * for spectators, who keep the winner/tie card.
    */
   viewerStanding?: ViewerStanding;
+  /** Multiplayer co-op: a team finish — no winner, handshake framing. */
+  coop?: boolean;
 }
 
 /**
@@ -137,6 +139,8 @@ export interface ResultCardLabels {
    * "Finished #3 of 5". Used when `viewerStanding` is set on the input.
    */
   standing?: string;
+  /** Co-op team-finish line, e.g. "Solved together!". */
+  coop?: string;
 }
 
 export interface ResultCardText {
@@ -159,6 +163,7 @@ export interface ResultCardText {
  */
 export function resultGlyph(input: ResultCardInput): string {
   if (input.mode !== "multiplayer") return "🏆";
+  if (input.coop) return "🤝";
   const s = input.viewerStanding;
   if (s) {
     if (s.won) return "🏆";
@@ -181,8 +186,9 @@ export function composeCardText(
   const glyph = resultGlyph(input);
 
   if (input.mode === "multiplayer") {
-    const metric =
-      input.viewerStanding && labels.standing
+    const metric = input.coop
+      ? labels.coop ?? labels.heading
+      : input.viewerStanding && labels.standing
         ? labels.standing
         : input.isTie
           ? labels.tie
