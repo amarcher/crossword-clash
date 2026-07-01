@@ -78,15 +78,12 @@ export function MenuScreen() {
       )}
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {/* Front door: instant play, no import. Prominent + above the fold. */}
+        {/* The daily mini is fully local (bundled data) — never gate it on
+            auth loading, so a cold visitor can tap the activation CTA instantly. */}
         <button
           type="button"
           onClick={playDailyMini}
-          disabled={disabled}
-          className={`group block w-full px-5 py-4 rounded-xl text-center text-white bg-gradient-to-br from-blue-600 to-indigo-600 shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-            disabled
-              ? "opacity-50 pointer-events-none"
-              : "hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg"
-          }`}
+          className="group block w-full px-5 py-4 rounded-xl text-center text-white bg-gradient-to-br from-blue-600 to-indigo-600 shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           <span className="block text-[11px] font-semibold uppercase tracking-wide text-blue-100">
             {t("menu.dailyMiniEyebrow")}

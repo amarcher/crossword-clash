@@ -42,7 +42,8 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
             typeof e === "object" &&
             e !== null &&
             typeof (e as ClassicEntry).file === "string" &&
-            typeof (e as ClassicEntry).title === "string",
+            typeof (e as ClassicEntry).title === "string" &&
+            typeof (e as ClassicEntry).size === "string",
         );
         setClassics(valid);
       })
