@@ -289,6 +289,17 @@ export function recordSoloCompletion(
 }
 
 /**
+ * Count a daily play (e.g. finishing a live daily race) toward the streak
+ * without touching best times. Same-day repeats are no-ops via rollStreak.
+ */
+export function recordDailyPlay(now: Date = new Date()): StreakState {
+  const stats = loadSoloStats();
+  const streak = rollStreak(stats.streak, dayKey(now));
+  saveSoloStats({ ...stats, streak });
+  return streak;
+}
+
+/**
  * Build a completion result for an already-recorded (restored-on-reload) finish
  * without mutating stats — so refreshing a completed puzzle doesn't double-count
  * the streak or clobber the best time.
