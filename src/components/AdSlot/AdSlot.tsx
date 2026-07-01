@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   isAdsEnabled,
   getPublisherId,
@@ -32,9 +32,15 @@ function injectAdSenseScript() {
 export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
   const adRef = useRef<HTMLModElement>(null);
   const pushed = useRef(false);
+  const [unfilled, setUnfilled] = useState(false);
+
+  const config = AD_PLACEMENTS[placement];
+  // No point reserving space (or loading AdSense) for a placement whose slot
+  // id isn't configured — it can never fill, so it would just be an empty box.
+  const configured = isAdsEnabled() && !!config.slot;
 
   useEffect(() => {
-    if (!isAdsEnabled() || pushed.current) return;
+    if (!configured || pushed.current) return;
     // Defer the AdSense script + push to browser idle so it doesn't compete
     // with the app's initial render/paint.
     const load = () => {
@@ -42,6 +48,20 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
         pushed.current = true;
+        // Collapse the slot if AdSense reports no ad to serve, so we never
+        // reserve blank space. `data-ad-status` flips to "unfilled" on no-fill.
+        const el = adRef.current;
+        if (el) {
+          const check = () => {
+            if (el.getAttribute("data-ad-status") === "unfilled") setUnfilled(true);
+          };
+          const obs = new MutationObserver(check);
+          obs.observe(el, { attributes: true, attributeFilter: ["data-ad-status"] });
+          window.setTimeout(() => {
+            check();
+            obs.disconnect();
+          }, 4000);
+        }
       } catch {
         // AdSense not ready yet — will retry on next mount
       }
@@ -54,11 +74,9 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
       if (hasRIC) window.cancelIdleCallback(id as number);
       else window.clearTimeout(id as number);
     };
-  }, []);
+  }, [configured]);
 
-  if (!isAdsEnabled()) return null;
-
-  const config = AD_PLACEMENTS[placement];
+  if (!configured || unfilled) return null;
 
   const bg = darkMode
     ? "bg-neutral-800/50 border-neutral-700"

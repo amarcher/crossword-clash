@@ -137,7 +137,7 @@ export function CompletionModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`modal-enter relative z-20 w-full max-w-md rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
+        className={`modal-enter relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
