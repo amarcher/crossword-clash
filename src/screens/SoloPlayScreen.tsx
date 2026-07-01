@@ -11,7 +11,8 @@ import { SoloTimer } from "../components/SoloTimer";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { clearMpSession } from "../lib/sessionPersistence";
-import { clearSoloTimer } from "../lib/soloStats";
+import { clearSoloTimer, formatDuration, puzzleIdentity } from "../lib/soloStats";
+import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
@@ -70,6 +71,25 @@ export function SoloPlayScreen() {
     isComplete,
   );
 
+  // An accepted friend challenge for THIS puzzle — the ghost time to race.
+  // Keyed by puzzle identity so a stale ghost never bleeds onto another puzzle.
+  const challenge = useMemo(() => {
+    if (!puzzle) return null;
+    const stored = loadChallenge();
+    return stored && stored.key === puzzleIdentity(puzzle) ? stored : null;
+  }, [puzzle]);
+
+  const challengeOutcome = useMemo(
+    () =>
+      challenge && soloResult
+        ? {
+            ...compareToChallenge(challenge.seconds, soloResult.finishSeconds),
+            challengerName: challenge.name,
+          }
+        : undefined,
+    [challenge, soloResult],
+  );
+
   // Report solo completion once (isComplete latches true once the grid fills).
   const completionReportedRef = useRef(false);
   useEffect(() => {
@@ -90,11 +110,13 @@ export function SoloPlayScreen() {
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
     clearSoloTimer();
+    clearChallenge();
     navigate("/");
   }, [reset, game, navigate]);
 
   const handleNewPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
+    clearChallenge();
     navigate("/solo/import");
   }, [setCompletionModalDismissed, navigate]);
 
@@ -130,7 +152,14 @@ export function SoloPlayScreen() {
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
+                <div className="flex flex-col items-end leading-tight">
+                  <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
+                  {challenge && (
+                    <span className="text-[11px] font-semibold text-amber-600 tabular-nums">
+                      🏁 {t('challenge.beatTarget', { time: formatDuration(challenge.seconds) })}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={handleReset}
                   className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
@@ -221,6 +250,9 @@ export function SoloPlayScreen() {
         isNewBest={soloResult?.isNewBest}
         previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
+        challengePuzzle={puzzle}
+        challengerName={game.displayName}
+        challengeOutcome={challengeOutcome}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
       />

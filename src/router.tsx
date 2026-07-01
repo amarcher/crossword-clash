@@ -26,6 +26,11 @@ function IndexRedirect() {
 
   // Check for URL puzzle (hash already consumed by GameProvider init)
   if (game.urlPuzzle) {
+    // A challenge deep link carries the challenger's name + ghost time alongside
+    // the puzzle — land on the accept screen instead of the plain mode picker.
+    if (game.urlChallenge) {
+      return <Navigate to="/challenge" replace />;
+    }
     return <Navigate to="/puzzle-ready" replace />;
   }
 
@@ -110,6 +115,7 @@ export const router = createBrowserRouter([
       { path: "lobby/:gameId", lazy: () => import("./screens/LobbyScreen").then((m) => ({ Component: m.LobbyScreen })) },
       { path: "play/:gameId", lazy: () => import("./screens/MultiplayerPlayScreen").then((m) => ({ Component: m.MultiplayerPlayScreen })) },
       { path: "puzzle-ready", lazy: () => import("./screens/PuzzleReadyScreen").then((m) => ({ Component: m.PuzzleReadyScreen })) },
+      { path: "challenge", lazy: () => import("./screens/ChallengeScreen").then((m) => ({ Component: m.ChallengeScreen })) },
       { path: "importing", lazy: () => import("./screens/ImportingScreen").then((m) => ({ Component: m.ImportingScreen })) },
       { path: "rejoin", lazy: () => import("./screens/RejoinScreen").then((m) => ({ Component: m.RejoinScreen })) },
     ],

@@ -9,6 +9,7 @@ import {
 import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
+import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -58,6 +59,11 @@ interface GameContextValue {
   setDisplayName: (v: string) => void;
   urlPuzzle: Puzzle | null;
   setUrlPuzzle: (p: Puzzle | null) => void;
+  /**
+   * Challenger name + ghost time captured from a challenge deep link's query
+   * string (`?cf=&ct=`). Read from context, never window.location, after init.
+   */
+  urlChallenge: ChallengePayload | null;
   wrongAnswerTimeout: number;
   setWrongAnswerTimeout: (v: number) => void;
   lockedUntil: number;
@@ -98,8 +104,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Compute initial state from URL params / localStorage (synchronous, no effects)
   const mpSession = useMemo(() => loadMpSession(), []);
 
+  const hasUrlPuzzleOnLoad = window.location.hash.startsWith("#puzzle=");
   const [urlPuzzle, setUrlPuzzle] = useState<Puzzle | null>(() =>
-    window.location.hash.startsWith("#puzzle=") ? extractPuzzleFromUrl() : null,
+    hasUrlPuzzleOnLoad ? extractPuzzleFromUrl() : null,
+  );
+  // The query string survives extractPuzzleFromUrl() (which clears only the
+  // hash), so a challenge's name+time can still be read from it at init.
+  const [urlChallenge] = useState<ChallengePayload | null>(() =>
+    hasUrlPuzzleOnLoad ? decodeChallengeParams(window.location.search) : null,
   );
 
   const initialSavedSession = useMemo(() => loadSavedSession(), []);
@@ -221,6 +233,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setDisplayName,
     urlPuzzle,
     setUrlPuzzle,
+    urlChallenge,
     wrongAnswerTimeout,
     setWrongAnswerTimeout,
     lockedUntil,

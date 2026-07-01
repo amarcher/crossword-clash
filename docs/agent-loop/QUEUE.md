@@ -42,7 +42,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 
 ### Blocked (needs a decision — the loop skips these)
 
-- [blocked: F4 invite model undecided — live-only lobby vs async ghost race] F4 — Challenge link "come play me on this puzzle" · slug:challenge-link
+- [review: #50] F4 — Challenge a friend (async ghost race) · slug:challenge-async-ghost-race · winner=A(minimalist) 2-1 · auto-merges on green
       outcome: From a puzzle or the completion screen, a player generates a link that drops a
         friend straight into a multiplayer room on that exact puzzle, attributed
         ("[Name] challenges you to this crossword"). Builds on the existing #puzzle= transfer +
@@ -94,6 +94,9 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
         unlicensed content.
 
 - [review: #48] F2b — Per-viewer multiplayer standing on the share card · slug:share-card-mp-standing · winner=A(minimalist) 2-1 · auto-merges on green
+
+- [ ] F4-live — Challenge link: join a LIVE room when the challenger is present · slug:challenge-live-join
+      outcome: When a challenger has an open joinable room, the accept screen offers 'Join live' (reuses ?join= / existing multiplayer) instead of only the async ghost race — completing the hybrid.
 
 ### Done (most recent first; trimmed periodically)
 _(none yet)_

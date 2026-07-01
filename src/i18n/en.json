@@ -137,6 +137,9 @@
     "share": "Share Result",
     "sharing": "Preparing…",
     "linkCopied": "Link copied!",
+    "signPlaceholder": "Your name",
+    "send": "Send Challenge",
+    "unsignedName": "A friend",
     "imageSaved": "Image saved",
     "cardHeading": "Solved!",
     "shareTag": "crosswordclash.com",
@@ -157,6 +160,23 @@
     "newBest": "New best! 🎉",
     "newBestBeat": "New best! 🎉 beat {{time}}",
     "streakDays": "🔥 {{count}}-day streak"
+  },
+  "challenge": {
+    "heading": "{{name}} challenges you!",
+    "subtitle": "Solve \"{{title}}\" and race their time.",
+    "targetTime": "{{name}} solved it in {{time}}",
+    "accept": "Accept Challenge",
+    "beatTarget": "beat {{time}}",
+    "challengeFriend": "🏁 Challenge a Friend",
+    "sharing": "Preparing…",
+    "linkCopied": "Challenge link copied!",
+    "signPlaceholder": "Your name",
+    "send": "Send Challenge",
+    "unsignedName": "A friend",
+    "shareCaption": "I solved \"{{title}}\" in {{time}} on Crossword Clash — can you beat me? {{url}}",
+    "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
+    "resultLost": "{{name}} was faster by {{delta}}",
+    "resultTied": "Dead heat with {{name}}!"
   },
   "tts": {
     "unmute": "Unmute",

@@ -105,6 +105,15 @@ export function hasImportHash(): boolean {
 }
 
 /**
+ * Decode a Puzzle from a `#puzzle=<compressed>` hash string (pure — no window
+ * access, no side effects). Returns null when the hash is absent or malformed.
+ */
+export function puzzleFromHash(hash: string): Puzzle | null {
+  if (!hash.startsWith(HASH_PREFIX)) return null;
+  return decompressPuzzle(hash.slice(HASH_PREFIX.length));
+}
+
+/**
  * Decode compressed puzzle data into a Puzzle object.
  */
 function decompressPuzzle(compressed: string): Puzzle | null {
