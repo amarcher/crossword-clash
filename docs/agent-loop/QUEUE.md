@@ -77,7 +77,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
       done-when: celebration fires once per completion; respects prefers-reduced-motion and the
         existing mute setting; reuses existing audio infra (no heavy new deps).
 
-- [ ] F7 — Landing / first-visit onboarding nudge · slug:onboarding-nudge
+- [done: #55] F7 — First-visit onboarding nudge · winner=minimalist (below-CTA) 3-0
       outcome: A cold visitor immediately understands what to do — a one-line "how it works" and a
         clear primary action on the menu — cutting bounce. No new routes.
       done-when: first-visit framing renders on the menu, dismissible/non-intrusive, i18n in en+es.
