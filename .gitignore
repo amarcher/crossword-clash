@@ -20,3 +20,6 @@ tests.json
 
 # Simple agent loop — runtime coordination (wait records), not source
 /.agents/
+
+# Firecrawl research artifacts
+.firecrawl/
