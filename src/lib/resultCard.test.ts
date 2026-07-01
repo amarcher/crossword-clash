@@ -4,6 +4,7 @@ import {
   buildResultFilename,
   composeCardText,
   computeViewerStanding,
+  resultGlyph,
   type ResultCardLabels,
   type StandingPlayer,
 } from "./resultCard";
@@ -209,5 +210,38 @@ describe("computeViewerStanding", () => {
     expect(computeViewerStanding(players, "zzz")).toBeNull();
     expect(computeViewerStanding(players, undefined)).toBeNull();
     expect(computeViewerStanding(players, null)).toBeNull();
+  });
+
+  it("is order-independent — a co-leader reads rank 1 regardless of array order", () => {
+    // Prove the tie-safety property adversarially: same scores, different
+    // orderings must all yield rank 1 / tiedForFirst for both co-leaders.
+    const base: StandingPlayer[] = [
+      { userId: "a", cellsClaimed: 8 },
+      { userId: "b", cellsClaimed: 8 },
+      { userId: "c", cellsClaimed: 3 },
+    ];
+    const orderings = [
+      base,
+      [base[2], base[0], base[1]],
+      [base[1], base[2], base[0]],
+      [...base].reverse(),
+    ];
+    for (const order of orderings) {
+      expect(computeViewerStanding(order, "a")).toEqual({ rank: 1, total: 3, won: false, tiedForFirst: true });
+      expect(computeViewerStanding(order, "b")).toEqual({ rank: 1, total: 3, won: false, tiedForFirst: true });
+      expect(computeViewerStanding(order, "c")?.rank).toBe(3);
+    }
+  });
+});
+
+describe("resultGlyph", () => {
+  it("only shows a trophy for an actual win, never for a lower placement", () => {
+    expect(resultGlyph({ mode: "solo", finishSeconds: 100 })).toBe("🏆");
+    expect(resultGlyph({ mode: "multiplayer", viewerStanding: { rank: 1, total: 4, won: true, tiedForFirst: false } })).toBe("🏆");
+    expect(resultGlyph({ mode: "multiplayer", viewerStanding: { rank: 1, total: 3, won: false, tiedForFirst: true } })).toBe("🤝");
+    expect(resultGlyph({ mode: "multiplayer", viewerStanding: { rank: 3, total: 5, won: false, tiedForFirst: false } })).toBe("🧩");
+    // Spectator/winner-card fallback (no per-viewer standing).
+    expect(resultGlyph({ mode: "multiplayer", isTie: true })).toBe("🤝");
+    expect(resultGlyph({ mode: "multiplayer", isTie: false })).toBe("🏆");
   });
 });

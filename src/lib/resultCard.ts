@@ -147,6 +147,26 @@ export interface ResultCardText {
   /** Optional secondary note (best time / new best). */
   detail?: string;
   tag: string;
+  /** Outcome glyph drawn on the card — never a trophy for a non-winner. */
+  glyph: string;
+}
+
+/**
+ * The emoji that headlines the card. A trophy only for an actual win (solo
+ * finish, or 1st in multiplayer); a handshake for a tie-for-first; a puzzle
+ * piece for any other multiplayer placement — so a non-winner's shared card
+ * never wears a trophy it didn't earn.
+ */
+export function resultGlyph(input: ResultCardInput): string {
+  if (input.mode !== "multiplayer") return "🏆";
+  const s = input.viewerStanding;
+  if (s) {
+    if (s.won) return "🏆";
+    if (s.tiedForFirst) return "🤝";
+    return "🧩";
+  }
+  // Spectator / winner-card fallback (no per-viewer standing).
+  return input.isTie ? "🤝" : "🏆";
 }
 
 /**
@@ -158,6 +178,8 @@ export function composeCardText(
 ): ResultCardText {
   const title = (input.puzzleTitle ?? "").trim() || "Crossword";
 
+  const glyph = resultGlyph(input);
+
   if (input.mode === "multiplayer") {
     const metric =
       input.viewerStanding && labels.standing
@@ -165,7 +187,7 @@ export function composeCardText(
         : input.isTie
           ? labels.tie
           : labels.winner;
-    return { heading: labels.heading, title, metric, tag: labels.tag };
+    return { heading: labels.heading, title, metric, tag: labels.tag, glyph };
   }
 
   const metric =
@@ -177,5 +199,5 @@ export function composeCardText(
         ? labels.best
         : undefined;
 
-  return { heading: labels.heading, title, metric, detail, tag: labels.tag };
+  return { heading: labels.heading, title, metric, detail, tag: labels.tag, glyph };
 }

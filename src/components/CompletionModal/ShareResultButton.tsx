@@ -37,9 +37,9 @@ function drawCard(card: ResultCardText): HTMLCanvasElement {
   ctx.textAlign = "center";
   const cx = CARD_W / 2;
 
-  // Trophy + heading.
+  // Outcome glyph + heading (trophy only for an actual win — see resultGlyph).
   ctx.font = "96px serif";
-  ctx.fillText("🏆", cx, 190);
+  ctx.fillText(card.glyph, cx, 190);
 
   ctx.fillStyle = "#a5b4fc";
   ctx.font = "600 44px system-ui, sans-serif";

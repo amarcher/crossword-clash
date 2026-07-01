@@ -148,8 +148,8 @@
     "cardStandingTie": "Tied for 1st!",
     "cardStandingRank": "Finished #{{rank}} of {{total}}",
     "shareCaptionStandingWin": "I won \"{{title}}\" — #{{rank}} of {{total}} on Crossword Clash 🏆 {{url}}",
-    "shareCaptionStandingTie": "I tied for 1st in \"{{title}}\" on Crossword Clash 🏆 {{url}}",
-    "shareCaptionStandingRank": "I finished #{{rank}} of {{total}} in \"{{title}}\" on Crossword Clash 🏆 {{url}}"
+    "shareCaptionStandingTie": "I tied for 1st in \"{{title}}\" on Crossword Clash 🤝 {{url}}",
+    "shareCaptionStandingRank": "I finished #{{rank}} of {{total}} in \"{{title}}\" on Crossword Clash 🧩 {{url}}"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",
