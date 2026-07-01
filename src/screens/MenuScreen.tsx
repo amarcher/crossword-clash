@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
 import { Title } from "../components/Title";
@@ -11,6 +11,17 @@ import { getDailyMini } from "../lib/dailyMinis";
 import { getDisplayStreak } from "../lib/soloStats";
 
 type GameMode = "join" | "host" | "tv" | "solo" | "import";
+
+const ONBOARDED_KEY = "crossword-clash:onboarded";
+
+function readOnboarded(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(ONBOARDED_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
 
 interface MenuTileProps {
   to: string;
@@ -58,6 +69,17 @@ export function MenuScreen() {
   // Resolve once per render — deterministic per calendar day.
   const dailyMini = useMemo(() => getDailyMini(), []);
 
+  // First-visit orienting tip — shown until the visitor dismisses it once.
+  const [showNudge, setShowNudge] = useState(() => !readOnboarded());
+  const dismissNudge = useCallback(() => {
+    setShowNudge(false);
+    try {
+      window.localStorage.setItem(ONBOARDED_KEY, "1");
+    } catch {
+      // Ignore storage failures — the tip simply reappears next visit.
+    }
+  }, []);
+
   const playDailyMini = useCallback(async () => {
     track("mode_selected", { mode: "daily" });
     // No import step: load the bundled mini straight into solo play. It carries
@@ -95,6 +117,19 @@ export function MenuScreen() {
             {t("menu.dailyMiniTheme", { theme: dailyMini.theme })}
           </span>
         </button>
+
+        {showNudge && (
+          <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-neutral-600">
+            <span className="flex-1 leading-snug">{t("menu.nudge")}</span>
+            <button
+              type="button"
+              onClick={dismissNudge}
+              className="shrink-0 font-semibold text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+            >
+              {t("menu.nudgeDismiss")}
+            </button>
+          </div>
+        )}
 
         {(user || loading) && (
           <>
