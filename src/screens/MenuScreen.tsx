@@ -178,32 +178,42 @@ export function MenuScreen() {
         )}
 
         {(user || loading) && (
-          <>
-            <MenuTile
-              to="/join"
-              title={t("menu.joinGame")}
-              subtitle={t("menu.joinGameSubtitle")}
-              variant="primary"
-              mode="join"
-              disabled={disabled}
-            />
-            <MenuTile
-              to="/host-game/name"
-              title={t("menu.hostAsPlayer")}
-              subtitle={t("menu.hostAsPlayerSubtitle")}
-              variant="outline"
-              mode="host"
-              disabled={disabled}
-            />
-            <MenuTile
-              to="/host"
-              title={t("menu.hostAsTV")}
-              subtitle={t("menu.hostAsTVSubtitle")}
-              variant="outline"
-              mode="tv"
-              disabled={disabled}
-            />
-          </>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide text-center">
+              {t("menu.friendsHeading")}
+            </h2>
+            <div className="flex flex-col gap-3">
+              <MenuTile
+                to="/host-game/name"
+                title={t("menu.startGame")}
+                subtitle={t("menu.startGameSubtitle")}
+                variant="primary"
+                mode="host"
+                disabled={disabled}
+              />
+              <MenuTile
+                to="/join"
+                title={t("menu.joinGame")}
+                subtitle={t("menu.joinGameSubtitle")}
+                variant="outline"
+                mode="join"
+                disabled={disabled}
+              />
+            </div>
+            <div className="mt-1 text-center">
+              <Link
+                to="/host"
+                aria-disabled={disabled}
+                onClick={() => track("mode_selected", { mode: "tv" })}
+                className={`text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded ${disabled ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                {t("menu.tvModeLink")}
+              </Link>
+              <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug px-2">
+                {t("menu.tvModeHint")}
+              </p>
+            </div>
+          </div>
         )}
         <Link
           to="/solo/import"

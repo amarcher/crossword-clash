@@ -20,6 +20,11 @@ export function HostLobbyScreen() {
       <Title variant="dark" />
       <p className="text-2xl font-semibold text-white -mt-4">{t('lobby.waitingForPlayersTitle')}</p>
 
+      <ol className="w-full max-w-xs list-decimal list-inside space-y-1 rounded-lg bg-neutral-800 border border-neutral-700 px-4 py-3 text-xs text-neutral-300 text-left -mt-4">
+        <li>{t('lobby.howItWorksStep1')}</li>
+        <li>{t('lobby.howItWorksStep2')}</li>
+      </ol>
+
       {joinUrl && (
         <div className="flex flex-col items-center gap-4">
           <div className="bg-white p-4 rounded-xl">

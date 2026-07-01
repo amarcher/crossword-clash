@@ -3,12 +3,17 @@
     "defaultPlayerName": "Player"
   },
   "menu": {
-    "joinGame": "Join Game",
-    "joinGameSubtitle": "Enter a code to join someone's room",
+    "friendsHeading": "Play with friends",
+    "startGame": "Start a game",
+    "startGameSubtitle": "Create a room and invite friends to join",
+    "joinGame": "Join with a code",
+    "joinGameSubtitle": "Enter a code a friend shared with you",
     "hostAsPlayer": "Host Game as Player",
     "hostAsPlayerSubtitle": "Play with friends from this device",
     "hostAsTV": "Host Game as TV",
     "hostAsTVSubtitle": "Display the game on a shared screen — no playing",
+    "tvModeLink": "Putting it on a TV? Use TV mode",
+    "tvModeHint": "The TV shows the board — everyone else joins and plays from their phone.",
     "playSolo": "Play Solo",
     "playSoloSubtitle": "Just you, on this device",
     "importPuzzle": "Browse puzzles",
@@ -21,9 +26,12 @@
     "nudgeDismiss": "Got it"
   },
   "hostName": {
-    "enterDisplayName": "Enter your display name",
+    "heading": "Host a game",
+    "subtitlePick": "Enter your name, then pick a puzzle. You'll get a room code to share with friends.",
+    "subtitleCreate": "Enter your name to create the room — you'll get a code to share with friends.",
     "yourName": "Your name",
     "choosePuzzle": "Choose Puzzle",
+    "createRoom": "Create Room",
     "back": "Back"
   },
   "importer": {
@@ -73,6 +81,8 @@
     "modeCoopDesc": "One shared grid \u2014 fill it together as a team.",
     "modeAsync": "Time trial",
     "modeAsyncDesc": "Everyone gets their own copy \u2014 fastest solve wins.",
+    "howItWorksStep1": "Friends scan the QR code or enter the code at crosswordclash.com.",
+    "howItWorksStep2": "When everyone's in, press Start.",
     "copied": "Copied!",
     "clickToCopy": "Click to copy",
     "copyInviteLink": "Copy invite link",
@@ -260,6 +270,7 @@
   },
   "hostView": {
     "tvHostView": "TV / Host View",
+    "tvHostViewHint": "This screen becomes the shared game board — friends join and play from their own phones.",
     "roomCode": "Room Code"
   },
   "grid": {

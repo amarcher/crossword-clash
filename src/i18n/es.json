@@ -3,12 +3,17 @@
     "defaultPlayerName": "Jugador"
   },
   "menu": {
-    "joinGame": "Unirse a partida",
-    "joinGameSubtitle": "Ingresa un código para unirte a una sala",
+    "friendsHeading": "Juega con amigos",
+    "startGame": "Crear una partida",
+    "startGameSubtitle": "Crea una sala e invita a tus amigos a unirse",
+    "joinGame": "Unirse con un código",
+    "joinGameSubtitle": "Ingresa el código que te compartió un amigo",
     "hostAsPlayer": "Crear partida como jugador",
     "hostAsPlayerSubtitle": "Juega con amigos desde este dispositivo",
     "hostAsTV": "Modo TV",
-    "hostAsTVSubtitle": "Muestra la partida en una pantalla compartida — sin jugar",
+    "hostAsTVSubtitle": "Muestra el juego en una pantalla compartida — sin jugar",
+    "tvModeLink": "¿Lo vas a poner en una TV? Usa el modo TV",
+    "tvModeHint": "La TV muestra el tablero — los demás se unen y juegan desde su teléfono.",
     "playSolo": "Jugar solo",
     "playSoloSubtitle": "Solo tú, en este dispositivo",
     "importPuzzle": "Buscar crucigramas",
@@ -21,9 +26,12 @@
     "nudgeDismiss": "Entendido"
   },
   "hostName": {
-    "enterDisplayName": "Ingresa tu nombre",
+    "heading": "Crear una partida",
+    "subtitlePick": "Ingresa tu nombre y elige un crucigrama. Recibirás un código de sala para compartir con tus amigos.",
+    "subtitleCreate": "Ingresa tu nombre para crear la sala — recibirás un código para compartir con tus amigos.",
     "yourName": "Tu nombre",
     "choosePuzzle": "Elegir crucigrama",
+    "createRoom": "Crear sala",
     "back": "Volver"
   },
   "importer": {
@@ -73,6 +81,8 @@
     "modeCoopDesc": "Una cuadr\u00edcula compartida \u2014 ll\u00e9nenla juntos en equipo.",
     "modeAsync": "Contrarreloj",
     "modeAsyncDesc": "Cada uno con su propia copia \u2014 gana el tiempo m\u00e1s r\u00e1pido.",
+    "howItWorksStep1": "Tus amigos escanean el c\u00f3digo QR o ingresan el c\u00f3digo en crosswordclash.com.",
+    "howItWorksStep2": "Cuando todos est\u00e9n listos, presiona Iniciar.",
     "copied": "\u00a1Copiado!",
     "clickToCopy": "Clic para copiar",
     "copyInviteLink": "Copiar enlace de invitación",
@@ -260,6 +270,7 @@
   },
   "hostView": {
     "tvHostView": "Vista TV / Anfitri\u00f3n",
+    "tvHostViewHint": "Esta pantalla se convierte en el tablero compartido \u2014 tus amigos se unen y juegan desde su propio tel\u00e9fono.",
     "roomCode": "C\u00f3digo de sala"
   },
   "grid": {
