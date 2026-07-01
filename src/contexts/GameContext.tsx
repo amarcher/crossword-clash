@@ -60,6 +60,12 @@ interface GameContextValue {
   urlPuzzle: Puzzle | null;
   setUrlPuzzle: (p: Puzzle | null) => void;
   /**
+   * Theme label for the current solo puzzle, surfaced in the solo header. Set
+   * only when the Daily Mini is launched; null for imported / sample puzzles.
+   */
+  soloTheme: string | null;
+  setSoloTheme: (v: string | null) => void;
+  /**
    * Challenger name + ghost time captured from a challenge deep link's query
    * string (`?cf=&ct=`). Read from context, never window.location, after init.
    */
@@ -113,6 +119,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [urlChallenge] = useState<ChallengePayload | null>(() =>
     hasUrlPuzzleOnLoad ? decodeChallengeParams(window.location.search) : null,
   );
+
+  const [soloTheme, setSoloTheme] = useState<string | null>(null);
 
   const initialSavedSession = useMemo(() => loadSavedSession(), []);
 
@@ -202,6 +210,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
       loadPuzzle(p);
       fileBufferRef.current = fileBuffer ?? null;
+      // Imported / sample puzzles carry no theme — clear any prior daily theme
+      // so a stale "Today's theme" banner never bleeds onto a new puzzle.
+      setSoloTheme(null);
 
       // fileBuffer present ⇒ came from a real file upload (SoloImportScreen).
       // The URL/deep-link path passes no buffer and is reported in
@@ -233,6 +244,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setDisplayName,
     urlPuzzle,
     setUrlPuzzle,
+    soloTheme,
+    setSoloTheme,
     urlChallenge,
     wrongAnswerTimeout,
     setWrongAnswerTimeout,

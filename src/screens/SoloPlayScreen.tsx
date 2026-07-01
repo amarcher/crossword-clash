@@ -47,6 +47,7 @@ export function SoloPlayScreen() {
     setClueSheetOpen,
     completionModalDismissed,
     setCompletionModalDismissed,
+    soloTheme,
   } = game;
 
   const { soloInputLetter, rejectedCell, completedClues } = mp;
@@ -167,6 +168,11 @@ export function SoloPlayScreen() {
           <>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
+                {soloTheme && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700 mb-0.5">
+                    {t('playing.dailyThemeBadge', { theme: soloTheme })}
+                  </span>
+                )}
                 <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
                 {puzzle.author && (
                   <p className="hidden md:block text-sm text-neutral-500">{t('playing.by', { author: puzzle.author })}</p>
