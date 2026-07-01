@@ -45,6 +45,14 @@ describe("encodeChallengeParams / decodeChallengeParams", () => {
     expect(decodeChallengeParams(params)).toEqual({ name: "José Ω", seconds: 61 });
   });
 
+  it("survives URL-special characters in the signed name", () => {
+    // Users now type arbitrary names in the sign field — & # ? = + must not
+    // corrupt the round-trip or bleed into other params.
+    const name = "A & B #1 ?=+ 🏆";
+    const params = encodeChallengeParams({ name, seconds: 90 });
+    expect(decodeChallengeParams(params)).toEqual({ name, seconds: 90 });
+  });
+
   it("floors fractional and clamps negative seconds on encode", () => {
     expect(decodeChallengeParams(encodeChallengeParams({ name: "A", seconds: 9.9 }))).toEqual({
       name: "A",
