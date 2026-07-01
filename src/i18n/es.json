@@ -75,6 +75,8 @@
     "modeAsyncDesc": "Cada uno con su propia copia \u2014 gana el tiempo m\u00e1s r\u00e1pido.",
     "copied": "\u00a1Copiado!",
     "clickToCopy": "Clic para copiar",
+    "copyInviteLink": "Copiar enlace de invitación",
+    "inviteLinkCopied": "¡Enlace de invitación copiado!",
     "scanToJoin": "Escanea para unirte",
     "players": "Jugadores ({{count}})",
     "host": "Anfitri\u00f3n",

@@ -11,6 +11,7 @@ import {
   type ResultCardText,
   type ShareMethod,
 } from "../../lib/resultCard";
+import { buildResultShareUrl } from "../../lib/shareLinks";
 
 interface ShareResultButtonProps extends ResultCardInput {
   darkMode?: boolean;
@@ -118,6 +119,15 @@ export function ShareResultButton(props: ShareResultButtonProps) {
 
   const buildCaption = useCallback((): string => {
     const title = (input.puzzleTitle ?? "").trim() || "Crossword";
+    // The shared link points at the /share edge function, so the pasted URL
+    // unfurls into a per-result OG card (time/standing) instead of the
+    // generic site preview. Crawlers see the card; humans get redirected in.
+    const url = buildResultShareUrl(SHARE_URL, {
+      title: input.puzzleTitle,
+      seconds: input.finishSeconds,
+      rank: input.viewerStanding?.rank,
+      total: input.viewerStanding?.total,
+    });
     if (input.mode === "multiplayer") {
       if (input.coop) {
         return input.finishSeconds !== undefined
@@ -130,26 +140,26 @@ export function ShareResultButton(props: ShareResultButtonProps) {
       }
       const standing = input.viewerStanding;
       if (standing) {
-        const vars = { title, rank: standing.rank, total: standing.total, url: SHARE_URL };
+        const vars = { title, rank: standing.rank, total: standing.total, url };
         if (standing.won) return t("completion.shareCaptionStandingWin", vars);
         if (standing.tiedForFirst) return t("completion.shareCaptionStandingTie", vars);
         return t("completion.shareCaptionStandingRank", vars);
       }
       return input.isTie
-        ? t("completion.shareCaptionTie", { title, url: SHARE_URL })
+        ? t("completion.shareCaptionTie", { title, url })
         : t("completion.shareCaptionWin", {
             name: input.winnerName ?? "",
             title,
-            url: SHARE_URL,
+            url,
           });
     }
     return input.finishSeconds !== undefined
       ? t("completion.shareCaptionSolo", {
           title,
           time: formatDuration(input.finishSeconds),
-          url: SHARE_URL,
+          url,
         })
-      : t("completion.shareCaptionSoloNoTime", { title, url: SHARE_URL });
+      : t("completion.shareCaptionSoloNoTime", { title, url });
   }, [input, t]);
 
   const handleShare = useCallback(async () => {

@@ -75,6 +75,8 @@
     "modeAsyncDesc": "Everyone gets their own copy \u2014 fastest solve wins.",
     "copied": "Copied!",
     "clickToCopy": "Click to copy",
+    "copyInviteLink": "Copy invite link",
+    "inviteLinkCopied": "Invite link copied!",
     "scanToJoin": "Scan to join",
     "players": "Players ({{count}})",
     "host": "Host",
