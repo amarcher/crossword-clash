@@ -52,7 +52,7 @@ export function MenuScreen() {
   const streak = useMemo(() => getDisplayStreak(), []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
+    <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
       {/* The wordmark constructs via a one-shot Lottie on every menu visit. */}
       <Title animate className="mb-8" />
       {streak > 0 && (

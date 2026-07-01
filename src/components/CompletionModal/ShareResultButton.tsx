@@ -193,7 +193,10 @@ export function ShareResultButton(props: ShareResultButtonProps) {
 
       if (method === "webshare" && file) {
         try {
-          await nav!.share({ files: [file], text: caption, url: SHARE_URL });
+          // Share the result IMAGE as the primary item (+ the brag caption).
+          // Passing `url` makes the OS headline the generic site link and its
+          // (often failing) link preview instead of the actual result card.
+          await nav!.share({ files: [file], text: caption });
           report("webshare");
         } catch (err) {
           // User dismissed the share sheet — not an error, nothing shared.
