@@ -134,9 +134,9 @@ export function ShareResultButton(props: ShareResultButtonProps) {
           ? t("completion.shareCaptionCoop", {
               title,
               time: formatDuration(input.finishSeconds),
-              url: SHARE_URL,
+              url,
             })
-          : t("completion.shareCaptionCoopNoTime", { title, url: SHARE_URL });
+          : t("completion.shareCaptionCoopNoTime", { title, url });
       }
       const standing = input.viewerStanding;
       if (standing) {
