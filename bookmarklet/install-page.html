@@ -9,6 +9,8 @@
   Browsing rationale (a runtime-assembled javascript: URL in the SPA
   bundle was getting flagged as deceptive). Do NOT reintroduce a React
   version. Edit this file and re-run `pnpm build:bookmarklet`.
+
+  English-only by design — this page is outside the i18n system.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -36,9 +38,81 @@
   h2 { font-size: 1.15rem; margin-top: 2rem; }
   p { margin: 0.75rem 0; }
   .intro { color: #4b5563; }
+  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  .note { color: #6b7280; font-size: 0.9em; }
+  a[href^="http"], a[href^="/"] { color: #2563eb; }
+
+  /* ---- Mobile notice ---- */
+  /* No JS device detection (this page stays dependency-free per PR #36) —
+     a narrow viewport is a reasonable proxy for "not a desktop browser",
+     since bookmarklets require a visible bookmarks bar and a javascript:
+     URL that the mobile browser chrome will actually execute. */
+  .mobile-notice {
+    display: none;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin: 1.25rem 0;
+  }
+  .desktop-only-content { display: block; }
+  @media (max-width: 700px) {
+    .mobile-notice { display: block; }
+    .desktop-only-content { display: none; }
+  }
+
+  /* ---- Step list ---- */
+  .steps {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 1.25rem 0;
+  }
+  .steps > li {
+    counter-increment: step;
+    position: relative;
+    padding: 0 0 1.5rem 2.75rem;
+    border-left: 2px solid #dbeafe;
+    margin-left: 1rem;
+  }
+  .steps > li:last-child {
+    border-left: 2px solid transparent;
+    padding-bottom: 0;
+  }
+  .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: -1.05rem;
+    top: 0;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+  .steps p { margin: 0.35rem 0; color: #4b5563; }
+
+  /* ---- Drag-to-bookmarks button ---- */
+  .drag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+  }
   .bookmarklet-link {
-    display: inline-block;
-    padding: 12px 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
     background: #2563eb;
     color: white;
     border-radius: 8px;
@@ -46,13 +120,15 @@
     font-weight: 600;
     font-size: 1.05rem;
     cursor: grab;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   }
   .bookmarklet-link:active { cursor: grabbing; }
-  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
-  .steps { padding-left: 1.2em; }
-  .steps li { margin-bottom: 0.5em; }
-  .note { color: #6b7280; font-size: 0.9em; }
-  a[href^="http"], a[href^="/"] { color: #2563eb; }
+  .drag-hint {
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
   .disclosure {
     background: #f9fafb;
     border-left: 3px solid #d1d5db;
@@ -76,10 +152,43 @@
 <div class="container">
 <h1>NYT → Crossword Clash Bookmarklet</h1>
 <p class="intro">
-  A bookmarklet that imports the New York Times crossword you're currently viewing
-  into <a href="https://crosswordclash.com">Crossword Clash</a> so you can play it
-  head-to-head with friends.
+  A one-click bookmarklet that imports the New York Times crossword you're currently
+  viewing into <a href="https://crosswordclash.com">Crossword Clash</a> so you can play
+  it head-to-head with friends.
 </p>
+
+<div class="mobile-notice">
+  <strong>You're on a small screen.</strong> Bookmarklets need a desktop browser with a
+  visible bookmarks bar (Chrome, Safari, Firefox, or Edge on a computer). Open this page
+  on a computer to install it — it won't work on a phone or tablet.
+</div>
+
+<div class="desktop-only-content">
+<h2>Install in 3 steps</h2>
+<ol class="steps">
+  <li>
+    <h3>Show your bookmarks bar</h3>
+    <p>If you don't see one under the address bar, press <code>Cmd+Shift+B</code> (Mac)
+    or <code>Ctrl+Shift+B</code> (Windows/Linux) to show it.</p>
+  </li>
+  <li>
+    <h3>Drag the button below into your bookmarks bar</h3>
+    <p><strong>Drag it — don't click it.</strong> Clicking it here won't do anything useful;
+    it only works once it's a bookmark and you click it from a NYT crossword page.</p>
+    <div class="drag-row">
+      <a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}">🧩 NYT → Crossword Clash</a>
+      <span class="drag-hint">← drag this up ↑</span>
+    </div>
+  </li>
+  <li>
+    <h3>Open a NYT puzzle, then click the bookmark</h3>
+    <p>Visit any <a href="https://www.nytimes.com/crosswords/game/daily" target="_blank" rel="noopener">Daily</a>,
+    <a href="https://www.nytimes.com/crosswords/game/mini" target="_blank" rel="noopener">Mini</a>, or other NYT
+    crossword while logged into your subscription. Click the bookmark you just added — a new
+    tab opens showing "Receiving puzzle...", then the puzzle is ready to play.</p>
+  </li>
+</ol>
+</div>
 
 <div class="disclosure">
   <strong>What this does:</strong> When clicked on a NYT crossword page, the bookmarklet
@@ -90,28 +199,18 @@
   <a href="https://github.com/amarcher/crossword-clash/blob/main/bookmarklet/nyt.js" target="_blank" rel="noopener">GitHub</a>.
 </div>
 
-<h2>Install</h2>
-<p>Drag this button to your bookmarks bar:</p>
-<p><a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}">NYT → Crossword Clash</a></p>
-<p class="note">Make sure your bookmarks bar is visible (Cmd+Shift+B on Mac, Ctrl+Shift+B on Windows).</p>
-
 <h2>See it in action</h2>
 <video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata"></video>
-
-<h2>Usage</h2>
-<ol class="steps">
-  <li>Visit a NYT crossword page — <a href="https://www.nytimes.com/crosswords/game/daily" target="_blank" rel="noopener">Daily</a>, <a href="https://www.nytimes.com/crosswords/game/mini" target="_blank" rel="noopener">Mini</a>, or any other puzzle — while logged into your NYT Crossword subscription.</li>
-  <li>Click the bookmarklet in your bookmarks bar.</li>
-  <li>Crossword Clash opens in a new tab with the puzzle pre-loaded.</li>
-</ol>
 
 <h2>How it works</h2>
 <ul>
   <li>Reads puzzle data from <code>nytimes.com/svc/crosswords/v6/puzzle/...</code> using the session cookie already in your browser.</li>
   <li>Converts the puzzle into Crossword Clash's internal format and compresses it with <a href="https://github.com/pieroxy/lz-string" target="_blank" rel="noopener">lz-string</a>.</li>
-  <li>Opens a new tab to crosswordclash.com and transfers the puzzle via <code>window.postMessage</code>.</li>
+  <li>Opens a new tab to crosswordclash.com and transfers the puzzle via <code>window.postMessage</code> (with a clipboard copy as a backup, in case the automatic transfer is blocked).</li>
   <li>No data is sent to any third-party server — the transfer is entirely between your two browser tabs.</li>
 </ul>
+
+<p class="note desktop-only-content">Trouble installing? Some browsers require you to right-click the button and choose "Bookmark this link" instead of dragging — try that if the drag doesn't take.</p>
 </div>
 </body>
 </html>
