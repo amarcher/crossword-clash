@@ -119,14 +119,30 @@ export function MenuScreen() {
         </button>
 
         {showNudge && (
-          <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-neutral-600">
+          <div
+            role="note"
+            className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-neutral-600"
+          >
             <span className="flex-1 leading-snug">{t("menu.nudge")}</span>
             <button
               type="button"
               onClick={dismissNudge}
-              className="shrink-0 font-semibold text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              aria-label={t("menu.nudgeDismiss")}
+              title={t("menu.nudgeDismiss")}
+              className="shrink-0 -mr-1 -mt-0.5 rounded p-0.5 text-blue-400 hover:text-blue-700 hover:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              {t("menu.nudgeDismiss")}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" />
+              </svg>
             </button>
           </div>
         )}
