@@ -280,6 +280,27 @@
   // ---- Fetch and transform puzzle ----
   async function run() {
     try {
+      // Dead end #1: wrong site entirely. Bail before hitting the network so
+      // the user gets a message that names the actual problem instead of a
+      // generic fetch/CORS failure.
+      if (window.location.hostname.indexOf("nytimes.com") === -1) {
+        alert(
+          "Crossword Clash: This bookmarklet only works on nytimes.com. Open a NYT crossword (Daily, Mini, Sunday, etc.) and click the bookmarklet again.",
+        );
+        return;
+      }
+
+      // Dead end #2: on nytimes.com, but not viewing an actual puzzle (e.g.
+      // the homepage or a section front). getPuzzleInfo() would otherwise
+      // silently guess "today's daily", which can succeed on the wrong
+      // puzzle and confuse the user.
+      if (window.location.pathname.indexOf("/crosswords/game/") === -1) {
+        alert(
+          "Crossword Clash: Open a NYT crossword puzzle first — Daily, Mini, or another game — then click the bookmarklet again.",
+        );
+        return;
+      }
+
       var info = getPuzzleInfo();
       var resp = await fetch(
         "/svc/crosswords/v6/puzzle/" + info.type + "/" + info.date + ".json",
@@ -292,7 +313,11 @@
             "Crossword Clash: Could not fetch puzzle. Make sure you're logged in to NYT with an active crossword subscription.",
           );
         } else {
-          alert("Crossword Clash: API error " + resp.status);
+          alert(
+            "Crossword Clash: NYT returned an error (status " +
+              resp.status +
+              "). Try reloading the puzzle page and clicking the bookmarklet again.",
+          );
         }
         return;
       }
@@ -303,7 +328,7 @@
       var cells = body.cells;
       if (!cells || !cells.length) {
         alert(
-          "Crossword Clash: Could not parse puzzle data. The NYT API format may have changed.",
+          "Crossword Clash: Could not read this puzzle. The NYT site may have changed, or this puzzle type isn't supported yet.",
         );
         return;
       }
@@ -397,9 +422,37 @@
       var json = JSON.stringify(transfer);
       var compressed = compressToEncodedURIComponent(json);
 
+      // Sanity cap — no real crossword compresses anywhere near this, but if
+      // NYT ever ships something absurd (or the API response is malformed)
+      // fail loudly here instead of quietly breaking postMessage/clipboard.
+      if (compressed.length > 200000) {
+        alert(
+          "Crossword Clash: This puzzle is too large to import. Please report this at github.com/amarcher/crossword-clash/issues.",
+        );
+        return;
+      }
+
+      // Best-effort clipboard copy so "Paste from Clipboard" on the
+      // Crossword Clash import screen works even if the automatic transfer
+      // below fails (pop-up blocked, slow connection, etc). Silently ignore
+      // failures — Clipboard API permissions vary by browser and this is
+      // purely a fallback, not the primary transfer path.
+      try {
+        navigator.clipboard.writeText(compressed);
+      } catch (ignore) {}
+
       // Open app with clean URL (no puzzle data in URL to avoid Safe Browsing flags)
       var appOrigin = APP_URL.replace(/\/$/, "");
       var appWindow = window.open(APP_URL + "#import", "_blank");
+
+      if (!appWindow) {
+        alert(
+          "Crossword Clash: Your browser blocked the pop-up. Allow pop-ups for nytimes.com and click the bookmarklet again — or open " +
+            APP_URL +
+            "#import in a new tab and use \"Paste from Clipboard\" (the puzzle was already copied).",
+        );
+        return;
+      }
 
       // Send puzzle data via postMessage when app signals ready
       var handler = function (event) {
@@ -418,7 +471,11 @@
         window.removeEventListener("message", handler);
       }, 30000);
     } catch (e) {
-      alert("Crossword Clash: " + (e.message || "Unknown error"));
+      alert(
+        "Crossword Clash: Something went wrong (" +
+          (e.message || "unknown error") +
+          "). Try reloading the NYT puzzle page and clicking the bookmarklet again.",
+      );
     }
   }
 
