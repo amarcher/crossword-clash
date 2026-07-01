@@ -14,7 +14,9 @@
     "importPuzzle": "Buscar crucigramas",
     "dailyMiniEyebrow": "Mini del día",
     "playDailyMini": "Jugar el Mini de hoy",
-    "dailyMiniTheme": "Tema de hoy: {{theme}}"
+    "dailyMiniTheme": "Tema de hoy: {{theme}}",
+    "nudge": "Compite con amigos para llenar un crucigrama — o resuelve el Mini de hoy solo.",
+    "nudgeDismiss": "Entendido"
   },
   "hostName": {
     "enterDisplayName": "Ingresa tu nombre",

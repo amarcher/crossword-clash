@@ -14,7 +14,9 @@
     "importPuzzle": "Browse puzzles",
     "dailyMiniEyebrow": "Daily Mini",
     "playDailyMini": "Play Today's Mini",
-    "dailyMiniTheme": "Today's theme: {{theme}}"
+    "dailyMiniTheme": "Today's theme: {{theme}}",
+    "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
+    "nudgeDismiss": "Got it"
   },
   "hostName": {
     "enterDisplayName": "Enter your display name",
