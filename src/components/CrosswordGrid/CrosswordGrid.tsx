@@ -30,6 +30,9 @@ interface CrosswordGridProps {
   highlightedCells: Set<string>;
   onCellClick: (row: number, col: number) => void;
   playerColorMap?: Record<string, string>;
+  /** The local player's id — their own fills render instantly with no animation.
+   *  Fill pops are reserved for *remote* players' claims. */
+  localPlayerId?: string;
   completedClues?: Set<string>;
   interactive?: boolean;
   navigationActions?: NavigationActions;
@@ -44,6 +47,7 @@ export function CrosswordGrid({
   highlightedCells,
   onCellClick,
   playerColorMap,
+  localPlayerId,
   completedClues,
   interactive = true,
   navigationActions,
@@ -59,42 +63,28 @@ export function CrosswordGrid({
     [],
   );
 
-  const [inputFocused, setInputFocused] = useState(false);
-
-  // On mobile, only show selection highlights when the hidden input is focused
-  // (i.e., the virtual keyboard is available). Desktop always shows selection.
-  const showSelection = !isTouchDevice || inputFocused;
-
   // --- Cell fill animation tracking ---
-  // Track which cell keys have been seen with a letter so we only animate new fills.
-  const seenCellsRef = useRef<Set<string>>(new Set());
-  const [animatingFills, setAnimatingFills] = useState<Set<string>>(new Set());
+  // Fill pops are reserved for *remote* players' claims — the local player's own
+  // typing must render instantly with zero animation (no self-input flicker).
+  // We derive "is this a brand-new fill?" during render from a ref snapshot of
+  // the previous committed render's filled keys, so the animation class is
+  // present from the very first frame the letter appears — no extra setState
+  // passes, no re-render churn, no one-frame flash.
+  // On the first render for a puzzle (mount / hydration / rejoin) nothing
+  // animates: pre-existing fills just appear.
+  const seenFillsRef = useRef<{ puzzle: Puzzle; seen: Set<string> } | null>(null);
+  const seenFills =
+    seenFillsRef.current?.puzzle === puzzle ? seenFillsRef.current.seen : null;
 
   useEffect(() => {
-    const newFills: string[] = [];
-    for (const [key, state] of Object.entries(playerCells)) {
-      if (state.letter && !seenCellsRef.current.has(key)) {
-        seenCellsRef.current.add(key);
-        newFills.push(key);
-      }
+    if (seenFillsRef.current?.puzzle !== puzzle) {
+      seenFillsRef.current = { puzzle, seen: new Set() };
     }
-    if (newFills.length === 0) return;
-
-    setAnimatingFills((prev) => {
-      const next = new Set(prev);
-      for (const k of newFills) next.add(k);
-      return next;
-    });
-
-    const timer = setTimeout(() => {
-      setAnimatingFills((prev) => {
-        const next = new Set(prev);
-        for (const k of newFills) next.delete(k);
-        return next;
-      });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [playerCells]);
+    const seen = seenFillsRef.current.seen;
+    for (const [key, state] of Object.entries(playerCells)) {
+      if (state.letter) seen.add(key);
+    }
+  }, [puzzle, playerCells]);
 
   // --- Word completion cascade tracking ---
   const prevCompletedRef = useRef<Set<string>>(new Set());
@@ -252,10 +242,13 @@ export function CrosswordGrid({
   // Fill available viewport: subtract header + padding vertically, and sidebar + padding horizontally.
   // --grid-h-offset: vertical space reserved for header + padding (default 6.5rem)
   // --grid-w-offset: horizontal space reserved for sidebar + padding + gap (default 1rem)
-  // --grid-h-max: optional hard cap on grid height (default: none / 100dvh)
+  // --grid-h-max: optional hard cap on grid height (default: none / 100svh)
   //   Used on non-touch narrow viewports so clues below the grid remain visible.
-  const hMax = `var(--grid-h-max, 100dvh)`;
-  const gridSize = `min(calc(100dvh - var(--grid-h-offset, 6.5rem)), calc(100vw - var(--grid-w-offset, 1rem)), ${hMax})`;
+  // NOTE: sized with `svh` (small viewport units), NOT `dvh` — dvh changes when
+  // the browser UI or virtual keyboard resizes the viewport, which made the whole
+  // grid visibly reflow when the mobile keyboard opened. svh is a stable basis.
+  const hMax = `var(--grid-h-max, 100svh)`;
+  const gridSize = `min(calc(100svh - var(--grid-h-offset, 6.5rem)), calc(100vw - var(--grid-w-offset, 1rem)), ${hMax})`;
   const gridWidth =
     puzzle.width >= puzzle.height
       ? gridSize
@@ -293,8 +286,6 @@ export function CrosswordGrid({
           data-form-type="other"
           data-lpignore="true"
           data-1p-ignore
-          onFocus={() => setInputFocused(true)}
-          onBlur={() => setInputFocused(false)}
           onKeyDown={handleKeyDown}
           onBeforeInput={handleBeforeInput}
           onChange={() => {
@@ -315,27 +306,41 @@ export function CrosswordGrid({
           gap: "1px",
         }}
       >
-        {puzzle.cells.flat().map((cell) => {
-          const key = `${cell.row},${cell.col}`;
-          const wcInfo = wordCompleteMap.get(key);
-          return (
-            <Cell
-              key={key}
-              cell={cell}
-              cellState={playerCells[key]}
-              isSelected={
-                interactive && showSelection && selectedCell?.row === cell.row && selectedCell?.col === cell.col
-              }
-              isHighlighted={interactive && showSelection && highlightedCells.has(key)}
-              isRejected={key === rejectedCell}
-              onClick={interactive ? handleCellClick : undefined}
-              playerColorMap={playerColorMap}
-              animateFill={animatingFills.has(key)}
-              wordCompleteColor={wcInfo?.color}
-              wordCompleteDelay={wcInfo?.delay}
-            />
-          );
-        })}
+        {puzzle.cells.map((rowCells, rowIdx) => (
+          // role="row" satisfies the ARIA grid structure; `contents` keeps the
+          // cells participating directly in the CSS grid layout.
+          <div key={rowIdx} role="row" className="contents">
+            {rowCells.map((cell) => {
+              const key = `${cell.row},${cell.col}`;
+              const wcInfo = wordCompleteMap.get(key);
+              const state = playerCells[key];
+              // Animate only genuinely-new fills made by a *remote* player.
+              const animateFill =
+                seenFills !== null &&
+                !!state?.letter &&
+                !!state.playerId &&
+                state.playerId !== localPlayerId &&
+                !seenFills.has(key);
+              return (
+                <Cell
+                  key={key}
+                  cell={cell}
+                  cellState={state}
+                  isSelected={
+                    interactive && selectedCell?.row === cell.row && selectedCell?.col === cell.col
+                  }
+                  isHighlighted={interactive && highlightedCells.has(key)}
+                  isRejected={key === rejectedCell}
+                  onClick={interactive ? handleCellClick : undefined}
+                  playerColorMap={playerColorMap}
+                  animateFill={animateFill}
+                  wordCompleteColor={wcInfo?.color}
+                  wordCompleteDelay={wcInfo?.delay}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

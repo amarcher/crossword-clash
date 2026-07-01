@@ -234,6 +234,7 @@ export function MultiplayerPlayScreen() {
               highlightedCells={highlightedCells}
               onCellClick={selectCell}
               playerColorMap={playerColorMap}
+              localPlayerId={user?.id}
               completedClues={completedClues}
               navigationActions={navActions}
               rejectedCell={rejectedCell}
