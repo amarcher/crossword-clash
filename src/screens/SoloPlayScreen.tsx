@@ -10,6 +10,7 @@ import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
+import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
@@ -22,6 +23,7 @@ export function SoloPlayScreen() {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+  const { user } = useAuth();
 
   const {
     puzzle,
@@ -124,6 +126,25 @@ export function SoloPlayScreen() {
     setCompletionModalDismissed(true);
     handleReset();
   }, [setCompletionModalDismissed, handleReset]);
+
+  // Live bridge: take the finisher into the EXISTING host-as-player flow to host
+  // a FRESH puzzle head-to-head (name → import → lobby with share code / QR).
+  // We deliberately tear down all solo/challenge state so the next puzzle is new
+  // to both players — the already-solved puzzle is never re-raced live (the
+  // unfair case). No new room/realtime code: this is pure routing into the
+  // existing stack. The finisher's name (if they signed one) rides along, so the
+  // host name field is pre-filled.
+  const handlePlayLive = useCallback(() => {
+    setCompletionModalDismissed(true);
+    reset();
+    game.setGameId(null);
+    game.setIsMultiplayer(false);
+    localStorage.removeItem(STORAGE_KEY);
+    clearMpSession();
+    clearSoloTimer();
+    clearChallenge();
+    navigate("/host-game/name");
+  }, [setCompletionModalDismissed, reset, game, navigate]);
 
   function handleClueClick(clue: PuzzleClue) {
     selectCell(clue.row, clue.col);
@@ -253,6 +274,8 @@ export function SoloPlayScreen() {
         challengePuzzle={puzzle}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
+        onPlayLive={user ? handlePlayLive : undefined}
+        puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
       />

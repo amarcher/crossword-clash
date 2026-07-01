@@ -3,8 +3,14 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/react";
 import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
+import { track } from "../../lib/analytics";
 
-afterEach(cleanup);
+vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
+
+afterEach(() => {
+  cleanup();
+  vi.mocked(track).mockClear();
+});
 
 const SOLO_PROPS = {
   open: true,
@@ -154,5 +160,53 @@ describe("CompletionModal", () => {
       <CompletionModal {...SOLO_PROPS} players={makePlayers()} />,
     );
     expect(queryByText("Play Again")).toBeNull();
+  });
+
+  it("hides the live CTA when onPlayLive is undefined (multiplayer unavailable)", () => {
+    const { queryByText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} />,
+    );
+    expect(queryByText("⚡ Play Live")).toBeNull();
+    expect(queryByText("⚡ Rematch Live")).toBeNull();
+  });
+
+  it("shows 'Play Live' on a plain solo finish and calls onPlayLive", () => {
+    const onPlayLive = vi.fn();
+    const { getByText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} onPlayLive={onPlayLive} />,
+    );
+    fireEvent.click(getByText("⚡ Play Live"));
+    expect(onPlayLive).toHaveBeenCalledOnce();
+  });
+
+  it("shows 'Rematch Live' after racing a challenge ghost", () => {
+    const { getByText, queryByText } = render(
+      <CompletionModal
+        {...SOLO_PROPS}
+        finishSeconds={90}
+        onPlayLive={() => {}}
+        challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
+      />,
+    );
+    expect(getByText("⚡ Rematch Live")).toBeTruthy();
+    expect(queryByText("⚡ Play Live")).toBeNull();
+  });
+
+  it("emits a distinct live_bridge analytics event (not puzzle_imported)", () => {
+    const { getByText } = render(
+      <CompletionModal
+        {...SOLO_PROPS}
+        finishSeconds={90}
+        puzzleSize="15x15"
+        onPlayLive={() => {}}
+        challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
+      />,
+    );
+    fireEvent.click(getByText("⚡ Rematch Live"));
+    expect(track).toHaveBeenCalledWith("live_bridge", {
+      mode: "live",
+      from: "rematch",
+      size: "15x15",
+    });
   });
 });

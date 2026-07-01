@@ -176,7 +176,10 @@
     "shareCaption": "I solved \"{{title}}\" in {{time}} on Crossword Clash — can you beat me? {{url}}",
     "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
     "resultLost": "{{name}} was faster by {{delta}}",
-    "resultTied": "Dead heat with {{name}}!"
+    "resultTied": "Dead heat with {{name}}!",
+    "playLive": "⚡ Play Live",
+    "rematchLive": "⚡ Rematch Live",
+    "playLiveHint": "Host a fresh puzzle head-to-head — invite by link or QR."
   },
   "tts": {
     "unmute": "Unmute",

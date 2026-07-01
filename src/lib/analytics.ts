@@ -33,7 +33,8 @@ export type AnalyticsEvent =
   | "language_changed"
   | "result_shared"
   | "challenge_created"
-  | "challenge_accepted";
+  | "challenge_accepted"
+  | "live_bridge";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 
