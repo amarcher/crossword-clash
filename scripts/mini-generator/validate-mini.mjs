@@ -1,4 +1,5 @@
 // Validate authored themed minis against the ENABLE (public-domain) word list.
+// Accepts any N×N grid (5×5, 7×7, 11×11, ... — nothing hard-codes 5).
 // Usage: node validate-mini.mjs minis.json
 import { readFileSync } from "node:fs";
 
@@ -40,8 +41,11 @@ function entries(grid) {
 function validateMini(m, i) {
   const errs = [];
   const grid = m.grid;
-  if (!Array.isArray(grid) || grid.length !== 5 || grid.some((r) => r.length !== 5))
-    errs.push("grid must be 5x5");
+  const N = Array.isArray(grid) ? grid.length : 0;
+  if (!Array.isArray(grid) || N < 2 || grid.some((r) => typeof r !== "string" || r.length !== N)) {
+    errs.push("grid must be a square N×N array of strings");
+    return { i, title: m.title, theme: m.theme, ok: false, errs, entries: [] };
+  }
   if (!m.theme) errs.push("missing theme");
   const ents = entries(grid);
   // every white cell must be in an across run >=2 AND a down run >=2
@@ -53,13 +57,12 @@ function validateMini(m, i) {
       (e.dir === "A" ? acrossCover : downCover).add(key);
     }
   }
-  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     if (grid[r][c] === "#") continue;
     if (!acrossCover.has(`${r},${c}`)) errs.push(`cell ${r},${c} unchecked across`);
     if (!downCover.has(`${r},${c}`)) errs.push(`cell ${r},${c} unchecked down`);
   }
   // each entry (len>=2) is a real word + has a clue
-  let themeHit = false;
   for (const e of ents) {
     if (e.word.length < 2) continue;
     if (!isWord(e.word)) errs.push(`NOT A WORD: ${e.dir} "${e.word}" @${e.r},${e.c}`);
@@ -69,9 +72,10 @@ function validateMini(m, i) {
   const seen = new Map();
   for (const e of ents) if (e.word.length >= 2) seen.set(e.word, (seen.get(e.word) || 0) + 1);
   for (const [w, n] of seen) if (n > 1) errs.push(`duplicate answer "${w}" (x${n}) — builder keys clues by answer`);
-
+  // the theme word appears among the answers
   const ans = ents.filter((e) => e.word.length >= 2).map((e) => e.word.toUpperCase());
-  themeHit = ans.length > 0;
+  if (m.theme && !ans.includes(String(m.theme).toUpperCase()))
+    errs.push(`theme "${m.theme}" not among the answers`);
   return { i, title: m.title, theme: m.theme, ok: errs.length === 0, errs, entries: ans };
 }
 
@@ -83,3 +87,4 @@ for (let i = 0; i < minis.length; i++) {
   else { console.log(`✗ [${i}] "${r.title}" (${r.theme})`); r.errs.forEach((e) => console.log(`    - ${e}`)); }
 }
 console.log(`\n${pass}/${minis.length} valid`);
+if (pass !== minis.length) process.exit(1);
