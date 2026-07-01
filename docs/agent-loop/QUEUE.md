@@ -82,7 +82,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
         clear primary action on the menu — cutting bounce. No new routes.
       done-when: first-visit framing renders on the menu, dismissible/non-intrusive, i18n in en+es.
 
-- [ ] F1 — Daily puzzle + built-in free library · slug:daily-puzzle
+- [done: #52+#53] F1 — Daily themed Mini + public-domain classics · content #52, front-door UI #53 · winner=product 2-1
       outcome: A cold visitor can play instantly with no import — a "Play today's puzzle" CTA loads
         a free puzzle deterministically by date, working fully offline/solo.
       done-when: menu shows a prominent "Play today" tile; clicking loads straight into /solo/play
