@@ -81,6 +81,13 @@ interface UseMultiplayerReturn {
   isRoomClosed: boolean;
   newGameId: string | null;
   hydrated: boolean;
+  /**
+   * Shared race time in whole seconds (game start → grid complete), or null
+   * while the game is unstarted/in progress. Derived from the host's
+   * game_started timestamp + the completion moment, backed by the DB's
+   * started_at/completed_at for rejoiners.
+   */
+  raceSeconds: number | null;
 }
 
 export function useMultiplayer({
@@ -101,6 +108,10 @@ export function useMultiplayer({
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
+  // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
+  // by the DB's started_at/completed_at on hydrate, so refreshes keep the time.
+  const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
+  const [completedAtMs, setCompletedAtMs] = useState<number | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -133,6 +144,10 @@ export function useMultiplayer({
     if (state.settings && typeof state.settings.wrongAnswerTimeoutSeconds === "number") {
       setGameSettings({ wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds });
     }
+
+    // DB timestamps are authoritative for the race clock (rejoin/refresh).
+    if (state.startedAt != null) setStartedAtMs(state.startedAt);
+    if (state.completedAt != null) setCompletedAtMs(state.completedAt);
 
     // Determine host from DB-ordered players (first by created_at)
     if (state.players.length > 0) {
@@ -221,10 +236,15 @@ export function useMultiplayer({
       if (payload?.settings) {
         setGameSettings(payload.settings);
       }
+      // The host's clock anchors the shared race time for everyone.
+      setStartedAtMs(typeof payload?.startedAt === "number" ? payload.startedAt : Date.now());
     });
 
-    channel.on("broadcast", { event: "game_completed" }, () => {
+    channel.on("broadcast", { event: "game_completed" }, ({ payload }) => {
       setGameStatus("completed");
+      setCompletedAtMs((prev) =>
+        prev ?? (typeof payload?.completedAt === "number" ? payload.completedAt : Date.now()),
+      );
     });
 
     channel.on("broadcast", { event: "room_closed" }, () => {
@@ -278,14 +298,16 @@ export function useMultiplayer({
     if (gameStatus !== "active") return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
     if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
+      const completedAt = Date.now();
       setGameStatus("completed");
+      setCompletedAtMs((prev) => prev ?? completedAt);
       // Update DB
       if (supabase) {
         supabase
           .from("games")
           .update({
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: new Date(completedAt).toISOString(),
           })
           .eq("id", gameId)
           .then(() => {
@@ -293,7 +315,7 @@ export function useMultiplayer({
               ?.send({
                 type: "broadcast",
                 event: "game_completed",
-                payload: {},
+                payload: { completedAt },
               })
               .catch(() => {});
           });
@@ -393,13 +415,15 @@ export function useMultiplayer({
     const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
     const success = await startGameOnServer(gameId, resolvedSettings);
     if (success) {
+      const startedAt = Date.now();
       setGameSettings(resolvedSettings);
       setGameStatus("active");
+      setStartedAtMs(startedAt);
       void channelRef.current
         ?.send({
           type: "broadcast",
           event: "game_started",
-          payload: { settings: resolvedSettings },
+          payload: { settings: resolvedSettings, startedAt },
         })
         .catch(() => {});
     }
@@ -454,6 +478,11 @@ export function useMultiplayer({
     };
   }, [gameId]);
 
+  const raceSeconds =
+    startedAtMs != null && completedAtMs != null && completedAtMs >= startedAtMs
+      ? Math.round((completedAtMs - startedAtMs) / 1000)
+      : null;
+
   return {
     claimCell,
     broadcastWrongLetter,
@@ -469,5 +498,6 @@ export function useMultiplayer({
     isRoomClosed,
     newGameId,
     hydrated,
+    raceSeconds,
   };
 }

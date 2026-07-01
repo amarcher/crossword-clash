@@ -29,6 +29,8 @@ interface MultiplayerContextValue {
   isRoomClosed: boolean;
   newGameId: string | null;
   hydrated: boolean;
+  /** Shared race time in whole seconds once the game completes, else null. */
+  raceSeconds: number | null;
 
   // Derived values
   multiplayerActive: boolean;
