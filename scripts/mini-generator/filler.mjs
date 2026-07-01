@@ -1,7 +1,7 @@
 // Backtracking filler for N×N crossword grids with symmetric black-square
 // patterns (180° rotational symmetry — the crossword standard).
 //
-//   node filler.mjs [themeWord] [--size N] [--pool N] [--pattern P] [--time-ms N]
+//   node filler.mjs [themeWord] [--size N] [--pool N] [--pattern P] [--time-ms N] [--steps N]
 //
 //   --size N      grid size (default 5; supports 5..15, e.g. 5, 7, 11)
 //   --pool N      fill pool = top-N frequency words ∩ ENABLE (default 20000;
@@ -10,8 +10,9 @@
 //                 retries if a pattern won't fill), or explicit rows joined by
 //                 commas (e.g. "#....,.....,.....,.....,....#").
 //                 Default: the built-in pattern for the size, else auto.
-//   --time-ms N   wall-clock cap per fill attempt loop (default scales with
-//                 size: 1200 for 5×5, 10000 for 7×7, 30000 beyond)
+//   --time-ms N   wall-clock cap per fill attempt loop (default 1200 for 5×5,
+//                 10000 beyond)
+//   --steps N     backtracking steps per attempt before a randomized restart
 //
 // Examples:
 //   node filler.mjs ocean                 # classic 5×5 black-corner mini
@@ -63,7 +64,7 @@ const JUNK = new Set([
   // interjections
   "aah", "umm", "heh", "yeh", "wha", "rah", "yip", "shh", "pfft", "psst",
   // family-friendly fill only
-  "ass", "arse", "pee", "loo", "dui", "scum", "scumbag", "sex", "sexy",
+  "ass", "arse", "pee", "loo", "dui", "scum", "scumbag", "sex", "sexy", "fart",
 ]);
 const pool = [...new Set(COMMON.filter((w) => EN.has(w) && /^[a-z]+$/.test(w) && !JUNK.has(w)))];
 const poolSet = new Set(pool);
@@ -75,21 +76,36 @@ function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.fl
 const BUILTIN = {
   5: ["#....", ".....", ".....", ".....", "....#"], // classic black-corner mini
   7: ["...#...", "...#...", ".......", "##...##", ".......", "...#...", "...#..."], // pinwheel
+  11: [
+    // curated midi: 24 blacks (19.8%), slots 3-7, corner stacks cover the
+    // edge columns that isolated blacks can't reach with runs >= 3
+    "###...#....",
+    "......#....",
+    "......#....",
+    "....##.....",
+    "...#.......",
+    "###.....###",
+    ".......#...",
+    ".....##....",
+    "....#......",
+    "....#......",
+    "....#...###",
+  ],
 };
 
-const runsOK = (rows, n, minLen) => {
+const runsOK = (rows, n, minLen, maxLen = Infinity) => {
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; ) {
       if (rows[r][c] === "#") { c++; continue; }
       let len = 0; while (c < n && rows[r][c] !== "#") { len++; c++; }
-      if (len < minLen) return false;
+      if (len < minLen || len > maxLen) return false;
     }
   }
   for (let c = 0; c < n; c++) {
     for (let r = 0; r < n; ) {
       if (rows[r][c] === "#") { r++; continue; }
       let len = 0; while (r < n && rows[r][c] !== "#") { len++; r++; }
-      if (len < minLen) return false;
+      if (len < minLen || len > maxLen) return false;
     }
   }
   return true;
@@ -115,24 +131,86 @@ const isSymmetric = (rows, n) => {
   return true;
 };
 
-// Derive a random 180°-symmetric pattern: place symmetric black pairs, then
-// keep it only if every run >= MIN_LEN, whites are connected, blacks < 20%.
-// Biases toward more blacks on big grids (shorter slots fill more reliably).
+// Derive a random 180°-symmetric pattern. Every row and every column mask
+// must have all runs within [minLen, maxLen]; on 9×9+ run length is capped at
+// 8 so no grid-spanning slot is required — long spanning entries are what make
+// big random patterns unfillable. Blind sampling can't hit the joint row+
+// column constraint on big grids, so this does a randomized DFS over the
+// top-half row masks (the bottom half is the mirror), pruning on column-prefix
+// feasibility, then verifies runs, connectivity and the <20% black budget.
 function derivePattern(n, minLen) {
   const maxBlack = Math.floor(n * n * 0.2) - 1;
-  for (let attempt = 0; attempt < 20000; attempt++) {
-    const lo = n <= 5 ? 2 : Math.floor(maxBlack / 2);
-    const target = lo + 2 * Math.floor(Math.random() * ((maxBlack - lo) / 2 + 1));
-    const black = new Set();
-    let guard = 0;
-    while (black.size < target && guard++ < 200) {
-      const r = Math.floor(Math.random() * n), c = Math.floor(Math.random() * n);
-      black.add(`${r},${c}`); black.add(`${n - 1 - r},${n - 1 - c}`);
+  const maxLen = n <= 8 ? n : 8;
+  const masks = [];
+  for (let m = 0; m < 1 << n; m++) {
+    // On small grids keep derived blacks isolated (clumps make walls: ugly
+    // and hard to fill). On 9×9+ clumps must be allowed — edge-adjacent
+    // columns can only get a black via a corner stack when runs are capped.
+    if (n <= 8 && m & (m << 1)) continue;
+    let ok = true, len = 0;
+    for (let c = 0; c <= n; c++) {
+      const black = c === n || (m >> c) & 1;
+      if (black) { if (len && (len < minLen || len > maxLen)) { ok = false; break; } len = 0; }
+      else len++;
     }
-    if (black.size > maxBlack) continue;
+    if (ok) masks.push(m);
+  }
+  const rev = (m) => { let r = 0; for (let c = 0; c < n; c++) if ((m >> c) & 1) r |= 1 << (n - 1 - c); return r; };
+  const centerMasks = masks.filter((m) => rev(m) === m);
+  const popcount = (m) => { let k = 0; while (m) { k += m & 1; m >>= 1; } return k; };
+  // Column-prefix feasibility: the set of every low-`len`-bit prefix of a
+  // valid mask. A column whose first rows match no prefix can never become
+  // a valid column — prune that branch of the DFS.
+  const prefixes = Array.from({ length: n + 1 }, () => new Set());
+  for (const m of masks) for (let len = 1; len <= n; len++) prefixes[len].add(m & ((1 << len) - 1));
+
+  const half = Math.floor((n - 1) / 2); // rows 0..half chosen; rest mirrored
+  const rowMask = new Array(n).fill(0);
+  let nodes = 0;
+  function colsPrefixOK(uptoRow) {
+    for (let c = 0; c < n; c++) {
+      let col = 0;
+      for (let r = 0; r <= uptoRow; r++) if ((rowMask[r] >> c) & 1) col |= 1 << r;
+      if (!prefixes[uptoRow + 1].has(col)) return false;
+    }
+    return true;
+  }
+  function finish() {
     const rows = Array.from({ length: n }, (_, r) =>
-      Array.from({ length: n }, (_, c) => (black.has(`${r},${c}`) ? "#" : ".")).join(""));
-    if (runsOK(rows, n, minLen) && isConnected(rows, n)) return rows;
+      Array.from({ length: n }, (_, c) => ((rowMask[r] >> c) & 1 ? "#" : ".")).join(""));
+    if (!runsOK(rows, n, minLen, maxLen) || !isConnected(rows, n)) return null;
+    return rows;
+  }
+  function dfs(r, blacks) {
+    if (nodes++ > 200000) return null;
+    if (r > half) return finish();
+    const pool = r === half && n % 2 === 1 ? centerMasks : masks;
+    // Prefer denser rows (shorter slots fill far more reliably), with jitter
+    // for variety; stay under the black budget (mirrored rows count double).
+    const ranked = [...pool].sort((a, b) =>
+      (popcount(b) + Math.random() * 2) - (popcount(a) + Math.random() * 2));
+    const mult = r === n - 1 - r ? 1 : 2;
+    for (const m of ranked) {
+      const nb = blacks + mult * popcount(m);
+      if (nb > maxBlack) continue;
+      // no vertically adjacent blacks on small grids (see mask filter above)
+      if (n <= 8 && r > 0 && ((m & rowMask[r - 1]) || (rev(m) & rowMask[n - r]))) continue;
+      rowMask[r] = m;
+      rowMask[n - 1 - r] = rev(m);
+      if (colsPrefixOK(r)) {
+        const got = dfs(r + 1, nb);
+        if (got) return got;
+      }
+    }
+    rowMask[r] = 0;
+    rowMask[n - 1 - r] = 0;
+    return null;
+  }
+  for (let attempt = 0; attempt < 50; attempt++) {
+    nodes = 0;
+    rowMask.fill(0);
+    const got = dfs(0, 0);
+    if (got) return got;
   }
   console.error("could not derive a valid symmetric pattern"); process.exit(1);
 }
@@ -169,13 +247,24 @@ function fillPattern(patternRows) {
 
   // Per-length word lists + O(1) prefix feasibility for every slot length.
   const lengths = new Set([...across, ...downByStart.values()].map((cells) => cells.length));
-  const byLen = {}, prefixSet = {};
+  const byLen = {}, prefixSet = {}, prefixCount = {};
   for (const len of lengths) {
     byLen[len] = pool.filter((w) => w.length === len);
     prefixSet[len] = new Set();
-    for (const w of byLen[len]) for (let i = 2; i <= len; i++) prefixSet[len].add(w.slice(0, i));
+    prefixCount[len] = new Map();
+    for (const w of byLen[len]) {
+      for (let i = 2; i <= len; i++) prefixSet[len].add(w.slice(0, i));
+      for (let i = 1; i <= len; i++) {
+        const p = w.slice(0, i);
+        prefixCount[len].set(p, (prefixCount[len].get(p) || 0) + 1);
+      }
+    }
     if (byLen[len].length === 0) { console.error(`no pool words of length ${len} — raise --pool`); return null; }
   }
+  // Which down slot runs through each white cell (for candidate scoring).
+  const downAt = new Map();
+  for (const cells of downByStart.values())
+    cells.forEach(([r, c], k) => downAt.set(`${r},${c}`, { cells, k }));
 
   const grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
   for (const k of black) { const [r, c] = k.split(",").map(Number); grid[r][c] = "#"; }
@@ -231,8 +320,34 @@ function fillPattern(patternRows) {
     const len = cells.length;
     // constraint from already-filled crossing letters
     const constraint = cells.map(([r, c]) => grid[r][c]);
-    const candidates = shuffle(byLen[len].filter((w) => constraint.every((ch, k) => ch === null || ch === w[k])));
-    for (const w of candidates) {
+    // Score candidates by how many down words each crossing still allows
+    // (least-constraining first, with jitter). Rows above are complete, so
+    // each down slot's letters through this row form a contiguous prefix —
+    // a zero count means the candidate is a dead end (forward checking).
+    const base = cells.map(([r, c]) => {
+      const d = downAt.get(`${r},${c}`);
+      let prefix = "";
+      for (let i = 0; i < d.k; i++) {
+        const ch = grid[d.cells[i][0]][d.cells[i][1]];
+        if (ch === null) return null; // gap above (seeded slot) — skip scoring
+        prefix += ch;
+      }
+      return { dlen: d.cells.length, prefix };
+    });
+    const scored = [];
+    for (const w of byLen[len]) {
+      if (!constraint.every((ch, k) => ch === null || ch === w[k])) continue;
+      let score = Infinity;
+      for (let k = 0; k < len; k++) {
+        if (base[k] === null) continue;
+        const cnt = prefixCount[base[k].dlen].get(base[k].prefix + w[k]) || 0;
+        if (cnt === 0) { score = 0; break; }
+        if (cnt < score) score = cnt;
+      }
+      if (score > 0) scored.push([score * (0.5 + Math.random()), w]);
+    }
+    scored.sort((a, b) => b[0] - a[0]);
+    for (const [, w] of scored) {
       cells.forEach(([r, c], k) => { grid[r][c] = w[k]; });
       if (downPrefixOK() && solve(ai + 1)) return true;
       cells.forEach(([r, c], k) => { grid[r][c] = constraint[k]; });
@@ -318,5 +433,6 @@ if (found) {
   console.log("down:  ", found.down.join(" "));
 } else {
   console.log("NO FILL FOUND" + (themeWord ? ` for theme "${themeWord}"` : ""));
+  if (patternUsed) console.log("last pattern tried:", JSON.stringify(patternUsed));
   process.exit(2);
 }

@@ -54,7 +54,7 @@ const JUNK = new Set([
   // interjections
   "aah", "umm", "heh", "yeh", "wha", "rah", "yip",
   // family-friendly fill only
-  "ass", "arse", "dui", "scum", "scumbag",
+  "ass", "arse", "dui", "scum", "scumbag", "fart",
 ]);
 
 function entries(grid) {

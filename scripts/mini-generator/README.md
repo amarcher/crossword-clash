@@ -33,8 +33,16 @@ Flags:
 - `--steps N` — backtracking steps per attempt before a randomized restart.
 
 The filler keeps the prefix-feasibility backtracking + step cap + retry-until-dup-free approach
-at every size; theme words are seeded into a random slot of matching length. 2-letter entries
-are allowed only at 5×5; 7×7 and larger require all entries ≥ 3 letters.
+at every size, and orders candidates least-constraining-first (down-prefix counts, forward
+checking). Theme words are seeded into a random slot of matching length. 2-letter entries are
+allowed only at 5×5; 7×7 and larger require all entries ≥ 3 letters.
+
+**Fill reliability**: 5×5 fills in ~a second, 7×7 in seconds. 9×9+ is currently *experimental*:
+patterns (incl. the curated built-in 11×11), validation and the audit gate fully support any
+N×N, but the row-major backtracker rarely completes an 11×11 fill even with generous budgets
+(`--time-ms 600000 --pool 50000`) — the mirrored bottom rows are fully constrained by the time
+the search reaches them. A proper most-constrained-slot filler with constraint propagation is
+the known fix (future work).
 
 Curate the fills (reject weak/obscure words — rerun for a better one), then author clues and add
 a spec to `SPECS` in `src/lib/dailyMinis.ts`.
