@@ -187,7 +187,12 @@ export function composeCardText(
         : input.isTie
           ? labels.tie
           : labels.winner;
-    return { heading: labels.heading, title, metric, tag: labels.tag, glyph };
+    // Race time (when measured) rides along as the secondary detail line.
+    const detail =
+      input.finishSeconds !== undefined
+        ? formatDuration(input.finishSeconds)
+        : undefined;
+    return { heading: labels.heading, title, metric, detail, tag: labels.tag, glyph };
   }
 
   const metric =

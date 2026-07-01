@@ -110,6 +110,7 @@ export const router = createBrowserRouter([
       { path: "solo/import", lazy: () => import("./screens/SoloImportScreen").then((m) => ({ Component: m.SoloImportScreen })) },
       { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
       { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },
+      { path: "daily/leaderboard", lazy: () => import("./screens/DailyLeaderboardScreen").then((m) => ({ Component: m.DailyLeaderboardScreen })) },
       { path: "host-game/name", lazy: () => import("./screens/HostNameScreen").then((m) => ({ Component: m.HostNameScreen })) },
       { path: "host-game/import", lazy: () => import("./screens/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
       { path: "lobby/:gameId", lazy: () => import("./screens/LobbyScreen").then((m) => ({ Component: m.LobbyScreen })) },

@@ -43,6 +43,16 @@ interface CompletionModalProps {
   previousBest?: number | null;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
+  /**
+   * Multiplayer: the shared race time in whole seconds (host start → grid
+   * complete). Shown as the headline time and stamped on the share card.
+   */
+  raceSeconds?: number | null;
+  /**
+   * Shown as a "Daily leaderboard" action when the finished puzzle is today's
+   * daily mini — routes the finisher to the cross-day board.
+   */
+  onViewLeaderboard?: () => void;
   players?: PlayerResult[];
   /**
    * The viewing player's Supabase user id. When it matches a player, the share
@@ -87,6 +97,8 @@ export function CompletionModal({
   isNewBest,
   previousBest,
   streakCount,
+  raceSeconds,
+  onViewLeaderboard,
   players,
   currentUserId,
   challengePuzzle,
@@ -192,6 +204,18 @@ export function CompletionModal({
                 ? t('completion.tie')
                 : t('completion.wins', { name: winner.displayName })}
             </p>
+
+            {/* Shared race time */}
+            {raceSeconds != null && (
+              <div className={`mb-5 rounded-xl px-4 py-3 text-center ${tableBg}`}>
+                <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                  {formatDuration(raceSeconds)}
+                </div>
+                <div className={`mt-0.5 text-sm font-medium ${textSub}`}>
+                  {t('completion.raceTime')}
+                </div>
+              </div>
+            )}
 
             {/* Player table */}
             <div className={`rounded-xl overflow-hidden ${tableBg} mb-6`}>
@@ -332,7 +356,7 @@ export function CompletionModal({
           <ShareResultButton
             mode={isMultiplayer ? "multiplayer" : "solo"}
             puzzleTitle={puzzleTitle}
-            finishSeconds={finishSeconds}
+            finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
             bestSeconds={bestSeconds}
             isNewBest={isNewBest}
             winnerName={winner?.displayName}
@@ -384,6 +408,11 @@ export function CompletionModal({
 
             return (
               <>
+                {onViewLeaderboard && (
+                  <button onClick={onViewLeaderboard} className={secondarySolid}>
+                    🏅 {t('completion.viewLeaderboard')}
+                  </button>
+                )}
                 {onRematch && (
                   <button onClick={onRematch} className={primaryClass} autoFocus>
                     {t('completion.playAgain')}

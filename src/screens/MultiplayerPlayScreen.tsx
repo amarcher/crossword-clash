@@ -16,6 +16,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
+import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { recordDailyPlay } from "../lib/soloStats";
 import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
@@ -62,6 +64,7 @@ export function MultiplayerPlayScreen() {
     isHost,
     shareCode,
     gameStatus,
+    raceSeconds,
   } = mp;
 
   useBeforeUnload(gameStatus === "active");
@@ -95,8 +98,34 @@ export function MultiplayerPlayScreen() {
       mode: "multiplayer",
       role: isHost ? "host" : "player",
       player_count: multiplayerPlayers.length,
+      duration_seconds: raceSeconds ?? undefined,
     });
-  }, [gameStatus, isHost, multiplayerPlayers.length]);
+  }, [gameStatus, isHost, multiplayerPlayers.length, raceSeconds]);
+
+  // When the finished puzzle is today's daily mini, post this player's result
+  // to the cross-day leaderboard and count the play toward their streak.
+  // Separate ref-guard from the analytics effect so a late-arriving race time
+  // still submits.
+  const isDaily = useMemo(() => isTodaysDaily(puzzle), [puzzle]);
+  const dailySubmittedRef = useRef(false);
+  useEffect(() => {
+    if (gameStatus !== "completed") {
+      dailySubmittedRef.current = false;
+      return;
+    }
+    if (dailySubmittedRef.current) return;
+    if (!isDaily || !user || raceSeconds == null) return;
+    dailySubmittedRef.current = true;
+    recordDailyPlay();
+    void submitDailyResult({
+      day: todayKey(),
+      userId: user.id,
+      displayName: game.displayName,
+      mode: "race",
+      seconds: raceSeconds,
+      gameId: game.gameId,
+    });
+  }, [gameStatus, isDaily, user, raceSeconds, game.displayName, game.gameId]);
 
   const handleReset = useCallback(async () => {
     await mp.leaveGame();
@@ -304,6 +333,8 @@ export function MultiplayerPlayScreen() {
         totalClues={puzzle.clues.length}
         players={playerResults}
         currentUserId={user?.id}
+        raceSeconds={raceSeconds}
+        onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}

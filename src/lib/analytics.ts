@@ -34,7 +34,8 @@ export type AnalyticsEvent =
   | "result_shared"
   | "challenge_created"
   | "challenge_accepted"
-  | "live_bridge";
+  | "live_bridge"
+  | "leaderboard_viewed";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

@@ -13,6 +13,7 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity } from "../lib/soloStats";
+import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
@@ -92,6 +93,24 @@ export function SoloPlayScreen() {
         : undefined,
     [challenge, soloResult],
   );
+
+  // Post a finished daily mini to the cross-day leaderboard (best-effort,
+  // no-op offline). Keyed by puzzle identity so imported puzzles never post.
+  const isDaily = useMemo(() => isTodaysDaily(puzzle), [puzzle]);
+  const dailySubmittedRef = useRef(false);
+  useEffect(() => {
+    if (!soloResult || dailySubmittedRef.current) return;
+    if (!isDaily || !user) return;
+    dailySubmittedRef.current = true;
+    void submitDailyResult({
+      day: todayKey(),
+      userId: user.id,
+      displayName: game.displayName,
+      mode: "solo",
+      seconds: soloResult.finishSeconds,
+      gameId: game.gameId,
+    });
+  }, [soloResult, isDaily, user, game.displayName, game.gameId]);
 
   // Report solo completion once (isComplete latches true once the grid fills).
   const completionReportedRef = useRef(false);
@@ -277,6 +296,7 @@ export function SoloPlayScreen() {
         isNewBest={soloResult?.isNewBest}
         previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
+        onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
         challengePuzzle={puzzle}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
