@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/share", "destination": "/api/share" },
     { "source": "/((?!api/)(?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

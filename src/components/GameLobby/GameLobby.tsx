@@ -4,6 +4,7 @@ import QRCode from "react-qr-code";
 import { Title } from "../Title";
 import { TimeoutSelector } from "./TimeoutSelector";
 import { RaceModeSelector } from "./RaceModeSelector";
+import { buildRaceInviteUrl } from "../../lib/shareLinks";
 import type { Player, RaceMode } from "../../types/game";
 
 interface GameLobbyProps {
@@ -22,12 +23,36 @@ interface GameLobbyProps {
 export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const handleCopy = async () => {
     if (!shareCode) return;
     await navigator.clipboard.writeText(shareCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Share the rich invite link (unfurls into a per-room OG card — see
+  // src/lib/shareLinks.ts). Native share sheet on mobile, clipboard elsewhere.
+  const handleShareLink = async () => {
+    if (!shareCode) return;
+    const url = buildRaceInviteUrl(window.location.origin, { code: shareCode });
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ url });
+        return;
+      }
+    } catch (err) {
+      if ((err as DOMException)?.name === "AbortError") return;
+      // fall through to clipboard
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // clipboard unavailable — nothing else to do
+    }
   };
 
   return (
@@ -47,6 +72,13 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             <p className="text-xs text-neutral-400 mt-1">
               {copied ? t('lobby.copied') : t('lobby.clickToCopy')}
             </p>
+          </button>
+
+          <button
+            onClick={handleShareLink}
+            className="mb-6 -mt-3 px-4 py-2 rounded-lg text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            {linkCopied ? t('lobby.inviteLinkCopied') : `🔗 ${t('lobby.copyInviteLink')}`}
           </button>
 
           <div className="mb-8 flex flex-col items-center">
