@@ -30,6 +30,7 @@ Flags:
   fill), or pass explicit rows joined by commas (`"#....,.....,.....,.....,....#"`). Defaults to
   the built-in pattern for the size (5: black corners, 7: pinwheel), else `auto`.
 - `--time-ms N` — wall-clock cap per fill attempt loop (defaults scale with size).
+- `--steps N` — backtracking steps per attempt before a randomized restart.
 
 The filler keeps the prefix-feasibility backtracking + step cap + retry-until-dup-free approach
 at every size; theme words are seeded into a random slot of matching length. 2-letter entries
