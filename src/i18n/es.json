@@ -11,7 +11,10 @@
     "hostAsTVSubtitle": "Muestra la partida en una pantalla compartida — sin jugar",
     "playSolo": "Jugar solo",
     "playSoloSubtitle": "Solo tú, en este dispositivo",
-    "importPuzzle": "Buscar crucigramas"
+    "importPuzzle": "Buscar crucigramas",
+    "dailyMiniEyebrow": "Mini del día",
+    "playDailyMini": "Jugar el Mini de hoy",
+    "dailyMiniTheme": "Tema de hoy: {{theme}}"
   },
   "hostName": {
     "enterDisplayName": "Ingresa tu nombre",
@@ -38,7 +41,10 @@
     "tileScraperCta": "Obtener la extensi\u00f3n",
     "tileFileTitle": "Subir un archivo",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd de AVCX, Lollapuzzoola, BEQ, donde sea.",
-    "tileSampleTitle": "Probar una muestra"
+    "tileSampleTitle": "Probar una muestra",
+    "classicTitle": "Crucigramas clásicos",
+    "classicSubtitle": "Crucigramas de dominio público de 1924 — haz clic en uno para jugar.",
+    "classicError": "No se pudo cargar ese crucigrama. Prueba con otro."
   },
   "importing": {
     "receiving": "Recibiendo crucigrama...",
@@ -86,6 +92,7 @@
   },
   "playing": {
     "by": "por {{author}}",
+    "dailyThemeBadge": "Tema de hoy: {{theme}}",
     "room": "Sala",
     "close": "Cerrar",
     "closeRoom": "Cerrar sala",

@@ -1,11 +1,13 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { useAuth } from "../contexts/AuthContext";
+import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
+import { getDailyMini } from "../lib/dailyMinis";
 import { getDisplayStreak } from "../lib/soloStats";
 
 type GameMode = "join" | "host" | "tv" | "solo" | "import";
@@ -48,8 +50,22 @@ function MenuTile({ to, title, subtitle, variant, mode, disabled }: MenuTileProp
 export function MenuScreen() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { handleSoloPuzzleLoaded, setSoloTheme } = useGame();
   const disabled = loading;
   const streak = useMemo(() => getDisplayStreak(), []);
+
+  // Resolve once per render — deterministic per calendar day.
+  const dailyMini = useMemo(() => getDailyMini(), []);
+
+  const playDailyMini = useCallback(async () => {
+    track("mode_selected", { mode: "daily" });
+    // No import step: load the bundled mini straight into solo play. It carries
+    // no file buffer, so handleSoloPuzzleLoaded won't count it as an import.
+    await handleSoloPuzzleLoaded(dailyMini.puzzle);
+    setSoloTheme(dailyMini.theme);
+    navigate("/solo/play");
+  }, [dailyMini, handleSoloPuzzleLoaded, setSoloTheme, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
@@ -61,6 +77,28 @@ export function MenuScreen() {
         </div>
       )}
       <div className="flex flex-col gap-3 w-full max-w-xs">
+        {/* Front door: instant play, no import. Prominent + above the fold. */}
+        <button
+          type="button"
+          onClick={playDailyMini}
+          disabled={disabled}
+          className={`group block w-full px-5 py-4 rounded-xl text-center text-white bg-gradient-to-br from-blue-600 to-indigo-600 shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+            disabled
+              ? "opacity-50 pointer-events-none"
+              : "hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg"
+          }`}
+        >
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-blue-100">
+            {t("menu.dailyMiniEyebrow")}
+          </span>
+          <span className="block text-lg font-bold leading-tight mt-0.5">
+            {t("menu.playDailyMini")}
+          </span>
+          <span className="block text-xs mt-1 text-blue-50/90">
+            {t("menu.dailyMiniTheme", { theme: dailyMini.theme })}
+          </span>
+        </button>
+
         {(user || loading) && (
           <>
             <MenuTile

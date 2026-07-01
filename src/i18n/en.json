@@ -11,7 +11,10 @@
     "hostAsTVSubtitle": "Display the game on a shared screen — no playing",
     "playSolo": "Play Solo",
     "playSoloSubtitle": "Just you, on this device",
-    "importPuzzle": "Browse puzzles"
+    "importPuzzle": "Browse puzzles",
+    "dailyMiniEyebrow": "Daily Mini",
+    "playDailyMini": "Play Today's Mini",
+    "dailyMiniTheme": "Today's theme: {{theme}}"
   },
   "hostName": {
     "enterDisplayName": "Enter your display name",
@@ -38,7 +41,10 @@
     "tileScraperCta": "Get the extension",
     "tileFileTitle": "Drop a file",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd from AVCX, Lollapuzzoola, BEQ, anywhere.",
-    "tileSampleTitle": "Try a sample"
+    "tileSampleTitle": "Try a sample",
+    "classicTitle": "Classic puzzles",
+    "classicSubtitle": "Public-domain crosswords from 1924 — click one to play.",
+    "classicError": "Couldn't load that puzzle. Please try another."
   },
   "importing": {
     "receiving": "Receiving puzzle...",
@@ -86,6 +92,7 @@
   },
   "playing": {
     "by": "by {{author}}",
+    "dailyThemeBadge": "Today's theme: {{theme}}",
     "room": "Room",
     "close": "Close",
     "closeRoom": "Close Room",
