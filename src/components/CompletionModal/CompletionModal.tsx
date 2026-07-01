@@ -1,7 +1,13 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
+import {
+  isFreshCompletion,
+  prefersReducedMotion,
+  CONFETTI_DURATION_MS,
+} from "../../lib/celebration";
+import { playWinSound } from "../../lib/winSound";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { AdSlot } from "../AdSlot";
@@ -65,6 +71,29 @@ export function CompletionModal({
 
   useFocusTrap(open ? modalRef : { current: null }, handleEscape);
 
+  // One-shot celebration: confetti + win chime fire exactly once, on the
+  // transition into the completed state. Initialised to `open` so a finished
+  // puzzle restored on reload (modal already open at mount) does NOT re-fire.
+  const prevOpenRef = useRef(open);
+  const [celebrating, setCelebrating] = useState(false);
+
+  useEffect(() => {
+    const fresh = isFreshCompletion(prevOpenRef.current, open);
+    prevOpenRef.current = open;
+    if (!fresh) return;
+
+    // Sound self-gates on the app mute setting; safe to call unconditionally.
+    playWinSound();
+    // Large motion is suppressed under prefers-reduced-motion.
+    if (!prefersReducedMotion()) setCelebrating(true);
+  }, [open]);
+
+  useEffect(() => {
+    if (!celebrating) return;
+    const id = window.setTimeout(() => setCelebrating(false), CONFETTI_DURATION_MS);
+    return () => window.clearTimeout(id);
+  }, [celebrating]);
+
   if (!open) return null;
 
   const isMultiplayer = players && players.length > 0;
@@ -91,8 +120,8 @@ export function CompletionModal({
         onClick={onBackToMenu}
       />
 
-      {/* Confetti */}
-      <Confetti />
+      {/* Confetti — mounted only during the one-shot celebration window */}
+      {celebrating && <Confetti />}
 
       {/* Modal */}
       <div
@@ -227,7 +256,7 @@ export function CompletionModal({
           <AdSlot placement="completion-footer" darkMode={darkMode} />
         </div>
 
-        {/* Buttons */}
+        {/* Buttons — the positive next action (Rematch › New Puzzle) is the hero. */}
         <div className="flex flex-col gap-2">
           <ShareResultButton
             mode={isMultiplayer ? "multiplayer" : "solo"}
@@ -239,40 +268,56 @@ export function CompletionModal({
             isTie={isTie}
             darkMode={darkMode}
           />
-          {onRematch && (
-            <button
-              onClick={onRematch}
-              className={`w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`}
-            >
-              {t('completion.playAgain')}
-            </button>
-          )}
-          {onNewPuzzle && (
-            <button
-              onClick={onNewPuzzle}
-              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                onRematch
-                  ? darkMode
-                    ? "text-white bg-neutral-700 hover:bg-neutral-600 focus-visible:ring-offset-neutral-800"
-                    : "text-blue-700 bg-blue-50 hover:bg-blue-100"
-                  : `text-white bg-blue-600 hover:bg-blue-700 ${darkMode ? "focus-visible:ring-offset-neutral-800" : ""}`
-              }`}
-            >
-              {t('completion.newPuzzle')}
-            </button>
-          )}
-          {onBackToMenu && (
-            <button
-              onClick={onBackToMenu}
-              className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                darkMode
-                  ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700 focus-visible:ring-offset-neutral-800"
-                  : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100"
-              }`}
-            >
-              {t('completion.backToMenu')}
-            </button>
-          )}
+          {(() => {
+            const ringOffset = darkMode
+              ? "focus-visible:ring-offset-neutral-800"
+              : "focus-visible:ring-offset-2";
+            // The largest, brightest call to action: keep finishers in the loop.
+            const primaryClass =
+              `cta-primary w-full px-6 py-3.5 rounded-xl text-lg font-bold text-white ` +
+              `bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-700 ` +
+              `shadow-lg shadow-blue-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0 ` +
+              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${ringOffset}`;
+            const secondarySolid =
+              `w-full px-6 py-3 rounded-lg font-semibold transition-colors ` +
+              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${ringOffset} ` +
+              (darkMode
+                ? "text-white bg-neutral-700 hover:bg-neutral-600"
+                : "text-blue-700 bg-blue-50 hover:bg-blue-100");
+            const secondaryOutline =
+              `w-full px-6 py-3 rounded-lg font-semibold transition-colors ` +
+              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${ringOffset} ` +
+              (darkMode
+                ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700"
+                : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100");
+
+            // Exactly one button is primary: rematch if available, else "new puzzle".
+            const primaryIsRematch = !!onRematch;
+
+            return (
+              <>
+                {onRematch && (
+                  <button onClick={onRematch} className={primaryClass} autoFocus>
+                    {t('completion.playAgain')}
+                  </button>
+                )}
+                {onNewPuzzle && (
+                  <button
+                    onClick={onNewPuzzle}
+                    className={primaryIsRematch ? secondarySolid : primaryClass}
+                    autoFocus={!primaryIsRematch}
+                  >
+                    {t('completion.newPuzzle')}
+                  </button>
+                )}
+                {onBackToMenu && (
+                  <button onClick={onBackToMenu} className={secondaryOutline}>
+                    {t('completion.backToMenu')}
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* NYT affiliate */}
