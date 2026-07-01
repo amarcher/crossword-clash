@@ -61,8 +61,21 @@
    cap the grid height so the clue list below remains visible. */
 @media (pointer: fine) and (max-width: 767px) {
   .grid-offset-mobile {
-    --grid-h-max: 50dvh;
+    --grid-h-max: 50svh;
   }
+}
+
+/* Mobile input polish: kill the gray tap flash and the 300ms double-tap-zoom
+   delay on interactive elements. `manipulation` still allows pan + pinch. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a,
+input,
+select,
+[role="gridcell"] {
+  touch-action: manipulation;
 }
 
 @keyframes cell-reject {
