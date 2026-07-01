@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import { Confetti } from "./Confetti";
+import { ShareResultButton } from "./ShareResultButton";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
 
@@ -16,6 +17,8 @@ export interface PlayerResult {
 
 interface CompletionModalProps {
   open: boolean;
+  /** Puzzle title, used on the shareable result card. */
+  puzzleTitle?: string;
   totalCells: number;
   totalClues: number;
   soloScore?: number;
@@ -38,6 +41,7 @@ interface CompletionModalProps {
 
 export function CompletionModal({
   open,
+  puzzleTitle,
   totalCells,
   totalClues,
   soloScore,
@@ -225,6 +229,16 @@ export function CompletionModal({
 
         {/* Buttons */}
         <div className="flex flex-col gap-2">
+          <ShareResultButton
+            mode={isMultiplayer ? "multiplayer" : "solo"}
+            puzzleTitle={puzzleTitle}
+            finishSeconds={finishSeconds}
+            bestSeconds={bestSeconds}
+            isNewBest={isNewBest}
+            winnerName={winner?.displayName}
+            isTie={isTie}
+            darkMode={darkMode}
+          />
           {onRematch && (
             <button
               onClick={onRematch}

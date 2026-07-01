@@ -133,7 +133,17 @@
     "newPuzzle": "Choose a New Puzzle",
     "playAgain": "Play Again",
     "backToMenu": "Back to Menu",
-    "ariaLabel": "Puzzle Complete"
+    "ariaLabel": "Puzzle Complete",
+    "share": "Share Result",
+    "sharing": "Preparing…",
+    "linkCopied": "Link copied!",
+    "imageSaved": "Image saved",
+    "cardHeading": "Solved!",
+    "shareTag": "crosswordclash.com",
+    "shareCaptionSolo": "I solved \"{{title}}\" in {{time}} on Crossword Clash 🏆 {{url}}",
+    "shareCaptionSoloNoTime": "I solved \"{{title}}\" on Crossword Clash 🏆 {{url}}",
+    "shareCaptionWin": "{{name}} won \"{{title}}\" on Crossword Clash 🏆 {{url}}",
+    "shareCaptionTie": "\"{{title}}\" ended in a tie on Crossword Clash 🏆 {{url}}"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",

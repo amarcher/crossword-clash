@@ -212,6 +212,7 @@ export function SoloPlayScreen() {
       />
       <CompletionModal
         open={showCompletionModal}
+        puzzleTitle={puzzle.title}
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         soloScore={score}

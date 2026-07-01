@@ -62,7 +62,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
         across reloads in localStorage; completion modal shows "Your time: M:SS (best: M:SS)";
         time/streak logic is pure functions in lib/ with unit tests. Feeds F2.
 
-- [ ] F2 — Shareable result card · slug:share-result-card
+- [review: #47] F2 — Shareable result card · slug:share-result-card · winner=A(minimalist) 2-1 · after F6 #46 (modal overlap)
       outcome: On completion (solo + multiplayer), the player can share a result card —
         "Solved [Puzzle] in M:SS 🏆 crosswordclash.com" — opening the viral loop.
       done-when: Share button on the completion modal renders a card to PNG (canvas), uses Web
