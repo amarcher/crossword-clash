@@ -95,7 +95,7 @@ Each entry is a **feature** — a coherent unit each of the 2 builders can fully
 
 - [review: #48] F2b — Per-viewer multiplayer standing on the share card · slug:share-card-mp-standing · winner=A(minimalist) 2-1 · auto-merges on green
 
-- [ ] F4-live — Challenge link: join a LIVE room when the challenger is present · slug:challenge-live-join
+- [review: #51] F4-live — Challenge link: join a LIVE room (as a fair fresh-puzzle rematch) · winner=product 3-0 · auto-merges on green
       outcome: When a challenger has an open joinable room, the accept screen offers 'Join live' (reuses ?join= / existing multiplayer) instead of only the async ghost race — completing the hybrid.
 
 ### Done (most recent first; trimmed periodically)

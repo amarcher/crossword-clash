@@ -12,6 +12,7 @@ import { computeViewerStanding } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { ChallengeFriendButton } from "./ChallengeFriendButton";
+import { PlayLiveButton } from "./PlayLiveButton";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
 import type { Puzzle } from "../../types/puzzle";
@@ -60,6 +61,15 @@ interface CompletionModalProps {
    * against the challenger's ghost — drives the personal outcome banner.
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
+  /**
+   * Bridge into a FAIR live rematch: when provided, a "Play Live" / "Rematch
+   * Live" CTA funnels the finisher into the existing host-as-player flow on a
+   * FRESH puzzle. Passed only when multiplayer is actually available (Supabase
+   * configured + anonymous auth); absent → the CTA is hidden entirely.
+   */
+  onPlayLive?: () => void;
+  /** Puzzle size (e.g. "15x15") for the live-bridge analytics dimension. */
+  puzzleSize?: string;
   onNewPuzzle?: () => void;
   onRematch?: () => void;
   onBackToMenu?: () => void;
@@ -82,6 +92,8 @@ export function CompletionModal({
   challengePuzzle,
   challengerName,
   challengeOutcome,
+  onPlayLive,
+  puzzleSize,
   onNewPuzzle,
   onRematch,
   onBackToMenu,
@@ -333,6 +345,14 @@ export function CompletionModal({
               puzzle={challengePuzzle}
               challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
               finishSeconds={finishSeconds}
+              darkMode={darkMode}
+            />
+          )}
+          {onPlayLive && (
+            <PlayLiveButton
+              onPlayLive={onPlayLive}
+              intent={challengeOutcome ? "rematch" : "solo"}
+              size={puzzleSize}
               darkMode={darkMode}
             />
           )}

@@ -176,7 +176,10 @@
     "shareCaption": "Resolv\u00ed \"{{title}}\" en {{time}} en Crossword Clash, \u00bfpuedes superarme? {{url}}",
     "resultBeat": "\u00a1Superaste a {{name}} por {{delta}}! \ud83c\udf89",
     "resultLost": "{{name}} fue m\u00e1s r\u00e1pido por {{delta}}",
-    "resultTied": "\u00a1Empate t\u00e9cnico con {{name}}!"
+    "resultTied": "\u00a1Empate t\u00e9cnico con {{name}}!",
+    "playLive": "\u26a1 Jugar en vivo",
+    "rematchLive": "\u26a1 Revancha en vivo",
+    "playLiveHint": "Organiza un crucigrama nuevo cara a cara: invita por enlace o QR."
   },
   "tts": {
     "unmute": "Activar sonido",
