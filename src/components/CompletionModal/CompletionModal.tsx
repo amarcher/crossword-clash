@@ -8,6 +8,7 @@ import {
   CONFETTI_DURATION_MS,
 } from "../../lib/celebration";
 import { playWinSound } from "../../lib/winSound";
+import { computeViewerStanding } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { AdSlot } from "../AdSlot";
@@ -39,6 +40,11 @@ interface CompletionModalProps {
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
   players?: PlayerResult[];
+  /**
+   * The viewing player's Supabase user id. When it matches a player, the share
+   * card brags this viewer's own standing; absent (spectator) → winner card.
+   */
+  currentUserId?: string;
   onNewPuzzle?: () => void;
   onRematch?: () => void;
   onBackToMenu?: () => void;
@@ -57,6 +63,7 @@ export function CompletionModal({
   previousBest,
   streakCount,
   players,
+  currentUserId,
   onNewPuzzle,
   onRematch,
   onBackToMenu,
@@ -104,6 +111,10 @@ export function CompletionModal({
   const winner = ranked[0];
   const isTie =
     ranked.length > 1 && ranked[0].cellsClaimed === ranked[1].cellsClaimed;
+  // Personal standing for the share card — derived from the same ranked list.
+  const viewerStanding = isMultiplayer
+    ? computeViewerStanding(ranked, currentUserId)
+    : null;
 
   const bg = darkMode ? "bg-neutral-800" : "bg-white";
   const text = darkMode ? "text-white" : "text-neutral-900";
@@ -266,6 +277,7 @@ export function CompletionModal({
             isNewBest={isNewBest}
             winnerName={winner?.displayName}
             isTie={isTie}
+            viewerStanding={viewerStanding ?? undefined}
             darkMode={darkMode}
           />
           {(() => {

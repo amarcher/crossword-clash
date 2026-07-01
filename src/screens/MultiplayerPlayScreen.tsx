@@ -302,6 +302,7 @@ export function MultiplayerPlayScreen() {
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         players={playerResults}
+        currentUserId={user?.id}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}

@@ -143,7 +143,13 @@
     "shareCaptionSolo": "Resolv\u00ed \"{{title}}\" en {{time}} en Crossword Clash \ud83c\udfc6 {{url}}",
     "shareCaptionSoloNoTime": "Resolv\u00ed \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
     "shareCaptionWin": "{{name}} gan\u00f3 \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
-    "shareCaptionTie": "\"{{title}}\" termin\u00f3 en empate en Crossword Clash \ud83c\udfc6 {{url}}"
+    "shareCaptionTie": "\"{{title}}\" termin\u00f3 en empate en Crossword Clash \ud83c\udfc6 {{url}}",
+    "cardStandingWin": "\u00a1Victoria! #{{rank}} de {{total}}",
+    "cardStandingTie": "\u00a1Empatado en 1.\u00ba!",
+    "cardStandingRank": "Termin\u00e9 #{{rank}} de {{total}}",
+    "shareCaptionStandingWin": "Gan\u00e9 \"{{title}}\" \u2014 #{{rank}} de {{total}} en Crossword Clash \ud83c\udfc6 {{url}}",
+    "shareCaptionStandingTie": "Empat\u00e9 en el 1.\u00ba en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}",
+    "shareCaptionStandingRank": "Termin\u00e9 #{{rank}} de {{total}} en \"{{title}}\" en Crossword Clash \ud83c\udfc6 {{url}}"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",
