@@ -205,7 +205,7 @@ describe("CompletionModal", () => {
     fireEvent.click(getByText("⚡ Rematch Live"));
     expect(track).toHaveBeenCalledWith("live_bridge", {
       mode: "live",
-      from: "rematch",
+      from: "challenge_result",
       size: "15x15",
     });
   });

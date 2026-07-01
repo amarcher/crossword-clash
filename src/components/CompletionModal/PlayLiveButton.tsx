@@ -41,7 +41,13 @@ export function PlayLiveButton({
   const handleClick = useCallback(() => {
     // Distinct funnel event for the live bridge — deliberately NOT overloading
     // puzzle_imported / challenge_created. mode marks the origin of the bridge.
-    track("live_bridge", { mode: "live", from: intent, size });
+    // "challenge_result" reads clearer than "rematch" as a funnel dimension —
+    // it names where the live bridge was taken from.
+    track("live_bridge", {
+      mode: "live",
+      from: intent === "rematch" ? "challenge_result" : "solo",
+      size,
+    });
     onPlayLive();
   }, [onPlayLive, intent, size]);
 
