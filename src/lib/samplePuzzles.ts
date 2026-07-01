@@ -1,12 +1,12 @@
 import type { Puzzle, PuzzleCell, PuzzleClue, Direction } from "../types/puzzle";
 
-interface GridSpec {
+export interface GridSpec {
   title: string;
   grid: string[];
   clueTexts: Record<string, string>;
 }
 
-function buildPuzzle(spec: GridSpec): Puzzle {
+export function buildPuzzle(spec: GridSpec): Puzzle {
   const height = spec.grid.length;
   const width = spec.grid[0].length;
   const cells: PuzzleCell[][] = [];
