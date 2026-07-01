@@ -45,7 +45,7 @@ describe("GameLobby", () => {
       expect(screen.queryByTestId("qr-code")).toBeNull();
     });
 
-    it("encodes join URL with origin and shareCode", () => {
+    it("encodes join URL with origin and shareCode, pointing at the clean join route (not the lobby deep link)", () => {
       render(
         <GameLobby
           shareCode="XYZ789"
@@ -56,9 +56,7 @@ describe("GameLobby", () => {
         />,
       );
       const qr = screen.getByTestId("qr-code");
-      expect(qr.dataset.value).toBe(
-        `${window.location.origin}${window.location.pathname}?join=XYZ789`,
-      );
+      expect(qr.dataset.value).toBe(`${window.location.origin}/?join=XYZ789`);
     });
 
     it("shows 'Scan to join' label", () => {
@@ -72,6 +70,39 @@ describe("GameLobby", () => {
         />,
       );
       expect(screen.getByText("Scan to join")).toBeDefined();
+    });
+  });
+
+  describe("how it works hint", () => {
+    it("shows the numbered hint for the host", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={true}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+        />,
+      );
+      expect(
+        screen.getByText("Friends scan the QR code or enter the code at crosswordclash.com."),
+      ).toBeDefined();
+      expect(screen.getByText("When everyone's in, press Start.")).toBeDefined();
+    });
+
+    it("does not show the hint for non-host", () => {
+      render(
+        <GameLobby
+          shareCode="ABC123"
+          players={mockPlayers}
+          isHost={false}
+          onStartGame={() => {}}
+          onCloseRoom={() => {}}
+        />,
+      );
+      expect(
+        screen.queryByText("Friends scan the QR code or enter the code at crosswordclash.com."),
+      ).toBeNull();
     });
   });
 

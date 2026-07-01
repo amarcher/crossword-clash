@@ -33,7 +33,14 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   return (
     <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8 overflow-auto">
       <Title className="mb-2" />
-      <p className="text-neutral-500 mb-8">{t('lobby.shareInvite')}</p>
+      <p className={`text-neutral-500 ${isHost ? "mb-2" : "mb-8"}`}>{t('lobby.shareInvite')}</p>
+
+      {isHost && (
+        <ol className="mb-6 w-full max-w-xs list-decimal list-inside space-y-1 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-neutral-600 text-left">
+          <li>{t('lobby.howItWorksStep1')}</li>
+          <li>{t('lobby.howItWorksStep2')}</li>
+        </ol>
+      )}
 
       {shareCode && (
         <>
@@ -52,7 +59,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           <div className="mb-8 flex flex-col items-center">
             <div className="p-4 bg-white rounded-xl border border-neutral-200">
               <QRCode
-                value={`${window.location.origin}${window.location.pathname}?join=${shareCode}`}
+                value={`${window.location.origin}/?join=${shareCode}`}
                 size={200}
                 title={t('lobby.qrCodeLabel')}
               />
