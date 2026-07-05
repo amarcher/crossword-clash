@@ -208,7 +208,11 @@
     "modeSolo": "Solo",
     "modeRace": "Race",
     "playToday": "Play Today's Mini",
-    "raceFriends": "Race friends live"
+    "raceFriends": "Race friends live",
+    "signPrompt": "You're on today's board as “{{name}}”",
+    "signPlaceholder": "Your name",
+    "signSave": "Save",
+    "signedAs": "On the board as {{name}} ✓"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",

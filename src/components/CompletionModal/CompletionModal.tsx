@@ -12,6 +12,7 @@ import { computeViewerStanding } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { ChallengeFriendButton } from "./ChallengeFriendButton";
+import { LeaderboardSignForm } from "./LeaderboardSignForm";
 import { PlayLiveButton } from "./PlayLiveButton";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
@@ -54,6 +55,13 @@ interface CompletionModalProps {
    * daily mini — routes the finisher to the cross-day board.
    */
   onViewLeaderboard?: () => void;
+  /**
+   * "Sign the board": present only when a daily time was just submitted under
+   * the anonymous default name. `onSign` claims the entry (also fired when the
+   * finisher signs a challenge link, so one name covers both); `signedAs`
+   * flips the form into a confirmation once a name lands.
+   */
+  dailySign?: { signedAs?: string | null; onSign: (name: string) => void };
   /**
    * Async ("time trial") mode: per-player standings ranked by finish time.
    * When present the player table shows times instead of cells/clues, and
@@ -108,6 +116,7 @@ export function CompletionModal({
   streakCount,
   raceSeconds,
   onViewLeaderboard,
+  dailySign,
   raceStandings,
   coop,
   players,
@@ -389,6 +398,14 @@ export function CompletionModal({
               </p>
             )}
 
+            {dailySign && (
+              <LeaderboardSignForm
+                signedAs={dailySign.signedAs}
+                onSign={dailySign.onSign}
+                darkMode={darkMode}
+              />
+            )}
+
             {challengeOutcome && (
               <div
                 className={`mb-6 rounded-xl px-4 py-3 text-center text-base font-bold ${
@@ -445,6 +462,7 @@ export function CompletionModal({
               puzzle={challengePuzzle}
               challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
               finishSeconds={finishSeconds}
+              onNameSigned={dailySign?.onSign}
               darkMode={darkMode}
             />
           )}

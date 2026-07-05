@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
@@ -13,7 +13,8 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity } from "../lib/soloStats";
-import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { isTodaysDaily, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
+import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
@@ -111,6 +112,27 @@ export function SoloPlayScreen() {
       gameId: game.gameId,
     });
   }, [soloResult, isDaily, user, game.displayName, game.gameId]);
+
+  // "Sign the board": when the daily time was submitted under the anonymous
+  // default, the modal offers a one-field claim. `boardSignedAs` latches the
+  // signed name so the form flips to a confirmation instead of vanishing the
+  // moment displayName stops being the default.
+  const [boardSignedAs, setBoardSignedAs] = useState<string | null>(null);
+  const handleSignBoard = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      setBoardSignedAs(trimmed);
+      game.setDisplayName(trimmed);
+      savePlayerName(trimmed);
+      if (user) void updateDailyDisplayName(todayKey(), user.id, trimmed);
+    },
+    [game, user],
+  );
+  const dailySign =
+    isDaily && user && soloResult && (boardSignedAs || !isRealPlayerName(game.displayName))
+      ? { signedAs: boardSignedAs, onSign: handleSignBoard }
+      : undefined;
 
   // Report solo completion once (isComplete latches true once the grid fills).
   const completionReportedRef = useRef(false);
@@ -297,6 +319,7 @@ export function SoloPlayScreen() {
         previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
         onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
+        dailySign={dailySign}
         challengePuzzle={puzzle}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}

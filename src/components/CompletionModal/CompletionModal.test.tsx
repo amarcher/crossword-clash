@@ -209,4 +209,54 @@ describe("CompletionModal", () => {
       size: "15x15",
     });
   });
+
+  it("hides the sign-the-board form when dailySign is absent", () => {
+    const { queryByPlaceholderText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} />,
+    );
+    expect(queryByPlaceholderText("Your name")).toBeNull();
+  });
+
+  it("shows the sign-the-board form and submits the typed name", () => {
+    const onSign = vi.fn();
+    const { getByPlaceholderText, getByText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySign={{ onSign }} />,
+    );
+    const input = getByPlaceholderText("Your name");
+    fireEvent.change(input, { target: { value: "Andy" } });
+    fireEvent.click(getByText("Save"));
+    expect(onSign).toHaveBeenCalledWith("Andy");
+  });
+
+  it("submits the sign-the-board name on Enter", () => {
+    const onSign = vi.fn();
+    const { getByPlaceholderText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySign={{ onSign }} />,
+    );
+    const input = getByPlaceholderText("Your name");
+    fireEvent.change(input, { target: { value: "Andy" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onSign).toHaveBeenCalledWith("Andy");
+  });
+
+  it("does not submit an empty sign-the-board name", () => {
+    const onSign = vi.fn();
+    const { getByPlaceholderText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySign={{ onSign }} />,
+    );
+    fireEvent.keyDown(getByPlaceholderText("Your name"), { key: "Enter" });
+    expect(onSign).not.toHaveBeenCalled();
+  });
+
+  it("shows a confirmation instead of the form once signed", () => {
+    const { queryByPlaceholderText, getByText } = render(
+      <CompletionModal
+        {...SOLO_PROPS}
+        finishSeconds={90}
+        dailySign={{ signedAs: "Andy", onSign: vi.fn() }}
+      />,
+    );
+    expect(queryByPlaceholderText("Your name")).toBeNull();
+    expect(getByText("On the board as Andy ✓")).toBeTruthy();
+  });
 });

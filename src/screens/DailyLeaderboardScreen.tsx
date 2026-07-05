@@ -8,8 +8,10 @@ import { getDailyMini } from "../lib/dailyMinis";
 import {
   fetchDailyLeaderboard,
   todayKey,
+  updateDailyDisplayName,
   type RankedDailyEntry,
 } from "../lib/dailyLeaderboard";
+import { isRealPlayerName, savePlayerName, MAX_PLAYER_NAME_LENGTH } from "../lib/playerName";
 import { formatDuration, getDisplayStreak } from "../lib/soloStats";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
@@ -45,6 +47,24 @@ export function DailyLeaderboardScreen() {
       alive = false;
     };
   }, []);
+
+  // The viewer's own row still carrying the anonymous default → offer a
+  // one-field rename right under the table (catches anyone who dismissed the
+  // completion-modal prompt).
+  const myEntry = entries?.find((e) => e.userId === user?.id);
+  const needsName = !!myEntry && !isRealPlayerName(myEntry.displayName);
+  const [nameDraft, setNameDraft] = useState("");
+  const saveName = useCallback(() => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || !user) return;
+    game.setDisplayName(trimmed);
+    savePlayerName(trimmed);
+    void updateDailyDisplayName(todayKey(), user.id, trimmed);
+    // Reflect immediately — the board was already fetched.
+    setEntries((prev) =>
+      prev?.map((e) => (e.userId === user.id ? { ...e, displayName: trimmed } : e)) ?? prev,
+    );
+  }, [nameDraft, user, game]);
 
   const playToday = useCallback(async () => {
     track("mode_selected", { mode: "daily" });
@@ -146,6 +166,36 @@ export function DailyLeaderboardScreen() {
             </table>
           )}
         </div>
+
+        {needsName && (
+          <div className="rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3 mb-4">
+            <p className="text-center text-sm font-semibold text-indigo-700 mb-2">
+              🏅 {t("leaderboard.signPrompt", { name: myEntry.displayName })}
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveName();
+                }}
+                placeholder={t("leaderboard.signPlaceholder")}
+                aria-label={t("leaderboard.signPlaceholder")}
+                maxLength={MAX_PLAYER_NAME_LENGTH}
+                className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-neutral-300 bg-white text-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={saveName}
+                disabled={!nameDraft.trim()}
+                className="shrink-0 px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                {t("leaderboard.signSave")}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <button

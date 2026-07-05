@@ -125,6 +125,33 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
 }
 
 /**
+ * Rename the player's existing entry for a day — used when a finisher signs
+ * the board after their time was already submitted under the anonymous
+ * default. A plain UPDATE (not upsert) because submitDailyResult's keep-best
+ * rule would refuse to touch a row without a strictly faster time.
+ * Best-effort like submitDailyResult.
+ */
+export async function updateDailyDisplayName(
+  day: string,
+  userId: string,
+  displayName: string,
+): Promise<void> {
+  if (!supabase) return;
+  const name = displayName.trim().slice(0, 40);
+  if (!name) return;
+  try {
+    const { error } = await supabase
+      .from("daily_results")
+      .update({ display_name: name })
+      .eq("day", day)
+      .eq("user_id", userId);
+    if (error) console.error("Failed to update daily display name:", error);
+  } catch (err) {
+    console.error("Failed to update daily display name:", err);
+  }
+}
+
+/**
  * Today's board: entries ranked by time, capped at `limit` fastest.
  * Returns [] offline or on error.
  */

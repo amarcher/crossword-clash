@@ -11,6 +11,7 @@ import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
+import { loadPlayerName } from "../lib/playerName";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -133,7 +134,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return initialSavedSession?.gameId ?? null;
   });
   const [isMultiplayer, setIsMultiplayer] = useState(() => !!mpSession);
-  const [displayName, setDisplayName] = useState(() => mpSession?.displayName ?? tStatic('common.defaultPlayerName'));
+  const [displayName, setDisplayName] = useState(
+    () => mpSession?.displayName ?? loadPlayerName() ?? tStatic('common.defaultPlayerName'),
+  );
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
   const [importFailed, setImportFailed] = useState(false);

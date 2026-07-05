@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { joinGame } from "../lib/puzzleService";
 import { clearMpSession } from "../lib/sessionPersistence";
+import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
 
 export function JoinScreen() {
@@ -41,6 +42,11 @@ export function JoinScreen() {
       game.loadPuzzle(result.puzzle);
       game.setGameId(result.gameId);
       game.setIsMultiplayer(true);
+      // Adopt the joiner's typed name into game state (it previously stayed
+      // the anonymous default, so daily-race results posted as "Player") and
+      // persist it for future sessions.
+      game.setDisplayName(displayName);
+      savePlayerName(displayName);
       setJoinLoading(false);
 
       if (result.status === "waiting") {
