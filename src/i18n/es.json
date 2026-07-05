@@ -208,7 +208,11 @@
     "modeSolo": "Solo",
     "modeRace": "Carrera",
     "playToday": "Jugar el Mini de hoy",
-    "raceFriends": "Carrera en vivo con amigos"
+    "raceFriends": "Carrera en vivo con amigos",
+    "signPrompt": "Estás en la clasificación de hoy como “{{name}}”",
+    "signPlaceholder": "Tu nombre",
+    "signSave": "Guardar",
+    "signedAs": "En la clasificación como {{name}} ✓"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",

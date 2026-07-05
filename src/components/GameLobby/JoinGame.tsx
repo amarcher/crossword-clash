@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
+import { loadPlayerName } from "../../lib/playerName";
 
 interface JoinGameProps {
   onJoin: (code: string, displayName: string) => void;
@@ -13,7 +14,8 @@ interface JoinGameProps {
 export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGameProps) {
   const { t } = useTranslation();
   const [code, setCode] = useState(initialCode ?? "");
-  const [displayName, setDisplayName] = useState("");
+  // Prefill with the persisted name so returning players just hit Join.
+  const [displayName, setDisplayName] = useState(() => loadPlayerName() ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

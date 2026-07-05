@@ -4,6 +4,7 @@ import { track } from "../../lib/analytics";
 import { formatDuration } from "../../lib/soloStats";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { SHARE_URL } from "../../lib/resultCard";
+import { savePlayerName } from "../../lib/playerName";
 import type { Puzzle } from "../../types/puzzle";
 
 interface ChallengeFriendButtonProps {
@@ -12,6 +13,11 @@ interface ChallengeFriendButtonProps {
   challengerName: string;
   /** The finisher's time in whole seconds — the ghost to beat. */
   finishSeconds: number;
+  /**
+   * Fired when the finisher types a name to sign the challenge — lets the
+   * screen reuse it (e.g. claim the daily-leaderboard entry with it too).
+   */
+  onNameSigned?: (name: string) => void;
   darkMode?: boolean;
 }
 
@@ -29,6 +35,7 @@ export function ChallengeFriendButton({
   puzzle,
   challengerName,
   finishSeconds,
+  onNameSigned,
   darkMode,
 }: ChallengeFriendButtonProps) {
   const { t } = useTranslation();
@@ -51,7 +58,14 @@ export function ChallengeFriendButton({
       if (busy) return;
       setBusy(true);
       try {
-        const finalName = rawName.trim() || t("challenge.unsignedName");
+        const typedName = rawName.trim();
+        // A freshly signed name is worth keeping: persist it for future
+        // sessions and let the screen apply it elsewhere (daily leaderboard).
+        if (!hasRealName && typedName) {
+          savePlayerName(typedName);
+          onNameSigned?.(typedName);
+        }
+        const finalName = typedName || t("challenge.unsignedName");
         const seconds = Math.max(0, Math.floor(finishSeconds));
         const url = buildChallengeUrl(SHARE_URL, puzzle, { name: finalName, seconds });
         track("challenge_created", {
@@ -86,7 +100,7 @@ export function ChallengeFriendButton({
         setBusy(false);
       }
     },
-    [busy, puzzle, finishSeconds, t, flash],
+    [busy, puzzle, finishSeconds, hasRealName, onNameSigned, t, flash],
   );
 
   const handlePrimary = useCallback(() => {

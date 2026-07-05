@@ -11,6 +11,7 @@ import {
   createNextGame,
 } from "../lib/puzzleService";
 import { clearMpSession } from "../lib/sessionPersistence";
+import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
 
 export function HostNameScreen() {
@@ -33,6 +34,8 @@ export function HostNameScreen() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!game.displayName.trim()) return;
+      // Remember the name so future dailies/challenges never ask again.
+      savePlayerName(game.displayName);
 
       // If there's a URL puzzle, handle it directly (create game from it)
       if (game.urlPuzzle) {

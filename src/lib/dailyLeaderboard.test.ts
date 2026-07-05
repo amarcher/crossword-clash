@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Force the offline path: vitest inherits .env.local, so without this mock the
+// I/O helpers would talk to the real Supabase project from unit tests.
+vi.mock("./supabaseClient", () => ({ supabase: null }));
 import {
   isTodaysDaily,
   rankEntries,
   shouldReplace,
   todayKey,
+  updateDailyDisplayName,
   type DailyResultEntry,
 } from "./dailyLeaderboard";
 import { getDailyMini } from "./dailyMinis";
@@ -78,5 +83,13 @@ describe("shouldReplace", () => {
     expect(shouldReplace(null, -5)).toBe(false);
     expect(shouldReplace(null, NaN)).toBe(false);
     expect(shouldReplace(null, Infinity)).toBe(false);
+  });
+});
+
+describe("updateDailyDisplayName", () => {
+  it("no-ops offline (supabase not configured)", async () => {
+    await expect(
+      updateDailyDisplayName("2026-07-05", "user-1", "Andy"),
+    ).resolves.toBeUndefined();
   });
 });
