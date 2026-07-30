@@ -11,11 +11,18 @@ export function logUsage(
   },
 ) {
   const dbUrl = Deno.env.get("DASHBOARD_DATABASE_URL");
-  if (!dbUrl) return;
+  if (!dbUrl) {
+    console.warn(`[${endpoint}] DASHBOARD_DATABASE_URL not set; usage not logged`);
+    return;
+  }
   const sql = neon(dbUrl);
-  sql`INSERT INTO api_usage (project, service, endpoint, tokens_in, tokens_out, characters, model)
+  const insert = sql`INSERT INTO api_usage (project, service, endpoint, tokens_in, tokens_out, characters, model)
     VALUES ('crossword-clash', ${service}, ${endpoint}, ${data.tokensIn ?? 0}, ${data.tokensOut ?? 0}, ${data.characters ?? 0}, ${data.model ?? null})`.catch(
     (e: unknown) =>
       console.error(`[${endpoint}] usage log failed:`, e),
   );
+  // The edge runtime freezes the isolate once the response is returned, so a
+  // plain fire-and-forget insert never completes. waitUntil keeps it alive.
+  // deno-lint-ignore no-explicit-any
+  (globalThis as any).EdgeRuntime?.waitUntil?.(insert);
 }
