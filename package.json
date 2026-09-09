@@ -9,7 +9,8 @@
     "build:bookmarklet": "node scripts/build-bookmarklet.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:classics": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-classic-manifest.mts"
   },
   "dependencies": {
     "@elevenlabs/client": "^1.10.0",

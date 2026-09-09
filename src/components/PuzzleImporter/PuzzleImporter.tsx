@@ -1,10 +1,15 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
-import { track } from "../../lib/analytics";
+import {
+  loadClassicManifest,
+  loadClassicPuzzle,
+  type ClassicEntry,
+} from "../../lib/classicLibrary";
 import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
@@ -13,12 +18,8 @@ interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
 }
 
-/** One entry in /classic-puzzles/manifest.json. */
-interface ClassicEntry {
-  file: string;
-  title: string;
-  size: string;
-}
+/** How many classics the hub previews before pointing at /classics. */
+const CLASSIC_PREVIEW_COUNT = 4;
 
 export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const { t } = useTranslation();
@@ -30,47 +31,33 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load the bundled 1924 public-domain classics list from the static asset.
-  // Best-effort: if it 404s or is malformed, the section simply stays hidden.
+  // Best-effort: resolves to [] on failure, so the section simply stays hidden.
   useEffect(() => {
     let cancelled = false;
-    fetch("/classic-puzzles/manifest.json")
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((data: unknown) => {
-        if (cancelled || !Array.isArray(data)) return;
-        const valid = data.filter(
-          (e): e is ClassicEntry =>
-            typeof e === "object" &&
-            e !== null &&
-            typeof (e as ClassicEntry).file === "string" &&
-            typeof (e as ClassicEntry).title === "string" &&
-            typeof (e as ClassicEntry).size === "string",
-        );
-        setClassics(valid);
-      })
-      .catch(() => {
-        /* No classics section — not fatal. */
-      });
+    loadClassicManifest().then((list) => {
+      if (!cancelled) setClassics(list);
+    });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Preview the smallest puzzles first — the friendliest quick start from a
+  // hub whose visitor hasn't chosen a size. The full, filterable list is /classics.
+  const classicPreview = useMemo(
+    () =>
+      [...classics]
+        .sort((a, b) => Math.max(a.width, a.height) - Math.max(b.width, b.height) || a.number - b.number)
+        .slice(0, CLASSIC_PREVIEW_COUNT),
+    [classics],
+  );
 
   const handleClassic = useCallback(
     async (entry: ClassicEntry) => {
       setError(null);
       setLoadingClassic(entry.file);
       try {
-        const res = await fetch(`/classic-puzzles/${entry.file}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
-        const parsed = parse(buffer, { filename: entry.file });
-        const puzzle = normalizePuzzle(parsed, "puzzle.puz");
-        track("puzzle_imported", {
-          source: "classic",
-          title: puzzle.title || entry.title,
-          size: `${puzzle.width}x${puzzle.height}`,
-        });
-        onPuzzleLoaded(puzzle);
+        onPuzzleLoaded(await loadClassicPuzzle(entry));
       } catch {
         setError(t("importer.classicError"));
       } finally {
@@ -262,7 +249,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
               {t("importer.classicSubtitle")}
             </p>
             <div className="grid grid-cols-2 gap-2">
-              {classics.map((entry) => {
+              {classicPreview.map((entry) => {
                 const isLoading = loadingClassic === entry.file;
                 return (
                   <button
@@ -270,18 +257,24 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
                     type="button"
                     disabled={loadingClassic !== null}
                     onClick={() => handleClassic(entry)}
-                    className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
+                    className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
                   >
                     <span className="block text-sm font-medium text-neutral-700">
                       {entry.title}
                     </span>
                     <span className="block text-xs text-neutral-400">
-                      {isLoading ? t("importer.parsing") : entry.size}
+                      {isLoading ? t("importer.parsing") : `${entry.width}×${entry.height}`}
                     </span>
                   </button>
                 );
               })}
             </div>
+            <Link
+              to="/classics"
+              className="mt-2 inline-block min-h-11 py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+            >
+              {t("importer.classicSeeAll", { count: classics.length })}
+            </Link>
           </details>
         )}
 
