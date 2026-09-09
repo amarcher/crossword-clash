@@ -148,6 +148,20 @@ export function MenuScreen() {
           </Link>
         </div>
 
+        {/* The bundled 1924 library — the most-played content after the daily
+            mini (see the Sept 2026 usage review), so it sits right under the
+            daily block rather than inside the import hub. */}
+        <Link
+          to="/classics"
+          onClick={() => track("mode_selected", { mode: "classics" })}
+          className="block px-5 py-3 rounded-lg text-center font-semibold text-amber-800 bg-amber-50 border-2 border-amber-200 hover:bg-amber-100 active:bg-amber-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <span className="block leading-tight">{t("menu.classicLibrary")}</span>
+          <span className="block text-xs mt-0.5 font-normal text-amber-700/80">
+            {t("menu.classicLibrarySubtitle")}
+          </span>
+        </Link>
+
         {showNudge && (
           <div
             role="note"

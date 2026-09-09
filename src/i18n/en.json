@@ -23,7 +23,9 @@
     "raceFriends": "Race friends",
     "dailyLeaderboard": "Leaderboard",
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
-    "nudgeDismiss": "Got it"
+    "nudgeDismiss": "Got it",
+    "classicLibrary": "📚 Classic library",
+    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)"
   },
   "hostName": {
     "heading": "Host a game",
@@ -55,8 +57,9 @@
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd from AVCX, Lollapuzzoola, BEQ, anywhere.",
     "tileSampleTitle": "Try a sample",
     "classicTitle": "Classic puzzles",
-    "classicSubtitle": "Public-domain crosswords from 1924 — click one to play.",
-    "classicError": "Couldn't load that puzzle. Please try another."
+    "classicSubtitle": "From the first crossword book ever published (1924). Public domain — tap one to play.",
+    "classicError": "Couldn't load that puzzle. Please try another.",
+    "classicSeeAll": "See all {{count}} in the classic library →"
   },
   "importing": {
     "receiving": "Receiving puzzle...",
@@ -72,7 +75,7 @@
   "puzzleReady": {
     "importedBadge": "Puzzle imported",
     "by": "by {{author}}",
-    "dimensions": "{{width}}\u00d7{{height}} \u00b7 {{acrossCount}} across, {{downCount}} down",
+    "dimensions": "{{width}}×{{height}} · {{acrossCount}} across, {{downCount}} down",
     "hostGame": "Host Game",
     "connecting": "Connecting to server..."
   },
@@ -80,11 +83,11 @@
     "shareInvite": "Share the code below to invite players",
     "modeHeading": "Game mode",
     "modeVersus": "Compete",
-    "modeVersusDesc": "One shared grid \u2014 race to claim the most squares.",
+    "modeVersusDesc": "One shared grid — race to claim the most squares.",
     "modeCoop": "Co-op",
-    "modeCoopDesc": "One shared grid \u2014 fill it together as a team.",
+    "modeCoopDesc": "One shared grid — fill it together as a team.",
     "modeAsync": "Time trial",
-    "modeAsyncDesc": "Everyone gets their own copy \u2014 fastest solve wins.",
+    "modeAsyncDesc": "Everyone gets their own copy — fastest solve wins.",
     "howItWorksStep1": "Friends scan the QR code or enter the code at crosswordclash.com.",
     "howItWorksStep2": "When everyone's in, press Start.",
     "copied": "Copied!",
@@ -190,12 +193,12 @@
     "raceTime": "Race time",
     "yourTime": "Your time",
     "time": "Time",
-    "solving": "Solving\u2026",
-    "waitingOthers": "Waiting for the others to finish\u2026",
+    "solving": "Solving…",
+    "waitingOthers": "Waiting for the others to finish…",
     "coopSolved": "Solved together!",
     "standings": "Standings",
-    "shareCaptionCoop": "We solved \"{{title}}\" together in {{time}} on Crossword Clash \ud83e\udd1d {{url}}",
-    "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash \ud83e\udd1d {{url}}",
+    "shareCaptionCoop": "We solved \"{{title}}\" together in {{time}} on Crossword Clash 🤝 {{url}}",
+    "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash 🤝 {{url}}",
     "viewLeaderboard": "Daily leaderboard"
   },
   "leaderboard": {
@@ -293,8 +296,35 @@
   },
   "nyt": {
     "cardText": "Looking for puzzles? The NYT Crossword has thousands of puzzles from easy to expert.",
-    "cardCta": "Try NYT Crossword \u2192",
+    "cardCta": "Try NYT Crossword →",
     "inlineText": "Want more puzzles?",
     "inlineCta": "Try the NYT Crossword"
+  },
+  "classics": {
+    "title": "Classic library",
+    "subtitle": "{{count}} puzzles from The Cross Word Puzzle Book (1924) — the first crossword book ever published. Free, public domain, and still a good fight.",
+    "subtitleNoCount": "Puzzles from The Cross Word Puzzle Book (1924) — the first crossword book ever published.",
+    "progress": "{{solved}} of {{total}} solved",
+    "filterAll": "All sizes",
+    "size": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "giant": "Giant"
+    },
+    "surpriseMe": "Surprise me",
+    "hideSolved": "Hide solved",
+    "loading": "Loading the library…",
+    "unavailable": "The library couldn't be loaded right now.",
+    "emptyFilter": "Nothing left here — try another size, or show solved puzzles.",
+    "loadError": "Couldn't load that puzzle. Please try another.",
+    "loadingPuzzle": "Loading…",
+    "cardEyebrow": "No. {{number}} · {{size}} · {{clues}} clues",
+    "by": "by {{author}}",
+    "playSolo": "Play solo",
+    "playAgain": "Play again",
+    "raceFriends": "Race friends",
+    "credit": "Puzzles from The Cross Word Puzzle Book, edited by Prosper Buranelli, F. Gregory Hartswick and Margaret Petherbridge (Plaza Publishing, 1924). Public domain. Text via Project Gutenberg; .puz files via crosserville.com.",
+    "backToMenu": "← Back to menu"
   }
 }
