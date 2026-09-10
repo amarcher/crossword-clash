@@ -14,6 +14,8 @@ import {
   loadSoloStats,
   saveSoloStats,
   getDisplayStreak,
+  getDisplayNytStreak,
+  recordNytPlay,
   getBestTime,
   loadSoloTimer,
   saveSoloTimer,
@@ -232,19 +234,60 @@ describe("persistence (localStorage)", () => {
       version: 1,
       bestTimes: { k: 238 },
       streak: { current: 2, longest: 3, lastPlayedDay: "2026-06-30" },
+      nytStreak: { current: 4, longest: 4, lastPlayedDay: "2026-06-30" },
     });
     const loaded = loadSoloStats();
     expect(loaded.bestTimes.k).toBe(238);
     expect(loaded.streak.current).toBe(2);
+    expect(loaded.nytStreak.current).toBe(4);
   });
 
   it("returns empty stats when nothing stored", () => {
-    expect(loadSoloStats()).toEqual({ version: 1, bestTimes: {}, streak: { ...EMPTY_STREAK } });
+    expect(loadSoloStats()).toEqual({
+      version: 1,
+      bestTimes: {},
+      streak: { ...EMPTY_STREAK },
+      nytStreak: { ...EMPTY_STREAK },
+    });
   });
 
   it("survives corrupted JSON", () => {
     localStorage.setItem("crossword-clash-solo-stats", "{not json");
-    expect(loadSoloStats()).toEqual({ version: 1, bestTimes: {}, streak: { ...EMPTY_STREAK } });
+    expect(loadSoloStats()).toEqual({
+      version: 1,
+      bestTimes: {},
+      streak: { ...EMPTY_STREAK },
+      nytStreak: { ...EMPTY_STREAK },
+    });
+  });
+
+  it("tolerates stats saved before nytStreak existed", () => {
+    localStorage.setItem(
+      "crossword-clash-solo-stats",
+      JSON.stringify({ version: 1, bestTimes: { k: 100 }, streak: { current: 1, longest: 1, lastPlayedDay: "2026-06-30" } }),
+    );
+    const loaded = loadSoloStats();
+    expect(loaded.bestTimes.k).toBe(100);
+    expect(loaded.streak.current).toBe(1);
+    expect(loaded.nytStreak).toEqual({ ...EMPTY_STREAK });
+  });
+
+  it("recordNytPlay rolls the NYT streak independently of the daily streak", () => {
+    recordNytPlay(new Date(2026, 5, 30));
+    const s = recordNytPlay(new Date(2026, 6, 1));
+    expect(s.current).toBe(2);
+    expect(loadSoloStats().streak.current).toBe(0); // daily streak untouched
+    // same-day repeat is a no-op
+    expect(recordNytPlay(new Date(2026, 6, 1)).current).toBe(2);
+    expect(getDisplayNytStreak(new Date(2026, 6, 1))).toBe(2);
+    expect(getDisplayNytStreak(new Date(2026, 6, 2))).toBe(2); // still alive (today not yet played)
+    expect(getDisplayNytStreak(new Date(2026, 6, 3))).toBe(0); // missed a day
+  });
+
+  it("recordSoloCompletion preserves the NYT streak", () => {
+    recordNytPlay(new Date(2026, 5, 30));
+    recordSoloCompletion("k", 272, new Date(2026, 5, 30));
+    expect(loadSoloStats().nytStreak.current).toBe(1);
   });
 
   it("records a completion: new best + streak start", () => {

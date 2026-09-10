@@ -25,7 +25,10 @@
     "nudge": "Compite con amigos para llenar un crucigrama — o resuelve el Mini de hoy solo.",
     "nudgeDismiss": "Entendido",
     "classicLibrary": "📚 Biblioteca clásica",
-    "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)"
+    "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)",
+    "nytTile": "Compite con amigos en el crucigrama del NYT de hoy",
+    "nytTileStreak": "Racha NYT de {{count}} días — juega el de hoy",
+    "nytTileSubtitle": "Importación gratis con un clic para suscriptores del NYT (escritorio)"
   },
   "hostName": {
     "heading": "Crear una partida",
@@ -77,7 +80,10 @@
     "by": "por {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} →, {{downCount}} ↓",
     "hostGame": "Crear partida",
-    "connecting": "Conectando al servidor..."
+    "connecting": "Conectando al servidor...",
+    "importedFromNyt": "Importado del NYT",
+    "nytTomorrow": "Funciona todos los días: abre el crucigrama de mañana en nytimes.com y vuelve a hacer clic en el marcador.",
+    "nytStreak": "¡Racha NYT de {{count}} días!"
   },
   "lobby": {
     "shareInvite": "Comparte el código para invitar jugadores",
@@ -199,7 +205,9 @@
     "standings": "Clasificación",
     "shareCaptionCoop": "Resolvimos \"{{title}}\" juntos en {{time}} en Crossword Clash 🤝 {{url}}",
     "shareCaptionCoopNoTime": "Resolvimos \"{{title}}\" juntos en Crossword Clash 🤝 {{url}}",
-    "viewLeaderboard": "Clasificación diaria"
+    "viewLeaderboard": "Clasificación diaria",
+    "nytTomorrow": "¿Mañana a la misma hora? Abre el crucigrama del NYT de mañana y vuelve a hacer clic en el marcador.",
+    "nytStreak": "Racha NYT de {{count}} días"
   },
   "leaderboard": {
     "title": "Clasificación diaria",
