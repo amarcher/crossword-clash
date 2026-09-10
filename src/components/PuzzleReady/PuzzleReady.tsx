@@ -12,6 +12,11 @@ interface PuzzleReadyProps {
   showHostOptions: boolean;
   /** Dark theme variant for HostApp */
   darkMode?: boolean;
+  /**
+   * Current NYT-bookmarklet streak in days. Only shown for a puzzle whose
+   * origin is the bookmarklet; 0 hides the streak line.
+   */
+  nytStreak?: number;
 }
 
 export function PuzzleReady({
@@ -21,10 +26,12 @@ export function PuzzleReady({
   onHostOnTV,
   showHostOptions,
   darkMode = false,
+  nytStreak = 0,
 }: PuzzleReadyProps) {
   const { t } = useTranslation();
   const acrossCount = puzzle.clues.filter((c) => c.direction === "across").length;
   const downCount = puzzle.clues.filter((c) => c.direction === "down").length;
+  const fromNyt = puzzle.origin === "nyt-bookmarklet";
 
   const bg = darkMode ? "bg-neutral-900" : "crossword-bg";
   const subtitleColor = darkMode ? "text-neutral-400" : "text-neutral-500";
@@ -46,7 +53,7 @@ export function PuzzleReady({
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="M2 6.5L4.5 9L10 3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        {t('puzzleReady.importedBadge')}
+        {fromNyt ? t('puzzleReady.importedFromNyt') : t('puzzleReady.importedBadge')}
       </div>
 
       <div className="text-center mb-6">
@@ -57,6 +64,21 @@ export function PuzzleReady({
         <p className={`text-sm ${subtitleColor} mt-2`}>
           {t('puzzleReady.dimensions', { width: puzzle.width, height: puzzle.height, acrossCount, downCount })}
         </p>
+        {/* The bookmarklet's return loop starts here: the first import is the
+            moment to say "this works every day", before they've even played. */}
+        {fromNyt && (
+          <p className={`text-xs ${subtitleColor} mt-3 max-w-xs mx-auto leading-snug`}>
+            🗞️ {t('puzzleReady.nytTomorrow')}
+            {nytStreak > 0 && (
+              <>
+                {' '}
+                <span className={darkMode ? "text-amber-400 font-semibold" : "text-amber-700 font-semibold"}>
+                  {t('puzzleReady.nytStreak', { count: nytStreak })}
+                </span>
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">

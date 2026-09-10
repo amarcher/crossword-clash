@@ -35,7 +35,14 @@ export type AnalyticsEvent =
   | "challenge_created"
   | "challenge_accepted"
   | "live_bridge"
-  | "leaderboard_viewed";
+  | "leaderboard_viewed"
+  /**
+   * Fired from the STATIC /install-bookmarklet page (bookmarklet/install-page.html
+   * has its own gtag snippet — it is outside the React bundle by design).
+   * Listed here so the event vocabulary stays in one place. Param `method`:
+   * "drag" | "contextmenu" | "click".
+   */
+  | "bookmarklet_install_intent";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

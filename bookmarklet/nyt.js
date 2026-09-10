@@ -412,6 +412,9 @@
       var transfer = {
         title: title,
         author: author,
+        // Lets the app tell a bookmarklet import apart from a shared link
+        // (analytics + the "same time tomorrow" hook + NYT streak).
+        origin: "nyt-bookmarklet",
         size: { rows: rows, cols: cols },
         grid: grid,
         gridnums: gridnums,

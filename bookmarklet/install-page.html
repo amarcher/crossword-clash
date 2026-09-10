@@ -212,5 +212,40 @@
 
 <p class="note desktop-only-content">Trouble installing? Some browsers require you to right-click the button and choose "Bookmark this link" instead of dragging — try that if the drag doesn't take.</p>
 </div>
+
+<!--
+  Analytics. The SPA's GA4 property (same tag as index.html) so install-page
+  views sit next to the in-app funnel. This is an ordinary external <script>,
+  not a runtime-assembled javascript: URL — the Safe Browsing concern from
+  PR #36 was about the latter. Never fetch or execute the bookmarklet here.
+
+  Events (also listed in src/lib/analytics.ts):
+    bookmarklet_install_intent {method: "drag" | "contextmenu" | "click"}
+  A drag start is the closest observable proxy for "installed" — the browser
+  gives no signal when a bookmark actually lands on the bar.
+-->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0DNSC7RPSN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-0DNSC7RPSN');
+
+  (function () {
+    var link = document.querySelector('.bookmarklet-link');
+    if (!link) return;
+    var sent = {};
+    function intent(method) {
+      // One event per method per page view — a jittery drag fires dragstart
+      // repeatedly and would otherwise inflate the count.
+      if (sent[method]) return;
+      sent[method] = true;
+      try { gtag('event', 'bookmarklet_install_intent', { method: method }); } catch (e) {}
+    }
+    link.addEventListener('dragstart', function () { intent('drag'); });
+    link.addEventListener('contextmenu', function () { intent('contextmenu'); });
+    link.addEventListener('click', function () { intent('click'); });
+  })();
+</script>
 </body>
 </html>

@@ -46,6 +46,12 @@ interface CompletionModalProps {
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
   /**
+   * Present when the finished puzzle came from the NYT bookmarklet: shows the
+   * "same time tomorrow" nudge and, when > 0, the NYT streak. This is the
+   * bookmarklet's return loop — the whole reason it is worth installing.
+   */
+  nytHook?: { streak: number };
+  /**
    * Multiplayer: the shared race time in whole seconds (host start → grid
    * complete). Shown as the headline time and stamped on the share card.
    */
@@ -114,6 +120,7 @@ export function CompletionModal({
   isNewBest,
   previousBest,
   streakCount,
+  nytHook,
   raceSeconds,
   onViewLeaderboard,
   dailySign,
@@ -396,6 +403,25 @@ export function CompletionModal({
               <p className={`text-center mb-6 text-sm font-semibold ${text}`}>
                 {t('soloStats.streakDays', { count: streakCount })}
               </p>
+            )}
+
+            {nytHook && (
+              <div
+                data-testid="nyt-hook"
+                className={`text-center mb-6 rounded-lg border px-3 py-2 text-sm ${
+                  darkMode
+                    ? "bg-amber-950/40 border-amber-800 text-amber-200"
+                    : "bg-amber-50 border-amber-200 text-amber-800"
+                }`}
+              >
+                {nytHook.streak > 0 && (
+                  <p className="font-semibold">🗞️ {t('completion.nytStreak', { count: nytHook.streak })}</p>
+                )}
+                <p className={nytHook.streak > 0 ? "mt-0.5 text-xs opacity-90" : ""}>
+                  {nytHook.streak > 0 ? "" : "🗞️ "}
+                  {t('completion.nytTomorrow')}
+                </p>
+              </div>
             )}
 
             {dailySign && (

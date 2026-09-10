@@ -12,7 +12,7 @@ import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
-import { clearSoloTimer, formatDuration, puzzleIdentity } from "../lib/soloStats";
+import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
 import { isTodaysDaily, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
@@ -141,11 +141,22 @@ export function SoloPlayScreen() {
     completionReportedRef.current = true;
     track("puzzle_completed", {
       mode: "solo",
+      origin: puzzle?.origin,
       size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined,
       cells: totalWhiteCells,
       duration_seconds: getElapsedSeconds(),
     });
   }, [isComplete, puzzle, totalWhiteCells, getElapsedSeconds]);
+
+  // NYT-bookmarklet return loop: finishing an imported NYT puzzle rolls the
+  // NYT streak (same-day repeats/reloads are no-ops) and the modal nudges
+  // "same time tomorrow". Solo only needs the finish, not a server round-trip.
+  const fromNyt = puzzle?.origin === "nyt-bookmarklet";
+  const [nytStreak, setNytStreak] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isComplete || !fromNyt || nytStreak !== null) return;
+    setNytStreak(recordNytPlay().current);
+  }, [isComplete, fromNyt, nytStreak]);
 
   const handleReset = useCallback(() => {
     reset();
@@ -318,6 +329,7 @@ export function SoloPlayScreen() {
         isNewBest={soloResult?.isNewBest}
         previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
+        nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
         onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
         dailySign={dailySign}
         challengePuzzle={puzzle}

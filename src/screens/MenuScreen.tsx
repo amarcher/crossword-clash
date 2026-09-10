@@ -8,7 +8,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { getDailyMini } from "../lib/dailyMinis";
-import { getDisplayStreak } from "../lib/soloStats";
+import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
+import { isDesktopBrowser } from "../lib/platform";
 
 type GameMode = "join" | "host" | "tv" | "solo" | "import";
 
@@ -65,6 +66,10 @@ export function MenuScreen() {
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const disabled = loading;
   const streak = useMemo(() => getDisplayStreak(), []);
+  // Bookmarklet promotion is desktop-only: it needs a bookmarks bar, so on a
+  // phone the tile would only lead to a dead end.
+  const desktop = useMemo(() => isDesktopBrowser(), []);
+  const nytStreak = useMemo(() => getDisplayNytStreak(), []);
 
   // Resolve once per render — deterministic per calendar day.
   const dailyMini = useMemo(() => getDailyMini(), []);
@@ -147,6 +152,24 @@ export function MenuScreen() {
             🏅 {t("menu.dailyLeaderboard")}
           </Link>
         </div>
+
+        {/* NYT bookmarklet — the stickiest thing the app does for subscribers,
+            and until now reachable only from a tile inside the import hub.
+            Plain <a>: /install-bookmarklet is a static page, not a route. */}
+        {desktop && (
+          <a
+            href="/install-bookmarklet"
+            onClick={() => track("mode_selected", { mode: "nyt" })}
+            className="block px-5 py-3 rounded-lg text-center font-semibold text-neutral-800 bg-white border-2 border-neutral-800 hover:bg-neutral-100 active:bg-neutral-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <span className="block leading-tight">
+              🗞️ {nytStreak > 0 ? t("menu.nytTileStreak", { count: nytStreak }) : t("menu.nytTile")}
+            </span>
+            <span className="block text-xs mt-0.5 font-normal text-neutral-500">
+              {t("menu.nytTileSubtitle")}
+            </span>
+          </a>
+        )}
 
         {/* The bundled 1924 library — the most-played content after the daily
             mini (see the Sept 2026 usage review), so it sits right under the

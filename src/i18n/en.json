@@ -25,7 +25,10 @@
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
     "nudgeDismiss": "Got it",
     "classicLibrary": "📚 Classic library",
-    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)"
+    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
+    "nytTile": "Race friends on today's NYT crossword",
+    "nytTileStreak": "{{count}}-day NYT streak — play today's",
+    "nytTileSubtitle": "Free one-click import for NYT subscribers (desktop)"
   },
   "hostName": {
     "heading": "Host a game",
@@ -77,7 +80,10 @@
     "by": "by {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} across, {{downCount}} down",
     "hostGame": "Host Game",
-    "connecting": "Connecting to server..."
+    "connecting": "Connecting to server...",
+    "importedFromNyt": "Imported from NYT",
+    "nytTomorrow": "This works every day: open tomorrow's puzzle on nytimes.com and click the bookmark again.",
+    "nytStreak": "{{count}}-day NYT streak!"
   },
   "lobby": {
     "shareInvite": "Share the code below to invite players",
@@ -199,7 +205,9 @@
     "standings": "Standings",
     "shareCaptionCoop": "We solved \"{{title}}\" together in {{time}} on Crossword Clash 🤝 {{url}}",
     "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash 🤝 {{url}}",
-    "viewLeaderboard": "Daily leaderboard"
+    "viewLeaderboard": "Daily leaderboard",
+    "nytTomorrow": "Same time tomorrow? Open tomorrow's NYT puzzle and click the bookmark again.",
+    "nytStreak": "{{count}}-day NYT streak"
   },
   "leaderboard": {
     "title": "Daily Leaderboard",

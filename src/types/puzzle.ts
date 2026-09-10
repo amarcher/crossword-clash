@@ -21,6 +21,13 @@ export interface PuzzleClue {
   answer: string;
 }
 
+/**
+ * Where a puzzle came from, when it matters after import. Only the NYT
+ * bookmarklet is tagged today: it drives the "same time tomorrow" hook and
+ * the NYT streak. Absent for file uploads, classics, dailies and samples.
+ */
+export type PuzzleOrigin = "nyt-bookmarklet";
+
 export interface Puzzle {
   title: string;
   author: string;
@@ -28,6 +35,7 @@ export interface Puzzle {
   height: number;
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
+  origin?: PuzzleOrigin;
 }
 
 export interface CellState {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
 import { compressToEncodedURIComponent } from "lz-string";
-import { extractPuzzleFromUrl, puzzleToTransferFormat, compressPuzzleToHash } from "./puzzleUrl";
+import { extractPuzzleFromUrl, puzzleToTransferFormat, compressPuzzleToHash, listenForImportedPuzzle } from "./puzzleUrl";
 import type { TransferPuzzle } from "./puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
 
@@ -228,4 +228,48 @@ describe("round-trip", () => {
     const across1 = result!.clues.find((c) => c.direction === "across" && c.number === 1)!;
     expect(across1.answer).toBe("CAT");
   });
+});
+
+describe("NYT bookmarklet origin", () => {
+  beforeEach(() => {
+    setHash("");
+  });
+
+  it("normalizes an explicit origin from the transfer payload and round-trips it through the hash", () => {
+    const transfer = { ...makeTransferPuzzle(), origin: "nyt-bookmarklet" as const };
+    setHash("#puzzle=" + compressToEncodedURIComponent(JSON.stringify(transfer)));
+    const puzzle = extractPuzzleFromUrl();
+    expect(puzzle?.origin).toBe("nyt-bookmarklet");
+
+    // Share/challenge links built from it keep the tag; untagged puzzles stay untagged.
+    expect(puzzleToTransferFormat(puzzle!).origin).toBe("nyt-bookmarklet");
+    const untagged = extractPuzzleFromUrlWith(makeTransferPuzzle());
+    expect(untagged?.origin).toBeUndefined();
+    expect("origin" in puzzleToTransferFormat(untagged!)).toBe(false);
+  });
+
+  it("ignores unknown origin values", () => {
+    const transfer = { ...makeTransferPuzzle(), origin: "something-else" } as unknown as TransferPuzzle;
+    expect(extractPuzzleFromUrlWith(transfer)?.origin).toBeUndefined();
+  });
+
+  it("stamps the origin on puzzles that arrive over postMessage (older bookmarklets send none)", async () => {
+    const pending = listenForImportedPuzzle(1000);
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "crossword-clash-puzzle",
+          puzzle: compressToEncodedURIComponent(JSON.stringify(makeTransferPuzzle())),
+        },
+      }),
+    );
+    const puzzle = await pending;
+    expect(puzzle?.title).toBe("Test Puzzle");
+    expect(puzzle?.origin).toBe("nyt-bookmarklet");
+  });
+
+  function extractPuzzleFromUrlWith(transfer: TransferPuzzle): Puzzle | null {
+    setHash("#puzzle=" + compressToEncodedURIComponent(JSON.stringify(transfer)));
+    return extractPuzzleFromUrl();
+  }
 });

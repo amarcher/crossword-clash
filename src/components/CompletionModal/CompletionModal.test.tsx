@@ -40,6 +40,21 @@ describe("CompletionModal", () => {
     expect(getByText("8/8 cells filled")).toBeTruthy();
   });
 
+  it("shows the NYT 'same time tomorrow' hook only for bookmarklet puzzles", () => {
+    const { queryByTestId, rerender, getByTestId, getByText } = render(
+      <CompletionModal {...SOLO_PROPS} />,
+    );
+    expect(queryByTestId("nyt-hook")).toBeNull();
+
+    rerender(<CompletionModal {...SOLO_PROPS} nytHook={{ streak: 0 }} />);
+    expect(getByTestId("nyt-hook").textContent).toContain("Same time tomorrow?");
+    expect(getByTestId("nyt-hook").textContent).not.toContain("streak");
+
+    rerender(<CompletionModal {...SOLO_PROPS} nytHook={{ streak: 3 }} />);
+    expect(getByText("🗞️ 3-day NYT streak")).toBeTruthy();
+    expect(getByTestId("nyt-hook").textContent).toContain("Same time tomorrow?");
+  });
+
   it("renders multiplayer variant with winner", () => {
     const { getByText } = render(
       <CompletionModal open={true} totalCells={8} totalClues={4} players={makePlayers()} />,
