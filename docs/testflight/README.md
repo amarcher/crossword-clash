@@ -73,15 +73,14 @@ See `../NATIVE-NYT-IMPORT.md` for importer behavior and current limitations.
   `78f6022f-d97f-494a-a09f-1bd0687915be`.
 - Required prerequisite internal group: **Development**,
   `e9a9d2b9-67e4-4855-b54c-b247a480eb77`, with automatic distribution off.
-- No testers have been invited, no public invitation link has been enabled,
-  and the build has not yet been submitted for external beta review.
-- The external-build wizard requires the owner's feedback email and review
-  contact phone/email. Those details have been requested. Description and
-  marketing URL were saved; Apple did not save the review contact/note block
-  while its required contact fields were incomplete. Review notes remain in
-  this directory and in the prepared browser form.
-- Finish contact information, save the review notes, add the build to Friends
-  and Family, paste WHAT-TO-TEST.txt, and submit for beta review. Do not claim
-  external tester availability until Apple approves the build.
+- The owner supplied the review contact phone. Contact information, feedback
+  email, and review notes were saved in App Store Connect without adding
+  contact details to this repository. Review does not require a Clash login.
+- Build `1.0.0 (1)` was submitted for external beta review with
+  `WHAT-TO-TEST.txt` and attached to **Friends and Family**. Verified Apple
+  status: **Waiting for Review**; group contains 1 build and 0 testers.
+- No testers have been invited and no public invitation link has been enabled.
+  External tester availability remains pending Apple's beta-review approval;
+  submission is not approval or proof of installation on a physical device.
 - Local signed IPA: `artifacts/mobile/testflight-export/App.ipa`.
   SHA-256: `05297485a0b0a589bf42cde327dc6f5aa5aebca257510ad3aeb4ff760bd0e085`.
