@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: "Crossword Clash",
   webDir: "dist",
   loggingBehavior: "none",
-  ios: { contentInset: "always" },
+  backgroundColor: "#ffffff",
+  ios: { contentInset: "never" },
   // Remote NYT pages are presented by NytImporter in a separate, unbridged view.
   // Never add NYT to server.allowNavigation or enable cookie/HTTP interception.
 };

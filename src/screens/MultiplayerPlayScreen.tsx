@@ -1,3 +1,4 @@
+import { shareOrigin } from "../lib/shareOrigin";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -7,6 +8,7 @@ import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
 import { CluePanel } from "../components/CluePanel";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
+import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
 import { MultiplayerScoreboard } from "../components/Scoreboard/MultiplayerScoreboard";
 import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
@@ -258,6 +260,7 @@ export function MultiplayerPlayScreen() {
   return (
     <>
       <GameLayout
+        keyboard={<PuzzleKeyboard actions={navActions} allowDelete={false} disabled={isComplete || clueSheetOpen || gameStatus !== "active"} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">
@@ -278,7 +281,7 @@ export function MultiplayerPlayScreen() {
                     </div>
                     <div className="hidden md:block">
                       <QRCode
-                        value={`${window.location.origin}/?join=${shareCode}`}
+                        value={`${shareOrigin()}/?join=${shareCode}`}
                         size={48}
                         title={t('lobby.qrCodeLabel')}
                       />

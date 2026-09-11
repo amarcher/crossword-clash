@@ -79,8 +79,30 @@ See `../NATIVE-NYT-IMPORT.md` for importer behavior and current limitations.
 - Build `1.0.0 (1)` was submitted for external beta review with
   `WHAT-TO-TEST.txt` and attached to **Friends and Family**. Verified Apple
   status: **Waiting for Review**; group contains 1 build and 0 testers.
-- No testers have been invited and no public invitation link has been enabled.
-  External tester availability remains pending Apple's beta-review approval;
-  submission is not approval or proof of installation on a physical device.
+- Build 1 was subsequently enabled for the **Development** internal group
+  (3 testers). The owner also enabled an external public invitation link.
+  External availability still depends on Apple beta-review approval.
+- Build 2 uploaded successfully with the NYT navigation fix, but was not
+  assigned to testers before work expanded to the combined build 3.
 - Local signed IPA: `artifacts/mobile/testflight-export/App.ipa`.
   SHA-256: `05297485a0b0a589bf42cde327dc6f5aa5aebca257510ad3aeb4ff760bd0e085`.
+
+### Build 3: native input and TV joining
+
+- Native letters-only keyboard appears with the puzzle. The active clue stays
+  immediately above it; the grid fits the remaining viewport without page scroll.
+- Native safe areas are handled explicitly, with a separate layout for short
+  landscape screens and a clue sidebar on larger displays.
+- NYT cross-host GET redirects stay in the embedded browser, avoiding app-link
+  handoff. A fresh sign-in on a physical phone with NYT Games installed remains
+  a required beta check. The original report confirmed authentication itself
+  had succeeded despite the stuck loading page.
+- Join as TV opens a read-only room display without creating a player. Native
+  invitations now use the public website rather than the embedded app origin.
+- 646 shared tests passed; mobile and web production builds passed. Native
+  navigation policy tests and the iOS Release archive passed. Simulator input,
+  active clue visibility, clue sheet, and lack of outer scrolling were checked.
+- A synthetic live room verified TV joining, scoring, refresh recovery, rematch,
+  and closure; player count remained unchanged. Test rooms were closed afterward.
+- Tester instructions: `WHAT-TO-TEST-3.txt`. Build upload/distribution status is
+  recorded separately after Apple accepts the archive.

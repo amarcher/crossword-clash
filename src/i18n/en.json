@@ -327,6 +327,25 @@
     "credit": "Puzzles from The Cross Word Puzzle Book, edited by Prosper Buranelli, F. Gregory Hartswick and Margaret Petherbridge (Plaza Publishing, 1924). Public domain. Text via Project Gutenberg; .puz files via crosserville.com.",
     "backToMenu": "← Back to menu"
   },
+  "keyboard": {
+    "label": "Crossword keyboard",
+    "switchDirection": "Switch Across / Down",
+    "delete": "Delete letter",
+    "backToPuzzle": "Back to puzzle"
+  },
+  "spectator": {
+    "join": "Join as TV",
+    "description": "Start the game on your phone, then enter its room code here. This screen shows the puzzle and scores without joining as a player.",
+    "display": "TV display · controlled by the host",
+    "leave": "Leave display",
+    "error": "Could not connect to that room. Check the code and your connection.",
+    "closed": "The host closed this room.",
+    "waiting": "Waiting for the host to start the game on their device.",
+    "completed": "Game complete",
+    "live": "Live game",
+    "reconnecting": "Connection interrupted. Reconnecting…",
+    "race": "Time trial results"
+  },
   "nytImport": {
     "eyebrow": "Your puzzles, your game",
     "title": "Import from NYT",

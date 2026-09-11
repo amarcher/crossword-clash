@@ -1,6 +1,7 @@
 import { useCallback, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { Capacitor } from "@capacitor/core";
 
 interface MobileClueSheetProps {
   open: boolean;
@@ -17,6 +18,7 @@ export function MobileClueSheet({
 }: MobileClueSheetProps) {
   const { t } = useTranslation();
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const native = Capacitor.isNativePlatform();
 
   const handleEscape = useCallback(() => {
     onClose();
@@ -27,7 +29,7 @@ export function MobileClueSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className={`fixed inset-0 z-50 ${native ? "native-clue-sheet" : "md:hidden"}`}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/30"
@@ -45,6 +47,7 @@ export function MobileClueSheet({
         <div className="flex justify-center py-2 shrink-0">
           <div className="w-10 h-1 rounded-full bg-neutral-300" />
         </div>
+        {native && <button type="button" onClick={onClose} className="self-end px-4 py-2 text-blue-700 font-semibold">{t("keyboard.backToPuzzle")}</button>}
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0 flex flex-col gap-3">
           {scoreboard}

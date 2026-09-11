@@ -327,6 +327,25 @@
     "credit": "Crucigramas de The Cross Word Puzzle Book, editado por Prosper Buranelli, F. Gregory Hartswick y Margaret Petherbridge (Plaza Publishing, 1924). Dominio público. Texto vía Project Gutenberg; archivos .puz vía crosserville.com.",
     "backToMenu": "← Volver al menú"
   },
+  "keyboard": {
+    "label": "Teclado de crucigrama",
+    "switchDirection": "Cambiar horizontal / vertical",
+    "delete": "Borrar letra",
+    "backToPuzzle": "Volver al crucigrama"
+  },
+  "spectator": {
+    "join": "Unirse como TV",
+    "description": "Crea la partida en tu teléfono e introduce su código aquí. Esta pantalla muestra el crucigrama y los puntos sin unirse como jugador.",
+    "display": "Pantalla de TV · controlada por el anfitrión",
+    "leave": "Salir de la pantalla",
+    "error": "No se pudo conectar a la sala. Comprueba el código y tu conexión.",
+    "closed": "El anfitrión cerró esta sala.",
+    "waiting": "Esperando a que el anfitrión inicie la partida en su dispositivo.",
+    "completed": "Partida terminada",
+    "live": "Partida en directo",
+    "reconnecting": "Conexión interrumpida. Reconectando…",
+    "race": "Resultados de contrarreloj"
+  },
   "nytImport": {
     "eyebrow": "Tus crucigramas, tu partida",
     "title": "Importar de NYT",

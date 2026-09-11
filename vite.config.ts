@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
     transformIndexHtml: {
       order: "pre" as const,
       handler(html: string) {
-        return html.replace(/\s*<!-- Google Analytics 4 -->[\s\S]*?(?=\s*<\/head>)/, "");
+        return html.replace(/\s*<!-- Google Analytics 4 -->[\s\S]*?(?=\s*<\/head>)/, "")
+          .replace('content="width=device-width, initial-scale=1.0"', 'content="width=device-width, initial-scale=1.0, viewport-fit=cover"');
       },
     },
   }] : [])],

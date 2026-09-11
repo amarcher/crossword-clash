@@ -95,6 +95,13 @@ WebKit content world. Android evaluates the bundled script and polls a random
 per-attempt result slot; navigation invalidates the attempt. Native timeouts
 bound the wait. Only normalized puzzle fields cross into the game.
 
+On iOS, cross-host GET navigations (including login redirects) and new-window
+GET links are cancelled and loaded through the public WKWebView load API to
+keep Universal Links inside Clash. A one-use pending URL prevents reload loops.
+Login POSTs stay with WebKit so their bodies are not lost or replayed. Custom
+app schemes are blocked in subframes as well as the main frame. Intentional
+navigation cancellations do not replace the status with a network error.
+
 The inbox contains the latest imported puzzle, not credentials. It uses the
 app's local web storage. NYT cookies stay in the native browser's website
 storage; Android OS app backup is disabled. iOS default app/device backup
@@ -132,6 +139,30 @@ denied access, malformed results, account-field exclusion, cancellation,
 inbox restoration, and preventing solo imports from writing to Supabase.
 Android instrumentation verifies the real separate browser configuration and
 packaged extractor. These tests are not a substitute for subscriber sign-in.
+
+Run the iOS navigation regression checks on macOS with existing Xcode tools:
+
+```sh
+mkdir -p artifacts/mobile
+swiftc ios/App/App/NytNavigationPolicy.swift scripts/test-nyt-navigation.swift \
+  -o artifacts/mobile/test-nyt-navigation
+artifacts/mobile/test-nyt-navigation
+```
+
+The checks exercise login redirect chains, one-use reload protection, POST
+preservation, popup routing, URL restrictions, and subframe app-scheme blocking.
+They do not simulate the installed NYT app's Universal Link association.
+
+### iOS app-link fix, build 2
+
+- Reported on a physical device: NYT sign-in opens the installed NYT app and
+  leaves the embedded login page spinning. The previous `.allow` policy allowed
+  cross-host HTTPS navigations through WebKit's app-link handling.
+- Navigation regression checks and the iOS simulator build passed. With its
+  existing NYT session retained after updating, the simulator imported the
+  September 11 Daily by Robyn Weintraub (15×15).
+- Fresh sign-in on a physical device with NYT Games installed still needs a
+  tester check; retained-session import does not verify that exact scenario.
 
 Local build logs and screenshots belong under ignored `artifacts/mobile/`.
 

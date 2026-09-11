@@ -216,6 +216,7 @@ export function MenuScreen() {
               />
             </div>
             <div className="mt-1 text-center">
+              <Link to="/watch" className="block text-sm text-blue-700 underline underline-offset-2 mb-3">{t("spectator.join")}</Link>
               <Link
                 to="/host"
                 aria-disabled={disabled}

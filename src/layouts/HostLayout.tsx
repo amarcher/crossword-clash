@@ -1,3 +1,4 @@
+import { shareOrigin } from "../lib/shareOrigin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useSupabase } from "../hooks/useSupabase";
@@ -590,7 +591,7 @@ export function HostLayout() {
   const showCompletionModal = multiplayer.gameStatus === "completed" && !completionModalDismissed;
 
   const joinUrl = multiplayer.shareCode
-    ? `${window.location.origin}/?join=${multiplayer.shareCode}`
+    ? `${shareOrigin()}/?join=${multiplayer.shareCode}`
     : null;
 
   const value: HostContextValue = {

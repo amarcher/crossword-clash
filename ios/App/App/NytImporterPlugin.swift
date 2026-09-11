@@ -47,6 +47,7 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
     private var generation = 0
     private var busy = false
     private var finished = false
+    private let navigationPolicy = NytNavigationPolicy()
 
     init(url: URL, labels: [String: String]) {
         initialURL = url; self.labels = labels
@@ -56,9 +57,7 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
     func label(_ key: String, _ fallback: String) -> String { labels[key] ?? fallback }
 
     static func allowed(_ url: URL) -> Bool {
-        guard url.scheme == "https", url.user == nil, url.password == nil, url.port == nil || url.port == 443,
-              let host = url.host else { return false }
-        return host == "nytimes.com" || host.hasSuffix(".nytimes.com")
+        NytNavigationPolicy.allowed(url)
     }
     static func isPuzzle(_ url: URL) -> Bool {
         allowed(url) && url.host == "www.nytimes.com" &&
@@ -100,11 +99,15 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
                         UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)]
         navigationController?.setToolbarHidden(false, animated: false)
         importButton.isEnabled = false
-        webView.load(URLRequest(url: initialURL))
+        loadInBrowser(URLRequest(url: initialURL))
     }
 
     @objc private func close() { complete(["cancelled": true]) }
-    @objc private func selectedPuzzle() { webView.load(URLRequest(url: initialURL)) }
+    @objc private func selectedPuzzle() { loadInBrowser(URLRequest(url: initialURL)) }
+    private func loadInBrowser(_ request: URLRequest) {
+        navigationPolicy.prepareToLoad(request)
+        webView.load(request)
+    }
     private func complete(_ result: [String: Any]) {
         guard !finished else { return }; finished = true; generation += 1
         webView.stopLoading()
@@ -140,12 +143,22 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        guard let url = action.request.url else { decisionHandler(.cancel); return }
-        if action.targetFrame?.isMainFrame != false && !Self.allowed(url) {
-            statusLabel.text = label("external", "Use NYT email sign-in here. This importer only opens NYT pages.")
-            decisionHandler(.cancel); return
+        switch navigationPolicy.decide(action.request, sourceURL: action.sourceFrame.request.url,
+                                       isMainFrame: action.targetFrame?.isMainFrame ?? true,
+                                       opensWindow: action.targetFrame == nil) {
+        case .cancel:
+            if action.targetFrame?.isMainFrame != false {
+                statusLabel.text = label("external", "Use NYT email sign-in here. This importer only opens NYT pages.")
+            }
+            decisionHandler(.cancel)
+        case .loadInBrowser:
+            // Use the public load API, not private WebKit app-link policy values.
+            // The one-use pending URL lets that load through without a loop.
+            decisionHandler(.cancel)
+            loadInBrowser(action.request)
+        case .allow:
+            decisionHandler(.allow)
         }
-        decisionHandler(.allow)
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         generation += 1; busy = false; importButton.isEnabled = false
@@ -154,11 +167,17 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
         importButton.isEnabled = webView.url.map(Self.isPuzzle) ?? false
         statusLabel.text = label("hint", "Sign in on NYT, open the selected puzzle, then tap Import.")
     }
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { showError("NETWORK") }
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { showError("NETWORK") }
+    private func navigationFailed(_ error: Error) {
+        let failure = error as NSError
+        // Replacing an app-link navigation intentionally cancels the old load.
+        guard failure.domain != NSURLErrorDomain || failure.code != NSURLErrorCancelled else { return }
+        showError("NETWORK")
+    }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { navigationFailed(error) }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { navigationFailed(error) }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { generation += 1; showError("NETWORK") }
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = action.request.url, Self.allowed(url) { webView.load(action.request) }
+        if let url = action.request.url, Self.allowed(url), (action.request.httpMethod ?? "GET") == "GET" { loadInBrowser(action.request) }
         else { statusLabel.text = label("external", "Use NYT email sign-in here.") }
         return nil
     }

@@ -1,3 +1,4 @@
+import { shareOrigin } from "../../lib/shareOrigin";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
@@ -36,7 +37,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   // src/lib/shareLinks.ts). Native share sheet on mobile, clipboard elsewhere.
   const handleShareLink = async () => {
     if (!shareCode) return;
-    const url = buildRaceInviteUrl(window.location.origin, { code: shareCode });
+    const url = buildRaceInviteUrl(shareOrigin(), { code: shareCode });
     try {
       if (typeof navigator.share === "function") {
         await navigator.share({ url });
@@ -91,7 +92,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           <div className="mb-8 flex flex-col items-center">
             <div className="p-4 bg-white rounded-xl border border-neutral-200">
               <QRCode
-                value={`${window.location.origin}/?join=${shareCode}`}
+                value={`${shareOrigin()}/?join=${shareCode}`}
                 size={200}
                 title={t('lobby.qrCodeLabel')}
               />

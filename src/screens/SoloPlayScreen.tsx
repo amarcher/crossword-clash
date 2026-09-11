@@ -5,6 +5,7 @@ import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
 import { CluePanel } from "../components/CluePanel";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
+import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
 import { Scoreboard } from "../components/Scoreboard/Scoreboard";
 import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
@@ -205,6 +206,7 @@ export function SoloPlayScreen() {
   return (
     <>
       <GameLayout
+        keyboard={<PuzzleKeyboard actions={navActions} disabled={isComplete || clueSheetOpen} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">

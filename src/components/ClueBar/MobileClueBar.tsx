@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PuzzleClue, Direction } from "../../types/puzzle";
+import { Capacitor } from "@capacitor/core";
 
 interface MobileClueBarProps {
   activeClue: PuzzleClue | null;
@@ -23,9 +24,11 @@ export function MobileClueBar({
 }: MobileClueBarProps) {
   const { t } = useTranslation();
   const barRef = useRef<HTMLDivElement>(null);
+  const embedded = Capacitor.isNativePlatform();
 
   // Keep the clue bar above the virtual keyboard using the VisualViewport API.
   useEffect(() => {
+    if (embedded) return;
     const vv = window.visualViewport;
     if (!vv) return;
 
@@ -50,12 +53,12 @@ export function MobileClueBar({
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
     };
-  }, []);
+  }, [embedded]);
 
   return (
     <div
       ref={barRef}
-      className="md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-white border-t border-neutral-200 z-50 transition-[bottom] duration-100 ease-out"
+      className={embedded ? "native-clue-bar flex items-stretch" : "md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-white border-t border-neutral-200 z-50 transition-[bottom] duration-100 ease-out"}
     >
       <button
         onClick={() => { onPrevWord(); inputRef?.current?.focus(); }}

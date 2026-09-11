@@ -101,6 +101,7 @@ export { IndexRedirect, HostIndexRedirect };
 // It is intentionally NOT a React route — see PR #36 for the Safe
 // Browsing rationale. Edit the HTML template, not React.
 export const router = createBrowserRouter([
+  { path: "/watch/:code?", lazy: () => import("./screens/SpectatorScreen").then(m => ({ Component: m.SpectatorScreen })) },
   {
     path: "/",
     Component: RootLayout,

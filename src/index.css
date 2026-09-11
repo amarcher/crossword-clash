@@ -1,5 +1,105 @@
 @import "tailwindcss";
 
+/* Native screens own the safe areas instead of stacking WebView content insets
+   on top of a full-height document. Non-game pages can still scroll normally. */
+.native-app { background: #fff; overscroll-behavior: none; }
+.native-app #root {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.native-game-layout {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  background: #fff;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.native-game-header { flex: none; padding: 8px 12px; border-bottom: 1px solid #e5e5e5; }
+.native-game-main { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.native-grid-slot {
+  container-type: size;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  --native-grid-size: min(100cqw, 100cqh);
+}
+.native-game-clues { display: none; }
+.native-game-controls { flex: none; background: #dce1e7; }
+.native-clue-bar { min-height: 60px; background: #dbeafe; border-top: 1px solid #bfdbfe; }
+.native-clue-bar > button { min-height: 60px; }
+.native-clue-bar > button > span.line-clamp-2 {
+  font-size: 16px;
+  line-height: 1.3;
+  display: block;
+  max-height: 100px;
+  overflow-y: auto;
+  padding-block: 10px;
+  overscroll-behavior: contain;
+}
+.puzzle-keyboard {
+  padding: 8px 4px max(10px, env(safe-area-inset-bottom));
+  max-width: 780px;
+  margin: 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.puzzle-keyboard-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
+.puzzle-keyboard-row:last-child { margin-bottom: 0; }
+.puzzle-keyboard-row-1 { padding-inline: 5%; }
+.puzzle-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: clamp(44px, 6.4dvh, 60px);
+  border-radius: 6px;
+  background: #fff;
+  color: #171717;
+  font-size: clamp(21px, 5.5vw, 28px);
+  font-weight: 500;
+  box-shadow: 0 2px 0 #a4aab3;
+  -webkit-touch-callout: none;
+}
+.puzzle-key-action { flex: 1.45; background: #bfc8d3; color: #25344b; }
+.puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
+.puzzle-key:focus-visible { outline: 3px solid #2563eb; outline-offset: -3px; }
+.puzzle-key:disabled { opacity: .45; }
+.native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
+.native-clue-sheet ul { overscroll-behavior: contain; }
+.spectator-layout { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.native-app .spectator-layout { height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+.spectator-body { display: flex; flex: 1; min-height: 0; gap: 16px; padding: 0 16px 16px; }
+.spectator-sidebar { width: clamp(280px, 32vw, 480px); display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+.spectator-clues { flex: 1; min-height: 160px; overflow: hidden; }
+.spectator-clues li { font-size: clamp(14px, 1.1vw, 19px); line-height: 1.4; padding-block: 3px; }
+@media (max-width: 700px) {
+  .spectator-body { flex-direction: column; overflow-y: auto; }
+  .spectator-body > .native-grid-slot { flex: none; height: 65vw; }
+  .spectator-sidebar { width: 100%; overflow: visible; }
+  .spectator-clues { height: 280px; flex: none; }
+}
+@media (min-width: 768px) {
+  .native-game-clues { display: block; width: clamp(220px, 28vw, 380px); padding: 12px; min-height: 0; overflow: hidden; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .native-game-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .native-game-header { grid-column: 1 / -1; }
+  .native-game-main { padding-bottom: env(safe-area-inset-bottom); }
+  .native-game-clues { display: none; }
+  .native-game-controls { align-self: end; }
+  .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
+  .puzzle-key { height: 44px; }
+}
+
 /* Cell fill pop — triggers when a letter first appears in a cell */
 @keyframes cell-fill {
   0% {

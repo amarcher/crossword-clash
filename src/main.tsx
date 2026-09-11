@@ -5,6 +5,9 @@ import { RouterProvider } from "react-router";
 import { DeferredAnalytics } from "./components/DeferredAnalytics";
 import "./index.css";
 import { router } from "./router";
+import { Capacitor } from "@capacitor/core";
+
+document.documentElement.classList.toggle("native-app", Capacitor.isNativePlatform());
 
 // Keep <html lang> in sync with the active language
 document.documentElement.lang = i18n.language;

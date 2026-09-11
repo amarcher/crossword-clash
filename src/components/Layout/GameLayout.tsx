@@ -1,13 +1,30 @@
 import type { ReactNode } from "react";
+import { Capacitor } from "@capacitor/core";
 
 interface GameLayoutProps {
   header: ReactNode;
   grid: ReactNode;
   clues: ReactNode;
   mobileClueBar?: ReactNode;
+  keyboard?: ReactNode;
 }
 
-export function GameLayout({ header, grid, clues, mobileClueBar }: GameLayoutProps) {
+export function GameLayout({ header, grid, clues, mobileClueBar, keyboard }: GameLayoutProps) {
+  if (Capacitor.isNativePlatform()) {
+    return (
+      <div className="native-game-layout">
+        <header className="native-game-header">{header}</header>
+        <main className="native-game-main">
+          <div className="native-grid-slot">{grid}</div>
+          <aside className="native-game-clues">{clues}</aside>
+        </main>
+        <footer className="native-game-controls">
+          {mobileClueBar}
+          {keyboard}
+        </footer>
+      </div>
+    );
+  }
   return (
     <div className={`h-dvh bg-neutral-50 flex flex-col overflow-hidden ${mobileClueBar ? "grid-offset-mobile" : ""}`}>
       <header className="bg-white border-b border-neutral-200 px-4 py-2 md:py-3 shrink-0">

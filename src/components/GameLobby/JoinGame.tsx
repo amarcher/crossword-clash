@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
 import { loadPlayerName } from "../../lib/playerName";
+import { Link } from "react-router";
 
 interface JoinGameProps {
   onJoin: (code: string, displayName: string) => void;
@@ -85,6 +86,9 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
           {loading ? t('join.joining') : t('join.joinGame')}
         </button>
 
+        <Link to={code.length === 6 ? `/watch/${code}` : "/watch"} className="block text-center text-blue-700 underline py-2">
+          {t("spectator.join")}
+        </Link>
         <button
           type="button"
           onClick={onBack}
