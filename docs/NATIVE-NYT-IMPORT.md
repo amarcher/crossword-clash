@@ -58,9 +58,10 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
 ```
 
-Physical iPhone installation requires selecting the appropriate signing team
-in Xcode. No signing identity, provisioning profile, or store listing was
-configured by this change. Generated app icons remain Capacitor defaults.
+The iOS project is configured for Andrew Archer's developer team. TestFlight
+release preparation, signing, app identity, and review material are documented
+in [testflight/README.md](testflight/README.md). Physical-device behavior still
+requires verification; simulator success is not a device-distribution result.
 
 ## Subscriber verification
 

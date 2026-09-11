@@ -1,0 +1,9 @@
+No Crossword Clash login, purchase, or subscription is required.
+
+Core review path: tap Play Today's Mini for a built-in playable crossword. Alternatively, open Classic library, choose a puzzle, and select Play Solo. Tap a cell to show the keyboard. Correct letters remain on the grid; incorrect letters are rejected. Close and reopen the app to test saved solo progress.
+
+Multiplayer: on one device choose Start a game, select a built-in puzzle, enter a display name, and create a room. On another device choose Join with a code, enter the room code and a display name. The host starts once two players have joined. Internet access is required for multiplayer.
+
+Optional subscriber import: Import from NYT opens a separate NYT browser. The tester signs in directly on NYT using their own account, selects an accessible edition, and taps Import this puzzle. No NYT credentials or publisher puzzle content are bundled with the app. NYT is not affiliated with this app. Core review can be completed using included puzzles without a NYT account. The current importer supports single-letter Daily and Mini puzzles. Solo NYT imports stay on the device; choosing to host or share a challenge sends the puzzle to participants, as explained in the play picker.
+
+Please use TestFlight feedback for issues in this first native beta.
