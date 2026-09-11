@@ -9,6 +9,7 @@ import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { getDailyMini } from "../lib/dailyMinis";
 import { getDisplayStreak } from "../lib/soloStats";
+import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 
 type GameMode = "join" | "host" | "tv" | "solo" | "import";
 
@@ -240,11 +241,11 @@ export function MenuScreen() {
           </span>
         </Link>
         <Link
-          to="/solo/import"
+          to={nativeNytImportAvailable() ? "/nyt-import" : "/solo/import"}
           onClick={() => track("mode_selected", { mode: "import" })}
           className="px-4 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 transition-colors text-center"
         >
-          {t("menu.importPuzzle")}
+          {nativeNytImportAvailable() ? t("nytImport.title") : t("menu.importPuzzle")}
         </Link>
       </div>
       <div className="mt-6">

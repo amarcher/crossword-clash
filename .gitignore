@@ -23,3 +23,7 @@ tests.json
 
 # Firecrawl research artifacts
 .firecrawl/
+
+# Generated native extractor and local verification output
+public/native/
+artifacts/mobile/

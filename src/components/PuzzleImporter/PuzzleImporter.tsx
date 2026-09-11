@@ -13,6 +13,7 @@ import {
 import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
+import { nativeNytImportAvailable } from "../../lib/nativeNytImport";
 
 interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
@@ -134,8 +135,12 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           {t("importer.hubSubtitle")}
         </p>
 
-        {/* Primary tile — NYT bookmarklet */}
-        <a
+        {nativeNytImportAvailable() ? <Link to="/nyt-import"
+          className="mb-3 block w-full max-w-md rounded-xl border-2 border-blue-500 bg-white p-5 text-blue-700">
+          <h3 className="font-semibold">{t("nytImport.title")}</h3>
+          <p className="mt-1 text-sm text-neutral-600">{t("nytImport.description")}</p>
+          <span className="mt-3 block font-semibold">{t("nytImport.open")} →</span>
+        </Link> : <a
           href="/install-bookmarklet"
           target="_blank"
           rel="noopener noreferrer"
@@ -154,7 +159,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
               {t("importer.tileNytCta")}
             </span>
           </div>
-        </a>
+        </a>}
 
         {/* Two secondary tiles side-by-side on desktop */}
         <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">

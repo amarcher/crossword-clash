@@ -107,6 +107,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: IndexRedirect },
       { path: "menu", Component: MenuScreen },
+      { path: "nyt-import", lazy: () => import("./screens/NytImportScreen").then((m) => ({ Component: m.NytImportScreen })) },
       { path: "solo/import", lazy: () => import("./screens/SoloImportScreen").then((m) => ({ Component: m.SoloImportScreen })) },
       { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
       { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },

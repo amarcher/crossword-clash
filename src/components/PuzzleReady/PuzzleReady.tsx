@@ -59,6 +59,8 @@ export function PuzzleReady({
         </p>
       </div>
 
+      {puzzle.source?.provider === "nyt" && <p className={`mb-4 max-w-sm text-center text-sm ${subtitleColor}`}>{t("nytImport.sharing")}</p>}
+
       <div className="flex flex-col gap-3 w-full max-w-xs">
         {showHostOptions && (
           <>

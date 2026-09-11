@@ -22,6 +22,8 @@ export interface PuzzleClue {
 }
 
 export interface Puzzle {
+  /** Provenance for subscriber-directed imports; contains no account or session data. */
+  source?: { provider: "nyt"; date: string; kind: "daily" | "mini"; url: string };
   title: string;
   author: string;
   width: number;

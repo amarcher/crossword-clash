@@ -37,7 +37,7 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
   const config = AD_PLACEMENTS[placement];
   // No point reserving space (or loading AdSense) for a placement whose slot
   // id isn't configured — it can never fill, so it would just be an empty box.
-  const configured = isAdsEnabled() && !!config.slot;
+  const configured = import.meta.env.MODE !== "mobile" && isAdsEnabled() && !!config.slot;
 
   useEffect(() => {
     if (!configured || pushed.current) return;
