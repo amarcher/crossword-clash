@@ -101,8 +101,15 @@ See `../NATIVE-NYT-IMPORT.md` for importer behavior and current limitations.
   invitations now use the public website rather than the embedded app origin.
 - 646 shared tests passed; mobile and web production builds passed. Native
   navigation policy tests and the iOS Release archive passed. Simulator input,
-  active clue visibility, clue sheet, and lack of outer scrolling were checked.
+  active clue visibility, clue sheet, portrait/landscape layout, and lack of outer
+  scrolling were checked, including a saved 15 by 15 NYT puzzle.
 - A synthetic live room verified TV joining, scoring, refresh recovery, rematch,
   and closure; player count remained unchanged. Test rooms were closed afterward.
-- Tester instructions: `WHAT-TO-TEST-3.txt`. Build upload/distribution status is
-  recorded separately after Apple accepts the archive.
+- Tester instructions: `WHAT-TO-TEST-3.txt`. Apple accepted build 3 at
+  4:52 PM Eastern. Processing completed and build 3 was assigned to
+  **Development** (3 internal testers); the group build table shows **Testing**.
+  Build ID: `ffaaba3f-3f7d-49d1-bfcc-322ece82ab8b`. Test instructions were saved.
+  Build 1 remains Waiting for Review for external testers; Apple blocks adding
+  another build from this version to external review until that review ends.
+- Website changes are committed locally; production publishing awaits owner
+  approval. Commit: `74f9623` (application code).
