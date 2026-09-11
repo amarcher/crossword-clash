@@ -76,7 +76,11 @@ export function parseNytPuzzle(payload: unknown, pageUrl: string): Puzzle {
       ...(cell.isCircled === true || cell.circled === true ? { circled: true } : {}),
     };
   });
-  const clueMap = record(body.clues);
+  // NYT v6 returns an indexed array; older exports can use an ID-keyed object.
+  // Normalize only this collection, leaving individual clue validation intact.
+  const clueMap = Array.isArray(body.clues)
+    ? Object.fromEntries(body.clues.map((clue, index) => [String(index), clue]))
+    : record(body.clues);
   if (!Array.isArray(body.clueLists)) throw formatError();
   const clues: PuzzleClue[] = [];
   const seen = new Set<string>();

@@ -29,6 +29,29 @@ describe("subscriber-directed NYT extraction", () => {
     expect(JSON.stringify(puzzle)).not.toContain("private");
   });
 
+  it("imports the indexed clue array returned by NYT v6", async () => {
+    const data = fixture();
+    const payload = { ...data, body: [{ ...data.body[0], clues: Object.values(data.body[0].clues) }] };
+    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(payload)));
+    const puzzle = await fetchNytPuzzle(url, request);
+    expect(puzzle).toEqual(parseNytPuzzle(data, url));
+    expect(puzzle.clues.map(({ direction, number }) => [direction, number])).toEqual([
+      ["across", 1], ["across", 3], ["down", 1], ["down", 2],
+    ]);
+  });
+
+  it("still rejects missing and malformed entries in an indexed clue array", () => {
+    const data = fixture();
+    const clues: unknown[] = Object.values(data.body[0].clues);
+    const payload = { ...data, body: [{ ...data.body[0], clues }] };
+    clues.pop();
+    expect(() => parseNytPuzzle(payload, url)).toThrow();
+    clues.push(null);
+    expect(() => parseNytPuzzle(payload, url)).toThrow();
+    clues[3] = { ...data.body[0].clues["3"], cells: [1, 2] };
+    expect(() => parseNytPuzzle(payload, url)).toThrow();
+  });
+
   it.each([
     "https://www.nytimes.com.evil.test/crosswords/game/daily/2026/09/10",
     "http://www.nytimes.com/crosswords/game/daily/2026/09/10",

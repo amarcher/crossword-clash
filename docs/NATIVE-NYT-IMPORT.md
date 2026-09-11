@@ -76,10 +76,10 @@ configured by this change. Generated app icons remain Capacitor defaults.
 7. Test cancellation, an inaccessible edition, an expired session and a slow
    connection. No partial or unsupported puzzle should replace the inbox.
 
-The implementation has not yet demonstrated a subscriber import or session
-retention with a signed-in account. Both are required before calling the
-integration verified. Simulator success is also separate from physical-device
-verification.
+A subscriber import, retained NYT sign-in across app updates/restarts, and
+restored solo progress were verified on the iPhone simulator on September 11,
+2026 (details below). Android subscriber sign-in and physical-device
+verification remain outstanding.
 
 ## Isolation and data boundaries
 
@@ -149,6 +149,29 @@ Local build logs and screenshots belong under ignored `artifacts/mobile/`.
   configuration enables neither remote bridged navigation nor cookie interception.
 - No physical-device subscriber import, account-session retention test, store
   upload, production deployment, or external publication has been completed.
+
+### Verification recorded September 11, 2026
+
+- Reproduced the subscriber's FORMAT error on the September 10 Daily edition.
+  The live v6 response stores `body[0].clues` as an indexed array (70 clues),
+  while the importer incorrectly required an object. Grid dimensions, date,
+  single-letter answers, and cell labels passed the existing checks.
+- The shared parser now accepts indexed arrays and older ID-keyed objects,
+  retaining individual clue, cell, and edition validation. Synthetic regression
+  tests cover successful array import and malformed/missing array entries.
+- Rebuilt and installed the repaired iOS app without clearing its data. Using
+  the retained NYT session, Import succeeded directly from the NYT landing
+  screen without first pressing Play. Clash showed September 10, Simeon Seigel,
+  a 15×15 grid, and 35 Across / 35 Down clues.
+- Opened solo play, entered a correct letter, terminated and relaunched the
+  app, and observed the same puzzle and saved letter. Removed the temporary
+  test letter afterward and left the puzzle open for the subscriber.
+- All 640 Vitest tests, mobile asset/type-check build, iOS simulator build,
+  and Android debug build/lint passed. The repaired Android APK includes the
+  shared parser, but subscriber import on Android was not exercised here.
+- Temporary diagnostics inspected only response structure, not credentials;
+  no publisher puzzle payload was saved as a test fixture. Diagnostic code
+  was removed before building the repaired app.
 
 ## References
 
