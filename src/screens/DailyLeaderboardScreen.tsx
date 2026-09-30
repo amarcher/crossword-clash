@@ -145,7 +145,7 @@ export function DailyLeaderboardScreen() {
                   return (
                     <tr
                       key={e.userId}
-                      className={isMe ? "bg-brand-50 font-semibold text-ink shadow-[inset_3px_0_0_var(--color-brand-600)]" : "text-ink-soft"}
+                      className={isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}
                     >
                       <td className="py-2.5 pl-4 pr-2">
                         <span

@@ -118,7 +118,7 @@ const ClueList = memo(function ClueList({
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClueClick(clue); } }}
               className={`flex gap-1.5 px-1 py-px md:px-2 md:py-1.5 rounded md:rounded-lg text-xs md:text-[15px] leading-tight md:leading-snug cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                 isActive
-                  ? "bg-brand-100 text-brand-800 font-medium md:shadow-[inset_3px_0_0_var(--color-brand-600)]"
+                  ? "bg-brand-100 text-brand-800 font-medium"
                   : isCompleted && !completedBg
                     ? "text-neutral-400"
                     : isCompleted

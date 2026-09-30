@@ -77,7 +77,6 @@ export function HostLobbyScreen() {
                   <li
                     key={player.userId}
                     className="tv-pop flex items-center gap-4 rounded-xl border border-stage-line bg-stage px-5 py-3"
-                    style={{ borderLeft: `6px solid ${player.color}` }}
                   >
                     <span className="size-5 shrink-0 rounded-full" style={{ backgroundColor: player.color }} aria-hidden />
                     <span className="tv-t-xl min-w-0 truncate font-display font-semibold text-white">{player.displayName}</span>

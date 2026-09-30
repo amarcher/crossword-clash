@@ -36,4 +36,5 @@ Codes and timers: `font-mono tabular-nums`.
 5. Sentence case copy; buttons say what happens ("Create room", not "Submit").
 6. `hover:` always paired with an `active:` or focus state; `focus-visible:outline-2 outline-brand-500` on custom controls.
 7. Respect `prefers-reduced-motion`; motion is short (150–250ms) and purposeful.
-8. The TV view uses the stage tokens and is read from across a room: large type, `clamp()` sizing, no small text.
+8. **No left-border accent bars** (`border-l-4`, inset left shadows, colored `borderLeft`) to mark active, selected, or attributed items. Use a tinted fill, a dot, a chip, or type weight instead.
+9. The TV view uses the stage tokens and is read from across a room: large type, `clamp()` sizing, no small text.

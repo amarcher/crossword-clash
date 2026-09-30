@@ -60,8 +60,8 @@ function ClueColumn({ title, clues, completedClues, completedCluesByPlayer, play
             <li
               key={key}
               ref={clue === firstOpen ? firstOpenRef : undefined}
-              className={`tv-clue flex gap-2 rounded-md border-l-4 px-2 py-1 ${done ? "text-slate-500 line-through decoration-2" : "text-slate-100"}`}
-              style={{ borderLeftColor: done ? (color ?? "var(--color-stage-line)") : "transparent" }}
+              className={`tv-clue flex gap-2 rounded-md px-2 py-1 ${done ? "text-slate-500 line-through decoration-2" : "text-slate-100"}`}
+              style={done && color ? { backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)` } : undefined}
             >
               <span className={`shrink-0 font-bold tabular-nums ${done ? "" : "text-brand-200"}`}>{clue.number}</span>
               <span>{clue.text}</span>
