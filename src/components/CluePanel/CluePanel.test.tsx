@@ -39,7 +39,7 @@ describe("CluePanel", () => {
     );
     const items = Array.from(container.querySelectorAll("li"));
     const feline = items.find((li) => li.textContent?.includes("Feline"));
-    expect(feline?.className).toContain("bg-blue-100");
+    expect(feline?.className).toContain("bg-brand-100");
   });
 
   it("calls onClueClick when a clue is clicked", () => {
@@ -153,7 +153,7 @@ describe("CluePanel strikethrough", () => {
     );
     const items = Array.from(container.querySelectorAll("li"));
     const feline = items.find((li) => li.textContent?.includes("Feline"));
-    expect(feline?.className).toContain("bg-blue-100");
+    expect(feline?.className).toContain("bg-brand-100");
     expect(feline?.className).toContain("line-through");
   });
 
@@ -239,7 +239,7 @@ describe("CluePanel player-colored completion", () => {
     const items = Array.from(container.querySelectorAll("li"));
     const feline = items.find((li) => li.textContent?.includes("Feline"));
     // Active styling wins
-    expect(feline?.className).toContain("bg-blue-100");
+    expect(feline?.className).toContain("bg-brand-100");
     // But strikethrough preserved
     expect(feline?.className).toContain("line-through");
     // No inline player color when active

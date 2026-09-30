@@ -15,8 +15,11 @@ export function useGridNavigation(actions: NavigationActions) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target instanceof Element ? e.target : null;
       // Ignore if user is typing in an input/textarea
       if (
+        e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey ||
+        target?.closest('[role="dialog"], [contenteditable="true"]') ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
       ) {
@@ -25,6 +28,8 @@ export function useGridNavigation(actions: NavigationActions) {
 
       const a = actionsRef.current;
       const key = e.key;
+      // Keep keyboard buttons and modal/other controls accessible via Space/Tab.
+      if ((key === " " || key === "Tab") && target?.closest("button, a, select")) return;
 
       // Letter input
       if (/^[a-zA-Z]$/.test(key)) {

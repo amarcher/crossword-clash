@@ -21,7 +21,7 @@ export function DeferredAnalytics() {
     };
   }, []);
 
-  if (!show) return null;
+  if (!show || import.meta.env.MODE === "mobile") return null;
   return (
     <>
       <Analytics />

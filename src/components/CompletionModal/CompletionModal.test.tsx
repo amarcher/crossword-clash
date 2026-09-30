@@ -36,7 +36,7 @@ describe("CompletionModal", () => {
 
   it("renders solo variant with score", () => {
     const { getByText } = render(<CompletionModal {...SOLO_PROPS} />);
-    expect(getByText("Puzzle Complete!")).toBeTruthy();
+    expect(getByText("Puzzle complete")).toBeTruthy();
     expect(getByText("8/8 cells filled")).toBeTruthy();
   });
 
@@ -51,7 +51,7 @@ describe("CompletionModal", () => {
     expect(getByTestId("nyt-hook").textContent).not.toContain("streak");
 
     rerender(<CompletionModal {...SOLO_PROPS} nytHook={{ streak: 3 }} />);
-    expect(getByText("🗞️ 3-day NYT streak")).toBeTruthy();
+    expect(getByText("3-day NYT streak")).toBeTruthy();
     expect(getByTestId("nyt-hook").textContent).toContain("Same time tomorrow?");
   });
 
@@ -89,7 +89,7 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal {...SOLO_PROPS} onNewPuzzle={onNewPuzzle} />,
     );
-    fireEvent.click(getByText("Choose a New Puzzle"));
+    fireEvent.click(getByText("New puzzle"));
     expect(onNewPuzzle).toHaveBeenCalledOnce();
   });
 
@@ -98,7 +98,7 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal {...SOLO_PROPS} onBackToMenu={onBackToMenu} />,
     );
-    fireEvent.click(getByText("Back to Menu"));
+    fireEvent.click(getByText("Back to menu"));
     expect(onBackToMenu).toHaveBeenCalledOnce();
   });
 
@@ -112,7 +112,7 @@ describe("CompletionModal", () => {
         onBackToMenu={() => {}}
       />,
     );
-    expect(queryByText("Choose a New Puzzle")).toBeNull();
+    expect(queryByText("New puzzle")).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {
@@ -120,7 +120,7 @@ describe("CompletionModal", () => {
       <CompletionModal {...SOLO_PROPS} darkMode />,
     );
     const dialog = container.querySelector("[role='dialog']");
-    expect(dialog?.className).toContain("bg-neutral-800");
+    expect(dialog?.className).toContain("bg-stage-raised");
   });
 
   it("applies light mode classes by default", () => {
@@ -128,7 +128,7 @@ describe("CompletionModal", () => {
       <CompletionModal {...SOLO_PROPS} />,
     );
     const dialog = container.querySelector("[role='dialog']");
-    expect(dialog?.className).toContain("bg-white");
+    expect(dialog?.className).toContain("bg-surface");
   });
 
   it("does NOT fire confetti when mounted already-complete (reload)", () => {
@@ -166,7 +166,7 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal {...SOLO_PROPS} players={makePlayers()} onRematch={onRematch} />,
     );
-    fireEvent.click(getByText("Play Again"));
+    fireEvent.click(getByText("Play again"));
     expect(onRematch).toHaveBeenCalledOnce();
   });
 
@@ -174,15 +174,15 @@ describe("CompletionModal", () => {
     const { queryByText } = render(
       <CompletionModal {...SOLO_PROPS} players={makePlayers()} />,
     );
-    expect(queryByText("Play Again")).toBeNull();
+    expect(queryByText("Play again")).toBeNull();
   });
 
   it("hides the live CTA when onPlayLive is undefined (multiplayer unavailable)", () => {
     const { queryByText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} />,
     );
-    expect(queryByText("⚡ Play Live")).toBeNull();
-    expect(queryByText("⚡ Rematch Live")).toBeNull();
+    expect(queryByText("Play live")).toBeNull();
+    expect(queryByText("Rematch live")).toBeNull();
   });
 
   it("shows 'Play Live' on a plain solo finish and calls onPlayLive", () => {
@@ -190,7 +190,7 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} onPlayLive={onPlayLive} />,
     );
-    fireEvent.click(getByText("⚡ Play Live"));
+    fireEvent.click(getByText("Play live"));
     expect(onPlayLive).toHaveBeenCalledOnce();
   });
 
@@ -203,8 +203,8 @@ describe("CompletionModal", () => {
         challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
       />,
     );
-    expect(getByText("⚡ Rematch Live")).toBeTruthy();
-    expect(queryByText("⚡ Play Live")).toBeNull();
+    expect(getByText("Rematch live")).toBeTruthy();
+    expect(queryByText("Play live")).toBeNull();
   });
 
   it("emits a distinct live_bridge analytics event (not puzzle_imported)", () => {
@@ -217,7 +217,7 @@ describe("CompletionModal", () => {
         challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
       />,
     );
-    fireEvent.click(getByText("⚡ Rematch Live"));
+    fireEvent.click(getByText("Rematch live"));
     expect(track).toHaveBeenCalledWith("live_bridge", {
       mode: "live",
       from: "challenge_result",

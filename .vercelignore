@@ -1,0 +1,16 @@
+node_modules
+.env*
+.git
+.vercel
+.agent-team
+.agents
+.claude
+.firecrawl
+artifacts
+ios
+android
+public/native
+*.tsbuildinfo
+agents.json
+tools.json
+tests.json

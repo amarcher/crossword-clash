@@ -37,7 +37,7 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
   const config = AD_PLACEMENTS[placement];
   // No point reserving space (or loading AdSense) for a placement whose slot
   // id isn't configured — it can never fill, so it would just be an empty box.
-  const configured = isAdsEnabled() && !!config.slot;
+  const configured = import.meta.env.MODE !== "mobile" && isAdsEnabled() && !!config.slot;
 
   useEffect(() => {
     if (!configured || pushed.current) return;
@@ -79,16 +79,16 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
   if (!configured || unfilled) return null;
 
   const bg = darkMode
-    ? "bg-neutral-800/50 border-neutral-700"
-    : "bg-neutral-50 border-neutral-200";
+    ? "bg-stage-raised/60 border-stage-line"
+    : "bg-surface border-line";
 
   return (
     <div
-      className={`relative w-full ${config.maxWidthClass} rounded-lg border ${bg} overflow-hidden`}
+      className={`relative w-full ${config.maxWidthClass} rounded-2xl border ${bg} overflow-hidden`}
     >
       <span
         className={`absolute top-1 right-1.5 text-[10px] leading-none ${
-          darkMode ? "text-neutral-500" : "text-neutral-400"
+          darkMode ? "text-subtle" : "text-subtle"
         }`}
       >
         Ad

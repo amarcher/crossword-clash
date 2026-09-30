@@ -2,9 +2,15 @@ import i18n from "./i18n/i18n";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 import { DeferredAnalytics } from "./components/DeferredAnalytics";
 import "./index.css";
+import { reloadOnceForChunkError } from "./lib/chunkReload";
+import { initErrorReporting } from "./lib/errorReporting";
 import { router } from "./router";
+import { Capacitor } from "@capacitor/core";
+
+document.documentElement.classList.toggle("native-app", Capacitor.isNativePlatform());
 
 // Keep <html lang> in sync with the active language
 document.documentElement.lang = i18n.language;
@@ -12,26 +18,22 @@ i18n.on("languageChanged", (lng) => {
   document.documentElement.lang = lng;
 });
 
-// Recover from stale code-split chunks after a redeploy. A long-lived client
-// holds an old index.html referencing chunk hashes that no longer exist on the
-// server; the lazy import 404s (or gets index.html back as text/html), which
-// Vite reports via `vite:preloadError`. Reloading fetches the fresh index.html
-// with current hashes. Guard against a reload loop (a genuinely broken deploy)
-// by only reloading once per short window.
+// Recover from stale code-split chunks after a redeploy: an old tab references
+// chunk hashes that no longer exist, so the lazy import fails (Vite reports it
+// via `vite:preloadError`). Reload once — guarded by a sessionStorage timestamp
+// so a genuinely broken deploy can't loop; RouteErrorScreen covers the same
+// failure when it surfaces through the router instead.
 window.addEventListener("vite:preloadError", (event) => {
-  const KEY = "crossword-clash:chunk-reload";
-  const now = Date.now();
-  const last = Number(sessionStorage.getItem(KEY) ?? 0);
-  // If we already reloaded within the last 10s, don't loop — let the error surface.
-  if (now - last < 10_000) return;
-  event.preventDefault();
-  sessionStorage.setItem(KEY, String(now));
-  window.location.reload();
+  if (reloadOnceForChunkError()) event.preventDefault();
 });
+
+initErrorReporting();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <ConfirmProvider>
+      <RouterProvider router={router} />
+    </ConfirmProvider>
     <DeferredAnalytics />
   </StrictMode>,
 );

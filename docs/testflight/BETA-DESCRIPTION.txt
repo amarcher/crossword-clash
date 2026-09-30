@@ -1,0 +1,5 @@
+Crossword Clash turns crosswords into a game you can play together. Solve the daily mini, explore the classic puzzle library, import your own puzzle files, or host a live room and invite friends with a code. Solo progress stays available when you reopen the app.
+
+This first iPhone and iPad beta also includes an optional NYT importer: choose a Daily or Mini edition, sign in on NYT with your own access, and tap Import. Crossword Clash is an independent app and is not affiliated with The New York Times. A NYT subscription is not needed for the included puzzles or core game.
+
+Please test puzzle entry, keyboard behavior, saved progress after reopening, and live rooms with another device. NYT import currently supports standard single-letter puzzles; rebus and other special cells are not supported.

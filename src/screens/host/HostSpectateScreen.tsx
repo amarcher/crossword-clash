@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
-import QRCode from "react-qr-code";
+import { X } from "lucide-react";
 import { CrosswordGrid } from "../../components/CrosswordGrid";
-import { CluePanel } from "../../components/CluePanel";
 import { TVLayout } from "../../components/Layout/TVLayout";
-import { MultiplayerScoreboard } from "../../components/Scoreboard/MultiplayerScoreboard";
+import { TVCluePanel } from "../../components/Layout/TVCluePanel";
+import { TVJoinCard } from "../../components/Layout/TVJoinCard";
+import { TVScoreboard } from "../../components/Layout/TVScoreboard";
+import { buttonClass } from "../../components/ui";
 import { CompletionModal } from "../../components/CompletionModal";
 import { TTSMuteButton, TTSSettingsModal } from "../../components/TTSControls";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useHostContext } from "../../layouts/HostLayout";
-
-const NOOP = () => {};
 
 export function HostSpectateScreen() {
   const { t } = useTranslation();
@@ -87,7 +87,7 @@ export function HostSpectateScreen() {
         <button
           type="button"
           onClick={() => setBannerHidden(true)}
-          className="fixed top-2 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-lg bg-amber-500/95 text-white text-sm shadow-lg hover:bg-amber-600 transition-colors"
+          className="tv-t-md fixed top-3 left-1/2 z-40 -translate-x-1/2 rounded-xl border border-gold-500/50 bg-stage-raised px-5 py-3 font-semibold text-gold-400 shadow-overlay transition-colors hover:bg-stage-line"
         >
           {fallbackMessage}
         </button>
@@ -106,68 +106,37 @@ export function HostSpectateScreen() {
           />
         }
         sidebar={
-          <div className="bg-neutral-800 rounded-xl p-4 space-y-4">
-            <div className="text-center">
-              <p className="text-neutral-400 text-xs uppercase tracking-wide mb-1">{t('hostView.roomCode')}</p>
-              <p className="font-mono font-bold text-4xl text-white tracking-widest">
-                {multiplayer.shareCode}
-              </p>
-            </div>
-            {joinUrl && (
-              <div className="flex justify-center">
-                <div className="bg-white p-2 rounded-lg">
-                  <QRCode value={joinUrl} size={100} title={t('lobby.qrCodeLabel')} />
-                </div>
-              </div>
-            )}
-            <div className="space-y-1.5">
-              <p className="text-neutral-400 text-xs uppercase tracking-wide">
-                {t('lobby.players', { count: multiplayer.players.length })}
-              </p>
-              {multiplayer.players.map((player) => (
-                <div
-                  key={player.userId}
-                  className="flex items-center gap-2"
-                >
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: player.color }}
-                  />
-                  <span className="text-lg text-neutral-200 truncate">
-                    {player.displayName}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={handleCloseRoom}
-              className="w-full text-sm px-3 py-2 rounded-lg text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
-            >
-              {t('lobby.closeRoom')}
-            </button>
-          </div>
+          <TVJoinCard
+            code={multiplayer.shareCode}
+            joinUrl={joinUrl}
+            actions={
+              <button
+                type="button"
+                onClick={handleCloseRoom}
+                className={buttonClass("stage", "md", "tv-t-sm h-auto! shrink-0 self-start py-2")}
+              >
+                <X className="size-[1.3em]" aria-hidden />
+                {t('lobby.closeRoom')}
+              </button>
+            }
+          />
         }
         scoreboard={
-          <div className="bg-white rounded-xl p-5">
-            <MultiplayerScoreboard
-              players={multiplayerPlayers}
-              totalCells={totalWhiteCells}
-              isComplete={isComplete}
-              clueCountsByPlayer={clueCountsByPlayer}
-              totalClues={puzzle.clues.length}
-            />
-          </div>
+          <TVScoreboard
+            players={multiplayerPlayers}
+            totalCells={totalWhiteCells}
+            isComplete={isComplete}
+            clueCountsByPlayer={clueCountsByPlayer}
+            totalClues={puzzle.clues.length}
+          />
         }
         clues={
-          <div className="bg-white rounded-xl p-4 h-full flex flex-col">
-            <CluePanel
-              clues={puzzle.clues}
-              activeClue={null}
-              onClueClick={NOOP}
-              completedCluesByPlayer={completedCluesByPlayer}
-              playerColorMap={playerColorMap}
-            />
-          </div>
+          <TVCluePanel
+            clues={puzzle.clues}
+            completedClues={completedClues}
+            completedCluesByPlayer={completedCluesByPlayer}
+            playerColorMap={playerColorMap}
+          />
         }
         controls={
           <>

@@ -1,7 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../components/Title";
+import { Loader2 } from "lucide-react";
+import { FlowPage, TextField } from "../components/Flow";
+import { Button, Card, Eyebrow, MiniGridThumb } from "../components/ui";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,7 +19,7 @@ import { tStatic } from "../i18n/i18n";
 export function HostNameScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const game = useGame();
   const mp = useMultiplayerContext();
 
@@ -30,9 +32,10 @@ export function HostNameScreen() {
     navigate("/");
   }, [game, navigate]);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+  const [busy, setBusy] = useState(false);
+
+  const submit = useCallback(
+    async () => {
       if (!game.displayName.trim()) return;
       // Remember the name so future dailies/challenges never ask again.
       savePlayerName(game.displayName);
@@ -78,48 +81,65 @@ export function HostNameScreen() {
     [game, user, mp, navigate],
   );
 
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (busy) return;
+      setBusy(true);
+      try {
+        await submit();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, submit],
+  );
+
+  const connecting = authLoading && !!game.urlPuzzle;
+  const pending = busy || connecting;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
-      <Title className="mb-2" />
-      <h1 className="text-lg font-semibold text-neutral-700 mb-1">{t('hostName.heading')}</h1>
-      <p className="text-neutral-500 mb-6 text-sm text-center max-w-xs">
-        {game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
-      </p>
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-3 w-full max-w-xs"
-        autoComplete="off"
-      >
-        <input
+    <FlowPage
+      title={t('hostName.heading')}
+      subtitle={game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
+      onBack={handleReset}
+      backLabel={t('hostName.back')}
+    >
+      <form onSubmit={handleSubmit} className="grid gap-5" autoComplete="off">
+        {game.urlPuzzle && (
+          <Card className="flex items-center gap-4 p-4">
+            <MiniGridThumb puzzle={game.urlPuzzle} className="w-16 shrink-0" />
+            <div className="min-w-0">
+              <Eyebrow>{t('hostName.puzzleLabel')}</Eyebrow>
+              <p className="mt-0.5 truncate font-display text-lg font-bold leading-snug text-ink">{game.urlPuzzle.title}</p>
+              <p className="text-sm text-muted tabular-nums">
+                {game.urlPuzzle.width}×{game.urlPuzzle.height}
+              </p>
+            </div>
+          </Card>
+        )}
+        <TextField
+          id="host-display-name"
+          label={t('hostName.yourName')}
           type="text"
           name="xw-handle"
           value={game.displayName}
           onChange={(e) => game.setDisplayName(e.target.value)}
-          placeholder={t('hostName.yourName')}
-          aria-label={t('hostName.yourName')}
           maxLength={20}
-          className="px-4 py-2.5 rounded-lg border border-neutral-300 text-center text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          enterKeyHint="go"
+          autoCapitalize="words"
+          autoCorrect="off"
           autoComplete="nofill"
           data-form-type="other"
           data-lpignore="true"
           data-1p-ignore
           autoFocus
         />
-        <button
-          type="submit"
-          disabled={!game.displayName.trim()}
-          className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
-        >
-          {game.urlPuzzle ? t('hostName.createRoom') : t('hostName.choosePuzzle')}
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="text-sm text-neutral-500 hover:text-neutral-700"
-        >
-          {t('hostName.back')}
-        </button>
+        <Button type="submit" size="lg" block disabled={!game.displayName.trim() || pending} aria-busy={pending || undefined}>
+          {pending && <Loader2 className="size-4.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+          {busy ? t('hostName.creating') : connecting ? t('join.connecting') : game.urlPuzzle ? t('hostName.createRoom') : t('hostName.choosePuzzle')}
+        </Button>
       </form>
-    </div>
+    </FlowPage>
   );
 }

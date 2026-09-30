@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { RACE_MODE_OPTIONS } from "../../lib/gameSettings";
 import type { RaceMode } from "../../types/game";
+import { SegmentedControl } from "./SegmentedControl";
 
 interface RaceModeSelectorProps {
   value: RaceMode;
@@ -20,35 +21,18 @@ export function RaceModeSelector({ value, onChange, variant = "light" }: RaceMod
   const selectedOption = RACE_MODE_OPTIONS.find((o) => o.value === value) ?? RACE_MODE_OPTIONS[0];
 
   return (
-    <div className="w-full max-w-sm">
-      <p className={`text-sm font-semibold uppercase tracking-wide mb-2 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+    <div className="w-full">
+      <p className={`mb-2 text-sm font-semibold ${isDark ? "uppercase tracking-wide text-neutral-400" : "text-ink-soft"}`}>
         {t("lobby.modeHeading")}
       </p>
-      <div className="flex gap-1.5" role="radiogroup" aria-label={t("lobby.modeHeading")}>
-        {RACE_MODE_OPTIONS.map((option) => {
-          const selected = value === option.value;
-          return (
-            <button
-              key={option.value}
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onChange(option.value)}
-              className={`flex-1 px-2 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                isDark ? "focus-visible:ring-offset-neutral-900" : ""
-              } ${
-                selected
-                  ? "bg-blue-600 text-white"
-                  : isDark
-                    ? "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-            >
-              {t(option.labelKey)}
-            </button>
-          );
-        })}
-      </div>
-      <p className={`text-xs mt-1.5 leading-snug ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+      <SegmentedControl
+        label={t("lobby.modeHeading")}
+        variant={variant}
+        value={value}
+        onChange={onChange}
+        options={RACE_MODE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+      />
+      <p className={`mt-2 text-sm leading-snug ${isDark ? "text-neutral-400" : "text-muted"}`}>
         {t(selectedOption.descriptionKey)}
       </p>
     </div>

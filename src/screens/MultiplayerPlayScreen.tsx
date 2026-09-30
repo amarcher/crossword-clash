@@ -1,12 +1,15 @@
+import { shareOrigin } from "../lib/shareOrigin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import QRCode from "react-qr-code";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
-import { CluePanel } from "../components/CluePanel";
+import { ActiveClueCard, CluePanel } from "../components/CluePanel";
+import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
+import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
 import { MultiplayerScoreboard } from "../components/Scoreboard/MultiplayerScoreboard";
 import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
@@ -19,12 +22,13 @@ import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
-import { tStatic } from "../i18n/i18n";
+import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
@@ -181,10 +185,15 @@ export function MultiplayerPlayScreen() {
   }, [mp, reset, game, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
+    const ok = await confirm({
+      title: t('playing.closeRoomConfirm'),
+      confirmLabel: t('playing.closeRoom'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await mp.closeRoom();
     handleReset();
-  }, [mp, handleReset]);
+  }, [mp, handleReset, confirm, t]);
 
   const handleNewPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
@@ -271,27 +280,28 @@ export function MultiplayerPlayScreen() {
   return (
     <>
       <GameLayout
+        keyboard={<PuzzleKeyboard actions={navActions} allowDelete={false} disabled={isComplete || clueSheetOpen || gameStatus !== "active"} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
+                <h1 className="font-display text-lg md:text-2xl font-bold tracking-tight text-ink truncate">{puzzle.title}</h1>
                 {puzzle.author && (
-                  <p className="hidden md:block text-sm text-neutral-500">{t('playing.by', { author: puzzle.author })}</p>
+                  <p className="hidden md:block text-sm text-muted truncate">{t('playing.by', { author: puzzle.author })}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
                 {multiplayerActive && shareCode && (
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-neutral-400 hidden sm:inline">{t('playing.room')}</span>
-                      <span className="font-mono font-bold text-sm text-neutral-700 tracking-wider">
+                      <span className="text-xs text-subtle hidden sm:inline">{t('playing.room')}</span>
+                      <span className="rounded-lg bg-surface-sunken px-2 py-1 font-mono font-bold text-sm text-ink tracking-wider">
                         {shareCode}
                       </span>
                     </div>
                     <div className="hidden md:block">
                       <QRCode
-                        value={`${window.location.origin}/?join=${shareCode}`}
+                        value={`${shareOrigin()}/?join=${shareCode}`}
                         size={48}
                         title={t('lobby.qrCodeLabel')}
                       />
@@ -301,7 +311,7 @@ export function MultiplayerPlayScreen() {
                 {multiplayerActive && isHost ? (
                   <button
                     onClick={handleCloseRoom}
-                    className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                    className={buttonClass("danger", "sm")}
                   >
                     <span className="md:hidden">{t('playing.close')}</span>
                     <span className="hidden md:inline">{t('playing.closeRoom')}</span>
@@ -309,7 +319,7 @@ export function MultiplayerPlayScreen() {
                 ) : (
                   <button
                     onClick={handleReset}
-                    className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
+                    className={buttonClass("secondary", "sm")}
                   >
                     <span className="md:hidden">{t('playing.leave')}</span>
                     <span className="hidden md:inline">{t('playing.leaveGame')}</span>
@@ -317,11 +327,6 @@ export function MultiplayerPlayScreen() {
                 )}
               </div>
             </div>
-            {activeClue && (
-              <div className="hidden sm:block text-sm font-medium text-blue-700 mt-1 truncate">
-                {activeClue.number}-{direction === "across" ? t('clueBar.directionAbbrevAcross') : t('clueBar.directionAbbrevDown')}: {activeClue.text}
-              </div>
-            )}
           </>
         }
         grid={
@@ -383,7 +388,9 @@ export function MultiplayerPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 h-full">
+          <div className="flex flex-col gap-2 md:gap-4 h-full">
+            <ActiveClueCard clue={activeClue} />
+            <div className="flex-1 min-h-0">
             <CluePanel
               clues={puzzle.clues}
               activeClue={activeClue}
@@ -392,6 +399,7 @@ export function MultiplayerPlayScreen() {
               completedCluesByPlayer={completedCluesByPlayer}
               playerColorMap={playerColorMap}
             />
+            </div>
             {isAsync ? (
               raceStatusPanel
             ) : (

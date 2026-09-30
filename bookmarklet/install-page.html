@@ -19,28 +19,82 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Install NYT Bookmarklet — Crossword Clash</title>
+<meta name="description" content="A one-click bookmarklet that imports the NYT crossword you're viewing into Crossword Clash, so you can race or solve it with friends. For NYT subscribers.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#f4f6fa">
+<link rel="canonical" href="https://crosswordclash.com/install-bookmarklet">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crossword Clash">
+<meta property="og:url" content="https://crosswordclash.com/install-bookmarklet">
+<meta property="og:title" content="Play today's NYT crossword with friends — Crossword Clash">
+<meta property="og:description" content="A one-click bookmarklet for NYT subscribers: import the puzzle you're viewing and race friends to fill the grid.">
+<meta property="og:image" content="https://crosswordclash.com/install-bookmarklet/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Crossword Clash: play today's NYT crossword with friends — a one-click bookmarklet for NYT subscribers">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Play today's NYT crossword with friends — Crossword Clash">
+<meta name="twitter:description" content="A one-click bookmarklet for NYT subscribers: import the puzzle you're viewing and race friends to fill the grid.">
+<meta name="twitter:image" content="https://crosswordclash.com/install-bookmarklet/og.png">
 <style>
+  @font-face {
+    font-family: "Figtree Variable";
+    src: url("/install-bookmarklet/figtree.woff2") format("woff2");
+    font-weight: 300 900;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Bricolage Grotesque Variable";
+    src: url("/install-bookmarklet/bricolage.woff2") format("woff2");
+    font-weight: 200 800;
+    font-display: swap;
+  }
+  /* Tokens mirror src/index.css @theme (docs/DESIGN.md). */
+  :root {
+    --ink: #141a26; --ink-soft: #3a4252; --muted: #5f6878; --subtle: #8c94a3;
+    --line: #e3e7ee; --line-strong: #cfd5df;
+    --canvas: #f4f6fa; --surface: #ffffff; --sunken: #eef1f6;
+    --brand-50: #eef3ff; --brand-100: #dde7ff; --brand-200: #bccfff;
+    --brand-500: #3a6bf0; --brand-600: #2456e6; --brand-700: #1c45c2;
+    --gold-50: #fff8e6; --gold-100: #fdefc4; --gold-700: #9a6a00;
+    --shadow-card: 0 1px 2px rgb(20 26 38 / 0.04), 0 1px 1px rgb(20 26 38 / 0.03);
+    --shadow-raised: 0 1px 2px rgb(20 26 38 / 0.05), 0 8px 24px -8px rgb(20 26 38 / 0.12);
+  }
+  * { box-sizing: border-box; }
   body {
-    font-family: system-ui, sans-serif;
+    font-family: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     margin: 0;
     padding: 0;
     line-height: 1.6;
-    color: #333;
+    color: var(--ink-soft);
     min-height: 100dvh;
-    background-color: rgb(250 250 249);
+    background-color: var(--canvas);
+    -webkit-text-size-adjust: 100%;
   }
   .container {
-    max-width: 640px;
+    max-width: 680px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 12px 16px 56px;
   }
-  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  .container { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .site-header { display: flex; justify-content: flex-start; padding: 4px 0 8px; }
+  .site-header a { display: inline-flex; min-height: 44px; align-items: center; border-radius: 8px; }
+  .site-header img { height: 48px; width: auto; display: block; }
+  @media (min-width: 640px) { .site-header img { height: 56px; } }
+  a:focus-visible, .bookmarklet-link:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif; color: var(--ink); text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(1.75rem, 6vw, 2.25rem); line-height: 1.15; margin: 1rem 0 0.5rem; font-weight: 700; }
+  h2 { font-size: 1.25rem; margin: 2.25rem 0 0.5rem; font-weight: 650; }
   p { margin: 0.75rem 0; }
-  .intro { color: #4b5563; }
-  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
-  .note { color: #6b7280; font-size: 0.9em; }
-  a[href^="http"], a[href^="/"] { color: #2563eb; }
+  .intro { color: var(--muted); font-size: 1.05rem; }
+  code { background: var(--sunken); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; font-size: 0.88em; color: var(--ink); overflow-wrap: anywhere; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  a[href^="http"], a[href^="/"] { color: var(--brand-700); text-decoration-color: var(--brand-200); text-underline-offset: 3px; }
+  a[href^="http"]:hover, a[href^="/"]:hover { text-decoration-color: var(--brand-500); }
+  ul { padding-left: 1.25rem; }
+  li { margin: 0.4rem 0; }
 
   /* ---- Mobile notice ---- */
   /* No JS device detection (this page stays dependency-free per PR #36) —
@@ -49,11 +103,11 @@
      URL that the mobile browser chrome will actually execute. */
   .mobile-notice {
     display: none;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
+    background: var(--gold-50);
+    border: 1px solid var(--gold-100);
+    color: var(--gold-700);
     padding: 14px 16px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 0.95rem;
     margin: 1.25rem 0;
   }
@@ -73,9 +127,9 @@
   .steps > li {
     counter-increment: step;
     position: relative;
-    padding: 0 0 1.5rem 2.75rem;
-    border-left: 2px solid #dbeafe;
-    margin-left: 1rem;
+    padding: 0 0 1.75rem 2.75rem;
+    border-left: 2px solid var(--brand-100);
+    margin: 0 0 0 1rem;
   }
   .steps > li:last-child {
     border-left: 2px solid transparent;
@@ -89,67 +143,93 @@
     width: 2.1rem;
     height: 2.1rem;
     border-radius: 999px;
-    background: #2563eb;
+    background: var(--brand-600);
     color: white;
     font-weight: 700;
     font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 0 0 4px var(--canvas);
   }
-  .steps h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
-  .steps p { margin: 0.35rem 0; color: #4b5563; }
+  .steps h3 { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 650; }
+  .steps p { margin: 0.35rem 0; color: var(--muted); }
 
   /* ---- Drag-to-bookmarks button ---- */
   .drag-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin: 0.75rem 0;
+    margin: 0.9rem 0;
   }
   .bookmarklet-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    background: #2563eb;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 20px;
+    background: var(--brand-600);
+    color: white !important;
+    border-radius: 12px;
+    text-decoration: none !important;
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1rem;
     cursor: grab;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.15) inset, 0 1px 2px rgb(20 26 38 / 0.15);
+    transition: background-color 150ms;
   }
+  .bookmarklet-link:hover { background: var(--brand-700); }
   .bookmarklet-link:active { cursor: grabbing; }
+  .bookmarklet-link svg { width: 20px; height: 20px; flex: none; }
   .drag-hint {
-    color: #2563eb;
+    color: var(--brand-700);
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
   }
   .disclosure {
-    background: #f9fafb;
-    border-left: 3px solid #d1d5db;
-    padding: 12px 16px;
-    margin: 1.5rem 0;
-    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+    padding: 16px 18px;
+    margin: 2rem 0 1.5rem;
+    border-radius: 16px;
     font-size: 0.95rem;
-    color: #4b5563;
+    color: var(--muted);
   }
+  .disclosure strong { color: var(--ink); }
   .primer {
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-raised);
     background: #000;
     display: block;
   }
+  .primer-wrap { margin: 1.5rem 0 0; }
+  .primer-wrap figcaption { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); text-align: center; }
+  /* Desktop: install steps and the demo side by side, both above the fold. */
+  @media (min-width: 1024px) {
+    .container { max-width: 1120px; }
+    .intro { max-width: 680px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      gap: 3rem;
+      align-items: start;
+    }
+    .hero-grid > .primer-wrap { order: 2; position: sticky; top: 24px; margin-top: 2.25rem; }
+    .install-col > .desktop-only-content > h2:first-child { margin-top: 1.5rem; }
+    .hero-grid ~ * { max-width: 680px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="container">
+<header class="site-header"><a href="/" aria-label="Crossword Clash home"><img src="/logo.png" alt="Crossword Clash"></a></header>
 <h1>NYT → Crossword Clash Bookmarklet</h1>
 <p class="intro">
   A one-click bookmarklet that imports the New York Times crossword you're currently
@@ -163,6 +243,12 @@
   on a computer to install it — it won't work on a phone or tablet.
 </div>
 
+<div class="hero-grid">
+<figure class="primer-wrap">
+  <video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata" aria-label="See it in action: a 19-second demo of importing a NYT puzzle"></video>
+  <figcaption>See it in action · 0:19</figcaption>
+</figure>
+<div class="install-col">
 <div class="desktop-only-content">
 <h2>Install in 3 steps</h2>
 <ol class="steps">
@@ -176,7 +262,7 @@
     <p><strong>Drag it — don't click it.</strong> Clicking it here won't do anything useful;
     it only works once it's a bookmark and you click it from a NYT crossword page.</p>
     <div class="drag-row">
-      <a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}">🧩 NYT → Crossword Clash</a>
+      <a class="bookmarklet-link" href="{{BOOKMARKLET_HREF}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>NYT → Crossword Clash</a>
       <span class="drag-hint">← drag this up ↑</span>
     </div>
   </li>
@@ -198,9 +284,8 @@
   active NYT Crossword subscription. Full source is available on
   <a href="https://github.com/amarcher/crossword-clash/blob/main/bookmarklet/nyt.js" target="_blank" rel="noopener">GitHub</a>.
 </div>
-
-<h2>See it in action</h2>
-<video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata"></video>
+</div>
+</div>
 
 <h2>How it works</h2>
 <ul>

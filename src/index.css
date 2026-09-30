@@ -1,4 +1,143 @@
+@import "@fontsource-variable/figtree";
+@import "@fontsource-variable/bricolage-grotesque";
 @import "tailwindcss";
+
+/* Design tokens — "refined brand": neutral surfaces, the logo's blue as the one
+   action color, the logo's gold only for highlights (streaks, the active word). */
+@theme {
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #141a26;
+  --color-ink-soft: #3a4252;
+  --color-muted: #5f6878;
+  --color-subtle: #8c94a3;
+  --color-line: #e3e7ee;
+  --color-line-strong: #cfd5df;
+  --color-canvas: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #eef1f6;
+
+  --color-brand-50: #eef3ff;
+  --color-brand-100: #dde7ff;
+  --color-brand-200: #bccfff;
+  --color-brand-500: #3a6bf0;
+  --color-brand-600: #2456e6;
+  --color-brand-700: #1c45c2;
+  --color-brand-800: #193a9b;
+
+  --color-gold-50: #fff8e6;
+  --color-gold-100: #fdefc4;
+  --color-gold-400: #f5bd2c;
+  --color-gold-500: #eaa90f;
+  --color-gold-700: #9a6a00;
+
+  --color-stage: #0e1320;
+  --color-stage-raised: #171e2f;
+  --color-stage-line: #273047;
+
+  --shadow-card: 0 1px 2px rgb(20 26 38 / 0.04), 0 1px 1px rgb(20 26 38 / 0.03);
+  --shadow-raised: 0 1px 2px rgb(20 26 38 / 0.05), 0 8px 24px -8px rgb(20 26 38 / 0.12);
+  --shadow-overlay: 0 24px 64px -16px rgb(20 26 38 / 0.35);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01" 0;
+  }
+  h1, h2, h3 { text-wrap: balance; }
+}
+
+/* Native screens own the safe areas instead of stacking WebView content insets
+   on top of a full-height document. Non-game pages can still scroll normally. */
+.native-app { background: #fff; overscroll-behavior: none; }
+.native-app #root {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.native-game-layout {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  background: #fff;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.native-game-header { flex: none; padding: 8px 12px; border-bottom: 1px solid var(--color-line); }
+.native-game-main { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.native-grid-slot {
+  container-type: size;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  --native-grid-size: min(100cqw, 100cqh);
+}
+.native-game-clues { display: none; }
+.native-game-controls { flex: none; background: #dde2ea; }
+.native-clue-bar { min-height: 60px; background: var(--color-brand-50); border-top: 1px solid var(--color-brand-100); }
+.native-clue-bar > button { min-height: 60px; }
+.native-clue-bar > button > span.line-clamp-2 {
+  font-size: 16px;
+  line-height: 1.3;
+  display: block;
+  max-height: 100px;
+  overflow-y: auto;
+  padding-block: 10px;
+  overscroll-behavior: contain;
+}
+.puzzle-keyboard {
+  padding: 8px 4px max(10px, env(safe-area-inset-bottom));
+  max-width: 780px;
+  margin: 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.puzzle-keyboard-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
+.puzzle-keyboard-row:last-child { margin-bottom: 0; }
+.puzzle-keyboard-row-1 { padding-inline: 5%; }
+.puzzle-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: clamp(44px, 6.4dvh, 60px);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-ink);
+  font-size: clamp(21px, 5.5vw, 28px);
+  font-weight: 500;
+  box-shadow: 0 2px 0 #a4aab3;
+  -webkit-touch-callout: none;
+}
+.puzzle-key-action { flex: 1.45; background: #bfc8d3; color: #25344b; }
+.puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
+.puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }
+.puzzle-key:disabled { opacity: .45; }
+.native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
+.native-clue-sheet ul { overscroll-behavior: contain; }
+@media (min-width: 768px) {
+  .native-game-clues { display: block; width: clamp(220px, 28vw, 380px); padding: 12px; min-height: 0; overflow: hidden; }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .native-game-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .native-game-header { grid-column: 1 / -1; }
+  .native-game-main { padding-bottom: env(safe-area-inset-bottom); }
+  .native-game-clues { display: none; }
+  .native-game-controls { align-self: end; }
+  .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
+  .puzzle-key { height: 44px; }
+}
 
 /* Cell fill pop — triggers when a letter first appears in a cell */
 @keyframes cell-fill {
@@ -170,9 +309,11 @@ select,
 
 /* Faint crossword grid background pattern for menu/non-play screens */
 .crossword-bg {
-  background-color: rgb(250 250 249);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect width='160' height='160' fill='none'/%3E%3Cg stroke='%23000' stroke-opacity='0.04' stroke-width='0.5'%3E%3Cline x1='0' y1='0' x2='160' y2='0'/%3E%3Cline x1='0' y1='20' x2='160' y2='20'/%3E%3Cline x1='0' y1='40' x2='160' y2='40'/%3E%3Cline x1='0' y1='60' x2='160' y2='60'/%3E%3Cline x1='0' y1='80' x2='160' y2='80'/%3E%3Cline x1='0' y1='100' x2='160' y2='100'/%3E%3Cline x1='0' y1='120' x2='160' y2='120'/%3E%3Cline x1='0' y1='140' x2='160' y2='140'/%3E%3Cline x1='0' y1='160' x2='160' y2='160'/%3E%3Cline x1='0' y1='0' x2='0' y2='160'/%3E%3Cline x1='20' y1='0' x2='20' y2='160'/%3E%3Cline x1='40' y1='0' x2='40' y2='160'/%3E%3Cline x1='60' y1='0' x2='60' y2='160'/%3E%3Cline x1='80' y1='0' x2='80' y2='160'/%3E%3Cline x1='100' y1='0' x2='100' y2='160'/%3E%3Cline x1='120' y1='0' x2='120' y2='160'/%3E%3Cline x1='140' y1='0' x2='140' y2='160'/%3E%3Cline x1='160' y1='0' x2='160' y2='160'/%3E%3C/g%3E%3Cg fill='%23000' fill-opacity='0.04'%3E%3Crect x='60' y='0' width='20' height='20'/%3E%3Crect x='120' y='0' width='20' height='20'/%3E%3Crect x='0' y='20' width='20' height='20'/%3E%3Crect x='80' y='20' width='20' height='20'/%3E%3Crect x='40' y='40' width='20' height='20'/%3E%3Crect x='140' y='40' width='20' height='20'/%3E%3Crect x='20' y='60' width='20' height='20'/%3E%3Crect x='100' y='60' width='20' height='20'/%3E%3Crect x='0' y='80' width='20' height='20'/%3E%3Crect x='60' y='80' width='20' height='20'/%3E%3Crect x='140' y='80' width='20' height='20'/%3E%3Crect x='40' y='100' width='20' height='20'/%3E%3Crect x='120' y='100' width='20' height='20'/%3E%3Crect x='80' y='120' width='20' height='20'/%3E%3Crect x='20' y='120' width='20' height='20'/%3E%3Crect x='0' y='140' width='20' height='20'/%3E%3Crect x='60' y='140' width='20' height='20'/%3E%3Crect x='100' y='140' width='20' height='20'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: repeat;
+  background-color: var(--color-canvas);
+  /* The crossword texture sits behind the header area only and fades into the
+     canvas, so long pages and dense content read on a clean surface. */
+  background-image: linear-gradient(to bottom, rgb(244 246 250 / 0) 0, var(--color-canvas) 520px), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Crect width='160' height='160' fill='none'/%3E%3Cg stroke='%23000' stroke-opacity='0.04' stroke-width='0.5'%3E%3Cline x1='0' y1='0' x2='160' y2='0'/%3E%3Cline x1='0' y1='20' x2='160' y2='20'/%3E%3Cline x1='0' y1='40' x2='160' y2='40'/%3E%3Cline x1='0' y1='60' x2='160' y2='60'/%3E%3Cline x1='0' y1='80' x2='160' y2='80'/%3E%3Cline x1='0' y1='100' x2='160' y2='100'/%3E%3Cline x1='0' y1='120' x2='160' y2='120'/%3E%3Cline x1='0' y1='140' x2='160' y2='140'/%3E%3Cline x1='0' y1='160' x2='160' y2='160'/%3E%3Cline x1='0' y1='0' x2='0' y2='160'/%3E%3Cline x1='20' y1='0' x2='20' y2='160'/%3E%3Cline x1='40' y1='0' x2='40' y2='160'/%3E%3Cline x1='60' y1='0' x2='60' y2='160'/%3E%3Cline x1='80' y1='0' x2='80' y2='160'/%3E%3Cline x1='100' y1='0' x2='100' y2='160'/%3E%3Cline x1='120' y1='0' x2='120' y2='160'/%3E%3Cline x1='140' y1='0' x2='140' y2='160'/%3E%3Cline x1='160' y1='0' x2='160' y2='160'/%3E%3C/g%3E%3Cg fill='%23000' fill-opacity='0.04'%3E%3Crect x='60' y='0' width='20' height='20'/%3E%3Crect x='120' y='0' width='20' height='20'/%3E%3Crect x='0' y='20' width='20' height='20'/%3E%3Crect x='80' y='20' width='20' height='20'/%3E%3Crect x='40' y='40' width='20' height='20'/%3E%3Crect x='140' y='40' width='20' height='20'/%3E%3Crect x='20' y='60' width='20' height='20'/%3E%3Crect x='100' y='60' width='20' height='20'/%3E%3Crect x='0' y='80' width='20' height='20'/%3E%3Crect x='60' y='80' width='20' height='20'/%3E%3Crect x='140' y='80' width='20' height='20'/%3E%3Crect x='40' y='100' width='20' height='20'/%3E%3Crect x='120' y='100' width='20' height='20'/%3E%3Crect x='80' y='120' width='20' height='20'/%3E%3Crect x='20' y='120' width='20' height='20'/%3E%3Crect x='0' y='140' width='20' height='20'/%3E%3Crect x='60' y='140' width='20' height='20'/%3E%3Crect x='100' y='140' width='20' height='20'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
 }
 
 @media print {
@@ -184,4 +325,112 @@ select,
 @keyframes bounce-up {
   0%, 100% { transform: translateY(0); opacity: 0.9; }
   50% { transform: translateY(-10px); opacity: 1; }
+}
+
+/* library facelift */
+@keyframes lf-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lf-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lf-toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lf-toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+.lf-fade-in { animation: lf-fade-in 160ms ease-out both; }
+.lf-pop-in { animation: lf-pop-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.lf-toast-in { animation: lf-toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.lf-toast-out { animation: lf-toast-out 180ms ease-in both; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-fade-in, .lf-pop-in { animation: none; }
+  .lf-toast-in { animation: none; }
+  .lf-toast-out { animation-duration: 1ms; }
+}
+
+/* TV facelift */
+.tv-stage {
+  --u: min(1vw, 1.7778vh);
+  background: var(--color-stage);
+  color: #fff;
+  height: 100dvh;
+  overflow: hidden;
+  font-size: max(16px, calc(var(--u) * 1.1));
+}
+.tv-stage-scroll { min-height: 100dvh; height: auto; overflow: auto; }
+.tv-t-sm { font-size: max(14px, calc(var(--u) * 0.9)); }
+.tv-t-md { font-size: max(17px, calc(var(--u) * 1.15)); }
+.tv-t-lg { font-size: max(22px, calc(var(--u) * 1.6)); }
+.tv-t-xl { font-size: max(30px, calc(var(--u) * 2.4)); }
+.tv-t-2xl { font-size: max(40px, calc(var(--u) * 3.6)); }
+.tv-code { font-size: clamp(56px, calc(var(--u) * 9.5), 420px); line-height: 1; letter-spacing: 0.06em; }
+.tv-code-sm { font-size: max(30px, calc(var(--u) * 2.6)); line-height: 1; letter-spacing: 0.08em; }
+.tv-gap { gap: calc(var(--u) * 1.5); }
+.tv-pad { padding: calc(var(--u) * 1.6); }
+.tv-card {
+  background: var(--color-stage-raised);
+  border: 1px solid var(--color-stage-line);
+  border-radius: calc(var(--u) * 1.2);
+}
+.tv-lobby {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 2.2);
+  height: 100dvh;
+}
+.tv-lobby-join {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgb(58 107 240 / 0.28), transparent 60%),
+    radial-gradient(80% 60% at 100% 100%, rgb(245 189 44 / 0.10), transparent 60%),
+    var(--color-stage-raised);
+}
+.tv-main {
+  display: flex;
+  height: 100dvh;
+  gap: calc(var(--u) * 1.6);
+  padding: calc(var(--u) * 1.6);
+}
+.tv-grid-slot {
+  container-type: size;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --native-grid-size: min(100cqw, 100cqh);
+}
+.tv-side {
+  width: clamp(360px, 34vw, 1500px);
+  flex: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.1);
+}
+.tv-clue { font-size: max(14px, calc(var(--u) * 1.0)); line-height: 1.3; }
+.tv-clue-list { scrollbar-width: none; }
+.tv-clue-list::-webkit-scrollbar { display: none; }
+.tv-pop { animation: tv-pop 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+@keyframes tv-pop { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
+.tv-pulse { animation: tv-pulse 1.6s ease-in-out infinite; }
+@keyframes tv-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tv-pop, .tv-pulse { animation: none; }
+}
+@media (max-width: 700px) {
+  .tv-stage { --u: 3.2vw; overflow-x: hidden; }
+  .tv-t-xl { font-size: 22px; }
+  .tv-t-2xl { font-size: 30px; }
+  .tv-stage { height: auto; min-height: 100dvh; overflow: visible; overflow-x: clip; }
+  .tv-lobby { display: flex; flex-direction: column; height: auto; }
+  .tv-main { flex-direction: column; height: auto; }
+  .tv-grid-slot { flex: none; height: 92vw; }
+  .tv-side { width: 100%; }
+  .tv-clues-box { height: 320px; flex: none !important; }
+  .tv-code { font-size: 15vw; }
 }

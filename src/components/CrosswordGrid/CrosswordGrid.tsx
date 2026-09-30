@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
 import { getWordCells } from "../../lib/gridUtils";
 import { Cell } from "./Cell";
+import { Capacitor } from "@capacitor/core";
 
 export interface NavigationActions {
   inputLetter: (letter: string) => void;
@@ -57,6 +58,7 @@ export function CrosswordGrid({
   const { t } = useTranslation();
   const internalInputRef = useRef<HTMLInputElement>(null);
   const inputRef = externalInputRef ?? internalInputRef;
+  const nativeKeyboard = Capacitor.isNativePlatform();
 
   const isTouchDevice = useMemo(
     () => "ontouchstart" in window || navigator.maxTouchPoints > 0,
@@ -173,7 +175,7 @@ export function CrosswordGrid({
       onCellClick(row, col);
       inputRef.current?.focus();
     },
-    [onCellClick],
+    [onCellClick, inputRef],
   );
 
   const handleKeyDown = useCallback(
@@ -248,7 +250,7 @@ export function CrosswordGrid({
   // the browser UI or virtual keyboard resizes the viewport, which made the whole
   // grid visibly reflow when the mobile keyboard opened. svh is a stable basis.
   const hMax = `var(--grid-h-max, 100svh)`;
-  const gridSize = `min(calc(100svh - var(--grid-h-offset, 6.5rem)), calc(100vw - var(--grid-w-offset, 1rem)), ${hMax})`;
+  const gridSize = `var(--native-grid-size, min(calc(100svh - var(--grid-h-offset, 6.5rem)), calc(100vw - var(--grid-w-offset, 1rem)), ${hMax}))`;
   const gridWidth =
     puzzle.width >= puzzle.height
       ? gridSize
@@ -260,7 +262,7 @@ export function CrosswordGrid({
 
   return (
     <div className="relative shrink-0">
-      {interactive && navigationActions && (
+      {interactive && navigationActions && !nativeKeyboard && (
         <input
           ref={inputRef}
           className="absolute opacity-0"

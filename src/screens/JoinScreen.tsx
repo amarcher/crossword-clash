@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { JoinGame } from "../components/GameLobby";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,11 +10,15 @@ import { tStatic } from "../i18n/i18n";
 
 export function JoinScreen() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const game = useGame();
 
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  // A join tapped before the anonymous session finished loading is queued here
+  // and runs the moment the user arrives (instead of silently doing nothing).
+  const [waitingForAuth, setWaitingForAuth] = useState(false);
+  const pendingJoin = useRef<{ code: string; displayName: string } | null>(null);
 
   const initialCode = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,13 +30,12 @@ export function JoinScreen() {
     return game.initialJoinCode ?? undefined;
   }, [game.initialJoinCode]);
 
-  const handleJoin = useCallback(
-    async (code: string, displayName: string) => {
-      if (!user) return;
+  const runJoin = useCallback(
+    async (code: string, displayName: string, userId: string) => {
       setJoinLoading(true);
       setJoinError(null);
 
-      const result = await joinGame(code, user.id, displayName);
+      const result = await joinGame(code, userId, displayName);
       if (!result) {
         setJoinError(tStatic('join.notFound'));
         setJoinLoading(false);
@@ -55,8 +58,36 @@ export function JoinScreen() {
         navigate(`/play/${result.gameId}`);
       }
     },
-    [user, game, navigate],
+    [game, navigate],
   );
+
+  const handleJoin = useCallback(
+    (code: string, displayName: string) => {
+      if (user) {
+        void runJoin(code, displayName, user.id);
+        return;
+      }
+      if (authLoading) {
+        pendingJoin.current = { code, displayName };
+        setJoinError(null);
+        setWaitingForAuth(true);
+      } else {
+        setJoinError(tStatic('join.connectFailed'));
+      }
+    },
+    [user, authLoading, runJoin],
+  );
+
+  // Resolve a queued join once auth settles (user arrived, or loading failed).
+  useEffect(() => {
+    if (!waitingForAuth) return;
+    if (!user && authLoading) return;
+    const pending = pendingJoin.current;
+    pendingJoin.current = null;
+    setWaitingForAuth(false);
+    if (user && pending) void runJoin(pending.code, pending.displayName, user.id);
+    else if (!user) setJoinError(tStatic('join.connectFailed'));
+  }, [waitingForAuth, user, authLoading, runJoin]);
 
   const handleBack = useCallback(() => {
     game.reset();
@@ -71,7 +102,8 @@ export function JoinScreen() {
     <JoinGame
       onJoin={handleJoin}
       onBack={handleBack}
-      loading={joinLoading}
+      loading={joinLoading || waitingForAuth}
+      connecting={waitingForAuth}
       error={joinError}
       initialCode={initialCode}
     />

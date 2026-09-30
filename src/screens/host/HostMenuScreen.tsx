@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../../components/Title";
+import { ArrowRight } from "lucide-react";
+import { TVScreen } from "../../components/Layout/TVScreen";
+import { buttonClass } from "../../components/ui";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { useHostContext } from "../../layouts/HostLayout";
 
@@ -16,29 +18,20 @@ export function HostMenuScreen() {
   }, [user, navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-      <Title variant="dark" className="mb-2" />
-      <p className="text-neutral-400 mb-1">{t('hostView.tvHostView')}</p>
-      <p className="text-neutral-500 text-sm text-center max-w-xs mb-8">
-        {t('hostView.tvHostViewHint')}
-      </p>
-      <div className="flex flex-col gap-3 w-full max-w-xs">
-        {user ? (
-          <button
-            onClick={() => navigate("/host/import")}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            {t('puzzleReady.hostGame')}
-          </button>
-        ) : (
-          <p className="text-neutral-500 text-center text-sm">
-            {t('puzzleReady.connecting')}
-          </p>
-        )}
+    <TVScreen>
+      <div className="max-w-[40em]">
+        <h1 className="tv-t-2xl font-display font-bold text-white">{t('hostView.tvHostView')}</h1>
+        <p className="tv-t-lg mt-3 text-slate-300">{t('hostView.tvHostViewHint')}</p>
       </div>
-      <div className="mt-6">
-        <LanguageSwitcher />
-      </div>
-    </div>
+      {user ? (
+        <button onClick={() => navigate("/host/import")} className={buttonClass("primary", "lg", "tv-t-lg h-auto! px-10 py-4")}>
+          {t('puzzleReady.hostGame')}
+          <ArrowRight className="size-[1.1em]" aria-hidden />
+        </button>
+      ) : (
+        <p role="status" className="tv-t-md text-slate-400">{t('puzzleReady.connecting')}</p>
+      )}
+      <LanguageSwitcher />
+    </TVScreen>
   );
 }

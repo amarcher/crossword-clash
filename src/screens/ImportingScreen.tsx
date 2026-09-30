@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../components/Title";
+import { ClipboardPaste, Loader2, RotateCw, TriangleAlert } from "lucide-react";
+import { Button, Card } from "../components/ui";
+import { FlowPage } from "../components/Flow";
 import { useGame } from "../contexts/GameContext";
 import { listenForImportedPuzzle, readPuzzleFromClipboard } from "../lib/puzzleUrl";
-import { tStatic } from "../i18n/i18n";
+import { emitToast } from "../lib/toastBus";
 
 export function ImportingScreen() {
   const { t } = useTranslation();
@@ -35,45 +37,54 @@ export function ImportingScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (!game.importFailed) {
+    return (
+      <div className="grid min-h-dvh place-items-center crossword-bg p-6">
+        <div className="flex flex-col items-center gap-4 text-center" role="status">
+          <span className="grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+            <Loader2 className="size-7 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          </span>
+          <p className="font-display text-xl font-bold text-ink">{t('importing.receiving')}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-50 p-8">
-      <Title className="mb-6" />
-      {game.importFailed ? (
-        <div className="flex flex-col items-center gap-4 max-w-xs">
-          <p className="text-neutral-600 text-center">{t('importing.failed')}</p>
-          <p className="text-sm text-neutral-500 text-center -mt-2">{t('importing.failedReason')}</p>
-          <button
-            onClick={attemptImport}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors w-full"
-          >
+    <FlowPage title={t('importing.failed')} subtitle={t('importing.failedReason')} onBack={() => navigate("/")} backLabel={t('importing.backToMenu')}>
+      <div className="grid gap-4">
+        <Card className="grid gap-3 p-5">
+          <Button size="lg" block onClick={attemptImport}>
+            <RotateCw className="size-4.5" aria-hidden="true" />
             {t('importing.tryAgain')}
-          </button>
-          <p className="text-xs text-neutral-400 text-center">{t('importing.pasteHint')}</p>
-          <button
+          </Button>
+          <p className="text-sm text-muted">{t('importing.pasteHint')}</p>
+          <Button
+            variant="secondary"
+            size="lg"
+            block
             onClick={async () => {
               const puzzle = await readPuzzleFromClipboard();
               if (puzzle) {
                 game.setUrlPuzzle(puzzle);
                 navigate("/puzzle-ready");
               } else {
-                alert(tStatic('importing.pasteError'));
+                emitToast({ message: t('importing.pasteError'), severity: 'error', ttl: 8000 });
               }
             }}
-            className="px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors w-full"
           >
+            <ClipboardPaste className="size-4.5" aria-hidden="true" />
             {t('importing.pasteButton')}
-          </button>
-          <p className="text-xs text-neutral-400 text-center">{t('importing.retryHint')}</p>
-          <button
-            onClick={() => navigate("/")}
-            className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            {t('importing.backToMenu')}
-          </button>
-        </div>
-      ) : (
-        <p className="text-neutral-500">{t('importing.receiving')}</p>
-      )}
-    </div>
+          </Button>
+        </Card>
+        <p className="flex items-start gap-2.5 px-1 text-sm text-muted">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-gold-500" aria-hidden="true" />
+          {t('importing.retryHint')}
+        </p>
+        <Button variant="ghost" block onClick={() => navigate("/")}>
+          {t('importing.backToMenu')}
+        </Button>
+      </div>
+    </FlowPage>
   );
 }

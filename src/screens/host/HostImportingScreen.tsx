@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../../components/Title";
+import { ClipboardPaste, Loader2, RotateCw } from "lucide-react";
+import { TVScreen } from "../../components/Layout/TVScreen";
+import { buttonClass } from "../../components/ui";
 import { useHostContext } from "../../layouts/HostLayout";
 import { listenForImportedPuzzle, readPuzzleFromClipboard } from "../../lib/puzzleUrl";
-import { tStatic } from "../../i18n/i18n";
+import { emitToast } from "../../lib/toastBus";
 
 export function HostImportingScreen() {
   const { t } = useTranslation();
@@ -36,19 +38,16 @@ export function HostImportingScreen() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh bg-neutral-900 p-8">
-      <Title variant="dark" className="mb-6" />
+    <TVScreen>
       {host.importFailed ? (
-        <div className="flex flex-col items-center gap-4 max-w-xs">
-          <p className="text-neutral-400 text-center">{t('importing.failed')}</p>
-          <p className="text-sm text-neutral-500 text-center -mt-2">{t('importing.failedReason')}</p>
-          <button
-            onClick={attemptImport}
-            className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors w-full"
-          >
+        <div className="flex w-full max-w-[32em] flex-col items-center gap-4">
+          <p className="tv-t-lg text-slate-100">{t('importing.failed')}</p>
+          <p className="tv-t-md text-slate-400">{t('importing.failedReason')}</p>
+          <button onClick={attemptImport} className={buttonClass("primary", "lg", "tv-t-md w-full")}>
+            <RotateCw className="size-5" aria-hidden />
             {t('importing.tryAgain')}
           </button>
-          <p className="text-xs text-neutral-500 text-center">{t('importing.pasteHint')}</p>
+          <p className="tv-t-sm text-slate-400">{t('importing.pasteHint')}</p>
           <button
             onClick={async () => {
               const puzzle = await readPuzzleFromClipboard();
@@ -56,24 +55,25 @@ export function HostImportingScreen() {
                 host.setUrlPuzzle(puzzle);
                 navigate("/host/puzzle-ready");
               } else {
-                alert(tStatic('importing.pasteError'));
+                emitToast({ message: t('importing.pasteError'), severity: 'error', ttl: 8000 });
               }
             }}
-            className="px-6 py-3 rounded-lg font-semibold text-blue-400 border-2 border-blue-400 hover:bg-neutral-800 transition-colors w-full"
+            className={buttonClass("stage", "lg", "tv-t-md w-full")}
           >
+            <ClipboardPaste className="size-5" aria-hidden />
             {t('importing.pasteButton')}
           </button>
-          <p className="text-xs text-neutral-500 text-center">{t('importing.retryHint')}</p>
-          <button
-            onClick={() => navigate("/host")}
-            className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors"
-          >
+          <p className="tv-t-sm text-slate-400">{t('importing.retryHint')}</p>
+          <button onClick={() => navigate("/host")} className="tv-t-md min-h-11 rounded-xl px-4 text-slate-300 transition-colors hover:bg-stage-raised hover:text-white active:bg-stage-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">
             {t('importing.backToMenu')}
           </button>
         </div>
       ) : (
-        <p className="text-neutral-400">{t('importing.receiving')}</p>
+        <p role="status" className="tv-t-lg flex items-center gap-3 text-slate-300">
+          <Loader2 className="size-[1.2em] animate-spin motion-reduce:animate-none" aria-hidden />
+          {t('importing.receiving')}
+        </p>
       )}
-    </div>
+    </TVScreen>
   );
 }

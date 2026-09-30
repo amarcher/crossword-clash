@@ -6,11 +6,14 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
+import { useConfirm } from "../components/ConfirmDialog";
 
 export function LobbyScreen() {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+
+  const confirm = useConfirm();
 
   useBeforeUnload(true);
 
@@ -32,7 +35,12 @@ export function LobbyScreen() {
   }, [mp, game.wrongAnswerTimeout, game.raceMode, game.gameId, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
+    const ok = await confirm({
+      title: tStatic('playing.closeRoomConfirm'),
+      confirmLabel: tStatic('playing.closeRoom'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await mp.closeRoom();
     game.reset();
     game.setGameId(null);
@@ -40,7 +48,7 @@ export function LobbyScreen() {
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
     navigate("/");
-  }, [mp, game, navigate]);
+  }, [mp, game, navigate, confirm]);
 
   const handleLeave = useCallback(async () => {
     await mp.leaveGame();

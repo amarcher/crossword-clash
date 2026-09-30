@@ -18,10 +18,10 @@ export function NytRecommendation({
   if (!NYT_AFFILIATE_URL) return null;
 
   if (variant === "inline") {
-    const color = darkMode ? "text-neutral-500" : "text-neutral-400";
+    const color = darkMode ? "text-subtle" : "text-muted";
     const linkColor = darkMode
-      ? "text-neutral-400 hover:text-neutral-300"
-      : "text-neutral-500 hover:text-neutral-600";
+      ? "text-stage-line hover:text-white"
+      : "text-ink-soft hover:text-brand-700";
     return (
       <p className={`text-xs ${color} text-center`}>
         {t("nyt.inlineText")}{" "}
@@ -29,7 +29,7 @@ export function NytRecommendation({
           href={NYT_AFFILIATE_URL}
           target="_blank"
           rel="sponsored noopener"
-          className={`underline ${linkColor}`}
+          className={`underline underline-offset-2 ${linkColor}`}
         >
           {t("nyt.inlineCta")}
         </a>
@@ -37,23 +37,21 @@ export function NytRecommendation({
     );
   }
 
-  const border = darkMode ? "border-neutral-700" : "border-neutral-200";
-  const text = darkMode ? "text-neutral-400" : "text-neutral-500";
+  const surface = darkMode ? "border-stage-line bg-stage-raised" : "border-line bg-surface shadow-card";
+  const text = darkMode ? "text-subtle" : "text-muted";
   const linkColor = darkMode
-    ? "text-blue-400 hover:text-blue-300"
-    : "text-blue-500 hover:text-blue-600";
+    ? "text-brand-200 hover:text-white"
+    : "text-brand-700 hover:text-brand-800";
 
   return (
-    <div
-      className={`w-full max-w-md border ${border} rounded-lg p-3 text-center`}
-    >
+    <div className={`w-full max-w-md rounded-2xl border ${surface} px-4 py-3 text-center`}>
       <p className={`text-sm ${text}`}>
         {t("nyt.cardText")}{" "}
         <a
           href={NYT_AFFILIATE_URL}
           target="_blank"
           rel="sponsored noopener"
-          className={`underline ${linkColor}`}
+          className={`font-semibold underline underline-offset-2 ${linkColor}`}
         >
           {t("nyt.cardCta")}
         </a>

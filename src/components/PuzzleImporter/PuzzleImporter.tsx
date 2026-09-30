@@ -1,8 +1,10 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../Title";
+import { ArrowRight, BookOpen, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
+import { SiteBar } from "../SiteBar";
+import { Eyebrow, MiniGridThumb } from "../ui";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
 import {
@@ -13,6 +15,7 @@ import {
 import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
+import { nativeNytImportAvailable } from "../../lib/nativeNytImport";
 
 interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
@@ -21,6 +24,56 @@ interface PuzzleImporterProps {
 /** How many classics the hub previews before pointing at /classics. */
 const CLASSIC_PREVIEW_COUNT = 4;
 
+const SCRAPER_URL =
+  "https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US";
+
+const CARD =
+  "group flex h-full flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-card transition-[box-shadow,border-color,background-color] duration-150 hover:border-line-strong hover:shadow-raised active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
+
+/** One consistent "source" card: icon tile, title, description, call to action. */
+function SourceCard({
+  icon: Icon,
+  title,
+  description,
+  cta,
+  external,
+  ...link
+}: {
+  icon: typeof Newspaper;
+  title: ReactNode;
+  description: ReactNode;
+  cta: ReactNode;
+  external?: boolean;
+} & ({ to: string; href?: never } | { href: string; to?: never })) {
+  const body = (
+    <>
+      <span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
+        <Icon className="size-5" aria-hidden="true" />
+      </span>
+      <span className="block">
+        <span className="block font-semibold leading-snug text-ink">{title}</span>
+        <span className="mt-1 block text-sm leading-snug text-muted">{description}</span>
+      </span>
+      <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+        {cta}
+        {external ? (
+          <ExternalLink className="size-3.5" aria-hidden="true" />
+        ) : (
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        )}
+      </span>
+    </>
+  );
+  if (link.to) {
+    return <Link to={link.to} className={CARD}>{body}</Link>;
+  }
+  return (
+    <a href={link.href} target="_blank" rel="noopener noreferrer" className={CARD}>
+      {body}
+    </a>
+  );
+}
+
 export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +81,6 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [classics, setClassics] = useState<ClassicEntry[]>([]);
   const [loadingClassic, setLoadingClassic] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load the bundled 1924 public-domain classics list from the static asset.
   // Best-effort: resolves to [] on failure, so the section simply stays hidden.
@@ -118,137 +170,125 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
     [handleFile],
   );
 
-  const acrossCount = (p: Puzzle) =>
-    p.clues.filter((c) => c.direction === "across").length;
-  const downCount = (p: Puzzle) =>
-    p.clues.filter((c) => c.direction === "down").length;
+  const nativeNyt = nativeNytImportAvailable();
 
   return (
-    <div className="min-h-dvh crossword-bg p-6 sm:p-8">
-      <div className="max-w-3xl mx-auto flex flex-col items-center">
-        <Title className="mb-2" />
-        <h2 className="text-xl font-semibold text-neutral-700 mt-2">
-          {t("importer.hubTitle")}
-        </h2>
-        <p className="text-neutral-500 text-center max-w-md mt-1 mb-6">
-          {t("importer.hubSubtitle")}
-        </p>
-
-        {/* Primary tile — NYT bookmarklet */}
-        <a
-          href="/install-bookmarklet"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full max-w-md rounded-xl bg-white border-2 border-blue-500 p-5 mb-3 hover:bg-blue-50 transition-colors block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="font-semibold text-neutral-800">
-                {t("importer.tileNytTitle")}
-              </h3>
-              <p className="text-sm text-neutral-500 mt-1">
-                {t("importer.tileNytDesc")}
-              </p>
-            </div>
-            <span className="shrink-0 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-semibold">
-              {t("importer.tileNytCta")}
-            </span>
-          </div>
-        </a>
-
-        {/* Two secondary tiles side-by-side on desktop */}
-        <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <a
-            href="https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl bg-white border border-neutral-300 p-4 hover:border-blue-400 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <h3 className="font-semibold text-neutral-800 text-sm">
-              {t("importer.tileScraperTitle")}
-            </h3>
-            <p className="text-xs text-neutral-500 mt-1 mb-2">
-              {t("importer.tileScraperDesc")}
-            </p>
-            <span className="text-xs font-semibold text-blue-600">
-              {t("importer.tileScraperCta")} →
-            </span>
-          </a>
-
-          <button
-            type="button"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
-            className={`rounded-xl border-2 border-dashed p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              isDragging
-                ? "border-blue-500 bg-blue-50"
-                : "border-neutral-300 hover:border-blue-400 hover:bg-blue-50 bg-white"
-            }`}
-          >
-            <h3 className="font-semibold text-neutral-800 text-sm">
-              {loading ? t("importer.parsing") : t("importer.tileFileTitle")}
-            </h3>
-            <p className="text-xs text-neutral-500 mt-1 mb-2">
-              {t("importer.tileFileDesc")}
-            </p>
-            <span className="text-xs font-semibold text-blue-600">
-              {t("importer.dropHere")} ↓
-            </span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".puz,.ipuz,.jpz,.xd"
-              className="hidden"
-              onChange={handleInputChange}
-            />
-          </button>
+    <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
+      <SiteBar />
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="pb-6 pt-4 text-center sm:pt-6">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            {t("importer.hubTitle")}
+          </h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{t("importer.hubSubtitle")}</p>
         </div>
 
-        {/* Samples — open by default */}
-        <details
-          className="w-full max-w-md mt-2"
-          open
+        {/* Dropzone: a real <label> around a visually-hidden file input, so it is
+            keyboard-focusable, tappable on phones, and accepts drag-and-drop. */}
+        <label
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-8 text-center transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500 sm:py-10 ${
+            isDragging
+              ? "border-brand-500 bg-brand-50"
+              : "border-line-strong bg-surface hover:border-brand-500/60 hover:bg-brand-50/50 active:bg-brand-50"
+          }`}
         >
-          <summary className="text-sm text-neutral-500 cursor-pointer hover:text-neutral-700 transition-colors select-none">
-            {t("importer.tileSampleTitle")}
-          </summary>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          <span
+            className={`grid size-12 place-items-center rounded-2xl transition-colors ${
+              isDragging ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"
+            }`}
+          >
+            {loading ? (
+              <Loader2 className="size-6 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            ) : (
+              <FileUp className="size-6" aria-hidden="true" />
+            )}
+          </span>
+          <span className="font-display text-lg font-semibold text-ink">
+            {loading ? t("importer.parsing") : t("importer.tileFileTitle")}
+          </span>
+          <span className="max-w-sm text-sm text-muted">{t("importer.tileFileDesc")}</span>
+          <span className="mt-1 text-sm font-semibold text-brand-700">
+            <span className="hidden md:inline">{t("importer.dropHere")}</span>
+            <span className="md:hidden">{t("importer.orBrowse")}</span>
+          </span>
+          <input
+            type="file"
+            accept=".puz,.ipuz,.jpz,.xd"
+            className="sr-only"
+            onChange={handleInputChange}
+          />
+        </label>
+
+        {error && (
+          <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-center text-sm font-medium text-red-700">
+            {error}
+          </p>
+        )}
+
+        {/* Sources */}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {nativeNyt ? (
+            <SourceCard
+              to="/nyt-import"
+              icon={Newspaper}
+              title={t("nytImport.title")}
+              description={t("nytImport.description")}
+              cta={t("nytImport.open")}
+            />
+          ) : (
+            <SourceCard
+              href="/install-bookmarklet"
+              external
+              icon={Newspaper}
+              title={t("importer.tileNytTitle")}
+              description={t("importer.tileNytDesc")}
+              cta={t("importer.tileNytCta")}
+            />
+          )}
+          <SourceCard
+            href={SCRAPER_URL}
+            external
+            icon={PuzzleIcon}
+            title={t("importer.tileScraperTitle")}
+            description={t("importer.tileScraperDesc")}
+            cta={t("importer.tileScraperCta")}
+          />
+        </div>
+
+        {/* Samples */}
+        <section className="mt-8">
+          <Eyebrow as="h2" className="px-1">{t("importer.tileSampleTitle")}</Eyebrow>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {SAMPLE_PUZZLES.map((sp) => (
               <button
                 key={sp.id}
                 type="button"
                 onClick={() => onPuzzleLoaded(sp.puzzle)}
-                className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className={`${CARD} items-start`}
               >
-                <span className="block text-sm font-medium text-neutral-700">
-                  {sp.puzzle.title}
-                </span>
-                <span className="block text-xs text-neutral-400">
-                  {sp.puzzle.width}&times;{sp.puzzle.height}
-                  {" · "}
-                  {acrossCount(sp.puzzle) + downCount(sp.puzzle)}{" "}
-                  {t("importer.sampleClues")}
+                <MiniGridThumb puzzle={sp.puzzle} className="w-14" />
+                <span className="block">
+                  <span className="block text-sm font-semibold leading-snug text-ink">{sp.puzzle.title}</span>
+                  <span className="mt-0.5 block text-xs tabular-nums text-muted">
+                    {sp.puzzle.width}&times;{sp.puzzle.height}
+                    {" · "}
+                    {sp.puzzle.clues.length} {t("importer.sampleClues")}
+                  </span>
                 </span>
               </button>
             ))}
           </div>
-        </details>
+        </section>
 
         {/* Classic puzzles — bundled public-domain 1924 puzzles, one-click play. */}
         {classics.length > 0 && (
-          <details
-            className="w-full max-w-md mt-2"
-            open
-          >
-            <summary className="text-sm text-neutral-500 cursor-pointer hover:text-neutral-700 transition-colors select-none">
-              {t("importer.classicTitle")}
-            </summary>
-            <p className="text-xs text-neutral-400 mt-1 mb-2">
-              {t("importer.classicSubtitle")}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
+          <section className="mt-8">
+            <Eyebrow as="h2" className="px-1">{t("importer.classicTitle")}</Eyebrow>
+            <p className="mt-1 px-1 text-sm text-muted">{t("importer.classicSubtitle")}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {classicPreview.map((entry) => {
                 const isLoading = loadingClassic === entry.file;
                 return (
@@ -257,13 +297,16 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
                     type="button"
                     disabled={loadingClassic !== null}
                     onClick={() => handleClassic(entry)}
-                    className="text-left px-3 py-2 rounded-lg border border-neutral-200 bg-white hover:border-blue-400 hover:bg-blue-50 active:bg-blue-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
+                    className={`${CARD} items-start disabled:pointer-events-none disabled:opacity-60`}
                   >
-                    <span className="block text-sm font-medium text-neutral-700">
-                      {entry.title}
+                    <span className="grid size-9 place-items-center rounded-xl bg-gold-50 text-gold-700">
+                      <BookOpen className="size-4.5" aria-hidden="true" />
                     </span>
-                    <span className="block text-xs text-neutral-400">
-                      {isLoading ? t("importer.parsing") : `${entry.width}×${entry.height}`}
+                    <span className="block">
+                      <span className="block text-sm font-semibold leading-snug text-ink">{entry.title}</span>
+                      <span className="mt-0.5 block text-xs tabular-nums text-muted">
+                        {isLoading ? t("importer.parsing") : `${entry.width}×${entry.height}`}
+                      </span>
                     </span>
                   </button>
                 );
@@ -271,22 +314,15 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
             </div>
             <Link
               to="/classics"
-              className="mt-2 inline-block min-h-11 py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm font-semibold text-brand-700 hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
             >
               {t("importer.classicSeeAll", { count: classics.length })}
             </Link>
-          </details>
+          </section>
         )}
 
-        {error && (
-          <p className="mt-4 text-red-600 text-sm max-w-md text-center">{error}</p>
-        )}
-
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col items-center gap-4">
           <NytRecommendation variant="card" />
-        </div>
-
-        <div className="mt-4">
           <AdSlot placement="import-bottom" />
         </div>
       </div>

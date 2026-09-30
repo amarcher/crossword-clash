@@ -1,0 +1,7 @@
+Build 1.0.0 (2): NYT sign-in navigation fix.
+
+With the NYT or NYT Games app installed, open Crossword Clash → Import from NYT → Open puzzle on NYT. Sign in using NYT email sign-in in the embedded page. Verify that NYT web links and the return to the crossword stay inside Clash instead of opening another app. Tap Import this puzzle and verify the edition appears in Clash.
+
+If you are already signed in, verify the session survives the update and that importing another edition still works. If login does not return to the crossword, tap Selected puzzle. Report any continued app handoff or stuck login button, including your iOS version and which sign-in option you used. Do not include passwords or sign-in codes in feedback.
+
+Navigation regression checks and retained-session import passed in the simulator; the installed-NYT-app sign-in path needs physical-device verification.

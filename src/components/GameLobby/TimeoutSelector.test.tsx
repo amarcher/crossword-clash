@@ -23,14 +23,14 @@ describe("TimeoutSelector", () => {
   it("highlights the selected option", () => {
     render(<TimeoutSelector value={3} onChange={() => {}} />);
     const btn = screen.getByText("3s");
-    expect(btn.className).toContain("bg-blue-600");
+    expect(btn.className).toContain("bg-brand-600");
     expect(btn.className).toContain("text-white");
   });
 
   it("does not highlight unselected options", () => {
     render(<TimeoutSelector value={3} onChange={() => {}} />);
     const off = screen.getByText("Off");
-    expect(off.className).not.toContain("bg-blue-600");
+    expect(off.className).not.toContain("bg-brand-600");
   });
 
   it("calls onChange with correct value when clicked", () => {
@@ -56,7 +56,7 @@ describe("TimeoutSelector", () => {
   it("applies light variant styles by default to unselected options", () => {
     render(<TimeoutSelector value={1} onChange={() => {}} />);
     const off = screen.getByText("Off");
-    expect(off.className).toContain("bg-neutral-100");
+    expect(off.className).toContain("text-ink-soft");
   });
 
   it("applies dark variant styles to heading", () => {

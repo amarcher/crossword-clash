@@ -442,7 +442,9 @@
       // purely a fallback, not the primary transfer path.
       try {
         navigator.clipboard.writeText(compressed);
-      } catch (ignore) {}
+      } catch (_ignore) {
+        // Fallback only — see comment above.
+      }
 
       // Open app with clean URL (no puzzle data in URL to avoid Safe Browsing flags)
       var appOrigin = APP_URL.replace(/\/$/, "");

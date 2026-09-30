@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Share2 } from "lucide-react";
+import { buttonClass } from "../ui";
 import { track } from "../../lib/analytics";
 import { formatDuration } from "../../lib/soloStats";
 import {
@@ -256,13 +258,10 @@ export function ShareResultButton(props: ShareResultButtonProps) {
     <button
       onClick={handleShare}
       disabled={busy}
-      className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70 ${
-        darkMode
-          ? "text-white bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-offset-neutral-800"
-          : "text-white bg-indigo-600 hover:bg-indigo-700"
-      }`}
+      className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}
     >
-      {toast ?? (busy ? t("completion.sharing") : `🔗 ${t("completion.share")}`)}
+      {!toast && !busy && <Share2 className="size-4" aria-hidden="true" />}
+      {toast ?? (busy ? t("completion.sharing") : t("completion.share"))}
     </button>
   );
 }

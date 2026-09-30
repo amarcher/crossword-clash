@@ -1,8 +1,10 @@
 import { useCallback } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../components/Title";
+import { Flag, Timer } from "lucide-react";
 import { AdSlot } from "../components/AdSlot";
+import { Button, Card, MiniGridThumb } from "../components/ui";
+import { FlowPage } from "../components/Flow";
 import { useGame } from "../contexts/GameContext";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { saveChallenge } from "../lib/challenge";
@@ -40,34 +42,30 @@ export function ChallengeScreen() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
-      <Title variant="light" className="mb-6" />
-
-      <div className="text-center mb-6 max-w-sm">
-        <div className="text-5xl mb-3" role="img" aria-label="racing flag">🏁</div>
-        <h2 className="text-xl font-bold text-neutral-800">
-          {t("challenge.heading", { name: challenge.name })}
-        </h2>
-        <p className="text-sm text-neutral-600 mt-2">
-          {t("challenge.subtitle", { title: puzzle.title })}
-        </p>
-        <p className="mt-4 inline-block rounded-full bg-amber-50 border border-amber-200 px-4 py-1.5 text-sm font-semibold text-amber-700">
-          {t("challenge.targetTime", { name: challenge.name, time: formatDuration(challenge.seconds) })}
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-3 w-full max-w-xs">
-        <button
-          onClick={handleAccept}
-          autoFocus
-          className="px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-        >
+    <FlowPage
+      eyebrow={
+        <span className="grid size-10 place-items-center rounded-xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
+          <Flag className="size-5" aria-hidden="true" />
+        </span>
+      }
+      title={t("challenge.heading", { name: challenge.name })}
+      subtitle={t("challenge.subtitle", { title: puzzle.title })}
+    >
+      <Card className="grid gap-5 p-5">
+        <div className="flex items-center gap-4">
+          <MiniGridThumb puzzle={puzzle} className="w-20 shrink-0" />
+          <p className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+            <Timer className="size-5 shrink-0 text-gold-500" aria-hidden="true" />
+            {t("challenge.targetTime", { name: challenge.name, time: formatDuration(challenge.seconds) })}
+          </p>
+        </div>
+        <Button size="lg" block onClick={handleAccept} autoFocus>
           {t("challenge.accept")}
-        </button>
-      </div>
-      <div className="mt-4">
+        </Button>
+      </Card>
+      <div className="mt-6 flex justify-center">
         <AdSlot placement="puzzle-ready-bottom" />
       </div>
-    </div>
+    </FlowPage>
   );
 }

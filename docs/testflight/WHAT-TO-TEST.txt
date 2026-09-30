@@ -1,0 +1,9 @@
+Welcome to the first Crossword Clash iPhone and iPad beta!
+
+1. Play Today's Mini or choose a puzzle from the Classic library. Test tapping cells, switching Across/Down, keyboard entry, and clue navigation. Correct letters stay on the grid; incorrect letters are rejected.
+2. Close and reopen the app during a solo puzzle. Confirm your letters and progress return.
+3. With a friend on another device, create a room and join using its code. Start the game, claim letters, and check that both screens update. Try reopening the app during the game.
+4. If you have access to NYT crosswords, open Import from NYT, choose a Daily or Mini edition, sign in on NYT, and tap Import this puzzle. Check the date, author, grid, and clues. Try a second import without signing in again.
+5. Send screenshots and feedback through TestFlight, including your device model and puzzle date.
+
+NYT import is optional. Included puzzles work without a NYT account. Rebus and other special-cell puzzles are not supported yet. Solo NYT imports stay on your device; hosting or sharing a challenge sends the puzzle to participants, as explained in the play picker.

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Flame, Newspaper, Trophy } from "lucide-react";
+import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import {
@@ -207,18 +209,18 @@ export function CompletionModal({
       ? computeViewerStanding(ranked, currentUserId)
       : null;
 
-  const bg = darkMode ? "bg-neutral-800" : "bg-white";
-  const text = darkMode ? "text-white" : "text-neutral-900";
-  const textSub = darkMode ? "text-neutral-400" : "text-neutral-500";
-  const tableBg = darkMode ? "bg-neutral-700/50" : "bg-neutral-50";
-  const tableText = darkMode ? "text-neutral-300" : "text-neutral-600";
-  const tableHeader = darkMode ? "text-neutral-400" : "text-neutral-400";
+  const bg = darkMode ? "bg-stage-raised ring-1 ring-stage-line" : "bg-surface";
+  const text = darkMode ? "text-white" : "text-ink";
+  const textSub = darkMode ? "text-white/60" : "text-muted";
+  const tableBg = darkMode ? "bg-white/5" : "bg-surface-sunken";
+  const tableText = darkMode ? "text-white/80" : "text-ink-soft";
+  const tableHeader = darkMode ? "text-white/50" : "text-subtle";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-ink/60 backdrop-blur-[2px]"
         onClick={onBackToMenu}
       />
 
@@ -228,20 +230,20 @@ export function CompletionModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`modal-enter relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl ${bg} shadow-2xl p-6 sm:p-8`}
+        className={`modal-enter relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
         {/* Trophy */}
-        <div className="text-center mb-4">
-          <span className="trophy-pulse inline-block text-5xl" role="img" aria-label="trophy">
-            🏆
+        <div className="mb-4 flex justify-center">
+          <span className={`trophy-pulse grid size-14 place-items-center rounded-full ${darkMode ? "bg-gold-500/15" : "bg-gold-50 ring-1 ring-gold-100"}`}>
+            <Trophy className="size-7 text-gold-500" strokeWidth={2} aria-hidden="true" />
           </span>
         </div>
 
         {/* Title */}
-        <h2 className={`text-2xl font-bold text-center mb-1 ${text}`}>
+        <h2 className={`font-display text-2xl font-bold tracking-tight text-center mb-1 ${text}`}>
           {t('completion.puzzleComplete')}
         </h2>
 
@@ -266,7 +268,7 @@ export function CompletionModal({
             {/* Headline time: your own finish (async) or the shared race time. */}
             {raceSeconds != null && (
               <div className={`mb-5 rounded-xl px-4 py-3 text-center ${tableBg}`}>
-                <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                <div className={`font-display text-4xl font-bold tracking-tight tabular-nums ${text}`}>
                   {formatDuration(raceSeconds)}
                 </div>
                 <div className={`mt-0.5 text-sm font-medium ${textSub}`}>
@@ -370,20 +372,20 @@ export function CompletionModal({
                   className={`mb-4 rounded-xl px-4 py-3 text-center ${
                     celebrateBest
                       ? darkMode
-                        ? "bg-amber-500/15 border border-amber-500/40"
-                        : "bg-amber-50 border border-amber-200"
+                        ? "bg-gold-500/15 ring-1 ring-gold-500/40"
+                        : "bg-gold-50 ring-1 ring-gold-100"
                       : tableBg
                   }`}
                 >
-                  <div className={`text-3xl font-bold tabular-nums ${text}`}>
+                  <div className={`font-display text-4xl font-bold tracking-tight tabular-nums ${text}`}>
                     {formatDuration(finishSeconds)}
                   </div>
                   <div
                     className={`mt-0.5 text-sm font-medium ${
                       celebrateBest
                         ? darkMode
-                          ? "text-amber-300"
-                          : "text-amber-600"
+                          ? "text-gold-400"
+                          : "text-gold-700"
                         : textSub
                     }`}
                   >
@@ -400,7 +402,8 @@ export function CompletionModal({
             })()}
 
             {streakCount !== undefined && streakCount > 0 && (
-              <p className={`text-center mb-6 text-sm font-semibold ${text}`}>
+              <p className={`mb-5 flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
+                <Flame className="size-4 text-gold-500" aria-hidden="true" />
                 {t('soloStats.streakDays', { count: streakCount })}
               </p>
             )}
@@ -408,19 +411,19 @@ export function CompletionModal({
             {nytHook && (
               <div
                 data-testid="nyt-hook"
-                className={`text-center mb-6 rounded-lg border px-3 py-2 text-sm ${
-                  darkMode
-                    ? "bg-amber-950/40 border-amber-800 text-amber-200"
-                    : "bg-amber-50 border-amber-200 text-amber-800"
+                className={`mb-5 flex items-start gap-3 rounded-2xl px-4 py-3 text-left text-sm ${
+                  darkMode ? "bg-white/5 text-white/80 ring-1 ring-stage-line" : "bg-surface-sunken text-ink-soft"
                 }`}
               >
-                {nytHook.streak > 0 && (
-                  <p className="font-semibold">🗞️ {t('completion.nytStreak', { count: nytHook.streak })}</p>
-                )}
-                <p className={nytHook.streak > 0 ? "mt-0.5 text-xs opacity-90" : ""}>
-                  {nytHook.streak > 0 ? "" : "🗞️ "}
-                  {t('completion.nytTomorrow')}
-                </p>
+                <Newspaper className={`mt-0.5 size-4 shrink-0 ${darkMode ? "text-white/50" : "text-subtle"}`} aria-hidden="true" />
+                <div>
+                  {nytHook.streak > 0 && (
+                    <p className={`font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
+                      {t('completion.nytStreak', { count: nytHook.streak })}
+                    </p>
+                  )}
+                  <p className={nytHook.streak > 0 ? "mt-0.5" : ""}>{t('completion.nytTomorrow')}</p>
+                </div>
               </div>
             )}
 
@@ -464,97 +467,70 @@ export function CompletionModal({
           </>
         )}
 
-        {/* Ad */}
-        <div className="flex justify-center mb-4">
-          <AdSlot placement="completion-footer" darkMode={darkMode} />
+        {/* Actions: exactly one primary (Rematch › New puzzle), then a grid of
+            secondary share/next-step actions, then a quiet way out. */}
+        <div className="flex flex-col gap-2.5">
+          {onRematch && (
+            <button onClick={onRematch} className={buttonClass("primary", "lg", "w-full")} autoFocus>
+              {t('completion.playAgain')}
+            </button>
+          )}
+          {onNewPuzzle && (
+            <button
+              onClick={onNewPuzzle}
+              className={buttonClass(onRematch ? (darkMode ? "stage" : "secondary") : "primary", "lg", "w-full")}
+              autoFocus={!onRematch}
+            >
+              {t('completion.newPuzzle')}
+            </button>
+          )}
+          <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+            <ShareResultButton
+              mode={isMultiplayer ? "multiplayer" : "solo"}
+              puzzleTitle={puzzleTitle}
+              finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
+              bestSeconds={bestSeconds}
+              isNewBest={isNewBest}
+              winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
+              isTie={isAsync ? asyncTie : isTie}
+              coop={coop}
+              viewerStanding={viewerStanding ?? undefined}
+              darkMode={darkMode}
+            />
+            {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
+              <ChallengeFriendButton
+                puzzle={challengePuzzle}
+                challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+                finishSeconds={finishSeconds}
+                onNameSigned={dailySign?.onSign}
+                darkMode={darkMode}
+              />
+            )}
+            {onViewLeaderboard && (
+              <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
+                <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+                {t('completion.viewLeaderboard')}
+              </button>
+            )}
+            {onPlayLive && (
+              <PlayLiveButton
+                onPlayLive={onPlayLive}
+                intent={challengeOutcome ? "rematch" : "solo"}
+                size={puzzleSize}
+                darkMode={darkMode}
+              />
+            )}
+          </div>
+          {onBackToMenu && (
+            <button onClick={onBackToMenu} className={buttonClass("ghost", "md", `w-full ${darkMode ? "text-white/60 hover:text-white hover:bg-white/10" : ""}`)}>
+              {t('completion.backToMenu')}
+            </button>
+          )}
         </div>
 
-        {/* Buttons — the positive next action (Rematch › New Puzzle) is the hero. */}
-        <div className="flex flex-col gap-2">
-          <ShareResultButton
-            mode={isMultiplayer ? "multiplayer" : "solo"}
-            puzzleTitle={puzzleTitle}
-            finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
-            bestSeconds={bestSeconds}
-            isNewBest={isNewBest}
-            winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
-            isTie={isAsync ? asyncTie : isTie}
-            coop={coop}
-            viewerStanding={viewerStanding ?? undefined}
-            darkMode={darkMode}
-          />
-          {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
-            <ChallengeFriendButton
-              puzzle={challengePuzzle}
-              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
-              finishSeconds={finishSeconds}
-              onNameSigned={dailySign?.onSign}
-              darkMode={darkMode}
-            />
-          )}
-          {onPlayLive && (
-            <PlayLiveButton
-              onPlayLive={onPlayLive}
-              intent={challengeOutcome ? "rematch" : "solo"}
-              size={puzzleSize}
-              darkMode={darkMode}
-            />
-          )}
-          {(() => {
-            const ringOffset = darkMode
-              ? "focus-visible:ring-offset-neutral-800"
-              : "focus-visible:ring-offset-2";
-            // The largest, brightest call to action: keep finishers in the loop.
-            const primaryClass =
-              `cta-primary w-full px-6 py-3.5 rounded-xl text-lg font-bold text-white ` +
-              `bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-700 ` +
-              `shadow-lg shadow-blue-600/30 transition-all hover:-translate-y-0.5 active:translate-y-0 ` +
-              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${ringOffset}`;
-            const secondarySolid =
-              `w-full px-6 py-3 rounded-lg font-semibold transition-colors ` +
-              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${ringOffset} ` +
-              (darkMode
-                ? "text-white bg-neutral-700 hover:bg-neutral-600"
-                : "text-blue-700 bg-blue-50 hover:bg-blue-100");
-            const secondaryOutline =
-              `w-full px-6 py-3 rounded-lg font-semibold transition-colors ` +
-              `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${ringOffset} ` +
-              (darkMode
-                ? "text-neutral-300 border border-neutral-600 hover:bg-neutral-700"
-                : "text-neutral-600 border border-neutral-300 hover:bg-neutral-100");
-
-            // Exactly one button is primary: rematch if available, else "new puzzle".
-            const primaryIsRematch = !!onRematch;
-
-            return (
-              <>
-                {onViewLeaderboard && (
-                  <button onClick={onViewLeaderboard} className={secondarySolid}>
-                    🏅 {t('completion.viewLeaderboard')}
-                  </button>
-                )}
-                {onRematch && (
-                  <button onClick={onRematch} className={primaryClass} autoFocus>
-                    {t('completion.playAgain')}
-                  </button>
-                )}
-                {onNewPuzzle && (
-                  <button
-                    onClick={onNewPuzzle}
-                    className={primaryIsRematch ? secondarySolid : primaryClass}
-                    autoFocus={!primaryIsRematch}
-                  >
-                    {t('completion.newPuzzle')}
-                  </button>
-                )}
-                {onBackToMenu && (
-                  <button onClick={onBackToMenu} className={secondaryOutline}>
-                    {t('completion.backToMenu')}
-                  </button>
-                )}
-              </>
-            );
-          })()}
+        {/* Ad */}
+        <div className="flex justify-center mt-4">
+          <AdSlot placement="completion-footer" darkMode={darkMode} />
         </div>
 
         {/* NYT affiliate */}

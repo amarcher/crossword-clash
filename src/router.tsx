@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
+import { RouteErrorScreen } from "./screens/RouteErrorScreen";
+import { NotFoundScreen } from "./screens/NotFoundScreen";
 
 // MenuScreen + HostMenuScreen are imported statically because the index-route
 // resolvers below render them inline as the fallback. Every other screen is
@@ -23,12 +26,19 @@ const STORAGE_KEY = "crossword-clash-solo";
  */
 function IndexRedirect() {
   const game = useGame();
+  // Only a puzzle present when "/" first rendered (the bookmarklet/share hash,
+  // consumed by GameProvider init) routes to /puzzle-ready. At "/" this
+  // component also renders the menu, and it stays mounted while a lazy route
+  // loads — so a puzzle handed to the host flow afterwards (e.g. "Race
+  // friends") must not be hijacked into /puzzle-ready.
+  const [landingPuzzle] = useState(() => game.urlPuzzle);
+  const [landingChallenge] = useState(() => game.urlChallenge);
 
   // Check for URL puzzle (hash already consumed by GameProvider init)
-  if (game.urlPuzzle) {
+  if (landingPuzzle && game.urlPuzzle) {
     // A challenge deep link carries the challenger's name + ghost time alongside
     // the puzzle — land on the accept screen instead of the plain mode picker.
-    if (game.urlChallenge) {
+    if (landingChallenge) {
       return <Navigate to="/challenge" replace />;
     }
     return <Navigate to="/puzzle-ready" replace />;
@@ -101,12 +111,19 @@ export { IndexRedirect, HostIndexRedirect };
 // It is intentionally NOT a React route — see PR #36 for the Safe
 // Browsing rationale. Edit the HTML template, not React.
 export const router = createBrowserRouter([
+  { path: "/watch/:code?", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/SpectatorScreen").then(m => ({ Component: m.SpectatorScreen })) },
+  // Static legal pages: top-level so they skip the game/auth providers (no
+  // anonymous sign-in just to read a policy).
+  { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/PrivacyScreen").then((m) => ({ Component: m.PrivacyScreen })) },
+  { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/TermsScreen").then((m) => ({ Component: m.TermsScreen })) },
   {
     path: "/",
     Component: RootLayout,
+    errorElement: <RouteErrorScreen />,
     children: [
       { index: true, Component: IndexRedirect },
       { path: "menu", Component: MenuScreen },
+      { path: "nyt-import", lazy: () => import("./screens/NytImportScreen").then((m) => ({ Component: m.NytImportScreen })) },
       { path: "solo/import", lazy: () => import("./screens/SoloImportScreen").then((m) => ({ Component: m.SoloImportScreen })) },
       { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
       { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },
@@ -125,6 +142,7 @@ export const router = createBrowserRouter([
   {
     path: "/host",
     Component: HostLayout,
+    errorElement: <RouteErrorScreen />,
     children: [
       { index: true, Component: HostIndexRedirect },
       { path: "import", lazy: () => import("./screens/host/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
@@ -135,4 +153,5 @@ export const router = createBrowserRouter([
       { path: "rejoin", lazy: () => import("./screens/host/HostRejoinScreen").then((m) => ({ Component: m.HostRejoinScreen })) },
     ],
   },
+  { path: "*", Component: NotFoundScreen },
 ]);

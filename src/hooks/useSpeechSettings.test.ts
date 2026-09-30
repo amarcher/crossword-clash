@@ -259,6 +259,9 @@ describe("useSpeechSettings", () => {
       Promise.resolve(new Response(new ArrayBuffer(8))),
     );
     vi.stubGlobal("fetch", mockFetch);
+    // ElevenLabs is only "available" when Supabase is configured; without this
+    // the hook falls back to browser TTS and the test depends on .env.local.
+    vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
 
     const { result } = renderHook(() => useSpeechSettings());
     act(() => result.current.speak("Hello"));
@@ -267,5 +270,6 @@ describe("useSpeechSettings", () => {
     expect(mockSpeak).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 });

@@ -1,6 +1,7 @@
 {
   "common": {
-    "defaultPlayerName": "Player"
+    "defaultPlayerName": "Player",
+    "back": "Back"
   },
   "menu": {
     "friendsHeading": "Play with friends",
@@ -24,8 +25,15 @@
     "dailyLeaderboard": "Leaderboard",
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
     "nudgeDismiss": "Got it",
-    "classicLibrary": "📚 Classic library",
+    "classicLibrary": "Classic library",
     "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
+    "dailyPlay": "Play",
+    "dailyMeta": "{{width}}×{{height}} · {{count}} clues",
+    "soloHeading": "Solve on your own",
+    "tvMode": "TV mode",
+    "watchLink": "Have a room code? Show that game on a TV",
+    "ownPuzzle": "Bring your own puzzle",
+    "ownPuzzleSubtitle": "Import from the NYT, a puzzle file, or try a sample",
     "nytTile": "Race friends on today's NYT crossword",
     "nytTileStreak": "{{count}}-day NYT streak — play today's",
     "nytTileSubtitle": "Free one-click import for NYT subscribers (desktop)"
@@ -37,7 +45,9 @@
     "yourName": "Your name",
     "choosePuzzle": "Choose Puzzle",
     "createRoom": "Create Room",
-    "back": "Back"
+    "back": "Back",
+    "creating": "Creating room…",
+    "puzzleLabel": "Puzzle"
   },
   "importer": {
     "subtitle": "Upload a crossword puzzle to get started",
@@ -81,6 +91,7 @@
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} across, {{downCount}} down",
     "hostGame": "Host Game",
     "connecting": "Connecting to server...",
+    "friendsHeading": "Or play with friends",
     "importedFromNyt": "Imported from NYT",
     "nytTomorrow": "This works every day: open tomorrow's puzzle on nytimes.com and click the bookmark again.",
     "nytStreak": "{{count}}-day NYT streak!"
@@ -114,7 +125,15 @@
     "qrCodeLabel": "QR code to join game",
     "roomClosedTitle": "Room closed",
     "roomClosedNotice": "The host closed this room.",
-    "roomClosedAction": "Back to menu"
+    "roomClosedAction": "Back to menu",
+    "title": "Invite players",
+    "guestTitle": "You're in",
+    "guestSubtitle": "The game starts when the host is ready.",
+    "roomCode": "Room code",
+    "tapToCopy": "Tap to copy",
+    "shareInviteAction": "Share invite",
+    "gameSettings": "Game settings",
+    "qrHint": "Or have friends scan this code"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",
@@ -124,7 +143,10 @@
     "joinGame": "Join Game",
     "joining": "Joining...",
     "back": "Back",
-    "notFound": "Game not found or not joinable"
+    "notFound": "Game not found or not joinable",
+    "title": "Join a game",
+    "connecting": "Connecting…",
+    "connectFailed": "Couldn't connect. Check your connection and try again."
   },
   "playing": {
     "by": "by {{author}}",
@@ -165,7 +187,7 @@
     "tie": "It's a tie!"
   },
   "completion": {
-    "puzzleComplete": "Puzzle Complete!",
+    "puzzleComplete": "Puzzle complete",
     "tie": "It's a tie!",
     "wins": "{{name}} wins!",
     "player": "Player",
@@ -173,15 +195,15 @@
     "clues": "Clues",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} cells filled",
-    "newPuzzle": "Choose a New Puzzle",
-    "playAgain": "Play Again",
-    "backToMenu": "Back to Menu",
-    "ariaLabel": "Puzzle Complete",
-    "share": "Share Result",
+    "newPuzzle": "New puzzle",
+    "playAgain": "Play again",
+    "backToMenu": "Back to menu",
+    "ariaLabel": "Puzzle complete",
+    "share": "Share result",
     "sharing": "Preparing…",
     "linkCopied": "Link copied!",
     "signPlaceholder": "Your name",
-    "send": "Send Challenge",
+    "send": "Send challenge",
     "unsignedName": "A friend",
     "imageSaved": "Image saved",
     "cardHeading": "Solved!",
@@ -228,9 +250,9 @@
   "soloStats": {
     "timerLabel": "Elapsed time",
     "bestTime": "best: {{time}}",
-    "newBest": "New best! 🎉",
-    "newBestBeat": "New best! 🎉 beat {{time}}",
-    "streakDays": "🔥 {{count}}-day streak"
+    "newBest": "New best!",
+    "newBestBeat": "New best — beat {{time}}",
+    "streakDays": "{{count}}-day streak"
   },
   "challenge": {
     "heading": "{{name}} challenges you!",
@@ -238,18 +260,18 @@
     "targetTime": "{{name}} solved it in {{time}}",
     "accept": "Accept Challenge",
     "beatTarget": "beat {{time}}",
-    "challengeFriend": "🏁 Challenge a Friend",
+    "challengeFriend": "Challenge a friend",
     "sharing": "Preparing…",
     "linkCopied": "Challenge link copied!",
     "signPlaceholder": "Your name",
-    "send": "Send Challenge",
+    "send": "Send challenge",
     "unsignedName": "A friend",
     "shareCaption": "I solved \"{{title}}\" in {{time}} on Crossword Clash — can you beat me? {{url}}",
     "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
     "resultLost": "{{name}} was faster by {{delta}}",
     "resultTied": "Dead heat with {{name}}!",
-    "playLive": "⚡ Play Live",
-    "rematchLive": "⚡ Rematch Live",
+    "playLive": "Play live",
+    "rematchLive": "Rematch live",
     "playLiveHint": "Host a fresh puzzle head-to-head — invite by link or QR."
   },
   "tts": {
@@ -291,6 +313,15 @@
     "tvHostView": "TV / Host View",
     "tvHostViewHint": "This screen becomes the shared game board — friends join and play from their own phones.",
     "roomCode": "Room Code"
+  },
+  "tv": {
+    "joinAt": "Join at crosswordclash.com",
+    "joinOnPhone": "Join on your phone",
+    "orScan": "or scan the code",
+    "players": "Players",
+    "settings": "Room settings",
+    "playersNeeded": "Two players needed to start",
+    "hostHint": "Everyone plays from their own phone. This screen is the shared board."
   },
   "grid": {
     "crosswordInput": "Crossword input"
@@ -334,5 +365,77 @@
     "raceFriends": "Race friends",
     "credit": "Puzzles from The Cross Word Puzzle Book, edited by Prosper Buranelli, F. Gregory Hartswick and Margaret Petherbridge (Plaza Publishing, 1924). Public domain. Text via Project Gutenberg; .puz files via crosserville.com.",
     "backToMenu": "← Back to menu"
+  },
+  "keyboard": {
+    "label": "Crossword keyboard",
+    "switchDirection": "Switch Across / Down",
+    "delete": "Delete letter",
+    "backToPuzzle": "Back to puzzle"
+  },
+  "spectator": {
+    "join": "Join as TV",
+    "description": "Start the game on your phone, then enter its room code here. This screen shows the puzzle and scores without joining as a player.",
+    "display": "TV display · controlled by the host",
+    "leave": "Leave display",
+    "error": "Could not connect to that room. Check the code and your connection.",
+    "closed": "The host closed this room.",
+    "waiting": "Waiting for the host to start the game on their device.",
+    "completed": "Game complete",
+    "live": "Live game",
+    "reconnecting": "Connection interrupted. Reconnecting…",
+    "race": "Time trial results"
+  },
+  "nytImport": {
+    "eyebrow": "Your puzzles, your game",
+    "title": "Import from NYT",
+    "description": "Bring a crossword you can access with your NYT subscription into Clash.",
+    "puzzle": "Puzzle",
+    "daily": "Daily Crossword",
+    "mini": "Mini Crossword",
+    "date": "Edition date",
+    "open": "Open puzzle on NYT",
+    "close": "Close",
+    "selected": "Selected puzzle",
+    "import": "Import this puzzle",
+    "working": "Importing puzzle…",
+    "hint": "Sign in on NYT, open the selected puzzle, then tap Import.",
+    "external": "Use NYT email sign-in here. This importer only opens NYT pages.",
+    "session": "Sign in on NYT the first time. Your session stays in this app on this device, until you or NYT sign it out.",
+    "saved": "Saved on this device",
+    "local": "Your puzzle is ready. Solo play stays on this device.",
+    "continue": "Choose how to play",
+    "back": "Back to menu",
+    "webOnly": "The built-in importer is available in the iOS and Android apps. On a computer, use the bookmarklet.",
+    "bookmarklet": "Set up the bookmarklet",
+    "pageError": "Open a dated Daily or Mini crossword, or tap Selected puzzle.",
+    "accessError": "Sign in to NYT with access to this puzzle, then tap Import again.",
+    "networkError": "The puzzle did not load. Check your connection and try again.",
+    "formatError": "This puzzle could not be read. NYT may have changed its format.",
+    "unsupportedError": "This puzzle uses rebus or special cells that Clash does not support yet. Please choose another puzzle.",
+    "saveError": "The import could not be saved. Please reopen the importer and try again.",
+    "sharing": "Solo play stays on this device. Hosting a room or sharing a challenge sends a copy of this puzzle to other players."
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "body": "The page hit an unexpected problem. Reloading usually fixes it.",
+    "reload": "Reload",
+    "backToMenu": "Back to menu",
+    "updatedTitle": "A new version is available",
+    "updatedBody": "This tab is out of date. Reload to get the latest version.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "We couldn't find that page. It may have moved, or the link may be mistyped."
+  },
+  "confirmDialog": {
+    "cancel": "Cancel",
+    "ok": "OK"
+  },
+  "legal": {
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "footerLabel": "Legal",
+    "lastUpdated": "Last updated: {{date}}",
+    "back": "Back to menu",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Use"
   }
 }

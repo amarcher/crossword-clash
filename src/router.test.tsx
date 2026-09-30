@@ -133,6 +133,24 @@ describe("IndexRedirect", () => {
     expect(screen.getByTestId("navigated-to").textContent).toBe("/puzzle-ready");
   });
 
+  it("does not redirect a puzzle handed over after mount (Race friends from /)", () => {
+    // At "/" IndexRedirect renders the menu and stays mounted while a lazy
+    // route loads; a urlPuzzle set by the menu must not hijack that navigation.
+    const { rerender } = renderInRouter(IndexRedirect);
+    expect(screen.getByTestId("menu-screen")).toBeTruthy();
+    mockUseGame.mockReturnValue({ urlPuzzle: makeMockPuzzle() });
+    rerender(
+      <MemoryRouter initialEntries={["/test-start"]}>
+        <Routes>
+          <Route path="/test-start" element={<IndexRedirect />} />
+          <Route path="/puzzle-ready" element={<div data-testid="navigated-to">/puzzle-ready</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTestId("navigated-to")).toBeNull();
+    expect(screen.getByTestId("menu-screen")).toBeTruthy();
+  });
+
   it("redirects to /importing when import hash is present", () => {
     mockUseGame.mockReturnValue({ urlPuzzle: null });
     mockHasImportHash.mockReturnValue(true);

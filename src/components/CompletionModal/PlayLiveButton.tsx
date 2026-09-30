@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { Zap } from "lucide-react";
+import { buttonClass } from "../ui";
 import { track } from "../../lib/analytics";
 
 interface PlayLiveButtonProps {
@@ -51,27 +53,20 @@ export function PlayLiveButton({
     onPlayLive();
   }, [onPlayLive, intent, size]);
 
-  const ringOffset = darkMode
-    ? "focus-visible:ring-offset-neutral-800"
-    : "focus-visible:ring-offset-2";
-
   return (
     <button
       type="button"
       onClick={handleClick}
-      className={
-        `group w-full px-6 py-3 rounded-lg font-semibold text-white transition-all ` +
-        `bg-gradient-to-b from-violet-500 to-violet-600 hover:from-violet-500 hover:to-violet-700 ` +
-        `shadow-md shadow-violet-600/25 hover:-translate-y-0.5 active:translate-y-0 ` +
-        `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${ringOffset}`
-      }
+      title={t("challenge.playLiveHint")}
+      className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}
     >
-      <span className="block leading-tight">
+      <Zap className="size-4 text-brand-600" aria-hidden="true" />
+      <span>
         {intent === "rematch"
           ? t("challenge.rematchLive")
           : t("challenge.playLive")}
       </span>
-      <span className="block text-xs font-medium text-violet-50/90 mt-0.5">
+      <span className="sr-only">
         {t("challenge.playLiveHint")}
       </span>
     </button>

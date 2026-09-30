@@ -208,15 +208,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Persist game state to Supabase when cells change (solo mode only)
   useEffect(() => {
-    if (!gameId || !user || isMultiplayer) return;
+    if (!puzzle || !gameId || !user || isMultiplayer || puzzle.source?.provider === "nyt") return;
     const status = isComplete ? "completed" : "active";
     updateGame(gameId, playerCells, status, score, user.id);
-  }, [gameId, user, playerCells, score, isComplete, isMultiplayer]);
+  }, [gameId, user, playerCells, score, isComplete, isMultiplayer, puzzle]);
 
   // Solo puzzle loaded
   const handleSoloPuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
       loadPuzzle(p);
+      // A new solo puzzle must never write into a previous game's server row.
+      setGameId(null);
+      setIsMultiplayer(false);
       fileBufferRef.current = fileBuffer ?? null;
       // Imported / sample puzzles carry no theme — clear any prior daily theme
       // so a stale "Today's theme" banner never bleeds onto a new puzzle.
@@ -233,7 +236,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      if (!user) return;
+      // Subscriber-directed native imports remain local during solo play.
+      // Hosting is a separate explicit action with a sharing notice.
+      if (!user || p.source?.provider === "nyt") return;
       const puzzleId = await uploadPuzzle(p, fileBuffer);
       if (!puzzleId) return;
       const result = await createGame(puzzleId, user.id);

@@ -1,0 +1,9 @@
+This update adds a crossword keyboard and a TV display for existing games.
+
+1. Start a solo or multiplayer puzzle. The letter keyboard should appear immediately, with the active clue directly above it. Try typing, switching Across/Down, and moving between clues.
+2. Open the clue list and return to the puzzle. Check that the keyboard never covers the active clue and that dragging the grid does not scroll the whole page. Try portrait and landscape on iPhone or iPad.
+3. With NYT Games installed, open Import from NYT and sign in. The embedded browser should remain in Clash and return to the puzzle instead of leaving a spinning login screen. Import a puzzle your subscription can access.
+4. Host a game on your phone. On a second device, choose Join as TV and enter the room code. The display should show the puzzle and scores without adding a player. Try refreshing, a rematch, and closing the room from the host.
+5. Copy or scan an invitation from the iOS app. It should open the public Crossword Clash website.
+
+The web Join as TV option requires the corresponding website update to be published. Existing Host as TV remains available.

@@ -1,3 +1,4 @@
+import { shareOrigin } from "../lib/shareOrigin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useSupabase } from "../hooks/useSupabase";
@@ -29,6 +30,7 @@ import {
   buildStallEvent,
 } from "../lib/narrator/events";
 import { tStatic } from "../i18n/i18n";
+import { useConfirm } from "../components/ConfirmDialog";
 import { usePageViews } from "../hooks/usePageViews";
 import { track } from "../lib/analytics";
 import { createContext, useContext } from "react";
@@ -132,6 +134,7 @@ export function useHostContext(): HostContextValue {
 
 export function HostLayout() {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   usePageViews();
   const { user } = useSupabase();
   const {
@@ -487,15 +490,20 @@ export function HostLayout() {
     if (gameId) {
       navigate(`/host/spectate/${gameId}`);
     }
-  }, [multiplayer, wrongAnswerTimeout, gameId, navigate]);
+  }, [multiplayer, wrongAnswerTimeout, gameId, navigate, tts.narratorEngine]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
+    const ok = await confirm({
+      title: tStatic('playing.closeRoomConfirm'),
+      confirmLabel: tStatic('playing.closeRoom'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await multiplayer.closeRoom();
     setGameId(null);
     clearHostSession();
     navigate("/host");
-  }, [multiplayer, navigate]);
+  }, [multiplayer, navigate, confirm]);
 
   const handleNewPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
@@ -590,7 +598,7 @@ export function HostLayout() {
   const showCompletionModal = multiplayer.gameStatus === "completed" && !completionModalDismissed;
 
   const joinUrl = multiplayer.shareCode
-    ? `${window.location.origin}/?join=${multiplayer.shareCode}`
+    ? `${shareOrigin()}/?join=${multiplayer.shareCode}`
     : null;
 
   const value: HostContextValue = {
