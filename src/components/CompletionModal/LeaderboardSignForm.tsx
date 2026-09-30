@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { buttonClass } from "../ui";
 import { MAX_PLAYER_NAME_LENGTH } from "../../lib/playerName";
 
 interface LeaderboardSignFormProps {
@@ -19,10 +20,8 @@ export function LeaderboardSignForm({ signedAs, onSign, darkMode }: LeaderboardS
   const { t } = useTranslation();
   const [name, setName] = useState("");
 
-  const boxClass = `mb-4 rounded-xl px-4 py-3 border ${
-    darkMode
-      ? "bg-indigo-500/10 border-indigo-500/40"
-      : "bg-indigo-50 border-indigo-200"
+  const boxClass = `mb-5 rounded-2xl px-4 py-3 ${
+    darkMode ? "bg-white/5 ring-1 ring-stage-line" : "bg-surface-sunken"
   }`;
 
   if (signedAs) {
@@ -30,7 +29,7 @@ export function LeaderboardSignForm({ signedAs, onSign, darkMode }: LeaderboardS
       <div className={boxClass}>
         <p
           className={`text-center text-sm font-semibold ${
-            darkMode ? "text-indigo-300" : "text-indigo-700"
+            darkMode ? "text-white/80" : "text-ink-soft"
           }`}
         >
           {t("leaderboard.signedAs", { name: signedAs })}
@@ -47,10 +46,10 @@ export function LeaderboardSignForm({ signedAs, onSign, darkMode }: LeaderboardS
     <div className={boxClass}>
       <p
         className={`text-center text-sm font-semibold mb-2 ${
-          darkMode ? "text-indigo-300" : "text-indigo-700"
+          darkMode ? "text-white/80" : "text-ink-soft"
         }`}
       >
-        🏅 {t("leaderboard.signPrompt", { name: t("common.defaultPlayerName") })}
+        {t("leaderboard.signPrompt", { name: t("common.defaultPlayerName") })}
       </p>
       <div className="flex gap-2">
         <input
@@ -63,21 +62,17 @@ export function LeaderboardSignForm({ signedAs, onSign, darkMode }: LeaderboardS
           placeholder={t("leaderboard.signPlaceholder")}
           aria-label={t("leaderboard.signPlaceholder")}
           maxLength={MAX_PLAYER_NAME_LENGTH}
-          className={`min-w-0 flex-1 px-3 py-2 rounded-lg border text-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+          className={`h-11 min-w-0 flex-1 rounded-xl border px-3 text-center text-base font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${
             darkMode
-              ? "bg-neutral-700 border-neutral-600 text-white placeholder:text-neutral-400"
-              : "bg-white border-neutral-300 text-neutral-900 placeholder:text-neutral-400"
+              ? "bg-white/5 border-stage-line text-white placeholder:text-white/40"
+              : "bg-surface border-line-strong text-ink placeholder:text-subtle"
           }`}
         />
         <button
           type="button"
           onClick={submit}
           disabled={!name.trim()}
-          className={`shrink-0 px-4 py-2 rounded-lg font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-            darkMode
-              ? "bg-indigo-600 hover:bg-indigo-500"
-              : "bg-indigo-600 hover:bg-indigo-700"
-          }`}
+          className={buttonClass("primary", "md", "shrink-0")}
         >
           {t("leaderboard.signSave")}
         </button>

@@ -68,7 +68,7 @@
   overflow: hidden;
   overscroll-behavior: none;
 }
-.native-game-header { flex: none; padding: 8px 12px; border-bottom: 1px solid #e5e5e5; }
+.native-game-header { flex: none; padding: 8px 12px; border-bottom: 1px solid var(--color-line); }
 .native-game-main { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .native-grid-slot {
   container-type: size;
@@ -82,8 +82,8 @@
   --native-grid-size: min(100cqw, 100cqh);
 }
 .native-game-clues { display: none; }
-.native-game-controls { flex: none; background: #dce1e7; }
-.native-clue-bar { min-height: 60px; background: #dbeafe; border-top: 1px solid #bfdbfe; }
+.native-game-controls { flex: none; background: #dde2ea; }
+.native-clue-bar { min-height: 60px; background: var(--color-brand-50); border-top: 1px solid var(--color-brand-100); }
 .native-clue-bar > button { min-height: 60px; }
 .native-clue-bar > button > span.line-clamp-2 {
   font-size: 16px;
@@ -114,7 +114,7 @@
   height: clamp(44px, 6.4dvh, 60px);
   border-radius: 6px;
   background: #fff;
-  color: #171717;
+  color: var(--color-ink);
   font-size: clamp(21px, 5.5vw, 28px);
   font-weight: 500;
   box-shadow: 0 2px 0 #a4aab3;
@@ -122,7 +122,7 @@
 }
 .puzzle-key-action { flex: 1.45; background: #bfc8d3; color: #25344b; }
 .puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
-.puzzle-key:focus-visible { outline: 3px solid #2563eb; outline-offset: -3px; }
+.puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }
 .puzzle-key:disabled { opacity: .45; }
 .native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
 .native-clue-sheet ul { overscroll-behavior: contain; }

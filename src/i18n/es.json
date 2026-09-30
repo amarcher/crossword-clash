@@ -227,9 +227,9 @@
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",
     "bestTime": "mejor: {{time}}",
-    "newBest": "¡Nuevo récord! 🎉",
-    "newBestBeat": "¡Nuevo récord! 🎉 superaste {{time}}",
-    "streakDays": "🔥 Racha de {{count}} días"
+    "newBest": "¡Nuevo récord!",
+    "newBestBeat": "¡Nuevo récord! Superaste {{time}}",
+    "streakDays": "Racha de {{count}} días"
   },
   "challenge": {
     "heading": "¡{{name}} te desafía!",
@@ -237,7 +237,7 @@
     "targetTime": "{{name}} lo resolvió en {{time}}",
     "accept": "Aceptar desafío",
     "beatTarget": "supera {{time}}",
-    "challengeFriend": "🏁 Desafiar a un amigo",
+    "challengeFriend": "Desafiar a un amigo",
     "sharing": "Preparando…",
     "linkCopied": "¡Enlace de desafío copiado!",
     "signPlaceholder": "Tu nombre",
@@ -247,8 +247,8 @@
     "resultBeat": "¡Superaste a {{name}} por {{delta}}! 🎉",
     "resultLost": "{{name}} fue más rápido por {{delta}}",
     "resultTied": "¡Empate técnico con {{name}}!",
-    "playLive": "⚡ Jugar en vivo",
-    "rematchLive": "⚡ Revancha en vivo",
+    "playLive": "Jugar en vivo",
+    "rematchLive": "Revancha en vivo",
     "playLiveHint": "Organiza un crucigrama nuevo cara a cara: invita por enlace o QR."
   },
   "tts": {

@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Swords } from "lucide-react";
+import { buttonClass } from "../ui";
 import { track } from "../../lib/analytics";
 import { formatDuration } from "../../lib/soloStats";
 import { buildChallengeUrl } from "../../lib/challenge";
@@ -108,15 +110,11 @@ export function ChallengeFriendButton({
     else setSigning(true);
   }, [hasRealName, presetName, doShare]);
 
-  const buttonClass = `w-full px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70 ${
-    darkMode
-      ? "text-white bg-emerald-600 hover:bg-emerald-500 focus-visible:ring-offset-neutral-800"
-      : "text-white bg-emerald-600 hover:bg-emerald-700"
-  }`;
+  const btnClass = buttonClass(darkMode ? "stage" : "secondary", "md", "w-full");
 
   if (signing) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="col-span-2 flex flex-col gap-2">
         <input
           type="text"
           value={name}
@@ -128,13 +126,13 @@ export function ChallengeFriendButton({
           aria-label={t("challenge.signPlaceholder")}
           autoFocus
           maxLength={24}
-          className={`w-full px-4 py-3 rounded-lg border text-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+          className={`h-11 w-full rounded-xl border px-4 text-center text-base font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${
             darkMode
-              ? "bg-neutral-700 border-neutral-600 text-white placeholder:text-neutral-400"
-              : "bg-white border-neutral-300 text-neutral-900 placeholder:text-neutral-400"
+              ? "bg-white/5 border-stage-line text-white placeholder:text-white/40"
+              : "bg-surface border-line-strong text-ink placeholder:text-subtle"
           }`}
         />
-        <button onClick={() => doShare(name)} disabled={busy} className={buttonClass}>
+        <button onClick={() => doShare(name)} disabled={busy} className={btnClass}>
           {toast ?? (busy ? t("challenge.sharing") : t("challenge.send"))}
         </button>
       </div>
@@ -142,7 +140,8 @@ export function ChallengeFriendButton({
   }
 
   return (
-    <button onClick={handlePrimary} disabled={busy} className={buttonClass}>
+    <button onClick={handlePrimary} disabled={busy} className={btnClass}>
+      {!toast && !busy && <Swords className="size-4" aria-hidden="true" />}
       {toast ?? (busy ? t("challenge.sharing") : t("challenge.challengeFriend"))}
     </button>
   );

@@ -37,7 +37,7 @@ describe("ChallengeFriendButton", () => {
 
   it("shares in one tap when the finisher already has a real name", async () => {
     render(<ChallengeFriendButton puzzle={makePuzzle()} challengerName="Alex" finishSeconds={272} />);
-    fireEvent.click(screen.getByText("🏁 Challenge a Friend"));
+    fireEvent.click(screen.getByText("Challenge a friend"));
     await Promise.resolve();
     expect(navigator.share).toHaveBeenCalledTimes(1);
     expect(parseChallengeUrl(shared!.url!)?.payload.name).toBe("Alex");
@@ -46,15 +46,15 @@ describe("ChallengeFriendButton", () => {
   it("prompts the finisher to sign when they have no real name (does not share yet)", () => {
     // "Player" is the generic default — treat as no real name.
     render(<ChallengeFriendButton puzzle={makePuzzle()} challengerName="Player" finishSeconds={90} />);
-    fireEvent.click(screen.getByText("🏁 Challenge a Friend"));
+    fireEvent.click(screen.getByText("Challenge a friend"));
     expect(navigator.share).not.toHaveBeenCalled();
     expect(screen.getByPlaceholderText("Your name")).toBeTruthy();
   });
 
   it("falls back to 'A friend' when the challenge is sent unsigned", async () => {
     render(<ChallengeFriendButton puzzle={makePuzzle()} challengerName="" finishSeconds={90} />);
-    fireEvent.click(screen.getByText("🏁 Challenge a Friend"));
-    fireEvent.click(screen.getByText("Send Challenge")); // leave the name blank
+    fireEvent.click(screen.getByText("Challenge a friend"));
+    fireEvent.click(screen.getByText("Send challenge")); // leave the name blank
     await Promise.resolve();
     expect(parseChallengeUrl(shared!.url!)?.payload.name).toBe("A friend");
   });
