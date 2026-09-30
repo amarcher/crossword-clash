@@ -29,10 +29,11 @@ describe("legal content", () => {
     }
   });
 
-  it("contains no real email address, only the placeholder", () => {
+  it("uses the published contact address and ships no unfilled placeholders", () => {
     const all = JSON.stringify(LEGAL_CONTENT);
-    expect(all).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
-    expect(all).toContain("[CONTACT EMAIL]");
+    const emails = new Set(all.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g));
+    expect([...emails]).toEqual(["acesuplabs@gmail.com"]);
+    expect(all).not.toMatch(/\[[A-Z][A-Z /]+\]/);
   });
 
   it("renders privacy and terms with the last-updated date, in both languages", async () => {

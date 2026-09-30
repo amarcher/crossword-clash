@@ -6,14 +6,12 @@
  * index.html, DeferredAnalytics, AdSlot, supabase/migrations, edge functions,
  * docs/NATIVE-NYT-IMPORT.md). Re-check it whenever data handling changes.
  *
- * Placeholders the owner must fill in are the constants below.
+ * No governing-law clause yet: add one (e.g. "the State of X, USA") once the
+ * owner decides; until then default conflict-of-law rules apply.
  */
 
 export const LEGAL_LAST_UPDATED = "2026-09-30";
-/** Deliberately NOT a real address. Replace before publishing. */
-export const CONTACT_PLACEHOLDER = "[CONTACT EMAIL]";
-/** Replace with the governing law / venue, e.g. "the State of X, USA". */
-export const JURISDICTION_PLACEHOLDER = "[GOVERNING LAW / JURISDICTION]";
+export const LEGAL_CONTACT_EMAIL = "acesuplabs@gmail.com";
 
 export interface LegalSection {
   heading: string;
@@ -31,8 +29,7 @@ export interface LegalContent {
   terms: LegalDoc;
 }
 
-const C = CONTACT_PLACEHOLDER;
-const J = JURISDICTION_PLACEHOLDER;
+const C = LEGAL_CONTACT_EMAIL;
 
 const en: LegalContent = {
   privacy: {
@@ -197,8 +194,8 @@ const en: LegalContent = {
         ],
       },
       {
-        heading: "Governing law and contact",
-        paragraphs: ["These terms are governed by the laws of " + J + ". Questions: " + C + "."],
+        heading: "Contact",
+        paragraphs: ["Questions about these terms: " + C + "."],
       },
     ],
   },
@@ -367,8 +364,8 @@ const es: LegalContent = {
         ],
       },
       {
-        heading: "Ley aplicable y contacto",
-        paragraphs: ["Estos términos se rigen por las leyes de " + J + ". Preguntas: " + C + "."],
+        heading: "Contacto",
+        paragraphs: ["Preguntas sobre estos términos: " + C + "."],
       },
     ],
   },
