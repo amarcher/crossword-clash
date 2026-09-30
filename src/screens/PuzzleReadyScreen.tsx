@@ -42,6 +42,12 @@ export function PuzzleReadyScreen() {
     window.location.href = "/host" + hash;
   }, [game.urlPuzzle]);
 
+  const handleBack = useCallback(() => {
+    // Drop the imported puzzle so the index route doesn't bounce straight back here.
+    game.setUrlPuzzle(null);
+    navigate("/");
+  }, [game, navigate]);
+
   if (!game.urlPuzzle) {
     return <Navigate to="/" replace />;
   }
@@ -53,6 +59,7 @@ export function PuzzleReadyScreen() {
       onPlaySolo={handlePlaySolo}
       onHostGame={handleHostGame}
       onHostOnTV={handleHostOnTV}
+      onBack={handleBack}
     />
   );
 }

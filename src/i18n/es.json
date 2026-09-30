@@ -1,6 +1,7 @@
 {
   "common": {
-    "defaultPlayerName": "Jugador"
+    "defaultPlayerName": "Jugador",
+    "back": "Volver"
   },
   "menu": {
     "friendsHeading": "Juega con amigos",
@@ -41,7 +42,9 @@
     "yourName": "Tu nombre",
     "choosePuzzle": "Elegir crucigrama",
     "createRoom": "Crear sala",
-    "back": "Volver"
+    "back": "Volver",
+    "creating": "Creando sala…",
+    "puzzleLabel": "Crucigrama"
   },
   "importer": {
     "subtitle": "Sube un crucigrama para empezar",
@@ -84,7 +87,8 @@
     "by": "por {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} →, {{downCount}} ↓",
     "hostGame": "Crear partida",
-    "connecting": "Conectando al servidor..."
+    "connecting": "Conectando al servidor...",
+    "friendsHeading": "O juega con amigos"
   },
   "lobby": {
     "shareInvite": "Comparte el código para invitar jugadores",
@@ -115,7 +119,15 @@
     "qrCodeLabel": "Código QR para unirse a la partida",
     "roomClosedTitle": "Sala cerrada",
     "roomClosedNotice": "El anfitrión cerró esta sala.",
-    "roomClosedAction": "Volver al menú"
+    "roomClosedAction": "Volver al menú",
+    "title": "Invita jugadores",
+    "guestTitle": "Ya estás dentro",
+    "guestSubtitle": "La partida empieza cuando el anfitrión esté listo.",
+    "roomCode": "Código de sala",
+    "tapToCopy": "Toca para copiar",
+    "shareInviteAction": "Compartir invitación",
+    "gameSettings": "Ajustes de partida",
+    "qrHint": "O pide a tus amigos que escaneen este código"
   },
   "join": {
     "subtitle": "Ingresa el código de 6 caracteres",
@@ -125,7 +137,10 @@
     "joinGame": "Unirse",
     "joining": "Uniéndose...",
     "back": "Volver",
-    "notFound": "Partida no encontrada o no disponible"
+    "notFound": "Partida no encontrada o no disponible",
+    "title": "Unirse a una partida",
+    "connecting": "Conectando…",
+    "connectFailed": "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo."
   },
   "playing": {
     "by": "por {{author}}",

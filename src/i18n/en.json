@@ -1,6 +1,7 @@
 {
   "common": {
-    "defaultPlayerName": "Player"
+    "defaultPlayerName": "Player",
+    "back": "Back"
   },
   "menu": {
     "friendsHeading": "Play with friends",
@@ -41,7 +42,9 @@
     "yourName": "Your name",
     "choosePuzzle": "Choose Puzzle",
     "createRoom": "Create Room",
-    "back": "Back"
+    "back": "Back",
+    "creating": "Creating room…",
+    "puzzleLabel": "Puzzle"
   },
   "importer": {
     "subtitle": "Upload a crossword puzzle to get started",
@@ -84,7 +87,8 @@
     "by": "by {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} across, {{downCount}} down",
     "hostGame": "Host Game",
-    "connecting": "Connecting to server..."
+    "connecting": "Connecting to server...",
+    "friendsHeading": "Or play with friends"
   },
   "lobby": {
     "shareInvite": "Share the code below to invite players",
@@ -115,7 +119,15 @@
     "qrCodeLabel": "QR code to join game",
     "roomClosedTitle": "Room closed",
     "roomClosedNotice": "The host closed this room.",
-    "roomClosedAction": "Back to menu"
+    "roomClosedAction": "Back to menu",
+    "title": "Invite players",
+    "guestTitle": "You're in",
+    "guestSubtitle": "The game starts when the host is ready.",
+    "roomCode": "Room code",
+    "tapToCopy": "Tap to copy",
+    "shareInviteAction": "Share invite",
+    "gameSettings": "Game settings",
+    "qrHint": "Or have friends scan this code"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",
@@ -125,7 +137,10 @@
     "joinGame": "Join Game",
     "joining": "Joining...",
     "back": "Back",
-    "notFound": "Game not found or not joinable"
+    "notFound": "Game not found or not joinable",
+    "title": "Join a game",
+    "connecting": "Connecting…",
+    "connectFailed": "Couldn't connect. Check your connection and try again."
   },
   "playing": {
     "by": "by {{author}}",

@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Title } from "../Title";
+import { Check, Tv, Users } from "lucide-react";
+import { FlowPage } from "../Flow";
 import { AdSlot } from "../AdSlot";
+import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../ui";
 import type { Puzzle } from "../../types/puzzle";
 
 interface PuzzleReadyProps {
@@ -10,7 +12,9 @@ interface PuzzleReadyProps {
   onHostOnTV: () => void;
   /** When false, only show Play Solo (e.g. no Supabase connection) */
   showHostOptions: boolean;
-  /** Dark theme variant for HostApp */
+  /** Optional back affordance (returns to the menu). */
+  onBack?: () => void;
+  /** Kept for API compatibility; the light theme is used everywhere now. */
   darkMode?: boolean;
 }
 
@@ -20,83 +24,69 @@ export function PuzzleReady({
   onHostGame,
   onHostOnTV,
   showHostOptions,
-  darkMode = false,
+  onBack,
 }: PuzzleReadyProps) {
   const { t } = useTranslation();
   const acrossCount = puzzle.clues.filter((c) => c.direction === "across").length;
   const downCount = puzzle.clues.filter((c) => c.direction === "down").length;
 
-  const bg = darkMode ? "bg-neutral-900" : "crossword-bg";
-  const subtitleColor = darkMode ? "text-neutral-400" : "text-neutral-500";
-  const metaColor = darkMode ? "text-neutral-300" : "text-neutral-700";
-  const badgeClass = darkMode
-    ? "bg-emerald-950 border-emerald-800 text-emerald-400"
-    : "bg-emerald-50 border-emerald-200 text-emerald-700";
-  const buttonSubtitleClass = darkMode ? "text-neutral-500" : "text-neutral-400";
-
   return (
-    <div className={`flex flex-col items-center justify-center h-dvh ${bg} p-8`}>
-      <Title variant={darkMode ? "dark" : "light"} className="mb-4" />
+    <FlowPage
+      wide
+      onBack={onBack}
+      backLabel={t("common.back")}
+      eyebrow={
+        // First thing a bookmarklet import shows — confirm success explicitly
+        // rather than silently landing on a puzzle summary.
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
+          <Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+          {t("puzzleReady.importedBadge")}
+        </span>
+      }
+      title={puzzle.title}
+      subtitle={puzzle.author ? t("puzzleReady.by", { author: puzzle.author }) : undefined}
+    >
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <Card className="flex items-center gap-4 p-4 lg:flex-col lg:p-6">
+          <MiniGridThumb puzzle={puzzle} className="w-24 shrink-0 lg:w-56" />
+          <div className="min-w-0 lg:text-center">
+            <p className="text-sm text-muted tabular-nums">
+              {t("puzzleReady.dimensions", { width: puzzle.width, height: puzzle.height, acrossCount, downCount })}
+            </p>
+            {puzzle.source?.provider === "nyt" && <p className="mt-2 text-sm text-muted">{t("nytImport.sharing")}</p>}
+          </div>
+        </Card>
 
-      {/* First thing a bookmarklet import shows — confirm success explicitly
-          rather than silently landing on a puzzle summary. */}
-      <div
-        className={`mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}`}
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M2 6.5L4.5 9L10 3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        {t('puzzleReady.importedBadge')}
-      </div>
+        <div className="grid gap-5">
+          <Button size="lg" block onClick={onPlaySolo}>
+            {t("menu.playSolo")}
+          </Button>
 
-      <div className="text-center mb-6">
-        <h2 className={`text-xl font-bold ${metaColor}`}>{puzzle.title}</h2>
-        {puzzle.author && (
-          <p className={`text-sm ${subtitleColor} mt-1`}>{t('puzzleReady.by', { author: puzzle.author })}</p>
-        )}
-        <p className={`text-sm ${subtitleColor} mt-2`}>
-          {t('puzzleReady.dimensions', { width: puzzle.width, height: puzzle.height, acrossCount, downCount })}
-        </p>
+          {showHostOptions && (
+            <section className="grid gap-3">
+              <Eyebrow as="h2" className="px-1">{t("puzzleReady.friendsHeading")}</Eyebrow>
+              <ListGroup>
+                <ListRow
+                  icon={Users}
+                  title={t("menu.hostAsPlayer")}
+                  subtitle={t("menu.hostAsPlayerSubtitle")}
+                  onClick={onHostGame}
+                />
+                <ListRow
+                  icon={Tv}
+                  tone="neutral"
+                  title={t("menu.hostAsTV")}
+                  subtitle={t("menu.hostAsTVSubtitle")}
+                  onClick={onHostOnTV}
+                />
+              </ListGroup>
+            </section>
+          )}
+        </div>
       </div>
-
-      {puzzle.source?.provider === "nyt" && <p className={`mb-4 max-w-sm text-center text-sm ${subtitleColor}`}>{t("nytImport.sharing")}</p>}
-
-      <div className="flex flex-col gap-3 w-full max-w-xs">
-        {showHostOptions && (
-          <>
-            <button
-              onClick={onHostGame}
-              className={`px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-900" : ""}`}
-            >
-              <span className="block leading-tight">{t('menu.hostAsPlayer')}</span>
-              <span className={`block text-xs font-normal mt-0.5 ${darkMode ? "text-blue-100/80" : "text-blue-50/90"}`}>
-                {t('menu.hostAsPlayerSubtitle')}
-              </span>
-            </button>
-            <button
-              onClick={onHostOnTV}
-              className={`px-6 py-3 rounded-lg font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-900" : ""}`}
-            >
-              <span className="block leading-tight">{t('menu.hostAsTV')}</span>
-              <span className={`block text-xs font-normal mt-0.5 ${buttonSubtitleClass}`}>
-                {t('menu.hostAsTVSubtitle')}
-              </span>
-            </button>
-          </>
-        )}
-        <button
-          onClick={onPlaySolo}
-          className={`px-6 py-3 rounded-lg font-semibold text-neutral-600 border-2 border-neutral-300 hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${darkMode ? "focus-visible:ring-offset-neutral-900" : ""}`}
-        >
-          <span className="block leading-tight">{t('menu.playSolo')}</span>
-          <span className={`block text-xs font-normal mt-0.5 ${buttonSubtitleClass}`}>
-            {t('menu.playSoloSubtitle')}
-          </span>
-        </button>
+      <div className="mt-6 flex justify-center">
+        <AdSlot placement="puzzle-ready-bottom" />
       </div>
-      <div className="mt-4">
-        <AdSlot placement="puzzle-ready-bottom" darkMode={darkMode} />
-      </div>
-    </div>
+    </FlowPage>
   );
 }

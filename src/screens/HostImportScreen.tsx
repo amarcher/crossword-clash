@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { PuzzleImporter } from "../components/PuzzleImporter";
+import { BackButton } from "../components/Flow";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -13,6 +15,7 @@ import { tStatic } from "../i18n/i18n";
 import type { Puzzle } from "../types/puzzle";
 
 export function HostImportScreen() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
@@ -54,5 +57,15 @@ export function HostImportScreen() {
     [game, user, mp, navigate],
   );
 
-  return <PuzzleImporter onPuzzleLoaded={handleHostPuzzleLoaded} />;
+  return (
+    <>
+      {/* Same chevron back pattern as the other host flow screens; the importer below owns its own page. */}
+      <div className="crossword-bg px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="mx-auto flex h-14 w-full max-w-3xl items-center">
+          <BackButton onClick={() => navigate("/host-game/name")} label={t("hostName.back")} />
+        </div>
+      </div>
+      <PuzzleImporter onPuzzleLoaded={handleHostPuzzleLoaded} />
+    </>
+  );
 }
