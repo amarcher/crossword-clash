@@ -490,7 +490,7 @@ export function HostLayout() {
     if (gameId) {
       navigate(`/host/spectate/${gameId}`);
     }
-  }, [multiplayer, wrongAnswerTimeout, gameId, navigate]);
+  }, [multiplayer, wrongAnswerTimeout, gameId, navigate, tts.narratorEngine]);
 
   const handleCloseRoom = useCallback(async () => {
     const ok = await confirm({

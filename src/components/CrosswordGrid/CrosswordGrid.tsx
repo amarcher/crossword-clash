@@ -175,7 +175,7 @@ export function CrosswordGrid({
       onCellClick(row, col);
       inputRef.current?.focus();
     },
-    [onCellClick],
+    [onCellClick, inputRef],
   );
 
   const handleKeyDown = useCallback(

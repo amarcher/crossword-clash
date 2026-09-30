@@ -64,7 +64,8 @@ function entries(grid) {
     let c = 0;
     while (c < W) {
       if (grid[r][c] === "#") { c++; continue; }
-      let s = c, word = "";
+      const s = c;
+      let word = "";
       while (c < W && grid[r][c] !== "#") { word += grid[r][c]; c++; }
       out.push({ dir: "A", r, c: s, word });
     }
@@ -73,7 +74,8 @@ function entries(grid) {
     let r = 0;
     while (r < H) {
       if (grid[r][c] === "#") { r++; continue; }
-      let s = r, word = "";
+      const s = r;
+      let word = "";
       while (r < H && grid[r][c] !== "#") { word += grid[r][c]; r++; }
       out.push({ dir: "D", r: s, c, word });
     }
