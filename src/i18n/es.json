@@ -291,6 +291,15 @@
     "tvHostViewHint": "Esta pantalla se convierte en el tablero compartido — tus amigos se unen y juegan desde su propio teléfono.",
     "roomCode": "Código de sala"
   },
+  "tv": {
+    "joinAt": "Únete en crosswordclash.com",
+    "joinOnPhone": "Únete desde tu móvil",
+    "orScan": "o escanea el código",
+    "players": "Jugadores",
+    "settings": "Ajustes de la sala",
+    "playersNeeded": "Hacen falta dos jugadores para empezar",
+    "hostHint": "Todos juegan desde su propio móvil. Esta pantalla es el tablero compartido."
+  },
   "grid": {
     "crosswordInput": "Entrada del crucigrama"
   },

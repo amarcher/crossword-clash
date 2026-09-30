@@ -291,6 +291,15 @@
     "tvHostViewHint": "This screen becomes the shared game board — friends join and play from their own phones.",
     "roomCode": "Room Code"
   },
+  "tv": {
+    "joinAt": "Join at crosswordclash.com",
+    "joinOnPhone": "Join on your phone",
+    "orScan": "or scan the code",
+    "players": "Players",
+    "settings": "Room settings",
+    "playersNeeded": "Two players needed to start",
+    "hostHint": "Everyone plays from their own phone. This screen is the shared board."
+  },
   "grid": {
     "crosswordInput": "Crossword input"
   },

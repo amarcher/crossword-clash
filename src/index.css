@@ -126,18 +126,6 @@
 .puzzle-key:disabled { opacity: .45; }
 .native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
 .native-clue-sheet ul { overscroll-behavior: contain; }
-.spectator-layout { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-.native-app .spectator-layout { height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
-.spectator-body { display: flex; flex: 1; min-height: 0; gap: 16px; padding: 0 16px 16px; }
-.spectator-sidebar { width: clamp(280px, 32vw, 480px); display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
-.spectator-clues { flex: 1; min-height: 160px; overflow: hidden; }
-.spectator-clues li { font-size: clamp(14px, 1.1vw, 19px); line-height: 1.4; padding-block: 3px; }
-@media (max-width: 700px) {
-  .spectator-body { flex-direction: column; overflow-y: auto; }
-  .spectator-body > .native-grid-slot { flex: none; height: 65vw; }
-  .spectator-sidebar { width: 100%; overflow: visible; }
-  .spectator-clues { height: 280px; flex: none; }
-}
 @media (min-width: 768px) {
   .native-game-clues { display: block; width: clamp(220px, 28vw, 380px); padding: 12px; min-height: 0; overflow: hidden; }
 }
@@ -361,4 +349,88 @@ select,
   .lf-fade-in, .lf-pop-in { animation: none; }
   .lf-toast-in { animation: none; }
   .lf-toast-out { animation-duration: 1ms; }
+}
+
+/* TV facelift */
+.tv-stage {
+  --u: min(1vw, 1.7778vh);
+  background: var(--color-stage);
+  color: #fff;
+  height: 100dvh;
+  overflow: hidden;
+  font-size: max(16px, calc(var(--u) * 1.1));
+}
+.tv-stage-scroll { min-height: 100dvh; height: auto; overflow: auto; }
+.tv-t-sm { font-size: max(14px, calc(var(--u) * 0.9)); }
+.tv-t-md { font-size: max(17px, calc(var(--u) * 1.15)); }
+.tv-t-lg { font-size: max(22px, calc(var(--u) * 1.6)); }
+.tv-t-xl { font-size: max(30px, calc(var(--u) * 2.4)); }
+.tv-t-2xl { font-size: max(40px, calc(var(--u) * 3.6)); }
+.tv-code { font-size: clamp(56px, calc(var(--u) * 9.5), 420px); line-height: 1; letter-spacing: 0.06em; }
+.tv-code-sm { font-size: max(30px, calc(var(--u) * 2.6)); line-height: 1; letter-spacing: 0.08em; }
+.tv-gap { gap: calc(var(--u) * 1.5); }
+.tv-pad { padding: calc(var(--u) * 1.6); }
+.tv-card {
+  background: var(--color-stage-raised);
+  border: 1px solid var(--color-stage-line);
+  border-radius: calc(var(--u) * 1.2);
+}
+.tv-lobby {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 2.2);
+  height: 100dvh;
+}
+.tv-lobby-join {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgb(58 107 240 / 0.28), transparent 60%),
+    radial-gradient(80% 60% at 100% 100%, rgb(245 189 44 / 0.10), transparent 60%),
+    var(--color-stage-raised);
+}
+.tv-main {
+  display: flex;
+  height: 100dvh;
+  gap: calc(var(--u) * 1.6);
+  padding: calc(var(--u) * 1.6);
+}
+.tv-grid-slot {
+  container-type: size;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --native-grid-size: min(100cqw, 100cqh);
+}
+.tv-side {
+  width: clamp(360px, 34vw, 1500px);
+  flex: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.1);
+}
+.tv-clue { font-size: max(14px, calc(var(--u) * 1.0)); line-height: 1.3; }
+.tv-clue-list { scrollbar-width: none; }
+.tv-clue-list::-webkit-scrollbar { display: none; }
+.tv-pop { animation: tv-pop 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+@keyframes tv-pop { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
+.tv-pulse { animation: tv-pulse 1.6s ease-in-out infinite; }
+@keyframes tv-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tv-pop, .tv-pulse { animation: none; }
+}
+@media (max-width: 700px) {
+  .tv-stage { --u: 3.2vw; overflow-x: hidden; }
+  .tv-t-xl { font-size: 22px; }
+  .tv-t-2xl { font-size: 30px; }
+  .tv-stage { height: auto; min-height: 100dvh; overflow: visible; overflow-x: clip; }
+  .tv-lobby { display: flex; flex-direction: column; height: auto; }
+  .tv-main { flex-direction: column; height: auto; }
+  .tv-grid-slot { flex: none; height: 92vw; }
+  .tv-side { width: 100%; }
+  .tv-clues-box { height: 320px; flex: none !important; }
+  .tv-code { font-size: 15vw; }
 }

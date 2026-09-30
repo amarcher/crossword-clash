@@ -1,32 +1,30 @@
 import type { ReactNode } from "react";
-import { Title } from "../Title";
+import { TVBrand } from "./TVBrand";
 
 interface TVLayoutProps {
   grid: ReactNode;
+  /** Persistent room-code card (kept visible so late joiners can join). */
   sidebar: ReactNode;
   scoreboard: ReactNode;
   clues?: ReactNode;
   controls?: ReactNode;
 }
 
+/** Spectate composition: the grid takes all the room it can; scoreboard + clues live in a right rail. */
 export function TVLayout({ grid, sidebar, scoreboard, clues, controls }: TVLayoutProps) {
   return (
-    <div className="h-dvh bg-neutral-900 flex flex-col overflow-hidden">
-      <main className="flex-1 flex flex-row gap-6 p-6 min-h-0 items-start justify-center">
-        <div className="w-64 shrink-0 flex flex-col gap-4 self-stretch min-h-0">
-          <Title variant="dark" />
-          {scoreboard}
-          {sidebar}
-          {controls}
-        </div>
-        <div className="shrink-0" style={{ "--grid-h-offset": "3rem", "--grid-w-offset": clues ? "46rem" : "22rem" } as React.CSSProperties}>
-          {grid}
-        </div>
-        {clues && (
-          <div className="w-96 shrink-0 self-stretch min-h-0 overflow-hidden">
-            {clues}
+    <div className="tv-stage">
+      <main className="tv-main">
+        <div className="tv-grid-slot">{grid}</div>
+        <div className="tv-side">
+          <div className="flex shrink-0 items-center justify-between gap-3">
+            <TVBrand height="calc(var(--u) * 2.8)" />
+            {controls}
           </div>
-        )}
+          <div className="shrink-0">{sidebar}</div>
+          <div className="shrink-0">{scoreboard}</div>
+          {clues && <div className="tv-clues-box tv-card min-h-0 flex-1 overflow-hidden" style={{ padding: "calc(var(--u) * 1)" }}>{clues}</div>}
+        </div>
       </main>
     </div>
   );

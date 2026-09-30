@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { Settings, Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SpeechSettings } from "../../hooks/useSpeechSettings";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -10,19 +11,17 @@ type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSet
 export function TTSMuteButton({ muted, toggleMute, openSettings }: TTSMuteButtonProps) {
   const { t } = useTranslation();
 
+  const btn =
+    "tv-t-sm inline-flex min-h-11 items-center gap-2 rounded-xl border border-stage-line bg-stage-raised px-4 py-2 font-semibold text-slate-100 transition-colors hover:bg-stage-line active:bg-stage-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
+
   return (
-    <div className="bg-neutral-800 rounded-xl p-3 flex items-center gap-2">
-      <button
-        onClick={toggleMute}
-        className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
-      >
+    <div className="flex items-center gap-2">
+      <button onClick={toggleMute} className={btn}>
+        {muted ? <VolumeX className="size-[1.3em]" aria-hidden /> : <Volume2 className="size-[1.3em]" aria-hidden />}
         {muted ? t('tts.unmute') : t('tts.mute')}
       </button>
-      <button
-        onClick={openSettings}
-        aria-label={t('tts.settingsAriaLabel')}
-        className="text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
-      >
+      <button onClick={openSettings} aria-label={t('tts.settingsAriaLabel')} className={btn}>
+        <Settings className="size-[1.3em]" aria-hidden />
         {t('tts.settings')}
       </button>
     </div>
@@ -104,7 +103,7 @@ export function TTSSettingsModal({
 
       <div
         ref={modalRef}
-        className="relative z-20 w-full max-w-sm rounded-2xl bg-neutral-800 shadow-2xl p-6"
+        className="relative z-20 w-full max-w-sm rounded-2xl border border-stage-line bg-stage-raised shadow-overlay p-6 text-white"
         role="dialog"
         aria-modal="true"
         aria-label={t('tts.voiceSettings')}
@@ -114,7 +113,7 @@ export function TTSSettingsModal({
         {/* Narrator engine selector — only shown when ElevenLabs gate is set */}
         {elevenLabsAvailable && (
           <label className="block mb-4">
-            <span className="text-sm text-neutral-400 block mb-1">{t('tts.narratorLabel')}</span>
+            <span className="text-sm text-slate-400 block mb-1">{t('tts.narratorLabel')}</span>
             <select
               value={narratorEngine ?? ""}
               onChange={(e) => {
@@ -123,7 +122,7 @@ export function TTSSettingsModal({
                 if (next) track("narrator_enabled", { engine: next });
                 setNarratorEngine(next);
               }}
-              className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <option value="">{t('tts.narratorNone')}</option>
               <option value="elevenlabs-agent">{t('tts.narratorElevenLabs')}</option>
@@ -135,7 +134,7 @@ export function TTSSettingsModal({
 
         {/* Narrator description */}
         {hasNarrator && elevenLabsAvailable && (
-          <p className="text-xs text-neutral-400 mb-4">
+          <p className="text-xs text-slate-400 mb-4">
             {narratorEngine === "elevenlabs-agent" && t('tts.narratorElevenLabsDesc')}
             {narratorEngine === "openai-agent" && t('tts.narratorOpenAIDesc')}
             {narratorEngine === "claude" && t('tts.narratorClaudeDesc')}
@@ -150,13 +149,13 @@ export function TTSSettingsModal({
               type="checkbox"
               checked={spokenEvents}
               onChange={(e) => setSpokenEvents(e.target.checked)}
-              className="mt-1 accent-blue-500"
+              className="mt-1 accent-brand-500"
             />
             <span>
-              <span className="text-sm text-neutral-200 block">
+              <span className="text-sm text-slate-100 block">
                 {t("tts.spokenEvents")}
               </span>
-              <span className="text-xs text-neutral-400 block">
+              <span className="text-xs text-slate-400 block">
                 {t("tts.spokenEventsHint")}
               </span>
             </span>
@@ -169,11 +168,11 @@ export function TTSSettingsModal({
             {/* Engine toggle — only shown when ElevenLabs gate is set and no agent narrator (Claude narrator also uses TTS) */}
             {elevenLabsAvailable && (!hasNarrator || narratorEngine === "claude") && (
               <label className="block mb-4">
-                <span className="text-sm text-neutral-400 block mb-1">{t('tts.engineLabel')}</span>
+                <span className="text-sm text-slate-400 block mb-1">{t('tts.engineLabel')}</span>
                 <select
                   value={engine}
                   onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs")}
-                  className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
                 >
                   <option value="browser">{t('tts.engineBrowser')}</option>
                   <option value="elevenlabs">{t('tts.engineElevenLabs')}</option>
@@ -184,11 +183,11 @@ export function TTSSettingsModal({
             {engine === "elevenlabs" && elevenLabsAvailable ? (
               /* ElevenLabs voice select */
               <label className="block mb-4">
-                <span className="text-sm text-neutral-400 block mb-1">{t('tts.elevenLabsVoice')}</span>
+                <span className="text-sm text-slate-400 block mb-1">{t('tts.elevenLabsVoice')}</span>
                 <select
                   value={elevenLabsVoiceId ?? ""}
                   onChange={(e) => setElevenLabsVoiceId(e.target.value || null)}
-                  className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
                 >
                   <option value="">Rachel (default)</option>
                   {elevenLabsVoices.map((v) => (
@@ -202,11 +201,11 @@ export function TTSSettingsModal({
               <>
                 {/* Browser voice select */}
                 <label className="block mb-4">
-                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.voice')}</span>
+                  <span className="text-sm text-slate-400 block mb-1">{t('tts.voice')}</span>
                   <select
                     value={voiceName ?? ""}
                     onChange={(e) => setVoiceName(e.target.value || null)}
-                    className="w-full rounded-lg bg-neutral-700 text-neutral-200 text-sm px-3 py-2 border border-neutral-600 focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
                   >
                     <option value="">{t('tts.systemDefault')}</option>
                     {[...groupedVoices.entries()].map(([lang, langVoices]) => (
@@ -223,7 +222,7 @@ export function TTSSettingsModal({
 
                 {/* Rate slider */}
                 <label className="block mb-4">
-                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.rate', { value: rate.toFixed(1) })}</span>
+                  <span className="text-sm text-slate-400 block mb-1">{t('tts.rate', { value: rate.toFixed(1) })}</span>
                   <input
                     type="range"
                     min={0.5}
@@ -231,13 +230,13 @@ export function TTSSettingsModal({
                     step={0.1}
                     value={rate}
                     onChange={(e) => setRate(parseFloat(e.target.value))}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-brand-500"
                   />
                 </label>
 
                 {/* Pitch slider */}
                 <label className="block mb-4">
-                  <span className="text-sm text-neutral-400 block mb-1">{t('tts.pitch', { value: pitch.toFixed(1) })}</span>
+                  <span className="text-sm text-slate-400 block mb-1">{t('tts.pitch', { value: pitch.toFixed(1) })}</span>
                   <input
                     type="range"
                     min={0.5}
@@ -245,7 +244,7 @@ export function TTSSettingsModal({
                     step={0.1}
                     value={pitch}
                     onChange={(e) => setPitch(parseFloat(e.target.value))}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-brand-500"
                   />
                 </label>
               </>
@@ -259,14 +258,14 @@ export function TTSSettingsModal({
           {narratorEngine !== "elevenlabs-agent" && narratorEngine !== "openai-agent" && (
             <button
               onClick={() => speak(t('tts.testText'))}
-              className="flex-1 text-sm px-3 py-2 rounded-lg text-neutral-300 border border-neutral-600 hover:bg-neutral-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
+              className="flex-1 text-sm px-3 py-2 rounded-lg text-slate-200 border border-stage-line hover:bg-stage transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stage-raised"
             >
               {t('tts.testVoice')}
             </button>
           )}
           <button
             onClick={closeSettings}
-            className="flex-1 text-sm px-3 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-800"
+            className="flex-1 text-sm px-3 py-2 rounded-lg font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stage-raised"
           >
             {t('tts.done')}
           </button>
