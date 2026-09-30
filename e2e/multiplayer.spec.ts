@@ -32,7 +32,7 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     await host.getByRole("textbox", { name: /Your name/i }).fill("E2E Host");
     await host.getByRole("button", { name: /Create Room/i }).click();
 
-    const codeButton = host.getByRole("button", { name: /Click to copy/i });
+    const codeButton = host.getByRole("button", { name: /copy/i }).first();
     await expect(codeButton).toBeVisible({ timeout: 20_000 });
     const code = ((await codeButton.textContent()) ?? "").match(/[A-Z0-9]{6}/)?.[0];
     expect(code, "lobby should show a 6-char share code").toBeTruthy();

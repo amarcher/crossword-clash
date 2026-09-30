@@ -10,7 +10,7 @@ interface StoredCell {
 // Runs with or without Supabase env vars — the daily mini is bundled data.
 test("solo: complete today's mini", async ({ page }) => {
   await page.goto("/menu");
-  await page.getByRole("button", { name: /Play Today's Mini/i }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page).toHaveURL(/\/solo\/play/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 

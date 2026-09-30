@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
@@ -25,12 +26,19 @@ const STORAGE_KEY = "crossword-clash-solo";
  */
 function IndexRedirect() {
   const game = useGame();
+  // Only a puzzle present when "/" first rendered (the bookmarklet/share hash,
+  // consumed by GameProvider init) routes to /puzzle-ready. At "/" this
+  // component also renders the menu, and it stays mounted while a lazy route
+  // loads — so a puzzle handed to the host flow afterwards (e.g. "Race
+  // friends") must not be hijacked into /puzzle-ready.
+  const [landingPuzzle] = useState(() => game.urlPuzzle);
+  const [landingChallenge] = useState(() => game.urlChallenge);
 
   // Check for URL puzzle (hash already consumed by GameProvider init)
-  if (game.urlPuzzle) {
+  if (landingPuzzle && game.urlPuzzle) {
     // A challenge deep link carries the challenger's name + ghost time alongside
     // the puzzle — land on the accept screen instead of the plain mode picker.
-    if (game.urlChallenge) {
+    if (landingChallenge) {
       return <Navigate to="/challenge" replace />;
     }
     return <Navigate to="/puzzle-ready" replace />;
