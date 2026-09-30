@@ -63,6 +63,8 @@ Agent worktrees live under `.claude/`; run `pnpm exec vitest run --dir src` to t
 ```
 src/
   components/   UI (grid, clue panel, lobby, scoreboard, layouts, narrator controls)
+  components/ui shared design-system primitives (Button, Card, ListRow, ...)
+  screens/      one component per route
   hooks/        usePuzzle (game reducer), useMultiplayer, useNarrator, ...
   lib/          pure logic, Supabase services, narrator backends
   i18n/         English and Spanish strings
@@ -74,10 +76,12 @@ scripts/        build scripts and the daily-mini generator
 supabase/       migrations and edge functions
 docs/           roadmap notes and design docs
 fixtures/       sample puzzle files for manual testing
+e2e/            Playwright end-to-end tests
+ios/ android/   Capacitor native projects
 agent_configs/  ElevenLabs CLI project files (agent definitions)
 ```
 
-See `CLAUDE.md` for architecture notes and conventions.
+See `CLAUDE.md` for architecture notes and conventions, and [docs/DESIGN.md](docs/DESIGN.md) for the design system (tokens, primitives, UI rules).
 
 ## Supabase setup
 
@@ -106,16 +110,27 @@ Optional client variables (ads, affiliate link) are listed in `.env.example`.
 
 ## Mobile app
 
-The iOS and Android apps wrap the web build with Capacitor. Native project directories, sync scripts and the TestFlight release notes are documented alongside the mobile work in the repository docs.
-<!-- TODO: fill in exact `pnpm mobile:*` commands once the native branch is merged. -->
+The iOS and Android apps (`com.crosswordclash.app`) wrap the web build with Capacitor 8. Mobile builds omit web analytics, AdSense and error reporting, and add a native crossword keyboard and subscriber-directed NYT import.
+
+Prerequisites: Xcode, and Android Studio with Java 21 and Android SDK 36.
+
+```bash
+pnpm mobile:sync      # build the NYT extractor + a mobile-mode web build, then copy into ios/ and android/
+pnpm mobile:ios       # open the Xcode project
+pnpm mobile:android   # open the Android Studio project
+```
+
+Run `mobile:sync` after changing shared source; don't copy a plain web build into the native projects. See [docs/NATIVE-NYT-IMPORT.md](docs/NATIVE-NYT-IMPORT.md) for how the NYT import works and what data it touches, and [docs/testflight/README.md](docs/testflight/README.md) for the iOS release process.
 
 ## Testing
 
 ```bash
-pnpm test
+pnpm test     # unit + component tests (Vitest)
+pnpm lint     # ESLint (typescript-eslint + react-hooks)
+pnpm e2e      # Playwright: solo solve; two-browser multiplayer race when Supabase is configured
 ```
 
-Unit tests cover the reducer, grid utilities, puzzle parsing, session persistence, routing, i18n, narrator events and the main components. Component tests use jsdom per file.
+CI (`.github/workflows/ci.yml`) runs lint, build, unit tests and the solo E2E test on every pull request. Unit tests cover the reducer, grid utilities, puzzle parsing, session persistence, routing, i18n, narrator events and the main components. Component tests use jsdom per file.
 
 ## Deployment
 
