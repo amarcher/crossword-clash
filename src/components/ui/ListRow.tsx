@@ -7,6 +7,8 @@ interface ListRowProps {
   title: ReactNode;
   subtitle?: ReactNode;
   to?: string;
+  /** Plain anchor for non-router pages (e.g. static /install-bookmarklet). */
+  href?: string;
   onClick?: () => void;
   disabled?: boolean;
   tone?: "brand" | "gold" | "neutral";
@@ -22,7 +24,7 @@ const ROW =
   "group flex w-full items-center gap-3.5 px-4 py-3 min-h-16 text-left transition-colors hover:bg-surface-sunken/70 active:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 aria-disabled:pointer-events-none aria-disabled:opacity-45";
 
 /** One tappable row inside a ListGroup: icon tile, title + subtitle, chevron. */
-export function ListRow({ icon: Icon, title, subtitle, to, onClick, disabled, tone = "brand" }: ListRowProps) {
+export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabled, tone = "brand" }: ListRowProps) {
   const body = (
     <>
       <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${TONES[tone]}`}>
@@ -35,6 +37,13 @@ export function ListRow({ icon: Icon, title, subtitle, to, onClick, disabled, to
       <ChevronRight className="size-4 shrink-0 text-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </>
   );
+  if (href) {
+    return (
+      <a href={href} onClick={onClick} className={ROW}>
+        {body}
+      </a>
+    );
+  }
   if (to) {
     return (
       <Link to={to} onClick={onClick} aria-disabled={disabled || undefined} className={ROW}>

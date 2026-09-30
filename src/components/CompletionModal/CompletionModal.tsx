@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Flame, Trophy } from "lucide-react";
+import { Flame, Newspaper, Trophy } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -47,6 +47,12 @@ interface CompletionModalProps {
   previousBest?: number | null;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
+  /**
+   * Present when the finished puzzle came from the NYT bookmarklet: shows the
+   * "same time tomorrow" nudge and, when > 0, the NYT streak. This is the
+   * bookmarklet's return loop — the whole reason it is worth installing.
+   */
+  nytHook?: { streak: number };
   /**
    * Multiplayer: the shared race time in whole seconds (host start → grid
    * complete). Shown as the headline time and stamped on the share card.
@@ -116,6 +122,7 @@ export function CompletionModal({
   isNewBest,
   previousBest,
   streakCount,
+  nytHook,
   raceSeconds,
   onViewLeaderboard,
   dailySign,
@@ -399,6 +406,25 @@ export function CompletionModal({
                 <Flame className="size-4 text-gold-500" aria-hidden="true" />
                 {t('soloStats.streakDays', { count: streakCount })}
               </p>
+            )}
+
+            {nytHook && (
+              <div
+                data-testid="nyt-hook"
+                className={`mb-5 flex items-start gap-3 rounded-2xl px-4 py-3 text-left text-sm ${
+                  darkMode ? "bg-white/5 text-white/80 ring-1 ring-stage-line" : "bg-surface-sunken text-ink-soft"
+                }`}
+              >
+                <Newspaper className={`mt-0.5 size-4 shrink-0 ${darkMode ? "text-white/50" : "text-subtle"}`} aria-hidden="true" />
+                <div>
+                  {nytHook.streak > 0 && (
+                    <p className={`font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
+                      {t('completion.nytStreak', { count: nytHook.streak })}
+                    </p>
+                  )}
+                  <p className={nytHook.streak > 0 ? "mt-0.5" : ""}>{t('completion.nytTomorrow')}</p>
+                </div>
+              </div>
             )}
 
             {dailySign && (

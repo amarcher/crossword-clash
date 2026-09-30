@@ -76,6 +76,9 @@ export function puzzleToTransferFormat(puzzle: Puzzle): TransferPuzzle {
     grid,
     gridnums,
     ...(hasCircles ? { circles } : {}),
+    // Carried through share/challenge/TV links so a friend who receives an
+    // NYT puzzle also sees the bookmarklet hook.
+    ...(puzzle.origin ? { origin: puzzle.origin } : {}),
     clues: {
       across: acrossClues.map((c) => `${c.number}. ${c.text}`),
       down: downClues.map((c) => `${c.number}. ${c.text}`),
@@ -128,6 +131,17 @@ function decompressPuzzle(compressed: string): Puzzle | null {
 }
 
 /**
+ * The postMessage and clipboard channels are used ONLY by the NYT bookmarklet
+ * (shared/challenge links travel in the URL hash instead), so a puzzle that
+ * arrives on them is a bookmarklet import even when it came from an older
+ * installed copy that predates the `origin` field in the payload.
+ */
+function stampBookmarkletOrigin(puzzle: Puzzle | null): Puzzle | null {
+  if (puzzle && !puzzle.origin) puzzle.origin = "nyt-bookmarklet";
+  return puzzle;
+}
+
+/**
  * Listen for puzzle data via postMessage from the bookmarklet (cross-origin).
  * Sends a "ready" signal to window.opener, then waits for puzzle data.
  * Resolves with the Puzzle on success, or null on timeout.
@@ -142,7 +156,7 @@ export function listenForImportedPuzzle(timeoutMs = 5000): Promise<Puzzle | null
         resolved = true;
         window.removeEventListener("message", handler);
         clearHash();
-        resolve(decompressPuzzle(event.data.puzzle));
+        resolve(stampBookmarkletOrigin(decompressPuzzle(event.data.puzzle)));
       }
     };
 
@@ -176,7 +190,7 @@ export async function readPuzzleFromClipboard(): Promise<Puzzle | null> {
   try {
     const text = await navigator.clipboard.readText();
     if (!text) return null;
-    return decompressPuzzle(text.trim());
+    return stampBookmarkletOrigin(decompressPuzzle(text.trim()));
   } catch {
     return null;
   }

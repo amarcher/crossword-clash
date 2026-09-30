@@ -28,6 +28,12 @@ export interface SoloStats {
   /** puzzleIdentity → best finish time in whole seconds. */
   bestTimes: Record<string, number>;
   streak: StreakState;
+  /**
+   * Consecutive days on which an NYT-bookmarklet puzzle was finished (solo or
+   * multiplayer). Separate from `streak` (daily mini) so the bookmarklet has
+   * its own return loop. Missing in stats saved before it existed.
+   */
+  nytStreak: StreakState;
 }
 
 export interface SoloCompletionResult {
@@ -57,6 +63,7 @@ export const EMPTY_STATS: SoloStats = {
   version: 1,
   bestTimes: {},
   streak: { ...EMPTY_STREAK },
+  nytStreak: { ...EMPTY_STREAK },
 };
 
 // --- Pure: time formatting ---
@@ -236,17 +243,24 @@ function writeJSON(key: string, value: unknown): void {
   }
 }
 
+function sanitizeStreak(raw: Partial<StreakState> | undefined): StreakState {
+  return {
+    current: typeof raw?.current === "number" ? raw.current : 0,
+    longest: typeof raw?.longest === "number" ? raw.longest : 0,
+    lastPlayedDay: typeof raw?.lastPlayedDay === "string" ? raw.lastPlayedDay : null,
+  };
+}
+
 export function loadSoloStats(): SoloStats {
   const raw = readJSON<Partial<SoloStats>>(STATS_KEY);
-  if (!raw || typeof raw !== "object") return { version: 1, bestTimes: {}, streak: { ...EMPTY_STREAK } };
+  if (!raw || typeof raw !== "object") {
+    return { version: 1, bestTimes: {}, streak: { ...EMPTY_STREAK }, nytStreak: { ...EMPTY_STREAK } };
+  }
   return {
     version: 1,
     bestTimes: raw.bestTimes && typeof raw.bestTimes === "object" ? raw.bestTimes : {},
-    streak: {
-      current: typeof raw.streak?.current === "number" ? raw.streak.current : 0,
-      longest: typeof raw.streak?.longest === "number" ? raw.streak.longest : 0,
-      lastPlayedDay: typeof raw.streak?.lastPlayedDay === "string" ? raw.streak.lastPlayedDay : null,
-    },
+    streak: sanitizeStreak(raw.streak),
+    nytStreak: sanitizeStreak(raw.nytStreak),
   };
 }
 
@@ -284,7 +298,7 @@ export function recordSoloCompletion(
     finishSeconds,
   );
   const streak = rollStreak(stats.streak, dayKey(now));
-  saveSoloStats({ version: 1, bestTimes, streak });
+  saveSoloStats({ version: 1, bestTimes, streak, nytStreak: stats.nytStreak });
   return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak };
 }
 
@@ -297,6 +311,23 @@ export function recordDailyPlay(now: Date = new Date()): StreakState {
   const streak = rollStreak(stats.streak, dayKey(now));
   saveSoloStats({ ...stats, streak });
   return streak;
+}
+
+/**
+ * Count a finished NYT-bookmarklet puzzle toward the NYT streak (solo or
+ * multiplayer). Same-day repeats are no-ops via rollStreak, so a reload of a
+ * finished puzzle can't double-count.
+ */
+export function recordNytPlay(now: Date = new Date()): StreakState {
+  const stats = loadSoloStats();
+  const nytStreak = rollStreak(stats.nytStreak, dayKey(now));
+  saveSoloStats({ ...stats, nytStreak });
+  return nytStreak;
+}
+
+/** The NYT streak to display right now (0 once a day has been missed). */
+export function getDisplayNytStreak(now: Date = new Date()): number {
+  return effectiveStreak(loadSoloStats().nytStreak, dayKey(now));
 }
 
 /**

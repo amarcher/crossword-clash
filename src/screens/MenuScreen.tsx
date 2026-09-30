@@ -10,7 +10,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { getDailyMini } from "../lib/dailyMinis";
-import { getDisplayStreak } from "../lib/soloStats";
+import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
+import { isDesktopBrowser } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
 
@@ -21,6 +22,10 @@ export function MenuScreen() {
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const disabled = loading;
   const streak = useMemo(() => getDisplayStreak(), []);
+  // Bookmarklet promotion is desktop-only: it needs a bookmarks bar, so on a
+  // phone or tablet the row would be a dead end.
+  const desktop = useMemo(() => isDesktopBrowser(), []);
+  const nytStreak = useMemo(() => getDisplayNytStreak(), []);
 
   // Resolve once per render — deterministic per calendar day.
   const dailyMini = useMemo(() => getDailyMini(), []);
@@ -144,6 +149,17 @@ export function MenuScreen() {
           <section className="grid gap-3">
             <Eyebrow as="h2" className="px-1">{t("menu.soloHeading")}</Eyebrow>
             <ListGroup>
+              {/* NYT bookmarklet — the stickiest thing the app does for
+                  subscribers. Plain <a>: /install-bookmarklet is a static page. */}
+              {desktop && (
+                <ListRow
+                  icon={Newspaper}
+                  href="/install-bookmarklet"
+                  title={nytStreak > 0 ? t("menu.nytTileStreak", { count: nytStreak }) : t("menu.nytTile")}
+                  subtitle={t("menu.nytTileSubtitle")}
+                  onClick={() => track("mode_selected", { mode: "nyt" })}
+                />
+              )}
               <ListRow
                 icon={BookOpen}
                 tone="gold"

@@ -1,5 +1,5 @@
 import { shareOrigin } from "../lib/shareOrigin";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useBeforeUnload } from "../hooks/useBeforeUnload";
@@ -20,7 +20,7 @@ import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
-import { recordDailyPlay, formatDuration } from "../lib/soloStats";
+import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
 import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
@@ -160,6 +160,19 @@ export function MultiplayerPlayScreen() {
     dailySubmittedRef.current = true;
     recordDailyPlay();
   }, [gameStatus, isDaily, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
+
+  // NYT-bookmarklet return loop (mirrors SoloPlayScreen): a finished NYT
+  // puzzle rolls the NYT streak for everyone in the room, including friends
+  // who joined via a share link — the modal then tells them how to get
+  // tomorrow's puzzle themselves.
+  const fromNyt = puzzle?.origin === "nyt-bookmarklet";
+  const [nytStreak, setNytStreak] = useState<number | null>(null);
+  useEffect(() => {
+    if (!fromNyt || nytStreak !== null) return;
+    const finished = isAsync ? myFinishSeconds !== undefined : gameStatus === "completed";
+    if (!finished) return;
+    setNytStreak(recordNytPlay().current);
+  }, [fromNyt, nytStreak, isAsync, myFinishSeconds, gameStatus]);
 
   const handleReset = useCallback(async () => {
     await mp.leaveGame();
@@ -409,6 +422,7 @@ export function MultiplayerPlayScreen() {
         raceSeconds={isAsync ? myFinishSeconds ?? null : raceSeconds}
         raceStandings={raceStandings}
         coop={isCoop}
+        nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
         onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}

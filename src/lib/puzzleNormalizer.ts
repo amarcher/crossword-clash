@@ -1,4 +1,4 @@
-import type { Puzzle, PuzzleCell, PuzzleClue, Direction } from "../types/puzzle";
+import type { Puzzle, PuzzleCell, PuzzleClue, PuzzleOrigin, Direction } from "../types/puzzle";
 import { computeCellNumbers } from "./gridUtils";
 
 type ParserClues = {
@@ -201,6 +201,8 @@ export interface TransferPuzzle {
   circles?: number[];
   clues: { across: string[]; down: string[] };
   answers: { across: string[]; down: string[] };
+  /** Set by the NYT bookmarklet; older installs omit it (see puzzleUrl.ts). */
+  origin?: PuzzleOrigin;
 }
 
 /**
@@ -294,6 +296,8 @@ export function normalizeTransferPuzzle(transfer: TransferPuzzle): Puzzle {
     ...buildTransferClues(clues.across, answers.across, "across"),
     ...buildTransferClues(clues.down, answers.down, "down"),
   ];
+
+  if (transfer.origin === "nyt-bookmarklet") puzzle.origin = transfer.origin;
 
   return puzzle;
 }

@@ -42,6 +42,21 @@ function makePuzzle(): Puzzle {
 
 describe("PuzzleReady", () => {
   afterEach(cleanup);
+
+  it("shows the NYT return-loop hook only for bookmarklet imports", () => {
+    const base = { onPlaySolo: vi.fn(), onHostGame: vi.fn(), onHostOnTV: vi.fn(), showHostOptions: false };
+    const { queryByText, rerender, getByText } = render(<PuzzleReady puzzle={makePuzzle()} {...base} />);
+    expect(getByText("Puzzle imported")).toBeTruthy();
+    expect(queryByText(/click the bookmark again/)).toBeNull();
+
+    rerender(<PuzzleReady puzzle={{ ...makePuzzle(), origin: "nyt-bookmarklet" }} {...base} />);
+    expect(getByText("Imported from NYT")).toBeTruthy();
+    expect(getByText(/click the bookmark again/)).toBeTruthy();
+    expect(queryByText(/NYT streak/)).toBeNull();
+
+    rerender(<PuzzleReady puzzle={{ ...makePuzzle(), origin: "nyt-bookmarklet" }} {...base} nytStreak={5} />);
+    expect(getByText("5-day NYT streak!")).toBeTruthy();
+  });
   it("renders puzzle title and author", () => {
     render(
       <PuzzleReady
