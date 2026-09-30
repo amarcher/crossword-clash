@@ -14,9 +14,9 @@ interface SiteBarProps {
 const LINK =
   "inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg max-sm:min-w-11 max-sm:justify-center text-sm font-semibold text-ink-soft hover:text-brand-700 active:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500";
 const LOGO =
-  "inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-brand-500";
+  "-ml-1 inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-brand-500";
 
-/** Compact top bar for inner pages: back link, logo (home link), optional right slot. */
+/** Top bar for inner pages: logo (home link) on the left; back link + optional right slot on the right. */
 export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps) {
   const backInner = (
     <>
@@ -24,10 +24,18 @@ export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps)
       <span className="max-sm:sr-only">{backLabel}</span>
     </>
   );
-  const logo = <img src="/logo.png" alt="Crossword Clash" className="h-10 w-auto object-contain" />;
+  // The two-row wordmark needs real height to stay legible; 48px keeps each
+  // letter tile readable on phones, 56px from sm up.
+  const logo = <img src="/logo.png" alt="Crossword Clash" className="h-12 w-auto object-contain sm:h-14" />;
   return (
-    <header className="mx-auto grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3">
-      <div className="flex justify-start">
+    <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+      {plain ? (
+        <a href="/" className={LOGO}>{logo}</a>
+      ) : (
+        <Link to="/" className={LOGO}>{logo}</Link>
+      )}
+      <div className="flex items-center gap-2">
+        {right}
         {backLabel &&
           (plain ? (
             <a href={backTo} className={LINK}>{backInner}</a>
@@ -35,12 +43,6 @@ export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps)
             <Link to={backTo} className={LINK}>{backInner}</Link>
           ))}
       </div>
-      {plain ? (
-        <a href="/" className={LOGO}>{logo}</a>
-      ) : (
-        <Link to="/" className={LOGO}>{logo}</Link>
-      )}
-      <div className="flex justify-end">{right}</div>
     </header>
   );
 }

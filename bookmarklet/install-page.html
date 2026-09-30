@@ -19,6 +19,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Install NYT Bookmarklet — Crossword Clash</title>
+<meta name="description" content="A one-click bookmarklet that imports the NYT crossword you're viewing into Crossword Clash, so you can race or solve it with friends. For NYT subscribers.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#f4f6fa">
+<link rel="canonical" href="https://crosswordclash.com/install-bookmarklet">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crossword Clash">
+<meta property="og:url" content="https://crosswordclash.com/install-bookmarklet">
+<meta property="og:title" content="Play today's NYT crossword with friends — Crossword Clash">
+<meta property="og:description" content="A one-click bookmarklet for NYT subscribers: import the puzzle you're viewing and race friends to fill the grid.">
+<meta property="og:image" content="https://crosswordclash.com/install-bookmarklet/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Crossword Clash: play today's NYT crossword with friends — a one-click bookmarklet for NYT subscribers">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Play today's NYT crossword with friends — Crossword Clash">
+<meta name="twitter:description" content="A one-click bookmarklet for NYT subscribers: import the puzzle you're viewing and race friends to fill the grid.">
+<meta name="twitter:image" content="https://crosswordclash.com/install-bookmarklet/og.png">
 <style>
   @font-face {
     font-family: "Figtree Variable";
@@ -60,9 +79,10 @@
     padding: 12px 16px 56px;
   }
   .container { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
-  .site-header { display: flex; justify-content: center; padding: 4px 0 8px; }
+  .site-header { display: flex; justify-content: flex-start; padding: 4px 0 8px; }
   .site-header a { display: inline-flex; min-height: 44px; align-items: center; border-radius: 8px; }
-  .site-header img { height: 40px; width: auto; display: block; }
+  .site-header img { height: 48px; width: auto; display: block; }
+  @media (min-width: 640px) { .site-header img { height: 56px; } }
   a:focus-visible, .bookmarklet-link:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
   h1, h2, h3 { font-family: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif; color: var(--ink); text-wrap: balance; letter-spacing: -0.01em; }
   h1 { font-size: clamp(1.75rem, 6vw, 2.25rem); line-height: 1.15; margin: 1rem 0 0.5rem; font-weight: 700; }
@@ -188,6 +208,22 @@
     background: #000;
     display: block;
   }
+  .primer-wrap { margin: 1.5rem 0 0; }
+  .primer-wrap figcaption { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); text-align: center; }
+  /* Desktop: install steps and the demo side by side, both above the fold. */
+  @media (min-width: 1024px) {
+    .container { max-width: 1120px; }
+    .intro { max-width: 680px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      gap: 3rem;
+      align-items: start;
+    }
+    .hero-grid > .primer-wrap { order: 2; position: sticky; top: 24px; margin-top: 2.25rem; }
+    .install-col > .desktop-only-content > h2:first-child { margin-top: 1.5rem; }
+    .hero-grid ~ * { max-width: 680px; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -207,6 +243,12 @@
   on a computer to install it — it won't work on a phone or tablet.
 </div>
 
+<div class="hero-grid">
+<figure class="primer-wrap">
+  <video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata" aria-label="See it in action: a 19-second demo of importing a NYT puzzle"></video>
+  <figcaption>See it in action · 0:19</figcaption>
+</figure>
+<div class="install-col">
 <div class="desktop-only-content">
 <h2>Install in 3 steps</h2>
 <ol class="steps">
@@ -242,9 +284,8 @@
   active NYT Crossword subscription. Full source is available on
   <a href="https://github.com/amarcher/crossword-clash/blob/main/bookmarklet/nyt.js" target="_blank" rel="noopener">GitHub</a>.
 </div>
-
-<h2>See it in action</h2>
-<video class="primer" src="/cc-primer.mp4" poster="/cc-primer-poster.jpg" controls playsinline preload="metadata"></video>
+</div>
+</div>
 
 <h2>How it works</h2>
 <ul>
