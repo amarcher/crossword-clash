@@ -30,11 +30,11 @@ export function SoloTimer({ getElapsedSeconds, running, className }: SoloTimerPr
     <span
       role="timer"
       aria-label={t("soloStats.timerLabel")}
-      className={`inline-flex items-center gap-1 tabular-nums font-mono text-sm text-neutral-600 ${className ?? ""}`}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-xl bg-surface-sunken px-2.5 tabular-nums font-mono text-sm font-semibold text-ink-soft ${className ?? ""}`}
     >
       <svg
         viewBox="0 0 24 24"
-        className="w-3.5 h-3.5 text-neutral-400"
+        className="w-3.5 h-3.5 text-subtle"
         fill="none"
         stroke="currentColor"
         strokeWidth="2"

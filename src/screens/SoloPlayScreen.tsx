@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
-import { CluePanel } from "../components/CluePanel";
+import { Flag } from "lucide-react";
+import { ActiveClueCard, CluePanel } from "../components/CluePanel";
+import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
 import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
@@ -211,39 +213,36 @@ export function SoloPlayScreen() {
           <>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                {soloTheme && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700 mb-0.5">
-                    {t('playing.dailyThemeBadge', { theme: soloTheme })}
-                  </span>
-                )}
-                <h1 className="text-base md:text-xl font-bold truncate">{puzzle.title}</h1>
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1 className="font-display text-lg md:text-2xl font-bold tracking-tight text-ink truncate">{puzzle.title}</h1>
+                  {soloTheme && (
+                    <span className="hidden sm:inline shrink-0 rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
+                      {t('playing.dailyThemeBadge', { theme: soloTheme })}
+                    </span>
+                  )}
+                </div>
                 {puzzle.author && (
-                  <p className="hidden md:block text-sm text-neutral-500">{t('playing.by', { author: puzzle.author })}</p>
+                  <p className="hidden md:block text-sm text-muted truncate">{t('playing.by', { author: puzzle.author })}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
                 <div className="flex flex-col items-end leading-tight">
                   <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
                   {challenge && (
-                    <span className="text-[11px] font-semibold text-amber-600 tabular-nums">
-                      🏁 {t('challenge.beatTarget', { time: formatDuration(challenge.seconds) })}
+                    <span className="text-xs font-semibold text-gold-700 tabular-nums">
+                      <Flag className="inline size-3 mr-1 -mt-px" aria-hidden="true" />{t('challenge.beatTarget', { time: formatDuration(challenge.seconds) })}
                     </span>
                   )}
                 </div>
                 <button
                   onClick={handleReset}
-                  className="text-sm px-2.5 md:px-3 py-1.5 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
+                  className={buttonClass("secondary", "sm")}
                 >
                   <span className="md:hidden">{t('playing.newPuzzle')}</span>
                   <span className="hidden md:inline">{t('playing.loadDifferent')}</span>
                 </button>
               </div>
             </div>
-            {activeClue && (
-              <div className="hidden sm:block text-sm font-medium text-blue-700 mt-1 truncate">
-                {activeClue.number}-{direction === "across" ? t('clueBar.directionAbbrevAcross') : t('clueBar.directionAbbrevDown')}: {activeClue.text}
-              </div>
-            )}
           </>
         }
         grid={
@@ -294,13 +293,16 @@ export function SoloPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 h-full">
+          <div className="flex flex-col gap-2 md:gap-4 h-full">
+            <ActiveClueCard clue={activeClue} />
+            <div className="flex-1 min-h-0">
             <CluePanel
               clues={puzzle.clues}
               activeClue={activeClue}
               onClueClick={handleClueClick}
               completedClues={completedClues}
             />
+            </div>
             <Scoreboard
               score={score}
               totalCells={totalWhiteCells}

@@ -106,7 +106,7 @@ export const Cell = memo(function Cell({
         <span
           aria-hidden="true"
           className="absolute top-[2cqi] left-[4cqi] leading-none font-medium text-neutral-800"
-          style={{ fontSize: "25cqi" }}
+          style={{ fontSize: "min(25cqi, 17px)" }}
         >
           {cell.number}
         </span>
