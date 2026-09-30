@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../components/Title";
+import { BookOpen, Check, Dices, EyeOff, Swords } from "lucide-react";
+import { SiteBar } from "../components/SiteBar";
+import { Button } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import {
@@ -24,9 +26,10 @@ type Filter = SizeBucket | "all";
  * the 1924 *Cross Word Puzzle Book* we ship, filterable by size, with the
  * player's solved state and personal best pulled from local solo stats.
  *
- * One page, not one page per puzzle: each card offers "Play solo" (straight
- * into /solo/play, same path as the daily mini) and "Race friends" (hands the
- * puzzle to the existing host flow via urlPuzzle, same path as the daily race).
+ * One page, not one page per puzzle: each card is a "Play solo" target
+ * (straight into /solo/play, same path as the daily mini) with a secondary
+ * "Race friends" (hands the puzzle to the existing host flow via urlPuzzle,
+ * same path as the daily race).
  */
 export function ClassicLibraryScreen() {
   const { t } = useTranslation();
@@ -108,86 +111,96 @@ export function ClassicLibraryScreen() {
 
   const canRace = Boolean(user) || authLoading;
   const chipBase =
-    "min-h-10 px-3 py-2 rounded-full text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
-  const chipOn = `${chipBase} bg-neutral-800 text-white border-neutral-800`;
-  const chipOff = `${chipBase} bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-100 active:bg-neutral-200`;
+    "inline-flex shrink-0 items-center justify-center gap-1.5 min-h-11 md:min-h-9 px-3.5 rounded-full text-sm font-semibold border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
+  const chipOn = `${chipBase} bg-ink text-white border-ink`;
+  const chipOff = `${chipBase} bg-surface text-ink-soft border-line-strong hover:bg-surface-sunken active:bg-line`;
 
   return (
-    <div className="flex flex-col items-center min-h-dvh crossword-bg p-6 sm:p-8">
-      <Title className="mb-4" />
+    <div className="min-h-dvh crossword-bg pb-10">
+      <div className="px-4 pt-2">
+        <SiteBar backLabel={t("legal.back")} />
+      </div>
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-neutral-900">📚 {t("classics.title")}</h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            {entries && entries.length > 0
-              ? t("classics.subtitle", { count: entries.length })
-              : t("classics.subtitleNoCount")}
+      <div className="mx-auto w-full max-w-5xl px-4 pb-5 pt-4 text-center sm:pt-6">
+        <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
+          <BookOpen className="size-6" aria-hidden="true" />
+        </span>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("classics.title")}</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">
+          {entries && entries.length > 0
+            ? t("classics.subtitle", { count: entries.length })
+            : t("classics.subtitleNoCount")}
+        </p>
+        {solvedCount > 0 && entries && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700 ring-1 ring-brand-100">
+            <Check className="size-4" aria-hidden="true" />
+            <span>{t("classics.progress", { solved: solvedCount, total: entries.length })}</span>
           </p>
-          {solvedCount > 0 && entries && (
-            <p className="mt-2 inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-700">
-              {t("classics.progress", { solved: solvedCount, total: entries.length })}
-            </p>
-          )}
-        </div>
+        )}
+      </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            aria-pressed={filter === "all"}
-            className={filter === "all" ? chipOn : chipOff}
-          >
-            {t("classics.filterAll")}
-          </button>
-          {SIZE_BUCKETS.map((b) => (
+      {/* Sticky filter bar — stays reachable while scrolling 46 cards. */}
+      <div className="sticky top-0 z-20 border-y border-line bg-canvas/90 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-canvas/75">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-2">
+          <div className="-mx-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
-              key={b}
               type="button"
-              onClick={() => setFilter(b)}
-              aria-pressed={filter === b}
-              className={filter === b ? chipOn : chipOff}
+              onClick={() => setFilter("all")}
+              aria-pressed={filter === "all"}
+              className={filter === "all" ? chipOn : chipOff}
             >
-              {t(`classics.size.${b}`)}
+              {t("classics.filterAll")}
             </button>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <button
-            type="button"
+            {SIZE_BUCKETS.map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setFilter(b)}
+                aria-pressed={filter === b}
+                className={filter === b ? chipOn : chipOff}
+              >
+                {t(`classics.size.${b}`)}
+              </button>
+            ))}
+            {solvedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setHideSolved((v) => !v)}
+                aria-pressed={hideSolved}
+                className={hideSolved ? chipOn : chipOff}
+              >
+                <EyeOff className="size-4" aria-hidden="true" />
+                {t("classics.hideSolved")}
+              </button>
+            )}
+          </div>
+          <Button
+            variant="soft"
             onClick={surpriseMe}
             disabled={!entries || entries.length === 0 || busy !== null}
-            className="flex-1 min-h-11 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-br from-blue-600 to-indigo-600 shadow-sm hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="shrink-0 max-sm:w-11 max-sm:px-0"
           >
-            🎲 {t("classics.surpriseMe")}
-          </button>
-          {solvedCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setHideSolved((v) => !v)}
-              aria-pressed={hideSolved}
-              className={hideSolved ? chipOn : chipOff}
-            >
-              {t("classics.hideSolved")}
-            </button>
-          )}
+            <Dices className="size-4.5" aria-hidden="true" />
+            <span className="max-sm:sr-only">{t("classics.surpriseMe")}</span>
+          </Button>
         </div>
+      </div>
 
+      <div className="mx-auto mt-5 w-full max-w-5xl px-4">
         {error && (
-          <p role="alert" className="mb-3 text-center text-sm text-red-600">
+          <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-center text-sm font-medium text-red-700">
             {error}
           </p>
         )}
 
         {entries === null ? (
-          <p className="py-8 text-center text-sm text-neutral-400">{t("classics.loading")}</p>
+          <p className="py-12 text-center text-sm text-subtle">{t("classics.loading")}</p>
         ) : entries.length === 0 ? (
-          <p className="py-8 text-center text-sm text-neutral-500">{t("classics.unavailable")}</p>
+          <p className="py-12 text-center text-sm text-muted">{t("classics.unavailable")}</p>
         ) : visible.length === 0 ? (
-          <p className="py-8 text-center text-sm text-neutral-500">{t("classics.emptyFilter")}</p>
+          <p className="py-12 text-center text-sm text-muted">{t("classics.emptyFilter")}</p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((entry) => {
               const best = bestTimes[entry.identity];
               const isSolved = typeof best === "number";
@@ -195,61 +208,58 @@ export function ClassicLibraryScreen() {
               return (
                 <li
                   key={entry.file}
-                  className={`rounded-2xl bg-white shadow-sm border p-4 ${
-                    isSolved ? "border-emerald-200" : "border-neutral-200"
+                  className={`relative flex flex-col rounded-2xl border bg-surface p-4 shadow-card transition-[box-shadow,border-color] duration-150 hover:shadow-raised ${
+                    isSolved ? "border-brand-200" : "border-line hover:border-line-strong"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                        {t("classics.cardEyebrow", {
-                          number: entry.number,
-                          size: `${entry.width}×${entry.height}`,
-                          clues: entry.clues,
-                        })}
-                        {" · "}
-                        {t(`classics.size.${sizeBucket(entry)}`)}
-                      </p>
-                      <h2 className="text-base font-semibold text-neutral-900 leading-snug mt-0.5">
-                        {entry.title}
-                      </h2>
-                      <p className="text-xs text-neutral-500">
-                        {t("classics.by", { author: entry.author })}
-                      </p>
-                    </div>
+                    <p className="min-w-0 text-xs font-semibold uppercase tracking-[0.06em] text-subtle tabular-nums">
+                      {t("classics.cardEyebrow", {
+                        number: entry.number,
+                        size: `${entry.width}×${entry.height}`,
+                        clues: entry.clues,
+                      })}
+                      {" · "}
+                      {t(`classics.size.${sizeBucket(entry)}`)}
+                    </p>
                     {isSolved && (
-                      <span className="shrink-0 inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-700 tabular-nums">
-                        ✓ {formatDuration(best)}
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 tabular-nums ring-1 ring-brand-100">
+                        <Check className="size-3.5" aria-hidden="true" />
+                        {formatDuration(best)}
                       </span>
                     )}
                   </div>
+                  <h2 className="mt-1.5 font-display text-lg font-semibold leading-snug tracking-tight text-ink">
+                    {entry.title}
+                  </h2>
+                  <p className="text-sm text-muted">{t("classics.by", { author: entry.author })}</p>
                   {entry.blurb && (
-                    <p className="mt-2 text-sm italic text-neutral-600 leading-snug">
-                      “{entry.blurb}”
-                    </p>
+                    <p className="mt-2 line-clamp-3 text-sm italic leading-snug text-ink-soft">“{entry.blurb}”</p>
                   )}
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
+                  <div className="mt-auto flex gap-2 pt-4">
+                    {/* The play button's ::after stretches over the whole card, so the card itself is the "play solo" target. */}
+                    <Button
+                      variant={isSolved ? "secondary" : "soft"}
                       onClick={() => void playSolo(entry)}
                       disabled={busy !== null}
-                      className="flex-1 min-h-11 px-3 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      className="flex-1 after:absolute after:inset-0 after:rounded-2xl"
                     >
                       {isBusy
                         ? t("classics.loadingPuzzle")
                         : isSolved
                           ? t("classics.playAgain")
                           : t("classics.playSolo")}
-                    </button>
+                    </Button>
                     {canRace && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
                         onClick={() => void raceFriends(entry)}
                         disabled={busy !== null || authLoading}
-                        className="flex-1 min-h-11 px-3 py-2 rounded-lg text-sm font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 active:bg-indigo-200 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        className="relative z-10"
                       >
-                        ⚔️ {t("classics.raceFriends")}
-                      </button>
+                        <Swords className="size-4" aria-hidden="true" />
+                        {t("classics.raceFriends")}
+                      </Button>
                     )}
                   </div>
                 </li>
@@ -258,18 +268,9 @@ export function ClassicLibraryScreen() {
           </ul>
         )}
 
-        <p className="mt-6 text-center text-[11px] text-neutral-400 leading-snug px-2">
+        <p className="mx-auto mt-10 max-w-2xl px-2 text-center text-xs leading-snug text-subtle">
           {t("classics.credit")}
         </p>
-
-        <div className="mt-4 text-center">
-          <Link
-            to="/"
-            className="inline-block min-h-11 px-4 py-2.5 text-sm text-neutral-500 underline underline-offset-2 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-          >
-            {t("classics.backToMenu")}
-          </Link>
-        </div>
       </div>
     </div>
   );

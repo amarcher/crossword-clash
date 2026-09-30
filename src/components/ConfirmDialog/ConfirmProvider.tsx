@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TriangleAlert } from "lucide-react";
+import { buttonClass } from "../ui";
 
 export interface ConfirmOptions {
   title: string;
@@ -121,9 +123,6 @@ function ConfirmDialog({
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [onSettle]);
 
-  const btn =
-    "min-h-11 flex-1 px-4 py-2.5 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
-
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center overscroll-contain"
@@ -134,29 +133,38 @@ function ConfirmDialog({
         paddingLeft: "max(1rem, env(safe-area-inset-left))",
       }}
     >
-      <div data-testid="confirm-backdrop" className="absolute inset-0 bg-black/60" onClick={() => onSettle(false)} />
+      <div data-testid="confirm-backdrop" className="lf-fade-in absolute inset-0 bg-stage/60 backdrop-blur-[2px]" onClick={() => onSettle(false)} />
       <div
         ref={panelRef}
         role={danger ? "alertdialog" : "dialog"}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={body ? bodyId : undefined}
-        className="relative w-full max-w-sm max-h-full overflow-y-auto overscroll-contain rounded-2xl bg-white text-neutral-900 shadow-2xl p-6"
+        className="lf-pop-in relative max-h-full w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-6 text-ink shadow-overlay"
       >
-        <h2 id={titleId} className="text-lg font-bold mb-2">
-          {title}
-        </h2>
-        {body && (
-          <p id={bodyId} className="text-neutral-600 mb-6">
-            {body}
-          </p>
-        )}
-        <div className={`flex gap-3 ${body ? "" : "mt-6"}`}>
+        <div className="flex items-start gap-3.5">
+          {danger && (
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-red-50 text-red-600">
+              <TriangleAlert className="size-5" aria-hidden="true" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">
+              {title}
+            </h2>
+            {body && (
+              <p id={bodyId} className="mt-1.5 text-sm leading-relaxed text-muted">
+                {body}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-6 flex gap-2.5">
           <button
             ref={cancelRef}
             type="button"
             onClick={() => onSettle(false)}
-            className={`${btn} text-neutral-700 bg-white border-2 border-neutral-300 hover:bg-neutral-100 active:bg-neutral-200 focus-visible:ring-blue-500`}
+            className={buttonClass("secondary", "lg", "flex-1")}
           >
             {cancelLabel ?? t("confirmDialog.cancel")}
           </button>
@@ -164,11 +172,11 @@ function ConfirmDialog({
             ref={confirmRef}
             type="button"
             onClick={() => onSettle(true)}
-            className={`${btn} text-white ${
+            className={
               danger
-                ? "bg-red-600 hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500"
-                : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus-visible:ring-blue-500"
-            }`}
+                ? buttonClass("primary", "lg", "flex-1 !bg-red-600 hover:!bg-red-700 active:!bg-red-800 focus-visible:!outline-red-500")
+                : buttonClass("primary", "lg", "flex-1")
+            }
           >
             {confirmLabel ?? t("confirmDialog.ok")}
           </button>

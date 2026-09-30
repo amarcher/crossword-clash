@@ -20,27 +20,61 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Install NYT Bookmarklet — Crossword Clash</title>
 <style>
+  @font-face {
+    font-family: "Figtree Variable";
+    src: url("/install-bookmarklet/figtree.woff2") format("woff2");
+    font-weight: 300 900;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Bricolage Grotesque Variable";
+    src: url("/install-bookmarklet/bricolage.woff2") format("woff2");
+    font-weight: 200 800;
+    font-display: swap;
+  }
+  /* Tokens mirror src/index.css @theme (docs/DESIGN.md). */
+  :root {
+    --ink: #141a26; --ink-soft: #3a4252; --muted: #5f6878; --subtle: #8c94a3;
+    --line: #e3e7ee; --line-strong: #cfd5df;
+    --canvas: #f4f6fa; --surface: #ffffff; --sunken: #eef1f6;
+    --brand-50: #eef3ff; --brand-100: #dde7ff; --brand-200: #bccfff;
+    --brand-500: #3a6bf0; --brand-600: #2456e6; --brand-700: #1c45c2;
+    --gold-50: #fff8e6; --gold-100: #fdefc4; --gold-700: #9a6a00;
+    --shadow-card: 0 1px 2px rgb(20 26 38 / 0.04), 0 1px 1px rgb(20 26 38 / 0.03);
+    --shadow-raised: 0 1px 2px rgb(20 26 38 / 0.05), 0 8px 24px -8px rgb(20 26 38 / 0.12);
+  }
+  * { box-sizing: border-box; }
   body {
-    font-family: system-ui, sans-serif;
+    font-family: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     margin: 0;
     padding: 0;
     line-height: 1.6;
-    color: #333;
+    color: var(--ink-soft);
     min-height: 100dvh;
-    background-color: rgb(250 250 249);
+    background-color: var(--canvas);
+    -webkit-text-size-adjust: 100%;
   }
   .container {
-    max-width: 640px;
+    max-width: 680px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 12px 16px 56px;
   }
-  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  .container { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .site-header { display: flex; justify-content: center; padding: 4px 0 8px; }
+  .site-header a { display: inline-flex; min-height: 44px; align-items: center; border-radius: 8px; }
+  .site-header img { height: 40px; width: auto; display: block; }
+  a:focus-visible, .bookmarklet-link:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif; color: var(--ink); text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(1.75rem, 6vw, 2.25rem); line-height: 1.15; margin: 1rem 0 0.5rem; font-weight: 700; }
+  h2 { font-size: 1.25rem; margin: 2.25rem 0 0.5rem; font-weight: 650; }
   p { margin: 0.75rem 0; }
-  .intro { color: #4b5563; }
-  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
-  .note { color: #6b7280; font-size: 0.9em; }
-  a[href^="http"], a[href^="/"] { color: #2563eb; }
+  .intro { color: var(--muted); font-size: 1.05rem; }
+  code { background: var(--sunken); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; font-size: 0.88em; color: var(--ink); overflow-wrap: anywhere; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  a[href^="http"], a[href^="/"] { color: var(--brand-700); text-decoration-color: var(--brand-200); text-underline-offset: 3px; }
+  a[href^="http"]:hover, a[href^="/"]:hover { text-decoration-color: var(--brand-500); }
+  ul { padding-left: 1.25rem; }
+  li { margin: 0.4rem 0; }
 
   /* ---- Mobile notice ---- */
   /* No JS device detection (this page stays dependency-free per PR #36) —
@@ -49,11 +83,11 @@
      URL that the mobile browser chrome will actually execute. */
   .mobile-notice {
     display: none;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
+    background: var(--gold-50);
+    border: 1px solid var(--gold-100);
+    color: var(--gold-700);
     padding: 14px 16px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 0.95rem;
     margin: 1.25rem 0;
   }
@@ -73,9 +107,9 @@
   .steps > li {
     counter-increment: step;
     position: relative;
-    padding: 0 0 1.5rem 2.75rem;
-    border-left: 2px solid #dbeafe;
-    margin-left: 1rem;
+    padding: 0 0 1.75rem 2.75rem;
+    border-left: 2px solid var(--brand-100);
+    margin: 0 0 0 1rem;
   }
   .steps > li:last-child {
     border-left: 2px solid transparent;
@@ -89,67 +123,77 @@
     width: 2.1rem;
     height: 2.1rem;
     border-radius: 999px;
-    background: #2563eb;
+    background: var(--brand-600);
     color: white;
     font-weight: 700;
     font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 0 0 4px var(--canvas);
   }
-  .steps h3 { margin: 0 0 0.35rem; font-size: 1.05rem; }
-  .steps p { margin: 0.35rem 0; color: #4b5563; }
+  .steps h3 { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 650; }
+  .steps p { margin: 0.35rem 0; color: var(--muted); }
 
   /* ---- Drag-to-bookmarks button ---- */
   .drag-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin: 0.75rem 0;
+    margin: 0.9rem 0;
   }
   .bookmarklet-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    background: #2563eb;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 20px;
+    background: var(--brand-600);
+    color: white !important;
+    border-radius: 12px;
+    text-decoration: none !important;
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1rem;
     cursor: grab;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.15) inset, 0 1px 2px rgb(20 26 38 / 0.15);
+    transition: background-color 150ms;
   }
+  .bookmarklet-link:hover { background: var(--brand-700); }
   .bookmarklet-link:active { cursor: grabbing; }
+  .bookmarklet-link svg { width: 20px; height: 20px; flex: none; }
   .drag-hint {
-    color: #2563eb;
+    color: var(--brand-700);
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
   }
   .disclosure {
-    background: #f9fafb;
-    border-left: 3px solid #d1d5db;
-    padding: 12px 16px;
-    margin: 1.5rem 0;
-    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+    padding: 16px 18px;
+    margin: 2rem 0 1.5rem;
+    border-radius: 16px;
     font-size: 0.95rem;
-    color: #4b5563;
+    color: var(--muted);
   }
+  .disclosure strong { color: var(--ink); }
   .primer {
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-raised);
     background: #000;
     display: block;
   }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="container">
+<header class="site-header"><a href="/" aria-label="Crossword Clash home"><img src="/logo.png" alt="Crossword Clash"></a></header>
 <h1>NYT → Crossword Clash Bookmarklet</h1>
 <p class="intro">
   A one-click bookmarklet that imports the New York Times crossword you're currently
@@ -176,7 +220,7 @@
     <p><strong>Drag it — don't click it.</strong> Clicking it here won't do anything useful;
     it only works once it's a bookmark and you click it from a NYT crossword page.</p>
     <div class="drag-row">
-      <a class="bookmarklet-link" href="javascript:void%20(function()%7B%22use%20strict%22;var%20k=%22https://crosswordclash.com/%22,U=%22ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$%22;function%20L(i,s,o)%7Bif(i==null)return%22%22;var%20r,t,h=%7B%7D,d=%7B%7D,u=%22%22,f=%22%22,n=%22%22,c=2,w=3,l=2,p=%5B%5D,e=0,a=0,v;for(v=0;v%3Ci.length;v+=1)if(u=i.charAt(v),Object.prototype.hasOwnProperty.call(h,u)%7C%7C(h%5Bu%5D=w++,d%5Bu%5D=!0),f=n+u,Object.prototype.hasOwnProperty.call(h,f))n=f;else%7Bif(Object.prototype.hasOwnProperty.call(d,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cl;r++)e=e%3C%3C1,a==s-1?(a=0,p.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Dc--,c==0&amp;&amp;(c=Math.pow(2,l),l++),delete%20d%5Bn%5D%7Delse%20for(t=h%5Bn%5D,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;c--,c==0&amp;&amp;(c=Math.pow(2,l),l++),h%5Bf%5D=w++,n=String(u)%7Dif(n!==%22%22)%7Bif(Object.prototype.hasOwnProperty.call(d,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cl;r++)e=e%3C%3C1,a==s-1?(a=0,p.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Dc--,c==0&amp;&amp;(c=Math.pow(2,l),l++),delete%20d%5Bn%5D%7Delse%20for(t=h%5Bn%5D,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;c--,c==0&amp;&amp;(c=Math.pow(2,l),l++)%7Dfor(t=2,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;for(;;)if(e=e%3C%3C1,a==s-1)%7Bp.push(o(e));break%7Delse%20a++;return%20p.join(%22%22)%7Dfunction%20D(i)%7Breturn%20i==null?%22%22:L(i,6,function(s)%7Breturn%20U.charAt(s)%7D)%7Dfunction%20E()%7Bvar%20i=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)%5C/(%5Cd%7B4%7D)%5C/(%5Cd%7B2%7D)%5C/(%5Cd%7B2%7D)/);if(i)return%7Btype:i%5B1%5D,date:i%5B2%5D+%22-%22+i%5B3%5D+%22-%22+i%5B4%5D%7D;var%20s=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)/),o=new%20Date,r=o.getFullYear(),t=String(o.getMonth()+1).padStart(2,%220%22),h=String(o.getDate()).padStart(2,%220%22);return%7Btype:s?s%5B1%5D:%22daily%22,date:r+%22-%22+t+%22-%22+h%7D%7Dasync%20function%20B()%7Btry%7Bif(window.location.hostname.indexOf(%22nytimes.com%22)===-1)%7Balert(%22Crossword%20Clash:%20This%20bookmarklet%20only%20works%20on%20nytimes.com.%20Open%20a%20NYT%20crossword%20(Daily,%20Mini,%20Sunday,%20etc.)%20and%20click%20the%20bookmarklet%20again.%22);return%7Dif(window.location.pathname.indexOf(%22/crosswords/game/%22)===-1)%7Balert(%22Crossword%20Clash:%20Open%20a%20NYT%20crossword%20puzzle%20first%20%5Cu2014%20Daily,%20Mini,%20or%20another%20game%20%5Cu2014%20then%20click%20the%20bookmarklet%20again.%22);return%7Dvar%20i=E(),s=await%20fetch(%22/svc/crosswords/v6/puzzle/%22+i.type+%22/%22+i.date+%22.json%22,%7Bcredentials:%22include%22%7D);if(!s.ok)%7Bs.status===403%7C%7Cs.status===401?alert(%22Crossword%20Clash:%20Could%20not%20fetch%20puzzle.%20Make%20sure%20you're%20logged%20in%20to%20NYT%20with%20an%20active%20crossword%20subscription.%22):alert(%22Crossword%20Clash:%20NYT%20returned%20an%20error%20(status%20%22+s.status+%22).%20Try%20reloading%20the%20puzzle%20page%20and%20clicking%20the%20bookmarklet%20again.%22);return%7Dvar%20o=await%20s.json(),r=o.body&amp;&amp;o.body%5B0%5D?o.body%5B0%5D:o,t=r.cells;if(!t%7C%7C!t.length)%7Balert(%22Crossword%20Clash:%20Could%20not%20read%20this%20puzzle.%20The%20NYT%20site%20may%20have%20changed,%20or%20this%20puzzle%20type%20isn't%20supported%20yet.%22);return%7Dfor(var%20h=r.dimensions,d=h.height,u=h.width,f=%5B%5D,n=%5B%5D,c=0;c%3Ct.length;c++)%7Bvar%20w=t%5Bc%5D;w.answer?(f.push(w.answer.toUpperCase()),n.push(w.label&amp;&amp;parseInt(w.label,10)%7C%7C0)):(f.push(%22.%22),n.push(0))%7Dfor(var%20l=r.clues,p=r.clueLists,e=%5B%5D,a=%5B%5D,v=%5B%5D,M=%5B%5D,T=0;T%3Cp.length;T++)for(var%20A=p%5BT%5D,J=A.name.toLowerCase().indexOf(%22across%22)!==-1,Y=A.clues,_=0;_%3CY.length;_++)%7Bvar%20y=l%5BString(Y%5B_%5D)%5D;if(y)%7Bvar%20R=y.label,m=%22%22;y.text&amp;&amp;y.text.length%3E0&amp;&amp;(m=y.text%5B0%5D.plain%7C%7Cy.text%5B0%5D%7C%7C%22%22),m=m.replace(/%3C%5B%5E%3E%5D*%3E/g,%22%22);for(var%20N=R+%22.%20%22+m,O=%22%22,C=y.cells%7C%7C%5B%5D,x=0;x%3CC.length;x++)%7Bvar%20z=C%5Bx%5D;z%3E=0&amp;&amp;z%3Ct.length&amp;&amp;t%5Bz%5D.answer&amp;&amp;(O+=t%5Bz%5D.answer.toUpperCase())%7DJ?(e.push(N),v.push(O)):(a.push(N),M.push(O))%7D%7Dvar%20$=i.type.charAt(0).toUpperCase()+i.type.slice(1),q=o.title%7C%7C%22NYT%20%22+$+%22%20%5Cu2014%20%22+i.date,G=o.constructors&amp;&amp;o.constructors.join(%22,%20%22)%7C%7Co.editor%7C%7C%22%22,H=%7Btitle:q,author:G,size:%7Brows:d,cols:u%7D,grid:f,gridnums:n,clues:%7Bacross:e,down:a%7D,answers:%7Bacross:v,down:M%7D%7D,K=JSON.stringify(H),b=D(K);if(b.length%3E2e5)%7Balert(%22Crossword%20Clash:%20This%20puzzle%20is%20too%20large%20to%20import.%20Please%20report%20this%20at%20github.com/amarcher/crossword-clash/issues.%22);return%7Dtry%7Bnavigator.clipboard.writeText(b)%7Dcatch(g)%7B%7Dvar%20Q=k.replace(/%5C/$/,%22%22),j=window.open(k+%22#import%22,%22_blank%22);if(!j)%7Balert(%22Crossword%20Clash:%20Your%20browser%20blocked%20the%20pop-up.%20Allow%20pop-ups%20for%20nytimes.com%20and%20click%20the%20bookmarklet%20again%20%5Cu2014%20or%20open%20%22+k+'#import%20in%20a%20new%20tab%20and%20use%20%22Paste%20from%20Clipboard%22%20(the%20puzzle%20was%20already%20copied).');return%7Dvar%20S=function(g)%7Bg.data&amp;&amp;g.data.type===%22crossword-clash-ready%22&amp;&amp;(j.postMessage(%7Btype:%22crossword-clash-puzzle%22,puzzle:b%7D,Q),window.removeEventListener(%22message%22,S))%7D;window.addEventListener(%22message%22,S),setTimeout(function()%7Bwindow.removeEventListener(%22message%22,S)%7D,3e4)%7Dcatch(g)%7Balert(%22Crossword%20Clash:%20Something%20went%20wrong%20(%22+(g.message%7C%7C%22unknown%20error%22)+%22).%20Try%20reloading%20the%20NYT%20puzzle%20page%20and%20clicking%20the%20bookmarklet%20again.%22)%7D%7DB()%7D)();">🧩 NYT → Crossword Clash</a>
+      <a class="bookmarklet-link" href="javascript:void%20(function()%7B%22use%20strict%22;var%20k=%22https://crosswordclash.com/%22,U=%22ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$%22;function%20L(i,s,o)%7Bif(i==null)return%22%22;var%20r,t,h=%7B%7D,d=%7B%7D,u=%22%22,f=%22%22,n=%22%22,c=2,w=3,l=2,p=%5B%5D,e=0,a=0,v;for(v=0;v%3Ci.length;v+=1)if(u=i.charAt(v),Object.prototype.hasOwnProperty.call(h,u)%7C%7C(h%5Bu%5D=w++,d%5Bu%5D=!0),f=n+u,Object.prototype.hasOwnProperty.call(h,f))n=f;else%7Bif(Object.prototype.hasOwnProperty.call(d,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cl;r++)e=e%3C%3C1,a==s-1?(a=0,p.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Dc--,c==0&amp;&amp;(c=Math.pow(2,l),l++),delete%20d%5Bn%5D%7Delse%20for(t=h%5Bn%5D,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;c--,c==0&amp;&amp;(c=Math.pow(2,l),l++),h%5Bf%5D=w++,n=String(u)%7Dif(n!==%22%22)%7Bif(Object.prototype.hasOwnProperty.call(d,n))%7Bif(n.charCodeAt(0)%3C256)%7Bfor(r=0;r%3Cl;r++)e=e%3C%3C1,a==s-1?(a=0,p.push(o(e)),e=0):a++;for(t=n.charCodeAt(0),r=0;r%3C8;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Delse%7Bfor(t=1,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=0;for(t=n.charCodeAt(0),r=0;r%3C16;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1%7Dc--,c==0&amp;&amp;(c=Math.pow(2,l),l++),delete%20d%5Bn%5D%7Delse%20for(t=h%5Bn%5D,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;c--,c==0&amp;&amp;(c=Math.pow(2,l),l++)%7Dfor(t=2,r=0;r%3Cl;r++)e=e%3C%3C1%7Ct&amp;1,a==s-1?(a=0,p.push(o(e)),e=0):a++,t=t%3E%3E1;for(;;)if(e=e%3C%3C1,a==s-1)%7Bp.push(o(e));break%7Delse%20a++;return%20p.join(%22%22)%7Dfunction%20D(i)%7Breturn%20i==null?%22%22:L(i,6,function(s)%7Breturn%20U.charAt(s)%7D)%7Dfunction%20E()%7Bvar%20i=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)%5C/(%5Cd%7B4%7D)%5C/(%5Cd%7B2%7D)%5C/(%5Cd%7B2%7D)/);if(i)return%7Btype:i%5B1%5D,date:i%5B2%5D+%22-%22+i%5B3%5D+%22-%22+i%5B4%5D%7D;var%20s=window.location.pathname.match(/%5C/crosswords%5C/game%5C/(%5Cw+)/),o=new%20Date,r=o.getFullYear(),t=String(o.getMonth()+1).padStart(2,%220%22),h=String(o.getDate()).padStart(2,%220%22);return%7Btype:s?s%5B1%5D:%22daily%22,date:r+%22-%22+t+%22-%22+h%7D%7Dasync%20function%20B()%7Btry%7Bif(window.location.hostname.indexOf(%22nytimes.com%22)===-1)%7Balert(%22Crossword%20Clash:%20This%20bookmarklet%20only%20works%20on%20nytimes.com.%20Open%20a%20NYT%20crossword%20(Daily,%20Mini,%20Sunday,%20etc.)%20and%20click%20the%20bookmarklet%20again.%22);return%7Dif(window.location.pathname.indexOf(%22/crosswords/game/%22)===-1)%7Balert(%22Crossword%20Clash:%20Open%20a%20NYT%20crossword%20puzzle%20first%20%5Cu2014%20Daily,%20Mini,%20or%20another%20game%20%5Cu2014%20then%20click%20the%20bookmarklet%20again.%22);return%7Dvar%20i=E(),s=await%20fetch(%22/svc/crosswords/v6/puzzle/%22+i.type+%22/%22+i.date+%22.json%22,%7Bcredentials:%22include%22%7D);if(!s.ok)%7Bs.status===403%7C%7Cs.status===401?alert(%22Crossword%20Clash:%20Could%20not%20fetch%20puzzle.%20Make%20sure%20you're%20logged%20in%20to%20NYT%20with%20an%20active%20crossword%20subscription.%22):alert(%22Crossword%20Clash:%20NYT%20returned%20an%20error%20(status%20%22+s.status+%22).%20Try%20reloading%20the%20puzzle%20page%20and%20clicking%20the%20bookmarklet%20again.%22);return%7Dvar%20o=await%20s.json(),r=o.body&amp;&amp;o.body%5B0%5D?o.body%5B0%5D:o,t=r.cells;if(!t%7C%7C!t.length)%7Balert(%22Crossword%20Clash:%20Could%20not%20read%20this%20puzzle.%20The%20NYT%20site%20may%20have%20changed,%20or%20this%20puzzle%20type%20isn't%20supported%20yet.%22);return%7Dfor(var%20h=r.dimensions,d=h.height,u=h.width,f=%5B%5D,n=%5B%5D,c=0;c%3Ct.length;c++)%7Bvar%20w=t%5Bc%5D;w.answer?(f.push(w.answer.toUpperCase()),n.push(w.label&amp;&amp;parseInt(w.label,10)%7C%7C0)):(f.push(%22.%22),n.push(0))%7Dfor(var%20l=r.clues,p=r.clueLists,e=%5B%5D,a=%5B%5D,v=%5B%5D,M=%5B%5D,T=0;T%3Cp.length;T++)for(var%20A=p%5BT%5D,J=A.name.toLowerCase().indexOf(%22across%22)!==-1,Y=A.clues,_=0;_%3CY.length;_++)%7Bvar%20y=l%5BString(Y%5B_%5D)%5D;if(y)%7Bvar%20R=y.label,m=%22%22;y.text&amp;&amp;y.text.length%3E0&amp;&amp;(m=y.text%5B0%5D.plain%7C%7Cy.text%5B0%5D%7C%7C%22%22),m=m.replace(/%3C%5B%5E%3E%5D*%3E/g,%22%22);for(var%20N=R+%22.%20%22+m,O=%22%22,C=y.cells%7C%7C%5B%5D,x=0;x%3CC.length;x++)%7Bvar%20z=C%5Bx%5D;z%3E=0&amp;&amp;z%3Ct.length&amp;&amp;t%5Bz%5D.answer&amp;&amp;(O+=t%5Bz%5D.answer.toUpperCase())%7DJ?(e.push(N),v.push(O)):(a.push(N),M.push(O))%7D%7Dvar%20$=i.type.charAt(0).toUpperCase()+i.type.slice(1),q=o.title%7C%7C%22NYT%20%22+$+%22%20%5Cu2014%20%22+i.date,G=o.constructors&amp;&amp;o.constructors.join(%22,%20%22)%7C%7Co.editor%7C%7C%22%22,H=%7Btitle:q,author:G,size:%7Brows:d,cols:u%7D,grid:f,gridnums:n,clues:%7Bacross:e,down:a%7D,answers:%7Bacross:v,down:M%7D%7D,K=JSON.stringify(H),b=D(K);if(b.length%3E2e5)%7Balert(%22Crossword%20Clash:%20This%20puzzle%20is%20too%20large%20to%20import.%20Please%20report%20this%20at%20github.com/amarcher/crossword-clash/issues.%22);return%7Dtry%7Bnavigator.clipboard.writeText(b)%7Dcatch(g)%7B%7Dvar%20Q=k.replace(/%5C/$/,%22%22),j=window.open(k+%22#import%22,%22_blank%22);if(!j)%7Balert(%22Crossword%20Clash:%20Your%20browser%20blocked%20the%20pop-up.%20Allow%20pop-ups%20for%20nytimes.com%20and%20click%20the%20bookmarklet%20again%20%5Cu2014%20or%20open%20%22+k+'#import%20in%20a%20new%20tab%20and%20use%20%22Paste%20from%20Clipboard%22%20(the%20puzzle%20was%20already%20copied).');return%7Dvar%20S=function(g)%7Bg.data&amp;&amp;g.data.type===%22crossword-clash-ready%22&amp;&amp;(j.postMessage(%7Btype:%22crossword-clash-puzzle%22,puzzle:b%7D,Q),window.removeEventListener(%22message%22,S))%7D;window.addEventListener(%22message%22,S),setTimeout(function()%7Bwindow.removeEventListener(%22message%22,S)%7D,3e4)%7Dcatch(g)%7Balert(%22Crossword%20Clash:%20Something%20went%20wrong%20(%22+(g.message%7C%7C%22unknown%20error%22)+%22).%20Try%20reloading%20the%20NYT%20puzzle%20page%20and%20clicking%20the%20bookmarklet%20again.%22)%7D%7DB()%7D)();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>NYT → Crossword Clash</a>
       <span class="drag-hint">← drag this up ↑</span>
     </div>
   </li>

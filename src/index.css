@@ -338,3 +338,27 @@ select,
   0%, 100% { transform: translateY(0); opacity: 0.9; }
   50% { transform: translateY(-10px); opacity: 1; }
 }
+
+/* library facelift */
+@keyframes lf-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lf-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lf-toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lf-toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+.lf-fade-in { animation: lf-fade-in 160ms ease-out both; }
+.lf-pop-in { animation: lf-pop-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.lf-toast-in { animation: lf-toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.lf-toast-out { animation: lf-toast-out 180ms ease-in both; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-fade-in, .lf-pop-in { animation: none; }
+  .lf-toast-in { animation: none; }
+  .lf-toast-out { animation-duration: 1ms; }
+}

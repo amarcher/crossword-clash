@@ -101,7 +101,7 @@ describe("ClassicLibraryScreen", () => {
     bestTimes["id-medium"] = 272;
     renderScreen();
     const card = (await screen.findByText("A Simplicity")).closest("li")!;
-    expect(within(card).getByText("✓ 4:32")).toBeTruthy();
+    expect(within(card).getByText("4:32")).toBeTruthy();
     expect(within(card).getByRole("button", { name: "Play again" })).toBeTruthy();
     expect(screen.getByText("1 of 3 solved")).toBeTruthy();
 

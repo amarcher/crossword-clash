@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Title } from "../components/Title";
+import { Flame, Loader2, Swords, Trophy, WifiOff } from "lucide-react";
+import { SiteBar } from "../components/SiteBar";
+import { Button, Card } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { getDailyMini } from "../lib/dailyMinis";
@@ -15,6 +17,23 @@ import { isRealPlayerName, savePlayerName, MAX_PLAYER_NAME_LENGTH } from "../lib
 import { formatDuration, getDisplayStreak } from "../lib/soloStats";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
+
+/** Medal treatment for the podium, all in gold tokens (gold -> pale gold). */
+const MEDAL: Record<number, string> = {
+  1: "bg-gold-400 text-ink shadow-[0_1px_0_rgb(255_255_255/0.5)_inset]",
+  2: "bg-gold-100 text-gold-700 ring-1 ring-gold-400/50",
+  3: "bg-gold-50 text-gold-700 ring-1 ring-gold-100",
+};
+
+/** Message panel used for the loading / empty / offline states. */
+function BoardMessage({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-muted">
+      <span className="grid size-10 place-items-center rounded-full bg-surface-sunken text-subtle">{icon}</span>
+      <p>{children}</p>
+    </div>
+  );
+}
 
 /**
  * Cross-day leaderboard for the daily mini: today's fastest solves (solo +
@@ -82,95 +101,92 @@ export function DailyLeaderboardScreen() {
   }, [game, dailyMini, navigate]);
 
   return (
-    <div className="flex flex-col items-center min-h-dvh crossword-bg p-6 sm:p-8">
-      <Title className="mb-4" />
+    <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
+      <SiteBar backLabel={t("completion.backToMenu")} />
 
-      <div className="w-full max-w-md">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-neutral-900">
-            🏅 {t("leaderboard.title")}
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            {t("menu.dailyMiniTheme", { theme: dailyMini.theme })}
-          </p>
+      <div className="mx-auto mt-4 grid w-full max-w-md gap-4 sm:mt-6">
+        <div className="text-center">
+          <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
+            <Trophy className="size-6" aria-hidden="true" />
+          </span>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">{t("leaderboard.title")}</h1>
+          <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: dailyMini.theme })}</p>
           {streak > 0 && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-sm font-semibold text-amber-700">
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">
+              <Flame className="size-4 text-gold-500" aria-hidden="true" />
               {t("soloStats.streakDays", { count: streak })}
-            </div>
+            </p>
           )}
         </div>
 
-        <div className="rounded-2xl bg-white shadow-md border border-neutral-200 overflow-hidden mb-4">
+        <Card className="overflow-hidden">
           {!supabase ? (
-            <p className="px-4 py-6 text-center text-sm text-neutral-500">
-              {t("leaderboard.offline")}
-            </p>
+            <BoardMessage icon={<WifiOff className="size-5" aria-hidden="true" />}>{t("leaderboard.offline")}</BoardMessage>
           ) : entries === null ? (
-            <p className="px-4 py-6 text-center text-sm text-neutral-400">
-              {t("leaderboard.loading")}
-            </p>
+            <div role="status">
+              <BoardMessage icon={<Loader2 className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />}>
+                {t("leaderboard.loading")}
+              </BoardMessage>
+            </div>
           ) : entries.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-neutral-500">
-              {t("leaderboard.empty")}
-            </p>
+            <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t("leaderboard.empty")}</BoardMessage>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wider text-neutral-400 border-b border-neutral-100">
-                  <th className="text-left py-2 px-3 w-10">#</th>
-                  <th className="text-left py-2 px-3">{t("completion.player")}</th>
-                  <th className="text-right py-2 px-3">{t("leaderboard.time")}</th>
+                <tr className="border-b border-line bg-surface-sunken/60 text-xs font-semibold uppercase tracking-[0.08em] text-subtle">
+                  <th scope="col" className="w-14 py-2.5 pl-4 pr-2 text-left">#</th>
+                  <th scope="col" className="px-2 py-2.5 text-left">{t("completion.player")}</th>
+                  <th scope="col" className="py-2.5 pl-2 pr-4 text-right">{t("leaderboard.time")}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-line">
                 {entries.map((e) => {
                   const isMe = user?.id === e.userId;
                   return (
                     <tr
                       key={e.userId}
-                      className={
-                        isMe
-                          ? "bg-blue-50 text-blue-900 font-semibold"
-                          : "text-neutral-600"
-                      }
+                      className={isMe ? "bg-brand-50 font-semibold text-ink shadow-[inset_3px_0_0_var(--color-brand-600)]" : "text-ink-soft"}
                     >
-                      <td className="py-2 px-3 font-medium tabular-nums">{e.rank}</td>
-                      <td className="py-2 px-3">
-                        <span className="truncate">
-                          {e.displayName}
+                      <td className="py-2.5 pl-4 pr-2">
+                        <span
+                          className={`grid size-8 place-items-center rounded-full text-sm font-bold tabular-nums ${
+                            MEDAL[e.rank] ?? "text-muted"
+                          }`}
+                        >
+                          {e.rank}
+                        </span>
+                      </td>
+                      <td className="max-w-0 px-2 py-2.5">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate">{e.displayName}</span>
                           {isMe && (
-                            <span className="ml-1.5 text-[10px] font-bold uppercase text-blue-500">
+                            <span className="shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                               {t("leaderboard.you")}
                             </span>
                           )}
-                        </span>
-                        <span
-                          className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                            e.mode === "race"
-                              ? "bg-indigo-50 text-indigo-600"
-                              : "bg-neutral-100 text-neutral-500"
-                          }`}
-                        >
-                          {e.mode === "race"
-                            ? t("leaderboard.modeRace")
-                            : t("leaderboard.modeSolo")}
-                        </span>
+                          <span
+                            className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide min-[380px]:inline ${
+                              e.mode === "race" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-muted"
+                            }`}
+                          >
+                            {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
+                          </span>
+                        </div>
                       </td>
-                      <td className="py-2 px-3 text-right tabular-nums">
-                        {formatDuration(e.seconds)}
-                      </td>
+                      <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">{formatDuration(e.seconds)}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           )}
-        </div>
+        </Card>
 
         {needsName && (
-          <div className="rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3 mb-4">
-            <p className="text-center text-sm font-semibold text-indigo-700 mb-2">
-              🏅 {t("leaderboard.signPrompt", { name: myEntry.displayName })}
+          <Card className="border-gold-100 bg-gold-50/60 p-4">
+            <p className="mb-3 flex items-center justify-center gap-2 text-center text-sm font-semibold text-gold-700">
+              <Trophy className="size-4 shrink-0" aria-hidden="true" />
+              {t("leaderboard.signPrompt", { name: myEntry.displayName })}
             </p>
             <div className="flex gap-2">
               <input
@@ -183,43 +199,26 @@ export function DailyLeaderboardScreen() {
                 placeholder={t("leaderboard.signPlaceholder")}
                 aria-label={t("leaderboard.signPlaceholder")}
                 maxLength={MAX_PLAYER_NAME_LENGTH}
-                className="min-w-0 flex-1 px-3 py-2 rounded-lg border border-neutral-300 bg-white text-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                autoComplete="nickname"
+                className="min-h-11 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 text-center text-base font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500 md:text-sm"
               />
-              <button
-                type="button"
-                onClick={saveName}
-                disabled={!nameDraft.trim()}
-                className="shrink-0 px-4 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              >
+              <Button onClick={saveName} disabled={!nameDraft.trim()}>
                 {t("leaderboard.signSave")}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={playToday}
-            className="w-full px-5 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-          >
+        <div className="grid gap-2.5">
+          <Button size="lg" block onClick={playToday}>
             {t("leaderboard.playToday")}
-          </button>
+          </Button>
           {user && (
-            <button
-              type="button"
-              onClick={raceFriends}
-              className="w-full px-5 py-3 rounded-lg font-semibold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-            >
-              ⚔️ {t("leaderboard.raceFriends")}
-            </button>
+            <Button size="lg" variant="secondary" block onClick={raceFriends}>
+              <Swords className="size-4.5" aria-hidden="true" />
+              {t("leaderboard.raceFriends")}
+            </Button>
           )}
-          <Link
-            to="/"
-            className="w-full px-5 py-2.5 rounded-lg text-center text-sm text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 transition-colors"
-          >
-            {t("completion.backToMenu")}
-          </Link>
         </div>
       </div>
     </div>
