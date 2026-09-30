@@ -5,6 +5,6 @@ export function Card({ className = "", ...rest }: HTMLAttributes<HTMLDivElement>
 }
 
 /** Small uppercase label that heads a section or card. */
-export function Eyebrow({ className = "", ...rest }: HTMLAttributes<HTMLElement>) {
-  return <p className={`text-xs font-semibold uppercase tracking-[0.08em] text-subtle ${className}`} {...rest} />;
+export function Eyebrow({ as: Tag = "p", className = "", ...rest }: HTMLAttributes<HTMLElement> & { as?: "p" | "h2" | "h3" | "span" }) {
+  return <Tag className={`text-xs font-semibold uppercase tracking-[0.08em] text-subtle ${className}`} {...rest} />;
 }

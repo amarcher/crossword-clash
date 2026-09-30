@@ -24,8 +24,15 @@
     "dailyLeaderboard": "Leaderboard",
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
     "nudgeDismiss": "Got it",
-    "classicLibrary": "📚 Classic library",
-    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)"
+    "classicLibrary": "Classic library",
+    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
+    "dailyPlay": "Play",
+    "dailyMeta": "{{width}}×{{height}} · {{count}} clues",
+    "soloHeading": "Solve on your own",
+    "tvMode": "TV mode",
+    "watchLink": "Have a room code? Show that game on a TV",
+    "ownPuzzle": "Bring your own puzzle",
+    "ownPuzzleSubtitle": "Import from the NYT, a puzzle file, or try a sample"
   },
   "hostName": {
     "heading": "Host a game",

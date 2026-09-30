@@ -24,8 +24,15 @@
     "dailyLeaderboard": "Clasificación",
     "nudge": "Compite con amigos para llenar un crucigrama — o resuelve el Mini de hoy solo.",
     "nudgeDismiss": "Entendido",
-    "classicLibrary": "📚 Biblioteca clásica",
-    "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)"
+    "classicLibrary": "Biblioteca clásica",
+    "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)",
+    "dailyPlay": "Jugar",
+    "dailyMeta": "{{width}}×{{height}} · {{count}} pistas",
+    "soloHeading": "Resuelve por tu cuenta",
+    "tvMode": "Modo TV",
+    "watchLink": "¿Tienes un código? Muestra esa partida en una TV",
+    "ownPuzzle": "Trae tu propio crucigrama",
+    "ownPuzzleSubtitle": "Importa desde NYT, un archivo o prueba un ejemplo"
   },
   "hostName": {
     "heading": "Crear una partida",
