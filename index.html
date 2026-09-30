@@ -52,6 +52,18 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+      // Consent Mode v2: opt-in regions (EEA, UK, CH) start denied until the
+      // visitor chooses in the cookie banner; everyone else starts granted.
+      // Region list mirrors CONSENT_REGIONS in src/lib/consent.ts.
+      gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', wait_for_update: 500, region: ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","LI","NO","GB","CH"] });
+      gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted' });
+      try {
+        var c = JSON.parse(localStorage.getItem('crossword-clash:consent'));
+        if (c && c.v === 1) {
+          var a = c.ads ? 'granted' : 'denied';
+          gtag('consent', 'update', { analytics_storage: c.analytics ? 'granted' : 'denied', ad_storage: a, ad_user_data: a, ad_personalization: a });
+        }
+      } catch (e) {}
       gtag('config', 'G-0DNSC7RPSN');
     </script>
   </head>
