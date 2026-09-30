@@ -6,8 +6,8 @@
  * index.html, DeferredAnalytics, AdSlot, supabase/migrations, edge functions,
  * docs/NATIVE-NYT-IMPORT.md). Re-check it whenever data handling changes.
  *
- * No governing-law clause yet: add one (e.g. "the State of X, USA") once the
- * owner decides; until then default conflict-of-law rules apply.
+ * Governing law: the Commonwealth of Massachusetts, where the operating
+ * business is registered.
  */
 
 export const LEGAL_LAST_UPDATED = "2026-09-30";
@@ -70,6 +70,12 @@ const en: LegalContent = {
         heading: "Advertising (website only)",
         paragraphs: [
           "The website may show ads served by Google AdSense. Google and its partners may use cookies and similar technologies to show and measure ads, and may personalise them where permitted. You can manage ad personalisation at adssettings.google.com.",
+        ],
+      },
+      {
+        heading: "Your cookie choices",
+        paragraphs: [
+          "If you visit from the European Economic Area, the United Kingdom or Switzerland, we ask before using analytics or advertising cookies. Until you choose, Google Analytics runs without cookies and ads are not loaded. You can accept all, reject all, or choose per category, and change your choice at any time with the Cookie settings link at the bottom of the menu. Game progress and settings stored on your device are essential to the game and are always on.",
         ],
       },
       {
@@ -194,8 +200,8 @@ const en: LegalContent = {
         ],
       },
       {
-        heading: "Contact",
-        paragraphs: ["Questions about these terms: " + C + "."],
+        heading: "Governing law and contact",
+        paragraphs: ["These terms are governed by the laws of the Commonwealth of Massachusetts, USA. Questions about these terms: " + C + "."],
       },
     ],
   },
@@ -240,6 +246,12 @@ const es: LegalContent = {
         heading: "Publicidad (solo sitio web)",
         paragraphs: [
           "El sitio web puede mostrar anuncios servidos por Google AdSense. Google y sus socios pueden usar cookies y tecnologías similares para mostrar y medir anuncios, y personalizarlos cuando esté permitido. Puedes gestionar la personalización en adssettings.google.com.",
+        ],
+      },
+      {
+        heading: "Tus opciones de cookies",
+        paragraphs: [
+          "Si nos visitas desde el Espacio Económico Europeo, el Reino Unido o Suiza, te pedimos permiso antes de usar cookies de analítica o de publicidad. Hasta que elijas, Google Analytics funciona sin cookies y no se cargan anuncios. Puedes aceptar todo, rechazar todo o elegir por categoría, y cambiar tu elección cuando quieras con el enlace Configuración de cookies al final del menú. El progreso y los ajustes del juego guardados en tu dispositivo son esenciales para el juego y siempre están activos.",
         ],
       },
       {
@@ -364,8 +376,8 @@ const es: LegalContent = {
         ],
       },
       {
-        heading: "Contacto",
-        paragraphs: ["Preguntas sobre estos términos: " + C + "."],
+        heading: "Ley aplicable y contacto",
+        paragraphs: ["Estos términos se rigen por las leyes de la Mancomunidad de Massachusetts, EE. UU. Preguntas sobre estos términos: " + C + "."],
       },
     ],
   },

@@ -437,5 +437,23 @@
     "back": "Back to menu",
     "privacyTitle": "Privacy Policy",
     "termsTitle": "Terms of Use"
+  },
+  "consent": {
+    "regionLabel": "Cookie consent",
+    "title": "Cookies on Crossword Clash",
+    "body": "We'd like to use cookies to see how the game is used and to show ads. No analytics or ad cookies are set until you choose, and you can change this anytime in Cookie settings.",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject all",
+    "customize": "Choose",
+    "save": "Save choices",
+    "necessary": "Essential",
+    "necessaryHint": "Game progress and settings saved in your browser. Always on.",
+    "analytics": "Analytics",
+    "analyticsHint": "Google Analytics: which modes people use and where they get stuck.",
+    "ads": "Advertising",
+    "adsHint": "Google AdSense ads, which help keep the game free.",
+    "privacyLink": "Privacy policy",
+    "settings": "Cookie settings",
+    "close": "Close"
   }
 }

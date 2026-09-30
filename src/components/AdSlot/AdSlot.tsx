@@ -5,6 +5,7 @@ import {
   AD_PLACEMENTS,
   type AdPlacement,
 } from "../../lib/adConfig";
+import { adsAllowed, useConsent } from "../../lib/consentStore";
 
 declare global {
   interface Window {
@@ -38,9 +39,12 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
   // No point reserving space (or loading AdSense) for a placement whose slot
   // id isn't configured — it can never fill, so it would just be an empty box.
   const configured = import.meta.env.MODE !== "mobile" && isAdsEnabled() && !!config.slot;
+  // EEA/UK/CH visitors: AdSense loads only after they accept advertising.
+  const consent = useConsent();
+  const allowed = configured && adsAllowed(consent);
 
   useEffect(() => {
-    if (!configured || pushed.current) return;
+    if (!allowed || pushed.current) return;
     // Defer the AdSense script + push to browser idle so it doesn't compete
     // with the app's initial render/paint.
     const load = () => {
@@ -74,9 +78,9 @@ export function AdSlot({ placement, darkMode = false }: AdSlotProps) {
       if (hasRIC) window.cancelIdleCallback(id as number);
       else window.clearTimeout(id as number);
     };
-  }, [configured]);
+  }, [allowed]);
 
-  if (!configured || unfilled) return null;
+  if (!allowed || unfilled) return null;
 
   const bg = darkMode
     ? "bg-stage-raised/60 border-stage-line"

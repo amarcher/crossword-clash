@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 import { ConfirmProvider } from "./components/ConfirmDialog";
+import { ConsentBanner } from "./components/ConsentBanner";
 import { DeferredAnalytics } from "./components/DeferredAnalytics";
 import "./index.css";
 import { reloadOnceForChunkError } from "./lib/chunkReload";
@@ -35,5 +36,6 @@ createRoot(document.getElementById("root")!).render(
       <RouterProvider router={router} />
     </ConfirmProvider>
     <DeferredAnalytics />
+    <ConsentBanner />
   </StrictMode>,
 );
