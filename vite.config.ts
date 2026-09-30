@@ -2,9 +2,29 @@ import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import type { Connect, Plugin } from "vite";
+
+// /install-bookmarklet is a static page (public/install-bookmarklet/index.html,
+// see CLAUDE.md). Vercel serves a folder's index.html; Vite's dev/preview
+// servers fall back to the SPA instead, so rewrite the bare folder path here.
+const rewriteBookmarkletPage: Connect.NextHandleFunction = (req, _res, next) => {
+  if (req.url && /^\/install-bookmarklet\/?(\?.*)?$/.test(req.url)) {
+    req.url = req.url.replace(/^\/install-bookmarklet\/?/, "/install-bookmarklet/index.html");
+  }
+  next();
+};
+const staticBookmarkletPage: Plugin = {
+  name: "static-bookmarklet-page",
+  configureServer(server) {
+    server.middlewares.use(rewriteBookmarkletPage);
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use(rewriteBookmarkletPage);
+  },
+};
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode === "mobile" ? [{
+  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...(mode === "mobile" ? [{
     name: "mobile-html",
     transformIndexHtml: {
       order: "pre" as const,
