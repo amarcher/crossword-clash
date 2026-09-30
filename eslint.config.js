@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       "dist",
       "ios",
+      "artifacts",
       "android",
       // Static/generated assets: install-bookmarklet page, native bundles,
       // classic-puzzle manifest, etc.
