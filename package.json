@@ -10,10 +10,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:classics": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-classic-manifest.mts",
-    "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
     "lint": "eslint .",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "build:classics": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-classic-manifest.mts",
+    "build:native-import": "node scripts/build-native-import.mjs",
+    "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
+    "mobile:ios": "cap open ios",
+    "mobile:android": "cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
