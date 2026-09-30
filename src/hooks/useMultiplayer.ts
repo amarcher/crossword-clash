@@ -9,6 +9,7 @@ import {
 import type { GameSettings, Player } from "../types/game";
 import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
+import { reportError } from "../lib/errorReporting";
 import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
 
 interface TrackedPresence {
@@ -289,7 +290,10 @@ export function useMultiplayer({
       setNewGameId(payload.gameId);
     });
 
-    channel.subscribe(async (status) => {
+    channel.subscribe(async (status, err) => {
+      if (status === "CHANNEL_ERROR") {
+        reportError(err ?? new Error("Realtime channel error"), { op: "realtime subscribe", gameId });
+      }
       if (status === "SUBSCRIBED") {
         const state = await hydrate();
         setHydrated(true);
@@ -347,7 +351,8 @@ export function useMultiplayer({
             completed_at: new Date(completedAt).toISOString(),
           })
           .eq("id", gameId)
-          .then(() => {
+          .then(({ error }) => {
+            if (error) reportError(error, { op: "mark game completed", gameId });
             void channelRef.current
               ?.send({
                 type: "broadcast",
@@ -377,7 +382,8 @@ export function useMultiplayer({
         .from("games")
         .update({ status: "completed", completed_at: new Date(completedAt).toISOString() })
         .eq("id", gameId)
-        .then(() => {
+        .then(({ error }) => {
+          if (error) reportError(error, { op: "mark async game completed", gameId });
           void channelRef.current
             ?.send({ type: "broadcast", event: "game_completed", payload: { completedAt } })
             .catch(() => {});
@@ -530,10 +536,11 @@ export function useMultiplayer({
       event: "room_closed",
       payload: {},
     });
-    await supabase
+    const { error } = await supabase
       .from("games")
       .update({ status: "closed" })
       .eq("id", gameId);
+    if (error) reportError(error, { op: "close room", gameId });
   }, [gameId]);
 
   // Untrack presence on intentional leave; Supabase fires presence.leave

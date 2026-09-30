@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
+import { RouteErrorScreen } from "./screens/RouteErrorScreen";
+import { NotFoundScreen } from "./screens/NotFoundScreen";
 
 // MenuScreen + HostMenuScreen are imported statically because the index-route
 // resolvers below render them inline as the fallback. Every other screen is
@@ -101,10 +103,15 @@ export { IndexRedirect, HostIndexRedirect };
 // It is intentionally NOT a React route — see PR #36 for the Safe
 // Browsing rationale. Edit the HTML template, not React.
 export const router = createBrowserRouter([
-  { path: "/watch/:code?", lazy: () => import("./screens/SpectatorScreen").then(m => ({ Component: m.SpectatorScreen })) },
+  { path: "/watch/:code?", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/SpectatorScreen").then(m => ({ Component: m.SpectatorScreen })) },
+  // Static legal pages: top-level so they skip the game/auth providers (no
+  // anonymous sign-in just to read a policy).
+  { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/PrivacyScreen").then((m) => ({ Component: m.PrivacyScreen })) },
+  { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/TermsScreen").then((m) => ({ Component: m.TermsScreen })) },
   {
     path: "/",
     Component: RootLayout,
+    errorElement: <RouteErrorScreen />,
     children: [
       { index: true, Component: IndexRedirect },
       { path: "menu", Component: MenuScreen },
@@ -127,6 +134,7 @@ export const router = createBrowserRouter([
   {
     path: "/host",
     Component: HostLayout,
+    errorElement: <RouteErrorScreen />,
     children: [
       { index: true, Component: HostIndexRedirect },
       { path: "import", lazy: () => import("./screens/host/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
@@ -137,4 +145,5 @@ export const router = createBrowserRouter([
       { path: "rejoin", lazy: () => import("./screens/host/HostRejoinScreen").then((m) => ({ Component: m.HostRejoinScreen })) },
     ],
   },
+  { path: "*", Component: NotFoundScreen },
 ]);

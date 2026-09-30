@@ -21,12 +21,13 @@ import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
-import { tStatic } from "../i18n/i18n";
+import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
@@ -170,10 +171,15 @@ export function MultiplayerPlayScreen() {
   }, [mp, reset, game, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
+    const ok = await confirm({
+      title: t('playing.closeRoomConfirm'),
+      confirmLabel: t('playing.closeRoom'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await mp.closeRoom();
     handleReset();
-  }, [mp, handleReset]);
+  }, [mp, handleReset, confirm, t]);
 
   const handleNewPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);

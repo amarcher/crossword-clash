@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
+import { LegalLinks } from "../components/LegalLinks";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
@@ -255,6 +256,7 @@ export function MenuScreen() {
       <div className="mt-4">
         <AdSlot placement="menu-bottom" />
       </div>
+      <LegalLinks className="mt-2" />
     </div>
   );
 }

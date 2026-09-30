@@ -375,5 +375,28 @@
     "unsupportedError": "This puzzle uses rebus or special cells that Clash does not support yet. Please choose another puzzle.",
     "saveError": "The import could not be saved. Please reopen the importer and try again.",
     "sharing": "Solo play stays on this device. Hosting a room or sharing a challenge sends a copy of this puzzle to other players."
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "body": "The page hit an unexpected problem. Reloading usually fixes it.",
+    "reload": "Reload",
+    "backToMenu": "Back to menu",
+    "updatedTitle": "A new version is available",
+    "updatedBody": "This tab is out of date. Reload to get the latest version.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "We couldn't find that page. It may have moved, or the link may be mistyped."
+  },
+  "confirmDialog": {
+    "cancel": "Cancel",
+    "ok": "OK"
+  },
+  "legal": {
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "footerLabel": "Legal",
+    "lastUpdated": "Last updated: {{date}}",
+    "back": "Back to menu",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Use"
   }
 }

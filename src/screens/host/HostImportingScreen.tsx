@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Title } from "../../components/Title";
 import { useHostContext } from "../../layouts/HostLayout";
 import { listenForImportedPuzzle, readPuzzleFromClipboard } from "../../lib/puzzleUrl";
-import { tStatic } from "../../i18n/i18n";
+import { emitToast } from "../../lib/toastBus";
 
 export function HostImportingScreen() {
   const { t } = useTranslation();
@@ -56,7 +56,7 @@ export function HostImportingScreen() {
                 host.setUrlPuzzle(puzzle);
                 navigate("/host/puzzle-ready");
               } else {
-                alert(tStatic('importing.pasteError'));
+                emitToast({ message: t('importing.pasteError'), severity: 'error', ttl: 8000 });
               }
             }}
             className="px-6 py-3 rounded-lg font-semibold text-blue-400 border-2 border-blue-400 hover:bg-neutral-800 transition-colors w-full"

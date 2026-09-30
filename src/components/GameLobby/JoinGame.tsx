@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Title } from "../Title";
 import { loadPlayerName } from "../../lib/playerName";
 import { Link } from "react-router";
+import { LegalLinks } from "../LegalLinks";
 
 interface JoinGameProps {
   onJoin: (code: string, displayName: string) => void;
@@ -26,7 +27,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-dvh crossword-bg p-8">
+    <div className="flex flex-col items-center justify-center min-h-dvh crossword-bg p-8">
       <Title className="mb-2" />
       <p className="text-neutral-500 mb-8">{t('join.subtitle')}</p>
 
@@ -97,6 +98,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode }: JoinGa
           {t('join.back')}
         </button>
       </form>
+      <LegalLinks className="mt-2" />
     </div>
   );
 }

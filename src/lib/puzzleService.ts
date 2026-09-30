@@ -3,6 +3,7 @@ import { emitToast } from "./toastBus";
 import { getPlayerColor } from "./playerColors";
 import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player } from "../types/game";
+import { reportError } from "./errorReporting";
 
 /**
  * Compute SHA-256 hash of an ArrayBuffer for puzzle deduplication.
@@ -57,6 +58,7 @@ export async function uploadPuzzle(
 
   if (error) {
     console.error("Failed to upload puzzle:", error);
+    reportError(error, { op: "Failed to upload puzzle" });
     emitToast({ message: "Could not save puzzle to the server.", severity: "error" });
     return null;
   }
@@ -93,6 +95,7 @@ export async function createGame(
 
   if (gameError || !game) {
     console.error("Failed to create game:", gameError);
+    reportError(gameError, { op: "Failed to create game" });
     return null;
   }
 
@@ -106,6 +109,7 @@ export async function createGame(
 
     if (playerError) {
       console.error("Failed to create player:", playerError);
+      reportError(playerError, { op: "Failed to create player" });
     }
   }
 
@@ -164,6 +168,7 @@ export async function claimCellOnServer(
 
   if (error) {
     console.error("Failed to claim cell:", error);
+    reportError(error, { op: "Failed to claim cell" });
     return false;
   }
 
@@ -229,6 +234,7 @@ export async function joinGame(
 
     if (playerError) {
       console.error("Failed to create player:", playerError);
+      reportError(playerError, { op: "Failed to create player" });
       return null;
     }
 
@@ -253,6 +259,7 @@ export async function joinGame(
 
   if (puzzleError || !puzzleRow) {
     console.error("Failed to fetch puzzle:", puzzleError);
+    reportError(puzzleError, { op: "Failed to fetch puzzle" });
     return null;
   }
 
@@ -315,7 +322,13 @@ export async function fetchGameState(gameId: string): Promise<{
   ]);
 
   const { data: game, error: gameError } = gameResult;
-  if (gameError || !game) return null;
+  if (gameError || !game) {
+    // PGRST116 = row not found (stale/deleted game) — expected, not a bug.
+    if (gameError && gameError.code !== "PGRST116") {
+      reportError(gameError, { op: "fetchGameState: fetch game" });
+    }
+    return null;
+  }
 
   const { data: playerRows } = playersResult;
 
@@ -404,7 +417,10 @@ export async function rejoinGame(
       .order("created_at"),
   ]);
 
-  if (puzzleResult.error || !puzzleResult.data) return null;
+  if (puzzleResult.error || !puzzleResult.data) {
+    if (puzzleResult.error) reportError(puzzleResult.error, { op: "rejoin: fetch puzzle" });
+    return null;
+  }
   const puzzleRow = puzzleResult.data;
 
   const puzzle: Puzzle = {
@@ -437,6 +453,7 @@ export async function rejoinGame(
 
       if (playerError) {
         console.error("Failed to create player on rejoin:", playerError);
+        reportError(playerError, { op: "Failed to create player on rejoin" });
       } else if (newPlayer) {
         players.push(newPlayer);
       }
@@ -494,6 +511,7 @@ export async function createNextGame(
 
   if (gameError || !game) {
     console.error("Failed to create next game:", gameError);
+    reportError(gameError, { op: "Failed to create next game" });
     return null;
   }
 
@@ -507,6 +525,7 @@ export async function createNextGame(
 
     if (playerError) {
       console.error("Failed to create player:", playerError);
+      reportError(playerError, { op: "Failed to create player" });
     }
   }
 
@@ -534,6 +553,7 @@ export async function startGame(
 
   if (error) {
     console.error("Failed to start game:", error);
+    reportError(error, { op: "Failed to start game" });
     return false;
   }
 

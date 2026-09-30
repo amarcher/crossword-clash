@@ -25,7 +25,8 @@ export function ToastViewport() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"
+      className="fixed left-1/2 -translate-x-1/2 z-[80] flex flex-col gap-2 pointer-events-none max-w-[calc(100vw-2rem)]"
+      style={{ top: "max(1rem, env(safe-area-inset-top))" }}
       role="region"
       aria-live="polite"
       aria-label="Notifications"

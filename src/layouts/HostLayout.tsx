@@ -30,6 +30,7 @@ import {
   buildStallEvent,
 } from "../lib/narrator/events";
 import { tStatic } from "../i18n/i18n";
+import { useConfirm } from "../components/ConfirmDialog";
 import { usePageViews } from "../hooks/usePageViews";
 import { track } from "../lib/analytics";
 import { createContext, useContext } from "react";
@@ -133,6 +134,7 @@ export function useHostContext(): HostContextValue {
 
 export function HostLayout() {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   usePageViews();
   const { user } = useSupabase();
   const {
@@ -491,12 +493,17 @@ export function HostLayout() {
   }, [multiplayer, wrongAnswerTimeout, gameId, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
-    if (!window.confirm(tStatic('playing.closeRoomConfirm'))) return;
+    const ok = await confirm({
+      title: tStatic('playing.closeRoomConfirm'),
+      confirmLabel: tStatic('playing.closeRoom'),
+      tone: 'danger',
+    });
+    if (!ok) return;
     await multiplayer.closeRoom();
     setGameId(null);
     clearHostSession();
     navigate("/host");
-  }, [multiplayer, navigate]);
+  }, [multiplayer, navigate, confirm]);
 
   const handleNewPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
