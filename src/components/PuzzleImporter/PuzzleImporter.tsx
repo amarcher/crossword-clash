@@ -171,6 +171,8 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   );
 
   const nativeNyt = nativeNytImportAvailable();
+  // The store apps have no drag-and-drop, bookmarklet or browser extensions.
+  const nativeApp = import.meta.env.MODE === "mobile";
 
   return (
     <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
@@ -180,7 +182,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("importer.hubTitle")}
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{t("importer.hubSubtitle")}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{t(nativeApp ? "importer.hubSubtitleNative" : "importer.hubSubtitle")}</p>
         </div>
 
         {/* Dropzone: a real <label> around a visually-hidden file input, so it is
@@ -207,12 +209,18 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
             )}
           </span>
           <span className="font-display text-lg font-semibold text-ink">
-            {loading ? t("importer.parsing") : t("importer.tileFileTitle")}
+            {loading ? t("importer.parsing") : t(nativeApp ? "importer.tileFileTitleNative" : "importer.tileFileTitle")}
           </span>
           <span className="max-w-sm text-sm text-muted">{t("importer.tileFileDesc")}</span>
           <span className="mt-1 text-sm font-semibold text-brand-700">
-            <span className="hidden md:inline">{t("importer.dropHere")}</span>
-            <span className="md:hidden">{t("importer.orBrowse")}</span>
+            {nativeApp ? (
+              t("importer.browseNative")
+            ) : (
+              <>
+                <span className="hidden md:inline">{t("importer.dropHere")}</span>
+                <span className="md:hidden">{t("importer.orBrowse")}</span>
+              </>
+            )}
           </span>
           <input
             type="file"
@@ -229,7 +237,7 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
         )}
 
         {/* Sources */}
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className={`mt-3 grid gap-3 ${nativeApp ? "" : "sm:grid-cols-2"}`}>
           {nativeNyt ? (
             <SourceCard
               to="/nyt-import"
@@ -248,14 +256,16 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
               cta={t("importer.tileNytCta")}
             />
           )}
-          <SourceCard
-            href={SCRAPER_URL}
-            external
-            icon={PuzzleIcon}
-            title={t("importer.tileScraperTitle")}
-            description={t("importer.tileScraperDesc")}
-            cta={t("importer.tileScraperCta")}
-          />
+          {!nativeApp && (
+            <SourceCard
+              href={SCRAPER_URL}
+              external
+              icon={PuzzleIcon}
+              title={t("importer.tileScraperTitle")}
+              description={t("importer.tileScraperDesc")}
+              cta={t("importer.tileScraperCta")}
+            />
+          )}
         </div>
 
         {/* Samples */}

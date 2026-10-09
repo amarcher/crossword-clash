@@ -14,6 +14,7 @@ import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
 import { getDailyMini } from "./dailyMinis";
 import type { Puzzle } from "../types/puzzle";
+import { displayableName } from "./nameFilter";
 
 // --- Types ---
 
@@ -109,7 +110,7 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
     const row = {
       day: input.day,
       user_id: input.userId,
-      display_name: input.displayName.trim().slice(0, 40) || "Player",
+      display_name: displayableName(input.displayName).slice(0, 40),
       mode: input.mode,
       seconds,
       game_id: input.gameId ?? null,
@@ -137,8 +138,8 @@ export async function updateDailyDisplayName(
   displayName: string,
 ): Promise<void> {
   if (!supabase) return;
-  const name = displayName.trim().slice(0, 40);
-  if (!name) return;
+  if (!displayName.trim()) return;
+  const name = displayableName(displayName).slice(0, 40);
   try {
     const { error } = await supabase
       .from("daily_results")
@@ -171,7 +172,7 @@ export async function fetchDailyLeaderboard(
     return rankEntries(
       data.map((r) => ({
         userId: r.user_id,
-        displayName: r.display_name,
+        displayName: displayableName(r.display_name),
         mode: (r.mode === "race" ? "race" : "solo") as DailyMode,
         seconds: r.seconds,
       })),

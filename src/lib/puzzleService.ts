@@ -4,6 +4,7 @@ import { getPlayerColor } from "./playerColors";
 import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player } from "../types/game";
 import { reportError } from "./errorReporting";
+import { displayableName } from "./nameFilter";
 
 /**
  * Compute SHA-256 hash of an ArrayBuffer for puzzle deduplication.
@@ -103,7 +104,7 @@ export async function createGame(
     const { error: playerError } = await supabase.from("players").insert({
       game_id: game.id,
       user_id: userId,
-      display_name: displayName,
+      display_name: displayableName(displayName),
       color: getPlayerColor(0),
     });
 
@@ -228,7 +229,7 @@ export async function joinGame(
     const { error: playerError } = await supabase.from("players").insert({
       game_id: game.id,
       user_id: userId,
-      display_name: displayName,
+      display_name: displayableName(displayName),
       color,
     });
 
@@ -242,7 +243,7 @@ export async function joinGame(
       id: "",
       game_id: game.id,
       user_id: userId,
-      display_name: displayName,
+      display_name: displayableName(displayName),
       color,
       score: 0,
       race_seconds: null,
@@ -276,7 +277,7 @@ export async function joinGame(
     id: p.id,
     gameId: p.game_id,
     userId: p.user_id,
-    displayName: p.display_name,
+    displayName: displayableName(p.display_name),
     color: p.color,
     score: p.score,
   }));
@@ -336,7 +337,7 @@ export async function fetchGameState(gameId: string): Promise<{
     id: p.id,
     gameId: p.game_id,
     userId: p.user_id,
-    displayName: p.display_name,
+    displayName: displayableName(p.display_name),
     color: p.color,
     score: p.score,
     // Undefined before the 20260701 migration is applied — read as null.
@@ -445,7 +446,7 @@ export async function rejoinGame(
         .insert({
           game_id: game.id,
           user_id: userId,
-          display_name: displayName,
+          display_name: displayableName(displayName),
           color,
         })
         .select("*")
@@ -464,7 +465,7 @@ export async function rejoinGame(
     id: p.id,
     gameId: p.game_id,
     userId: p.user_id,
-    displayName: p.display_name,
+    displayName: displayableName(p.display_name),
     color: p.color,
     score: p.score,
   }));
@@ -519,7 +520,7 @@ export async function createNextGame(
     const { error: playerError } = await supabase.from("players").insert({
       game_id: game.id,
       user_id: userId,
-      display_name: options?.displayName ?? "Player 1",
+      display_name: displayableName(options?.displayName, "Player 1"),
       color: getPlayerColor(0),
     });
 

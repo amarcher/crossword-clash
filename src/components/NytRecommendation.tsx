@@ -15,7 +15,8 @@ export function NytRecommendation({
 }: NytRecommendationProps) {
   const { t } = useTranslation();
 
-  if (!NYT_AFFILIATE_URL) return null;
+  // Website only: the native apps carry no sponsored links.
+  if (!NYT_AFFILIATE_URL || import.meta.env.MODE === "mobile") return null;
 
   if (variant === "inline") {
     const color = darkMode ? "text-subtle" : "text-muted";

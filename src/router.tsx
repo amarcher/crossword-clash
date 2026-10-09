@@ -116,6 +116,7 @@ export const router = createBrowserRouter([
   // anonymous sign-in just to read a policy).
   { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/PrivacyScreen").then((m) => ({ Component: m.PrivacyScreen })) },
   { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/TermsScreen").then((m) => ({ Component: m.TermsScreen })) },
+  { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/SupportScreen").then((m) => ({ Component: m.SupportScreen })) },
   {
     path: "/",
     Component: RootLayout,

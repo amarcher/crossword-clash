@@ -10,6 +10,7 @@ import type { GameSettings, Player } from "../types/game";
 import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
 import { reportError } from "../lib/errorReporting";
+import { displayableName } from "../lib/nameFilter";
 import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
 
 interface TrackedPresence {
@@ -32,7 +33,7 @@ function presenceStateToPlayers(
         id: p.user_id,
         gameId,
         userId: p.user_id,
-        displayName: p.display_name,
+        displayName: displayableName(p.display_name),
         color: p.color,
         score: 0,
       });

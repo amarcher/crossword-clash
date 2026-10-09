@@ -27,6 +27,7 @@ export interface LegalDoc {
 export interface LegalContent {
   privacy: LegalDoc;
   terms: LegalDoc;
+  support: LegalDoc;
 }
 
 const C = LEGAL_CONTACT_EMAIL;
@@ -205,6 +206,40 @@ const en: LegalContent = {
       },
     ],
   },
+  support: {
+    intro:
+      "Help with Crossword Clash on the web and in the iOS and Android apps. The game is free and needs no account.",
+    sections: [
+      {
+        heading: "Contact us",
+        paragraphs: [
+          "Email " + C + " with questions, bug reports or feedback. Tell us your device, what you were doing and, for a multiplayer game, the room code. We usually reply within a few days.",
+        ],
+      },
+      {
+        heading: "Common questions",
+        items: [
+          "Joining a game: choose Join with a code and enter the six-character room code your host shared, or scan the QR code on their screen.",
+          "A game needs at least two players before the host can start it. The host can close the room at any time.",
+          "Solo progress is saved on your device and is restored when you reopen the app. Deleting the app or clearing its data removes it.",
+          "Your own puzzles: Crossword Clash opens .puz, .ipuz, .jpz and .xd files.",
+          "Multiplayer and the daily leaderboard need an internet connection. Solo play with a puzzle already on your device does not.",
+        ],
+      },
+      {
+        heading: "Report a name or a player",
+        paragraphs: [
+          "Display names are filtered, but if you see an offensive name or abusive behaviour, email " + C + " with the room code or the leaderboard date and the name. We review reports and remove names or block access where our terms are broken.",
+        ],
+      },
+      {
+        heading: "Delete your data",
+        paragraphs: [
+          "To have the game, puzzle and leaderboard records tied to your anonymous ID deleted, email " + C + " with your display name and, if you have it, a room code. Deleting the app removes everything stored on your device.",
+        ],
+      },
+    ],
+  },
 };
 
 const es: LegalContent = {
@@ -378,6 +413,40 @@ const es: LegalContent = {
       {
         heading: "Ley aplicable y contacto",
         paragraphs: ["Estos términos se rigen por las leyes de la Mancomunidad de Massachusetts, EE. UU. Preguntas sobre estos términos: " + C + "."],
+      },
+    ],
+  },
+  support: {
+    intro:
+      "Ayuda con Crossword Clash en la web y en las apps de iOS y Android. El juego es gratuito y no requiere cuenta.",
+    sections: [
+      {
+        heading: "Contáctanos",
+        paragraphs: [
+          "Escribe a " + C + " con preguntas, errores o comentarios. Indica tu dispositivo, qué estabas haciendo y, si era una partida multijugador, el código de sala. Solemos responder en unos días.",
+        ],
+      },
+      {
+        heading: "Preguntas frecuentes",
+        items: [
+          "Unirse a una partida: elige Unirse con un código e introduce el código de sala de seis caracteres que compartió el anfitrión, o escanea el código QR de su pantalla.",
+          "Una partida necesita al menos dos jugadores antes de que el anfitrión pueda empezarla. El anfitrión puede cerrar la sala en cualquier momento.",
+          "El progreso en solitario se guarda en tu dispositivo y se recupera al volver a abrir la app. Si eliminas la app o borras sus datos, se pierde.",
+          "Tus propios crucigramas: Crossword Clash abre archivos .puz, .ipuz, .jpz y .xd.",
+          "El multijugador y la clasificación diaria necesitan conexión a internet. Jugar en solitario con un crucigrama que ya está en tu dispositivo, no.",
+        ],
+      },
+      {
+        heading: "Denunciar un nombre o a un jugador",
+        paragraphs: [
+          "Los nombres visibles se filtran, pero si ves un nombre ofensivo o un comportamiento abusivo, escribe a " + C + " con el código de sala o la fecha de la clasificación y el nombre. Revisamos las denuncias y eliminamos nombres o bloqueamos el acceso cuando se incumplen nuestros términos.",
+        ],
+      },
+      {
+        heading: "Eliminar tus datos",
+        paragraphs: [
+          "Para que eliminemos los registros de partidas, crucigramas y clasificación vinculados a tu identificador anónimo, escribe a " + C + " con tu nombre visible y, si lo tienes, un código de sala. Eliminar la app borra todo lo guardado en tu dispositivo.",
+        ],
       },
     ],
   },

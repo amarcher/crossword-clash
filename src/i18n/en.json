@@ -36,7 +36,9 @@
     "ownPuzzleSubtitle": "Import from the NYT, a puzzle file, or try a sample",
     "nytTile": "Race friends on today's NYT crossword",
     "nytTileStreak": "{{count}}-day NYT streak — play today's",
-    "nytTileSubtitle": "Free one-click import for NYT subscribers (desktop)"
+    "nytTileSubtitle": "Free one-click import for NYT subscribers (desktop)",
+    "iosApp": "Get the iPhone and iPad app",
+    "iosAppSubtitle": "Free on the App Store, with a keyboard made for crosswords"
   },
   "hostName": {
     "heading": "Host a game",
@@ -67,6 +69,9 @@
     "tileScraperDesc": "Crossword Scraper Chrome extension — Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
     "tileScraperCta": "Get the extension",
     "tileFileTitle": "Drop a file",
+    "hubSubtitleNative": "Pick a source: open a puzzle file, import one you already subscribe to, or try a sample.",
+    "tileFileTitleNative": "Open a puzzle file",
+    "browseNative": "Tap to choose a file (.puz, .ipuz, .jpz, .xd)",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd from AVCX, Lollapuzzoola, BEQ, anywhere.",
     "tileSampleTitle": "Try a sample",
     "classicTitle": "Classic puzzles",
@@ -436,7 +441,9 @@
     "lastUpdated": "Last updated: {{date}}",
     "back": "Back to menu",
     "privacyTitle": "Privacy Policy",
-    "termsTitle": "Terms of Use"
+    "termsTitle": "Terms of Use",
+    "support": "Support",
+    "supportTitle": "Support"
   },
   "consent": {
     "regionLabel": "Cookie consent",
