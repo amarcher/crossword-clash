@@ -18,7 +18,6 @@ Use a new archive path so prior artifacts remain available.
 
 ```sh
 pnpm mobile:sync
-node scripts/build-ios-icon.mjs
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath ios/DerivedData \
@@ -37,9 +36,11 @@ operation: use Xcode Organizer or a copy of the export options with
 profiles. No authentication keys, passwords, or private certificates belong in
 this repository.
 
-The icon renderer uses existing React/@vercel/og dependencies and macOS Swift
-ImageIO for lossless RGB PNG encoding. It renders the existing blue C tile
-identity with an opaque background, replacing the Capacitor template icon.
+The app icon is the "Tile duel" artwork (two C tiles and a lightning bolt on
+blue), checked in as the single 1024px opaque RGB PNG in
+`ios/App/App/Assets.xcassets/AppIcon.appiconset/`. Xcode generates every size
+from it and iOS masks the corners, so replace that file to change the icon.
+The website favicon and touch icon in `public/` are exports of the same art.
 
 ## Review material
 
