@@ -1,0 +1,11 @@
+No login, purchase or subscription is required. The app creates an anonymous session automatically.
+
+Core path: on the menu tap Play under Daily Mini for a built-in crossword. Tap a cell and type with the crossword keyboard. Correct letters stay on the grid; incorrect letters are rejected. Close and reopen the app to see saved solo progress. The Classic library has 46 more built-in, public-domain puzzles (The Cross Word Puzzle Book, 1924).
+
+Multiplayer (needs internet and two devices, or one device plus a browser): choose Start a game, pick a built-in puzzle, enter a display name and create the room. On a second device open Join with a code (or visit crosswordclash.com and choose Join) and enter the six-character room code. The host can start once two players are in.
+
+Display names are the only user-entered text other players see. They are filtered for objectionable words, and players can report a name through the Support page linked from the menu footer.
+
+Optional import: Import from NYT opens nytimes.com in a separate in-app browser. The person signs in on NYT's own page with their own subscription, opens a puzzle they can already access and taps Import to play that puzzle in this app. The app bundles no NYT content or credentials, does not see the sign-in, and keeps solo imports on the device. Crossword Clash is not affiliated with The New York Times. Review can be completed entirely with the built-in puzzles, without an NYT account.
+
+The app contains no ads, analytics SDKs or tracking.

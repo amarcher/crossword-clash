@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
-import { BookOpen, Flame, Hash, Newspaper, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
+import { BookOpen, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
@@ -11,7 +11,7 @@ import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { getDailyMini } from "../lib/dailyMinis";
 import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
-import { isDesktopBrowser } from "../lib/platform";
+import { IOS_APP_STORE_URL, isDesktopBrowser, isIosBrowser } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
 
@@ -51,6 +51,11 @@ export function MenuScreen() {
   const clueCount = dailyMini.puzzle.clues.length;
   const showFriends = Boolean(user) || loading;
   const nativeNyt = nativeNytImportAvailable();
+  // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
+  const iosAppUrl = useMemo(
+    () => (import.meta.env.MODE !== "mobile" && isIosBrowser() ? IOS_APP_STORE_URL : null),
+    [],
+  );
 
   return (
     <div className="min-h-dvh crossword-bg px-4 pb-8 pt-8 sm:pt-12">
@@ -185,6 +190,15 @@ export function MenuScreen() {
                 subtitle={t("menu.ownPuzzleSubtitle")}
                 onClick={() => track("mode_selected", { mode: "solo" })}
               />
+              {iosAppUrl && (
+                <ListRow
+                  icon={Smartphone}
+                  href={iosAppUrl}
+                  title={t("menu.iosApp")}
+                  subtitle={t("menu.iosAppSubtitle")}
+                  onClick={() => track("app_store_click", { placement: "menu" })}
+                />
+              )}
             </ListGroup>
           </section>
         </div>

@@ -7,14 +7,14 @@ import { Card } from "../../components/ui";
 import { LEGAL_CONTENT, LEGAL_LAST_UPDATED, type LegalDoc } from "./legalContent";
 
 interface LegalPageProps {
-  kind: "privacy" | "terms";
+  kind: "privacy" | "terms" | "support";
 }
 
 export function LegalPage({ kind }: LegalPageProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("es") ? "es" : "en";
   const doc: LegalDoc = LEGAL_CONTENT[lang][kind];
-  const title = kind === "privacy" ? t("legal.privacyTitle") : t("legal.termsTitle");
+  const title = t(`legal.${kind}Title`);
 
   useEffect(() => {
     const previous = document.title;
@@ -59,12 +59,17 @@ export function LegalPage({ kind }: LegalPageProps) {
             </section>
           ))}
           <nav aria-label={t("legal.footerLabel")} className="flex gap-4 border-t border-line pt-4 text-sm">
-            <Link
-              to={kind === "privacy" ? "/terms" : "/privacy"}
-              className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500 focus-visible:outline-2 focus-visible:outline-brand-500"
-            >
-              {kind === "privacy" ? t("legal.terms") : t("legal.privacy")}
-            </Link>
+            {(["privacy", "terms", "support"] as const)
+              .filter((other) => other !== kind)
+              .map((other) => (
+                <Link
+                  key={other}
+                  to={`/${other}`}
+                  className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500 focus-visible:outline-2 focus-visible:outline-brand-500"
+                >
+                  {t(`legal.${other}`)}
+                </Link>
+              ))}
           </nav>
         </article>
       </Card>

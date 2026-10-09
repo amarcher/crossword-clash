@@ -36,6 +36,8 @@ export type AnalyticsEvent =
   | "challenge_accepted"
   | "live_bridge"
   | "leaderboard_viewed"
+  /** A website visitor on iOS followed the App Store link. Param `placement`. */
+  | "app_store_click"
   /**
    * Fired from the STATIC /install-bookmarklet page (bookmarklet/install-page.html
    * has its own gtag snippet — it is outside the React bundle by design).

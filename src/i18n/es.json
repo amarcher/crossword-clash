@@ -36,7 +36,9 @@
     "ownPuzzleSubtitle": "Importa desde NYT, un archivo o prueba un ejemplo",
     "nytTile": "Compite con amigos en el crucigrama del NYT de hoy",
     "nytTileStreak": "Racha NYT de {{count}} días — juega el de hoy",
-    "nytTileSubtitle": "Importación gratis con un clic para suscriptores del NYT (escritorio)"
+    "nytTileSubtitle": "Importación gratis con un clic para suscriptores del NYT (escritorio)",
+    "iosApp": "Descarga la app para iPhone y iPad",
+    "iosAppSubtitle": "Gratis en el App Store, con un teclado hecho para crucigramas"
   },
   "hostName": {
     "heading": "Crear una partida",
@@ -67,6 +69,9 @@
     "tileScraperDesc": "Extensión Crossword Scraper de Chrome — Wapo, LAT, New Yorker, Atlantic, AVCX, Crosshare, Puzzmo.",
     "tileScraperCta": "Obtener la extensión",
     "tileFileTitle": "Subir un archivo",
+    "hubSubtitleNative": "Elige una fuente: abre un archivo de crucigrama, importa uno de tu suscripción o prueba una muestra.",
+    "tileFileTitleNative": "Abrir un archivo de crucigrama",
+    "browseNative": "Toca para elegir un archivo (.puz, .ipuz, .jpz, .xd)",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd de AVCX, Lollapuzzoola, BEQ, donde sea.",
     "tileSampleTitle": "Probar una muestra",
     "classicTitle": "Crucigramas clásicos",
@@ -436,7 +441,9 @@
     "lastUpdated": "Última actualización: {{date}}",
     "back": "Volver al menú",
     "privacyTitle": "Política de privacidad",
-    "termsTitle": "Términos de uso"
+    "termsTitle": "Términos de uso",
+    "support": "Ayuda",
+    "supportTitle": "Ayuda"
   },
   "consent": {
     "regionLabel": "Consentimiento de cookies",

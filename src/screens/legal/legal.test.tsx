@@ -18,7 +18,7 @@ afterEach(async () => {
 
 describe("legal content", () => {
   it("en and es have the same structure", () => {
-    for (const kind of ["privacy", "terms"] as const) {
+    for (const kind of ["privacy", "terms", "support"] as const) {
       const en = LEGAL_CONTENT.en[kind].sections;
       const es = LEGAL_CONTENT.es[kind].sections;
       expect(es.length).toBe(en.length);

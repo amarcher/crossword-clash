@@ -19,6 +19,10 @@ export function LegalLinks({ className = "" }: { className?: string }) {
       <Link to="/terms" className={link}>
         {t("legal.terms")}
       </Link>
+      <span aria-hidden="true">·</span>
+      <Link to="/support" className={link}>
+        {t("legal.support")}
+      </Link>
       {/* The native apps have no analytics or ad cookies to configure. */}
       {import.meta.env.MODE !== "mobile" && (
         <>
