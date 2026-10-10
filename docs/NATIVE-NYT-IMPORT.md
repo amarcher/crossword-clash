@@ -107,6 +107,28 @@ app's local web storage. NYT cookies stay in the native browser's website
 storage; Android OS app backup is disabled. iOS default app/device backup
 behavior is unchanged. Persistence is not cross-device sync.
 
+## Subscription check
+
+NYT's puzzle endpoint answers signed-out requests with the full puzzle, so a
+successful response says nothing about access (found October 9, 2026: a Daily
+imported on a device that had never signed in). The importer therefore confirms
+access itself before requesting a puzzle, in `fetchNytPuzzle`:
+
+1. It refuses on NYT's own "Subscribe to play." screen (the `.pz-error` element).
+2. It asks NYT's visitor-status endpoint, with the page's session, and requires
+   a signed-in account holding an `ACTIVE` subscription whose entitlements
+   include the crossword (`XWD`).
+
+Anything short of a clear yes, including a failed or unreadable status
+response, stops the import with the `ACCESS` error and the puzzle is never
+requested. This is a check inside the app: NYT's endpoint stays open, so it
+makes the importer behave as described rather than making access impossible.
+Both endpoints are undocumented and can change. The same bundled extractor runs
+on iOS and Android, so the check applies to both.
+
+At tablet widths NYT's paywall illustration covers its "Log in" link; signing
+in works from the page's menu instead.
+
 ## Known scope and limitations
 
 - The NYT endpoint is undocumented. Live responses can change independently

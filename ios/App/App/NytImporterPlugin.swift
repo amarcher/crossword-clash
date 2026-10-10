@@ -116,7 +116,12 @@ final class NytImportViewController: UIViewController, WKNavigationDelegate, WKU
     private func showError(_ code: String) {
         busy = false
         importButton.isEnabled = webView.url.map(Self.isPuzzle) ?? false
-        statusLabel.text = label(code, label("FORMAT", "This puzzle could not be imported."))
+        let message = label(code, label("FORMAT", "This puzzle could not be imported."))
+        statusLabel.text = message
+        // The status line is easy to miss; a refused import must be unmistakable.
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        if presentedViewController == nil { present(alert, animated: true) }
     }
     @objc private func importPuzzle() {
         guard !busy, let url = webView.url, Self.isPuzzle(url) else { showError("PAGE"); return }

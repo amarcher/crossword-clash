@@ -29,11 +29,10 @@ describe("subscriber-directed NYT extraction", () => {
     expect(JSON.stringify(puzzle)).not.toContain("private");
   });
 
-  it("imports the indexed clue array returned by NYT v6", async () => {
+  it("imports the indexed clue array returned by NYT v6", () => {
     const data = fixture();
     const payload = { ...data, body: [{ ...data.body[0], clues: Object.values(data.body[0].clues) }] };
-    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(payload)));
-    const puzzle = await fetchNytPuzzle(url, request);
+    const puzzle = parseNytPuzzle(payload, url);
     expect(puzzle).toEqual(parseNytPuzzle(data, url));
     expect(puzzle.clues.map(({ direction, number }) => [direction, number])).toEqual([
       ["across", 1], ["across", 3], ["down", 1], ["down", 2],
@@ -90,23 +89,63 @@ describe("subscriber-directed NYT extraction", () => {
     expect(() => parseNytPuzzle(duplicate, url)).toThrow();
   });
 
-  it("uses the current browser's credentials for one same-origin request", async () => {
-    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(fixture())));
+  const STATUS_URL = "https://a.nytimes.com/svc/nyt/data-layer?sourceApp=games-crosswords";
+  const subscriber = () => ({
+    session: { isLoggedIn: true },
+    user: { type: "sub", subInfo: { subscriptions: [{ status: "ACTIVE", entitlements: ["XWD"] }] } },
+  });
+  /** Answers the status check with `status`, and the puzzle request with `puzzle`. */
+  const nyt = (status: unknown, puzzle: () => Response = () => new Response(JSON.stringify(fixture()))) =>
+    vi.fn<typeof fetch>().mockImplementation(async (input) =>
+      String(input) === STATUS_URL ? new Response(JSON.stringify(status)) : puzzle());
+
+  it("confirms the subscription, then makes one same-origin puzzle request with the browser's credentials", async () => {
+    const request = nyt(subscriber());
     const puzzle = await fetchNytPuzzle(url, request);
     expect(puzzle.clues).toHaveLength(4);
-    expect(request).toHaveBeenCalledExactlyOnceWith("/svc/crosswords/v6/puzzle/daily/2026-09-10.json", {
-      credentials: "include", redirect: "error", signal: expect.any(AbortSignal),
-    });
+    const options = { credentials: "include", redirect: "error", signal: expect.any(AbortSignal) };
+    expect(request.mock.calls).toEqual([
+      [STATUS_URL, options],
+      ["/svc/crosswords/v6/puzzle/daily/2026-09-10.json", options],
+    ]);
+  });
+
+  it.each([
+    ["a signed-out visitor", { session: { isLoggedIn: false }, user: { type: "anon", subInfo: { modified: 0 } } }],
+    ["a signed-in account with no subscription", { session: { isLoggedIn: true }, user: { type: "regi", subInfo: {} } }],
+    ["a lapsed subscription", { session: { isLoggedIn: true }, user: { subInfo: { subscriptions: [{ status: "CANCELLED", entitlements: ["XWD"] }] } } }],
+    ["a subscription without the crossword", { session: { isLoggedIn: true }, user: { subInfo: { subscriptions: [{ status: "ACTIVE", entitlements: ["MM"] }] } } }],
+    ["an unreadable status", "nonsense"],
+  ])("refuses %s without requesting the puzzle", async (_label, status) => {
+    const request = nyt(status);
+    await expect(fetchNytPuzzle(url, request)).rejects.toMatchObject({ code: "ACCESS" });
+    expect(request).toHaveBeenCalledExactlyOnceWith(STATUS_URL, expect.anything());
+  });
+
+  it("fails closed when the status check cannot be completed", async () => {
+    const unavailable = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status: 503 }));
+    await expect(fetchNytPuzzle(url, unavailable)).rejects.toMatchObject({ code: "ACCESS" });
+    const offline = vi.fn<typeof fetch>().mockRejectedValue(new TypeError("network"));
+    await expect(fetchNytPuzzle(url, offline)).rejects.toMatchObject({ code: "ACCESS" });
+    expect(unavailable).toHaveBeenCalledTimes(1);
+    expect(offline).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses on NYT's paywall screen before making any request", async () => {
+    const request = nyt(subscriber());
+    const paywall = { querySelector: (selector: string) => (selector === ".pz-error" ? ({} as Element) : null) };
+    await expect(fetchNytPuzzle(url, request, paywall)).rejects.toMatchObject({ code: "ACCESS" });
+    expect(request).not.toHaveBeenCalled();
   });
 
   it.each([401, 403])("stops on access denial %s without alternate endpoints or retries", async (status) => {
-    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status }));
+    const request = nyt(subscriber(), () => new Response("", { status }));
     await expect(fetchNytPuzzle(url, request)).rejects.toMatchObject({ code: "ACCESS" });
-    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledTimes(2);
   });
 
   it("does not expose server response bodies in errors", async () => {
-    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response("private-account-data"));
+    const request = nyt(subscriber(), () => new Response("private-account-data"));
     await expect(fetchNytPuzzle(url, request)).rejects.toMatchObject({ code: "FORMAT" });
   });
 });

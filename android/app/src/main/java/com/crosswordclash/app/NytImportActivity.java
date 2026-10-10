@@ -113,7 +113,11 @@ public class NytImportActivity extends ComponentActivity {
 
     private void showError(String code) {
         importButton.setEnabled(isPuzzle(browser.getUrl()));
-        status.setText(label(code, label("FORMAT", "This puzzle could not be imported.")));
+        String message = label(code, label("FORMAT", "This puzzle could not be imported."));
+        status.setText(message);
+        // The status line is easy to miss under the toolbar; a refused import must be unmistakable.
+        if (!isFinishing()) new android.app.AlertDialog.Builder(this).setMessage(message)
+            .setPositiveButton(android.R.string.ok, null).show();
     }
     private void importPuzzle() {
         if (!isPuzzle(browser.getUrl())) { showError("PAGE"); return; }

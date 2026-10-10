@@ -123,15 +123,61 @@ export function parseNytPuzzle(payload: unknown, pageUrl: string): Puzzle {
   };
 }
 
+const ACCESS_MESSAGE = "Sign in to NYT with access to this puzzle, then tap Import again.";
+const NYT_STATUS_URL = "https://a.nytimes.com/svc/nyt/data-layer?sourceApp=games-crosswords";
+
+/**
+ * Whether NYT's own visitor-status response describes a signed-in account with
+ * an active subscription that includes the crossword ("XWD").
+ */
+export function hasNytCrosswordAccess(status: unknown): boolean {
+  if (!isRecord(status) || !isRecord(status.session) || status.session.isLoggedIn !== true) return false;
+  const subInfo = isRecord(status.user) ? status.user.subInfo : undefined;
+  const subscriptions = isRecord(subInfo) && Array.isArray(subInfo.subscriptions) ? subInfo.subscriptions : [];
+  return subscriptions.some((subscription) =>
+    isRecord(subscription) && subscription.status === "ACTIVE" &&
+    Array.isArray(subscription.entitlements) && subscription.entitlements.includes("XWD"));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * NYT's puzzle endpoint also answers signed-out requests, so a successful
+ * response proves nothing about access. Confirm the subscription first and fail
+ * closed: anything short of a clear "yes" from NYT stops the import.
+ */
+async function confirmNytCrosswordAccess(fetcher: typeof fetch, signal: AbortSignal, page?: NytPage): Promise<void> {
+  // NYT's own "Subscribe to play." screen.
+  if (page?.querySelector(".pz-error")) throw new NytImportError("ACCESS", ACCESS_MESSAGE);
+  let status: unknown;
+  try {
+    const response = await fetcher(NYT_STATUS_URL, { credentials: "include", redirect: "error", signal });
+    if (!response.ok) throw new Error("status unavailable");
+    status = await response.json();
+  } catch {
+    throw new NytImportError("ACCESS", ACCESS_MESSAGE);
+  }
+  if (!hasNytCrosswordAccess(status)) throw new NytImportError("ACCESS", ACCESS_MESSAGE);
+}
+
+type NytPage = Pick<Document, "querySelector">;
+
 /** Called only in the subscriber's NYT page, following an explicit import action. */
-export async function fetchNytPuzzle(pageUrl: string, fetcher: typeof fetch = fetch): Promise<Puzzle> {
+export async function fetchNytPuzzle(
+  pageUrl: string,
+  fetcher: typeof fetch = fetch,
+  page: NytPage | undefined = typeof document !== "undefined" ? document : undefined,
+): Promise<Puzzle> {
   const location = nytPuzzleLocation(pageUrl);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
+    await confirmNytCrosswordAccess(fetcher, controller.signal, page);
     const response = await fetcher(location.endpoint, { credentials: "include", redirect: "error", signal: controller.signal });
     if (response.status === 401 || response.status === 403) {
-      throw new NytImportError("ACCESS", "Sign in to NYT with access to this puzzle, then tap Import again.");
+      throw new NytImportError("ACCESS", ACCESS_MESSAGE);
     }
     if (!response.ok) throw new NytImportError("NETWORK", "NYT could not load this puzzle. Try again when the page is available.");
     const text = await response.text();
