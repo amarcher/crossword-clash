@@ -413,7 +413,7 @@
     "webOnly": "El importador integrado está disponible en las apps de iOS y Android. En una computadora, usa el marcador.",
     "bookmarklet": "Configurar el marcador",
     "pageError": "Abre un crucigrama diario o mini con fecha, o toca Crucigrama elegido.",
-    "accessError": "Inicia sesión en NYT con acceso a este crucigrama y vuelve a tocar Importar.",
+    "accessError": "Primero inicia sesión en NYT: abre el menú ☰ de la página de NYT y elige Log In; después vuelve a tocar Importar. Se necesita una suscripción a NYT que incluya el crucigrama.",
     "networkError": "No se cargó el crucigrama. Comprueba tu conexión y vuelve a intentarlo.",
     "formatError": "No se pudo leer este crucigrama. Puede que NYT haya cambiado su formato.",
     "unsupportedError": "Este crucigrama usa casillas rebus o especiales que Clash todavía no admite. Elige otro crucigrama.",

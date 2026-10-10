@@ -413,7 +413,7 @@
     "webOnly": "The built-in importer is available in the iOS and Android apps. On a computer, use the bookmarklet.",
     "bookmarklet": "Set up the bookmarklet",
     "pageError": "Open a dated Daily or Mini crossword, or tap Selected puzzle.",
-    "accessError": "Sign in to NYT with access to this puzzle, then tap Import again.",
+    "accessError": "Please log in to NYT first: open the ☰ menu on the NYT page and choose Log In, then tap Import again. An NYT subscription that includes the crossword is required.",
     "networkError": "The puzzle did not load. Check your connection and try again.",
     "formatError": "This puzzle could not be read. NYT may have changed its format.",
     "unsupportedError": "This puzzle uses rebus or special cells that Clash does not support yet. Please choose another puzzle.",
