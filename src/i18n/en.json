@@ -38,7 +38,9 @@
     "nytTileStreak": "{{count}}-day NYT streak — play today's",
     "nytTileSubtitle": "Free one-click import for NYT subscribers (desktop)",
     "iosApp": "Get the iPhone and iPad app",
-    "iosAppSubtitle": "Free on the App Store, with a keyboard made for crosswords"
+    "iosAppSubtitle": "Free on the App Store, with a keyboard made for crosswords",
+    "androidApp": "Get the Android app",
+    "androidAppSubtitle": "Free on Google Play, with a keyboard made for crosswords"
   },
   "hostName": {
     "heading": "Host a game",
