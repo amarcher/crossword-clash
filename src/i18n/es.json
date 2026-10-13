@@ -38,7 +38,9 @@
     "nytTileStreak": "Racha NYT de {{count}} días — juega el de hoy",
     "nytTileSubtitle": "Importación gratis con un clic para suscriptores del NYT (escritorio)",
     "iosApp": "Descarga la app para iPhone y iPad",
-    "iosAppSubtitle": "Gratis en el App Store, con un teclado hecho para crucigramas"
+    "iosAppSubtitle": "Gratis en el App Store, con un teclado hecho para crucigramas",
+    "androidApp": "Descarga la app para Android",
+    "androidAppSubtitle": "Gratis en Google Play, con un teclado hecho para crucigramas"
   },
   "hostName": {
     "heading": "Crear una partida",

@@ -46,3 +46,24 @@ export function isIosBrowser(
   if (/iPhone|iPad|iPod/.test(nav.userAgent)) return true;
   return /Macintosh/.test(nav.userAgent) && (nav.maxTouchPoints ?? 0) > 1;
 }
+
+/**
+ * The Android app's Google Play page (live since Oct 2026). The `referrer`
+ * shows up in Play Console's acquisition report, so website-driven installs
+ * can be told apart from store search.
+ */
+export const ANDROID_PLAY_STORE_URL: string | null =
+  "https://play.google.com/store/apps/details?id=com.crosswordclash.app&referrer=utm_source%3Dwebsite%26utm_medium%3Dmenu";
+
+/**
+ * True in a browser on an Android phone or tablet that can reach Google Play —
+ * the audience for the Android "get the app" row. Amazon Fire devices report
+ * an Android user agent but ship without Play, so they are left out.
+ */
+export function isAndroidBrowser(
+  nav: { userAgent: string } | undefined = typeof navigator !== "undefined" ? navigator : undefined,
+): boolean {
+  if (!nav) return false;
+  if (!/Android/.test(nav.userAgent)) return false;
+  return !/Silk\/|\bKF[A-Z]{2,}/.test(nav.userAgent);
+}

@@ -11,7 +11,13 @@ import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { getDailyMini } from "../lib/dailyMinis";
 import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
-import { IOS_APP_STORE_URL, isDesktopBrowser, isIosBrowser } from "../lib/platform";
+import {
+  ANDROID_PLAY_STORE_URL,
+  IOS_APP_STORE_URL,
+  isAndroidBrowser,
+  isDesktopBrowser,
+  isIosBrowser,
+} from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
 
@@ -54,6 +60,10 @@ export function MenuScreen() {
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
   const iosAppUrl = useMemo(
     () => (import.meta.env.MODE !== "mobile" && isIosBrowser() ? IOS_APP_STORE_URL : null),
+    [],
+  );
+  const androidAppUrl = useMemo(
+    () => (import.meta.env.MODE !== "mobile" && isAndroidBrowser() ? ANDROID_PLAY_STORE_URL : null),
     [],
   );
 
@@ -197,6 +207,15 @@ export function MenuScreen() {
                   title={t("menu.iosApp")}
                   subtitle={t("menu.iosAppSubtitle")}
                   onClick={() => track("app_store_click", { placement: "menu" })}
+                />
+              )}
+              {androidAppUrl && (
+                <ListRow
+                  icon={Smartphone}
+                  href={androidAppUrl}
+                  title={t("menu.androidApp")}
+                  subtitle={t("menu.androidAppSubtitle")}
+                  onClick={() => track("play_store_click", { placement: "menu" })}
                 />
               )}
             </ListGroup>
