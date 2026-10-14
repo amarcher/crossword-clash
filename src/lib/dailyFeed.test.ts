@@ -65,6 +65,15 @@ describe("parseDailyFeedEntry", () => {
   });
 });
 
+describe("dailyFeedUrl", () => {
+  it("is same-origin on the web and the public site in the apps", () => {
+    expect(dailyFeedUrl("2026-10-14")).toBe("/daily-puzzles/2026-10-14.json");
+    expect(dailyFeedUrl("2026-10-14", "https://crosswordclash.com")).toBe(
+      "https://crosswordclash.com/daily-puzzles/2026-10-14.json",
+    );
+  });
+});
+
 describe("resolveDailyMini", () => {
   it("serves the feed's puzzle for the day and remembers it", async () => {
     const { fetchImpl, calls } = respond(200, feedEntry);
