@@ -14,12 +14,6 @@
       ]
     },
     {
-      "source": "/daily-puzzles/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    },
-    {
       "source": "/index.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" }

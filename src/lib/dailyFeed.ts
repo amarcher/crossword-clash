@@ -13,7 +13,7 @@
  * today's daily?" check) stays synchronous.
  *
  * Website only for now: the native apps keep the bundled rotation until they
- * fetch from the site's origin (the feed is already served with CORS for that).
+ * fetch from the site's origin (Vercel already serves it with CORS).
  */
 
 import { dayKey } from "./soloStats";
