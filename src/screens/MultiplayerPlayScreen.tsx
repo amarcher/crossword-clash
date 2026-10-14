@@ -19,7 +19,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
-import { isTodaysDaily, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -138,7 +139,7 @@ export function MultiplayerPlayScreen() {
   // each finisher posts their OWN time. Shared-grid modes (versus/coop) roll
   // the streak but do NOT post times — a team-shared grid time isn't
   // comparable to individual solves.
-  const isDaily = useMemo(() => isTodaysDaily(puzzle), [puzzle]);
+  const isDaily = useIsTodaysDaily(puzzle);
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
     if (dailySubmittedRef.current || !isDaily || !user) return;

@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/share", "destination": "/api/share" },
-    { "source": "/((?!api/)(?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

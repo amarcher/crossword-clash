@@ -1,8 +1,10 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
-import { normalizeTransferPuzzle } from "./puzzleNormalizer";
+import { normalizeTransferPuzzle, puzzleToTransferFormat } from "./puzzleNormalizer";
 import { emitToast } from "./toastBus";
 import type { TransferPuzzle } from "./puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
+
+export { puzzleToTransferFormat };
 
 const HASH_PREFIX = "#puzzle=";
 const IMPORT_HASH = "#import";
@@ -44,50 +46,6 @@ export function extractPuzzleFromUrl(): Puzzle | null {
     }
     return null;
   }
-}
-
-/**
- * Convert an internal Puzzle to the TransferPuzzle format for URL transport.
- */
-export function puzzleToTransferFormat(puzzle: Puzzle): TransferPuzzle {
-  const grid: string[] = [];
-  const gridnums: number[] = [];
-  const circles: number[] = [];
-  let hasCircles = false;
-
-  for (let r = 0; r < puzzle.height; r++) {
-    for (let c = 0; c < puzzle.width; c++) {
-      const cell = puzzle.cells[r][c];
-      grid.push(cell.solution === null ? "." : cell.solution);
-      gridnums.push(cell.number ?? 0);
-      const circled = cell.circled ? 1 : 0;
-      circles.push(circled);
-      if (circled) hasCircles = true;
-    }
-  }
-
-  const acrossClues = puzzle.clues.filter((c) => c.direction === "across");
-  const downClues = puzzle.clues.filter((c) => c.direction === "down");
-
-  return {
-    title: puzzle.title,
-    author: puzzle.author,
-    size: { rows: puzzle.height, cols: puzzle.width },
-    grid,
-    gridnums,
-    ...(hasCircles ? { circles } : {}),
-    // Carried through share/challenge/TV links so a friend who receives an
-    // NYT puzzle also sees the bookmarklet hook.
-    ...(puzzle.origin ? { origin: puzzle.origin } : {}),
-    clues: {
-      across: acrossClues.map((c) => `${c.number}. ${c.text}`),
-      down: downClues.map((c) => `${c.number}. ${c.text}`),
-    },
-    answers: {
-      across: acrossClues.map((c) => c.answer),
-      down: downClues.map((c) => c.answer),
-    },
-  };
 }
 
 /**

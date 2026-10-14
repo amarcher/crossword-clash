@@ -9,7 +9,7 @@ import { LegalLinks } from "../components/LegalLinks";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
-import { getDailyMini } from "../lib/dailyMinis";
+import { useDailyMini } from "../hooks/useDailyMini";
 import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
 import {
   ANDROID_PLAY_STORE_URL,
@@ -34,12 +34,13 @@ export function MenuScreen() {
   const nytStreak = useMemo(() => getDisplayNytStreak(), []);
 
   // Resolve once per render — deterministic per calendar day.
-  const dailyMini = useMemo(() => getDailyMini(), []);
+  const dailyMini = useDailyMini();
 
   const playDailyMini = useCallback(async () => {
     track("mode_selected", { mode: "daily" });
     // No import step: load the bundled mini straight into solo play. It carries
     // no file buffer, so handleSoloPuzzleLoaded won't count it as an import.
+    if (!dailyMini) return;
     await handleSoloPuzzleLoaded(dailyMini.puzzle);
     setSoloTheme(dailyMini.theme);
     navigate("/solo/play");
@@ -50,11 +51,11 @@ export function MenuScreen() {
     // Hand today's mini to the existing host flow (name → lobby with share
     // code/QR) — everyone is released into the SAME puzzle at the same instant
     // when the host starts. Same lobby mechanic as any imported puzzle.
+    if (!dailyMini) return;
     setUrlPuzzle(dailyMini.puzzle);
     navigate("/host-game/name");
   }, [dailyMini, setUrlPuzzle, navigate]);
 
-  const clueCount = dailyMini.puzzle.clues.length;
   const showFriends = Boolean(user) || loading;
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
@@ -73,32 +74,51 @@ export function MenuScreen() {
       <Title animate className="mb-8 sm:mb-10" />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
-        {/* Front door: today's mini. Fully local (bundled data) — never gated on
-            auth loading, so a cold visitor can start instantly. */}
-        <Card className="overflow-hidden lg:sticky lg:top-8">
+        {/* Front door: today's mini. Never gated on auth loading; it waits only
+            for the daily feed's first answer of the day (see useDailyMini). */}
+        <Card className="overflow-hidden lg:sticky lg:top-8" aria-busy={!dailyMini}>
           <div className="flex items-start gap-5 p-5 sm:p-6">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <Eyebrow className="text-brand-600">{t("menu.dailyMiniEyebrow")}</Eyebrow>
-                <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
-                  {dailyMini.theme}
-                </span>
+                {dailyMini?.theme && (
+                  <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
+                    {dailyMini.theme}
+                  </span>
+                )}
               </div>
-              <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
-                {dailyMini.puzzle.title}
-              </h1>
-              <p className="mt-1 text-sm text-muted tabular-nums">
-                {t("menu.dailyMeta", { width: dailyMini.puzzle.width, height: dailyMini.puzzle.height, count: clueCount })}
-              </p>
+              {dailyMini ? (
+                <>
+                  <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
+                    {dailyMini.puzzle.title}
+                  </h1>
+                  <p className="mt-1 text-sm text-muted tabular-nums">
+                    {t("menu.dailyMeta", {
+                      width: dailyMini.puzzle.width,
+                      height: dailyMini.puzzle.height,
+                      count: dailyMini.puzzle.clues.length,
+                    })}
+                  </p>
+                </>
+              ) : (
+                <div className="animate-pulse" aria-hidden="true">
+                  <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
+                  <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
+                </div>
+              )}
             </div>
-            <MiniGridThumb puzzle={dailyMini.puzzle} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+            {dailyMini ? (
+              <MiniGridThumb puzzle={dailyMini.puzzle} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+            ) : (
+              <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
+            )}
           </div>
           <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
-            <Button size="lg" className="flex-1" onClick={playDailyMini}>
+            <Button size="lg" className="flex-1" onClick={playDailyMini} disabled={!dailyMini}>
               {t("menu.dailyPlay")}
             </Button>
             {showFriends && (
-              <Button variant="secondary" size="lg" className="flex-1" onClick={raceDailyMini} disabled={disabled}>
+              <Button variant="secondary" size="lg" className="flex-1" onClick={raceDailyMini} disabled={disabled || !dailyMini}>
                 <Swords className="size-4.5" aria-hidden="true" />
                 {t("menu.raceFriends")}
               </Button>
