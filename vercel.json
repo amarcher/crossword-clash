@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/share", "destination": "/api/share" },
-    { "source": "/((?!api/)(?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -11,6 +11,12 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(self)" },
         { "key": "Content-Security-Policy", "value": "frame-ancestors 'self'" }
+      ]
+    },
+    {
+      "source": "/daily-puzzles/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     },
     {

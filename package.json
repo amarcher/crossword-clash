@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "e2e": "playwright test",
     "build:classics": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-classic-manifest.mts",
+    "daily:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-daily-puzzle.mts",
     "build:native-import": "node scripts/build-native-import.mjs",
     "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
     "mobile:ios": "cap open ios",

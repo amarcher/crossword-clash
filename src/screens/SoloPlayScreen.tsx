@@ -16,7 +16,8 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
-import { isTodaysDaily, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
+import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
@@ -100,7 +101,7 @@ export function SoloPlayScreen() {
 
   // Post a finished daily mini to the cross-day leaderboard (best-effort,
   // no-op offline). Keyed by puzzle identity so imported puzzles never post.
-  const isDaily = useMemo(() => isTodaysDaily(puzzle), [puzzle]);
+  const isDaily = useIsTodaysDaily(puzzle);
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;

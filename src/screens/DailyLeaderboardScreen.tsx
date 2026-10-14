@@ -6,7 +6,7 @@ import { SiteBar } from "../components/SiteBar";
 import { Button, Card } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
-import { getDailyMini } from "../lib/dailyMinis";
+import { useDailyMini } from "../hooks/useDailyMini";
 import {
   fetchDailyLeaderboard,
   todayKey,
@@ -47,7 +47,7 @@ export function DailyLeaderboardScreen() {
   const { user } = useAuth();
   const game = useGame();
 
-  const dailyMini = useMemo(() => getDailyMini(), []);
+  const dailyMini = useDailyMini();
   const streak = useMemo(() => getDisplayStreak(), []);
 
   // null = loading; [] = loaded empty.
@@ -87,6 +87,7 @@ export function DailyLeaderboardScreen() {
 
   const playToday = useCallback(async () => {
     track("mode_selected", { mode: "daily" });
+    if (!dailyMini) return;
     await game.handleSoloPuzzleLoaded(dailyMini.puzzle);
     game.setSoloTheme(dailyMini.theme);
     navigate("/solo/play");
@@ -94,8 +95,9 @@ export function DailyLeaderboardScreen() {
 
   const raceFriends = useCallback(() => {
     track("mode_selected", { mode: "daily-race" });
-    // Hand the bundled daily to the existing host flow (name → lobby) — the
+    // Hand the daily to the existing host flow (name → lobby) — the
     // same mechanic used for imported puzzles, no import step.
+    if (!dailyMini) return;
     game.setUrlPuzzle(dailyMini.puzzle);
     navigate("/host-game/name");
   }, [game, dailyMini, navigate]);
@@ -110,7 +112,9 @@ export function DailyLeaderboardScreen() {
             <Trophy className="size-6" aria-hidden="true" />
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">{t("leaderboard.title")}</h1>
-          <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: dailyMini.theme })}</p>
+          {dailyMini?.theme && (
+            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: dailyMini.theme })}</p>
+          )}
           {streak > 0 && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">
               <Flame className="size-4 text-gold-500" aria-hidden="true" />

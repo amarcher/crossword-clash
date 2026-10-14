@@ -12,7 +12,7 @@
 
 import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
-import { getDailyMini } from "./dailyMinis";
+import { currentDailyMini } from "./dailyFeed";
 import type { Puzzle } from "../types/puzzle";
 import { displayableName } from "./nameFilter";
 
@@ -51,7 +51,7 @@ export function isTodaysDaily(
   now: Date = new Date(),
 ): boolean {
   if (!puzzle) return false;
-  return puzzleIdentity(puzzle) === puzzleIdentity(getDailyMini(now).puzzle);
+  return puzzleIdentity(puzzle) === puzzleIdentity(currentDailyMini(now).puzzle);
 }
 
 /**
