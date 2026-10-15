@@ -7,6 +7,7 @@ import { FillEngine, conflicts } from "./solver";
 import { buildSkeleton, placeSeed, placeSeeds, shapeSkeleton, mirrorPlacement } from "./layout";
 import { auditGrid, auditClues, clueGivesAway } from "./audit";
 import { toIpuz, SPEED_CLUES_KEY } from "./ipuz";
+import { entryKind, frequencyCap, splitWords } from "./scoring";
 
 function rng(seed: number) {
   return () => {
@@ -221,5 +222,34 @@ describe("ipuz", () => {
     expect(puzzle.width).toBe(3);
     const across = puzzle.clues.filter((c) => c.direction === "across");
     expect(across[0]).toMatchObject({ number: 1, text: "Cricket gear", answer: "BAT" });
+  });
+});
+
+describe("word-list scoring", () => {
+  const vocab = new Set(["GOAT", "CHEESE", "BELT", "AND", "BRACES", "CAR", "PET", "CARPET"]);
+  const dictionary = new Set(["CARPET", "OXLIP", "PURLOIN", "PURLOINS"]);
+  const rank = new Map([["CARPET", 9_000], ["PURLOIN", 30_000], ["GOODAFTERNOON", 250_000], ["OREO", 60_000]]);
+
+  it("splits run-together phrases into the fewest words", () => {
+    expect(splitWords("GOATCHEESE", vocab)).toEqual(["GOAT", "CHEESE"]);
+    expect(splitWords("BELTANDBRACES", vocab)).toEqual(["BELT", "AND", "BRACES"]);
+    expect(splitWords("CARPET", vocab)).toEqual(["CARPET"]);
+    expect(splitWords("XAXIS", vocab)).toBeNull();
+  });
+
+  it("only dictionary words and common tokens count as single words", () => {
+    expect(entryKind("CARPET", dictionary, rank, vocab)).toBe("word");
+    expect(entryKind("OREO", dictionary, rank, vocab)).toBe("word");
+    expect(entryKind("GOATCHEESE", dictionary, rank, vocab)).toBe("phrase");
+    // A rare run-together token in the frequency list is still a phrase, not a word.
+    expect(entryKind("GOODAFTERNOON", dictionary, rank, new Set([...vocab, "GOOD", "AFTERNOON"]))).toBe("phrase");
+    expect(entryKind("XAXIS", dictionary, rank, vocab)).toBe("other");
+  });
+
+  it("caps rare single words and spares inflections of common ones", () => {
+    expect(frequencyCap("CARPET", rank)).toBe(100);
+    expect(frequencyCap("OREO", rank)).toBe(60);
+    expect(frequencyCap("OXLIP", rank)).toBe(45);
+    expect(frequencyCap("PURLOINS", rank)).toBe(55);
   });
 });

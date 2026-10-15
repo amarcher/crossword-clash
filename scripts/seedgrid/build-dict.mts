@@ -10,16 +10,17 @@
  *
  *   pnpm seedgrid:dict
  *
- * Scores follow the "49 vs 50" convention: everyday words land at 50–60 by
- * frequency rank; less common ones at 44–47, used only when a grid will not
- * fill at 50 (as a constructor lowers Ingrid's required score); words seen
- * almost nowhere at 35. Phrases and spice come from lively.dict, and
- * rescore.dict overrides both.
+ * Scores use the Collaborative Word List's 0–100 scale with the "49 vs 50"
+ * convention: 50 and up is fill a grid may use freely; below 50 only when a grid
+ * will not fill otherwise (as a constructor lowers Ingrid's required score).
+ * Frequency can only lower a single word's score (see src/lib/seedgrid/scoring.ts);
+ * phrases keep theirs. lively.dict adds phrases and rescore.dict overrides all.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { formatDict, parseDict, type DictEntry } from "../../src/lib/seedgrid/dictionary";
+import { entryKind, frequencyCap, type EntryKind } from "../../src/lib/seedgrid/scoring";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sources = path.resolve(here, "../mini-generator/wordlists");
@@ -73,12 +74,31 @@ const fromCwl: DictEntry[] = fs.existsSync(cwlFile)
       .map((e) => ({ ...e, score: e.score === 50 ? 47 : e.score }))
   : [];
 if (!fromCwl.length) console.warn("No xwordlist.dict: long slots will be hard to fill (see scripts/mini-generator/README.md).");
-// A word in both keeps the higher score.
-const best = new Map<string, DictEntry>();
-for (const e of [...fromEnable, ...fromCwl]) {
-  const prev = best.get(e.word);
-  if (!prev || e.score > prev.score) best.set(e.word, e);
+// The Collaborative Word List's scores are the scale. Frequency can only lower a
+// single word's score (OXLIP, REATTEMPTED); phrases stored without spaces are
+// naturally rare as tokens, so they keep their score. ENABLE fills in words the
+// list lacks, scored by frequency.
+// Plain a–z tokens only: uppercasing ligatures ("baﬄed" → "BAFFLED") would let a rare
+// spelling overwrite the common word's rank.
+const RANK = new Map([...rank].filter(([w]) => /^[a-z]+$/.test(w)).map(([w, r]) => [w.toUpperCase(), r]));
+const DICTIONARY = new Set(enable.map((w) => w.toUpperCase()));
+const VOCAB = new Set([...DICTIONARY, ...[...RANK].filter(([, r]) => r < 100_000).map(([w]) => w)].filter((w) => w.length >= 2 && /^[A-Z]+$/.test(w)));
+VOCAB.add("A").add("I");
+const best = new Map<string, DictEntry>(fromEnable.map((e) => [e.word, e]));
+const report = { word: 0, phrase: 0, other: 0, capped: 0 } as Record<EntryKind | "capped", number>;
+const demoted: string[] = [];
+for (const e of fromCwl) {
+  const kind = entryKind(e.word, DICTIONARY, RANK, VOCAB);
+  report[kind]++;
+  const score = kind === "word" ? Math.min(e.score, frequencyCap(e.word, RANK)) : e.score;
+  if (score < e.score) {
+    report.capped++;
+    if (e.score >= 75 && demoted.length < 30 && report.capped % 97 === 0) demoted.push(`${e.word} ${e.score}→${score}`);
+  }
+  best.set(e.word, { ...e, score });
 }
+console.log(`Collaborative Word List: ${report.word} words, ${report.phrase} phrases, ${report.other} other; ${report.capped} rare words capped by frequency`);
+console.log(`  e.g. ${demoted.slice(0, 12).join(", ")}`);
 const entries = [...best.values()];
 const blockFile = path.join(sources, "blocklist-en.txt");
 const blocked = fs.existsSync(blockFile)
