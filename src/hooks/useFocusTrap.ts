@@ -20,6 +20,8 @@ export function useFocusTrap(
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
+        // An open dropdown (ui/Select) closes itself first; the dialog stays.
+        if ((e.target as HTMLElement | null)?.getAttribute?.('aria-expanded') === 'true') return;
         onEscape?.();
         return;
       }

@@ -14,6 +14,8 @@ const LIMITS: Record<string, RateLimitConfig> = {
   "openai-agent-auth": { windowMs: 3_600_000, maxRequests: 10 },
   "narrator-claude": { windowMs: 3_600_000, maxRequests: 60 },
   tts: { windowMs: 3_600_000, maxRequests: 30 },
+  // Construction studio (token-gated, one constructor): clue drafts and alternatives.
+  "studio-claude": { windowMs: 3_600_000, maxRequests: 120 },
 };
 
 function getClientIp(req: Request): string {

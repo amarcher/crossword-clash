@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CheckCircle2, Newspaper } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
-import { Button, Card, Eyebrow, buttonClass } from "../components/ui";
+import { Button, Card, Eyebrow, Select, buttonClass } from "../components/ui";
 import { useGame } from "../contexts/GameContext";
 import { importNativeNytPuzzle, loadNativeNytImport, nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { isPuzzleDate, nytPuzzleUrl } from "../lib/nytImport";
@@ -57,9 +57,14 @@ export function NytImportScreen() {
           {native ? <>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <label className="text-sm font-medium text-ink-soft">{t("nytImport.puzzle")}
-                <select value={kind} onChange={e => setKind(e.target.value as NytPuzzleKind)} disabled={busy} className={FIELD}>
-                  <option value="daily">{t("nytImport.daily")}</option><option value="mini">{t("nytImport.mini")}</option>
-                </select>
+                <Select
+                  value={kind}
+                  options={[{ value: "daily", label: t("nytImport.daily") }, { value: "mini", label: t("nytImport.mini") }]}
+                  onChange={setKind}
+                  disabled={busy}
+                  block
+                  className="mt-1.5 min-h-12"
+                />
               </label>
               <label className="text-sm font-medium text-ink-soft">{t("nytImport.date")}
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} className={FIELD} />

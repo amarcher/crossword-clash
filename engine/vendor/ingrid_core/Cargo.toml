@@ -1,0 +1,32 @@
+# Vendored from https://github.com/rf-/ingrid_core (MIT), see PATCHES.md.
+# Library only: the upstream CLI (src/bin.rs) and its embedded Spread the
+# Wordlist (CC-BY-NC) are deliberately left out.
+[package]
+name = "ingrid_core"
+version = "2.0.0"
+edition = "2021"
+license = "MIT"
+description = "Crossword-generating library (vendored)"
+repository = "https://github.com/rf-/ingrid_core"
+publish = false
+
+[dependencies]
+smallvec = "1.8.0"
+instant = { version = "0.1.12", features = ["wasm-bindgen"] }
+lazy_static = "1.4.0"
+float-ord = "0.3.2"
+rand = { version = "0.10.0", features = ["std", "alloc", "std_rng"] }
+getrandom = "0.4.0"
+unicode-normalization = "0.1.22"
+fancy-regex = "0.17"
+either = "1.15.0"
+unicode_categories = "0.1.1"
+
+[lib]
+name = "ingrid_core"
+path = "src/lib.rs"
+
+[features]
+# Declared so upstream cfg attributes resolve; neither is enabled here.
+check_invariants = []
+serde = []

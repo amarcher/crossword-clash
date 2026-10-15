@@ -33,3 +33,7 @@ artifacts/mobile/
 /playwright-report/
 /blob-report/
 /e2e/.auth/
+
+# SeedGrid studio word list (built by pnpm seedgrid:studio-dict) and Rust build output
+public/seedgrid/
+engine/target/

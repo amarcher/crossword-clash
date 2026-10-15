@@ -1,4 +1,6 @@
-import { defineConfig } from "vite";
+import fs from "node:fs";
+import path from "node:path";
+import { defineConfig, loadEnv } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -23,8 +25,24 @@ const staticBookmarkletPage: Plugin = {
   },
 };
 
+// /studio is dev-only unless VITE_STUDIO=1. Vite still emits its worker and wasm
+// (worker assets are written before tree-shaking), and copies the gitignored
+// public/seedgrid/ word list if one exists locally; drop both from other builds
+// so they never reach Vercel or the native app bundles.
+const STUDIO_ASSET = /^assets\/(engine\.worker|seedgrid_engine_bg)-/;
+const dropStudioAssets: Plugin = {
+  name: "drop-studio-assets",
+  apply: "build",
+  generateBundle(_options, bundle) {
+    for (const fileName of Object.keys(bundle)) if (STUDIO_ASSET.test(fileName)) delete bundle[fileName];
+  },
+  writeBundle(options) {
+    if (options.dir) fs.rmSync(path.join(options.dir, "seedgrid"), { recursive: true, force: true });
+  },
+};
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...(mode === "mobile" ? [{
+  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...(loadEnv(mode, process.cwd(), "VITE_").VITE_STUDIO === "1" ? [] : [dropStudioAssets]), ...(mode === "mobile" ? [{
     name: "mobile-html",
     transformIndexHtml: {
       order: "pre" as const,

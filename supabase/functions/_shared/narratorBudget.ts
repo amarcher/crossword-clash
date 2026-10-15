@@ -31,6 +31,8 @@ export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
     inputTokenUsd: 3 / 1_000_000,
     outputTokenUsd: 15 / 1_000_000,
   },
+  "claude-opus-5-5": { inputTokenUsd: 15 / 1_000_000, outputTokenUsd: 75 / 1_000_000 },
+  "claude-sonnet-5-5": { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
   convai: { sessionUsd: 1.0 },
   "gpt-realtime": { sessionUsd: 1.5 },
   "elevenlabs:tts": { characterUsd: 0.00015 },
