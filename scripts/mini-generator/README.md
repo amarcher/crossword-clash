@@ -13,9 +13,18 @@ curl -sfL https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/con
 curl -sfL https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_full.txt -o en_full.txt  # optional, 20 MB: used by scripts/seedgrid
 curl -sfL https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en -o blocklist-en.txt  # used by scripts/seedgrid
 curl -sfL https://raw.githubusercontent.com/Crossword-Nexus/collaborative-word-list/main/xwordlist.dict -o xwordlist.dict  # MIT; used by scripts/seedgrid
+curl -sfL https://raw.githubusercontent.com/Crossword-Nexus/collaborative-word-list/main/LICENSE -o xwordlist.LICENSE  # its notice, for NOTICES.txt
+# SCOWL (permissive license): how common a word is, for the production list. Levels 10-70 only.
+mkdir -p scowl && curl -sfL https://downloads.sourceforge.net/project/wordlist/SCOWL/2020.12.07/scowl-2020.12.07.tar.gz \
+  | tar xz --strip-components=1 -C scowl scowl-2020.12.07/final scowl-2020.12.07/Copyright
 ```
-Then `pnpm seedgrid:dict && pnpm seedgrid:studio-dict` builds the SeedGrid lists (the second
-writes `public/seedgrid/words.dict` for `/studio` in `pnpm dev`).
+Then `pnpm seedgrid:dict && pnpm seedgrid:studio-dict` builds the SeedGrid lists. Two variants:
+- `base.dict` / `public/seedgrid/words.dict`: scores everyday words with FrequencyWords, whose
+  data is CC-BY-SA. Fine for private use; don't ship it.
+- `production.dict` / `public/seedgrid/words-production.dict`: only the Collaborative Word List
+  (MIT), ENABLE (public domain) and SCOWL levels 10-70, with `public/seedgrid/NOTICES.txt` for
+  attribution. Use it for anything others can reach: `VITE_SEEDGRID_WORD_LIST=/seedgrid/words-production.dict`
+  for the studio, `SEEDGRID_WORD_LIST=production` for `pnpm seedgrid`.
 - `enable1.txt` — ENABLE word list (public domain), used to *validate* every entry is a real word.
 - `freq50k.txt` — 50k most-frequent English words (OpenSubtitles corpus). The filler uses the
   top `--pool N` of it (∩ ENABLE) as the fill pool; the audit uses word rank to reject obscure

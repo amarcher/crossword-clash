@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { formatDict, parseDict, type DictEntry } from "../../src/lib/seedgrid/dictionary";
-import { entryKind, frequencyCap, type EntryKind } from "../../src/lib/seedgrid/scoring";
+import { entryKind, frequencyCap, levelCap, levelScore, SCOWL_LEVELS, type EntryKind } from "../../src/lib/seedgrid/scoring";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sources = path.resolve(here, "../mini-generator/wordlists");
@@ -120,3 +120,46 @@ const out = path.join(here, "wordlists/base.dict");
 fs.writeFileSync(out, formatDict(entries));
 const clean = entries.filter((e) => e.score >= 50).length;
 console.log(`${entries.length} words (${clean} scored 50+; ${fromCwl.length} from the Collaborative Word List) → ${path.relative(process.cwd(), out)}`);
+
+// ---- production.dict: only sources whose licenses allow shipping the list ----
+// The Collaborative Word List (MIT), ENABLE (public domain), and SCOWL levels up
+// to 70 (Kevin Atkinson's permissive license; level 80+ adds UKACD) for how common
+// a word is. FrequencyWords is share-alike, so it plays no part here; the
+// offensive-words list only removes entries (blocked.dict) and is never shipped.
+const scowlDir = path.join(sources, "scowl/final");
+if (!fs.existsSync(scowlDir)) {
+  console.warn("No SCOWL in scripts/mini-generator/wordlists/scowl: skipping production.dict (see scripts/mini-generator/README.md).");
+} else {
+  const LEVELS = new Map<string, number>();
+  for (const level of SCOWL_LEVELS) {
+    for (const prefix of ["english-words", "american-words"]) {
+      const file = path.join(scowlDir, `${prefix}.${level}`);
+      if (!fs.existsSync(file)) continue;
+      // SCOWL is ISO-8859-1; plain a-z words only (no accents, apostrophes or capitals).
+      for (const raw of fs.readFileSync(file, "latin1").split("\n")) {
+        const w = raw.trim();
+        if (/^[a-z]+$/.test(w)) {
+          const word = w.toUpperCase();
+          if (!LEVELS.has(word)) LEVELS.set(word, level);
+        }
+      }
+    }
+  }
+  const SINGLE = new Set([...DICTIONARY, ...LEVELS.keys()]);
+  const PROD_VOCAB = new Set([...SINGLE].filter((w) => w.length >= 2)).add("A").add("I");
+  const prod = new Map<string, DictEntry>(
+    enable.filter((w) => /^[a-z]{3,15}$/.test(w)).map((w) => [w.toUpperCase(), { word: w.toUpperCase(), score: levelScore(w.toUpperCase(), LEVELS), tags: "" }]),
+  );
+  let capped = 0;
+  for (const e of fromCwl) {
+    const kind = entryKind(e.word, SINGLE, new Map(), PROD_VOCAB);
+    const score = kind === "word" ? Math.min(e.score, levelCap(e.word, LEVELS)) : e.score;
+    if (score < e.score) capped++;
+    prod.set(e.word, { ...e, score });
+  }
+  const prodEntries = [...prod.values()];
+  fs.writeFileSync(path.join(here, "wordlists/production.dict"), formatDict(prodEntries));
+  console.log(
+    `${prodEntries.length} words (${prodEntries.filter((e) => e.score >= 50).length} scored 50+; ${capped} rare words capped by SCOWL level) → scripts/seedgrid/wordlists/production.dict`,
+  );
+}

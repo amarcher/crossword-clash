@@ -1,2 +1,4 @@
 *.txt
 *.dict
+scowl/
+xwordlist.LICENSE

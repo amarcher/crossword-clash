@@ -5,4 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string;
   /** "1" exposes /studio outside dev builds. */
   readonly VITE_STUDIO?: string;
+  /** Word list the studio loads (default /seedgrid/words.dict; /seedgrid/words-production.dict for shared builds). */
+  readonly VITE_SEEDGRID_WORD_LIST?: string;
 }
