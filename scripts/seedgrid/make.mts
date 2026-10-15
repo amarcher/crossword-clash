@@ -57,13 +57,15 @@ const log = (...a: unknown[]) => console.log(...a);
 // ---- Word lists ----
 const here = path.dirname(fileURLToPath(import.meta.url));
 const listFile = (name: string) => path.join(here, "wordlists", name);
-if (!fs.existsSync(listFile("base.dict"))) {
-  console.error("Missing scripts/seedgrid/wordlists/base.dict. Run `pnpm seedgrid:dict` first.");
+// SEEDGRID_WORD_LIST=production uses only licensable sources (see build-dict.mts).
+const baseList = process.env.SEEDGRID_WORD_LIST === "production" ? "production.dict" : "base.dict";
+if (!fs.existsSync(listFile(baseList))) {
+  console.error(`Missing scripts/seedgrid/wordlists/${baseList}. Run \`pnpm seedgrid:dict\` first.`);
   process.exit(1);
 }
 const loadDict = (file: string) => (fs.existsSync(file) ? parseDict(fs.readFileSync(file, "utf8")) : []);
 const entries: DictEntry[] = mergeDicts(
-  loadDict(listFile("base.dict")),
+  loadDict(listFile(baseList)),
   loadDict(listFile("lively.dict")),
   ...(flags.dict ?? []).map(loadDict),
   loadDict(listFile("rescore.dict")),

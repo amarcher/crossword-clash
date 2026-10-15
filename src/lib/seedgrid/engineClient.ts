@@ -7,7 +7,8 @@ import type { EngineRules, FillOutcome, SlotOptions, Viability } from "./ingrid"
 import type { Grid, Symmetry } from "./grid";
 import type { WorkerRequest } from "./engine.worker";
 
-export const STUDIO_WORD_LIST_URL = "/seedgrid/words.dict";
+/** Which list the studio loads; set VITE_SEEDGRID_WORD_LIST=/seedgrid/words-production.dict for any studio others can reach. */
+export const STUDIO_WORD_LIST_URL = (import.meta.env.VITE_SEEDGRID_WORD_LIST as string | undefined) || "/seedgrid/words.dict";
 export const MAX_SHARED = 4;
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };

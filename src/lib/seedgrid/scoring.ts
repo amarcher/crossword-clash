@@ -55,3 +55,38 @@ export function frequencyCap(word: string, rank: Map<string, number>): number {
   if (r < 200_000) return 60;
   return lemmaRank(word, rank) < 50_000 ? 55 : 45;
 }
+
+/**
+ * SCOWL size levels (10 = the most common words … 70 = less common), used for the
+ * production word list in place of frequency ranks: SCOWL's license allows
+ * redistribution, FrequencyWords' share-alike data does not fit a closed product.
+ * Levels above 70 are never loaded (level 80 brings in UKACD, which has its own terms).
+ */
+export const SCOWL_LEVELS = [10, 20, 35, 40, 50, 55, 60, 70] as const;
+
+function lemmaLevel(word: string, levels: Map<string, number>): number {
+  let best = levels.get(word) ?? Infinity;
+  for (const suf of INFLECTIONS) {
+    if (word.length - suf.length >= 3 && word.endsWith(suf)) best = Math.min(best, levels.get(word.slice(0, -suf.length)) ?? Infinity);
+  }
+  return best;
+}
+
+/** Same shape as frequencyCap: common words uncapped, rarer ones held below the 50 floor. */
+export function levelCap(word: string, levels: Map<string, number>): number {
+  const level = levels.get(word) ?? Infinity;
+  if (level <= 50) return 100;
+  if (level <= 60) return 60;
+  if (level <= 70) return 55;
+  return lemmaLevel(word, levels) <= 50 ? 55 : 45;
+}
+
+/** A score for a dictionary word the Collaborative Word List lacks, from its SCOWL level alone. */
+export function levelScore(word: string, levels: Map<string, number>): number {
+  const level = levels.get(word) ?? Infinity;
+  if (level <= 35) return 60;
+  if (level <= 50) return 55;
+  if (level <= 60) return 50;
+  if (level <= 70) return 47;
+  return 35;
+}

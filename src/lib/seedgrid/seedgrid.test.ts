@@ -7,7 +7,7 @@ import { FillEngine, conflicts } from "./solver";
 import { buildSkeleton, placeSeed, placeSeeds, shapeSkeleton, mirrorPlacement } from "./layout";
 import { auditGrid, auditClues, clueGivesAway } from "./audit";
 import { toIpuz, toTransferPuzzle, SPEED_CLUES_KEY } from "./ipuz";
-import { entryKind, frequencyCap, splitWords } from "./scoring";
+import { entryKind, frequencyCap, levelCap, levelScore, splitWords } from "./scoring";
 
 function rng(seed: number) {
   return () => {
@@ -257,6 +257,12 @@ describe("word-list scoring", () => {
     // A rare run-together token in the frequency list is still a phrase, not a word.
     expect(entryKind("GOODAFTERNOON", dictionary, rank, new Set([...vocab, "GOOD", "AFTERNOON"]))).toBe("phrase");
     expect(entryKind("XAXIS", dictionary, rank, vocab)).toBe("other");
+  });
+
+  it("caps by SCOWL level for the production list", () => {
+    const levels = new Map([["CARPET", 20], ["PURLOIN", 50], ["ANTIC", 60], ["ACERBIC", 70]]);
+    expect([levelCap("CARPET", levels), levelCap("ANTIC", levels), levelCap("ACERBIC", levels), levelCap("OXLIP", levels), levelCap("PURLOINS", levels)]).toEqual([100, 60, 55, 45, 55]);
+    expect([levelScore("CARPET", levels), levelScore("PURLOIN", levels), levelScore("ANTIC", levels), levelScore("ACERBIC", levels), levelScore("OXLIP", levels)]).toEqual([60, 55, 50, 47, 35]);
   });
 
   it("caps rare single words and spares inflections of common ones", () => {
