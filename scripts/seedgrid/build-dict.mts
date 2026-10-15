@@ -1,0 +1,94 @@
+/**
+ * Builds the base word list, scripts/seedgrid/wordlists/base.dict, from two
+ * public sources (download them first; see scripts/mini-generator/README.md):
+ *
+ *   ENABLE (public domain)         — is it a real word?
+ *   FrequencyWords en_full (MIT)   — how everyday is it? (falls back to en_50k)
+ *   Collaborative Word List (MIT)  — constructor-scored phrases and names, which
+ *                                    give long slots enough options to fill
+ *                                    (Crossword Nexus; optional but recommended)
+ *
+ *   pnpm seedgrid:dict
+ *
+ * Scores follow the "49 vs 50" convention: everyday words land at 50–60 by
+ * frequency rank; less common ones at 44–47, used only when a grid will not
+ * fill at 50 (as a constructor lowers Ingrid's required score); words seen
+ * almost nowhere at 35. Phrases and spice come from lively.dict, and
+ * rescore.dict overrides both.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { formatDict, parseDict, type DictEntry } from "../../src/lib/seedgrid/dictionary";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const sources = path.resolve(here, "../mini-generator/wordlists");
+const read = (name: string) => {
+  const file = path.join(sources, name);
+  if (!fs.existsSync(file) && name === "en_full.txt") return read("freq50k.txt");
+  if (!fs.existsSync(file)) {
+    console.error(`Missing ${file}. Download it with the commands in scripts/mini-generator/README.md.`);
+    process.exit(1);
+  }
+  return fs.readFileSync(file, "utf8").split("\n").map((w) => w.trim().split(" ")[0].toLowerCase()).filter(Boolean);
+};
+
+const enable = read("enable1.txt");
+const rank = new Map<string, number>();
+read("en_full.txt").forEach((w, i) => {
+  if (!rank.has(w)) rank.set(w, i);
+});
+
+function score(word: string): number {
+  const r = rank.get(word);
+  if (r === undefined) return 35;
+  if (r < 2_000) return 60;
+  if (r < 8_000) return 57;
+  if (r < 20_000) return 54;
+  if (r < 35_000) return 52;
+  if (r < 50_000) return 50;
+  if (r < 100_000) return 47;
+  if (r < 200_000) return 44;
+  return 35;
+}
+
+const fromEnable: DictEntry[] = enable
+  .filter((w) => /^[a-z]{3,15}$/.test(w))
+  .map((w) => ({ word: w.toUpperCase(), score: score(w), tags: "" }));
+
+// Its 50 tier is a catch-all (ADHESIVEMIRROR, ANTEXCUSEFORAPARTY), so those
+// entries drop to 47: available when a grid needs them, never preferred.
+const cwlFile = path.join(sources, "xwordlist.dict");
+const fromCwl: DictEntry[] = fs.existsSync(cwlFile)
+  ? parseDict(fs.readFileSync(cwlFile, "utf8"))
+      .filter((e) => e.word.length <= 15)
+      .map((e) => ({ ...e, score: e.score === 50 ? 47 : e.score }))
+  : [];
+if (!fromCwl.length) console.warn("No xwordlist.dict: long slots will be hard to fill (see scripts/mini-generator/README.md).");
+// A word in both keeps the higher score.
+const best = new Map<string, DictEntry>();
+for (const e of [...fromEnable, ...fromCwl]) {
+  const prev = best.get(e.word);
+  if (!prev || e.score > prev.score) best.set(e.word, e);
+}
+const entries = [...best.values()];
+const blockFile = path.join(sources, "blocklist-en.txt");
+const blocked = fs.existsSync(blockFile)
+  ? read("blocklist-en.txt").map((w) => w.toUpperCase().replace(/[^A-Z]/g, "")).filter((w) => w.length >= 3)
+  : [];
+if (!blocked.length) console.warn("No blocklist-en.txt: offensive words are not filtered (see scripts/mini-generator/README.md).");
+const blockedSet = new Set(blocked);
+const SUFFIXES = ["", "S", "ES", "ED", "D", "ING", "Y", "ER", "ERS", "IER", "IEST"];
+const isBlocked = (word: string) =>
+  SUFFIXES.some((suf) => word.endsWith(suf) && blockedSet.has(word.slice(0, word.length - suf.length)));
+const lively = fs.existsSync(path.join(here, "wordlists/lively.dict"))
+  ? fs.readFileSync(path.join(here, "wordlists/lively.dict"), "utf8").split("\n").map((l) => l.split(";")[0])
+  : [];
+const blockedEntries = [...new Set([...blocked, ...entries.map((e) => e.word), ...lively].filter(isBlocked))].map((word) => ({ word, score: 0, tags: "" }));
+fs.writeFileSync(path.join(here, "wordlists/blocked.dict"), formatDict(blockedEntries));
+console.log(`${blockedEntries.length} offensive entries → scripts/seedgrid/wordlists/blocked.dict`);
+
+const out = path.join(here, "wordlists/base.dict");
+fs.writeFileSync(out, formatDict(entries));
+const clean = entries.filter((e) => e.score >= 50).length;
+console.log(`${entries.length} words (${clean} scored 50+; ${fromCwl.length} from the Collaborative Word List) → ${path.relative(process.cwd(), out)}`);

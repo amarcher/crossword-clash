@@ -10,6 +10,9 @@ third-party puzzle copyright.
 cd wordlists
 curl -sfL https://raw.githubusercontent.com/dolph/dictionary/master/enable1.txt -o enable1.txt
 curl -sfL https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt | awk '{print $1}' > freq50k.txt
+curl -sfL https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_full.txt -o en_full.txt  # optional, 20 MB: used by scripts/seedgrid
+curl -sfL https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en -o blocklist-en.txt  # used by scripts/seedgrid
+curl -sfL https://raw.githubusercontent.com/Crossword-Nexus/collaborative-word-list/main/xwordlist.dict -o xwordlist.dict  # MIT; used by scripts/seedgrid
 ```
 - `enable1.txt` — ENABLE word list (public domain), used to *validate* every entry is a real word.
 - `freq50k.txt` — 50k most-frequent English words (OpenSubtitles corpus). The filler uses the
