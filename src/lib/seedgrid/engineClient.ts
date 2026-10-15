@@ -29,17 +29,16 @@ export class EngineClient {
         if (e.data.error) p.reject(new Error(e.data.error));
         else p.resolve(e.data.result);
       };
-      this.ready = this.send<{ words: number }>({ type: "init", listUrl: STUDIO_WORD_LIST_URL, maxShared: MAX_SHARED }).then((r) => r.words);
-      this.ready.catch(() => (this.ready = null));
+      const ready = this.send<{ words: number }>({ type: "init", listUrl: STUDIO_WORD_LIST_URL, maxShared: MAX_SHARED }).then((r) => r.words);
+      this.ready = ready;
+      // A failed load shouldn't leave its worker running (unless a restart already replaced it).
+      ready.catch(() => this.ready === ready && this.dispose());
     }
     return this.ready;
   }
 
   restart(): Promise<number> {
-    this.worker?.terminate();
-    for (const p of this.pending.values()) p.reject(new Error("cancelled"));
-    this.pending.clear();
-    this.ready = null;
+    this.dispose();
     return this.load();
   }
 
@@ -47,6 +46,7 @@ export class EngineClient {
     this.worker?.terminate();
     this.worker = null;
     this.ready = null;
+    for (const p of this.pending.values()) p.reject(new Error("cancelled"));
     this.pending.clear();
   }
 
@@ -60,7 +60,14 @@ export class EngineClient {
 
   private async call<T>(req: WorkerRequest): Promise<T> {
     await this.load();
-    return this.send<T>(req);
+    try {
+      return await this.send<T>(req);
+    } catch (err) {
+      // A Rust panic leaves the wasm instance unusable ("unreachable", then "recursive use
+      // of an object" on every later call), so start a fresh worker for the next request.
+      if (err instanceof Error && /unreachable|recursive use|RuntimeError/i.test(err.message)) this.restart().catch(() => undefined);
+      throw err;
+    }
   }
 
   fill(grid: Grid, rules: EngineRules, timeoutMs: number, seed?: number) {
@@ -75,7 +82,7 @@ export class EngineClient {
     return this.call<Record<string, Viability>>({ type: "classify", grid, rules, slotId, words, timeoutMs });
   }
 
-  skeleton(size: number, symmetry: Symmetry, seeds: string[], rules: EngineRules, attempts = 60) {
+  skeleton(size: number, symmetry: Symmetry, seeds: string[], rules: Pick<EngineRules, "minScore" | "rejected">, attempts = 60) {
     return this.call<{ grid: Grid | null; attempts: number }>({ type: "skeleton", size, symmetry, seeds, rules, attempts });
   }
 }

@@ -10,6 +10,9 @@ Copied: `src/*.rs` except `bin.rs`, plus LICENSE and README. Not copied: `resour
    `use instant::Instant; use std::time::Duration;`. `std::time::Instant::now()` panics on
    `wasm32-unknown-unknown`; the crate already depends on `instant` with the `wasm-bindgen`
    feature for exactly this. Worth sending upstream.
-2. `Cargo.toml`: library only, so `clap` and `tempfile` (CLI and test-only) are dropped.
+2. `Cargo.toml`: library only. Dropped `clap` and `tempfile` (CLI), the optional
+   `serde`/`serde_derive` dependencies, the dev-dependencies and the build profiles (the
+   wrapper crate in `engine/` sets its own). The `serde` and `check_invariants` features are
+   declared empty so upstream's `cfg` attributes still resolve; neither is enabled.
 
 Upstream unit tests are not run here (they need the CC-BY-NC word list).

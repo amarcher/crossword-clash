@@ -5,7 +5,7 @@
  */
 import init, { Engine } from "./wasm/seedgrid_engine";
 import wasmUrl from "./wasm/seedgrid_engine_bg.wasm?url";
-import { IngridEngine, type EngineRules } from "./ingrid";
+import { checkWordListResponse, IngridEngine, MIN_WORD_LIST_WORDS, type EngineRules } from "./ingrid";
 import { buildSkeleton } from "./layout";
 import { cloneGrid, type Grid, type Symmetry } from "./grid";
 
@@ -14,7 +14,7 @@ export type WorkerRequest =
   | { type: "fill"; grid: Grid; rules: EngineRules; timeoutMs: number; seed?: number }
   | { type: "options"; grid: Grid; rules: EngineRules; listSlot?: string; listLimit?: number }
   | { type: "classify"; grid: Grid; rules: EngineRules; slotId: string; words: string[]; timeoutMs: number }
-  | { type: "skeleton"; size: number; symmetry: Symmetry; seeds: string[]; rules: EngineRules; attempts: number };
+  | { type: "skeleton"; size: number; symmetry: Symmetry; seeds: string[]; rules: Pick<EngineRules, "minScore" | "rejected">; attempts: number };
 
 let engine: IngridEngine | null = null;
 
@@ -31,8 +31,10 @@ async function handle(req: WorkerRequest): Promise<unknown> {
   if (req.type === "init") {
     await init({ module_or_path: wasmUrl });
     const res = await fetch(req.listUrl);
-    if (!res.ok) throw new Error(`word list ${res.status}`);
-    engine = new IngridEngine(new Engine(await res.text(), req.maxShared, 21));
+    const text = await res.text();
+    checkWordListResponse(res.status, res.headers.get("content-type"), text);
+    engine = new IngridEngine(new Engine(text, req.maxShared, 21));
+    if (engine.wordCount < MIN_WORD_LIST_WORDS) throw new Error(`word list has only ${engine.wordCount} words`);
     return { words: engine.wordCount };
   }
   if (!engine) throw new Error("engine not loaded");
@@ -55,7 +57,8 @@ async function handle(req: WorkerRequest): Promise<unknown> {
           maxBlockPct: attempt < req.attempts / 2 ? 0.22 : 0.26,
         });
         if (!placed) continue;
-        const probe = engine.fill(placed.grid, req.rules, { timeoutMs: req.size <= 7 ? 500 : 1500, seed: attempt });
+        // Only the score floor and rejections apply: approvals belong to another grid's slots.
+        const probe = engine.fill(placed.grid, { minScore: req.rules.minScore, rejected: req.rules.rejected }, { timeoutMs: req.size <= 7 ? 500 : 1500, seed: attempt });
         if (probe.ok) {
           const grid = cloneGrid(placed.grid);
           grid.cells = grid.cells.map((c, i) => (c === "#" || grid.locked[i] ? c : ""));

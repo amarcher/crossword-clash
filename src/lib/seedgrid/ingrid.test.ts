@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import fs from "node:fs";
 import { initSync, Engine } from "./wasm/seedgrid_engine";
-import { IngridEngine } from "./ingrid";
+import { checkWordListResponse, IngridEngine } from "./ingrid";
 import { gridFromRows, gridToRows } from "./grid";
 
 // BAT/ORE/WED across with BOW/ARE/TED down (or its transpose) is the only full fill;
@@ -52,9 +52,35 @@ describe("ingrid_core engine (wasm)", () => {
     expect(opts.counts["1A"]).toBeLessThan(8);
     expect(opts.words?.map((w) => w.word)).toContain("BAT");
     expect(opts.words?.[0].score).toBe(60);
-    const dead = engine.options(gridFromRows(["Q..", "...", "..."]), { minScore: 50 });
+  });
+
+  it("refuses over-long slots and bad characters without panicking, and keeps working", () => {
+    const short = new IngridEngine(new Engine(LIST, 4, 15));
+    expect(short.fill(gridFromRows([".".repeat(16)]), { minScore: 0 })).toMatchObject({ ok: false, reason: "bad-request" });
+    expect(short.options(gridFromRows([".".repeat(16)]), { minScore: 0 }).ok).toBe(false);
+    expect(short.fill(gridFromRows(["B?T"]), { minScore: 0 })).toMatchObject({ ok: false, reason: "bad-request" });
+    // A length the list has no words of at all (below max_length) is just empty, not a crash.
+    expect(short.fill(gridFromRows(["......."]), { minScore: 0 })).toMatchObject({ ok: false, reason: "unfillable" });
+    expect(short.fill(gridFromRows(["...", "...", "..."]), { minScore: 50 }).ok).toBe(true);
+  });
+
+  it("points at the one slot with no option instead of marking every slot dead", () => {
+    // 1A needs a Q word; the downs are fine on their own.
+    const opts = engine.options(gridFromRows(["Q..", "...", "..."]), { minScore: 50 });
+    expect(opts.ok).toBe(false);
+    expect(opts.counts).toEqual({ "1A": 0 });
+    // Arc consistency failing across the grid still reports every slot as 0.
+    const dead = engine.options(gridFromRows(["...", "...", "..."]), { minScore: 56 });
     expect(dead.ok).toBe(false);
+    expect(Object.keys(dead.counts)).toHaveLength(6);
     expect(Object.values(dead.counts).every((n) => n === 0)).toBe(true);
+  });
+
+  it("rejects word-list responses that are pages or errors", () => {
+    expect(() => checkWordListResponse(200, "text/plain", "BAT;60\n")).not.toThrow();
+    expect(() => checkWordListResponse(200, "text/html", "<!doctype html>")).toThrow(/HTML/);
+    expect(() => checkWordListResponse(200, null, "  <html>")).toThrow(/HTML/);
+    expect(() => checkWordListResponse(404, "text/plain", "")).toThrow(/404/);
   });
 
   it("classifies candidates by trying a full fill with each", () => {

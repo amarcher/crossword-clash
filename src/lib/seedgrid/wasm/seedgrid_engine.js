@@ -1,3 +1,4 @@
+/*! Contains ingrid_core (https://github.com/rf-/ingrid_core), Copyright (c) 2022 Ryan Fitzgerald, MIT License. */
 /* @ts-self-types="./seedgrid_engine.d.ts" */
 
 export class Engine {
@@ -33,8 +34,9 @@ export class Engine {
     }
     /**
      * `word_list` is `WORD;SCORE` lines (extra `;fields` are ignored; the first occurrence
-     * of a word wins). `max_shared` is the longest run of letters two entries may share
-     * (below 3 disables the check).
+     * of a word wins). `max_shared` is the longest run of letters two entries may share;
+     * ingrid_core supports 3–10, and anything outside that disables the check. Slots
+     * longer than `max_length` are refused as "bad-request".
      * @param {string} word_list
      * @param {number} max_shared
      * @param {number} max_length

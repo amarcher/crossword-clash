@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows, gridToRows } from "./grid";
-import { activeSlot, cellHeat, heatLevel, initialStudioState, rulesFor, slotKey, studioReducer, type StudioAction, type StudioState } from "./studioState";
+import { activeSlot, cellHeat, duplicateEntries, heatLevel, initialStudioState, rulesFor, slotKey, studioReducer, type StudioAction, type StudioState } from "./studioState";
 
 const run = (state: StudioState, ...actions: StudioAction[]) => actions.reduce(studioReducer, state);
 
@@ -24,10 +24,32 @@ describe("studio state", () => {
     expect(gridToRows(s.grid)[4]).toBe(".....");
   });
 
-  it("arrow moves skip blacks and set the direction", () => {
+  it("arrow moves step one square, onto blacks too, and set the direction", () => {
     const s = run({ ...initialStudioState(5), grid: gridFromRows([".#...", ".....", ".....", ".....", "....."]) }, { type: "MOVE", dRow: 0, dCol: 1 });
-    expect(s.cursor).toBe(2);
+    expect(s.cursor).toBe(1);
     expect(s.dir).toBe("across");
+    expect(run(s, { type: "MOVE", dRow: -1, dCol: 0 }).cursor).toBe(1);
+  });
+
+  it("a black square can be reselected and turned white after the cursor leaves it", () => {
+    let s = run(initialStudioState(5), { type: "SET_SYMMETRY", symmetry: "none" }, { type: "TOGGLE_BLOCK", cell: 12 }, { type: "SELECT", cell: 0 });
+    expect(s.grid.cells[12]).toBe("#");
+    s = run(s, { type: "SELECT", cell: 12 });
+    expect(s.cursor).toBe(12);
+    s = run(s, { type: "TOGGLE_BLOCK" });
+    expect(s.grid.cells[12]).toBe("");
+    // By keyboard as well: walk onto a black and toggle it.
+    s = run(s, { type: "TOGGLE_BLOCK", cell: 13 }, { type: "SELECT", cell: 11 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "TOGGLE_BLOCK" });
+    expect(s.grid.cells[13]).toBe("");
+    // Typing on a black does nothing.
+    s = run(s, { type: "TOGGLE_BLOCK" }, { type: "TYPE", letter: "a" });
+    expect(s.grid.cells[13]).toBe("#");
+  });
+
+  it("finds complete entries that repeat a word", () => {
+    expect(duplicateEntries(gridFromRows(["BAT", "#.#", "BAT"]))).toEqual(["1A", "3A"]);
+    expect(duplicateEntries(gridFromRows(["BAT", "ORE", "WED"]))).toEqual([]);
+    expect(duplicateEntries(gridFromRows(["BA.", "#.#", "BA."]))).toEqual([]);
   });
 
   it("clear fill keeps typed (locked) letters and drops engine letters", () => {

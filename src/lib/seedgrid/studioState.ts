@@ -108,19 +108,15 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return prune({ ...state, cursor: Math.min(state.cursor, action.grid.cells.length - 1) }, action.grid);
     case "SELECT":
       if (action.cell === state.cursor) return { ...state, dir: state.dir === "across" ? "down" : "across" };
-      return grid.cells[action.cell] === "#" ? state : { ...state, cursor: action.cell };
+      // Blacks are selectable so they can be toggled back to white.
+      return { ...state, cursor: action.cell };
     case "TOGGLE_DIR":
       return { ...state, dir: state.dir === "across" ? "down" : "across" };
     case "MOVE": {
-      let r = Math.floor(state.cursor / grid.width);
-      let c = state.cursor % grid.width;
-      // Skip over blacks to the next open square in that direction.
-      for (;;) {
-        r += action.dRow;
-        c += action.dCol;
-        if (r < 0 || r >= grid.height || c < 0 || c >= grid.width) return state;
-        if (grid.cells[r * grid.width + c] !== "#") break;
-      }
+      // One square at a time, blacks included, so the keyboard can reach them to toggle.
+      const r = Math.floor(state.cursor / grid.width) + action.dRow;
+      const c = (state.cursor % grid.width) + action.dCol;
+      if (r < 0 || r >= grid.height || c < 0 || c >= grid.width) return state;
       const dir = action.dCol !== 0 ? "across" : "down";
       return { ...state, cursor: r * grid.width + c, dir };
     }
@@ -200,6 +196,17 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return version ? prune({ ...state, cursor: 0 }, cloneGrid(version.grid)) : state;
     }
   }
+}
+
+/** Ids of complete entries whose word appears more than once (the engine refuses dupes). */
+export function duplicateEntries(grid: Grid): string[] {
+  const seen = new Map<string, string[]>();
+  for (const slot of slotsOf(grid)) {
+    if (!slot.cells.every((c) => grid.cells[c] && grid.cells[c] !== "#")) continue;
+    const word = slot.cells.map((c) => grid.cells[c]).join("");
+    seen.set(word, [...(seen.get(word) ?? []), slot.id]);
+  }
+  return [...seen.values()].filter((ids) => ids.length > 1).flat();
 }
 
 /** Option count → heat bucket, as Ingrid colors its grid. */

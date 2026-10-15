@@ -60,7 +60,15 @@ const fromEnable: DictEntry[] = enable
 // entries drop to 47: available when a grid needs them, never preferred.
 const cwlFile = path.join(sources, "xwordlist.dict");
 const fromCwl: DictEntry[] = fs.existsSync(cwlFile)
-  ? parseDict(fs.readFileSync(cwlFile, "utf8"))
+  ? parseDict(
+      fs
+        .readFileSync(cwlFile, "utf8")
+        .split("\n")
+        // Normalizing drops digits, which turns MP3JS into a fake "MPJS" (and 7ELEVEN into
+        // ELEVEN), so entries spelled with numerals are left out.
+        .filter((line) => !/\d/.test(line.split(";")[0]))
+        .join("\n"),
+    )
       .filter((e) => e.word.length <= 15)
       .map((e) => ({ ...e, score: e.score === 50 ? 47 : e.score }))
   : [];

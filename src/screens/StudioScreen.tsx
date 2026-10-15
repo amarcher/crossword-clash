@@ -13,6 +13,7 @@ import type { Viability } from "../lib/seedgrid/ingrid";
 import {
   activeSlot,
   cellHeat,
+  duplicateEntries,
   initialStudioState,
   rulesFor,
   slotKey,
@@ -31,7 +32,8 @@ function loadDraft(): StudioState {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (raw) {
       const draft = JSON.parse(raw) as StudioState;
-      if (draft.grid?.cells?.length === draft.grid.width * draft.grid.height) return { ...initialStudioState(), ...draft };
+      const cells = draft.grid?.width * draft.grid?.height;
+      if (draft.grid?.cells?.length === cells && draft.grid.locked?.length === cells) return { ...initialStudioState(), ...draft };
     }
   } catch {
     // A missing or unreadable draft just means a fresh grid.
@@ -70,6 +72,14 @@ export function StudioScreen() {
   const [size, setSize] = useState(state.grid.width);
   const fillSeed = useRef(1);
   const generation = useRef(0);
+  // Bumped after Stop so the heatmap and candidates are recomputed by the fresh worker.
+  const [engineEpoch, setEngineEpoch] = useState(0);
+  // The latest grid, so a fill or layout that finishes after the user edited can be dropped.
+  const latestGrid = useRef(state.grid);
+  latestGrid.current = state.grid;
+
+  // The size picker follows the grid (restored versions, laid-out skeletons).
+  useEffect(() => setSize(state.grid.width), [state.grid.width]);
 
   useEffect(() => {
     document.title = "Studio · Crossword Clash";
@@ -93,6 +103,7 @@ export function StudioScreen() {
   const rules = useMemo(() => rulesFor(state), [state]);
   const base = useMemo(() => committed(state.grid), [state.grid]);
   const rulesJson = JSON.stringify(rules);
+  const dupes = useMemo(() => duplicateEntries(base), [base]);
 
   // Heatmap, candidates for the selected entry, then background proofs for the top candidates.
   useEffect(() => {
@@ -103,7 +114,8 @@ export function StudioScreen() {
       try {
         const heat = await client.options(base, rules);
         if (stale()) return;
-        setHeatCounts(heat.counts);
+        // The engine refuses duplicate entries outright; point at them instead of the whole grid.
+        setHeatCounts(dupes.length ? Object.fromEntries(dupes.map((id) => [id, 0])) : heat.counts);
         if (!slot || !key) {
           setCandidates(null);
           return;
@@ -128,30 +140,41 @@ export function StudioScreen() {
     return () => clearTimeout(timer);
     // rulesJson stands in for rules; slot is derived from key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engine.kind, client, base, rulesJson, key]);
+  }, [engine.kind, engineEpoch, client, base, rulesJson, key]);
 
   const runFill = useCallback(async () => {
+    if (dupes.length) {
+      setMessage(`Entries ${dupes.join(", ")} repeat a word. Change one before filling.`);
+      return;
+    }
     setBusy("fill");
     setMessage(null);
+    const started = state.grid;
     try {
       const res = await client.fill(base, rules, FILL_MS, fillSeed.current++);
-      if (res.ok) dispatch({ type: "SET_GRID", grid: res.grid });
+      if (latestGrid.current !== started) setMessage("The grid changed while filling, so that fill was dropped. Fill again.");
+      else if (res.ok) dispatch({ type: "SET_GRID", grid: res.grid });
       else
         setMessage(
           res.reason === "timeout"
             ? `No fill in ${FILL_MS / 1000} s. Try fewer approvals, a lower score, or another black square.`
-            : "This grid can't be filled with these rules. Red squares show where it's stuck.",
+            : res.reason === "bad-request"
+              ? "The engine can't read this grid (an entry may be longer than 21 squares)."
+              : "This grid can't be filled with these rules. Red squares show where it's stuck.",
         );
     } catch {
       setMessage("Fill stopped.");
     } finally {
       setBusy(null);
     }
-  }, [client, base, rules]);
+  }, [client, base, rules, dupes, state.grid]);
 
   const stop = useCallback(() => {
     setBusy(null);
-    client.restart().catch(() => undefined);
+    client
+      .restart()
+      .then(() => setEngineEpoch((n) => n + 1))
+      .catch(() => undefined);
   }, [client]);
 
   const layOut = useCallback(async () => {
@@ -164,9 +187,12 @@ export function StudioScreen() {
     }
     setBusy("layout");
     setMessage(null);
+    const started = state.grid;
     try {
-      const res = await client.skeleton(gridSize, state.symmetry, seeds, rules);
-      if (res.grid) {
+      // Approvals belong to the current grid's slots, so a new layout only uses score and rejections.
+      const res = await client.skeleton(gridSize, state.symmetry, seeds, { minScore: state.minScore, rejected: state.rejected });
+      if (latestGrid.current !== started) setMessage("The grid changed during layout, so that layout was dropped.");
+      else if (res.grid) {
         setSize(gridSize);
         dispatch({ type: "SET_GRID", grid: res.grid });
       } else setMessage(`No fillable layout in ${res.attempts} tries. Try a larger grid or no symmetry.`);
@@ -175,7 +201,7 @@ export function StudioScreen() {
     } finally {
       setBusy(null);
     }
-  }, [client, seedsText, size, state.symmetry, rules]);
+  }, [client, seedsText, size, state.symmetry, state.minScore, state.rejected, state.grid]);
 
   const onKey = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -196,6 +222,8 @@ export function StudioScreen() {
       else if (ch === " ") dispatch({ type: "TOGGLE_DIR" });
     }
   }, []);
+
+  const onErase = useCallback(() => dispatch({ type: "ERASE" }), []);
 
   const heat = useMemo(() => (showHeat && heatCounts ? cellHeat(base, heatCounts) : undefined), [showHeat, heatCounts, base]);
   const stats = gridStats(state.grid);
@@ -247,9 +275,10 @@ export function StudioScreen() {
               onSelect={(cell) => dispatch({ type: "SELECT", cell })}
               onKey={onKey}
               onLetters={onLetters}
+              onErase={onErase}
             />
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {busy === "fill" ? (
+              {busy ? (
                 <Button variant="secondary" onClick={stop}>
                   <Square className="size-4" aria-hidden="true" /> Stop
                 </Button>

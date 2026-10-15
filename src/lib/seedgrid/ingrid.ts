@@ -24,9 +24,13 @@ export type FillOutcome =
   | { ok: false; reason: "unfillable" | "timeout" | "bad-request"; ms: number };
 
 export interface SlotOptions {
-  /** False when arc consistency already proves the grid can't be filled. */
+  /** False when the grid is already provably unfillable. */
   ok: boolean;
-  /** Slot id → words still possible there (the heatmap). Fixed slots count 1. */
+  /**
+   * Slot id → words still possible there (the heatmap). Fixed slots count 1.
+   * When one slot has no option at all, only that slot is reported (as 0);
+   * when arc consistency fails as a whole, every slot is 0.
+   */
   counts: Record<string, number>;
   /** Surviving words for the requested slot, best score first. */
   words?: { word: string; score: number }[];
@@ -49,6 +53,15 @@ function slotRules(slots: Slot[], rules: EngineRules): SlotRule[] {
 }
 
 const slotKey = (start: number, dir: string) => `${start}${dir}`;
+
+/** Fewer words than this means the response wasn't a word list (e.g. an SPA fallback page). */
+export const MIN_WORD_LIST_WORDS = 1000;
+
+/** Throws unless a fetched word list looks like `WORD;SCORE` lines rather than an HTML page. */
+export function checkWordListResponse(status: number, contentType: string | null, text: string): void {
+  if (status < 200 || status >= 300) throw new Error(`word list ${status}`);
+  if (/html/i.test(contentType ?? "") || /^\s*</.test(text)) throw new Error("word list missing (got an HTML page)");
+}
 
 export class IngridEngine {
   private readonly engine: Engine;
@@ -96,7 +109,11 @@ export class IngridEngine {
     ) as { ok: boolean; slots: { start: number; dir: string; count: number }[]; words?: { word: string; score: number }[] };
     const byKey = new Map(res.slots.map((s) => [slotKey(s.start, s.dir), s.count]));
     const counts: Record<string, number> = {};
-    for (const s of slots) if (s.cells.length > 1) counts[s.id] = res.ok ? (byKey.get(slotKey(s.cells[0], s.dir)) ?? 0) : 0;
+    for (const s of slots) {
+      const n = byKey.get(slotKey(s.cells[0], s.dir));
+      if (n !== undefined) counts[s.id] = n;
+      else if (!res.ok && !res.slots.length) counts[s.id] = 0;
+    }
     return { ok: res.ok, counts, words: res.words };
   }
 

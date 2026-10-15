@@ -92,6 +92,14 @@ struct OptionsResponse {
     words: Option<Vec<WordOption>>,
 }
 
+/// Why a grid can't even be set up for a search.
+enum Unprepared {
+    /// Malformed rows, or a slot longer than the engine's `max_length`.
+    BadRequest,
+    /// This slot has no option at all (nothing fits its letters and rules).
+    EmptySlot { start: usize, dir: &'static str },
+}
+
 struct Prepared {
     width: usize,
     height: usize,
@@ -141,8 +149,9 @@ pub struct Engine {
 #[wasm_bindgen]
 impl Engine {
     /// `word_list` is `WORD;SCORE` lines (extra `;fields` are ignored; the first occurrence
-    /// of a word wins). `max_shared` is the longest run of letters two entries may share
-    /// (below 3 disables the check).
+    /// of a word wins). `max_shared` is the longest run of letters two entries may share;
+    /// ingrid_core supports 3–10, and anything outside that disables the check. Slots
+    /// longer than `max_length` are refused as "bad-request".
     #[wasm_bindgen(constructor)]
     #[must_use]
     pub fn new(word_list: &str, max_shared: usize, max_length: usize) -> Engine {
@@ -178,8 +187,9 @@ impl Engine {
         let response = match serde_json::from_str::<Request>(request) {
             Err(_) => failure("bad-request", 0.0),
             Ok(req) => match self.prepare(&req) {
-                None => failure("unfillable", elapsed()),
-                Some(p) => {
+                Err(Unprepared::BadRequest) => failure("bad-request", elapsed()),
+                Err(Unprepared::EmptySlot { .. }) => failure("unfillable", elapsed()),
+                Ok(p) => {
                     let config = self.config(&p);
                     let timeout = req.timeout_ms.map(std::time::Duration::from_millis);
                     match find_fill(&config, timeout, None) {
@@ -189,9 +199,9 @@ impl Engine {
                                 .iter()
                                 .map(|g| g.map_or('.', |g| self.list.glyphs[g]))
                                 .collect();
-                            for row in 0..p.height {
-                                for col in 0..p.width {
-                                    if req.rows[row].as_bytes().get(col) == Some(&b'#') {
+                            for (row, text) in req.rows.iter().enumerate() {
+                                for (col, ch) in text.chars().enumerate() {
+                                    if ch == '#' {
                                         cells[row * p.width + col] = '#';
                                     }
                                 }
@@ -226,8 +236,14 @@ impl Engine {
             return r#"{"ok":false,"slots":[]}"#.into();
         };
         let response = match self.prepare(&req) {
-            None => OptionsResponse { ok: false, slots: vec![], words: None },
-            Some(p) => {
+            Err(Unprepared::BadRequest) => OptionsResponse { ok: false, slots: vec![], words: None },
+            // Point at the slot that has nothing, rather than marking the whole grid dead.
+            Err(Unprepared::EmptySlot { start, dir }) => OptionsResponse {
+                ok: false,
+                slots: vec![SlotCount { start, dir, count: 0 }],
+                words: None,
+            },
+            Ok(p) => {
                 let config = self.config(&p);
                 let mut sets = EliminationSet::build_all(&p.slot_configs, &self.list);
                 if establish_arc_consistency_for_static_grid(&config, &mut sets).is_err() {
@@ -279,12 +295,13 @@ impl Engine {
         }
     }
 
-    /// Build slots and their starting options. `None` when some slot has no option at all.
-    fn prepare(&mut self, req: &Request) -> Option<Prepared> {
+    /// Build slots and their starting options.
+    fn prepare(&mut self, req: &Request) -> Result<Prepared, Unprepared> {
         let height = req.rows.len();
-        let width = req.rows.first()?.chars().count();
-        if width == 0 || req.rows.iter().any(|r| r.chars().count() != width) {
-            return None;
+        let width = req.rows.first().map_or(0, |r| r.chars().count());
+        let valid_cell = |c: char| c == '#' || c == '.' || c.is_ascii_alphabetic();
+        if width == 0 || req.rows.iter().any(|r| r.chars().count() != width || !r.chars().all(valid_cell)) {
+            return Err(Unprepared::BadRequest);
         }
         let template: String = req
             .rows
@@ -293,6 +310,11 @@ impl Engine {
             .collect();
         let specs = generate_slots_from_template_string(&template);
         let (slot_configs, crossing_count) = generate_slot_configs(&specs);
+        // Indexing the word list by a longer length panics, which would poison the engine.
+        let max_length = self.list.max_length.unwrap_or(ingrid_core::MAX_SLOT_LENGTH).min(ingrid_core::MAX_SLOT_LENGTH);
+        if slot_configs.iter().any(|s| s.length > max_length) {
+            return Err(Unprepared::BadRequest);
+        }
 
         let fill: Vec<Option<GlyphId>> = template
             .lines()
@@ -326,6 +348,8 @@ impl Engine {
                     }
                     ids
                 }
+                // No bucket means no word of this length was ever loaded.
+                None if slot.length >= self.list.words.len() => Vec::new(),
                 None => generate_slot_options(
                     &mut self.list,
                     &entry_fill,
@@ -339,7 +363,7 @@ impl Engine {
                 options.retain(|&id| !reject.contains(&words[id].normalized_string));
             }
             if options.is_empty() {
-                return None;
+                return Err(Unprepared::EmptySlot { start: start_index(slot, width), dir: dir_name(slot.direction) });
             }
             slot_options.push(options);
         }
@@ -360,6 +384,6 @@ impl Engine {
             }
         }
 
-        Some(Prepared { width, height, fill, slot_configs, slot_options, crossing_count })
+        Ok(Prepared { width, height, fill, slot_configs, slot_options, crossing_count })
     }
 }

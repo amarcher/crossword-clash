@@ -11,7 +11,15 @@ interface StudioGridProps {
   onSelect: (cell: number) => void;
   onKey: (e: KeyboardEvent<HTMLInputElement>) => void;
   onLetters: (letters: string) => void;
+  onErase: () => void;
 }
+
+/**
+ * The hidden input always holds this zero-width character, so a soft-keyboard
+ * Backspace has something to delete. Android keyboards often report it only
+ * as an input change (keyCode 229), never as a Backspace keydown.
+ */
+const SENTINEL = "\u200b";
 
 const HEAT_BG = { dead: "bg-red-200", tight: "bg-orange-100", snug: "bg-amber-50", open: "bg-surface" } as const;
 
@@ -19,7 +27,7 @@ const HEAT_BG = { dead: "bg-red-200", tight: "bg-orange-100", snug: "bg-amber-50
  * Editable construction grid. Keys go through one visually hidden input so
  * phones get a keyboard and desktops get arrows, Backspace and "." for blocks.
  */
-export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, heat, onSelect, onKey, onLetters }: StudioGridProps) {
+export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, heat, onSelect, onKey, onLetters, onErase }: StudioGridProps) {
   const input = useRef<HTMLInputElement>(null);
   const numbers = useMemo(() => {
     const out = new Map<number, number>();
@@ -39,9 +47,13 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        value=""
+        value={SENTINEL}
         onKeyDown={onKey}
-        onChange={(e) => onLetters(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (!value.includes(SENTINEL)) onErase();
+          else onLetters(value.split(SENTINEL).join(""));
+        }}
       />
       <div
         role="grid"
@@ -51,7 +63,19 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
       >
         {grid.cells.map((cell, i) => {
           if (cell === "#") {
-            return <div key={i} role="gridcell" aria-label="Block" className="aspect-square bg-ink" onClick={() => { onSelect(i); input.current?.focus(); }} />;
+            return (
+              <div
+                key={i}
+                role="gridcell"
+                aria-label="Block"
+                aria-selected={i === cursor}
+                className={`aspect-square bg-ink ${i === cursor ? "outline-3 -outline-offset-3 outline-gold-400" : ""}`}
+                onClick={() => {
+                  onSelect(i);
+                  input.current?.focus();
+                }}
+              />
+            );
           }
           const bg = i === cursor ? "bg-gold-400" : active.has(i) ? "bg-gold-100" : heat ? HEAT_BG[heatLevel(heat[i])] : "bg-surface";
           return (

@@ -11,8 +11,9 @@ export class Engine {
     fill(request: string): string;
     /**
      * `word_list` is `WORD;SCORE` lines (extra `;fields` are ignored; the first occurrence
-     * of a word wins). `max_shared` is the longest run of letters two entries may share
-     * (below 3 disables the check).
+     * of a word wins). `max_shared` is the longest run of letters two entries may share;
+     * ingrid_core supports 3–10, and anything outside that disables the check. Slots
+     * longer than `max_length` are refused as "bad-request".
      */
     constructor(word_list: string, max_shared: number, max_length: number);
     /**
