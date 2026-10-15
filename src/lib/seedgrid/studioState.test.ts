@@ -96,4 +96,25 @@ describe("studio state", () => {
     expect(heat[4]).toBe(4);
     expect([heatLevel(heat[0]), heatLevel(heat[4]), heatLevel(heat[8]), heatLevel(undefined)]).toEqual(["dead", "tight", "snug", "open"]);
   });
+
+  it("applies drafted clues by slot key and drops them when the slot changes shape", () => {
+    let s = run(initialStudioState(5), { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Greeting", speed: "Hi there" } } });
+    expect(s.clues["0:across:5"]).toBe("Greeting");
+    expect(s.speedClues["0:across:5"]).toBe("Hi there");
+    s = run(s, { type: "SET_SYMMETRY", symmetry: "none" }, { type: "TOGGLE_BLOCK", cell: 4 });
+    expect(s.clues).toEqual({});
+    expect(s.speedClues).toEqual({});
+  });
+
+  it("never lets a draft overwrite a hand-written clue", () => {
+    let s = run(initialStudioState(5), { type: "SET_CLUE", key: "0:across:5", clue: "My own clue" });
+    expect(s.editedClues).toEqual(["0:across:5"]);
+    s = run(s, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Claude's", speed: "Fast" }, "0:down:5": { standard: "Down one", speed: "D" } } });
+    expect(s.clues).toEqual({ "0:across:5": "My own clue", "0:down:5": "Down one" });
+    expect(s.speedClues["0:across:5"]).toBeUndefined();
+    // Clearing it hands the slot back to drafting.
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "" }, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Claude's", speed: "Fast" } } });
+    expect(s.clues["0:across:5"]).toBe("Claude's");
+    expect(s.editedClues).toEqual([]);
+  });
 });

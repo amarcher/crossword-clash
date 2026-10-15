@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
-import { Download, Flame, LayoutGrid, Save, Sparkles, Square, Undo2 } from "lucide-react";
+import { Flame, LayoutGrid, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
+import { CluePanel } from "../components/Studio/CluePanel";
 import { EngineClient } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
-import { toIpuz } from "../lib/seedgrid/ipuz";
-import { CLUE_MAX } from "../lib/seedgrid/audit";
+import { toIpuz, type ClueSet } from "../lib/seedgrid/ipuz";
 import type { Viability } from "../lib/seedgrid/ingrid";
 import {
   activeSlot,
@@ -231,7 +231,12 @@ export function StudioScreen() {
   const complete = state.grid.cells.every((c) => c !== "");
 
   const exportIpuz = () => {
-    const clues = Object.fromEntries(slots.map((s) => [s.id, { standard: state.clues[slotKey(s)] ?? "" }]).filter(([, c]) => (c as { standard: string }).standard));
+    const clues: Record<string, ClueSet> = {};
+    for (const s of slots) {
+      const standard = state.clues[slotKey(s)]?.trim();
+      const speed = state.speedClues[slotKey(s)]?.trim();
+      if (standard) clues[s.id] = { standard, ...(speed ? { speed } : {}) };
+    }
     const ipuz = toIpuz(state.grid, clues, { title: state.title || "Untitled", author: "Crossword Clash" });
     const url = URL.createObjectURL(new Blob([JSON.stringify(ipuz, null, 2)], { type: "application/json" }));
     const a = document.createElement("a");
@@ -440,41 +445,7 @@ export function StudioScreen() {
 
         {/* Clues + export */}
         <section aria-label="Clues" className="order-4 lg:col-span-3">
-          <Card className="p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Eyebrow as="h2">Clues</Eyebrow>
-              <Button variant="secondary" size="sm" onClick={exportIpuz} disabled={!complete}>
-                <Download className="size-4" aria-hidden="true" /> Export .ipuz
-              </Button>
-            </div>
-            <div className="mt-3 grid gap-x-6 gap-y-2 md:grid-cols-2">
-              {(["across", "down"] as const).map((dir) => (
-                <ol key={dir} className="flex flex-col gap-2">
-                  <li className="text-sm font-semibold text-ink">{dir === "across" ? "Across" : "Down"}</li>
-                  {slots.filter((s) => s.dir === dir).map((s) => {
-                    const k = slotKey(s);
-                    const clue = state.clues[k] ?? "";
-                    return (
-                      <li key={k} className="flex items-center gap-2">
-                        <span className="w-24 shrink-0 font-mono text-xs text-muted">
-                          {s.number}. {slotText(state.grid, s)}
-                        </span>
-                        <input
-                          className="h-10 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base md:text-sm text-ink focus-visible:outline-2 focus-visible:outline-brand-500"
-                          aria-label={`Clue for ${s.number} ${dir}`}
-                          value={clue}
-                          onChange={(e) => dispatch({ type: "SET_CLUE", key: k, clue: e.target.value })}
-                        />
-                        <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
-                          {clue.length || ""}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ol>
-              ))}
-            </div>
-          </Card>
+          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} />
         </section>
       </main>
     </div>

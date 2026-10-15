@@ -63,6 +63,10 @@ export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
     inputTokenUsd: 3 / 1_000_000,
     outputTokenUsd: 15 / 1_000_000,
   },
+  // Studio clue drafting (studio-claude). Deliberately high ceilings rather than
+  // list prices, so the cap errs toward stopping early.
+  "claude-opus-5-5": { inputTokenUsd: 15 / 1_000_000, outputTokenUsd: 75 / 1_000_000 },
+  "claude-sonnet-5-5": { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
   // ElevenLabs Conversational AI — assume a generous ~8-minute session.
   convai: { sessionUsd: 1.0 },
   // OpenAI Realtime audio is the priciest path — assume a costly session.

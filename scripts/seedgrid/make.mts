@@ -23,7 +23,8 @@ import { mergeDicts, normalizeEntry, parseDict, WordIndex, type DictEntry } from
 import { gridStats, gridToRows, slotsOf, slotText, type Grid, type Symmetry } from "../../src/lib/seedgrid/grid";
 import { FillEngine } from "../../src/lib/seedgrid/solver";
 import { buildSkeleton, placeSeeds, shapeSkeleton, tryBlock, type Skeleton } from "../../src/lib/seedgrid/layout";
-import { auditClues, auditGrid, CLUE_MAX, clueBudget, type AuditReport } from "../../src/lib/seedgrid/audit";
+import { auditClues, auditGrid, clueBudget, type AuditReport } from "../../src/lib/seedgrid/audit";
+import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow } from "../../src/lib/seedgrid/cluePrompt";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
 
@@ -70,9 +71,6 @@ const entries: DictEntry[] = mergeDicts(
 );
 
 // ---- Claude steps ----
-const CONSTRUCTOR = `You are a veteran American crossword constructor and editor in the style of William Eisenberg working in Ingrid.
-You care about fill with soul: in-the-language phrases, fresh vocabulary, fair crossings. You dislike crosswordese (ESNE, ALAI, ERNE), partials, awkward plurals, obscure abbreviations, Roman numerals, and corners where niche names pile up. Prefer real words over abbreviations. Keep everything family friendly and avoid sad or gross entries.
-The puzzles are for Crossword Clash, a fast multiplayer game: solvers race, so instant recognizability matters.`;
 
 interface SeedSet {
   title: string;
@@ -203,45 +201,10 @@ For a pile-up, name the single entry whose removal helps most. Never list LOCKED
   });
 }
 
-interface ClueRow {
-  slot: string;
-  standard: string;
-  speed: string;
-}
 
-async function writeClues(grid: Grid, context: string, only?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
-  const slots = slotsOf(grid).filter((s) => !only || only.some((o) => o.slot === s.id));
-  const { clues } = await callJson<{ clues: ClueRow[] }>({
-    model,
-    system: CONSTRUCTOR,
-    prompt: `${context}
-Grid:
-${gridToRows(grid).join("\n")}
-
-Write two clues for every entry below.
-- standard: clever, mid-week difficulty (think a Wednesday): misdirection, wordplay, and fresh angles welcome, but always fair. Theme entries may nod to the theme.
-- speed: plain and instantly gettable; used as a hint in a race.
-- Each clue at most ${CLUE_MAX} characters. Shorter is better: players read under time pressure.
-- Never use the answer or any of its words in its clue. Mark fill-in-the-blank with ___ . Signal abbreviations and foreign words the standard way.
-- Write original clues; do not reuse famous published ones.
-${only ? `\nThese clues were rejected; fix the problems:\n${only.map((o) => `${o.slot}: ${o.problem}`).join("\n")}\n` : ""}
-${slots.map((s) => `${s.id} ${slotText(grid, s)}`).join("\n")}`,
-    schema: {
-      type: "object",
-      properties: {
-        clues: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: { slot: { type: "string" }, standard: { type: "string" }, speed: { type: "string" } },
-            required: ["slot", "standard", "speed"],
-          },
-        },
-      },
-      required: ["clues"],
-    },
-    maxTokens: 12000,
-  });
+async function writeClues(grid: Grid, context: string, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
+  const req = cluesRequest(grid, context, { fix });
+  const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
 }
 
@@ -455,15 +418,7 @@ async function main() {
     let rows = await writeClues(grid, context);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
-      const problems = Object.keys(answers).flatMap((id) => {
-        const c = clues[id];
-        if (!c) return [{ slot: id, problem: "missing" }];
-        const issues = [
-          ...auditClues([{ slotId: id, answer: answers[id], clue: c.standard }], "standard clue"),
-          ...auditClues([{ slotId: id, answer: answers[id], clue: c.speed ?? "" }], "speed clue"),
-        ].filter((i) => i.severity === "block");
-        return issues.length ? [{ slot: id, problem: issues.map((i) => i.message).join("; ") }] : [];
-      });
+      const problems = clueProblems(answers, clues);
       if (!problems.length) break;
       log(`  fixing ${problems.length} clue(s)`);
       rows = await writeClues(grid, context, problems);

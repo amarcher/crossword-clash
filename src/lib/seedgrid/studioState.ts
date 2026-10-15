@@ -9,6 +9,7 @@
  */
 import { cloneGrid, emptyGrid, partners, slotsOf, type Grid, type Slot, type Symmetry } from "./grid";
 import type { EngineRules } from "./ingrid";
+import type { Difficulty } from "./cluePrompt";
 
 export interface StudioVersion {
   name: string;
@@ -25,9 +26,16 @@ export interface StudioState {
   rejected: string[];
   cursor: number;
   dir: "across" | "down";
-  /** Slot key → clue. */
+  /** Slot key → clue (the standard tier players see). */
   clues: Record<string, string>;
+  /** Slot key → plain "speed" clue, used as a hint in races. */
+  speedClues: Record<string, string>;
+  /** Slot keys whose clues the constructor wrote or picked; drafting never overwrites them. */
+  editedClues: string[];
   title: string;
+  /** What the puzzle is about, passed to Claude with clue requests. */
+  theme: string;
+  difficulty: Difficulty;
   versions: StudioVersion[];
 }
 
@@ -48,7 +56,11 @@ export type StudioAction =
   | { type: "CLEAR_APPROVALS"; key: string }
   | { type: "TOGGLE_REJECT"; word: string }
   | { type: "SET_CLUE"; key: string; clue: string }
+  | { type: "SET_SPEED_CLUE"; key: string; clue: string }
+  | { type: "APPLY_CLUES"; clues: Record<string, { standard: string; speed: string }> }
   | { type: "SET_TITLE"; title: string }
+  | { type: "SET_THEME"; theme: string }
+  | { type: "SET_DIFFICULTY"; difficulty: Difficulty }
   | { type: "SAVE_VERSION"; name: string; at: number }
   | { type: "RESTORE_VERSION"; index: number };
 
@@ -64,7 +76,11 @@ export function initialStudioState(size = 5): StudioState {
     cursor: 0,
     dir: "across",
     clues: {},
+    speedClues: {},
+    editedClues: [],
     title: "",
+    theme: "",
+    difficulty: "medium",
     versions: [],
   };
 }
@@ -85,11 +101,24 @@ export function rulesFor(state: Pick<StudioState, "grid" | "minScore" | "approve
   return { minScore: state.minScore, approved, rejected: state.rejected };
 }
 
+/** Typing a clue marks it edited; clearing both tiers hands the slot back to drafting. */
+function markEdited(state: StudioState, key: string, text: string | undefined): string[] {
+  const rest = (state.editedClues ?? []).filter((k) => k !== key);
+  return text?.trim() ? [...rest, key] : rest;
+}
+
 /** Keeps only approvals and clues whose slots still exist. */
 function prune(state: StudioState, grid: Grid): StudioState {
   const keys = new Set(slotsOf(grid).map(slotKey));
   const keep = <T,>(rec: Record<string, T>) => Object.fromEntries(Object.entries(rec).filter(([k]) => keys.has(k)));
-  return { ...state, grid, approved: keep(state.approved), clues: keep(state.clues) };
+  return {
+    ...state,
+    grid,
+    approved: keep(state.approved),
+    clues: keep(state.clues),
+    speedClues: keep(state.speedClues),
+    editedClues: (state.editedClues ?? []).filter((k) => keys.has(k)),
+  };
 }
 
 function step(state: StudioState, delta: 1 | -1): number {
@@ -103,7 +132,14 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
   const { grid } = state;
   switch (action.type) {
     case "NEW_GRID":
-      return { ...initialStudioState(action.size), symmetry: state.symmetry, minScore: state.minScore, rejected: state.rejected, versions: state.versions };
+      return {
+        ...initialStudioState(action.size),
+        symmetry: state.symmetry,
+        minScore: state.minScore,
+        rejected: state.rejected,
+        difficulty: state.difficulty,
+        versions: state.versions,
+      };
     case "SET_GRID":
       return prune({ ...state, cursor: Math.min(state.cursor, action.grid.cells.length - 1) }, action.grid);
     case "SELECT":
@@ -186,9 +222,27 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return { ...state, approved, rejected: [...state.rejected, action.word] };
     }
     case "SET_CLUE":
-      return { ...state, clues: { ...state.clues, [action.key]: action.clue } };
+      return { ...state, clues: { ...state.clues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.speedClues[action.key]) };
+    case "SET_SPEED_CLUE":
+      return { ...state, speedClues: { ...state.speedClues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.clues[action.key]) };
+    case "APPLY_CLUES": {
+      const clues = { ...state.clues };
+      const speedClues = { ...state.speedClues };
+      const edited = new Set(state.editedClues ?? []);
+      for (const [key, c] of Object.entries(action.clues)) {
+        // Hand-written clues win: a draft only fills or replaces Claude's own.
+        if (edited.has(key)) continue;
+        clues[key] = c.standard;
+        speedClues[key] = c.speed;
+      }
+      return { ...state, clues, speedClues };
+    }
     case "SET_TITLE":
       return { ...state, title: action.title };
+    case "SET_THEME":
+      return { ...state, theme: action.theme };
+    case "SET_DIFFICULTY":
+      return { ...state, difficulty: action.difficulty };
     case "SAVE_VERSION":
       return { ...state, versions: [{ name: action.name, at: action.at, grid: cloneGrid(grid) }, ...state.versions].slice(0, 20) };
     case "RESTORE_VERSION": {
