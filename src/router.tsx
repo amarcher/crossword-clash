@@ -117,6 +117,10 @@ export const router = createBrowserRouter([
   { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/PrivacyScreen").then((m) => ({ Component: m.PrivacyScreen })) },
   { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/TermsScreen").then((m) => ({ Component: m.TermsScreen })) },
   { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/SupportScreen").then((m) => ({ Component: m.SupportScreen })) },
+  // Construction studio: dev builds only until its word list and Claude features are hosted.
+  ...(import.meta.env.DEV || import.meta.env.VITE_STUDIO === "1"
+    ? [{ path: "/studio", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/StudioScreen").then((m) => ({ Component: m.StudioScreen })) }]
+    : []),
   {
     path: "/",
     Component: RootLayout,

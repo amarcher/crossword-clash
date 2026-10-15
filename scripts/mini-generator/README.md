@@ -14,6 +14,8 @@ curl -sfL https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/con
 curl -sfL https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en -o blocklist-en.txt  # used by scripts/seedgrid
 curl -sfL https://raw.githubusercontent.com/Crossword-Nexus/collaborative-word-list/main/xwordlist.dict -o xwordlist.dict  # MIT; used by scripts/seedgrid
 ```
+Then `pnpm seedgrid:dict && pnpm seedgrid:studio-dict` builds the SeedGrid lists (the second
+writes `public/seedgrid/words.dict` for `/studio` in `pnpm dev`).
 - `enable1.txt` — ENABLE word list (public domain), used to *validate* every entry is a real word.
 - `freq50k.txt` — 50k most-frequent English words (OpenSubtitles corpus). The filler uses the
   top `--pool N` of it (∩ ENABLE) as the fill pool; the audit uses word rank to reject obscure
