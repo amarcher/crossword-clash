@@ -6,6 +6,7 @@ import { StudioGrid } from "../components/Studio/StudioGrid";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
+import { DailyQueue } from "../components/Studio/DailyQueue";
 import { EngineClient } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
@@ -378,6 +379,7 @@ export function StudioScreen() {
             onDuplicate={(entry) => openPuzzle(duplicateState(entry.id === state.id ? state : entry.state, newPuzzleId()))}
             onDelete={deletePuzzle}
           />
+          <DailyQueue state={state} />
           <Card className="p-4">
             <Eyebrow as="h2">Theme entries</Eyebrow>
             <textarea

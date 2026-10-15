@@ -5,7 +5,8 @@ import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText } from "../../lib/seedgrid/grid";
 import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
 import { slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
-import { draftClues, edgeCaller, entryAnswers, StudioClaudeError, STUDIO_TOKEN_KEY, suggestClues } from "../../lib/seedgrid/studioClaude";
+import { draftClues, edgeCaller, entryAnswers, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
+import { setStudioToken, useStudioToken } from "../../hooks/useStudioToken";
 
 interface CluePanelProps {
   state: StudioState;
@@ -18,14 +19,6 @@ const INPUT =
 const ICON_BUTTON =
   "inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
 
-function readToken(): string {
-  try {
-    return localStorage.getItem(STUDIO_TOKEN_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
 /**
  * Clue editor with Claude drafting: "Draft" writes standard + speed clues for
  * every entry still missing one (then "Redraft" replaces Claude's own), and the
@@ -37,7 +30,7 @@ export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
   const { grid } = state;
   const slots = slotsOf(grid);
   const complete = grid.cells.every((c) => c !== "");
-  const [token, setToken] = useState(readToken);
+  const token = useStudioToken();
   const [tokenDraft, setTokenDraft] = useState("");
   const [needToken, setNeedToken] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -97,13 +90,7 @@ export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
     });
 
   const saveToken = () => {
-    const value = tokenDraft.trim();
-    try {
-      localStorage.setItem(STUDIO_TOKEN_KEY, value);
-    } catch {
-      // Kept for this session only.
-    }
-    setToken(value);
+    setStudioToken(tokenDraft);
     setTokenDraft("");
     setNeedToken(false);
     setError(null);
