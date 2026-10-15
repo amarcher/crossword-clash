@@ -20,6 +20,7 @@ import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { usePlayInsights } from "../hooks/usePlayInsights";
 import { submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
@@ -140,6 +141,18 @@ export function MultiplayerPlayScreen() {
   // the streak but do NOT post times — a team-shared grid time isn't
   // comparable to individual solves.
   const isDaily = useIsTodaysDaily(puzzle);
+  usePlayInsights({
+    puzzle,
+    playerCells,
+    direction,
+    activeClue,
+    rejectedCell,
+    isComplete,
+    mode: raceMode,
+    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
+    localPlayerId: user?.id,
+    active: gameStatus !== "waiting",
+  });
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
     if (dailySubmittedRef.current || !isDaily || !user) return;
