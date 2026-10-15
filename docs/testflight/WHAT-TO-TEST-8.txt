@@ -1,0 +1,7 @@
+This update (1.0.1) lets us change the daily puzzle from our website without shipping a new version of the app.
+
+1. Open the app for the first time today. The daily puzzle card may show a gray placeholder for a moment, then the puzzle. Tell us if the placeholder ever lasts more than a few seconds.
+2. Play the daily solo, then try "Race friends" with someone. Both should use the same puzzle as the card, and a finished daily should appear on the daily leaderboard.
+3. Turn on Airplane Mode, force-quit the app, and open it again. A daily puzzle should still appear and be playable solo.
+4. Open the app again tomorrow. The daily should change.
+5. Anything else that looks or feels off: hosting or joining a race, the keyboard, the clue list, importing a puzzle.

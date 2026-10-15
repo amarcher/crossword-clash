@@ -12,8 +12,8 @@
  * instantly and `currentDailyMini()` (used by the leaderboard's "is this
  * today's daily?" check) stays synchronous.
  *
- * Website only for now: the native apps keep the bundled rotation until they
- * fetch from the site's origin (Vercel already serves it with CORS).
+ * The native apps have no feed of their own, so they read the website's
+ * (vercel.json allows any origin, including on a missing day's 404).
  */
 
 import { dayKey } from "./soloStats";
@@ -26,7 +26,8 @@ const FETCH_TIMEOUT_MS = 2500;
 /** How long "no feed file for today" is trusted before the feed is asked again. */
 export const ABSENT_TTL_MS = 3 * 60 * 60 * 1000;
 
-const FEED_ENABLED = import.meta.env?.MODE !== "mobile";
+/** Where the feed lives: the page's own origin on the web, the public site in the apps. */
+const FEED_ORIGIN = import.meta.env?.MODE === "mobile" ? "https://crosswordclash.com" : "";
 
 /** The JSON shape of one feed file. */
 export interface DailyFeedEntry {
@@ -43,8 +44,8 @@ type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<{
 
 // --- Pure ---
 
-export function dailyFeedUrl(day: string): string {
-  return `${DAILY_FEED_PATH}/${day}.json`;
+export function dailyFeedUrl(day: string, origin: string = FEED_ORIGIN): string {
+  return `${origin}${DAILY_FEED_PATH}/${day}.json`;
 }
 
 /** Validate one feed file's JSON. Null when it is not a playable puzzle. */
@@ -115,7 +116,6 @@ function known(now: Date): DailyMini | null | undefined {
  * answered yet — callers show a placeholder and use `resolveDailyMini`.
  */
 export function knownDailyMini(now: Date = new Date()): DailyMini | null {
-  if (!FEED_ENABLED) return getDailyMini(now);
   const mini = known(now);
   if (mini === undefined) return null;
   return mini ?? getDailyMini(now);
@@ -123,7 +123,7 @@ export function knownDailyMini(now: Date = new Date()): DailyMini | null {
 
 /** Best synchronous answer for today's daily: the feed's puzzle if known, else the bundled one. */
 export function currentDailyMini(now: Date = new Date()): DailyMini {
-  return (FEED_ENABLED ? known(now) : null) ?? getDailyMini(now);
+  return known(now) ?? getDailyMini(now);
 }
 
 /** Today's daily, asking the feed if it has not been asked recently. Never rejects. */
