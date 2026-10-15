@@ -41,8 +41,24 @@ const dropStudioAssets: Plugin = {
   },
 };
 
+// Studio builds load the licensable list from Supabase Storage. The full list
+// (FrequencyWords scoring) is for private use, so it ships only when asked for
+// by name with VITE_SEEDGRID_WORD_LIST=/seedgrid/words.dict.
+const dropPrivateWordList: Plugin = {
+  name: "drop-private-word-list",
+  apply: "build",
+  writeBundle(options) {
+    if (options.dir) fs.rmSync(path.join(options.dir, "seedgrid", "words.dict"), { force: true });
+  },
+};
+
+function studioPlugins(env: Record<string, string>): Plugin[] {
+  if (env.VITE_STUDIO !== "1") return [dropStudioAssets];
+  return env.VITE_SEEDGRID_WORD_LIST === "/seedgrid/words.dict" ? [] : [dropPrivateWordList];
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...(loadEnv(mode, process.cwd(), "VITE_").VITE_STUDIO === "1" ? [] : [dropStudioAssets]), ...(mode === "mobile" ? [{
+  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...studioPlugins(loadEnv(mode, process.cwd(), "VITE_")), ...(mode === "mobile" ? [{
     name: "mobile-html",
     transformIndexHtml: {
       order: "pre" as const,

@@ -17,6 +17,7 @@
     "seedgrid": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/make.mts",
     "seedgrid:dict": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/build-dict.mts",
     "seedgrid:studio-dict": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/studio-dict.mts",
+    "seedgrid:upload-dict": "for f in words-production.dict NOTICES.txt; do npx supabase storage rm ss:///seedgrid/$f --experimental --linked --yes >/dev/null 2>&1; npx supabase storage cp public/seedgrid/$f ss:///seedgrid/$f --experimental --linked --content-type 'text/plain; charset=utf-8' --cache-control max-age=300 || exit 1; done",
     "build:engine": "engine/build.sh",
     "seedgrid:lively": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/lively.mts",
     "build:native-import": "node scripts/build-native-import.mjs",

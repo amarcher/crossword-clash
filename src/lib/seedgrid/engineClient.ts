@@ -7,8 +7,23 @@ import type { EngineRules, FillOutcome, SlotOptions, Viability } from "./ingrid"
 import type { Grid, Symmetry } from "./grid";
 import type { WorkerRequest } from "./engine.worker";
 
-/** Which list the studio loads; set VITE_SEEDGRID_WORD_LIST=/seedgrid/words-production.dict for any studio others can reach. */
-export const STUDIO_WORD_LIST_URL = (import.meta.env.VITE_SEEDGRID_WORD_LIST as string | undefined) || "/seedgrid/words.dict";
+/**
+ * Which list the studio loads. VITE_SEEDGRID_WORD_LIST wins; otherwise dev uses
+ * the local full list and every other build the licensable list in Supabase
+ * Storage (`pnpm seedgrid:upload-dict`).
+ */
+export const STUDIO_WORD_LIST_URL = studioWordListUrl(
+  import.meta.env.VITE_SEEDGRID_WORD_LIST as string | undefined,
+  import.meta.env.DEV,
+  import.meta.env.VITE_SUPABASE_URL as string | undefined,
+);
+
+export function studioWordListUrl(override: string | undefined, dev: boolean, supabaseUrl: string | undefined): string {
+  if (override) return override;
+  if (dev) return "/seedgrid/words.dict";
+  if (!supabaseUrl) return "/seedgrid/words-production.dict";
+  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/seedgrid/words-production.dict`;
+}
 export const MAX_SHARED = 4;
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
