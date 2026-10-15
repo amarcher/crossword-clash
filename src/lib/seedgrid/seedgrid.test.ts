@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { parse } from "@xwordly/xword-parser";
-import { normalizePuzzle } from "../puzzleNormalizer";
+import { normalizePuzzle, normalizeTransferPuzzle } from "../puzzleNormalizer";
 import { WordIndex, parseDict, mergeDicts, normalizeEntry } from "./dictionary";
 import { gridFromRows, gridToRows, gridStats, slotsOf, slotText, partners, emptyGrid } from "./grid";
 import { FillEngine, conflicts } from "./solver";
 import { buildSkeleton, placeSeed, placeSeeds, shapeSkeleton, mirrorPlacement } from "./layout";
 import { auditGrid, auditClues, clueGivesAway } from "./audit";
-import { toIpuz, SPEED_CLUES_KEY } from "./ipuz";
+import { toIpuz, toTransferPuzzle, SPEED_CLUES_KEY } from "./ipuz";
 import { entryKind, frequencyCap, splitWords } from "./scoring";
 
 function rng(seed: number) {
@@ -222,6 +222,19 @@ describe("ipuz", () => {
     expect(puzzle.width).toBe(3);
     const across = puzzle.clues.filter((c) => c.direction === "across");
     expect(across[0]).toMatchObject({ number: 1, text: "Cricket gear", answer: "BAT" });
+  });
+});
+
+describe("play-test link", () => {
+  it("opens in the solver with numbers, answers and placeholder clues", () => {
+    const g = gridFromRows(["BAT", "O#E", "WED"]);
+    const puzzle = normalizeTransferPuzzle(toTransferPuzzle(g, { "1A": { standard: "Cave flier" } }, { title: "", author: "Me" }));
+    expect(puzzle.title).toBe("Untitled");
+    expect(puzzle.cells[1][1].solution).toBeNull();
+    const byId = Object.fromEntries(puzzle.clues.map((c) => [`${c.number}${c.direction[0].toUpperCase()}`, c]));
+    expect(byId["1A"]).toMatchObject({ text: "Cave flier", answer: "BAT", row: 0, col: 0 });
+    expect(byId["2D"]).toMatchObject({ text: "(no clue yet)", answer: "TED", row: 0, col: 2 });
+    expect(byId["3A"]).toMatchObject({ answer: "WED", row: 2, col: 0 });
   });
 });
 

@@ -51,3 +51,28 @@ export function toIpuz(grid: Grid, clues: Record<string, ClueSet>, meta: IpuzMet
     [SPEED_CLUES_KEY]: { Across: list("across", "speed"), Down: list("down", "speed") },
   };
 }
+
+/**
+ * The app's link-transfer format (puzzleNormalizer's TransferPuzzle), for
+ * opening a studio grid straight in the solver. Entries without a clue get a
+ * placeholder so a play test works before cluing is done.
+ */
+export function toTransferPuzzle(grid: Grid, clues: Record<string, ClueSet>, meta: Pick<IpuzMeta, "title" | "author">) {
+  const slots = slotsOf(grid);
+  const gridnums = Array(grid.cells.length).fill(0);
+  for (const s of slots) gridnums[s.cells[0]] = s.number;
+  const side = (dir: "across" | "down") => slots.filter((s) => s.dir === dir);
+  const clueText = (id: string) => clues[id]?.standard?.trim() || "(no clue yet)";
+  return {
+    title: meta.title || "Untitled",
+    author: meta.author,
+    size: { rows: grid.height, cols: grid.width },
+    grid: grid.cells.map((c) => (c === "#" ? "." : c)),
+    gridnums,
+    clues: {
+      across: side("across").map((s) => `${s.number}. ${clueText(s.id)}`),
+      down: side("down").map((s) => `${s.number}. ${clueText(s.id)}`),
+    },
+    answers: { across: side("across").map((s) => slotText(grid, s)), down: side("down").map((s) => slotText(grid, s)) },
+  };
+}

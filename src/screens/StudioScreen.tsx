@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
-import { Flame, LayoutGrid, Save, Sparkles, Square, Undo2 } from "lucide-react";
+import { Flame, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
 import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
+import { PuzzleList } from "../components/Studio/PuzzleList";
 import { EngineClient } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
-import { toIpuz, type ClueSet } from "../lib/seedgrid/ipuz";
+import { toIpuz, toTransferPuzzle, type ClueSet } from "../lib/seedgrid/ipuz";
+import { duplicateState, isBlank, loadLibrary, removeEntry, saveLibrary, toEntry, upsertEntry, type LibraryEntry } from "../lib/seedgrid/studioLibrary";
+import { normalizeTransferPuzzle } from "../lib/puzzleNormalizer";
+import { compressPuzzleToHash } from "../lib/puzzleUrl";
 import type { Viability } from "../lib/seedgrid/ingrid";
 import {
   activeSlot,
   cellHeat,
   duplicateEntries,
   initialStudioState,
+  newPuzzleId,
   rulesFor,
   slotKey,
   studioReducer,
@@ -88,13 +93,50 @@ export function StudioScreen() {
     return () => client.dispose();
   }, [client]);
 
+  // The open puzzle is the draft; it is also filed under "My puzzles" once it has
+  // anything in it. Debounced so typing doesn't rewrite the whole list per key.
+  const [library, setLibrary] = useState<LibraryEntry[]>(loadLibrary);
   useEffect(() => {
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
-    } catch {
-      // Private mode or full storage: the draft just isn't kept.
-    }
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
+      } catch {
+        // Private mode or full storage: the draft just isn't kept.
+      }
+      if (isBlank(state)) return;
+      setLibrary((list) => {
+        const next = upsertEntry(list, toEntry(state, Date.now()));
+        if (!saveLibrary(next)) setMessage("This browser's storage is full, so the puzzle list wasn't saved. Delete a few puzzles.");
+        return next;
+      });
+    }, 400);
+    return () => clearTimeout(timer);
   }, [state]);
+
+  // File the open puzzle right away before switching, in case the debounce hasn't run.
+  const fileCurrent = () => {
+    if (isBlank(state)) return library;
+    const next = upsertEntry(library, toEntry(state, Date.now()));
+    setLibrary(next);
+    saveLibrary(next);
+    return next;
+  };
+  const openPuzzle = (next: StudioState) => {
+    fileCurrent();
+    setMessage(null);
+    dispatch({ type: "LOAD", state: next });
+  };
+  const newPuzzle = () => {
+    fileCurrent();
+    setMessage(null);
+    dispatch({ type: "NEW_GRID", size, id: newPuzzleId() });
+  };
+  const deletePuzzle = (entry: LibraryEntry) => {
+    const next = removeEntry(library, entry.id);
+    setLibrary(next);
+    saveLibrary(next);
+    if (entry.id === state.id) dispatch({ type: "NEW_GRID", size: state.grid.width, id: newPuzzleId() });
+  };
 
   const slot = activeSlot(state);
   const key = slot ? slotKey(slot) : null;
@@ -244,6 +286,16 @@ export function StudioScreen() {
     URL.revokeObjectURL(url);
   };
 
+  const playTest = () => {
+    const clues: Record<string, ClueSet> = {};
+    for (const s of slots) {
+      const standard = state.clues[slotKey(s)]?.trim();
+      if (standard) clues[s.id] = { standard };
+    }
+    const puzzle = normalizeTransferPuzzle(toTransferPuzzle(state.grid, clues, { title: state.title, author: "Crossword Clash" }));
+    window.open(`${window.location.origin}/${compressPuzzleToHash(puzzle)}`, "_blank", "noopener");
+  };
+
   const status =
     engine.kind === "ready" ? `${engine.words.toLocaleString()} words` : engine.kind === "loading" ? "Loading words…" : "No word list";
 
@@ -296,6 +348,9 @@ export function StudioScreen() {
               <Button variant="ghost" onClick={() => dispatch({ type: "TOGGLE_BLOCK" })} aria-label="Toggle black square">
                 <LayoutGrid className="size-4" aria-hidden="true" /> Block
               </Button>
+              <Button variant="ghost" onClick={playTest} disabled={!complete} title="Open this puzzle in the solver, in a new tab">
+                <Play className="size-4" aria-hidden="true" /> Play test
+              </Button>
               <Button variant="ghost" aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""}>
                 <Flame className="size-4" aria-hidden="true" /> Heatmap
               </Button>
@@ -314,6 +369,15 @@ export function StudioScreen() {
 
         {/* Setup */}
         <aside className="order-3 flex flex-col gap-4 lg:order-1">
+          <PuzzleList
+            entries={library}
+            currentId={state.id}
+            newSize={size}
+            onOpen={(entry) => openPuzzle(entry.state)}
+            onNew={newPuzzle}
+            onDuplicate={(entry) => openPuzzle(duplicateState(entry.id === state.id ? state : entry.state, newPuzzleId()))}
+            onDelete={deletePuzzle}
+          />
           <Card className="p-4">
             <Eyebrow as="h2">Theme entries</Eyebrow>
             <textarea
@@ -335,9 +399,6 @@ export function StudioScreen() {
                 {busy === "layout" ? "Laying out…" : "Lay out"}
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => dispatch({ type: "NEW_GRID", size })}>
-              Blank {size}×{size} grid
-            </Button>
           </Card>
 
           <Card className="p-4">

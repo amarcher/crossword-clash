@@ -83,8 +83,8 @@ describe("studio state", () => {
   it("places a word in the active slot and saves/restores versions", () => {
     let s = run(initialStudioState(5), { type: "PLACE_WORD", word: "HELLO" }, { type: "SAVE_VERSION", name: "v1", at: 1 });
     expect(gridToRows(s.grid)[0]).toBe("HELLO");
-    s = run(s, { type: "NEW_GRID", size: 5 });
-    expect(gridToRows(s.grid)[0]).toBe(".....");
+    s = run(s, { type: "PLACE_WORD", word: "WORLD" });
+    expect(gridToRows(s.grid)[0]).toBe("WORLD");
     s = run(s, { type: "RESTORE_VERSION", index: 0 });
     expect(gridToRows(s.grid)[0]).toBe("HELLO");
   });
@@ -116,5 +116,19 @@ describe("studio state", () => {
     s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "" }, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Claude's", speed: "Fast" } } });
     expect(s.clues["0:across:5"]).toBe("Claude's");
     expect(s.editedClues).toEqual([]);
+  });
+
+  it("versions keep clues, and a new puzzle starts clean with its own id", () => {
+    let s = run(initialStudioState(5, "p-1"), { type: "PLACE_WORD", word: "HELLO" }, { type: "SET_CLUE", key: "0:across:5", clue: "Greeting" });
+    s = run(s, { type: "SAVE_VERSION", name: "v1", at: 1 }, { type: "SET_CLUE", key: "0:across:5", clue: "Hi" });
+    s = run(s, { type: "RESTORE_VERSION", index: 0 });
+    expect(s.clues["0:across:5"]).toBe("Greeting");
+    const fresh = run(s, { type: "NEW_GRID", size: 7, id: "p-2" });
+    expect(fresh).toMatchObject({ id: "p-2", clues: {}, versions: [], title: "" });
+    expect(fresh.grid.width).toBe(7);
+    // Loading fills in fields an older saved puzzle may lack.
+    const loaded = run(fresh, { type: "LOAD", state: { ...s, speedClues: undefined } as unknown as StudioState });
+    expect(loaded.id).toBe("p-1");
+    expect(loaded.speedClues).toEqual({});
   });
 });

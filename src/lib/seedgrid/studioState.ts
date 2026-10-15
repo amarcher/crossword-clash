@@ -15,9 +15,15 @@ export interface StudioVersion {
   name: string;
   at: number;
   grid: Grid;
+  /** Clue tiers and hand-edit marks at save time (absent in versions saved before clues were kept). */
+  clues?: Record<string, string>;
+  speedClues?: Record<string, string>;
+  editedClues?: string[];
 }
 
 export interface StudioState {
+  /** Identifies this puzzle in the "My puzzles" list. */
+  id: string;
   grid: Grid;
   symmetry: Symmetry;
   minScore: number;
@@ -40,7 +46,8 @@ export interface StudioState {
 }
 
 export type StudioAction =
-  | { type: "NEW_GRID"; size: number }
+  | { type: "NEW_GRID"; size: number; id: string }
+  | { type: "LOAD"; state: StudioState }
   | { type: "SET_GRID"; grid: Grid }
   | { type: "SELECT"; cell: number }
   | { type: "TOGGLE_DIR" }
@@ -66,8 +73,13 @@ export type StudioAction =
 
 export const slotKey = (slot: Slot) => `${slot.cells[0]}:${slot.dir}:${slot.cells.length}`;
 
-export function initialStudioState(size = 5): StudioState {
+export function newPuzzleId(): string {
+  return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function initialStudioState(size = 5, id = newPuzzleId()): StudioState {
   return {
+    id,
     grid: emptyGrid(size),
     symmetry: "rotational",
     minScore: 50,
@@ -133,13 +145,18 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
   switch (action.type) {
     case "NEW_GRID":
       return {
-        ...initialStudioState(action.size),
+        ...initialStudioState(action.size, action.id),
         symmetry: state.symmetry,
         minScore: state.minScore,
         rejected: state.rejected,
         difficulty: state.difficulty,
-        versions: state.versions,
       };
+    case "LOAD":
+      // Older saved puzzles may lack newer fields; keep the defaults for those.
+      return {
+        ...initialStudioState(action.state.grid.width, action.state.id),
+        ...Object.fromEntries(Object.entries(action.state).filter(([, v]) => v !== undefined)),
+      } as StudioState;
     case "SET_GRID":
       return prune({ ...state, cursor: Math.min(state.cursor, action.grid.cells.length - 1) }, action.grid);
     case "SELECT":
@@ -244,10 +261,27 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
     case "SET_DIFFICULTY":
       return { ...state, difficulty: action.difficulty };
     case "SAVE_VERSION":
-      return { ...state, versions: [{ name: action.name, at: action.at, grid: cloneGrid(grid) }, ...state.versions].slice(0, 20) };
+      return {
+        ...state,
+        versions: [
+          {
+            name: action.name,
+            at: action.at,
+            grid: cloneGrid(grid),
+            clues: { ...state.clues },
+            speedClues: { ...state.speedClues },
+            editedClues: [...(state.editedClues ?? [])],
+          },
+          ...state.versions,
+        ].slice(0, 20),
+      };
     case "RESTORE_VERSION": {
       const version = state.versions[action.index];
-      return version ? prune({ ...state, cursor: 0 }, cloneGrid(version.grid)) : state;
+      if (!version) return state;
+      const restored = version.clues
+        ? { ...state, cursor: 0, clues: { ...version.clues }, speedClues: { ...(version.speedClues ?? {}) }, editedClues: [...(version.editedClues ?? [])] }
+        : { ...state, cursor: 0 };
+      return prune(restored, cloneGrid(version.grid));
     }
   }
 }
