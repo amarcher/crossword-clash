@@ -4,3 +4,5 @@ export { Button } from "./Button";
 export { Card, Eyebrow } from "./Card";
 export { ListRow, ListGroup } from "./ListRow";
 export { MiniGridThumb } from "./MiniGridThumb";
+export { Select } from "./Select";
+export type { SelectOption } from "./Select";

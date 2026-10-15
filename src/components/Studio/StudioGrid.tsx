@@ -58,7 +58,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
       <div
         role="grid"
         aria-label="Puzzle grid"
-        className="grid gap-px rounded-lg border-2 border-ink bg-ink select-none touch-manipulation"
+        className="grid gap-px overflow-hidden rounded-lg border-2 border-ink bg-ink select-none touch-manipulation"
         style={{ gridTemplateColumns: `repeat(${w}, minmax(0, 1fr))` }}
       >
         {grid.cells.map((cell, i) => {

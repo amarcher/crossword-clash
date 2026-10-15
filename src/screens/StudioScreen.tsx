@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Flame, LayoutGrid, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
-import { Button, Card, Eyebrow } from "../components/ui";
+import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
@@ -48,8 +48,6 @@ function committed(grid: Grid): Grid {
   return out;
 }
 
-const SELECT =
-  "h-11 rounded-xl border border-line-strong bg-surface px-3 text-base md:text-sm text-ink focus-visible:outline-2 focus-visible:outline-brand-500";
 
 type EngineStatus = { kind: "loading" } | { kind: "ready"; words: number } | { kind: "error"; message: string };
 
@@ -327,11 +325,12 @@ export function StudioScreen() {
             />
             <div className="mt-2 flex items-center gap-2">
               <label className="sr-only" htmlFor="studio-size">Size</label>
-              <select id="studio-size" className={SELECT} value={size} onChange={(e) => setSize(Number(e.target.value))}>
-                {Array.from({ length: 11 }, (_, i) => i + 5).map((n) => (
-                  <option key={n} value={n}>{n}×{n}</option>
-                ))}
-              </select>
+              <Select
+                id="studio-size"
+                value={String(size)}
+                options={Array.from({ length: 11 }, (_, i) => ({ value: String(i + 5), label: `${i + 5}×${i + 5}` }))}
+                onChange={(n) => setSize(Number(n))}
+              />
               <Button variant="secondary" className="flex-1" onClick={layOut} disabled={engine.kind !== "ready" || busy !== null}>
                 {busy === "layout" ? "Laying out…" : "Lay out"}
               </Button>
@@ -344,17 +343,19 @@ export function StudioScreen() {
           <Card className="p-4">
             <Eyebrow as="h2">Rules</Eyebrow>
             <label className="mt-3 block text-sm font-medium text-ink-soft" htmlFor="studio-symmetry">Symmetry</label>
-            <select
+            <Select
               id="studio-symmetry"
-              className={`${SELECT} mt-1 w-full`}
+              block
+              className="mt-1"
               value={state.symmetry}
-              onChange={(e) => dispatch({ type: "SET_SYMMETRY", symmetry: e.target.value as Symmetry })}
-            >
-              <option value="rotational">Rotational</option>
-              <option value="mirror">Mirror (left–right)</option>
-              <option value="diagonal">Diagonal</option>
-              <option value="none">None</option>
-            </select>
+              options={[
+                { value: "rotational", label: "Rotational" },
+                { value: "mirror", label: "Mirror (left–right)" },
+                { value: "diagonal", label: "Diagonal" },
+                { value: "none", label: "None" },
+              ]}
+              onChange={(symmetry: Symmetry) => dispatch({ type: "SET_SYMMETRY", symmetry })}
+            />
             <label className="mt-3 flex items-baseline justify-between text-sm font-medium text-ink-soft" htmlFor="studio-score">
               Minimum word score <span className="tabular-nums text-ink">{state.minScore}</span>
             </label>

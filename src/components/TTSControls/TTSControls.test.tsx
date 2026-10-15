@@ -6,6 +6,15 @@ import { ELEVENLABS_VOICES } from "../../lib/elevenLabsClient";
 
 afterEach(cleanup);
 
+
+/** Opens the dropdown currently showing `current` and picks the option named `next`. */
+function pick(current: string, next: string | RegExp) {
+  const trigger = screen.getAllByRole("combobox").find((c) => c.textContent === current);
+  if (!trigger) throw new Error(`no dropdown showing ${current}`);
+  fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole("option", { name: next }));
+}
+
 describe("TTSMuteButton", () => {
   it("shows Mute when not muted", () => {
     render(<TTSMuteButton muted={false} toggleMute={vi.fn()} openSettings={vi.fn()} />);
@@ -108,11 +117,12 @@ describe("TTSSettingsModal", () => {
 
     render(<TTSSettingsModal {...baseProps()} voices={voices} />);
 
-    const select = screen.getByRole("combobox");
-    const optgroups = select.querySelectorAll("optgroup");
-    expect(optgroups.length).toBe(2);
-    expect(optgroups[0].getAttribute("label")).toBe("en-US");
-    expect(optgroups[1].getAttribute("label")).toBe("fr-FR");
+    fireEvent.click(screen.getByRole("combobox"));
+    const list = screen.getByRole("listbox").textContent ?? "";
+    expect(list.indexOf("en-US")).toBeGreaterThanOrEqual(0);
+    expect(list.indexOf("en-US")).toBeLessThan(list.indexOf("Voice A"));
+    expect(list.indexOf("fr-FR")).toBeLessThan(list.indexOf("Voice C"));
+    expect(list.indexOf("Voice B")).toBeLessThan(list.indexOf("fr-FR"));
   });
 
   it("does not show narrator toggle when elevenLabsAvailable is false", () => {
@@ -153,8 +163,7 @@ describe("TTSSettingsModal", () => {
     props.elevenLabsAvailable = true;
     render(<TTSSettingsModal {...props} />);
 
-    const engineSelect = screen.getByDisplayValue("Browser TTS");
-    fireEvent.change(engineSelect, { target: { value: "elevenlabs" } });
+    pick("Browser TTS", "ElevenLabs");
     expect(props.setEngine).toHaveBeenCalledWith("elevenlabs");
   });
 
@@ -164,8 +173,7 @@ describe("TTSSettingsModal", () => {
     props.engine = "elevenlabs";
     render(<TTSSettingsModal {...props} />);
 
-    const voiceSelect = screen.getByDisplayValue("Rachel (default)");
-    fireEvent.change(voiceSelect, { target: { value: ELEVENLABS_VOICES[1].id } });
+    pick("Rachel (default)", `${ELEVENLABS_VOICES[1].name} — ${ELEVENLABS_VOICES[1].description}`);
     expect(props.setElevenLabsVoiceId).toHaveBeenCalledWith(ELEVENLABS_VOICES[1].id);
   });
 
@@ -188,8 +196,7 @@ describe("TTSSettingsModal", () => {
     props.elevenLabsAvailable = true;
     render(<TTSSettingsModal {...props} />);
 
-    const narratorSelect = screen.getByDisplayValue("Off (per-clue announcements)");
-    fireEvent.change(narratorSelect, { target: { value: "elevenlabs-agent" } });
+    pick("Off (per-clue announcements)", /ElevenLabs/);
     expect(props.setNarratorEngine).toHaveBeenCalledWith("elevenlabs-agent");
   });
 });

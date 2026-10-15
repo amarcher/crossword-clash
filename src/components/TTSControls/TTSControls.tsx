@@ -5,6 +5,7 @@ import type { SpeechSettings } from "../../hooks/useSpeechSettings";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { track } from "../../lib/analytics";
 import type { NarratorEngine } from "../../lib/ttsSettings";
+import { Select } from "../ui";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
 
@@ -114,21 +115,22 @@ export function TTSSettingsModal({
         {elevenLabsAvailable && (
           <label className="block mb-4">
             <span className="text-sm text-slate-400 block mb-1">{t('tts.narratorLabel')}</span>
-            <select
+            <Select
+              variant="stage"
+              block
               value={narratorEngine ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
+              options={[
+                { value: "", label: t('tts.narratorNone') },
+                { value: "elevenlabs-agent", label: t('tts.narratorElevenLabs') },
+                { value: "openai-agent", label: t('tts.narratorOpenAI') },
+                { value: "claude", label: t('tts.narratorClaude') },
+              ]}
+              onChange={(val) => {
                 const next = val === "" ? null : (val as NarratorEngine);
                 if (next) track("narrator_enabled", { engine: next });
                 setNarratorEngine(next);
               }}
-              className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              <option value="">{t('tts.narratorNone')}</option>
-              <option value="elevenlabs-agent">{t('tts.narratorElevenLabs')}</option>
-              <option value="openai-agent">{t('tts.narratorOpenAI')}</option>
-              <option value="claude">{t('tts.narratorClaude')}</option>
-            </select>
+            />
           </label>
         )}
 
@@ -169,14 +171,16 @@ export function TTSSettingsModal({
             {elevenLabsAvailable && (!hasNarrator || narratorEngine === "claude") && (
               <label className="block mb-4">
                 <span className="text-sm text-slate-400 block mb-1">{t('tts.engineLabel')}</span>
-                <select
+                <Select
+                  variant="stage"
+                  block
                   value={engine}
-                  onChange={(e) => setEngine(e.target.value as "browser" | "elevenlabs")}
-                  className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
-                >
-                  <option value="browser">{t('tts.engineBrowser')}</option>
-                  <option value="elevenlabs">{t('tts.engineElevenLabs')}</option>
-                </select>
+                  options={[
+                    { value: "browser", label: t('tts.engineBrowser') },
+                    { value: "elevenlabs", label: t('tts.engineElevenLabs') },
+                  ]}
+                  onChange={setEngine}
+                />
               </label>
             )}
 
@@ -184,40 +188,29 @@ export function TTSSettingsModal({
               /* ElevenLabs voice select */
               <label className="block mb-4">
                 <span className="text-sm text-slate-400 block mb-1">{t('tts.elevenLabsVoice')}</span>
-                <select
+                <Select
+                  variant="stage"
+                  block
                   value={elevenLabsVoiceId ?? ""}
-                  onChange={(e) => setElevenLabsVoiceId(e.target.value || null)}
-                  className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
-                >
-                  <option value="">Rachel (default)</option>
-                  {elevenLabsVoices.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} — {v.description}
-                    </option>
-                  ))}
-                </select>
+                  options={[{ value: "", label: "Rachel (default)" }, ...elevenLabsVoices.map((v) => ({ value: v.id, label: `${v.name} — ${v.description}` }))]}
+                  onChange={(id) => setElevenLabsVoiceId(id || null)}
+                />
               </label>
             ) : (
               <>
                 {/* Browser voice select */}
                 <label className="block mb-4">
                   <span className="text-sm text-slate-400 block mb-1">{t('tts.voice')}</span>
-                  <select
+                  <Select
+                    variant="stage"
+                    block
                     value={voiceName ?? ""}
-                    onChange={(e) => setVoiceName(e.target.value || null)}
-                    className="w-full rounded-lg bg-stage text-slate-100 text-sm px-3 py-2 border border-stage-line focus-visible:outline-none focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500"
-                  >
-                    <option value="">{t('tts.systemDefault')}</option>
-                    {[...groupedVoices.entries()].map(([lang, langVoices]) => (
-                      <optgroup key={lang} label={lang}>
-                        {langVoices.map((v) => (
-                          <option key={v.name} value={v.name}>
-                            {v.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: t('tts.systemDefault') },
+                      ...[...groupedVoices.entries()].flatMap(([lang, langVoices]) => langVoices.map((v) => ({ value: v.name, label: v.name, group: lang }))),
+                    ]}
+                    onChange={(name) => setVoiceName(name || null)}
+                  />
                 </label>
 
                 {/* Rate slider */}

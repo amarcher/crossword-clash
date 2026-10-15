@@ -14,11 +14,12 @@ describe("LanguageSwitcher", () => {
     render(<LanguageSwitcher />);
     const select = screen.getByRole("combobox");
     expect(select).toBeDefined();
-    expect(select.tagName).toBe("SELECT");
+    expect(select.getAttribute("aria-haspopup")).toBe("listbox");
   });
 
   it("renders an option for each supported language", () => {
     render(<LanguageSwitcher />);
+    fireEvent.click(screen.getByRole("combobox"));
     const options = screen.getAllByRole("option");
     expect(options).toHaveLength(2);
     expect(options[0].textContent).toBe("English");
@@ -27,21 +28,21 @@ describe("LanguageSwitcher", () => {
 
   it("reflects the current language as selected value", () => {
     render(<LanguageSwitcher />);
-    const select = screen.getByRole("combobox") as HTMLSelectElement;
-    expect(select.value).toBe("en");
+    const select = screen.getByRole("combobox");
+    expect(select.textContent).toBe("English");
   });
 
   it("changes language when a different option is selected", () => {
     render(<LanguageSwitcher />);
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "es" } });
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: "Espa\u00f1ol" }));
     expect(i18n.language).toBe("es");
   });
 
-  it("option values match supported language codes", () => {
+  it("lists each language by its own name", () => {
     render(<LanguageSwitcher />);
-    const options = screen.getAllByRole("option") as HTMLOptionElement[];
-    expect(options[0].value).toBe("en");
-    expect(options[1].value).toBe("es");
+    fireEvent.click(screen.getByRole("combobox"));
+    const options = screen.getAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual(["English", "Espa\u00f1ol"]);
   });
 });

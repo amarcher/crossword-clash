@@ -1,6 +1,6 @@
 import { useMemo, useState, type Dispatch } from "react";
 import { Download, KeyRound, Sparkles, WandSparkles } from "lucide-react";
-import { Button, Card, Eyebrow } from "../ui";
+import { Button, Card, Eyebrow, Select } from "../ui";
 import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText } from "../../lib/seedgrid/grid";
 import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
@@ -115,16 +115,17 @@ export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
         <Eyebrow as="h2">Clues</Eyebrow>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="studio-difficulty">Difficulty</label>
-          <select
+          <Select
             id="studio-difficulty"
-            className="h-9 rounded-xl border border-line-strong bg-surface px-2 text-base md:text-sm text-ink focus-visible:outline-2 focus-visible:outline-brand-500"
+            size="sm"
             value={state.difficulty}
-            onChange={(e) => dispatch({ type: "SET_DIFFICULTY", difficulty: e.target.value as Difficulty })}
-          >
-            <option value="easy">Easy clues</option>
-            <option value="medium">Medium clues</option>
-            <option value="hard">Hard clues</option>
-          </select>
+            options={[
+              { value: "easy", label: "Easy clues" },
+              { value: "medium", label: "Medium clues" },
+              { value: "hard", label: "Hard clues" },
+            ]}
+            onChange={(difficulty: Difficulty) => dispatch({ type: "SET_DIFFICULTY", difficulty })}
+          />
           <Button variant="soft" size="sm" onClick={draft} disabled={!complete || busy !== null || (!missing.length && !redraftable.length)}>
             <Sparkles className="size-4" aria-hidden="true" />
             {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft Claude's clues"}
