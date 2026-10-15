@@ -60,6 +60,12 @@ export function useConsent(): ConsentState {
   return useSyncExternalStore(subscribe, getConsentState, getConsentState);
 }
 
+/** Whether first-party analytics (e.g. play insights) may be collected for this visitor right now. */
+export function analyticsAllowed(s: ConsentState = state): boolean {
+  if (s.status === "not-required") return true;
+  return s.status === "decided" && !!s.choice?.analytics;
+}
+
 /** Whether ads (AdSense) may load for this visitor right now. */
 export function adsAllowed(s: ConsentState = state): boolean {
   if (s.status === "not-required") return true;

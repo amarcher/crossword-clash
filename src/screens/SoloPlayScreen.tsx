@@ -17,6 +17,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
 import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { usePlayInsights } from "../hooks/usePlayInsights";
 import { submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
@@ -102,6 +103,16 @@ export function SoloPlayScreen() {
   // Post a finished daily mini to the cross-day leaderboard (best-effort,
   // no-op offline). Keyed by puzzle identity so imported puzzles never post.
   const isDaily = useIsTodaysDaily(puzzle);
+  usePlayInsights({
+    puzzle,
+    playerCells,
+    direction,
+    activeClue,
+    rejectedCell,
+    isComplete,
+    mode: "solo",
+    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
+  });
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
