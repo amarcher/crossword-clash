@@ -7,6 +7,9 @@
  * the bundled rotation"). Row-level security hides days that haven't started.
  */
 
+// Vercel's Node runtime provides process.env; api/ has no @types/node.
+declare const process: { env: Record<string, string | undefined> };
+
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function respond(status: number, body: unknown, maxAge: number): Response {
