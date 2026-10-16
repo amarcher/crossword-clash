@@ -7,6 +7,8 @@ import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
+import { StudioAccount } from "../components/Studio/StudioAccount";
+import { useStudioAccount } from "../hooks/useStudioAccount";
 import { EngineClient } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
@@ -65,6 +67,7 @@ type EngineStatus = { kind: "loading" } | { kind: "ready"; words: number } | { k
 export function StudioScreen() {
   const [state, dispatch] = useReducer(studioReducer, undefined, loadDraft);
   const client = useMemo(() => new EngineClient(), []);
+  const account = useStudioAccount();
   const [engine, setEngine] = useState<EngineStatus>({ kind: "loading" });
   const [busy, setBusy] = useState<"fill" | "layout" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -302,7 +305,12 @@ export function StudioScreen() {
 
   return (
     <div className="min-h-dvh bg-canvas px-4 pb-10 pt-2">
-      <SiteBar backLabel="Menu" backTo="/menu" right={<span className="text-sm text-muted tabular-nums">{status}</span>} />
+      <SiteBar backLabel="Menu" backTo="/menu" right={
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-muted tabular-nums sm:inline">{status}</span>
+            <StudioAccount account={account} />
+          </div>
+        } />
       <main className="mx-auto mt-4 grid w-full max-w-7xl gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
         {engine.kind === "error" && (
           <Card className="p-4 lg:col-span-3">
@@ -379,7 +387,7 @@ export function StudioScreen() {
             onDuplicate={(entry) => openPuzzle(duplicateState(entry.id === state.id ? state : entry.state, newPuzzleId()))}
             onDelete={deletePuzzle}
           />
-          <DailyQueue state={state} />
+          <DailyQueue state={state} admin={account.admin} />
           <Card className="p-4">
             <Eyebrow as="h2">Theme entries</Eyebrow>
             <textarea
@@ -509,7 +517,7 @@ export function StudioScreen() {
 
         {/* Clues + export */}
         <section aria-label="Clues" className="order-4 lg:col-span-3">
-          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} />
+          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} admin={account.admin} />
         </section>
       </main>
     </div>

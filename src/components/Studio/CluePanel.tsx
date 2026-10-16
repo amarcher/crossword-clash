@@ -12,6 +12,8 @@ interface CluePanelProps {
   state: StudioState;
   dispatch: Dispatch<StudioAction>;
   onExport: () => void;
+  /** A signed-in studio admin needs no token. */
+  admin: boolean;
 }
 
 const INPUT =
@@ -23,10 +25,11 @@ const ICON_BUTTON =
  * Clue editor with Claude drafting: "Draft" writes standard + speed clues for
  * every entry still missing one (then "Redraft" replaces Claude's own), and the
  * wand on a row asks for alternatives to pick from. Anything typed or picked by
- * hand is the constructor's and is never overwritten. Calls go through the token-gated studio-claude
- * function; the token is kept in this browser only.
+ * hand is the constructor's and is never overwritten. Calls go through the
+ * studio-claude function as a signed-in admin or with the studio token (kept
+ * in this browser only).
  */
-export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
+export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) {
   const { grid } = state;
   const slots = slotsOf(grid);
   const complete = grid.cells.every((c) => c !== "");
@@ -56,7 +59,7 @@ export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
   const redraftable = slots.filter((s) => !edited.has(slotKey(s)));
 
   const run = async (label: string, work: (call: ReturnType<typeof edgeCaller>) => Promise<void>) => {
-    if (!token) {
+    if (!token && !admin) {
       setNeedToken(true);
       return;
     }
@@ -143,7 +146,7 @@ export function CluePanel({ state, dispatch, onExport }: CluePanelProps) {
           }}
         >
           <KeyRound className="size-4 text-muted" aria-hidden="true" />
-          <label className="text-sm text-ink-soft" htmlFor="studio-token">Studio token</label>
+          <label className="text-sm text-ink-soft" htmlFor="studio-token">Sign in as a studio admin, or enter the studio token</label>
           <input
             id="studio-token"
             type="password"

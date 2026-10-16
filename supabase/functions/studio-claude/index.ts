@@ -1,4 +1,5 @@
 import { corsHeaders } from "../_shared/cors.ts";
+import { studioAllowed } from "../_shared/studioAuth.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 import { checkNarratorBudget } from "../_shared/budgetGuard.ts";
 import { logUsage } from "../_shared/usageLog.ts";
@@ -8,13 +9,12 @@ import { logUsage } from "../_shared/usageLog.ts";
  * request (clue drafts, alternatives). The studio builds the prompt with
  * src/lib/seedgrid/cluePrompt.ts; this function only gates and forwards it.
  *
- * Gated three ways: the STUDIO_TOKEN secret (sent as x-studio-token, so only
- * the constructor can spend), the per-IP rate limit, and the shared monthly AI
- * spend cap (402 narrator_unavailable once reached). Models and output size
- * are allowlisted.
+ * Gated three ways: studioAllowed (the STUDIO_TOKEN secret or a signed-in
+ * studio admin, so only the constructor can spend), the per-IP rate limit,
+ * and the shared monthly AI spend cap (402 narrator_unavailable once
+ * reached). Models and output size are allowlisted.
  */
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const STUDIO_TOKEN = Deno.env.get("STUDIO_TOKEN");
 const MODELS = new Set(["claude-opus-5-5", "claude-sonnet-5-5"]);
 const DEFAULT_MODEL = "claude-opus-5-5";
 const MAX_TOKENS = 16000;
@@ -23,14 +23,6 @@ const MAX_PROMPT_CHARS = 40000;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-/** Length-independent comparison, so the token can't be guessed a character at a time. */
-function sameToken(a: string, b: string): boolean {
-  const x = new TextEncoder().encode(a);
-  const y = new TextEncoder().encode(b);
-  let diff = x.length ^ y.length;
-  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
-  return diff === 0;
-}
 
 /** Structured output requires every object schema to forbid extra keys. */
 function closed(schema: unknown): unknown {
@@ -46,9 +38,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  if (!STUDIO_TOKEN || !sameToken(req.headers.get("x-studio-token") ?? "", STUDIO_TOKEN)) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  if (!(await studioAllowed(req))) return json({ error: "unauthorized" }, 401);
 
   const rateLimitResponse = await checkRateLimit(req, "studio-claude");
   if (rateLimitResponse) return rateLimitResponse;
