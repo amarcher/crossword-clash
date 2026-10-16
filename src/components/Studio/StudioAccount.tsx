@@ -75,7 +75,7 @@ export function StudioAccount({ account }: { account: Account }) {
       {user ? (
         <button
           type="button"
-          className="inline-flex h-9 max-w-44 items-center gap-2 rounded-full bg-surface-sunken pl-1 pr-3 text-sm font-medium text-ink hover:bg-line active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500"
+          className="inline-flex h-9 max-w-44 items-center gap-2 rounded-full bg-surface-sunken p-1 text-sm font-medium text-ink hover:bg-line active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500 sm:pr-3"
           aria-expanded={open}
           aria-haspopup="dialog"
           onClick={() => setOpen((o) => !o)}
@@ -83,11 +83,12 @@ export function StudioAccount({ account }: { account: Account }) {
           <span aria-hidden="true" className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
             {name.charAt(0).toUpperCase()}
           </span>
-          <span className="truncate">{name}</span>
+          {/* Phones show just the initial; the top bar has no room for a name. */}
+          <span className="truncate max-sm:sr-only">{name}</span>
         </button>
       ) : (
         <Button variant="secondary" size="sm" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((o) => !o)}>
-          <LogIn className="size-4" aria-hidden="true" /> Sign in
+          <LogIn className="size-4" aria-hidden="true" /> <span className="max-[359px]:sr-only">Sign in</span>
         </Button>
       )}
 

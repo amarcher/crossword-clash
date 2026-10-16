@@ -18,7 +18,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { formatDict, mergeDicts, parseDict } from "../../src/lib/seedgrid/dictionary";
+import { formatDict, liftDicts, mergeDicts, parseDict } from "../../src/lib/seedgrid/dictionary";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const listFile = (name: string) => path.join(here, "wordlists", name);
@@ -31,7 +31,7 @@ function write(base: string, out: string) {
     console.warn(`Missing scripts/seedgrid/wordlists/${base}; skipping ${out}. Run \`pnpm seedgrid:dict\` first.`);
     return;
   }
-  const entries = mergeDicts(load(base), load("lively.dict"), load("rescore.dict"), load("blocked.dict"))
+  const entries = mergeDicts(liftDicts(load(base), load("lively.dict")), load("rescore.dict"), load("blocked.dict"))
     .filter((e) => e.score > 0)
     .sort((a, b) => b.score - a.score || (a.word < b.word ? -1 : 1));
   const file = path.join(outDir, out);

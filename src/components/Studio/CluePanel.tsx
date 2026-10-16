@@ -159,7 +159,7 @@ export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) 
         </form>
       )}
 
-      <div className="mt-3 grid gap-x-6 gap-y-3 md:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
         {(["across", "down"] as const).map((dir) => (
           <ol key={dir} className="flex flex-col gap-3">
             <li className="text-sm font-semibold text-ink">{dir === "across" ? "Across" : "Down"}</li>

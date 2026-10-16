@@ -40,6 +40,22 @@ export function mergeDicts(...lists: DictEntry[][]): DictEntry[] {
   return [...byWord.values()];
 }
 
+/**
+ * Adds `lifts` to `base` without ever lowering a score: a word keeps the
+ * higher of its two scores (lively.dict vouches for phrases; it isn't a
+ * rescoring). Tags from the lift win, since they are hand-checked.
+ */
+export function liftDicts(base: DictEntry[], ...lifts: DictEntry[][]): DictEntry[] {
+  const byWord = new Map(base.map((e) => [e.word, e]));
+  for (const list of lifts) {
+    for (const e of list) {
+      const had = byWord.get(e.word);
+      byWord.set(e.word, had ? { word: e.word, score: Math.max(had.score, e.score), tags: e.tags || had.tags } : e);
+    }
+  }
+  return [...byWord.values()];
+}
+
 export function formatDict(entries: DictEntry[]): string {
   return entries.map((e) => (e.tags ? `${e.word};${e.score};${e.tags}` : `${e.word};${e.score}`)).join("\n") + "\n";
 }
