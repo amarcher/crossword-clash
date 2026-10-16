@@ -8,8 +8,9 @@ import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
 import { StudioAccount } from "../components/Studio/StudioAccount";
+import { EngineError } from "../components/Studio/EngineError";
 import { useStudioAccount } from "../hooks/useStudioAccount";
-import { EngineClient } from "../lib/seedgrid/engineClient";
+import { EngineClient, STUDIO_WORD_LIST_URL } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
 import { toIpuz, toTransferPuzzle, type ClueSet } from "../lib/seedgrid/ipuz";
@@ -317,15 +318,8 @@ export function StudioScreen() {
             <StudioAccount account={account} />
           </div>
         } />
-      <main className="mx-auto mt-4 grid w-full max-w-7xl gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
-        {engine.kind === "error" && (
-          <Card className="p-4 lg:col-span-3">
-            <p className="font-semibold text-ink">The studio's word list isn't built.</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              Run <code className="font-mono">pnpm seedgrid:dict && pnpm seedgrid:studio-dict</code>, then reload. ({engine.message})
-            </p>
-          </Card>
-        )}
+      <main className="mx-auto mt-4 grid w-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
+        {engine.kind === "error" && <EngineError className="lg:col-span-3" listUrl={STUDIO_WORD_LIST_URL} message={engine.message} />}
 
         {/* Grid: first on phones */}
         <section aria-label="Grid" className="order-1 lg:order-2">

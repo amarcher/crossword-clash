@@ -9,8 +9,8 @@ interface PlayInsightsInput {
   playerCells: Record<string, CellState>;
   direction: Direction;
   activeClue: PuzzleClue | null | undefined;
-  /** "row,col" while a wrong letter is being rejected, else null. */
-  rejectedCell: string | null;
+  /** Running count of wrong letters; each increase is recorded. */
+  wrongLetters: number;
   isComplete: boolean;
   mode: PlayMode;
   source: PlaySource;
@@ -25,7 +25,7 @@ interface PlayInsightsInput {
  * when the puzzle is finished, the page is hidden or closed, or the player
  * leaves the screen. Only visits with real input are sent.
  */
-export function usePlayInsights({ puzzle, playerCells, direction, activeClue, rejectedCell, isComplete, mode, source, localPlayerId, active = true }: PlayInsightsInput) {
+export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wrongLetters, isComplete, mode, source, localPlayerId, active = true }: PlayInsightsInput) {
   const tracker = useRef<PlaySessionTracker | null>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
@@ -66,9 +66,14 @@ export function usePlayInsights({ puzzle, playerCells, direction, activeClue, re
     tracker.current?.selectClue(activeClue ?? null, Date.now());
   }, [activeClue]);
 
+  // A count, not the flashing cell: two wrong letters inside one flash (or one
+  // render) would otherwise look like a single change.
+  const seenWrong = useRef(wrongLetters);
   useEffect(() => {
-    if (rejectedCell) tracker.current?.wrongLetter(latest.current.activeClue ?? null, Date.now());
-  }, [rejectedCell]);
+    const now = Date.now();
+    for (let i = seenWrong.current; i < wrongLetters; i++) tracker.current?.wrongLetter(latest.current.activeClue ?? null, now);
+    seenWrong.current = wrongLetters;
+  }, [wrongLetters]);
 
   useEffect(() => {
     tracker.current?.cellsChanged(playerCells, latest.current.direction, localPlayerId ?? null, Date.now());
