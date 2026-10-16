@@ -192,6 +192,14 @@ interface FillVerdict {
   notes: string;
 }
 
+/** "7D DARKMATTERDAMON (down), 20A MOONWALKOFFAME (across)": where each theme entry sits, so a review never reports one missing. */
+function themerSlots(grid: Grid): string {
+  return slotsOf(grid)
+    .filter((s) => s.cells.every((i) => grid.locked[i]))
+    .map((s) => `${s.id} ${slotText(grid, s)} (${s.dir})`)
+    .join(", ");
+}
+
 function describeFill(f: FillCandidate, scores: Map<string, number>): string {
   const weak = new Set(f.score.weak.map((w) => w.answer));
   const entries = slotsOf(f.grid)
@@ -210,6 +218,7 @@ async function pickFill(shortlist: FillCandidate[], context: string, round: numb
     prompt: `${context}
 
 ${shortlist.length > 1 ? `The engine produced these ${shortlist.length} complete fills of the same skeleton (theme entries are locked and never change). Pick the one you would ship, then list entries in it to replace.` : `Review this fill (round ${round}); the theme entries are locked.`}
+Theme entries and where they sit (across and down): ${themerSlots(shortlist[0].grid)}.
 Replacement severity:
 - "must": a solver racing the clock would not know it or could not get it from crossings (obscure, crosswordese, unfair proper-noun cross), an ugly partial, a duplicate, an abbreviation crossing an abbreviation, or anything crude, sad or gross.
 - "nice": acceptable but could be better.
@@ -636,7 +645,15 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     const picked = list.find((f) => f.index === verdict.pick) ?? list[0];
     chosen = picked;
     const must = verdict.replace.filter((r) => r.severity === "must").map((r) => ({ ...r, answer: normalizeEntry(r.answer) })).filter((r) => !seeds.includes(r.answer) && slotsOf(chosen.grid).some((s) => slotText(chosen.grid, s) === r.answer));
-    notes.push(`## Claude's review${round === "closing" ? " of the fill that ships" : `, round ${round}`}`, `Picked fill ${picked.index}. ${verdict.notes}`, ...verdict.replace.map((r) => `- [${r.severity}] ${r.answer}: ${r.reason}`), "");
+    // Claude reads the grid as rows, so a down themer has been reported "missing" before: say where each one is, and flag such a false alarm.
+    const falseAlarms = seeds.filter((w) => verdict.notes.includes(w) && /missing|doesn't appear|does not appear|not in the grid|absent|isn't in the grid/i.test(verdict.notes));
+    notes.push(
+      `## Claude's review${round === "closing" ? " of the fill that ships" : `, round ${round}`}`,
+      `Picked fill ${picked.index}. ${verdict.notes}`,
+      ...verdict.replace.map((r) => `- [${r.severity}] ${r.answer}: ${r.reason}`),
+      `Theme entries verified in the grid: ${themerSlots(chosen.grid)}.${falseAlarms.length ? ` **False alarm** in the notes above: ${falseAlarms.join(", ")} ${falseAlarms.length === 1 ? "is" : "are"} present (runs down, which the row view hides).` : ""}`,
+      "",
+    );
     log(`  picked fill ${picked.index}${must.length ? `; must replace ${must.map((r) => r.answer).join(", ")}` : "; nothing must go"}`);
     lastReviewed = { key: chosen.grid.cells.join(""), clean: !must.length };
     return must.map((r) => r.answer);

@@ -42,6 +42,12 @@ export interface SkeletonOptions {
   maxAvgLength?: number;
   /** Break up open runs longer than this, seeds excepted (default: the grid size up to 7×7, else 6, so long slots belong to the theme). */
   maxRunLength?: number;
+  /**
+   * How the seeds are placed: "paired" mirrors same-length seeds (null when they cannot pair),
+   * "free" takes the old random draw (crossings allowed), "auto" (default) mostly pairs and
+   * sometimes draws free, which two 8s in a 9×9 need since they only work crossing each other.
+   */
+  placement?: "paired" | "free" | "auto";
   /** When the random walk gets stuck, build the blacks column by column instead (slower per failed draw; default off). */
   construct?: boolean;
 }
@@ -415,13 +421,22 @@ export function freePlacements(opts: Pick<SkeletonOptions, "size" | "symmetry" |
  * placePaired); otherwise each seed takes a random legal spot, crossings
  * included. Null if this random draw does not fit.
  */
-export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">): Skeleton | null {
+export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random" | "placement">): Skeleton | null {
   const random = opts.random ?? Math.random;
   if (opts.seeds.some((w) => w.length > opts.size)) return null;
   if (opts.symmetry === "none") return placeFree(opts, random);
+  // An unpaired seed leaves a long unthemed slot opposite it that the engine fills with a
+  // 14-letter entry no constructor would ship, so a caller that can pair asks for "paired".
+  if (opts.placement === "paired") return placePaired(opts, random);
+  if (opts.placement === "free") return placeFree(opts, random);
   // Mostly paired, sometimes the free draw: two 8s in a 9×9 only work crossing each other.
   if (random() < 0.6) return placePaired(opts, random) ?? placeFree(opts, random);
   return placeFree(opts, random) ?? placePaired(opts, random);
+}
+
+/** True when the seeds pair under the symmetry (mirrored same-length pairs plus at most one centered seed that fits). */
+export function canPair(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">, random: () => number = Math.random): boolean {
+  return opts.symmetry !== "none" && pairedStart(opts, random) !== null;
 }
 
 /**

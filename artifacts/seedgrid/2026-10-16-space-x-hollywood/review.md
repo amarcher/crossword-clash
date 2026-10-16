@@ -2,7 +2,7 @@
 
 astronomy x Hollywood
 
-15×15, rotational symmetry, requested score 50, filled at floor 50, model claude-opus-5-5, 84s, tokens 9882 in / 7611 out
+15×15, rotational symmetry, requested score 50, filled at floor 50, model claude-opus-5-5, 84s, tokens 8809 in / 8248 out
 
 ## Seeds
 | Entry | Letters | Placement |
@@ -14,61 +14,64 @@ astronomy x Hollywood
 
 ## Skeleton
 ```
-.....#.D..#....
-.....#.A..#....
-.....#.R..#....
+...###...##....
+.....#....#....
+.....#....#....
 MOONWALKOFFAME#
-#####..M#...###
-#.....#A...#...
-#......T.......
-.....#.T.#.....
-REDCARPETGIANT#
-...#...R#.....#
-###...#D..#####
-#......A.......
-....#..M.#.....
-....#..O.#.....
-....#..N.#.....
+....#...##....#
+####...#...####
+.....##...#....
+DARKMATTERDAMON
+....#...##.....
+####...#...####
+#....##...#....
+#REDCARPETGIANT
+....#....#.....
+....#....#.....
+....##...###...
 ```
-Fills at floor **50**. Best of 2 layouts by tightest slot, then quick fills (11 options in the tightest slot, 0 flagged, quality 18.5 per entry at floor 50; 2 options in the tightest slot, 0 flagged, quality 18.8 per entry at floor 50); this one took 1 legal skeletons in 0s.
-74 words, 42 blocks (19%), average length 4.95, 11 three-letter entries. Corners white, no 2×2 black block (grid standards).
-Tightest open slots at floor 50: 38A (11 options), 23A (16 options), 27D (20 options), 6A (25 options), 6D (26 options).
+Fills at floor **50**. Best of 2 layouts by tightest slot, then quick fills (9 options in the tightest slot, 0 flagged, quality 19.1 per entry at floor 50; 2 options in the tightest slot, 0 flagged, quality 19.0 per entry at floor 50); this one took 3 legal skeletons in 2s.
+82 words, 52 blocks (23%), average length 4.22, 37 three-letter entries. Corners white, no 2×2 black block (grid standards).
+Tightest open slots at floor 50: 32D (9 options), 15D (14 options), 29D (15 options), 33D (17 options), 35D (21 options).
 
 ## Fills considered
-23 distinct fills. Quality = Σ min(score, 70) − 50 over engine entries; an entry under 50 loses the gap again plus 10; −8 per partial-looking entry, −15 when an entry sits inside another. Fills with audit blocks rank last whatever their quality.
+24 distinct fills. Quality = Σ min(score, 70) − 50 over engine entries; an entry under 50 loses the gap again plus 10; −8 per partial-looking entry, −15 when an entry sits inside another. Fills with audit blocks rank last whatever their quality.
 
 | Fill | Quality | Mean score | Weak entries | Audit blocks | Verdict |
 |---|---|---|---|---|---|
-| 1 | 1276 | 79.2 | — | — | — |
-| 2 | 1294 | 79.9 | — | — | shortlist |
-| 3 | 1264 | 78.5 | — | — | — |
-| 4 | 1289 | 80.1 | — | — | — |
-| 5 | 1226 | 78.0 | — | — | — |
-| 6 | 1283 | 79.9 | — | — | — |
-| 7 | 1246 | 78.4 | — | — | — |
-| 8 | 1259 | 79.1 | — | — | — |
-| 9 | 1282 | 79.8 | — | — | — |
-| 10 | 1241 | 78.3 | — | — | — |
-| 11 | 1272 | 79.3 | — | — | — |
-| 12 | 1262 | 78.9 | — | — | — |
-| 13 | 1277 | 78.9 | — | — | — |
-| 14 | 1321 | 81.7 | — | — | shortlist |
-| 15 | 1225 | 78.0 | — | — | — |
-| 16 | 1256 | 79.3 | — | — | — |
-| 17 | 1287 | 79.6 | — | — | — |
-| 18 | 1229 | 77.6 | — | — | — |
-| 19 | 1248 | 78.5 | AMANA (partial-looking) | — | — |
-| 20 | 1265 | 78.9 | — | — | — |
-| 21 | 1265 | 78.5 | — | — | — |
-| 22 | 1311 | 81.2 | — | — | shortlist |
-| 23 | 1286 | 79.8 | — | — | — |
+| 1 | 1478 | 81.5 | — | — | — |
+| 2 | 1515 | 83.7 | — | — | — |
+| 3 | 1452 | 83.2 | ISNOT (partial-looking) | — | — |
+| 4 | 1485 | 82.7 | — | — | — |
+| 5 | 1540 | 83.6 | — | — | shortlist |
+| 6 | 1490 | 82.0 | — | — | — |
+| 7 | 1502 | 82.4 | — | — | — |
+| 8 | 1528 | 82.9 | — | — | shortlist |
+| 9 | 1497 | 82.3 | ISNOT (partial-looking) | — | — |
+| 10 | 1400 | 78.9 | — | — | — |
+| 11 | 1492 | 83.6 | ISNOT (partial-looking) | — | — |
+| 12 | 1407 | 81.3 | — | — | — |
+| 13 | 1495 | 83.1 | — | — | — |
+| 14 | 1495 | 82.4 | — | — | — |
+| 15 | 1460 | 80.4 | ISNOT (partial-looking) | — | — |
+| 16 | 1487 | 82.8 | — | — | — |
+| 17 | 1500 | 82.2 | — | — | — |
+| 18 | 1453 | 81.1 | — | — | — |
+| 19 | 1483 | 81.6 | — | — | — |
+| 20 | 1525 | 83.4 | — | — | — |
+| 21 | 1508 | 82.0 | — | — | — |
+| 22 | 1465 | 80.7 | — | — | — |
+| 23 | 1537 | 84.1 | — | — | shortlist |
+| 24 | 1446 | 80.3 | — | — | — |
 
 ## Claude's review, round 1
-Picked fill 14. Fills 14 and 22 differ only in the NW. Fill 22 carries INNO, which is weak, while Fill 14's SHAM/HALO/OSLO/PAIN is clean apart from HASAT. Fill 2 has the best long entry (DEARATANYPRICE) but piles up AGGIE, EIN, DUA, LSU, CARNE and TERI, which is too much drag for a speed game. Fill 14 has nothing that truly blocks shipping, so all suggestions are polish. One flag: the locked theme entry DARKMATTERDAMON doesn't appear in the grid; the 14-letter slot holds ENCRYPTEDEMAIL instead. Confirm the theme set before shipping.
-- [nice] HASAT: A verb-plus-preposition partial that reads awkwardly. Reworking the NW, ideally keeping SHOPS, SHAM, HALO and OSLO, would give a cleaner entry.
-- [nice] IONE: IONE (Skye) is dated crosswordese. A plain word would read faster in a race.
-- [nice] SHARESABEDWITH: Long fill that feels assembled rather than in the language, and it can read as mildly suggestive. Fill 2's DEARATANYPRICE shows a livelier option fits this slot.
-- [nice] OTTO: Tired crosswordese. A common word would serve the solver better.
+Picked fill 5. Fill 5 is the cleanest, with no real crosswordese and no unfair name crossings. Fill 23 carries MROWL, TRA, ELS, ESP and EINE. Fill 8 piles up ENDOR, EDY, ARIEL, SMEE and VOLE. Fill 5 has nothing that must go; its few soft spots (ANIMA, TONOW, ETAS) are worth polishing if the engine can do so cheaply. SUN, GAS and MOODS add a little thematic flavor next to the Hollywood/astronomy themers.
+- [nice] ANIMA: Jungian term that racing solvers are unlikely to know. It is the weakest-scoring entry in the grid.
+- [nice] TONOW: Feels like an 'up ___' partial. It's a weak phrase on its own.
+- [nice] ETAS: Tired plural abbreviation that has become crosswordese.
+- [nice] SODOI: A mild multi-word phrase that reads awkwardly in the grid. A real word would be better.
+- [nice] AMES: Niche proper noun (Iowa city or Aldrich Ames) in a corner that also has REBA and CPA.
+Theme entries verified in the grid: 20A MOONWALKOFFAME (across), 38A DARKMATTERDAMON (across), 56A REDCARPETGIANT (across).
 
 ## Local refills
 Each flagged entry rejected and its neighborhood refilled at 50, kept when the fill scored better:
@@ -79,128 +82,128 @@ No flagged entry had an engine-approved alternative that fits its crossings as t
 
 ## Final fill
 ```
-SHOPS#ODOR#SLIM
-HASAT#RATS#MOOR
-ALLIE#ARTS#EONS
+ITS###GAP##DATA
+MOODS#ALOE#ERIC
+ANDIE#BILL#COME
 MOONWALKOFFAME#
-#####IBM#EAR###
-#BAAED#AMEN#MMA
-#ENCRYPTEDEMAIL
-ERODE#ATL#DENSE
-REDCARPETGIANT#
-ATE#DEAR#ATLAS#
-###PEP#DAM#####
-#SHARESABEDWITH
-BOAT#NAME#RENEE
-ERIE#TROT#ULCER
-EELS#SINS#GLASS
+SWIG#SEE##AFAR#
+####GPS#TON####
+OHBOY##AHA#MIRE
+DARKMATTERDAMON
+ETAS#LIE##MOOED
+####TEN#GAS####
+#PHIL##SUN#SPAS
+#REDCARPETGIANT
+COAL#LEIS#ANNIE
+PAVE#IBET#LETME
+AMES##ADS###SAP
 ```
-Quality 1321, mean score 81.7.
+Quality 1540, mean score 83.6.
 
 ## Audit
-- [warn] SHAM and SHARESABEDWITH share SHA
-- [warn] DAM is inside DARKMATTERDAMON
-- [warn] EAR is inside SMEAR
-- [warn] SMEAR and MEAL share MEA
-- [warn] SMEAR and DEAR share EAR
-- [warn] MOOR and MOONWALKOFFAME share MOO
-- [warn] MOONWALKOFFAME and AMEN share AME
-- [warn] MOONWALKOFFAME and GAME share AME
-- [warn] MOONWALKOFFAME and NAME share AME
-- [warn] EAR is inside DEAR
-- [warn] BERET and EREADER share ERE
-- [warn] ANODE and ERODE share ODE
-- [warn] AMEN and GAME share AME
-- [warn] AMEN and NAME share AME
-- [warn] ENCRYPTEDEMAIL and HAIL share AIL
-- [warn] ATL is inside ATLAS
-- [warn] GAME and NAME share AME
-- [warn] ATE is inside PATES
-- [warn] ATLAS and GLASS share LAS
-- [warn] ABETS and SHARESABEDWITH share ABE
+- [warn] IMAMS and ANIMA share IMA
+- [warn] TON is inside TONOW
+- [warn] GABLES and IDLES share LES
+- [warn] ALI is inside ALIKE
+- [warn] MOODS and MOONWALKOFFAME share MOO
+- [warn] MOODS and MOOED share MOO
+- [warn] MOONWALKOFFAME and MOOED share MOO
+- [warn] MOONWALKOFFAME and AMES share AME
+- [warn] ANT is inside PANTS
+- [warn] ANT is inside REDCARPETGIANT
+- [warn] HEAVE and PAVE share AVE
+- [warn] PANTS and REDCARPETGIANT share ANT
 
-Lowest-scored entries: AIDY (53), OTTO (55), RSSFEED (60), IONE (60), MRS (60), ANODE (60), EREADER (60), SHARESABEDWITH (60)
+Lowest-scored entries: ANIMA (55), ETAS (60), LETME (60), REBA (65), ASP (70), ODE (70), OKS (70), AMES (70)
 
 ## Clue review
-- 17A ALLIE: Factually wrong: Ally Sheedy is spelled ALLY, not ALLIE.
+- nothing flagged
 
 ## Clues
-Difficulty medium. Budget: 1396 / 1518 characters.
+Difficulty medium. Budget: 1497 / 1682 characters.
 
 | Slot | Answer | Standard | Speed |
 |---|---|---|---|
-| 1A | SHOPS | Goes looking for deals | Browses stores |
-| 1D | SHAM | Hollow pretense | Fake |
-| 2D | HALO | Glow suggesting saintliness | Angel's ring |
-| 3D | OSLO | Capital at the head of a fjord | Norway's capital |
-| 4D | PAIN | Real nuisance, informally | Ache |
-| 5D | STEW | Fret and fume | Beef dish in a pot |
-| 6A | ODOR | It's picked up by a nose | Smell |
-| 6D | ORALB | Crest rival | Toothbrush brand |
-| 7D | DARKMATTERDAMON (theme) | Astrophysical heartthrob? | Cosmic stuff meets 'The Martian' star? |
-| 8D | OTTO | Palindromic name | Bus driver on 'The Simpsons' |
-| 9D | RSSFEED | Stream for headline junkies | Web subscription format |
-| 10A | SLIM | Like long-shot odds | Thin |
-| 10D | SMEAR | Lipstick mishap, maybe | Smudge |
-| 11D | LOOM | Hover menacingly | Weaver's frame |
-| 12D | IONE | Skye of 'Say Anything...' | Actress Skye |
-| 13D | MRS | Robinson's title in 'The Graduate' | Wife's title: Abbr. |
-| 14A | HASAT | Goes after with gusto | Attacks |
-| 15A | RATS | Pied Piper's followers | 'Darn it!' |
-| 16A | MOOR | Heathcliff's stomping ground | Tie up, as a boat |
-| 17A | ALLIE | Rachel McAdams's role in "The Notebook" | "Kate & ___" (1980s sitcom) |
-| 18A | ARTS | Liberal ___ | Painting and sculpture |
-| 19A | EONS | Ages and ages | Very long times |
-| 20A | MOONWALKOFFAME (theme) | Hollywood Boulevard, per Neil Armstrong? | Lunar stroll past celebrity stars? |
-| 21D | AIDY | Bryant of 'Shrill' | Former 'SNL' star Bryant |
-| 22D | FANEDIT | Unofficial recut of a film | Viewer-made movie remix |
-| 23A | IBM | Big Blue | Tech giant with Watson |
-| 24A | EAR | Corn unit | Hearing organ |
-| 25A | BAAED | Spoke like a lamb | Bleated |
-| 25D | BERET | Painter's cap, stereotypically | French cap |
-| 26D | ANODE | Battery terminal | Positive electrode |
-| 27D | ACDC | 'Back in Black' band | 'Highway to Hell' rockers |
-| 28D | EREADER | Kindle, for one | Digital book device |
-| 29A | AMEN | 'You said it!' | Prayer closer |
-| 30D | MELT | Tuna ___ (diner sandwich) | Thaw |
-| 31A | MMA | Octagon sport, briefly | Cage fighting, for short |
-| 31D | MANNA | Heaven-sent food | Bread from heaven |
-| 32D | MISTS | Spritzes | Fogs |
-| 33D | ALE | Pub pour | Beer type |
-| 34A | ENCRYPTEDEMAIL | Message that needs a key to read | Secure electronic message |
-| 35D | PAPA | Bear in a Goldilocks tale | Dad |
-| 36D | MEAL | Prix fixe offering | Dinner, e.g. |
-| 37A | ERODE | Wash out, in a way | Wear away |
-| 37D | ERA | Pitcher's stat | Historical period |
-| 38A | ATL | Braves' home, on scoreboards | Georgia city: Abbr. |
-| 39A | DENSE | Slow on the uptake | Thick |
-| 40A | REDCARPETGIANT (theme) | Enormous premiere arrival? | Huge star at a movie opening? |
-| 41D | REPENTS | Feels remorse | Says sorry, in a sense |
-| 42D | GAME | Up for anything | Board ___ |
-| 43A | ATE | Had dinner | Dined |
-| 44A | DEAR | Letter opener | Beloved |
-| 45A | ATLAS | Titan holding up the heavens | Book of maps |
-| 46A | PEP | Get-up-and-go | Energy |
-| 46D | PATES | Domes | Tops of heads |
-| 47A | DAM | Beaver's project | River barrier |
-| 48D | ABETS | Aids in a heist | Helps a crook |
-| 49A | SHARESABEDWITH | Bunks with, as siblings might | Sleeps alongside |
-| 49D | SORE | Miffed | Achy |
-| 50D | HAIL | Flag down, as a cab | Icy precipitation |
-| 51D | SARI | Draped garment from India | Indian wrap |
-| 52D | DRUG | Pharmacy item | Medication |
-| 53D | WELL | 'So...' | Water source |
-| 54D | INCA | Machu Picchu builder | Ancient Peruvian |
-| 55D | TEES | Golf pegs | Casual shirts |
-| 56D | HERS | Towel monogram, maybe | Not his |
-| 57A | BOAT | Gravy holder | Vessel |
-| 57D | BEE | Spelling contest | Honey maker |
-| 58A | NAME | Moniker | 'Hello, my ___ is...' |
-| 59A | RENEE | Zellweger of 'Judy' | Actress Zellweger |
-| 60A | ERIE | Lake that feeds Niagara | Great Lake by Buffalo |
-| 61A | TROT | Gait faster than a walk | Jog |
-| 62A | ULCER | Stomach sore | Canker sore, e.g. |
-| 63A | EELS | Slippery swimmers | Snakelike fish |
-| 64A | SINS | Seven deadly things | Wrongdoings |
-| 65A | GLASS | Window material | Cup for milk |
+| 1A | ITS | "___ a deal!" | "___ a wrap!" |
+| 1D | IMAMS | Friday prayer leaders | Mosque leaders |
+| 2D | TONOW | Up ___ (thus far) | Up ___ (so far) |
+| 3D | SODOI | "Me too!" | "Same here!" |
+| 4A | GAP | Space between front teeth | Opening |
+| 4D | GABLES | Anne's "Green" home | Triangular roof parts |
+| 5D | ALIKE | Like peas in a pod | Similar |
+| 6D | POLO | Sport played on horseback | Collared knit shirt |
+| 7A | DATA | Analyst's raw material | Facts and figures |
+| 7D | DECAF | Late-night coffee order | Coffee without the buzz |
+| 8D | AROMA | Bakery draw | Pleasant smell |
+| 9D | TIMER | Egg boiler's aid | Kitchen countdown device |
+| 10D | ACE | Serve no one can touch | Top playing card |
+| 11A | MOODS | Ups and downs, say | Emotional states |
+| 12D | DING | Parking lot souvenir | Bell sound |
+| 13D | SEW | Hem, say | Use a needle |
+| 14A | ALOE | Plant with a soothing gel | Sunburn soother |
+| 15D | ELF | Workshop worker at the North Pole | Santa's helper |
+| 16A | ERIC | Clapton or Idle | Guitarist Clapton |
+| 17A | ANDIE | MacDowell of "Groundhog Day" | Actress MacDowell |
+| 18A | BILL | Duck's feature, or a waiter's delivery | Restaurant check |
+| 19A | COME | "___ again?" | Arrive |
+| 20A | MOONWALKOFFAME (theme) | Hollywood Boulevard, per Neil Armstrong? | Lunar strip of star plaques? |
+| 21D | ASP | Nile snake | Egyptian cobra |
+| 22D | FAN | Stadium face-painter | Ceiling cooler |
+| 23A | SWIG | Big gulp | Gulp |
+| 24A | SEE | Get the picture | Understand |
+| 25A | AFAR | From ___ (at a distance) | Far away |
+| 26A | GPS | Road-trip voice, briefly | Car nav system: Abbr. |
+| 26D | GYM | Dodgeball venue | Workout place |
+| 27A | TON | A whole lot | 2,000 pounds |
+| 27D | THE | Most common English word | Definite article |
+| 28D | OAR | Rowboat blade | Paddle |
+| 29A | OHBOY | "Here we go again!" | "Gee whiz!" |
+| 29D | ODE | Keats poem | Lyric poem |
+| 30D | HAT | Fedora or beret | Head topper |
+| 31D | BRA | Sports ___ (gym top) | Sports ___ |
+| 32D | OKS | Green-lights | Approves |
+| 33A | AHA | Lightbulb-moment cry | "Eureka!" |
+| 33D | ATE | Had dinner | Dined |
+| 34A | MIRE | Bog down | Swampy ground |
+| 34D | MAO | ___ jacket (high-collared coat) | Chairman ___ |
+| 35D | IMO | Opinion intro, in texts | "In my view," in texts |
+| 36D | ROE | Sushi topping | Fish eggs |
+| 37D | END | Finale | Conclusion |
+| 38A | DARKMATTERDAMON (theme) | Mysterious cosmic heartthrob? | Unseen cosmic stuff + Bourne actor |
+| 39D | ALE | Pub pour | Pub drink |
+| 40D | TIN | Element Sn | Can metal |
+| 41D | DMS | Private notes, for short | Social media messages |
+| 42A | ETAS | Arrival guesses, briefly | Flight board figs. |
+| 43A | LIE | Golfer's ball position | Fib |
+| 44A | MOOED | Made a pasture sound | Sounded like a cow |
+| 45A | TEN | Perfect score | Number after nine |
+| 45D | TLC | Pampering, briefly | Tender loving care |
+| 46A | GAS | What a pump pumps | Car fuel |
+| 46D | GUESTS | Party list | Visitors |
+| 47D | ANT | Picnic crasher | Colony insect |
+| 48A | PHIL | Punxsutawney forecaster | TV's Dr. ___ |
+| 48D | PROAM | Golf event pairing stars and amateurs | Mixed golf tourney |
+| 49D | HEAVE | Toss with effort | Big throw |
+| 50D | IDLES | Runs in neutral | Sits running at a light |
+| 51A | SUN | Star of our system | Daytime star |
+| 51D | SPIED | Caught sight of | Spotted |
+| 52A | SPAS | Places to get wrapped up? | Resorts with saunas |
+| 52D | SINE | Trig function | Cosine's partner |
+| 53D | PANTS | Breathes hard | Slacks |
+| 54D | ANIMA | Jungian soul | Inner self, to Jung |
+| 55D | STEEP | Like a black-diamond run | Let tea sit |
+| 56A | REDCARPETGIANT (theme) | Enormous premiere arrival? | Huge star at a movie premiere? |
+| 57D | ALI | Muhammad of boxing | "The Greatest" boxer |
+| 58D | REBA | Country star McEntire | Singer McEntire |
+| 59D | GAL | Pal | Woman, informally |
+| 60A | COAL | Stocking stuffer for the naughty | Grill fuel |
+| 60D | CPA | April 15 pro | Accountant: Abbr. |
+| 61A | LEIS | Honolulu hellos | Hawaiian garlands |
+| 62A | ANNIE | Musical with "Tomorrow" | Little Orphan ___ |
+| 63A | PAVE | Blacktop | Lay asphalt on |
+| 64A | IBET | "Sure you did..." | "Yeah, right!" |
+| 65A | LETME | "___ guess..." | "___ explain" |
+| 66A | AMES | Iowa State's city | Iowa college town |
+| 67A | ADS | Commercial break fillers | Commercials |
+| 68A | SAP | Maple syrup source | Tree fluid |
 

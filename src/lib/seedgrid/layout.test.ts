@@ -4,6 +4,7 @@ import {
   blackBlocks,
   blackCorners,
   buildSkeleton,
+  canPair,
   cornersMustBeWhite,
   meetsGridStandards,
   pairedPlacements,
@@ -101,6 +102,34 @@ describe("paired seed placement", () => {
     expect(keys.size).toBe(all.length);
     for (const s of all) expect(meetsGridStandards(s.grid)).toBe(true);
     expect(pairedPlacements({ size: 15, symmetry: "none", seeds: FOOTBALL }, 10)).toEqual([]);
+  });
+
+  it("mirrors same-length seeds in every paired draw, so no long unthemed slot faces a seed", () => {
+    // Star System: two 14s and a centered 15. findSkeleton's stage A asks for "paired" whenever
+    // canPair says so, and every such draw must put the 14s in rows r and 14 - r; a free draw once
+    // left them in rows 3 and 8, and the engine filled their mirror slots with ENCRYPTEDEMAIL and
+    // SHARESABEDWITH.
+    const seeds = ["REDCARPETGIANT", "MOONWALKOFFAME", "DARKMATTERDAMON"];
+    expect(canPair({ size: 15, symmetry: "rotational", seeds })).toBe(true);
+    expect(canPair({ size: 11, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY", "SEAHORSE"] })).toBe(false);
+    let draws = 0;
+    for (let i = 0; i < 40; i++) {
+      // Seeds only (placeSeeds) and the full draw with blacks (buildSkeleton, which fails more often).
+      const withBlacks = i % 2 === 1;
+      const sk = withBlacks ? buildSkeleton({ size: 15, symmetry: "rotational", seeds, random: mulberry32(i), placement: "paired" }) : placeSeeds({ size: 15, symmetry: "rotational", seeds, random: mulberry32(i), placement: "paired" });
+      if (!sk) continue;
+      draws++;
+      const long = sk.placements.filter((p) => p.word.length === 14);
+      expect(long).toHaveLength(2);
+      expect(long[0].dir).toBe(long[1].dir);
+      const lines = long.map((p) => (p.dir === "across" ? p.row : p.col));
+      expect(lines[0] + lines[1]).toBe(14);
+      const center = sk.placements.find((p) => p.word === "DARKMATTERDAMON")!;
+      expect(center.dir === "across" ? center.row : center.col).toBe(7);
+      // Once the blacks are in, nothing but a theme entry (whose mirror is now a theme entry too) runs longer than 7.
+      if (withBlacks) for (const s of slotsOf(sk.grid)) if (s.cells.length > 7) expect(s.cells.every((c) => sk.grid.locked[c])).toBe(true);
+    }
+    expect(draws).toBeGreaterThan(15);
   });
 
   it("falls back to free placement when the seeds cannot pair", () => {
