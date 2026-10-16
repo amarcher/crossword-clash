@@ -7,6 +7,7 @@ import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
+import { Insights } from "../components/Studio/Insights";
 import { StudioAccount } from "../components/Studio/StudioAccount";
 import { EngineError } from "../components/Studio/EngineError";
 import { useStudioAccount } from "../hooks/useStudioAccount";
@@ -518,6 +519,11 @@ export function StudioScreen() {
         {/* Clues + export */}
         <section aria-label="Clues" className="order-4 lg:col-span-3">
           <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} admin={account.admin} />
+        </section>
+
+        {/* How the published puzzles are doing */}
+        <section aria-label="Puzzle insights" className="order-5 lg:col-span-3">
+          <Insights admin={account.admin} />
         </section>
       </main>
     </div>

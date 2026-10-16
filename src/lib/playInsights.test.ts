@@ -75,6 +75,12 @@ describe("play session tracker", () => {
     expect(r.clues.find((c) => c.k === "1D")).toMatchObject({ x: 1, o: 1 });
   });
 
+  it("records the platform and whether the player was signed in", () => {
+    const t = new PlaySessionTracker(puzzle, {}, { ...meta, platform: "iOS Safari", signedIn: true }, T0, "s4");
+    expect(t.record(sec(1))).toMatchObject({ platform: "iOS Safari", signed_in: true });
+    expect(new PlaySessionTracker(puzzle, {}, meta, T0, "s5").record(sec(1))).toMatchObject({ platform: "", signed_in: false });
+  });
+
   it("marks completion", () => {
     const t = new PlaySessionTracker(puzzle, {}, meta, T0);
     t.complete(sec(9));

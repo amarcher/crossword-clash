@@ -40,6 +40,10 @@ export interface PlaySessionRecord {
   source: PlaySource;
   mode: PlayMode;
   client: "web" | "ios" | "android";
+  /** OS + browser family ("iOS Safari", "Android app"), see playInsightsClient.platformLabel. */
+  platform: string;
+  /** Playing as an account, not the anonymous default. */
+  signed_in: boolean;
   width: number;
   height: number;
   white_cells: number;
@@ -82,7 +86,7 @@ export class PlaySessionTracker {
   constructor(
     private readonly puzzle: Puzzle,
     initialCells: Record<string, CellState>,
-    private readonly meta: { puzzleKey: string; source: PlaySource; mode: PlayMode; client: PlaySessionRecord["client"] },
+    private readonly meta: { puzzleKey: string; source: PlaySource; mode: PlayMode; client: PlaySessionRecord["client"]; platform?: string; signedIn?: boolean },
     now: number,
     id: string = crypto.randomUUID(),
   ) {
@@ -170,6 +174,8 @@ export class PlaySessionTracker {
       source: this.meta.source,
       mode: this.meta.mode,
       client: this.meta.client,
+      platform: (this.meta.platform ?? "").slice(0, 60),
+      signed_in: this.meta.signedIn ?? false,
       width: this.puzzle.width,
       height: this.puzzle.height,
       white_cells: white,

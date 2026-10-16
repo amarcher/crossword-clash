@@ -343,6 +343,7 @@ export function HostLayout() {
     puzzle,
     playerScores: narratorPlayerScores,
     totalScore: totalWhiteCells,
+    gameId,
   });
 
   narratorSendEventRef.current = narrator.sendEvent;

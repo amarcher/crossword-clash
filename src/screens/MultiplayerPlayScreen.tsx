@@ -154,6 +154,7 @@ export function MultiplayerPlayScreen() {
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
     localPlayerId: user?.id,
     active: gameStatus !== "waiting",
+    signedIn: !!user && !user.is_anonymous,
   });
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
