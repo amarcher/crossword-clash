@@ -8,15 +8,7 @@ import { buildSkeleton, placeSeed, placeSeeds, shapeSkeleton, mirrorPlacement } 
 import { auditGrid, auditClues, clueGivesAway } from "./audit";
 import { toIpuz, toTransferPuzzle, SPEED_CLUES_KEY } from "./ipuz";
 import { entryKind, frequencyCap, levelCap, levelScore, splitWords } from "./scoring";
-
-function rng(seed: number) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from "./random";
 
 // BAT/ORE/WED across, BOW/ARE/TED down is one fill; the rest are decoys.
 const DICT = parseDict(`
@@ -91,13 +83,22 @@ describe("conflicts", () => {
     expect(conflicts("ATE", "LATER", 4)).toBe(false); // 3-letter containment is incidental
     expect(conflicts("NATION", "MOTION", 3)).toBe(true);
   });
+
+  it("at the studio limit of 3, a shared 4-letter run is a conflict and a 3-letter one is not", () => {
+    expect(conflicts("HERMITCRAB", "TAXIDERMIST", 3)).toBe(true); // ERMI
+    expect(conflicts("GOALPOSTMALONE", "GOALLINEDANCE", 3)).toBe(true); // GOAL: locked themers are exempt in the engines, not here
+    expect(conflicts("SEAHORSE", "HORSEPLAY", 3)).toBe(true); // HORSE
+    expect(conflicts("STARFISH", "DEVILRAY", 3)).toBe(false);
+    expect(conflicts("NATION", "STATION", 3)).toBe(true); // ATION
+    expect(conflicts("CATNIP", "NIPPLE", 3)).toBe(false); // NIP is fine
+  });
 });
 
 describe("FillEngine", () => {
   const index = new WordIndex(DICT, 50);
 
   it("fills an open grid with distinct dictionary words", () => {
-    const filled = new FillEngine(gridFromRows(["...", "...", "..."]), index, { random: rng(1) }).fill();
+    const filled = new FillEngine(gridFromRows(["...", "...", "..."]), index, { random: mulberry32(1) }).fill();
     expect(filled).not.toBeNull();
     const answers = slotsOf(filled!).map((s) => slotText(filled!, s));
     expect(new Set(answers).size).toBe(6);
@@ -106,7 +107,7 @@ describe("FillEngine", () => {
 
   it("keeps locked letters and accepts theme words missing from the list", () => {
     const g = gridFromRows(["BAT", "...", "..."]);
-    const filled = new FillEngine(g, index, { random: rng(2) }).fill();
+    const filled = new FillEngine(g, index, { random: mulberry32(2) }).fill();
     expect(gridToRows(filled!)[0]).toBe("BAT");
     const odd = gridFromRows(["QQQ#", "....", "....", "...."]);
     expect(new FillEngine(odd, index).fixed[0]).toBe("QQQ");
@@ -127,7 +128,7 @@ describe("FillEngine", () => {
     // Regression: a signed/unsigned compare made propagation loop forever.
     const words = Array.from({ length: 26 * 3 }, (_, i) => String.fromCharCode(65 + (i % 26)) + "A" + String.fromCharCode(65 + Math.floor(i / 26)));
     const big = new WordIndex(parseDict([...words, ...DICT.map((e) => e.word)].map((w) => `${w};60`).join("\n")), 50);
-    const filled = new FillEngine(gridFromRows(["...", "...", "..."]), big, { random: rng(3), timeMs: 2000 }).fill();
+    const filled = new FillEngine(gridFromRows(["...", "...", "..."]), big, { random: mulberry32(3), timeMs: 2000 }).fill();
     expect(filled).not.toBeNull();
   });
 
@@ -147,13 +148,14 @@ describe("layout", () => {
     expect(g.locked.slice(1, 5)).toEqual([true, true, true, true]);
   });
 
-  it("keeps parallel seeds three rows apart and prefers mirrored pairs", () => {
+  it("keeps parallel seeds apart and prefers mirrored pairs", () => {
     let mirrored = 0;
     for (let i = 0; i < 20; i++) {
-      const placed = placeSeeds({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random: rng(i) });
+      const placed = placeSeeds({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random: mulberry32(i) });
       if (!placed) continue;
       const [a, b] = placed.placements;
-      if (a.dir === b.dir) expect(Math.abs(a.dir === "across" ? a.row - b.row : a.col - b.col)).toBeGreaterThanOrEqual(3);
+      // One row between parallel seeds is the floor (wider when the grid allows it).
+      if (a.dir === b.dir) expect(Math.abs(a.dir === "across" ? a.row - b.row : a.col - b.col)).toBeGreaterThanOrEqual(2);
       const m = mirrorPlacement(a, 9, "rotational");
       if (m && m.dir === b.dir && m.row === b.row && m.col === b.col) mirrored++;
     }
@@ -164,7 +166,7 @@ describe("layout", () => {
     const words = ["STAR", "SEAT", "TEAS", "EATS", "RATE", "TEAR", "ARTS", "RATS", "STAT", "TARS", "ARES", "EAST", "SATE", "ETAS", "SEAR", "ERAS", "RASE", "TSAR", "STARE", "TEARS", "RATES", "ASTER", "TASTE", "STATE", "TREAT", "TERSE", "RESET", "STEER", "TREES", "ESTER"];
     const index = new WordIndex(parseDict(words.map((w) => `${w};60`).join("\n")), 50);
     const start = gridFromRows([".....", ".....", ".....", ".....", "....."]);
-    const shaped = shapeSkeleton(start, index, { symmetry: "rotational", random: rng(1), maxBlockPct: 0.3 });
+    const shaped = shapeSkeleton(start, index, { symmetry: "rotational", random: mulberry32(1), maxBlockPct: 0.3 });
     if (shaped) {
       expect(gridStats(shaped).shortRuns).toBe(0);
       expect(new FillEngine(shaped, index).consistentDomains()).not.toBeNull();
@@ -172,10 +174,10 @@ describe("layout", () => {
   });
 
   it("builds a legal skeleton around seeds", () => {
-    const random = rng(7);
+    const random = mulberry32(7);
     let skeleton = null;
     for (let i = 0; i < 50 && !skeleton; i++) {
-      skeleton = buildSkeleton({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random });
+      skeleton = buildSkeleton({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random, construct: true });
     }
     expect(skeleton).not.toBeNull();
     const stats = gridStats(skeleton!.grid);

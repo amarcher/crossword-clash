@@ -3,8 +3,26 @@
  * squares around them until the grid has legal, fillable proportions.
  */
 import type { WordIndex } from "./dictionary";
-import { emptyGrid, gridStats, isConnected, partners, runsOf, slotsOf, type Grid, type Symmetry } from "./grid";
+import {
+  cloneGrid,
+  emptyGrid,
+  fixShortRuns,
+  gridStats,
+  isConnected,
+  isThemeSlot,
+  meetsGridStandards,
+  MIN_RUN,
+  partners,
+  runsOf,
+  setBlack,
+  slotsOf,
+  type Grid,
+  type Symmetry,
+} from "./grid";
+import { enumerateSkeletons } from "./skeletonSearch";
 import { FillEngine } from "./solver";
+
+export { blackBlocks, blackCorners, cornersMustBeWhite, fixShortRuns, isThemeSlot, meetsGridStandards } from "./grid";
 
 export interface SeedPlacement {
   word: string;
@@ -24,6 +42,8 @@ export interface SkeletonOptions {
   maxAvgLength?: number;
   /** Break up open runs longer than this, seeds excepted (default: the grid size up to 7×7, else 6, so long slots belong to the theme). */
   maxRunLength?: number;
+  /** When the random walk gets stuck, build the blacks column by column instead (slower per failed draw; default off). */
+  construct?: boolean;
 }
 
 export interface Skeleton {
@@ -31,7 +51,6 @@ export interface Skeleton {
   placements: SeedPlacement[];
 }
 
-const MIN_LEN = 3;
 
 function pick<T>(list: T[], random: () => number): T {
   return list[Math.floor(random() * list.length)];
@@ -87,31 +106,19 @@ export function placeSeed(grid: Grid, p: SeedPlacement, symmetry: Symmetry): boo
   return true;
 }
 
-function setBlack(grid: Grid, i: number, symmetry: Symmetry): boolean {
-  const group = partners(grid, i, symmetry);
-  if (group.some((j) => grid.locked[j] || (grid.cells[j] && grid.cells[j] !== "#"))) return false;
-  for (const j of group) grid.cells[j] = "#";
-  return true;
-}
-
-/** Blacks out runs of 1–2 squares. False if a short run holds a seed letter. */
-function fixShortRuns(grid: Grid, symmetry: Symmetry): boolean {
-  for (let guard = 0; guard < grid.cells.length; guard++) {
-    const short = runsOf(grid).find((s) => s.cells.length < MIN_LEN);
-    if (!short) return true;
-    for (const i of short.cells) if (grid.cells[i] !== "#" && !setBlack(grid, i, symmetry)) return false;
-  }
-  return false;
+/** After new blacks: clear short runs, then require a connected grid that meets the standards. */
+function settle(grid: Grid, symmetry: Symmetry): boolean {
+  return fixShortRuns(grid, symmetry) && isConnected(grid) && meetsGridStandards(grid);
 }
 
 /**
  * Adds a black square (and its symmetric partners) at `cell`, cleaning up any
  * runs that become too short. Returns the new grid, or null if that breaks a
- * seed, disconnects the grid, or exceeds the block limit.
+ * seed, disconnects the grid, breaks the grid standards, or exceeds the block limit.
  */
 export function tryBlock(grid: Grid, cell: number, symmetry: Symmetry, maxBlockPct = 0.22): Grid | null {
-  const trial = { ...grid, cells: grid.cells.slice(), locked: grid.locked.slice() };
-  if (!setBlack(trial, cell, symmetry) || !fixShortRuns(trial, symmetry) || !isConnected(trial)) return null;
+  const trial = cloneGrid(grid);
+  if (!setBlack(trial, cell, symmetry) || !settle(trial, symmetry)) return null;
   return gridStats(trial).blockPct > maxBlockPct ? null : trial;
 }
 
@@ -126,11 +133,6 @@ function candidatePlacements(word: string, size: number, existing: SeedPlacement
   }
   if (!existing.length) return out.filter((p) => p.dir === "across");
   return out;
-}
-
-/** Seed slots, and the slots the symmetry mirrors them into, may stay long. */
-function isThemeSlot(grid: Grid, cells: number[], symmetry: Symmetry): boolean {
-  return cells.every((i) => grid.locked[i]) || cells.every((i) => partners(grid, i, symmetry).some((j) => grid.locked[j]));
 }
 
 /** Where a placement lands under the symmetry (null for none, or if it maps onto itself). */
@@ -175,23 +177,157 @@ function crossingPlacements(word: string, size: number, existing: SeedPlacement[
   return out;
 }
 
-/** Places and locks the seeds (longest first) in a fresh grid. Null if this random draw does not fit. */
-export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">): Skeleton | null {
+/** Rows (across) or columns (down) between two parallel placements; Infinity when they are not parallel. */
+function lineGap(p: SeedPlacement, q: Omit<SeedPlacement, "word">): number {
+  if (p.dir !== q.dir) return Infinity;
+  return Math.abs(p.dir === "across" ? p.row - q.row : p.col - q.col);
+}
+
+/**
+ * Parallel seeds want rows between them: one is the minimum (a down crossing
+ * both has fixed letters two apart), three or more leaves the crossings free.
+ */
+const MIN_GAP = 2;
+const EASY_GAP = 3;
+
+function commitSeeds(grid: Grid, seeds: SeedPlacement[], symmetry: Symmetry): Grid | null {
+  const trial = cloneGrid(grid);
+  for (const p of seeds) if (!placeSeed(trial, p, symmetry)) return null;
+  return settle(trial, symmetry) ? trial : null;
+}
+
+/** The pair plan with the centered seed (if any) already placed: where placePaired and pairedPlacements both begin. */
+function pairedStart(
+  opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">,
+  random: () => number,
+): { grid: Grid; placements: SeedPlacement[]; pairs: [string, string][] } | null {
+  const { size, symmetry } = opts;
+  const plan = pairPlan(opts.seeds, size, random);
+  if (!plan) return null;
+  if (!plan.center) return { grid: emptyGrid(size), placements: [], pairs: plan.pairs };
+  const placed = placeCenter(emptyGrid(size), plan.center, size, symmetry);
+  return placed ? { grid: placed.grid, placements: [placed.p], pairs: plan.pairs } : null;
+}
+
+/** How the seeds pair up under a symmetry: mirrored pairs plus at most one centered seed. */
+function pairPlan(seeds: string[], size: number, random: () => number): { pairs: [string, string][]; center: string | null } | null {
+  const byLength = new Map<number, string[]>();
+  for (const w of seeds) byLength.set(w.length, [...(byLength.get(w.length) ?? []), w]);
+  const pairs: [string, string][] = [];
+  let center: string | null = null;
+  for (const len of [...byLength.keys()].sort((a, b) => b - a)) {
+    const words = shuffle(byLength.get(len)!, random);
+    if (words.length % 2) {
+      if (center !== null || size % 2 === 0 || (size - len) % 2) return null;
+      center = words.pop()!;
+    }
+    for (let i = 0; i < words.length; i += 2) pairs.push([words[i], words[i + 1]]);
+  }
+  return { pairs, center };
+}
+
+interface PairCandidate {
+  grid: Grid;
+  p: SeedPlacement;
+  q: SeedPlacement;
+  gap: number;
+  blocks: number;
+}
+
+/** Every legal way to add the mirrored pair (a, b) to the grid, best-spaced and cheapest first. */
+function pairCandidates(grid: Grid, placements: SeedPlacement[], a: string, b: string, size: number, symmetry: Symmetry, random: () => number): PairCandidate[] {
+  const dir = symmetry === "mirror" ? "down" : "across";
+  const out: (PairCandidate & { tie: number })[] = [];
+  for (let line = 0; line < size; line++) {
+    for (let off = 0; off + a.length <= size; off++) {
+      const p: SeedPlacement = dir === "across" ? { word: a, dir, row: line, col: off } : { word: a, dir, row: off, col: line };
+      const m = mirrorPlacement(p, size, symmetry);
+      if (!m) continue;
+      const q: SeedPlacement = { ...m, word: b };
+      const gap = Math.min(lineGap(p, q), ...placements.map((e) => Math.min(lineGap(e, p), lineGap(e, q))));
+      if (gap < MIN_GAP) continue;
+      const next = commitSeeds(grid, [p, q], symmetry);
+      if (!next) continue;
+      out.push({ grid: next, p, q, gap: Math.min(gap, EASY_GAP), blocks: gridStats(next).blocks, tie: random() });
+    }
+  }
+  return out.sort((x, y) => y.gap - x.gap || x.blocks - y.blocks || x.tie - y.tie);
+}
+
+function placeCenter(grid: Grid, center: string, size: number, symmetry: Symmetry): { grid: Grid; p: SeedPlacement } | null {
+  const dir = symmetry === "mirror" ? "down" : "across";
+  const mid = (size - 1) / 2;
+  const off = (size - center.length) / 2;
+  const p: SeedPlacement = dir === "across" ? { word: center, dir, row: mid, col: off } : { word: center, dir, row: off, col: mid };
+  const next = commitSeeds(grid, [p], symmetry);
+  return next ? { grid: next, p } : null;
+}
+
+/**
+ * Constructors pair same-length theme entries in mirrored slots and center a
+ * lone one, so the symmetry never forces a long unthemed slot opposite a seed.
+ * Groups the seeds by length, places the centered one, then each pair (longest
+ * first) wherever it keeps the grid legal: usually one of the best-spaced,
+ * cheapest spots, sometimes any legal one, so retries explore. Null when the
+ * seeds cannot be paired that way (two lengths with an odd count, or a lone
+ * seed the grid cannot center).
+ */
+function placePaired(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">, random: () => number): Skeleton | null {
+  const { size, symmetry } = opts;
+  const start = pairedStart(opts, random);
+  if (!start) return null;
+  let { grid } = start;
+  const { placements, pairs } = start;
+  for (const [a, b] of pairs) {
+    const candidates = pairCandidates(grid, placements, a, b, size, symmetry, random);
+    if (!candidates.length) return null;
+    const pool = random() < 0.75 ? Math.min(4, candidates.length) : candidates.length;
+    const best = candidates[Math.floor(random() * pool)];
+    grid = best.grid;
+    placements.push(best.p, best.q);
+  }
+  return { grid, placements };
+}
+
+/**
+ * Many distinct paired placements of the seeds (see placePaired), in a random
+ * order, for a caller that can tell good layouts from bad ones with the fill
+ * engine: which pair goes where decides what the crossings look like, and the
+ * best-spaced choice is not always the fillable one.
+ */
+export function pairedPlacements(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">, limit = 60): Skeleton[] {
   const random = opts.random ?? Math.random;
+  const { size, symmetry } = opts;
+  if (symmetry === "none" || opts.seeds.some((w) => w.length > size)) return [];
+  const start = pairedStart(opts, random);
+  if (!start) return [];
+  const out: Skeleton[] = [];
+  const walk = (g: Grid, done: SeedPlacement[], pairIndex: number) => {
+    if (out.length >= limit) return;
+    if (pairIndex === start.pairs.length) {
+      out.push({ grid: g, placements: done });
+      return;
+    }
+    const [a, b] = start.pairs[pairIndex];
+    for (const c of shuffle(pairCandidates(g, done, a, b, size, symmetry, random), random)) {
+      walk(c.grid, [...done, c.p, c.q], pairIndex + 1);
+      if (out.length >= limit) return;
+    }
+  };
+  walk(start.grid, start.placements, 0);
+  return out;
+}
+
+/** The old random draw: seeds longest first, each in a random legal spot (crossings allowed). */
+function placeFree(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">, random: () => number): Skeleton | null {
   const { size, symmetry } = opts;
   const grid = emptyGrid(size);
   const placements: SeedPlacement[] = [];
   const seeds = opts.seeds.slice().sort((a, b) => b.length - a.length);
   for (const word of seeds) {
-    if (word.length > size) return null;
-    // Parallel seeds need 3+ rows between them: closer, every crossing entry gets a fixed
-    // letter at every other square. Crossing seeds are tried half the time.
-    const apart = (p: SeedPlacement) =>
-      placements.every((q) => q.dir !== p.dir || Math.abs(p.dir === "across" ? p.row - q.row : p.col - q.col) >= 3);
+    const apart = (p: SeedPlacement) => placements.every((q) => lineGap(q, p) >= EASY_GAP);
     const parallel = candidatePlacements(word, size, placements).filter(apart);
     const crossing = crossingPlacements(word, size, placements).filter(apart);
-    // Constructors pair same-length theme entries in mirrored slots, and center a lone one,
-    // so the symmetry never forces a long unthemed slot opposite a seed.
     const mirrored = placements
       .filter((q) => q.word.length === word.length)
       .map((q) => mirrorPlacement(q, size, symmetry))
@@ -208,27 +344,84 @@ export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "se
             random,
           )
         : [];
-    const options = [
-      ...mirrored.filter(apart),
-      ...centered.filter(apart),
-      ...(crossing.length && random() < 0.5 ? shuffle(crossing, random) : []),
-      ...shuffle(parallel, random),
-      ...shuffle(crossing, random),
-    ];
+    // Pairing is placePaired's job; here crossings lead half the time so stacked
+    // seeds that no symmetric layout can hold (two 8s in a 9×9) still find a spot.
+    const options =
+      crossing.length && random() < 0.5
+        ? [...shuffle(crossing, random), ...centered.filter(apart), ...mirrored.filter(apart), ...shuffle(parallel, random)]
+        : [...mirrored.filter(apart), ...centered.filter(apart), ...shuffle(parallel, random), ...shuffle(crossing, random)];
     let placed = false;
     for (const p of options.slice(0, 40)) {
-      const trial = { ...grid, cells: grid.cells.slice(), locked: grid.locked.slice() };
-      if (!placeSeed(trial, p, symmetry) || !fixShortRuns(trial, symmetry) || !isConnected(trial)) continue;
-      grid.cells = trial.cells;
-      grid.locked = trial.locked;
+      const next = commitSeeds(grid, [p], symmetry);
+      if (!next) continue;
+      grid.cells = next.cells;
+      grid.locked = next.locked;
       placements.push(p);
       placed = true;
       break;
     }
     if (!placed) return null;
   }
-
   return { grid, placements };
+}
+
+/**
+ * Many distinct free placements of the seeds (crossings first, then parallel
+ * spots), in a random order, for the same screening as pairedPlacements. Two
+ * 8s in a 9×9 only work crossing each other, and only at some of the letters
+ * they share, so the engine needs to see each way.
+ */
+export function freePlacements(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">, limit = 48): Skeleton[] {
+  const random = opts.random ?? Math.random;
+  const { size, symmetry } = opts;
+  if (opts.seeds.some((w) => w.length > size)) return [];
+  const seeds = opts.seeds.slice().sort((a, b) => b.length - a.length);
+  const out: Skeleton[] = [];
+  const seen = new Set<string>();
+  const key = (p: SeedPlacement) => `${p.word}${p.dir[0]}${p.row},${p.col}`;
+  // crossingOnly: every seed after the first crosses an earlier one. The budget is shared across
+  // the options at each level so the first seed's position varies too.
+  const walk = (grid: Grid, placements: SeedPlacement[], k: number, crossingOnly: boolean, budget: number): number => {
+    if (k === seeds.length) {
+      const id = placements.map(key).sort().join("|");
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      out.push({ grid, placements });
+      return 1;
+    }
+    const word = seeds[k];
+    const apart = (p: SeedPlacement) => placements.every((q) => lineGap(q, p) >= MIN_GAP);
+    const crossing = shuffle(crossingPlacements(word, size, placements).filter(apart), random);
+    const taken = new Set(crossing.map(key));
+    const parallel = crossingOnly && k > 0 ? [] : shuffle(candidatePlacements(word, size, placements).filter((p) => apart(p) && !taken.has(key(p))), random);
+    const options = [...crossing, ...parallel];
+    let made = 0;
+    for (const [i, p] of options.entries()) {
+      if (made >= budget) break;
+      const next = commitSeeds(grid, [p], symmetry);
+      if (!next) continue;
+      made += walk(next, [...placements, p], k + 1, crossingOnly, Math.max(1, Math.ceil((budget - made) / (options.length - i))));
+    }
+    return made;
+  };
+  walk(emptyGrid(size), [], 0, true, limit);
+  if (out.length < limit) walk(emptyGrid(size), [], 0, false, limit - out.length);
+  return out;
+}
+
+/**
+ * Places and locks the seeds in a fresh grid, meeting the grid standards.
+ * Under a symmetry, same-length seeds are usually paired in mirrored slots (see
+ * placePaired); otherwise each seed takes a random legal spot, crossings
+ * included. Null if this random draw does not fit.
+ */
+export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">): Skeleton | null {
+  const random = opts.random ?? Math.random;
+  if (opts.seeds.some((w) => w.length > opts.size)) return null;
+  if (opts.symmetry === "none") return placeFree(opts, random);
+  // Mostly paired, sometimes the free draw: two 8s in a 9×9 only work crossing each other.
+  if (random() < 0.6) return placePaired(opts, random) ?? placeFree(opts, random);
+  return placeFree(opts, random) ?? placePaired(opts, random);
 }
 
 /**
@@ -243,13 +436,15 @@ export function buildSkeleton(opts: SkeletonOptions): Skeleton | null {
   const maxRun = opts.maxRunLength ?? (size <= 7 ? size : 6);
   const placed = placeSeeds(opts);
   if (!placed) return null;
-  const { grid, placements } = placed;
+  const { placements } = placed;
+  const seedGrid = cloneGrid(placed.grid);
+  const grid = placed.grid;
 
   const seedRun = (cells: number[]) => isThemeSlot(grid, cells, symmetry);
   for (let tries = 0; tries < size * size * 4; tries++) {
     const stats = gridStats(grid);
     const runs = runsOf(grid)
-      .filter((s) => s.cells.length > MIN_LEN && !seedRun(s.cells))
+      .filter((s) => s.cells.length > MIN_RUN && !seedRun(s.cells))
       .sort((a, b) => b.cells.length - a.cells.length);
     const tooLong = runs.filter((s) => s.cells.length > maxRun);
     if (stats.avgLength <= maxAvg && !tooLong.length) break;
@@ -258,19 +453,25 @@ export function buildSkeleton(opts: SkeletonOptions): Skeleton | null {
     // A black may go at either end (a corner) or where it leaves 3+ on each side.
     const n = target.cells.length;
     const spots = target.cells.filter(
-      (i, k) => (k === 0 || k >= MIN_LEN) && (k === n - 1 || n - 1 - k >= MIN_LEN) && !grid.locked[i] && !grid.cells[i],
+      (i, k) => (k === 0 || k >= MIN_RUN) && (k === n - 1 || n - 1 - k >= MIN_RUN) && !grid.locked[i] && !grid.cells[i],
     );
     if (!spots.length) continue;
-    const trial = { ...grid, cells: grid.cells.slice(), locked: grid.locked.slice() };
-    if (!setBlack(trial, pick(spots, random), symmetry) || !fixShortRuns(trial, symmetry) || !isConnected(trial)) continue;
+    const trial = cloneGrid(grid);
+    if (!setBlack(trial, pick(spots, random), symmetry) || !settle(trial, symmetry)) continue;
     if (gridStats(trial).blockPct > maxBlockPct) continue;
     grid.cells = trial.cells;
   }
 
   const stats = gridStats(grid);
-  if (stats.shortRuns || !stats.connected || stats.blockPct > maxBlockPct) return null;
-  if (runsOf(grid).some((s) => s.cells.length > maxRun && !seedRun(s.cells))) return null;
-  return { grid, placements };
+  const legal = !stats.shortRuns && stats.connected && stats.blockPct <= maxBlockPct && meetsGridStandards(grid) && !runsOf(grid).some((s) => s.cells.length > maxRun && !seedRun(s.cells));
+  if (legal) return { grid, placements };
+  if (!opts.construct) return null;
+  // The walk can paint itself into a corner (a column it can no longer break without a 2×2 or an
+  // island); build the blacks column by column instead, taking the tightest grid that is in proportion.
+  const built = enumerateSkeletons(seedGrid, { symmetry, random, limit: 6, maxRunLength: maxRun, maxBlockPct })
+    .map((g) => ({ g, avg: gridStats(g).avgLength }))
+    .sort((a, b) => a.avg - b.avg)[0];
+  return built && built.avg <= maxAvg + 1 ? { grid: built.g, placements } : null;
 }
 
 export interface ShapeOptions {
