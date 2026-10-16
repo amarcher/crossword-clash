@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AuthProvider } from "../contexts/AuthContext";
+import { AccountProvider } from "../contexts/AccountContext";
 import { GameProvider } from "../contexts/GameContext";
 import { MultiplayerProvider } from "../contexts/MultiplayerContext";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
@@ -169,14 +170,16 @@ export function useRejoinEffect() {
 export function RootLayout() {
   return (
     <AuthProvider>
-      <GameProvider>
-        <MultiplayerProvider>
-          <RoutingEffects>
-            <Outlet />
-          </RoutingEffects>
-          <ToastViewport />
-        </MultiplayerProvider>
-      </GameProvider>
+      <AccountProvider>
+        <GameProvider>
+          <MultiplayerProvider>
+            <RoutingEffects>
+              <Outlet />
+            </RoutingEffects>
+            <ToastViewport />
+          </MultiplayerProvider>
+        </GameProvider>
+      </AccountProvider>
     </AuthProvider>
   );
 }

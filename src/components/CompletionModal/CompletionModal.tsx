@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Flame, Newspaper, Trophy } from "lucide-react";
+import { Flame, Newspaper, Trophy, UserRound } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -108,6 +108,12 @@ interface CompletionModalProps {
   onNewPuzzle?: () => void;
   onRematch?: () => void;
   onBackToMenu?: () => void;
+  /**
+   * Anonymous finisher in a build that offers accounts: a quiet "keep this
+   * solve" nudge that opens the sign-in sheet. Omit for signed-in solvers and
+   * wherever accounts aren't on offer, so the modal shows nothing extra.
+   */
+  onSignIn?: () => void;
   darkMode?: boolean;
 }
 
@@ -138,6 +144,7 @@ export function CompletionModal({
   onNewPuzzle,
   onRematch,
   onBackToMenu,
+  onSignIn,
   darkMode,
 }: CompletionModalProps) {
   const { t } = useTranslation();
@@ -465,6 +472,24 @@ export function CompletionModal({
               </div>
             )}
           </>
+        )}
+
+        {onSignIn && (
+          <div
+            data-testid="account-hook"
+            className={`mb-5 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm ${
+              darkMode ? "bg-white/5 text-white/80 ring-1 ring-stage-line" : "bg-surface-sunken text-ink-soft"
+            }`}
+          >
+            <UserRound className={`size-4 shrink-0 ${darkMode ? "text-white/50" : "text-subtle"}`} aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">{t('completion.saveHistory')}</p>
+              <p className={`mt-0.5 text-xs leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>{t('completion.saveHistoryHint')}</p>
+            </div>
+            <button type="button" onClick={onSignIn} className={buttonClass(darkMode ? "stage" : "secondary", "sm", "shrink-0")}>
+              {t('account.signIn')}
+            </button>
+          </div>
         )}
 
         {/* Actions: exactly one primary (Rematch › New puzzle), then a grid of

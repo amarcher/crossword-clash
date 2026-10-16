@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Loader2, Tv } from "lucide-react";
@@ -15,6 +15,8 @@ interface JoinGameProps {
   initialCode?: string;
   /** True while a tapped join is waiting for the anonymous session to finish loading. */
   connecting?: boolean;
+  /** A signed-in solver's username: prefilled ahead of the remembered name, still editable. */
+  initialName?: string;
 }
 
 const CODE_LENGTH = 6;
@@ -26,13 +28,19 @@ function sanitizeCode(raw: string): string {
   return source.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CODE_LENGTH);
 }
 
-export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecting }: JoinGameProps) {
+export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecting, initialName }: JoinGameProps) {
   const { t } = useTranslation();
   const [code, setCode] = useState(() => sanitizeCode(initialCode ?? ""));
-  // Prefill with the persisted name so returning players just hit Join.
-  const [displayName, setDisplayName] = useState(() => loadPlayerName() ?? "");
+  // Prefill with the username, else the persisted name, so returning players just hit Join.
+  const [displayName, setDisplayName] = useState(() => initialName ?? loadPlayerName() ?? "");
   const [codeFocused, setCodeFocused] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  // The profile loads a beat after the screen: adopt the username when it
+  // arrives, unless the player has already typed a name.
+  const nameTouched = useRef(false);
+  useEffect(() => {
+    if (initialName && !nameTouched.current) setDisplayName(initialName);
+  }, [initialName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +112,10 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
           type="text"
           name="xw-handle"
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={(e) => {
+            nameTouched.current = true;
+            setDisplayName(e.target.value);
+          }}
           placeholder={t("join.namePlaceholder")}
           maxLength={20}
           enterKeyHint="go"

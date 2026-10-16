@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
@@ -7,6 +7,7 @@ import { Button, Card, Eyebrow, MiniGridThumb } from "../components/ui";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useAccountContext } from "../contexts/AccountContext";
 import {
   uploadPuzzle,
   createGame,
@@ -22,6 +23,18 @@ export function HostNameScreen() {
   const { user, loading: authLoading } = useAuth();
   const game = useGame();
   const mp = useMultiplayerContext();
+  const { profile } = useAccountContext();
+
+  // A signed-in solver starts from their username (still editable). Applied
+  // once, so a name typed over it stays.
+  const prefilled = useRef(false);
+  const username = profile?.username;
+  const setDisplayName = game.setDisplayName;
+  useEffect(() => {
+    if (prefilled.current || !username) return;
+    prefilled.current = true;
+    setDisplayName(username);
+  }, [username, setDisplayName]);
 
   const handleReset = useCallback(() => {
     game.reset();

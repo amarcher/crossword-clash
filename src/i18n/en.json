@@ -236,7 +236,9 @@
     "shareCaptionCoopNoTime": "We solved \"{{title}}\" together on Crossword Clash 🤝 {{url}}",
     "viewLeaderboard": "Daily leaderboard",
     "nytTomorrow": "Same time tomorrow? Open tomorrow's NYT puzzle and click the bookmark again.",
-    "nytStreak": "{{count}}-day NYT streak"
+    "nytStreak": "{{count}}-day NYT streak",
+    "saveHistory": "Keep this solve",
+    "saveHistoryHint": "Sign in to save your streaks and times across devices."
   },
   "leaderboard": {
     "title": "Daily Leaderboard",
@@ -464,5 +466,36 @@
     "privacyLink": "Privacy policy",
     "settings": "Cookie settings",
     "close": "Close"
+  },
+  "account": {
+    "signIn": "Sign in",
+    "menuRow": "Save your solve history",
+    "menuRowSubtitle": "Optional: sign in with Apple or Google to keep streaks and times across devices",
+    "accountRowSubtitle": "Signed in · tap to manage your account",
+    "sheetTitle": "Save your solve history",
+    "sheetBody": "Sign in to keep your streaks and times across devices and pick a public username. Playing without an account stays exactly as it is.",
+    "continueApple": "Continue with Apple",
+    "continueGoogle": "Continue with Google",
+    "noProviders": "Sign-in isn't switched on yet. Check back soon.",
+    "signedInAs": "Signed in as {{name}}",
+    "noUsernameYet": "No username yet",
+    "changeUsername": "Change username",
+    "chooseUsername": "Choose a username",
+    "usernameBody": "This is how friends and leaderboards will see you. Letters, numbers and underscores, 3–20 characters.",
+    "usernameLabel": "Username",
+    "checking": "Checking…",
+    "available": "Available",
+    "taken": "Already taken",
+    "tooShort": "At least 3 characters",
+    "tooLong": "At most 20 characters",
+    "invalidChars": "Letters, numbers and underscores only",
+    "reserved": "That one's reserved",
+    "saveUsername": "Save username",
+    "saving": "Saving…",
+    "later": "Later",
+    "signOut": "Sign out",
+    "close": "Close",
+    "genericError": "Something went wrong. Please try again.",
+    "historyNote": "Your solves on this device are kept. Syncing them to your account comes next."
   }
 }

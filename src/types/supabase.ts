@@ -154,6 +154,20 @@ export interface Database {
         Update: { user_id?: string; note?: string; created_at?: string };
         Relationships: [];
       };
+      profiles: {
+        Row: {
+          user_id: string;
+          username: string;
+          /** Generated: lower(username), unique. */
+          username_lower: string;
+          display_name: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: { user_id: string; username: string; display_name?: string | null; created_at?: string; updated_at?: string };
+        Update: { user_id?: string; username?: string; display_name?: string | null; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

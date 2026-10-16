@@ -46,7 +46,11 @@ export type AnalyticsEvent =
    * Listed here so the event vocabulary stays in one place. Param `method`:
    * "drag" | "contextmenu" | "click".
    */
-  | "bookmarklet_install_intent";
+  | "bookmarklet_install_intent"
+  /** A solver tapped a provider in the account sheet. Params `provider`, `placement`. */
+  | "account_sign_in_started"
+  /** A signed-in solver saved a username (first pick or a change). Param `first`. */
+  | "username_saved";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 
