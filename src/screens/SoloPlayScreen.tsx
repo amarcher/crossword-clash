@@ -116,6 +116,7 @@ export function SoloPlayScreen() {
     isComplete,
     mode: "solo",
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
+    signedIn: !!user && !user.is_anonymous,
   });
   const dailySubmittedRef = useRef(false);
   useEffect(() => {

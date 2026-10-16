@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { PlaySessionTracker, type PlayMode, type PlaySource } from "../lib/playInsights";
-import { playClient, playInsightsAllowed, sendPlaySession, watchPlayInsightsAuth } from "../lib/playInsightsClient";
+import { platformLabel, playClient, playInsightsAllowed, sendPlaySession, watchPlayInsightsAuth } from "../lib/playInsightsClient";
 import { puzzleIdentity } from "../lib/soloStats";
 import type { CellState, Direction, Puzzle, PuzzleClue } from "../types/puzzle";
 
@@ -18,6 +18,8 @@ interface PlayInsightsInput {
   localPlayerId?: string | null;
   /** False while not actually playing (lobby, waiting for the host). */
   active?: boolean;
+  /** Playing as an account (not the anonymous default); recorded as signed_in. */
+  signedIn?: boolean;
 }
 
 /**
@@ -25,10 +27,12 @@ interface PlayInsightsInput {
  * when the puzzle is finished, the page is hidden or closed, or the player
  * leaves the screen. Only visits with real input are sent.
  */
-export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wrongLetters, isComplete, mode, source, localPlayerId, active = true }: PlayInsightsInput) {
+export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wrongLetters, isComplete, mode, source, localPlayerId, active = true, signedIn = false }: PlayInsightsInput) {
   const tracker = useRef<PlaySessionTracker | null>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
+  const signedInRef = useRef(signedIn);
+  signedInRef.current = signedIn;
   const latest = useRef({ playerCells, direction, activeClue, isComplete });
   latest.current = { playerCells, direction, activeClue, isComplete };
   // Reopening a finished puzzle isn't a new completion.
@@ -38,7 +42,7 @@ export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wr
 
   const flush = () => {
     const t = tracker.current;
-    if (t?.hasActivity) sendPlaySession({ ...t.record(Date.now()), source: sourceRef.current });
+    if (t?.hasActivity) sendPlaySession({ ...t.record(Date.now()), source: sourceRef.current, signed_in: signedInRef.current });
   };
 
   // A new visit per puzzle (and per return to the play screen).
@@ -46,7 +50,7 @@ export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wr
     if (!enabled || !puzzle || !key) return;
     watchPlayInsightsAuth();
     startedComplete.current = latest.current.isComplete;
-    tracker.current = new PlaySessionTracker(puzzle, latest.current.playerCells, { puzzleKey: key, source: sourceRef.current, mode, client: playClient() }, Date.now());
+    tracker.current = new PlaySessionTracker(puzzle, latest.current.playerCells, { puzzleKey: key, source: sourceRef.current, mode, client: playClient(), platform: platformLabel(), signedIn: signedInRef.current }, Date.now());
     const onHide = () => {
       if (document.visibilityState === "hidden") flush();
     };
