@@ -158,16 +158,16 @@ export interface Nesting {
 }
 
 /**
- * Engine-filled entries that appear inside another entry (ALE in ALEE): a
- * duplicate an editor would reject. A three-letter word inside a locked
- * themer (OWN in TOUCHDOWNUNDER) is unavoidable and standard, so it is not
- * reported; inside another engine entry it still is.
+ * Engine-filled entries that appear inside another entry (SCALE in UPSCALE):
+ * a duplicate an editor would reject. A contained entry no longer than
+ * `maxShared` (RON in IRON, OWN in TOUCHDOWNUNDER) is a shared run the
+ * rule allows, so it is not reported.
  */
-export function nestedEntries(entries: FillEntry[]): Nesting[] {
+export function nestedEntries(entries: FillEntry[], maxShared = 3): Nesting[] {
   const out: Nesting[] = [];
   for (const inner of entries) {
-    if (inner.locked) continue;
-    const host = entries.find((o) => o.answer !== inner.answer && o.answer.includes(inner.answer) && !(o.locked && inner.answer.length <= 3));
+    if (inner.locked || inner.answer.length <= maxShared) continue;
+    const host = entries.find((o) => o.answer !== inner.answer && o.answer.includes(inner.answer));
     if (host) out.push({ inner, host });
   }
   return out;
@@ -186,6 +186,8 @@ export interface ScoreContext {
   singleWords?: Set<string>;
   /** The score tier below which an entry counts as weak (default 50). */
   cleanScore?: number;
+  /** Longest run two entries may share (default 3); a contained entry this short is allowed. */
+  maxShared?: number;
 }
 
 export interface WeakEntry {
@@ -223,8 +225,8 @@ export const SCORE_CEILING = 70;
  * distance from the clean tier, capped at SCORE_CEILING; an entry below the
  * tier loses that distance again plus a flat SUBTIER_PENALTY, so a 45 costs
  * 20 and no number of 100-point phrases hides a pile of them. Partial-looking
- * entries (unless the list scores them PARTIAL_EXEMPT_SCORE+) and entries
- * nested inside another entry (`nestedEntries`) lose points; theme-bonus words
+ * entries (unless the list scores them PARTIAL_EXEMPT_SCORE+) and entries of
+ * 4+ letters nested inside another entry (`nestedEntries`) lose points; theme-bonus words
  * gain them. A banned word is reported, and the caller must reject the fill.
  */
 export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
@@ -237,7 +239,7 @@ export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
   const partials: string[] = [];
   const bonusHits: string[] = [];
   const weak: WeakEntry[] = [];
-  const nested = new Map(nestedEntries(entries).map((n) => [n.inner.answer, n.host.answer]));
+  const nested = new Map(nestedEntries(entries, ctx.maxShared ?? 3).map((n) => [n.inner.answer, n.host.answer]));
   for (const e of entries) {
     if (e.locked) continue;
     const score = ctx.scores.get(e.answer) ?? 0;

@@ -309,8 +309,9 @@ function swapIsClean(grid: Grid, slot: Slot, word: string): string | null {
     const locked = other.cells.every((i) => grid.locked[i]);
     if (text === word) return `duplicates ${other.id}`;
     const run = longestSharedRun(word, text);
-    if (!locked && (run.length > MAX_SHARED || text.includes(word) || word.includes(text))) return `shares ${run} with ${text}`;
-    if (locked && word.length >= 4 && text.includes(word)) return `sits inside ${text}`;
+    // Containment is a shared run of the shorter entry's length: fine up to MAX_SHARED, like any run.
+    if (!locked && run.length > MAX_SHARED) return `shares ${run} with ${text}`;
+    if (locked && word.length > MAX_SHARED && text.includes(word)) return `sits inside ${text}`;
   }
   return null;
 }
@@ -503,13 +504,14 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   let fillIndex = 0;
   const index = new WordIndex(dictEntries, floor);
   /**
-   * Engine entries an editor's audit blocks: nested inside another entry (ALE in ALEE; a 3-letter
-   * word inside a locked themer is allowed), or sharing a run longer than the limit with a themer.
+   * Engine entries an editor's audit blocks: nested inside another entry (SCALE in UPSCALE; a
+   * contained entry no longer than MAX_SHARED is an allowed shared run), or sharing a run longer
+   * than the limit with a themer.
    */
   const auditBlocks = (grid: Grid): string[] => {
     const entries = fillEntries(grid);
     const byId = new Map(entries.map((e) => [e.slotId, e]));
-    const out = new Set(nestedEntries(entries).map((n) => n.inner.answer));
+    const out = new Set(nestedEntries(entries, MAX_SHARED).map((n) => n.inner.answer));
     for (const issue of auditGrid(grid, index, MAX_SHARED).issues) {
       if (issue.severity !== "block" || issue.kind !== "duplicate") continue;
       const [a, b] = issue.slots.map((id) => byId.get(id)!);
@@ -659,7 +661,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     notes.push(`## Audit blocks, pass ${attempt + 1}`, `Fill ${chosen.index} has ${inners.join(", ")} nested in another entry; rejected.`, "");
     if (rejectAndRefill(inners, "  Refilling")) continue;
     const entries = fillEntries(chosen.grid);
-    const hosts = [...new Set(nestedEntries(entries).filter((n) => inners.includes(n.inner.answer) && !n.host.locked).map((n) => n.host.answer))];
+    const hosts = [...new Set(nestedEntries(entries, MAX_SHARED).filter((n) => inners.includes(n.inner.answer) && !n.host.locked).map((n) => n.host.answer))];
     for (const w of inners) rejected.delete(w);
     if (!hosts.length) break;
     notes.push(`The layout cannot be filled without ${inners.join(", ")}; rejecting the host entries ${hosts.join(", ")} instead.`, "");

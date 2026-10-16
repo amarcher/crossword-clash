@@ -192,22 +192,24 @@ describe("scoreFill", () => {
     expect(a.total).toBe(SCORE_CEILING - 50);
   });
 
-  it("penalizes an entry that sits inside another engine entry", () => {
-    const dict = new Map([["ALE", 60], ["ALEE", 55]]);
-    const res = scoreFill([entry("1A", "ALE"), entry("2D", "ALEE")], { scores: dict, ban: new Set() });
+  it("penalizes a 4+ letter entry that sits inside another entry, themers included", () => {
+    const dict = new Map([["SCALE", 60], ["UPSCALE", 55]]);
+    const res = scoreFill([entry("1A", "SCALE"), entry("2D", "UPSCALE")], { scores: dict, ban: new Set() });
     expect(res.total).toBe(10 + 5 - DUPLICATE_PENALTY);
-    expect(res.weak).toEqual([{ slotId: "1A", answer: "ALE", score: 60, reasons: ["inside ALEE"] }]);
+    expect(res.weak).toEqual([{ slotId: "1A", answer: "SCALE", score: 60, reasons: ["inside UPSCALE"] }]);
+    const themer = scoreFill([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE")], { scores: new Map([["LINE", 60]]), ban: new Set() });
+    expect(themer.weak[0].reasons).toEqual(["inside GOALLINEDANCE"]);
   });
 
-  it("lets a three-letter word sit inside a locked themer but not a longer one", () => {
-    const dict = new Map([["OWN", 60], ["LINE", 60]]);
-    const fine = scoreFill([entry("1A", "TOUCHDOWNUNDER", true), entry("2D", "OWN")], { scores: dict, ban: new Set() });
-    expect(fine.weak).toEqual([]);
-    const dupe = scoreFill([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE")], { scores: dict, ban: new Set() });
-    expect(dupe.weak[0].reasons).toEqual(["inside GOALLINEDANCE"]);
-    expect(nestedEntries([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE"), entry("3D", "OWN")])).toEqual([
-      { inner: entry("2D", "LINE"), host: entry("1A", "GOALLINEDANCE", true) },
+  it("allows a contained entry no longer than the shared-run limit (RON in IRON, OWN in a themer)", () => {
+    const dict = new Map([["RON", 60], ["IRON", 60], ["OWN", 60]]);
+    const res = scoreFill([entry("1A", "RON"), entry("2D", "IRON"), entry("3A", "TOUCHDOWNUNDER", true), entry("4D", "OWN")], { scores: dict, ban: new Set() });
+    expect(res.weak).toEqual([]);
+    expect(nestedEntries([entry("1A", "RON"), entry("2D", "IRON"), entry("3D", "LINE"), entry("4A", "GOALLINEDANCE", true)])).toEqual([
+      { inner: entry("3D", "LINE"), host: entry("4A", "GOALLINEDANCE", true) },
     ]);
+    // A looser limit lets longer nestings through too.
+    expect(nestedEntries([entry("3D", "LINE"), entry("4A", "GOALLINEDANCE", true)], 4)).toEqual([]);
   });
 
   it("does not second-guess partial-looking entries the list scores highly", () => {

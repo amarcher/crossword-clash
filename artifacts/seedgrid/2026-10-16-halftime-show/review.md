@@ -4,6 +4,8 @@ Football x music
 
 15×15, rotational symmetry, requested score 50, filled at floor 45, model claude-opus-5-5, 121s, tokens 7124 in / 5433 out
 
+> **Hand-reviewed exception.** This artifact is from the pipeline before the PR review fixes (audit-block gate, closing review, local refills, floor 48 default). The football set was re-run seven times with the fixed pipeline at `--seeds-floor 45` (floor 48 finds no fillable skeleton for four stacked 13/14s): every run cleared the ban list and grid standards, but Claude kept finding 3–6 "must" entries per round in the 45–49 tier that the slots through the stacked themers cannot escape, and the last run ended with RLO left for the editor. The set is kept as a hand-reviewed exception; edit the grid in the studio before scheduling it.
+
 ## Seeds
 | Entry | Letters | Placement |
 |---|---|---|
