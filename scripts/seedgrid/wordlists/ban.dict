@@ -1,0 +1,80 @@
+# Entries `pnpm seedgrid:large` never lets into a fill, whatever the word list
+# scores them. One entry per line; `;score` and `#` comments are ignored.
+# The engine gets this list as rejections, and the fill scorer throws out any
+# fill that still contains one. Grow it as reviews turn up more.
+
+# Junk the lists score highly (seen in real fills)
+CATPISS
+ACQHIRE
+ATUNING
+COMECON
+BIOBEDS
+LOSTBAG
+BOOMCAR
+ELIGOLD
+LANEONE
+ASDOI
+LYES
+
+# Crude (LDNOOBW-style entries the production list still scores at 45+)
+ARTISTICNUDES
+AREYOUDRUNK
+SCREWYOU
+HELLNO
+GODDAMN
+DUMBASS
+JACKASS
+KICKASS
+BADASS
+ASSHAT
+DOUCHE
+SHAG
+SHAGGED
+RANDY
+THONG
+GSTRING
+BRAS
+SEXTAPE
+SEXTOY
+PORNSTAR
+NUDIST
+STRIPPER
+BOOGER
+BOOGERS
+DIARRHEA
+ENEMA
+URINALS
+URINE
+PEED
+PEES
+SNOT
+PUKE
+VOMIT
+VOMITS
+TURD
+TURDS
+FART
+FARTS
+CRAPS
+DAMN
+
+# Sad or gross
+CORPSE
+CORPSES
+CADAVER
+DEATHBED
+LYNCHED
+HOMICIDE
+MURDERER
+GENOCIDE
+CANCER
+TUMOR
+TUMORS
+HITLER
+KKK
+PEDO
+RETARDS
+SPAZZ
+GIMPS
+CRIPPLE
+MYLAI

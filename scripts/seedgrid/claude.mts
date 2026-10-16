@@ -19,6 +19,11 @@ function apiKey(): string {
   throw new Error("ANTHROPIC_API_KEY is not set (environment or .env.local).");
 }
 
+/** Fails early, before any engine work, when the key is missing. */
+export function assertApiKey(): void {
+  apiKey();
+}
+
 export interface JsonCall {
   system: string;
   prompt: string;

@@ -13,11 +13,9 @@ import type { SkeletonResult } from "./skeletonFinder";
  * the local full list and every other build the licensable list in Supabase
  * Storage (`pnpm seedgrid:upload-dict`).
  */
-export const STUDIO_WORD_LIST_URL = studioWordListUrl(
-  import.meta.env.VITE_SEEDGRID_WORD_LIST as string | undefined,
-  import.meta.env.DEV,
-  import.meta.env.VITE_SUPABASE_URL as string | undefined,
-);
+// Node (pnpm seedgrid:large) imports this module for MAX_SHARED and has no import.meta.env.
+const env: Partial<ImportMetaEnv> = import.meta.env ?? {};
+export const STUDIO_WORD_LIST_URL = studioWordListUrl(env.VITE_SEEDGRID_WORD_LIST as string | undefined, Boolean(env.DEV), env.VITE_SUPABASE_URL as string | undefined);
 
 export function studioWordListUrl(override: string | undefined, dev: boolean, supabaseUrl: string | undefined): string {
   if (override) return override;
