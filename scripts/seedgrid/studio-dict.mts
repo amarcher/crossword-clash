@@ -7,10 +7,13 @@
  *   words-production.dict  licensable sources only, for any studio others can reach
  *   NOTICES.txt            attributions the production list needs
  *
- * The studio loads whichever VITE_SEEDGRID_WORD_LIST names (default /seedgrid/words.dict).
- * Run after `pnpm seedgrid:dict` or after editing lively.dict or rescore.dict.
+ * Dev studios load words.dict; every other build loads words-production.dict
+ * from the public `seedgrid` Supabase Storage bucket (VITE_SEEDGRID_WORD_LIST
+ * overrides both). Run after `pnpm seedgrid:dict` or after editing lively.dict
+ * or rescore.dict, then publish the production list:
  *
  *   pnpm seedgrid:studio-dict
+ *   pnpm seedgrid:upload-dict
  */
 import fs from "node:fs";
 import path from "node:path";
