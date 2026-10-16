@@ -18,6 +18,9 @@ constructor's machine.
 
 | Day | Date | Title | Theme | Themers | Clues |
 |---|---|---|---|---|---|
+| Thu | 2026-10-16 | Seed Money | Gardening × finance | BRANCH MANAGER, ROOT OF ALL EVIL, HEDGE FUND, MONEY TREE | easy |
+| Fri | 2026-10-17 | Economic Forecast | Weather × economics | FLOOD THE MARKET, BALLOON PAYMENT, RAINY DAY FUND, HIRING FREEZE | easy |
+| Sat | 2026-10-18 | Prime Time Nap | Sleep × TV | PILLOW TALK SHOW, SNOOZEFESTIVAL, SLEEPWALK-ONS, SIESTA FIESTA | easy |
 | Mon | 2026-10-19 | Grounds for Arrest | Coffee × crime | SPILL THE BEANS, CAFFEINE FIEND, AFFOGATO AWAY, PRESS CHARGES | easy |
 | Tue | 2026-10-20 | Mixed Doubles | Tennis × romance | BREAK POINT, DOUBLE DATE, COURTSHIP, LOVE MATCH | easy |
 | Wed | 2026-10-21 | Star Anise | Astronomy × cooking | CRESCENT ROLLS, ECLAIR ECLIPSE, MARS BARBECUE, SUNSPOT OF TEA | easy |
@@ -39,7 +42,10 @@ constructor's machine.
    run `scripts/seedgrid/check-themes.mts`), then build it:
    `pnpm seedgrid:large --theme "<A x B>" --title "<Title>" --seeds "<four themers>" [--difficulty easy|medium|hard]`.
    Themers must pair by length (plus at most one centered odd entry); sets with
-   two 14s or two 13s stacked need room and sometimes a themer swap.
+   two 14s or two 13s stacked need room and sometimes a themer swap. Four themers
+   is the sweet spot: every five-entry backlog set (two pairs plus a centered 15)
+   failed to find a skeleton on 2026-10-16, and all three filled once the 15 was
+   dropped. Some four-sets still fail on their letters alone (cars × anatomy).
 2. Read `review.md`: anything "Flagged for the editor" or "forced by the
    layout" needs a studio pass (import `studio.json`, reject the word, Fill).
 3. `pnpm daily:add --slot large <date> <folder>/puzzle.ipuz "<Theme>"`, commit
