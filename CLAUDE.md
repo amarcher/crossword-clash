@@ -189,7 +189,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 624 tests across 45 files (use `pnpm exec vitest run --dir src` to skip agent worktrees under `.claude/`)
+- `pnpm test` — 826 tests across 70 files (use `pnpm exec vitest run --dir src` to skip agent worktrees under `.claude/`; `SEEDGRID_PRODUCTION_DICT=1` adds the slow finder run against the local production list)
 - **gridUtils.test.ts** (59 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart (including skip-completed-clues behavior), getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (32 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete) + NEXT_WORD/PREV_WORD skip completed clues
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
@@ -212,6 +212,9 @@ VITE_SUPABASE_ANON_KEY=...
 - **ttsSettings.test.ts** (23 tests): Default values, round-trip, clamping, corrupted JSON, engine persistence, narratorEngine persistence + migration from legacy `engine: "agent"`, unknown value defaults
 - **TTSControls.test.tsx** (20 tests): Mute/unmute buttons, modal open/close, voice grouping, engine toggle, narrator engine toggle, ElevenLabs voice dropdown, controls hidden when narrator active
 - **useSpeechSettings.test.ts** (19 tests): Default init, persistence, toggleMute, speak with browser/elevenlabs, speak no-op when narrator active or muted, setNarratorEngine, elevenLabsAvailable
+- **seedgrid/layout.test.ts** (10 tests): Grid standards (black corners / 2×2 blocks, corners white only from 11×11), tryBlock refusals, paired placement of four long seeds in a rotational 15×15 (mirrored rows, one row apart minimum, standards met), centered odd seed, `pairedPlacements` enumeration, buildSkeleton under the standards (15×15, and a 9×9 with the constructive fallback)
+- **seedgrid/skeletonSearch.test.ts** (6 tests): `linePatterns` (legal runs, locked/frozen/theme cells), `rulePenalty` weights, `enumerateSkeletons` around the football seeds (legal, standards, seeds intact) and an impossible placement, `searchSkeleton` with a stub heatmap
+- **seedgrid/skeletonFinder.test.ts** (3 tests + 1 opt-in): the Lay out pipeline against the committed fixture list `__fixtures__/words.dict` (9×9 crossing midi, the four-themer 15×15 with white corners and no 2×2, zero attempts when nothing is legal); set `SEEDGRID_PRODUCTION_DICT=1` to also run it against the local production list
 
 Supabase project requires:
 - **Anonymous sign-ins enabled** (Authentication → Providers)

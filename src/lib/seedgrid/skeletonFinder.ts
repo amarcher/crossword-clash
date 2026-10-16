@@ -8,8 +8,8 @@
  *     few legal column shapes, which random blacks almost never hit.
  *  C. Annealing (searchSkeleton) from the best-ranked skeletons.
  *  D. The same skeletons at a lower score floor, when the floor itself is what
- *     blocks the fill (a quick look one step down runs before C); the result
- *     says which floor it fills at.
+ *     blocks the fill (when nothing is arc-consistent at the target, a quick
+ *     look one step down runs before C); the result says which floor it fills at.
  *
  * Engine-agnostic through SkeletonEngine so tests can run it in Node.
  */
@@ -36,7 +36,7 @@ export interface SkeletonRequest {
 export interface SkeletonResult {
   /** Seeds locked, every other square blank; null when nothing filled. */
   grid: Grid | null;
-  /** Skeletons the engine was asked to fill. */
+  /** Legal skeletons the engine looked at (heatmap or fill); 0 means no legal layout held the seeds. */
   attempts: number;
   /** The score floor the grid fills at: the requested one, or a step below it. */
   minScore: number;
@@ -74,11 +74,12 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
   // Long unthemed entries belong to the theme, but a 15×15 needs a few 7s to work around stacked themers.
   const maxRun = size <= 7 ? size : big ? 7 : 6;
   let attempts = 0;
+  let probes = 0;
 
   const heat = (grid: Grid, minScore: number) => engine.options(grid, { minScore, rejected: req.rules.rejected });
   const probe = (grid: Grid, minScore: number): boolean => {
-    attempts++;
-    return engine.fill(grid, { minScore, rejected: req.rules.rejected }, { timeoutMs: probeMs, seed: attempts }).ok;
+    probes++;
+    return engine.fill(grid, { minScore, rejected: req.rules.rejected }, { timeoutMs: probeMs, seed: probes }).ok;
   };
   const finish = (grid: Grid, minScore: number): SkeletonResult => {
     const out = cloneGrid(grid);
@@ -102,6 +103,7 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
   const candidates: Candidate[] = [];
   /** Ranks a legal skeleton and probes it right away when it looks fillable at the target. */
   const consider = (grid: Grid): SkeletonResult | null => {
+    attempts++;
     const c = rank(grid);
     if (!c) return null;
     candidates.push(c);
@@ -144,17 +146,19 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
     return null;
   };
   candidates.sort(byQuality);
-  // A quick look one step down first: when the floor is what blocks the fill, annealing cannot fix it.
-  if (floors.length > 1) {
+  // When no skeleton is even arc-consistent at the target, the floor is what blocks the fill and
+  // annealing cannot fix it: look one step down first. Otherwise the target gets its full try.
+  const targetReachable = candidates.some((c) => c.floor === target);
+  if (!targetReachable && floors.length > 1) {
     const hit = settle(floors[1], 3);
     if (hit) return hit;
   }
 
   // C. Anneal the most promising skeletons toward the target floor.
   const polish = candidates.slice(0, 3);
+  const stop = started + budget * (targetReachable ? 0.7 : 0.85);
   for (const [i, c] of polish.entries()) {
     const now = Date.now();
-    const stop = started + budget * 0.85;
     if (now > stop) break;
     const res = searchSkeleton(c.grid, {
       symmetry,

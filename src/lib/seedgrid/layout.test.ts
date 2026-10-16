@@ -10,15 +10,7 @@ import {
   placeSeeds,
   tryBlock,
 } from "./layout";
-
-function rng(seed: number) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from "./random";
 
 const FOOTBALL = ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "KICKOFFSPRING", "GOALLINEDANCE"];
 
@@ -61,7 +53,7 @@ describe("paired seed placement", () => {
   it("lays four long seeds out as two mirrored pairs in a rotational 15×15", () => {
     let placed = 0;
     for (let i = 0; i < 10; i++) {
-      const [sk] = pairedPlacements({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: rng(i) }, 1);
+      const [sk] = pairedPlacements({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: mulberry32(i) }, 1);
       expect(sk).toBeDefined();
       placed++;
       const { grid, placements } = sk;
@@ -85,17 +77,17 @@ describe("paired seed placement", () => {
   });
 
   it("centers a lone odd-length seed between the pairs", () => {
-    const [sk] = pairedPlacements({ size: 15, symmetry: "rotational", seeds: ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "HALFTIMESHOWS"], random: rng(1) }, 1);
+    const [sk] = pairedPlacements({ size: 15, symmetry: "rotational", seeds: ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "HALFTIMESHOWS"], random: mulberry32(1) }, 1);
     expect(sk).toBeDefined();
     const center = sk.placements.find((p) => p.word === "HALFTIMESHOWS")!;
     expect(center).toMatchObject({ row: 7, col: 1 });
     // A 12 has no centered spot in a 15-wide row, so pairing is impossible.
-    expect(pairedPlacements({ size: 15, symmetry: "rotational", seeds: ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "HALFTIMESHOW"], random: rng(1) }, 1)).toEqual([]);
+    expect(pairedPlacements({ size: 15, symmetry: "rotational", seeds: ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "HALFTIMESHOW"], random: mulberry32(1) }, 1)).toEqual([]);
   });
 
   it("placeSeeds always meets the standards and keeps every seed, paired or free", () => {
     for (let i = 0; i < 10; i++) {
-      const sk = placeSeeds({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: rng(i) });
+      const sk = placeSeeds({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: mulberry32(i) });
       expect(sk).not.toBeNull();
       expect(meetsGridStandards(sk!.grid)).toBe(true);
       expect(sk!.placements.map((p) => p.word).sort()).toEqual(FOOTBALL.slice().sort());
@@ -103,7 +95,7 @@ describe("paired seed placement", () => {
   });
 
   it("enumerates many distinct placements for the engine to screen", () => {
-    const all = pairedPlacements({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: rng(2) }, 200);
+    const all = pairedPlacements({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random: mulberry32(2) }, 200);
     expect(all.length).toBeGreaterThan(20);
     const keys = new Set(all.map((s) => gridToRows(s.grid).join("/")));
     expect(keys.size).toBe(all.length);
@@ -113,17 +105,17 @@ describe("paired seed placement", () => {
 
   it("falls back to free placement when the seeds cannot pair", () => {
     // Three 8s and nothing to center them with: the old random draw still applies.
-    const sk = placeSeeds({ size: 11, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY", "SEAHORSE"], random: rng(3) });
+    const sk = placeSeeds({ size: 11, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY", "SEAHORSE"], random: mulberry32(3) });
     if (sk) expect(meetsGridStandards(sk.grid)).toBe(true);
   });
 });
 
 describe("buildSkeleton under the standards", () => {
   it("keeps corners white and never leaves a 2×2 block in a 15×15", () => {
-    const random = rng(5);
+    const random = mulberry32(5);
     let built = 0;
     for (let i = 0; i < 200 && built < 3; i++) {
-      const sk = buildSkeleton({ size: 15, symmetry: "rotational", seeds: ["SEAHORSE", "STARFISH"], random, maxBlockPct: 0.26 });
+      const sk = buildSkeleton({ size: 15, symmetry: "rotational", seeds: ["SEAHORSE", "STARFISH"], random, maxBlockPct: 0.26, construct: true });
       if (!sk) continue;
       built++;
       expect(blackCorners(sk.grid)).toEqual([]);
@@ -135,9 +127,9 @@ describe("buildSkeleton under the standards", () => {
   });
 
   it("still builds a 9×9 midi around two 8s (corner blacks allowed there)", () => {
-    const random = rng(7);
+    const random = mulberry32(7);
     let sk = null;
-    for (let i = 0; i < 100 && !sk; i++) sk = buildSkeleton({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random });
+    for (let i = 0; i < 100 && !sk; i++) sk = buildSkeleton({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random, construct: true });
     expect(sk).not.toBeNull();
     expect(blackBlocks(sk!.grid)).toEqual([]);
   });

@@ -8,6 +8,7 @@ import wasmUrl from "./wasm/seedgrid_engine_bg.wasm?url";
 import { checkWordListResponse, IngridEngine, MIN_WORD_LIST_WORDS, type EngineRules } from "./ingrid";
 import { findSkeleton } from "./skeletonFinder";
 import type { Grid, Symmetry } from "./grid";
+import { mulberry32 } from "./random";
 
 export type WorkerRequest =
   | { type: "init"; listUrl: string; maxShared: number }
@@ -17,15 +18,6 @@ export type WorkerRequest =
   | { type: "skeleton"; size: number; symmetry: Symmetry; seeds: string[]; rules: Pick<EngineRules, "minScore" | "rejected">; attempts: number };
 
 let engine: IngridEngine | null = null;
-
-function rng(seed: number) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 async function handle(req: WorkerRequest): Promise<unknown> {
   if (req.type === "init") {
@@ -48,7 +40,7 @@ async function handle(req: WorkerRequest): Promise<unknown> {
     case "skeleton":
       // Random layouts first, then constructive ones ranked by the heatmap, then annealing,
       // then a lower score floor; see skeletonFinder.ts. Stop = the client terminates the worker.
-      return findSkeleton(engine, req, { random: rng(Date.now() & 0xffff) });
+      return findSkeleton(engine, req, { random: mulberry32(Date.now() & 0xffff) });
   }
 }
 

@@ -2,22 +2,14 @@ import { describe, it, expect } from "vitest";
 import { gridFromRows, gridStats, gridToRows, slotsOf } from "./grid";
 import { blackBlocks, blackCorners, placeSeeds } from "./layout";
 import { enumerateSkeletons, linePatterns, rulePenalty, searchSkeleton, type Heat } from "./skeletonSearch";
-
-function rng(seed: number) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from "./random";
 
 const FOOTBALL = ["TOUCHDOWNUNDER", "GOALPOSTMALONE", "KICKOFFSPRING", "GOALLINEDANCE"];
 const show = (p: boolean[]) => p.map((b) => (b ? "#" : ".")).join("");
 
 describe("linePatterns", () => {
   it("lists every legal way to black out a line", () => {
-    const free = linePatterns(Array(7).fill(false), Array(7).fill(false), 7);
+    const free = linePatterns({ locked: Array(7).fill(false), frozen: Array(7).fill(false), maxRun: 7 });
     expect(free.map(show)).toContain(".......");
     expect(free.map(show)).toContain("...#...");
     expect(free.map(show)).not.toContain("..#....");
@@ -28,15 +20,18 @@ describe("linePatterns", () => {
   it("keeps locked cells white, frozen cells black, and lets only a theme entry run long", () => {
     const locked = Array(15).fill(false);
     for (const r of [3, 5, 9, 11]) locked[r] = true;
-    const col = linePatterns(locked, Array(15).fill(false), 7, 4);
+    const col = linePatterns({ locked, frozen: Array(15).fill(false), maxRun: 7, maxBlackRun: 4 });
     expect(col.length).toBeGreaterThan(0);
     for (const p of col) {
       for (const r of [3, 5, 9, 11]) expect(p[r]).toBe(false);
       expect(show(p)).not.toMatch(/#{5}/);
     }
-    const seedRow = linePatterns(Array(15).fill(false).map((_, i) => i >= 1), [true, ...Array(14).fill(false)], 7);
+    const seed = Array(15).fill(false).map((_, i) => i >= 1);
+    const seedRow = linePatterns({ locked: seed, frozen: [true, ...Array(14).fill(false)], theme: seed, maxRun: 7 });
     expect(seedRow.map(show)).toEqual(["#.............."]);
-    expect(linePatterns(Array(15).fill(false), Array(15).fill(false), 7).every((p) => !/^\.{8}|\.{8}$/.test(show(p)))).toBe(true);
+    // Locked-but-unthemed cells (known white) still obey maxRun.
+    expect(linePatterns({ locked: seed, frozen: [true, ...Array(14).fill(false)], maxRun: 7 })).toEqual([]);
+    expect(linePatterns({ locked: Array(15).fill(false), frozen: Array(15).fill(false), maxRun: 7 }).every((p) => !/^\.{8}|\.{8}$/.test(show(p)))).toBe(true);
   });
 });
 
@@ -57,7 +52,7 @@ describe("rulePenalty", () => {
 
 describe("enumerateSkeletons", () => {
   it("builds legal skeletons around paired long seeds, with white corners and no 2×2 blocks", () => {
-    const random = rng(2);
+    const random = mulberry32(2);
     let found = 0;
     for (let i = 0; i < 12 && found < 3; i++) {
       const placed = placeSeeds({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random })!;
@@ -82,13 +77,13 @@ describe("enumerateSkeletons", () => {
     // Two 8s at rows 3 and 5 of a 9×9 leave every crossing column without a legal shape at run length 6.
     const g = gridFromRows(["?????????", "?????????", "?????????", "STARFISH#", "?????????", "#DEVILRAY", "?????????", "?????????", "?????????"].map((r) => r.replace(/\?/g, ".")));
     g.locked = g.cells.map((c) => /[A-Z]/.test(c));
-    expect(enumerateSkeletons(g, { symmetry: "rotational", random: rng(1), limit: 2, maxRunLength: 6 })).toEqual([]);
+    expect(enumerateSkeletons(g, { symmetry: "rotational", random: mulberry32(1), limit: 2, maxRunLength: 6 })).toEqual([]);
   });
 });
 
 describe("searchSkeleton", () => {
   it("walks a legal skeleton toward a better heatmap and probes the best", () => {
-    const random = rng(4);
+    const random = mulberry32(4);
     const placed = placeSeeds({ size: 15, symmetry: "rotational", seeds: FOOTBALL, random })!;
     const [start] = enumerateSkeletons(placed.grid, { symmetry: "rotational", random, limit: 1 });
     expect(start).toBeDefined();

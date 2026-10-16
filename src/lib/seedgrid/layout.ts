@@ -42,6 +42,8 @@ export interface SkeletonOptions {
   maxAvgLength?: number;
   /** Break up open runs longer than this, seeds excepted (default: the grid size up to 7×7, else 6, so long slots belong to the theme). */
   maxRunLength?: number;
+  /** When the random walk gets stuck, build the blacks column by column instead (slower per failed draw; default off). */
+  construct?: boolean;
 }
 
 export interface Skeleton {
@@ -194,6 +196,19 @@ function commitSeeds(grid: Grid, seeds: SeedPlacement[], symmetry: Symmetry): Gr
   return settle(trial, symmetry) ? trial : null;
 }
 
+/** The pair plan with the centered seed (if any) already placed: where placePaired and pairedPlacements both begin. */
+function pairedStart(
+  opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">,
+  random: () => number,
+): { grid: Grid; placements: SeedPlacement[]; pairs: [string, string][] } | null {
+  const { size, symmetry } = opts;
+  const plan = pairPlan(opts.seeds, size, random);
+  if (!plan) return null;
+  if (!plan.center) return { grid: emptyGrid(size), placements: [], pairs: plan.pairs };
+  const placed = placeCenter(emptyGrid(size), plan.center, size, symmetry);
+  return placed ? { grid: placed.grid, placements: [placed.p], pairs: plan.pairs } : null;
+}
+
 /** How the seeds pair up under a symmetry: mirrored pairs plus at most one centered seed. */
 function pairPlan(seeds: string[], size: number, random: () => number): { pairs: [string, string][]; center: string | null } | null {
   const byLength = new Map<number, string[]>();
@@ -259,17 +274,11 @@ function placeCenter(grid: Grid, center: string, size: number, symmetry: Symmetr
  */
 function placePaired(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds">, random: () => number): Skeleton | null {
   const { size, symmetry } = opts;
-  const plan = pairPlan(opts.seeds, size, random);
-  if (!plan) return null;
-  let grid = emptyGrid(size);
-  const placements: SeedPlacement[] = [];
-  if (plan.center) {
-    const placed = placeCenter(grid, plan.center, size, symmetry);
-    if (!placed) return null;
-    grid = placed.grid;
-    placements.push(placed.p);
-  }
-  for (const [a, b] of plan.pairs) {
+  const start = pairedStart(opts, random);
+  if (!start) return null;
+  let { grid } = start;
+  const { placements, pairs } = start;
+  for (const [a, b] of pairs) {
     const candidates = pairCandidates(grid, placements, a, b, size, symmetry, random);
     if (!candidates.length) return null;
     const pool = random() < 0.75 ? Math.min(4, candidates.length) : candidates.length;
@@ -290,30 +299,22 @@ export function pairedPlacements(opts: Pick<SkeletonOptions, "size" | "symmetry"
   const random = opts.random ?? Math.random;
   const { size, symmetry } = opts;
   if (symmetry === "none" || opts.seeds.some((w) => w.length > size)) return [];
-  const plan = pairPlan(opts.seeds, size, random);
-  if (!plan) return [];
-  let grid = emptyGrid(size);
-  const placements: SeedPlacement[] = [];
-  if (plan.center) {
-    const placed = placeCenter(grid, plan.center, size, symmetry);
-    if (!placed) return [];
-    grid = placed.grid;
-    placements.push(placed.p);
-  }
+  const start = pairedStart(opts, random);
+  if (!start) return [];
   const out: Skeleton[] = [];
   const walk = (g: Grid, done: SeedPlacement[], pairIndex: number) => {
     if (out.length >= limit) return;
-    if (pairIndex === plan.pairs.length) {
+    if (pairIndex === start.pairs.length) {
       out.push({ grid: g, placements: done });
       return;
     }
-    const [a, b] = plan.pairs[pairIndex];
+    const [a, b] = start.pairs[pairIndex];
     for (const c of shuffle(pairCandidates(g, done, a, b, size, symmetry, random), random)) {
       walk(c.grid, [...done, c.p, c.q], pairIndex + 1);
       if (out.length >= limit) return;
     }
   };
-  walk(grid, placements, 0);
+  walk(start.grid, start.placements, 0);
   return out;
 }
 
@@ -417,9 +418,10 @@ export function freePlacements(opts: Pick<SkeletonOptions, "size" | "symmetry" |
 export function placeSeeds(opts: Pick<SkeletonOptions, "size" | "symmetry" | "seeds" | "random">): Skeleton | null {
   const random = opts.random ?? Math.random;
   if (opts.seeds.some((w) => w.length > opts.size)) return null;
+  if (opts.symmetry === "none") return placeFree(opts, random);
   // Mostly paired, sometimes the free draw: two 8s in a 9×9 only work crossing each other.
-  const pairedFirst = opts.symmetry !== "none" && random() < 0.6;
-  return (pairedFirst ? placePaired(opts, random) : placeFree(opts, random)) ?? (pairedFirst ? placeFree(opts, random) : opts.symmetry !== "none" ? placePaired(opts, random) : null);
+  if (random() < 0.6) return placePaired(opts, random) ?? placeFree(opts, random);
+  return placeFree(opts, random) ?? placePaired(opts, random);
 }
 
 /**
@@ -463,6 +465,7 @@ export function buildSkeleton(opts: SkeletonOptions): Skeleton | null {
   const stats = gridStats(grid);
   const legal = !stats.shortRuns && stats.connected && stats.blockPct <= maxBlockPct && meetsGridStandards(grid) && !runsOf(grid).some((s) => s.cells.length > maxRun && !seedRun(s.cells));
   if (legal) return { grid, placements };
+  if (!opts.construct) return null;
   // The walk can paint itself into a corner (a column it can no longer break without a 2×2 or an
   // island); build the blacks column by column instead, taking the tightest grid that is in proportion.
   const built = enumerateSkeletons(seedGrid, { symmetry, random, limit: 6, maxRunLength: maxRun, maxBlockPct })

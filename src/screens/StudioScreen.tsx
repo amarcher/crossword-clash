@@ -236,8 +236,13 @@ export function StudioScreen() {
       else if (res.grid) {
         setSize(gridSize);
         dispatch({ type: "SET_GRID", grid: res.grid });
-        if (res.minScore < state.minScore) setMessage(`This layout fills at a score floor of ${res.minScore}, not ${state.minScore}. Lower the floor before filling, or try other theme entries.`);
-      } else setMessage(`No fillable layout in ${res.attempts} tries. Try a larger grid or no symmetry.`);
+        if (res.minScore < state.minScore) {
+          // The layout only fills below the chosen floor, so Fill would fail at it: move the floor with the layout.
+          dispatch({ type: "SET_MIN_SCORE", minScore: res.minScore });
+          setMessage(`This layout fills at a score floor of ${res.minScore}, not ${state.minScore}, so the floor is now ${res.minScore}. Raise it back for other theme entries.`);
+        }
+      } else if (res.attempts) setMessage(`None of ${res.attempts} layouts fills at a score floor of ${state.minScore}. Try a lower floor, a larger grid or no symmetry.`);
+      else setMessage(`No legal ${gridSize}×${gridSize} layout holds these theme entries. Try a larger grid or no symmetry.`);
     } catch {
       setMessage("Layout stopped.");
     } finally {

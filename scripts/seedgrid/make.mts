@@ -294,7 +294,7 @@ async function main() {
         for (let attempt = 0; attempt < 160 && !chosen; attempt++) {
           const placed =
             attempt < 100
-              ? buildSkeleton({ size, symmetry, seeds, random, maxBlockPct: attempt < 50 ? 0.22 : 0.26 })
+              ? buildSkeleton({ size, symmetry, seeds, random, maxBlockPct: attempt < 50 ? 0.22 : 0.26, construct: attempt >= 50 })
               : placeSeeds({ size, symmetry, seeds, random });
           const grid =
             placed &&

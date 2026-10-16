@@ -83,14 +83,27 @@ function frozenCells(grid: Grid): Set<number> {
 
 /**
  * Every way to black out a line (row or column) so each white run is 3..maxRun
- * long (longer only when every cell is locked: a theme entry or its mirror),
- * black runs at most maxBlackRun, locked cells stay white and frozen cells stay
- * black. The search re-rolls
+ * long (longer only when every cell is a theme cell), black runs at most
+ * maxBlackRun, locked cells stay white and frozen cells stay black. The search
+ * re-rolls
  * whole lines with these, because a column crossing several themers has only a
  * few legal shapes and single toggles rarely move between them.
  */
-export function linePatterns(locked: boolean[], frozen: boolean[], maxRun: number, maxBlackRun = Infinity, limit = 4000): boolean[][] {
+export interface LineConstraints {
+  /** Cells that must stay white. */
+  locked: boolean[];
+  /** Cells that must stay black. */
+  frozen: boolean[];
+  /** Cells of a theme entry or its mirror: a run made only of these may exceed maxRun (default: none). */
+  theme?: boolean[];
+  maxRun: number;
+  maxBlackRun?: number;
+  limit?: number;
+}
+
+export function linePatterns({ locked, frozen, theme, maxRun, maxBlackRun = Infinity, limit = 4000 }: LineConstraints): boolean[][] {
   const n = locked.length;
+  const isTheme = (i: number) => theme?.[i] ?? false;
   const out: boolean[][] = [];
   const cur: boolean[] = Array(n).fill(false);
   const canWhite = (i: number) => !frozen[i];
@@ -112,13 +125,13 @@ export function linePatterns(locked: boolean[], frozen: boolean[], maxRun: numbe
         continue;
       }
       if (j + 3 > n || !canWhite(j) || !canWhite(j + 1)) continue;
-      let allLocked = locked[j] && locked[j + 1];
+      let allTheme = isTheme(j) && isTheme(j + 1);
       for (let len = 3; j + len <= n; len++) {
         const last = j + len - 1;
         if (!canWhite(last)) break;
-        allLocked &&= locked[last];
-        // Only a theme entry (every cell locked) may run longer than maxRun.
-        if (len > maxRun && !allLocked) break;
+        allTheme &&= isTheme(last);
+        // Only a theme entry (or its mirror) may run longer than maxRun.
+        if (len > maxRun && !allTheme) break;
         cur[last] = false;
         go(j + len, true);
       }
@@ -236,7 +249,13 @@ export function enumerateSkeletons(start: Grid, opts: EnumerateOptions): Grid[] 
         return true;
       }
       const col = Array.from({ length: h }, (_, r) => r * w + c);
-      const patterns = linePatterns(col.map((i) => white(i) || theme[i] || corners.includes(i)), col.map(black), maxRun, maxBlackRun);
+      const patterns = linePatterns({
+        locked: col.map((i) => white(i) || theme[i] || corners.includes(i)),
+        frozen: col.map(black),
+        theme: col.map((i) => theme[i]),
+        maxRun,
+        maxBlackRun,
+      });
       const order = patterns.map((p) => ({ p, k: random() })).sort((a, b) => a.k - b.k);
       let descents = 0;
       for (const { p } of order) {
@@ -304,16 +323,16 @@ export function rulePenalty(grid: Grid, symmetry: Symmetry, maxBlockPct: number,
 
 /**
  * Legal grids score by their heatmap at the highest score floor where it is
- * still consistent (the target, a step below it, then anything goes): the
- * tightest free slot matters most, then the average room. A grid that is dead
- * even with every word allowed scores by how many slots are dead. `min` is the
- * tightest count at the target floor, 0 when inconsistent there.
+ * still consistent (the target, then ten points below it): the tightest free
+ * slot matters most, then the average room. A grid dead at both floors scores
+ * by how many slots are dead. `min` is the tightest count at the target floor,
+ * 0 when inconsistent there.
  */
 function heatScore(grid: Grid, minScore: number, heat: SearchOptions["heat"]): { score: number; min: number } {
   const free = slotsOf(grid).filter((s) => !s.cells.every((i) => grid.locked[i]));
   if (!free.length) return { score: 0, min: 0 };
   const blocks = grid.cells.filter((c) => c === "#").length;
-  const levels = [...new Set([minScore, Math.max(0, minScore - 10), 0])];
+  const levels = [...new Set([minScore, Math.max(0, minScore - 10)])];
   // Slots dead at the target floor keep costing at lower tiers, so a move that reshapes one is rewarded.
   let dead = 0;
   for (const [tier, level] of levels.entries()) {
@@ -325,7 +344,7 @@ function heatScore(grid: Grid, minScore: number, heat: SearchOptions["heat"]): {
     const counts = free.map((s) => h.counts[s.id] ?? 0);
     const min = Math.min(...counts);
     const logMean = counts.reduce((a, n) => a + Math.log2(1 + n), 0) / counts.length;
-    const base = [1000, 500, 200][tier] ?? 200;
+    const base = tier === 0 ? 1000 : 500;
     return { score: base + 10 * Math.min(min, 60) + logMean - 0.5 * blocks - 40 * dead, min: tier === 0 ? min : 0 };
   }
   return { score: 100 - 10 * dead, min: 0 };
@@ -356,7 +375,7 @@ export function searchSkeleton(start: Grid, opts: SearchOptions): SearchResult {
     let p = patterns.get(li);
     if (!p) {
       const cells = lines[li];
-      p = linePatterns(cells.map((i) => theme[i]), cells.map((i) => frozen.has(i)), maxRun, maxBlackRun);
+      p = linePatterns({ locked: cells.map((i) => theme[i]), frozen: cells.map((i) => frozen.has(i)), theme: cells.map((i) => theme[i]), maxRun, maxBlackRun });
       patterns.set(li, p);
     }
     return p;
@@ -382,10 +401,22 @@ export function searchSkeleton(start: Grid, opts: SearchOptions): SearchResult {
     return cells.every((i, k) => (g.cells[i] === "#") === pattern[k]);
   };
 
+  // The walk revisits grids; each heatmap call costs an engine pass, so remember them.
+  const heatCache = new Map<string, Heat>();
+  const heat = (g: Grid, level: number): Heat => {
+    const key = `${level}:${g.cells.map((c) => (c === "#" ? "#" : ".")).join("")}`;
+    let h = heatCache.get(key);
+    if (!h) {
+      if (heatCache.size > 4000) heatCache.clear();
+      h = opts.heat(g, level);
+      heatCache.set(key, h);
+    }
+    return h;
+  };
   const evaluate = (g: Grid): { score: number; min: number; legal: boolean } => {
     const pen = rulePenalty(g, symmetry, maxBlockPct, maxRun, maxBlackRun);
     if (pen > 0) return { score: -pen, min: 0, legal: false };
-    return { ...heatScore(g, opts.minScore, opts.heat), legal: true };
+    return { ...heatScore(g, opts.minScore, heat), legal: true };
   };
 
   let grid = cloneGrid(start);
