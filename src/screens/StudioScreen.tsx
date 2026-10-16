@@ -236,6 +236,7 @@ export function StudioScreen() {
       else if (res.grid) {
         setSize(gridSize);
         dispatch({ type: "SET_GRID", grid: res.grid });
+        if (res.minScore < state.minScore) setMessage(`This layout fills at a score floor of ${res.minScore}, not ${state.minScore}. Lower the floor before filling, or try other theme entries.`);
       } else setMessage(`No fillable layout in ${res.attempts} tries. Try a larger grid or no symmetry.`);
     } catch {
       setMessage("Layout stopped.");

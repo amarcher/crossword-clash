@@ -6,8 +6,8 @@
 import init, { Engine } from "./wasm/seedgrid_engine";
 import wasmUrl from "./wasm/seedgrid_engine_bg.wasm?url";
 import { checkWordListResponse, IngridEngine, MIN_WORD_LIST_WORDS, type EngineRules } from "./ingrid";
-import { buildSkeleton } from "./layout";
-import { cloneGrid, type Grid, type Symmetry } from "./grid";
+import { findSkeleton } from "./skeletonFinder";
+import type { Grid, Symmetry } from "./grid";
 
 export type WorkerRequest =
   | { type: "init"; listUrl: string; maxShared: number }
@@ -45,28 +45,10 @@ async function handle(req: WorkerRequest): Promise<unknown> {
       return engine.options(req.grid, req.rules, req.listSlot, req.listLimit);
     case "classify":
       return engine.classify(req.grid, req.slotId, req.words, req.rules, req.timeoutMs);
-    case "skeleton": {
-      // Random symmetric layouts around the seeds; keep the first one the engine can fill.
-      const random = rng(Date.now() & 0xffff);
-      for (let attempt = 0; attempt < req.attempts; attempt++) {
-        const placed = buildSkeleton({
-          size: req.size,
-          symmetry: req.symmetry,
-          seeds: req.seeds,
-          random,
-          maxBlockPct: attempt < req.attempts / 2 ? 0.22 : 0.26,
-        });
-        if (!placed) continue;
-        // Only the score floor and rejections apply: approvals belong to another grid's slots.
-        const probe = engine.fill(placed.grid, { minScore: req.rules.minScore, rejected: req.rules.rejected }, { timeoutMs: req.size <= 7 ? 500 : 1500, seed: attempt });
-        if (probe.ok) {
-          const grid = cloneGrid(placed.grid);
-          grid.cells = grid.cells.map((c, i) => (c === "#" || grid.locked[i] ? c : ""));
-          return { grid, attempts: attempt + 1 };
-        }
-      }
-      return { grid: null, attempts: req.attempts };
-    }
+    case "skeleton":
+      // Random layouts first, then constructive ones ranked by the heatmap, then annealing,
+      // then a lower score floor; see skeletonFinder.ts. Stop = the client terminates the worker.
+      return findSkeleton(engine, req, { random: rng(Date.now() & 0xffff) });
   }
 }
 

@@ -91,6 +91,15 @@ describe("conflicts", () => {
     expect(conflicts("ATE", "LATER", 4)).toBe(false); // 3-letter containment is incidental
     expect(conflicts("NATION", "MOTION", 3)).toBe(true);
   });
+
+  it("at the studio limit of 3, a shared 4-letter run is a conflict and a 3-letter one is not", () => {
+    expect(conflicts("HERMITCRAB", "TAXIDERMIST", 3)).toBe(true); // ERMI
+    expect(conflicts("GOALPOSTMALONE", "GOALLINEDANCE", 3)).toBe(true); // GOAL: locked themers are exempt in the engines, not here
+    expect(conflicts("SEAHORSE", "HORSEPLAY", 3)).toBe(true); // HORSE
+    expect(conflicts("STARFISH", "DEVILRAY", 3)).toBe(false);
+    expect(conflicts("NATION", "STATION", 3)).toBe(true); // ATION
+    expect(conflicts("CATNIP", "NIPPLE", 3)).toBe(false); // NIP is fine
+  });
 });
 
 describe("FillEngine", () => {
@@ -147,13 +156,14 @@ describe("layout", () => {
     expect(g.locked.slice(1, 5)).toEqual([true, true, true, true]);
   });
 
-  it("keeps parallel seeds three rows apart and prefers mirrored pairs", () => {
+  it("keeps parallel seeds apart and prefers mirrored pairs", () => {
     let mirrored = 0;
     for (let i = 0; i < 20; i++) {
       const placed = placeSeeds({ size: 9, symmetry: "rotational", seeds: ["STARFISH", "DEVILRAY"], random: rng(i) });
       if (!placed) continue;
       const [a, b] = placed.placements;
-      if (a.dir === b.dir) expect(Math.abs(a.dir === "across" ? a.row - b.row : a.col - b.col)).toBeGreaterThanOrEqual(3);
+      // One row between parallel seeds is the floor (wider when the grid allows it).
+      if (a.dir === b.dir) expect(Math.abs(a.dir === "across" ? a.row - b.row : a.col - b.col)).toBeGreaterThanOrEqual(2);
       const m = mirrorPlacement(a, 9, "rotational");
       if (m && m.dir === b.dir && m.row === b.row && m.col === b.col) mirrored++;
     }

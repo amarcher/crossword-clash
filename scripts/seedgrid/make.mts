@@ -10,7 +10,7 @@
  *   pnpm seedgrid --size 7 --no-llm             # grid only, no API calls
  *
  * Flags: --size N, --symmetry rotational|mirror|diagonal|none, --min-score 49|50,
- * --max-shared 4, --title, --author, --dict extra.dict (repeatable), --out DIR,
+ * --max-shared 3, --title, --author, --dict extra.dict (repeatable), --out DIR,
  * --model ID, --seed N (repeatable randomness).
  *
  * Writes <out>/<slug>/puzzle.ipuz (publish with `pnpm daily:add`) and
@@ -43,7 +43,7 @@ const useLlm = !flags["no-llm"];
 const theme = flag("theme") ?? "";
 let symmetry = (flag("symmetry") ?? "rotational") as Symmetry;
 let minScore = Number(flag("min-score") ?? 50);
-const maxShared = Number(flag("max-shared") ?? 4);
+const maxShared = Number(flag("max-shared") ?? 3);
 const model = flag("model") ?? DEFAULT_MODEL;
 let seedState = Number(flag("seed") ?? Date.now() % 2 ** 31);
 const random = () => {

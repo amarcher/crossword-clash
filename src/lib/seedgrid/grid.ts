@@ -183,3 +183,65 @@ export function gridStats(grid: Grid): GridStats {
     connected: isConnected(grid),
   };
 }
+
+/**
+ * Grid standards: the four corner squares stay white, and no 2×2 (or larger)
+ * all-black block anywhere. A `####` run in a corner or a 2×2 at a themer's end
+ * reads as filler, so every skeleton builder treats both as illegal.
+ */
+
+/**
+ * Minis and midis need their corner blacks (a 4-letter entry in a 5×5, an
+ * 8-letter themer in a 9×9 force one); from 11×11 up there is room to keep
+ * them white.
+ */
+export function cornersMustBeWhite(grid: Grid): boolean {
+  return Math.min(grid.width, grid.height) >= 11;
+}
+
+export function blackCorners(grid: Grid): number[] {
+  const { width: w, height: h } = grid;
+  return [0, w - 1, (h - 1) * w, h * w - 1].filter((i) => grid.cells[i] === "#");
+}
+
+/** Top-left cells of every 2×2 all-black block. */
+export function blackBlocks(grid: Grid): number[] {
+  const { width: w, height: h } = grid;
+  const out: number[] = [];
+  for (let r = 0; r + 1 < h; r++) {
+    for (let c = 0; c + 1 < w; c++) {
+      const i = r * w + c;
+      if (grid.cells[i] === "#" && grid.cells[i + 1] === "#" && grid.cells[i + w] === "#" && grid.cells[i + w + 1] === "#") out.push(i);
+    }
+  }
+  return out;
+}
+
+export function meetsGridStandards(grid: Grid): boolean {
+  return (!cornersMustBeWhite(grid) || !blackCorners(grid).length) && !blackBlocks(grid).length;
+}
+
+/** Seed slots, and the slots the symmetry mirrors them into, may stay long. */
+export function isThemeSlot(grid: Grid, cells: number[], symmetry: Symmetry): boolean {
+  return cells.every((i) => grid.locked[i]) || cells.every((i) => partners(grid, i, symmetry).some((j) => grid.locked[j]));
+}
+
+export const MIN_RUN = 3;
+
+/** Blacks `i` and its symmetric partners. False if any of them is locked or lettered. */
+export function setBlack(grid: Grid, i: number, symmetry: Symmetry): boolean {
+  const group = partners(grid, i, symmetry);
+  if (group.some((j) => grid.locked[j] || (grid.cells[j] && grid.cells[j] !== "#"))) return false;
+  for (const j of group) grid.cells[j] = "#";
+  return true;
+}
+
+/** Blacks out runs of 1–2 squares. False if a short run holds a seed letter. */
+export function fixShortRuns(grid: Grid, symmetry: Symmetry): boolean {
+  for (let guard = 0; guard < grid.cells.length; guard++) {
+    const short = runsOf(grid).find((s) => s.cells.length < MIN_RUN);
+    if (!short) return true;
+    for (const i of short.cells) if (grid.cells[i] !== "#" && !setBlack(grid, i, symmetry)) return false;
+  }
+  return false;
+}

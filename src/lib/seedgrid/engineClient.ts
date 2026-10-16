@@ -6,6 +6,7 @@
 import type { EngineRules, FillOutcome, SlotOptions, Viability } from "./ingrid";
 import type { Grid, Symmetry } from "./grid";
 import type { WorkerRequest } from "./engine.worker";
+import type { SkeletonResult } from "./skeletonFinder";
 
 /**
  * Which list the studio loads. VITE_SEEDGRID_WORD_LIST wins; otherwise dev uses
@@ -24,7 +25,8 @@ export function studioWordListUrl(override: string | undefined, dev: boolean, su
   if (!supabaseUrl) return "/seedgrid/words-production.dict";
   return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/seedgrid/words-production.dict`;
 }
-export const MAX_SHARED = 4;
+/** No two engine-filled entries may share a run of letters longer than this. */
+export const MAX_SHARED = 3;
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 
@@ -99,6 +101,6 @@ export class EngineClient {
   }
 
   skeleton(size: number, symmetry: Symmetry, seeds: string[], rules: Pick<EngineRules, "minScore" | "rejected">, attempts = 60) {
-    return this.call<{ grid: Grid | null; attempts: number }>({ type: "skeleton", size, symmetry, seeds, rules, attempts });
+    return this.call<SkeletonResult>({ type: "skeleton", size, symmetry, seeds, rules, attempts });
   }
 }
