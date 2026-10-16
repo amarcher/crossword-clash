@@ -1,0 +1,1133 @@
+{
+  "version": "http://ipuz.org/v2",
+  "kind": [
+    "http://ipuz.org/crossword#1"
+  ],
+  "dimensions": {
+    "width": 15,
+    "height": 15
+  },
+  "title": "Star System",
+  "author": "Crossword Clash",
+  "notes": "astronomy x Hollywood",
+  "block": "#",
+  "empty": 0,
+  "puzzle": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      "#",
+      6,
+      7,
+      8,
+      9,
+      "#",
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      15,
+      0,
+      0,
+      0,
+      "#",
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      18,
+      0,
+      0,
+      0,
+      "#",
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      "#",
+      23,
+      0,
+      0,
+      "#",
+      24,
+      0,
+      0,
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      25,
+      26,
+      27,
+      28,
+      0,
+      "#",
+      29,
+      30,
+      0,
+      0,
+      "#",
+      31,
+      32,
+      33
+    ],
+    [
+      "#",
+      34,
+      0,
+      0,
+      0,
+      0,
+      35,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0
+    ],
+    [
+      37,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      38,
+      0,
+      0,
+      "#",
+      39,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      40,
+      0,
+      0,
+      0,
+      0,
+      41,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      43,
+      0,
+      0,
+      "#",
+      44,
+      0,
+      0,
+      0,
+      "#",
+      45,
+      0,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      46,
+      0,
+      0,
+      "#",
+      47,
+      48,
+      0,
+      "#",
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      49,
+      50,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      52,
+      53,
+      54,
+      55,
+      56
+    ],
+    [
+      57,
+      0,
+      0,
+      0,
+      "#",
+      58,
+      0,
+      0,
+      0,
+      "#",
+      59,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      0,
+      0,
+      0,
+      "#",
+      61,
+      0,
+      0,
+      0,
+      "#",
+      62,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      63,
+      0,
+      0,
+      0,
+      "#",
+      64,
+      0,
+      0,
+      0,
+      "#",
+      65,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "solution": [
+    [
+      "S",
+      "H",
+      "O",
+      "P",
+      "S",
+      "#",
+      "O",
+      "D",
+      "O",
+      "R",
+      "#",
+      "S",
+      "L",
+      "I",
+      "M"
+    ],
+    [
+      "H",
+      "A",
+      "S",
+      "A",
+      "T",
+      "#",
+      "R",
+      "A",
+      "T",
+      "S",
+      "#",
+      "M",
+      "O",
+      "O",
+      "R"
+    ],
+    [
+      "A",
+      "L",
+      "L",
+      "I",
+      "E",
+      "#",
+      "A",
+      "R",
+      "T",
+      "S",
+      "#",
+      "E",
+      "O",
+      "N",
+      "S"
+    ],
+    [
+      "M",
+      "O",
+      "O",
+      "N",
+      "W",
+      "A",
+      "L",
+      "K",
+      "O",
+      "F",
+      "F",
+      "A",
+      "M",
+      "E",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      "#",
+      "I",
+      "B",
+      "M",
+      "#",
+      "E",
+      "A",
+      "R",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "B",
+      "A",
+      "A",
+      "E",
+      "D",
+      "#",
+      "A",
+      "M",
+      "E",
+      "N",
+      "#",
+      "M",
+      "M",
+      "A"
+    ],
+    [
+      "#",
+      "E",
+      "N",
+      "C",
+      "R",
+      "Y",
+      "P",
+      "T",
+      "E",
+      "D",
+      "E",
+      "M",
+      "A",
+      "I",
+      "L"
+    ],
+    [
+      "E",
+      "R",
+      "O",
+      "D",
+      "E",
+      "#",
+      "A",
+      "T",
+      "L",
+      "#",
+      "D",
+      "E",
+      "N",
+      "S",
+      "E"
+    ],
+    [
+      "R",
+      "E",
+      "D",
+      "C",
+      "A",
+      "R",
+      "P",
+      "E",
+      "T",
+      "G",
+      "I",
+      "A",
+      "N",
+      "T",
+      "#"
+    ],
+    [
+      "A",
+      "T",
+      "E",
+      "#",
+      "D",
+      "E",
+      "A",
+      "R",
+      "#",
+      "A",
+      "T",
+      "L",
+      "A",
+      "S",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "P",
+      "E",
+      "P",
+      "#",
+      "D",
+      "A",
+      "M",
+      "#",
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "S",
+      "H",
+      "A",
+      "R",
+      "E",
+      "S",
+      "A",
+      "B",
+      "E",
+      "D",
+      "W",
+      "I",
+      "T",
+      "H"
+    ],
+    [
+      "B",
+      "O",
+      "A",
+      "T",
+      "#",
+      "N",
+      "A",
+      "M",
+      "E",
+      "#",
+      "R",
+      "E",
+      "N",
+      "E",
+      "E"
+    ],
+    [
+      "E",
+      "R",
+      "I",
+      "E",
+      "#",
+      "T",
+      "R",
+      "O",
+      "T",
+      "#",
+      "U",
+      "L",
+      "C",
+      "E",
+      "R"
+    ],
+    [
+      "E",
+      "E",
+      "L",
+      "S",
+      "#",
+      "S",
+      "I",
+      "N",
+      "S",
+      "#",
+      "G",
+      "L",
+      "A",
+      "S",
+      "S"
+    ]
+  ],
+  "clues": {
+    "Across": [
+      [
+        1,
+        "Goes looking for deals"
+      ],
+      [
+        6,
+        "It's picked up by a nose"
+      ],
+      [
+        10,
+        "Like long-shot odds"
+      ],
+      [
+        14,
+        "Goes after with gusto"
+      ],
+      [
+        15,
+        "Pied Piper's followers"
+      ],
+      [
+        16,
+        "Heathcliff's stomping ground"
+      ],
+      [
+        17,
+        "Rachel McAdams's role in \"The Notebook\""
+      ],
+      [
+        18,
+        "Liberal ___"
+      ],
+      [
+        19,
+        "Ages and ages"
+      ],
+      [
+        20,
+        "Hollywood Boulevard, per Neil Armstrong?"
+      ],
+      [
+        23,
+        "Big Blue"
+      ],
+      [
+        24,
+        "Corn unit"
+      ],
+      [
+        25,
+        "Spoke like a lamb"
+      ],
+      [
+        29,
+        "'You said it!'"
+      ],
+      [
+        31,
+        "Octagon sport, briefly"
+      ],
+      [
+        34,
+        "Message that needs a key to read"
+      ],
+      [
+        37,
+        "Wash out, in a way"
+      ],
+      [
+        38,
+        "Braves' home, on scoreboards"
+      ],
+      [
+        39,
+        "Slow on the uptake"
+      ],
+      [
+        40,
+        "Enormous premiere arrival?"
+      ],
+      [
+        43,
+        "Had dinner"
+      ],
+      [
+        44,
+        "Letter opener"
+      ],
+      [
+        45,
+        "Titan holding up the heavens"
+      ],
+      [
+        46,
+        "Get-up-and-go"
+      ],
+      [
+        47,
+        "Beaver's project"
+      ],
+      [
+        49,
+        "Bunks with, as siblings might"
+      ],
+      [
+        57,
+        "Gravy holder"
+      ],
+      [
+        58,
+        "Moniker"
+      ],
+      [
+        59,
+        "Zellweger of 'Judy'"
+      ],
+      [
+        60,
+        "Lake that feeds Niagara"
+      ],
+      [
+        61,
+        "Gait faster than a walk"
+      ],
+      [
+        62,
+        "Stomach sore"
+      ],
+      [
+        63,
+        "Slippery swimmers"
+      ],
+      [
+        64,
+        "Seven deadly things"
+      ],
+      [
+        65,
+        "Window material"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Hollow pretense"
+      ],
+      [
+        2,
+        "Glow suggesting saintliness"
+      ],
+      [
+        3,
+        "Capital at the head of a fjord"
+      ],
+      [
+        4,
+        "Real nuisance, informally"
+      ],
+      [
+        5,
+        "Fret and fume"
+      ],
+      [
+        6,
+        "Crest rival"
+      ],
+      [
+        7,
+        "Astrophysical heartthrob?"
+      ],
+      [
+        8,
+        "Palindromic name"
+      ],
+      [
+        9,
+        "Stream for headline junkies"
+      ],
+      [
+        10,
+        "Lipstick mishap, maybe"
+      ],
+      [
+        11,
+        "Hover menacingly"
+      ],
+      [
+        12,
+        "Skye of 'Say Anything...'"
+      ],
+      [
+        13,
+        "Robinson's title in 'The Graduate'"
+      ],
+      [
+        21,
+        "Bryant of 'Shrill'"
+      ],
+      [
+        22,
+        "Unofficial recut of a film"
+      ],
+      [
+        25,
+        "Painter's cap, stereotypically"
+      ],
+      [
+        26,
+        "Battery terminal"
+      ],
+      [
+        27,
+        "'Back in Black' band"
+      ],
+      [
+        28,
+        "Kindle, for one"
+      ],
+      [
+        30,
+        "Tuna ___ (diner sandwich)"
+      ],
+      [
+        31,
+        "Heaven-sent food"
+      ],
+      [
+        32,
+        "Spritzes"
+      ],
+      [
+        33,
+        "Pub pour"
+      ],
+      [
+        35,
+        "Bear in a Goldilocks tale"
+      ],
+      [
+        36,
+        "Prix fixe offering"
+      ],
+      [
+        37,
+        "Pitcher's stat"
+      ],
+      [
+        41,
+        "Feels remorse"
+      ],
+      [
+        42,
+        "Up for anything"
+      ],
+      [
+        46,
+        "Domes"
+      ],
+      [
+        48,
+        "Aids in a heist"
+      ],
+      [
+        49,
+        "Miffed"
+      ],
+      [
+        50,
+        "Flag down, as a cab"
+      ],
+      [
+        51,
+        "Draped garment from India"
+      ],
+      [
+        52,
+        "Pharmacy item"
+      ],
+      [
+        53,
+        "'So...'"
+      ],
+      [
+        54,
+        "Machu Picchu builder"
+      ],
+      [
+        55,
+        "Golf pegs"
+      ],
+      [
+        56,
+        "Towel monogram, maybe"
+      ],
+      [
+        57,
+        "Spelling contest"
+      ]
+    ]
+  },
+  "com.crosswordclash:speedclues": {
+    "Across": [
+      [
+        1,
+        "Browses stores"
+      ],
+      [
+        6,
+        "Smell"
+      ],
+      [
+        10,
+        "Thin"
+      ],
+      [
+        14,
+        "Attacks"
+      ],
+      [
+        15,
+        "'Darn it!'"
+      ],
+      [
+        16,
+        "Tie up, as a boat"
+      ],
+      [
+        17,
+        "\"Kate & ___\" (1980s sitcom)"
+      ],
+      [
+        18,
+        "Painting and sculpture"
+      ],
+      [
+        19,
+        "Very long times"
+      ],
+      [
+        20,
+        "Lunar stroll past celebrity stars?"
+      ],
+      [
+        23,
+        "Tech giant with Watson"
+      ],
+      [
+        24,
+        "Hearing organ"
+      ],
+      [
+        25,
+        "Bleated"
+      ],
+      [
+        29,
+        "Prayer closer"
+      ],
+      [
+        31,
+        "Cage fighting, for short"
+      ],
+      [
+        34,
+        "Secure electronic message"
+      ],
+      [
+        37,
+        "Wear away"
+      ],
+      [
+        38,
+        "Georgia city: Abbr."
+      ],
+      [
+        39,
+        "Thick"
+      ],
+      [
+        40,
+        "Huge star at a movie opening?"
+      ],
+      [
+        43,
+        "Dined"
+      ],
+      [
+        44,
+        "Beloved"
+      ],
+      [
+        45,
+        "Book of maps"
+      ],
+      [
+        46,
+        "Energy"
+      ],
+      [
+        47,
+        "River barrier"
+      ],
+      [
+        49,
+        "Sleeps alongside"
+      ],
+      [
+        57,
+        "Vessel"
+      ],
+      [
+        58,
+        "'Hello, my ___ is...'"
+      ],
+      [
+        59,
+        "Actress Zellweger"
+      ],
+      [
+        60,
+        "Great Lake by Buffalo"
+      ],
+      [
+        61,
+        "Jog"
+      ],
+      [
+        62,
+        "Canker sore, e.g."
+      ],
+      [
+        63,
+        "Snakelike fish"
+      ],
+      [
+        64,
+        "Wrongdoings"
+      ],
+      [
+        65,
+        "Cup for milk"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Fake"
+      ],
+      [
+        2,
+        "Angel's ring"
+      ],
+      [
+        3,
+        "Norway's capital"
+      ],
+      [
+        4,
+        "Ache"
+      ],
+      [
+        5,
+        "Beef dish in a pot"
+      ],
+      [
+        6,
+        "Toothbrush brand"
+      ],
+      [
+        7,
+        "Cosmic stuff meets 'The Martian' star?"
+      ],
+      [
+        8,
+        "Bus driver on 'The Simpsons'"
+      ],
+      [
+        9,
+        "Web subscription format"
+      ],
+      [
+        10,
+        "Smudge"
+      ],
+      [
+        11,
+        "Weaver's frame"
+      ],
+      [
+        12,
+        "Actress Skye"
+      ],
+      [
+        13,
+        "Wife's title: Abbr."
+      ],
+      [
+        21,
+        "Former 'SNL' star Bryant"
+      ],
+      [
+        22,
+        "Viewer-made movie remix"
+      ],
+      [
+        25,
+        "French cap"
+      ],
+      [
+        26,
+        "Positive electrode"
+      ],
+      [
+        27,
+        "'Highway to Hell' rockers"
+      ],
+      [
+        28,
+        "Digital book device"
+      ],
+      [
+        30,
+        "Thaw"
+      ],
+      [
+        31,
+        "Bread from heaven"
+      ],
+      [
+        32,
+        "Fogs"
+      ],
+      [
+        33,
+        "Beer type"
+      ],
+      [
+        35,
+        "Dad"
+      ],
+      [
+        36,
+        "Dinner, e.g."
+      ],
+      [
+        37,
+        "Historical period"
+      ],
+      [
+        41,
+        "Says sorry, in a sense"
+      ],
+      [
+        42,
+        "Board ___"
+      ],
+      [
+        46,
+        "Tops of heads"
+      ],
+      [
+        48,
+        "Helps a crook"
+      ],
+      [
+        49,
+        "Achy"
+      ],
+      [
+        50,
+        "Icy precipitation"
+      ],
+      [
+        51,
+        "Indian wrap"
+      ],
+      [
+        52,
+        "Medication"
+      ],
+      [
+        53,
+        "Water source"
+      ],
+      [
+        54,
+        "Ancient Peruvian"
+      ],
+      [
+        55,
+        "Casual shirts"
+      ],
+      [
+        56,
+        "Not his"
+      ],
+      [
+        57,
+        "Honey maker"
+      ]
+    ]
+  }
+}

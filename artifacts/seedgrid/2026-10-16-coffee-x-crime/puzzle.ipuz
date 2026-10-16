@@ -1,0 +1,1181 @@
+{
+  "version": "http://ipuz.org/v2",
+  "kind": [
+    "http://ipuz.org/crossword#1"
+  ],
+  "dimensions": {
+    "width": 15,
+    "height": 15
+  },
+  "title": "Grounds for Arrest",
+  "author": "Crossword Clash",
+  "notes": "coffee x crime",
+  "block": "#",
+  "empty": 0,
+  "puzzle": [
+    [
+      1,
+      2,
+      3,
+      "#",
+      4,
+      5,
+      6,
+      "#",
+      7,
+      8,
+      9,
+      "#",
+      10,
+      11,
+      12
+    ],
+    [
+      13,
+      0,
+      0,
+      "#",
+      14,
+      0,
+      0,
+      "#",
+      15,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      "#",
+      18,
+      0,
+      0,
+      "#",
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "#",
+      20,
+      0,
+      21,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      23,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      24,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      25,
+      0,
+      0,
+      "#",
+      26,
+      27,
+      0,
+      "#",
+      "#",
+      "#",
+      28,
+      29,
+      30,
+      31
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      32,
+      33,
+      0,
+      0,
+      0,
+      34,
+      35,
+      36,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      37,
+      38,
+      39,
+      "#",
+      40,
+      0,
+      0,
+      "#",
+      41,
+      0,
+      0,
+      "#",
+      42,
+      0,
+      0
+    ],
+    [
+      43,
+      0,
+      0,
+      44,
+      0,
+      0,
+      0,
+      45,
+      0,
+      0,
+      0,
+      46,
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      47,
+      0,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      48,
+      0,
+      0,
+      "#",
+      49,
+      50,
+      51,
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      52,
+      53,
+      54,
+      55,
+      0,
+      "#",
+      "#",
+      "#",
+      56,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      57,
+      58,
+      0,
+      0,
+      0,
+      0,
+      0,
+      59,
+      60,
+      61,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      62,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      63,
+      0,
+      0,
+      "#",
+      64,
+      0,
+      65
+    ],
+    [
+      66,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      67,
+      0,
+      0,
+      "#",
+      68,
+      0,
+      0
+    ],
+    [
+      69,
+      0,
+      0,
+      "#",
+      70,
+      0,
+      0,
+      "#",
+      71,
+      0,
+      0,
+      "#",
+      72,
+      0,
+      0
+    ]
+  ],
+  "solution": [
+    [
+      "I",
+      "S",
+      "H",
+      "#",
+      "H",
+      "E",
+      "Y",
+      "#",
+      "O",
+      "R",
+      "B",
+      "#",
+      "B",
+      "A",
+      "N"
+    ],
+    [
+      "T",
+      "K",
+      "O",
+      "#",
+      "A",
+      "R",
+      "E",
+      "#",
+      "F",
+      "O",
+      "O",
+      "T",
+      "A",
+      "G",
+      "E"
+    ],
+    [
+      "S",
+      "I",
+      "T",
+      "#",
+      "L",
+      "I",
+      "T",
+      "#",
+      "T",
+      "O",
+      "W",
+      "E",
+      "R",
+      "E",
+      "D"
+    ],
+    [
+      "#",
+      "C",
+      "A",
+      "F",
+      "F",
+      "E",
+      "I",
+      "N",
+      "E",
+      "F",
+      "I",
+      "E",
+      "N",
+      "D",
+      "#"
+    ],
+    [
+      "#",
+      "A",
+      "I",
+      "L",
+      "#",
+      "#",
+      "#",
+      "I",
+      "N",
+      "S",
+      "E",
+      "T",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "P",
+      "R",
+      "O",
+      "#",
+      "H",
+      "I",
+      "T",
+      "#",
+      "#",
+      "#",
+      "E",
+      "A",
+      "R",
+      "L"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "P",
+      "R",
+      "E",
+      "S",
+      "S",
+      "C",
+      "H",
+      "A",
+      "R",
+      "G",
+      "E",
+      "S"
+    ],
+    [
+      "F",
+      "U",
+      "N",
+      "#",
+      "U",
+      "R",
+      "N",
+      "#",
+      "H",
+      "A",
+      "D",
+      "#",
+      "O",
+      "D",
+      "D"
+    ],
+    [
+      "A",
+      "F",
+      "F",
+      "O",
+      "G",
+      "A",
+      "T",
+      "O",
+      "A",
+      "W",
+      "A",
+      "Y",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "Y",
+      "O",
+      "L",
+      "K",
+      "#",
+      "#",
+      "#",
+      "A",
+      "N",
+      "N",
+      "#",
+      "O",
+      "H",
+      "M",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "F",
+      "E",
+      "A",
+      "S",
+      "T",
+      "#",
+      "#",
+      "#",
+      "D",
+      "U",
+      "E",
+      "#"
+    ],
+    [
+      "#",
+      "S",
+      "P",
+      "I",
+      "L",
+      "L",
+      "T",
+      "H",
+      "E",
+      "B",
+      "E",
+      "A",
+      "N",
+      "S",
+      "#"
+    ],
+    [
+      "P",
+      "L",
+      "U",
+      "N",
+      "G",
+      "E",
+      "R",
+      "#",
+      "L",
+      "A",
+      "D",
+      "#",
+      "T",
+      "S",
+      "A"
+    ],
+    [
+      "D",
+      "E",
+      "C",
+      "E",
+      "I",
+      "V",
+      "E",
+      "#",
+      "M",
+      "S",
+      "G",
+      "#",
+      "E",
+      "E",
+      "L"
+    ],
+    [
+      "A",
+      "W",
+      "E",
+      "#",
+      "N",
+      "E",
+      "W",
+      "#",
+      "S",
+      "H",
+      "E",
+      "#",
+      "D",
+      "S",
+      "L"
+    ]
+  ],
+  "clues": {
+    "Across": [
+      [
+        1,
+        "Approximately, informally"
+      ],
+      [
+        4,
+        "\"Over here!\""
+      ],
+      [
+        7,
+        "Crystal ball, e.g."
+      ],
+      [
+        10,
+        "Outlaw"
+      ],
+      [
+        13,
+        "Bout ender, briefly"
+      ],
+      [
+        14,
+        "\"You ___ here\""
+      ],
+      [
+        15,
+        "Security cam output"
+      ],
+      [
+        17,
+        "Command for Fido"
+      ],
+      [
+        18,
+        "Like a menorah at night"
+      ],
+      [
+        19,
+        "Loomed large"
+      ],
+      [
+        20,
+        "Addict who knocks over the espresso bar?"
+      ],
+      [
+        23,
+        "Feel under the weather"
+      ],
+      [
+        24,
+        "Map within a map"
+      ],
+      [
+        25,
+        "Seasoned veteran"
+      ],
+      [
+        26,
+        "Chart-topper"
+      ],
+      [
+        28,
+        "___ Grey (tea option)"
+      ],
+      [
+        32,
+        "Accuse a barista of a French-roast crime?"
+      ],
+      [
+        37,
+        "Good time"
+      ],
+      [
+        40,
+        "Coffee server at a big event"
+      ],
+      [
+        41,
+        "Owned"
+      ],
+      [
+        42,
+        "Like 1, 3 or 5"
+      ],
+      [
+        43,
+        "Dessert coffee that escaped?"
+      ],
+      [
+        47,
+        "Sunny-side-up center"
+      ],
+      [
+        48,
+        "Advice columnist Landers"
+      ],
+      [
+        49,
+        "Resistance unit"
+      ],
+      [
+        52,
+        "Thanksgiving spread"
+      ],
+      [
+        56,
+        "Library book status"
+      ],
+      [
+        57,
+        "Confess, or make a mess at the roaster?"
+      ],
+      [
+        62,
+        "French press part"
+      ],
+      [
+        63,
+        "Young fellow"
+      ],
+      [
+        64,
+        "Airport screening org."
+      ],
+      [
+        66,
+        "Con"
+      ],
+      [
+        67,
+        "Text, briefly"
+      ],
+      [
+        68,
+        "Slippery swimmer"
+      ],
+      [
+        69,
+        "Wonder"
+      ],
+      [
+        70,
+        "Fresh"
+      ],
+      [
+        71,
+        "Her, as a subject"
+      ],
+      [
+        72,
+        "Internet option, briefly"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Belonging to that thing"
+      ],
+      [
+        2,
+        "Slope topper"
+      ],
+      [
+        3,
+        "Empty talk"
+      ],
+      [
+        4,
+        "Fifty percent"
+      ],
+      [
+        5,
+        "Great Lake by Buffalo"
+      ],
+      [
+        6,
+        "Himalayan legend"
+      ],
+      [
+        7,
+        "Many a time"
+      ],
+      [
+        8,
+        "Spots for solar panels"
+      ],
+      [
+        9,
+        "\"Space Oddity\" singer"
+      ],
+      [
+        10,
+        "Hayloft's home"
+      ],
+      [
+        11,
+        "Like fine cheddar"
+      ],
+      [
+        12,
+        "Flanders of Springfield"
+      ],
+      [
+        16,
+        "Wobble on the brink"
+      ],
+      [
+        21,
+        "Box office bomb"
+      ],
+      [
+        22,
+        "Petty gripes"
+      ],
+      [
+        26,
+        "Zeus's wife"
+      ],
+      [
+        27,
+        "\"That ___ fair!\""
+      ],
+      [
+        29,
+        "Back in the day"
+      ],
+      [
+        30,
+        "Stop sign color"
+      ],
+      [
+        31,
+        "Old British money abbr."
+      ],
+      [
+        33,
+        "Thing to cut, on a dance floor"
+      ],
+      [
+        34,
+        "Jackie of action films"
+      ],
+      [
+        35,
+        "Goldie of \"Overboard\""
+      ],
+      [
+        36,
+        "Lovelace of early computing"
+      ],
+      [
+        37,
+        "Wray of \"King Kong\""
+      ],
+      [
+        38,
+        "Saucer sighting"
+      ],
+      [
+        39,
+        "Super Bowl org."
+      ],
+      [
+        44,
+        "\"You win, I give in!\""
+      ],
+      [
+        45,
+        "Witness stand vow"
+      ],
+      [
+        46,
+        "Green Jedi master"
+      ],
+      [
+        50,
+        "Chased by the law"
+      ],
+      [
+        51,
+        "Spills and such"
+      ],
+      [
+        53,
+        "___ Marbles"
+      ],
+      [
+        54,
+        "Pain reliever brand"
+      ],
+      [
+        55,
+        "Scatter about"
+      ],
+      [
+        57,
+        "Whole bunch"
+      ],
+      [
+        58,
+        "Purplish brown"
+      ],
+      [
+        59,
+        "Shady street trees"
+      ],
+      [
+        60,
+        "Big party"
+      ],
+      [
+        61,
+        "Competitive advantage"
+      ],
+      [
+        62,
+        "Palm Pilot, e.g., for short"
+      ],
+      [
+        65,
+        "Everyone"
+      ]
+    ]
+  },
+  "com.crosswordclash:speedclues": {
+    "Across": [
+      [
+        1,
+        "Sort of, as a suffix"
+      ],
+      [
+        4,
+        "Attention-getter"
+      ],
+      [
+        7,
+        "Sphere"
+      ],
+      [
+        10,
+        "Prohibit"
+      ],
+      [
+        13,
+        "Boxing win, for short"
+      ],
+      [
+        14,
+        "Plural of \"is\""
+      ],
+      [
+        15,
+        "Recorded video"
+      ],
+      [
+        17,
+        "Take a seat"
+      ],
+      [
+        18,
+        "Illuminated"
+      ],
+      [
+        19,
+        "Rose high above"
+      ],
+      [
+        20,
+        "Coffee addict"
+      ],
+      [
+        23,
+        "Be sick"
+      ],
+      [
+        24,
+        "Small inner picture"
+      ],
+      [
+        25,
+        "Expert"
+      ],
+      [
+        26,
+        "Smash song"
+      ],
+      [
+        28,
+        "British noble"
+      ],
+      [
+        32,
+        "Formally accuse of a crime"
+      ],
+      [
+        37,
+        "Enjoyment"
+      ],
+      [
+        40,
+        "Large coffee container"
+      ],
+      [
+        41,
+        "Possessed"
+      ],
+      [
+        42,
+        "Strange"
+      ],
+      [
+        43,
+        "Gelato-espresso treat on the lam?"
+      ],
+      [
+        47,
+        "Yellow part of an egg"
+      ],
+      [
+        48,
+        "Landers of advice columns"
+      ],
+      [
+        49,
+        "Electrical resistance unit"
+      ],
+      [
+        52,
+        "Big meal"
+      ],
+      [
+        56,
+        "Owed"
+      ],
+      [
+        57,
+        "Confess"
+      ],
+      [
+        62,
+        "Part of a French press"
+      ],
+      [
+        63,
+        "Boy"
+      ],
+      [
+        64,
+        "Airport security agcy."
+      ],
+      [
+        66,
+        "Mislead"
+      ],
+      [
+        67,
+        "Message: Abbr."
+      ],
+      [
+        68,
+        "Snakelike fish"
+      ],
+      [
+        69,
+        "Amazement"
+      ],
+      [
+        70,
+        "Not old"
+      ],
+      [
+        71,
+        "Pronoun for a woman"
+      ],
+      [
+        72,
+        "Broadband type: Abbr."
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Possessive pronoun"
+      ],
+      [
+        2,
+        "Winter headwear"
+      ],
+      [
+        3,
+        "Balloon filler"
+      ],
+      [
+        4,
+        "One of two equal parts"
+      ],
+      [
+        5,
+        "Lake ___"
+      ],
+      [
+        6,
+        "Abominable Snowman"
+      ],
+      [
+        7,
+        "Frequently"
+      ],
+      [
+        8,
+        "House tops"
+      ],
+      [
+        9,
+        "Rocker David"
+      ],
+      [
+        10,
+        "Farm building"
+      ],
+      [
+        11,
+        "Old"
+      ],
+      [
+        12,
+        "___ Flanders of \"The Simpsons\""
+      ],
+      [
+        16,
+        "Sway unsteadily"
+      ],
+      [
+        21,
+        "Failure"
+      ],
+      [
+        22,
+        "Small quibbles"
+      ],
+      [
+        26,
+        "Queen of Olympus"
+      ],
+      [
+        27,
+        "Is not, briefly"
+      ],
+      [
+        29,
+        "Years ___"
+      ],
+      [
+        30,
+        "Ruby color"
+      ],
+      [
+        31,
+        "Pounds, shillings, pence: Abbr."
+      ],
+      [
+        33,
+        "Carpet"
+      ],
+      [
+        34,
+        "Actor Jackie"
+      ],
+      [
+        35,
+        "Actress Goldie"
+      ],
+      [
+        36,
+        "Computing pioneer Lovelace"
+      ],
+      [
+        37,
+        "Actress Wray"
+      ],
+      [
+        38,
+        "Flying saucer, briefly"
+      ],
+      [
+        39,
+        "Football league: Abbr."
+      ],
+      [
+        44,
+        "Reluctant \"yes\""
+      ],
+      [
+        45,
+        "Sworn promise"
+      ],
+      [
+        46,
+        "\"Star Wars\" sage"
+      ],
+      [
+        50,
+        "Pursued"
+      ],
+      [
+        51,
+        "Untidy scenes"
+      ],
+      [
+        53,
+        "Illinois city west of Chicago"
+      ],
+      [
+        54,
+        "Naproxen brand"
+      ],
+      [
+        55,
+        "Spread loosely"
+      ],
+      [
+        57,
+        "Large number"
+      ],
+      [
+        58,
+        "Brownish-purple shade"
+      ],
+      [
+        59,
+        "Trees lining many streets"
+      ],
+      [
+        60,
+        "Shindig"
+      ],
+      [
+        61,
+        "Rim"
+      ],
+      [
+        62,
+        "Old handheld device: Abbr."
+      ],
+      [
+        65,
+        "Every bit"
+      ]
+    ]
+  }
+}
