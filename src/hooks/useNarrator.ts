@@ -3,6 +3,8 @@ import { createNarratorBackend } from "../lib/narrator/factory";
 import { buildGameStartedEvent, buildGameCompletedEvent } from "../lib/narrator/events";
 import { ClaudeNarratorBackend } from "../lib/narrator/claudeNarrator";
 import { NARRATOR_UNAVAILABLE_BUDGET } from "../lib/narratorBudget";
+import { sendNarratorSession } from "../lib/playInsightsClient";
+import { puzzleIdentity } from "../lib/soloStats";
 import { hasNarratorDemoRemaining } from "../lib/narratorDemo";
 import type { NarratorBackend, AgentGameEvent, NarratorEngine } from "../lib/narrator/types";
 import type { Puzzle } from "../types/puzzle";
@@ -28,6 +30,8 @@ interface UseNarratorOptions {
    */
   playerScores: { name: string; score: number }[];
   totalScore: number;
+  /** The room, for the narrator_sessions insight row. */
+  gameId?: string | null;
 }
 
 interface UseNarratorResult {
@@ -67,6 +71,7 @@ export function useNarrator({
   puzzle,
   playerScores,
   totalScore,
+  gameId = null,
 }: UseNarratorOptions): UseNarratorResult {
   const narratorRef = useRef<NarratorBackend | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -133,6 +138,10 @@ export function useNarrator({
   const playersRef = useRef(players);
   playersRef.current = players;
   const puzzleRef = useRef(puzzle);
+  const gameIdRef = useRef(gameId);
+  gameIdRef.current = gameId;
+  const requestedEngineRef = useRef(narratorEngine);
+  requestedEngineRef.current = narratorEngine;
   puzzleRef.current = puzzle;
   const playerScoresRef = useRef(playerScores);
   playerScoresRef.current = playerScores;
@@ -182,6 +191,17 @@ export function useNarrator({
     narrator.connect().then(() => {
       setIsConnected(narrator.isConnected);
       setConnectionError(narrator.connectionError);
+      // One insight row per start attempt: did the game-show host actually come on?
+      const error = narrator.connectionError ?? "";
+      sendNarratorSession({
+        game_id: gameIdRef.current,
+        puzzle_key: puzzleRef.current ? puzzleIdentity(puzzleRef.current) : "",
+        puzzle_title: puzzleRef.current?.title ?? "",
+        requested_engine: requestedEngineRef.current ?? "",
+        engine: currentEngine ?? "",
+        outcome: narrator.isConnected ? "connected" : error.startsWith(NARRATOR_UNAVAILABLE_BUDGET) ? "budget" : "failed",
+        error: narrator.isConnected ? "" : error,
+      });
 
       if (narrator.isConnected && puzzleRef.current) {
         narrator.sendEvent(

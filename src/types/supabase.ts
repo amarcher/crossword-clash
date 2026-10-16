@@ -157,9 +157,51 @@ export interface Database {
         Update: { user_id?: string; note?: string; created_at?: string };
         Relationships: [];
       };
+      narrator_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          game_id: string | null;
+          puzzle_key: string;
+          puzzle_title: string;
+          requested_engine: string;
+          engine: string;
+          outcome: "connected" | "failed" | "budget";
+          error: string;
+          client: string;
+          platform: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          game_id?: string | null;
+          puzzle_key?: string;
+          puzzle_title?: string;
+          requested_engine: string;
+          engine: string;
+          outcome: "connected" | "failed" | "budget";
+          error?: string;
+          client?: string;
+          platform?: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      /** Service role only (revoked from anon/authenticated): per-puzzle insights in a window. */
+      insights_puzzles: {
+        Args: { p_from: string; p_to: string };
+        Returns: unknown[];
+      };
+      /** Service role only: per-clue insights for one puzzle in a window. */
+      insights_clues: {
+        Args: { p_puzzle_key: string; p_from: string; p_to: string };
+        Returns: unknown[];
+      };
       claim_cell: {
         Args: {
           p_game_id: string;
