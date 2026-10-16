@@ -1,10 +1,12 @@
 /**
  * The admin daily queue: which studio puzzles are scheduled as the daily on
- * which days. Stored in Supabase `daily_schedule` through the token-gated
- * studio-schedule edge function; players get them from /daily-puzzles/<day>.json.
+ * which days, in which slot (the mini, or the 15×15 "large"). Stored in
+ * Supabase `daily_schedule` through the token-gated studio-schedule edge
+ * function; players get them from /daily-puzzles/<day>.json and
+ * /daily-puzzles/large/<day>.json.
  */
 import { dayKey } from "../soloStats";
-import type { DailyFeedEntry } from "../dailyFeed";
+import type { DailyFeedEntry, DailySlot } from "../dailyFeed";
 import { clueOk } from "./cluePrompt";
 import { slotsOf, slotText } from "./grid";
 import { toTransferPuzzle, type ClueSet } from "./ipuz";
@@ -14,8 +16,17 @@ import { studioHeaders } from "../studioAuth";
 
 export interface ScheduledDay {
   day: string;
+  slot: DailySlot;
   title: string;
   studio_id: string | null;
+}
+
+/** Grids this wide or taller go to the large slot by default. */
+export const LARGE_MIN_SIZE = 11;
+
+/** The slot a puzzle of this size belongs in: 15×15s are larges, minis are minis. */
+export function defaultSlotFor(width: number, height: number): DailySlot {
+  return Math.max(width, height) >= LARGE_MIN_SIZE ? "large" : "mini";
 }
 
 /** The next `count` local calendar days, starting today. */
@@ -62,7 +73,7 @@ async function call<T>(token: string, body: unknown): Promise<T> {
 export const listSchedule = (token: string, from: string, to: string) =>
   call<{ days: ScheduledDay[] }>(token, { action: "list", from, to }).then((r) => r.days);
 
-export const scheduleDay = (token: string, day: string, state: StudioState, label: string) =>
-  call<{ ok: true }>(token, { action: "set", day, entry: scheduleEntry(state, label), title: state.title.trim(), studioId: state.id });
+export const scheduleDay = (token: string, day: string, slot: DailySlot, state: StudioState, label: string) =>
+  call<{ ok: true }>(token, { action: "set", day, slot, entry: scheduleEntry(state, label), title: state.title.trim(), studioId: state.id });
 
-export const unscheduleDay = (token: string, day: string) => call<{ ok: true }>(token, { action: "remove", day });
+export const unscheduleDay = (token: string, day: string, slot: DailySlot) => call<{ ok: true }>(token, { action: "remove", day, slot });

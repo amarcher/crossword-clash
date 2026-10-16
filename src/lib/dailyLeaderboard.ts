@@ -1,9 +1,9 @@
 /**
- * Cross-day daily-mini leaderboard.
+ * Cross-day daily leaderboards — one per daily slot (mini, large).
  *
- * One row per (day, user) in the Supabase `daily_results` table: the player's
- * best finish time on that calendar day's daily mini, whether it came from a
- * solo solve or a live race. Everything that *decides* a value — the day key,
+ * One row per (day, slot, user) in the Supabase `daily_results` table: the
+ * player's best finish time on that calendar day's daily in that slot, whether
+ * it came from a solo solve or a live race. Everything that *decides* a value — the day key,
  * "is this puzzle today's daily?", and competition ranking — is a PURE function
  * here, unit-tested in dailyLeaderboard.test.ts. The Supabase I/O at the bottom
  * degrades to a no-op / empty board when the client isn't configured, so the
@@ -12,7 +12,7 @@
 
 import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
-import { currentDailyMini } from "./dailyFeed";
+import { DAILY_SLOTS, currentDailyPuzzle, type DailySlot } from "./dailyFeed";
 import type { Puzzle } from "../types/puzzle";
 import { displayableName } from "./nameFilter";
 
@@ -42,16 +42,36 @@ export function todayKey(now: Date = new Date()): string {
 }
 
 /**
- * Whether a loaded puzzle IS the daily mini for the given moment. Compared by
- * puzzle identity (title + dimensions + solution grid), so an imported copy of
- * an unrelated puzzle can never post to the daily board.
+ * Which daily a loaded puzzle IS for the given moment — "mini", "large", or
+ * null for neither. Compared by puzzle identity (title + dimensions +
+ * solution grid), so an imported copy of an unrelated puzzle can never post
+ * to a daily board. A slot whose feed hasn't answered yet can't match; the
+ * hooks re-check once it has.
  */
+export function todaysDailySlot(
+  puzzle: Pick<Puzzle, "title" | "width" | "height" | "cells"> | null,
+  now: Date = new Date(),
+): DailySlot | null {
+  if (!puzzle) return null;
+  const identity = puzzleIdentity(puzzle);
+  for (const slot of DAILY_SLOTS) {
+    const daily = currentDailyPuzzle(slot, now);
+    if (daily && puzzleIdentity(daily.puzzle) === identity) return slot;
+  }
+  return null;
+}
+
+/** Whether a loaded puzzle is one of today's dailies. */
 export function isTodaysDaily(
   puzzle: Pick<Puzzle, "title" | "width" | "height" | "cells"> | null,
   now: Date = new Date(),
 ): boolean {
-  if (!puzzle) return false;
-  return puzzleIdentity(puzzle) === puzzleIdentity(currentDailyMini(now).puzzle);
+  return todaysDailySlot(puzzle, now) !== null;
+}
+
+/** The leaderboard route for a slot; the mini keeps its original URL. */
+export function leaderboardPath(slot: DailySlot): string {
+  return slot === "mini" ? "/daily/leaderboard" : `/daily/leaderboard/${slot}`;
 }
 
 /**
@@ -82,6 +102,8 @@ export function shouldReplace(existingSeconds: number | null, newSeconds: number
 
 export interface SubmitDailyResultInput {
   day: string;
+  /** Which daily board; defaults to the mini. */
+  slot?: DailySlot;
   userId: string;
   displayName: string;
   mode: DailyMode;
@@ -97,11 +119,13 @@ export interface SubmitDailyResultInput {
 export async function submitDailyResult(input: SubmitDailyResultInput): Promise<void> {
   if (!supabase) return;
   const seconds = Math.max(0, Math.floor(input.seconds));
+  const slot = input.slot ?? "mini";
   try {
     const { data: existing } = await supabase
       .from("daily_results")
       .select("id, seconds")
       .eq("day", input.day)
+      .eq("slot", slot)
       .eq("user_id", input.userId)
       .maybeSingle();
 
@@ -109,6 +133,7 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
 
     const row = {
       day: input.day,
+      slot,
       user_id: input.userId,
       display_name: displayableName(input.displayName).slice(0, 40),
       mode: input.mode,
@@ -118,7 +143,7 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
 
     const { error } = await supabase
       .from("daily_results")
-      .upsert(row, { onConflict: "day,user_id" });
+      .upsert(row, { onConflict: "day,slot,user_id" });
     if (error) console.error("Failed to submit daily result:", error);
   } catch (err) {
     console.error("Failed to submit daily result:", err);
@@ -136,6 +161,7 @@ export async function updateDailyDisplayName(
   day: string,
   userId: string,
   displayName: string,
+  slot: DailySlot = "mini",
 ): Promise<void> {
   if (!supabase) return;
   if (!displayName.trim()) return;
@@ -145,6 +171,7 @@ export async function updateDailyDisplayName(
       .from("daily_results")
       .update({ display_name: name })
       .eq("day", day)
+      .eq("slot", slot)
       .eq("user_id", userId);
     if (error) console.error("Failed to update daily display name:", error);
   } catch (err) {
@@ -153,11 +180,12 @@ export async function updateDailyDisplayName(
 }
 
 /**
- * Today's board: entries ranked by time, capped at `limit` fastest.
+ * Today's board for a slot: entries ranked by time, capped at `limit` fastest.
  * Returns [] offline or on error.
  */
 export async function fetchDailyLeaderboard(
   day: string,
+  slot: DailySlot = "mini",
   limit = 50,
 ): Promise<RankedDailyEntry[]> {
   if (!supabase) return [];
@@ -166,6 +194,7 @@ export async function fetchDailyLeaderboard(
       .from("daily_results")
       .select("user_id, display_name, mode, seconds")
       .eq("day", day)
+      .eq("slot", slot)
       .order("seconds", { ascending: true })
       .limit(limit);
     if (error || !data) return [];

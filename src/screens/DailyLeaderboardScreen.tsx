@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flame, Loader2, Swords, Trophy, WifiOff } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
 import { Button, Card } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
-import { useDailyMini } from "../hooks/useDailyMini";
+import { useDailyPuzzle } from "../hooks/useDailyMini";
+import { isDailySlot, type DailySlot } from "../lib/dailyFeed";
 import {
   fetchDailyLeaderboard,
   todayKey,
@@ -36,7 +37,8 @@ function BoardMessage({ icon, children }: { icon: React.ReactNode; children: Rea
 }
 
 /**
- * Cross-day leaderboard for the daily mini: today's fastest solves (solo +
+ * Cross-day leaderboard for one daily slot — /daily/leaderboard for the mini,
+ * /daily/leaderboard/large for the large: today's fastest solves (solo +
  * live races), the viewer's own row highlighted, and their local streak.
  * Offline (no Supabase env) it degrades to the streak + a friendly note —
  * the solo path never breaks.
@@ -46,8 +48,12 @@ export function DailyLeaderboardScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
+  const params = useParams();
+  const slot: DailySlot = isDailySlot(params.slot) ? params.slot : "mini";
 
-  const dailyMini = useDailyMini();
+  // Undefined while the feed answers; null when there is no large today, in
+  // which case the board still shows but there is nothing to play.
+  const daily = useDailyPuzzle(slot);
   const streak = useMemo(() => getDisplayStreak(), []);
 
   // null = loading; [] = loaded empty.
@@ -58,14 +64,14 @@ export function DailyLeaderboardScreen() {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    track("leaderboard_viewed", { day: todayKey() });
-    fetchDailyLeaderboard(todayKey()).then((rows) => {
+    track("leaderboard_viewed", { day: todayKey(), slot });
+    fetchDailyLeaderboard(todayKey(), slot).then((rows) => {
       if (alive) setEntries(rows);
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [slot]);
 
   // The viewer's own row still carrying the anonymous default → offer a
   // one-field rename right under the table (catches anyone who dismissed the
@@ -78,29 +84,29 @@ export function DailyLeaderboardScreen() {
     if (!trimmed || !user) return;
     game.setDisplayName(trimmed);
     savePlayerName(trimmed);
-    void updateDailyDisplayName(todayKey(), user.id, trimmed);
+    void updateDailyDisplayName(todayKey(), user.id, trimmed, slot);
     // Reflect immediately — the board was already fetched.
     setEntries((prev) =>
       prev?.map((e) => (e.userId === user.id ? { ...e, displayName: trimmed } : e)) ?? prev,
     );
-  }, [nameDraft, user, game]);
+  }, [nameDraft, user, game, slot]);
 
   const playToday = useCallback(async () => {
-    track("mode_selected", { mode: "daily" });
-    if (!dailyMini) return;
-    await game.handleSoloPuzzleLoaded(dailyMini.puzzle);
-    game.setSoloTheme(dailyMini.theme);
+    track("mode_selected", { mode: "daily", slot });
+    if (!daily) return;
+    await game.handleSoloPuzzleLoaded(daily.puzzle);
+    game.setSoloTheme(daily.theme);
     navigate("/solo/play");
-  }, [game, dailyMini, navigate]);
+  }, [game, daily, slot, navigate]);
 
   const raceFriends = useCallback(() => {
-    track("mode_selected", { mode: "daily-race" });
+    track("mode_selected", { mode: "daily-race", slot });
     // Hand the daily to the existing host flow (name → lobby) — the
     // same mechanic used for imported puzzles, no import step.
-    if (!dailyMini) return;
-    game.setUrlPuzzle(dailyMini.puzzle);
+    if (!daily) return;
+    game.setUrlPuzzle(daily.puzzle);
     navigate("/host-game/name");
-  }, [game, dailyMini, navigate]);
+  }, [game, daily, slot, navigate]);
 
   return (
     <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
@@ -111,9 +117,11 @@ export function DailyLeaderboardScreen() {
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
             <Trophy className="size-6" aria-hidden="true" />
           </span>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">{t("leaderboard.title")}</h1>
-          {dailyMini?.theme && (
-            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: dailyMini.theme })}</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
+            {t(slot === "large" ? "leaderboard.titleLarge" : "leaderboard.title")}
+          </h1>
+          {daily?.theme && (
+            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: daily.theme })}</p>
           )}
           {streak > 0 && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">
@@ -213,17 +221,19 @@ export function DailyLeaderboardScreen() {
           </Card>
         )}
 
-        <div className="grid gap-2.5">
-          <Button size="lg" block onClick={playToday}>
-            {t("leaderboard.playToday")}
-          </Button>
-          {user && (
-            <Button size="lg" variant="secondary" block onClick={raceFriends}>
-              <Swords className="size-4.5" aria-hidden="true" />
-              {t("leaderboard.raceFriends")}
+        {daily !== null && (
+          <div className="grid gap-2.5">
+            <Button size="lg" block onClick={playToday} disabled={!daily}>
+              {t(slot === "large" ? "leaderboard.playTodayLarge" : "leaderboard.playToday")}
             </Button>
-          )}
-        </div>
+            {user && (
+              <Button size="lg" variant="secondary" block onClick={raceFriends} disabled={!daily}>
+                <Swords className="size-4.5" aria-hidden="true" />
+                {t("leaderboard.raceFriends")}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
