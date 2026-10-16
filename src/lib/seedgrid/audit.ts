@@ -63,10 +63,11 @@ export function auditGrid(grid: Grid, index: WordIndex, maxShared = 4): AuditRep
       const [short, long] = a.answer.length <= b.answer.length ? [a, b] : [b, a];
       const run = longestSharedRun(short.answer, long.answer);
       const inside = long.answer.includes(short.answer);
+      // A contained entry no longer than maxShared (RON in IRON) is a shared run the rule allows: a warning.
       if (inside || run.length >= maxShared) {
         issues.push({
           kind: "duplicate",
-          severity: inside || run.length > maxShared ? "block" : "warn",
+          severity: run.length > maxShared ? "block" : "warn",
           slots: [a.slotId, b.slotId],
           message: inside ? `${short.answer} is inside ${long.answer}` : `${a.answer} and ${b.answer} share ${run}`,
         });

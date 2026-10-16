@@ -204,8 +204,10 @@ describe("audit", () => {
   it("finds duplicates and niche crossings", () => {
     const index = new WordIndex(parseDict("NEON;55\nNEONS;55\nTED;49;p\nBAT;60"), 0);
     const g = gridFromRows(["NEON#", "#####", "NEONS"]);
-    const report = auditGrid(g, index);
-    expect(report.issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(true);
+    // NEON inside NEONS is a shared run of 4: a block when the limit is 3, only a warning at 4.
+    expect(auditGrid(g, index, 3).issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(true);
+    expect(auditGrid(g, index, 4).issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(false);
+    expect(auditGrid(g, index, 4).issues.some((i) => i.kind === "duplicate" && i.severity === "warn")).toBe(true);
   });
 
   it("checks clue length and give-aways", () => {

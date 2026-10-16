@@ -1,0 +1,1101 @@
+{
+  "version": "http://ipuz.org/v2",
+  "kind": [
+    "http://ipuz.org/crossword#1"
+  ],
+  "dimensions": {
+    "width": 15,
+    "height": 15
+  },
+  "title": "Halftime Show",
+  "author": "Crossword Clash",
+  "notes": "Football x music",
+  "block": "#",
+  "empty": 0,
+  "puzzle": [
+    [
+      1,
+      2,
+      3,
+      "#",
+      "#",
+      "#",
+      4,
+      5,
+      6,
+      "#",
+      "#",
+      "#",
+      7,
+      8,
+      9
+    ],
+    [
+      10,
+      0,
+      0,
+      11,
+      12,
+      "#",
+      13,
+      0,
+      0,
+      14,
+      15,
+      "#",
+      16,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      18,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      19,
+      0,
+      0
+    ],
+    [
+      "#",
+      "#",
+      20,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0
+    ],
+    [
+      23,
+      24,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      25,
+      0,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      26,
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      28,
+      29,
+      0,
+      0,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      30,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      31,
+      0,
+      0,
+      0,
+      "#",
+      32,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      33,
+      34,
+      0,
+      0,
+      0,
+      0,
+      35,
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      36,
+      37,
+      38,
+      "#",
+      39,
+      0,
+      0,
+      0,
+      "#",
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    [
+      "#",
+      45,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0,
+      0,
+      47,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "#",
+      48,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      49,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      51,
+      52,
+      53,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      "#"
+    ],
+    [
+      54,
+      0,
+      0,
+      "#",
+      55,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      56,
+      0,
+      0,
+      57,
+      58
+    ],
+    [
+      59,
+      0,
+      0,
+      "#",
+      60,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      61,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      62,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      63,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      64,
+      0,
+      0
+    ]
+  ],
+  "solution": [
+    [
+      "O",
+      "A",
+      "F",
+      "#",
+      "#",
+      "#",
+      "R",
+      "B",
+      "I",
+      "#",
+      "#",
+      "#",
+      "A",
+      "S",
+      "P"
+    ],
+    [
+      "U",
+      "S",
+      "U",
+      "A",
+      "L",
+      "#",
+      "E",
+      "A",
+      "R",
+      "T",
+      "H",
+      "#",
+      "Z",
+      "O",
+      "O"
+    ],
+    [
+      "R",
+      "A",
+      "N",
+      "T",
+      "O",
+      "#",
+      "A",
+      "L",
+      "O",
+      "H",
+      "A",
+      "#",
+      "I",
+      "R",
+      "S"
+    ],
+    [
+      "#",
+      "#",
+      "G",
+      "O",
+      "A",
+      "L",
+      "L",
+      "I",
+      "N",
+      "E",
+      "D",
+      "A",
+      "N",
+      "C",
+      "E"
+    ],
+    [
+      "B",
+      "R",
+      "O",
+      "N",
+      "T",
+      "E",
+      "#",
+      "#",
+      "#",
+      "D",
+      "O",
+      "D",
+      "G",
+      "E",
+      "#"
+    ],
+    [
+      "T",
+      "O",
+      "U",
+      "C",
+      "H",
+      "D",
+      "O",
+      "W",
+      "N",
+      "U",
+      "N",
+      "D",
+      "E",
+      "R",
+      "#"
+    ],
+    [
+      "U",
+      "N",
+      "S",
+      "E",
+      "E",
+      "#",
+      "T",
+      "O",
+      "O",
+      "K",
+      "#",
+      "S",
+      "R",
+      "Y",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      "S",
+      "T",
+      "O",
+      "O",
+      "G",
+      "E",
+      "S",
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "I",
+      "T",
+      "S",
+      "#",
+      "A",
+      "R",
+      "L",
+      "O",
+      "#",
+      "O",
+      "C",
+      "H",
+      "E",
+      "R"
+    ],
+    [
+      "#",
+      "G",
+      "O",
+      "A",
+      "L",
+      "P",
+      "O",
+      "S",
+      "T",
+      "M",
+      "A",
+      "L",
+      "O",
+      "N",
+      "E"
+    ],
+    [
+      "#",
+      "N",
+      "O",
+      "N",
+      "O",
+      "S",
+      "#",
+      "#",
+      "#",
+      "A",
+      "P",
+      "I",
+      "A",
+      "R",
+      "Y"
+    ],
+    [
+      "K",
+      "I",
+      "C",
+      "K",
+      "O",
+      "F",
+      "F",
+      "S",
+      "P",
+      "R",
+      "I",
+      "N",
+      "G",
+      "#",
+      "#"
+    ],
+    [
+      "O",
+      "T",
+      "U",
+      "#",
+      "S",
+      "O",
+      "L",
+      "A",
+      "R",
+      "#",
+      "E",
+      "C",
+      "I",
+      "G",
+      "S"
+    ],
+    [
+      "B",
+      "E",
+      "T",
+      "#",
+      "E",
+      "R",
+      "A",
+      "S",
+      "E",
+      "#",
+      "R",
+      "H",
+      "E",
+      "T",
+      "T"
+    ],
+    [
+      "E",
+      "S",
+      "E",
+      "#",
+      "#",
+      "#",
+      "W",
+      "H",
+      "Y",
+      "#",
+      "#",
+      "#",
+      "S",
+      "O",
+      "Y"
+    ]
+  ],
+  "clues": {
+    "Across": [
+      [
+        1,
+        "Clumsy lummox"
+      ],
+      [
+        4,
+        "Stat for a slugger, briefly"
+      ],
+      [
+        7,
+        "Snake in Cleopatra's story"
+      ],
+      [
+        10,
+        "\"The ___\" (regular's order)"
+      ],
+      [
+        13,
+        "Third rock from the sun"
+      ],
+      [
+        16,
+        "Place for pandas and penguins"
+      ],
+      [
+        17,
+        "Hurried toward"
+      ],
+      [
+        18,
+        "Maui greeting or goodbye"
+      ],
+      [
+        19,
+        "April 15 org."
+      ],
+      [
+        20,
+        "Boot-scootin' in the end zone?"
+      ],
+      [
+        23,
+        "Charlotte, Emily or Anne"
+      ],
+      [
+        25,
+        "Evade, as a question"
+      ],
+      [
+        26,
+        "Six points scored in Australia?"
+      ],
+      [
+        30,
+        "\"I can't ___ that!\""
+      ],
+      [
+        31,
+        "Grabbed"
+      ],
+      [
+        32,
+        "\"My bad,\" in a text"
+      ],
+      [
+        33,
+        "Larry, Moe and Curly"
+      ],
+      [
+        36,
+        "\"___ a deal!\""
+      ],
+      [
+        39,
+        "Guthrie of \"Alice's Restaurant\""
+      ],
+      [
+        40,
+        "Earthy yellow-brown"
+      ],
+      [
+        45,
+        "Upright rapper of \"Circles\"?"
+      ],
+      [
+        48,
+        "Things you shouldn't do"
+      ],
+      [
+        49,
+        "Buzzy workplace?"
+      ],
+      [
+        50,
+        "Punk band that starts the game?"
+      ],
+      [
+        54,
+        "Taxonomic grouping: Abbr."
+      ],
+      [
+        55,
+        "Kind of panel on a roof"
+      ],
+      [
+        56,
+        "Vapes, briefly"
+      ],
+      [
+        59,
+        "Wager"
+      ],
+      [
+        60,
+        "Wipe clean"
+      ],
+      [
+        61,
+        "Scarlett's Butler"
+      ],
+      [
+        62,
+        "Compass point near S"
+      ],
+      [
+        63,
+        "Toddler's favorite question"
+      ],
+      [
+        64,
+        "Tofu source"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Not yours or theirs"
+      ],
+      [
+        2,
+        "Snug ___ bug in a rug"
+      ],
+      [
+        3,
+        "Like a mushroomy growth"
+      ],
+      [
+        4,
+        "Not fake"
+      ],
+      [
+        5,
+        "Indonesian island getaway"
+      ],
+      [
+        6,
+        "Press shirts"
+      ],
+      [
+        7,
+        "Golfer Paul of Ryder Cup fame"
+      ],
+      [
+        8,
+        "Wizard's craft"
+      ],
+      [
+        9,
+        "Strike a ___ (Vogue move)"
+      ],
+      [
+        11,
+        "\"Right now!\""
+      ],
+      [
+        12,
+        "Can't stand"
+      ],
+      [
+        14,
+        "John Wayne's nickname"
+      ],
+      [
+        15,
+        "Was wearing"
+      ],
+      [
+        21,
+        "Was ahead"
+      ],
+      [
+        22,
+        "Tacks on"
+      ],
+      [
+        23,
+        "Heat unit: Abbr."
+      ],
+      [
+        24,
+        "Harry's red-haired pal"
+      ],
+      [
+        27,
+        "Fattiest tuna at a sushi bar"
+      ],
+      [
+        28,
+        "Merino and cashmere"
+      ],
+      [
+        29,
+        "Didn't have, in broken English"
+      ],
+      [
+        34,
+        "Picks to fill a role"
+      ],
+      [
+        35,
+        "More melodramatic"
+      ],
+      [
+        36,
+        "Sparks, as a fire"
+      ],
+      [
+        37,
+        "Adorable to a fault"
+      ],
+      [
+        38,
+        "Made, as a free throw"
+      ],
+      [
+        41,
+        "Lock up, as a title"
+      ],
+      [
+        42,
+        "Philly deli subs"
+      ],
+      [
+        43,
+        "Registrar's fig."
+      ],
+      [
+        44,
+        "Jedi played by Daisy Ridley"
+      ],
+      [
+        46,
+        "Not tight"
+      ],
+      [
+        47,
+        "Scratch up"
+      ],
+      [
+        50,
+        "Laker legend Bryant"
+      ],
+      [
+        51,
+        "Achilles' heel"
+      ],
+      [
+        52,
+        "Pageant winner's wear"
+      ],
+      [
+        53,
+        "Hawk's target"
+      ],
+      [
+        57,
+        "Classic Pontiac muscle car"
+      ],
+      [
+        58,
+        "Messy room, so to speak"
+      ]
+    ]
+  },
+  "com.crosswordclash:speedclues": {
+    "Across": [
+      [
+        1,
+        "Big klutz"
+      ],
+      [
+        4,
+        "Baseball stat, for short"
+      ],
+      [
+        7,
+        "Egyptian snake"
+      ],
+      [
+        10,
+        "Customary"
+      ],
+      [
+        13,
+        "Our planet"
+      ],
+      [
+        16,
+        "Animal park"
+      ],
+      [
+        17,
+        "Sprinted toward"
+      ],
+      [
+        18,
+        "Hawaiian hello"
+      ],
+      [
+        19,
+        "Tax agency"
+      ],
+      [
+        20,
+        "End-zone country dance?"
+      ],
+      [
+        23,
+        "\"Jane Eyre\" author"
+      ],
+      [
+        25,
+        "Avoid"
+      ],
+      [
+        26,
+        "Score in Sydney?"
+      ],
+      [
+        30,
+        "Forget seeing"
+      ],
+      [
+        31,
+        "Seized"
+      ],
+      [
+        32,
+        "Texted apology"
+      ],
+      [
+        33,
+        "Slapstick trio"
+      ],
+      [
+        36,
+        "\"___ a deal!\""
+      ],
+      [
+        39,
+        "Folk singer Guthrie"
+      ],
+      [
+        40,
+        "Brownish yellow"
+      ],
+      [
+        45,
+        "Rapper at the uprights?"
+      ],
+      [
+        48,
+        "Taboos"
+      ],
+      [
+        49,
+        "Beehive site"
+      ],
+      [
+        50,
+        "Opening play by a punk band?"
+      ],
+      [
+        54,
+        "Biology unit: Abbr."
+      ],
+      [
+        55,
+        "Sun-powered"
+      ],
+      [
+        56,
+        "Vaping devices"
+      ],
+      [
+        59,
+        "Gamble"
+      ],
+      [
+        60,
+        "Delete"
+      ],
+      [
+        61,
+        "Butler of fiction"
+      ],
+      [
+        62,
+        "Direction opposite WNW"
+      ],
+      [
+        63,
+        "\"How come?\""
+      ],
+      [
+        64,
+        "___ sauce"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Belonging to us"
+      ],
+      [
+        2,
+        "Snug ___ bug"
+      ],
+      [
+        3,
+        "Mold-like"
+      ],
+      [
+        4,
+        "Genuine"
+      ],
+      [
+        5,
+        "Island near Java"
+      ],
+      [
+        6,
+        "De-wrinkle"
+      ],
+      [
+        7,
+        "Golfer Paul ___"
+      ],
+      [
+        8,
+        "Magic"
+      ],
+      [
+        9,
+        "Model's stance"
+      ],
+      [
+        11,
+        "Immediately"
+      ],
+      [
+        12,
+        "Hates"
+      ],
+      [
+        14,
+        "John Wayne, familiarly"
+      ],
+      [
+        15,
+        "Wore"
+      ],
+      [
+        21,
+        "Guided"
+      ],
+      [
+        22,
+        "Sums"
+      ],
+      [
+        23,
+        "Furnace unit: Abbr."
+      ],
+      [
+        24,
+        "Weasley of Hogwarts"
+      ],
+      [
+        27,
+        "Fatty tuna sushi"
+      ],
+      [
+        28,
+        "Sheep fibers"
+      ],
+      [
+        29,
+        "Lacked, in pidgin"
+      ],
+      [
+        34,
+        "Selects (for)"
+      ],
+      [
+        35,
+        "More sudsy"
+      ],
+      [
+        36,
+        "Lights"
+      ],
+      [
+        37,
+        "Overly adorable"
+      ],
+      [
+        38,
+        "Went under"
+      ],
+      [
+        41,
+        "Secure"
+      ],
+      [
+        42,
+        "Sub sandwiches"
+      ],
+      [
+        43,
+        "Enrollment: Abbr."
+      ],
+      [
+        44,
+        "\"Star Wars\" heroine"
+      ],
+      [
+        46,
+        "Slack"
+      ],
+      [
+        47,
+        "Damage"
+      ],
+      [
+        50,
+        "Bryant of the NBA"
+      ],
+      [
+        51,
+        "Defect"
+      ],
+      [
+        52,
+        "Window frame"
+      ],
+      [
+        53,
+        "Hunted animal"
+      ],
+      [
+        57,
+        "Pontiac model"
+      ],
+      [
+        58,
+        "Pig pen"
+      ]
+    ]
+  }
+}

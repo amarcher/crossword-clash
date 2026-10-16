@@ -20,6 +20,7 @@
     "apple:client-secret": "node --experimental-strip-types scripts/apple-client-secret.mts",
     "seedgrid:upload-dict": "for f in words-production.dict NOTICES.txt; do npx supabase storage rm ss:///seedgrid/$f --experimental --linked --yes >/dev/null 2>&1; npx supabase storage cp public/seedgrid/$f ss:///seedgrid/$f --experimental --linked --content-type 'text/plain; charset=utf-8' --cache-control max-age=300 || exit 1; done",
     "build:engine": "engine/build.sh",
+    "seedgrid:large": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/large.mts",
     "seedgrid:lively": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/lively.mts",
     "build:native-import": "node scripts/build-native-import.mjs",
     "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
@@ -72,6 +73,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.0",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "yaml": "^2.9.1"
   }
 }
