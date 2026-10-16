@@ -189,7 +189,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ## Testing
 
-- `pnpm test` — 826 tests across 70 files (use `pnpm exec vitest run --dir src` to skip agent worktrees under `.claude/`; `SEEDGRID_PRODUCTION_DICT=1` adds the slow finder run against the local production list)
+- `pnpm test` — 831 tests across 71 files (use `pnpm exec vitest run --dir src` to skip agent worktrees under `.claude/`; `SEEDGRID_PRODUCTION_DICT=1` adds the slow finder run against the local production list)
 - **gridUtils.test.ts** (59 tests): getCellAt, isBlack, getWordCells, getClueForCell, getNextCell, getPrevCell, getNextWordStart, getPrevWordStart (including skip-completed-clues behavior), getCompletedClues, computeCellNumbers
 - **usePuzzle.test.ts** (32 tests): All reducer actions (LOAD_PUZZLE, RESET, SELECT_CELL, TOGGLE_DIRECTION, SET_DIRECTION, INPUT_LETTER, DELETE_LETTER, NEXT_WORD, PREV_WORD, MOVE_SELECTION, REMOTE_CELL_CLAIM, HYDRATE_CELLS, ROLLBACK_CELL) + smart cursor advancement (skip filled cells, auto-advance to next word, direction switch on word completion, puzzle complete) + NEXT_WORD/PREV_WORD skip completed clues
 - **puzzleNormalizer.test.ts** (22 tests): Parser output → Puzzle conversion (title/author, dimensions, cell solutions, numbering, clue positions/answers, parser-provided vs computed cell numbers)
