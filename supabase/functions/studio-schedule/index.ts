@@ -1,29 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { studioAllowed } from "../_shared/studioAuth.ts";
 
 /**
- * The constructor's daily queue (/studio). Gated by the STUDIO_TOKEN secret in
- * an x-studio-token header, like studio-claude; writes daily_schedule with the
- * service role (the table has no public write policy).
+ * The constructor's daily queue (/studio). Gated by studioAllowed (the
+ * STUDIO_TOKEN secret or a signed-in studio admin), like studio-claude;
+ * writes daily_schedule with the service role (the table has no public write
+ * policy).
  *
  *   { action: "list", from: "YYYY-MM-DD", to: "YYYY-MM-DD" }  → { days: [{ day, title, studio_id }] }
  *   { action: "set", day, entry: { theme?, puzzle }, title, studioId? } → { ok: true }
  *   { action: "remove", day } → { ok: true }
  */
-const STUDIO_TOKEN = Deno.env.get("STUDIO_TOKEN");
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_ENTRY_CHARS = 200_000;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-function sameToken(a: string, b: string): boolean {
-  const x = new TextEncoder().encode(a);
-  const y = new TextEncoder().encode(b);
-  let diff = x.length ^ y.length;
-  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
-  return diff === 0;
-}
 
 /** Just enough shape-checking that the feed's own parser will accept it. */
 function validEntry(entry: unknown): boolean {
@@ -45,9 +39,7 @@ function validEntry(entry: unknown): boolean {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-  if (!STUDIO_TOKEN || !sameToken(req.headers.get("x-studio-token") ?? "", STUDIO_TOKEN)) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  if (!(await studioAllowed(req))) return json({ error: "unauthorized" }, 401);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   try {
