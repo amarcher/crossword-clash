@@ -1,0 +1,810 @@
+{
+  "_comment": "Backlog of mashup themes for the Daily Large (15x15). Each theme lists entries as [ANSWER, clue sketch]. Validated by scripts/seedgrid/check-themes.mts: lengths must pair under rotational symmetry (plus at most one centered odd entry), no two entries share a letter run longer than 3, nothing over 15. 'status' is set by the checker.",
+  "themes": [
+    {
+      "slug": "football-x-music",
+      "title": "Halftime Show",
+      "concepts": [
+        "football",
+        "music"
+      ],
+      "entries": [
+        [
+          "TOUCHDOWNUNDER",
+          "Six points scored in Australia?"
+        ],
+        [
+          "GOALPOSTMALONE",
+          "Rapper who's good for three points?"
+        ],
+        [
+          "KICKOFFSPRING",
+          "Punk band that opens the game?"
+        ],
+        [
+          "BLITZKRIEGBOP",
+          "Ramones classic, or an all-out pass rush set to music?"
+        ]
+      ],
+      "notes": "Built 2026-10-15 as Halftime Show with GOALLINEDANCE (GOAL repeated, an accepted one-off). Backlog version uses BLITZKRIEGBOP; FIRSTDOWNBEAT (13) shares DOWN with TOUCHDOWNUNDER, so it is out."
+    },
+    {
+      "slug": "baseball-x-music",
+      "title": "Seventh-Inning Setlist",
+      "concepts": [
+        "baseball",
+        "music"
+      ],
+      "entries": [
+        [
+          "BULLPENTATONIX",
+          "A cappella group warming up the relievers?"
+        ],
+        [
+          "DOUBLEPLAYLIST",
+          "Two songs turned in one smooth motion?"
+        ],
+        [
+          "HOMERUNDMC",
+          "Hip-hop trio that clears the fence?"
+        ],
+        [
+          "DUGOUTKAST",
+          "Atlanta duo waiting on the bench?"
+        ],
+        [
+          "PITCHCOUNTBASIE",
+          "Bandleader tracking the starter's arm?"
+        ]
+      ]
+    },
+    {
+      "slug": "basketball-x-music",
+      "title": "Full-Court Jams",
+      "concepts": [
+        "basketball",
+        "music"
+      ],
+      "entries": [
+        [
+          "LAYUPTOWNFUNK",
+          "Bruno Mars hit from under the rim?"
+        ],
+        [
+          "FREETHROWBACK",
+          "Nostalgia from the foul line?"
+        ],
+        [
+          "TURNOVERTURE",
+          "Orchestral opener after a steal?"
+        ],
+        [
+          "TIPOFFSPRING",
+          "Punk band starting the game at center court?"
+        ]
+      ],
+      "notes": "TIPOFFSPRING reuses the Offspring from Halftime Show; POSTUPMALONE (12) reuses Post Malone. Prefer TURNOVERTURE's partner from a fresh act if one turns up."
+    },
+    {
+      "slug": "golf-x-music",
+      "title": "Links and Licks",
+      "concepts": [
+        "golf",
+        "music"
+      ],
+      "entries": [
+        [
+          "DRIVERSLICENSE",
+          "Olivia Rodrigo hit, or what you need to tee off?"
+        ],
+        [
+          "EAGLEEYECHERRY",
+          "'Save Tonight' singer two under par?"
+        ],
+        [
+          "FOREFIGHTERS",
+          "Grohl's band warning the next fairway?"
+        ],
+        [
+          "TEEOFFSPRING",
+          "Punk band on the first box?"
+        ],
+        [
+          "FAIRWAYTOHEAVEN",
+          "Zeppelin's classic down the middle?"
+        ]
+      ],
+      "notes": "PUTTINGGREENDAY (15) is an alternate center."
+    },
+    {
+      "slug": "cooking-x-programming",
+      "title": "Full Stack Kitchen",
+      "concepts": [
+        "cooking",
+        "programming"
+      ],
+      "entries": [
+        [
+          "KERNELSANDERS",
+          "Fried-chicken founder at the heart of the OS?"
+        ],
+        [
+          "SPAGHETTICODE",
+          "Tangled program, or dinner gone wrong"
+        ],
+        [
+          "HASHBROWNIES",
+          "Breakfast potatoes with a checksum?"
+        ],
+        [
+          "COOKIEBANNER",
+          "Pop-up that asks before it bakes?"
+        ],
+        [
+          "BUFFERINGBUFFET",
+          "All-you-can-eat while the video loads?"
+        ]
+      ],
+      "notes": "STACKOFPANCAKES (15) is an alternate center."
+    },
+    {
+      "slug": "gardening-x-finance",
+      "title": "Growth Portfolio",
+      "concepts": [
+        "gardening",
+        "finance"
+      ],
+      "entries": [
+        [
+          "BRANCHMANAGER",
+          "Banker in charge of the limbs?"
+        ],
+        [
+          "ROOTOFALLEVIL",
+          "Money, per Timothy, or a weed problem"
+        ],
+        [
+          "HEDGEFUND",
+          "Money set aside for the shrubbery?"
+        ],
+        [
+          "MONEYTREE",
+          "What cash doesn't grow on"
+        ],
+        [
+          "GROWTHPORTFOLIO",
+          "Seed catalog for an aggressive investor?"
+        ]
+      ]
+    },
+    {
+      "slug": "tennis-x-romance",
+      "title": "Love Match",
+      "concepts": [
+        "tennis",
+        "romance"
+      ],
+      "entries": [
+        [
+          "COURTSHIP",
+          "Wooing, or a tennis partnership?"
+        ],
+        [
+          "LOVEMATCH",
+          "Perfect pairing, or a 0-0 contest"
+        ],
+        [
+          "BREAKPOINT",
+          "Chance to take the serve, or the moment a couple splits"
+        ],
+        [
+          "DOUBLEDATE",
+          "Foursome on the court, or at dinner"
+        ]
+      ],
+      "notes": "Short pairs (9/9, 10/10): leaves room for a 15 center; MIXEDDOUBLES (12) could replace a pair if a 12 partner appears."
+    },
+    {
+      "slug": "poker-x-startups",
+      "title": "Table Stakes",
+      "concepts": [
+        "poker",
+        "startups"
+      ],
+      "entries": [
+        [
+          "POKERFACEBOOK",
+          "Social network that never shows its hand?"
+        ],
+        [
+          "SHOWDOWNROUND",
+          "Final bet when the valuation drops?"
+        ],
+        [
+          "BURNRATE",
+          "Startup's monthly spend, or how fast the dealer discards"
+        ],
+        [
+          "DEALFLOW",
+          "VC's pipeline, or the dealer's rhythm"
+        ]
+      ]
+    },
+    {
+      "slug": "space-x-hollywood",
+      "title": "Star System",
+      "concepts": [
+        "astronomy",
+        "Hollywood"
+      ],
+      "entries": [
+        [
+          "REDCARPETGIANT",
+          "Enormous premiere arrival?"
+        ],
+        [
+          "MOONWALKOFFAME",
+          "Hollywood Boulevard, by Neil Armstrong?"
+        ],
+        [
+          "DARKMATTERDAMON",
+          "Astrophysical heartthrob?"
+        ]
+      ],
+      "notes": "Three themers; STUNTDOUBLESTAR (15) is an alternate center."
+    },
+    {
+      "slug": "weather-x-economics",
+      "title": "Economic Forecast",
+      "concepts": [
+        "weather",
+        "economics"
+      ],
+      "entries": [
+        [
+          "FLOODTHEMARKET",
+          "Oversupply, as a monsoon might?"
+        ],
+        [
+          "BALLOONPAYMENT",
+          "Big final installment, or what a weather probe costs?"
+        ],
+        [
+          "RAINYDAYFUND",
+          "Savings for a storm"
+        ],
+        [
+          "HIRINGFREEZE",
+          "No new jobs till the thaw?"
+        ],
+        [
+          "WINDFALLPROFITS",
+          "Gusty gains?"
+        ]
+      ]
+    },
+    {
+      "slug": "chess-x-workplace",
+      "title": "Board Meeting",
+      "concepts": [
+        "chess",
+        "the workplace"
+      ],
+      "entries": [
+        [
+          "RANKANDFILE",
+          "Ordinary employees, or the grid they stand on"
+        ],
+        [
+          "KNIGHTSHIFT",
+          "Late hours for the piece that jumps?"
+        ],
+        [
+          "PAWNSHOPTALK",
+          "Jargon among the front line?"
+        ],
+        [
+          "BOARDMEETING",
+          "Where the directors gather, or the pieces do"
+        ]
+      ]
+    },
+    {
+      "slug": "boxing-x-politics",
+      "title": "Split Decision",
+      "concepts": [
+        "boxing",
+        "politics"
+      ],
+      "entries": [
+        [
+          "ONTHEROPELINE",
+          "Cornered while shaking hands?"
+        ],
+        [
+          "CORNERMANDATE",
+          "What the trainer wins at the polls?"
+        ],
+        [
+          "LOWBLOWHARD",
+          "Pundit who hits below the belt?"
+        ],
+        [
+          "UPPERCUTTAX",
+          "Fiscal haymaker?"
+        ]
+      ],
+      "notes": "SUCKERPUNCHLINE (15) shares LINE with ONTHEROPELINE; left out."
+    },
+    {
+      "slug": "theater-x-military",
+      "title": "Theater of Operations",
+      "concepts": [
+        "theater",
+        "the military"
+      ],
+      "entries": [
+        [
+          "THEATEROFWAR",
+          "Where a campaign plays out"
+        ],
+        [
+          "SCENESTEALTH",
+          "Quietly upstaging the lead?"
+        ],
+        [
+          "CASTINGCALLSIGN",
+          "Radio handle for an audition?"
+        ]
+      ],
+      "notes": "Three themers. ENGAGEMENT is a bonus double-definition for the fill."
+    },
+    {
+      "slug": "cars-x-anatomy",
+      "title": "Body Shop",
+      "concepts": [
+        "cars",
+        "anatomy"
+      ],
+      "entries": [
+        [
+          "LEGROOMSERVICE",
+          "Perk of a chauffeured stretch?"
+        ],
+        [
+          "HEADSUPDISPLAY",
+          "Windshield readout, or a warning for a tall driver"
+        ],
+        [
+          "BODYSHOPTALK",
+          "Jargon at the repair garage?"
+        ],
+        [
+          "SPARERIBCAGE",
+          "Backup skeleton in the trunk?"
+        ]
+      ],
+      "notes": "TAILLIGHTHEADED (15) shares HEAD with HEADSUPDISPLAY; do not add it."
+    },
+    {
+      "slug": "bands-x-food",
+      "title": "Dinner and a Show",
+      "concepts": [
+        "bands",
+        "food"
+      ],
+      "entries": [
+        [
+          "CRANBERRYSAUCE",
+          "Thanksgiving side from a Limerick band?"
+        ],
+        [
+          "BREADANDBUTTER",
+          "Main income, or a '70s soft-rock band's spread"
+        ],
+        [
+          "PEARLJAMJAR",
+          "Where Eddie Vedder keeps the preserves?"
+        ],
+        [
+          "HOTCHIPOTLE",
+          "British synth-pop band's smoky pepper?"
+        ],
+        [
+          "VANILLAICECREAM",
+          "'Ice Ice Baby' rapper's dessert?"
+        ]
+      ]
+    },
+    {
+      "slug": "dogs-x-music",
+      "title": "Who Let the Dogs Out",
+      "concepts": [
+        "dogs",
+        "music"
+      ],
+      "entries": [
+        [
+          "BARKSTREETBOYS",
+          "'90s boy band that wants it that way, loudly?"
+        ],
+        [
+          "PUPPYLOVESHACK",
+          "B-52's hangout for a smitten pooch?"
+        ],
+        [
+          "GOODBOYGEORGE",
+          "Culture Club frontman who sits on command?"
+        ],
+        [
+          "DOGHOUSEMUSIC",
+          "Four-on-the-floor beats from the kennel?"
+        ]
+      ],
+      "notes": "FETCHSHOPBOYS (13) shared BOYS with BARKSTREETBOYS; DOGHOUSEMUSIC replaces it. THEBEAGLES (10) is a spare."
+    },
+    {
+      "slug": "coffee-x-crime",
+      "title": "Grounds for Arrest",
+      "concepts": [
+        "coffee",
+        "crime"
+      ],
+      "entries": [
+        [
+          "SPILLTHEBEANS",
+          "Confess, or make a mess at the roaster"
+        ],
+        [
+          "CAFFEINEFIEND",
+          "Addict who knocks over the espresso bar?"
+        ],
+        [
+          "AFFOGATOAWAY",
+          "Dessert coffee that escaped?"
+        ],
+        [
+          "PRESSCHARGES",
+          "Take the barista to court over a French roast?"
+        ]
+      ],
+      "notes": "BEANCOUNTERFEIT (15) shares BEAN with SPILLTHEBEANS; skip it."
+    },
+    {
+      "slug": "fitness-x-finance",
+      "title": "Sweat Equity",
+      "concepts": [
+        "fitness",
+        "finance"
+      ],
+      "entries": [
+        [
+          "BENCHMARKPRESS",
+          "Lift everyone else is measured against?"
+        ],
+        [
+          "RUNNINGBALANCE",
+          "Ledger total, or what a treadmill demands"
+        ],
+        [
+          "FLEXSPENDING",
+          "Health account, or showing off a new watch at the gym?"
+        ],
+        [
+          "SPOTTERPRICE",
+          "What the person behind the bar charges today?"
+        ],
+        [
+          "SPINCLASSACTION",
+          "Lawsuit filed by the Peloton crowd?"
+        ]
+      ]
+    },
+    {
+      "slug": "pirates-x-tech",
+      "title": "Yarr Protocol",
+      "concepts": [
+        "pirates",
+        "tech"
+      ],
+      "entries": [
+        [
+          "EYEPATCHUPDATE",
+          "Fix for a one-eyed captain's software?"
+        ],
+        [
+          "PARLEYPROTOCOL",
+          "Rules for a pirate negotiation?"
+        ],
+        [
+          "HOOKHANDSHAKE",
+          "Captain Hook's TCP greeting?"
+        ],
+        [
+          "SCUTTLEBUTTON",
+          "Pirate gossip control?"
+        ],
+        [
+          "RUMRUNTIMEERROR",
+          "Crash during a smuggling job?"
+        ]
+      ],
+      "notes": "SHIVERMETIMEOUT (15) is an alternate center."
+    },
+    {
+      "slug": "weddings-x-sports",
+      "title": "Reception Yards",
+      "concepts": [
+        "weddings",
+        "sports"
+      ],
+      "entries": [
+        [
+          "RECEPTIONYARDS",
+          "Distance to the open bar?"
+        ],
+        [
+          "AISLERUNNERSUP",
+          "Bridesmaids who nearly caught the bouquet?"
+        ],
+        [
+          "HONEYMOONSHOT",
+          "Ambitious trip right after the vows?"
+        ],
+        [
+          "BOUQUETTOSSUP",
+          "Who catches it is anyone's guess?"
+        ]
+      ]
+    },
+    {
+      "slug": "bees-x-business",
+      "title": "Hive Mindshare",
+      "concepts": [
+        "bees",
+        "business"
+      ],
+      "entries": [
+        [
+          "HIVEMINDSHARE",
+          "Collective brand awareness in the colony?"
+        ],
+        [
+          "BUZZKILLERAPP",
+          "Must-have software that ruins the mood?"
+        ],
+        [
+          "WORKERBEENEFITS",
+          "Hive health insurance?"
+        ]
+      ],
+      "notes": "Three themers. BEELINEITEM (11) and STINGOPERATION (14) are bonus doubles if partners appear."
+    },
+    {
+      "slug": "shakespeare-x-tech",
+      "title": "Much Ado About Nothing Burger",
+      "concepts": [
+        "Shakespeare",
+        "tech"
+      ],
+      "entries": [
+        [
+          "SHYLOCKSCREEN",
+          "Venetian moneylender's phone security?"
+        ],
+        [
+          "OTHELLOWORLDS",
+          "Moor's first programs?"
+        ],
+        [
+          "ASYOULIKEIT",
+          "Comedy of 1599, or a thumbs-up for your feed"
+        ],
+        [
+          "MACBOOKBETH",
+          "Scottish laptop?"
+        ]
+      ],
+      "notes": "ETTUBRUTEFORCE (14) is great but shares BRUT with nothing here; it needs a 14 partner."
+    },
+    {
+      "slug": "dinosaurs-x-office",
+      "title": "Extinction Event",
+      "concepts": [
+        "dinosaurs",
+        "office life"
+      ],
+      "entries": [
+        [
+          "RAPTORRAPPORT",
+          "Good working relationship among predators?"
+        ],
+        [
+          "TRICERATOPTEN",
+          "Chart of three-horned hits?"
+        ],
+        [
+          "TREXTMESSAGE",
+          "Note from a tyrant lizard?"
+        ],
+        [
+          "IGUANODONUTS",
+          "Herbivore's break-room box?"
+        ],
+        [
+          "EXTINCTIONEVENT",
+          "Mass layoff, 66 million years ago?"
+        ]
+      ]
+    },
+    {
+      "slug": "royalty-x-fast-food",
+      "title": "Royal with Cheese",
+      "concepts": [
+        "royalty",
+        "fast food"
+      ],
+      "entries": [
+        [
+          "DAIRYQUEENSIZE",
+          "Mattress for the Blizzard monarch?"
+        ],
+        [
+          "EARLOFSANDWICH",
+          "Noble who put meat between bread"
+        ],
+        [
+          "BURGERKINGDOM",
+          "Realm ruled from the drive-thru?"
+        ],
+        [
+          "PRINCEOFWINGS",
+          "Heir to the hot-sauce throne?"
+        ],
+        [
+          "DUCHESSPOTATOES",
+          "Piped side fit for a peer"
+        ]
+      ]
+    },
+    {
+      "slug": "sleep-x-tv",
+      "title": "Snooze Festival",
+      "concepts": [
+        "sleep",
+        "television"
+      ],
+      "entries": [
+        [
+          "PILLOWTALKSHOW",
+          "Late-night program taped in bed?"
+        ],
+        [
+          "SNOOZEFESTIVAL",
+          "Lineup of acts that put you under?"
+        ],
+        [
+          "SLEEPWALKONS",
+          "Bit parts played while unconscious?"
+        ],
+        [
+          "SIESTAFIESTA",
+          "Afternoon party that ends in a nap"
+        ],
+        [
+          "BEDTIMESTORYARC",
+          "Season-long plot told at 8 p.m. sharp?"
+        ]
+      ]
+    },
+    {
+      "slug": "pizza-x-tech",
+      "title": "Deep Dish Network",
+      "concepts": [
+        "pizza",
+        "tech"
+      ],
+      "entries": [
+        [
+          "GLUTENFREEWARE",
+          "No-cost software with no wheat?"
+        ],
+        [
+          "EXTRASAUCECODE",
+          "What a programmer orders on the side?"
+        ],
+        [
+          "SICILIANSILICON",
+          "Chip made in Palermo?"
+        ]
+      ],
+      "notes": "Three themers. DEEPDISHNETWORK (15) is an alternate center."
+    },
+    {
+      "slug": "astronomy-x-cooking",
+      "title": "Star Anise",
+      "concepts": [
+        "astronomy",
+        "cooking"
+      ],
+      "entries": [
+        [
+          "CRESCENTROLLS",
+          "Moon-shaped pastries"
+        ],
+        [
+          "ECLAIRECLIPSE",
+          "Pastry blocking the sun?"
+        ],
+        [
+          "MARSBARBECUE",
+          "Cookout on the red planet?"
+        ],
+        [
+          "SUNSPOTOFTEA",
+          "Solar brew-up?"
+        ],
+        [
+          "SATURNRINGDINGS",
+          "Snack cakes orbiting a gas giant?"
+        ]
+      ]
+    },
+    {
+      "slug": "monsters-x-finance",
+      "title": "Ghoul'd Standard",
+      "concepts": [
+        "monsters",
+        "finance"
+      ],
+      "entries": [
+        [
+          "GRAVEYARDSHIFT",
+          "Overnight hours, or when the dead clock in"
+        ],
+        [
+          "GHOULDSTANDARD",
+          "Monetary system backed by the undead?"
+        ],
+        [
+          "STAKEHOLDERS",
+          "Investors, or a vampire hunter's crew"
+        ],
+        [
+          "FULLMOONSHOT",
+          "Werewolf's wildly ambitious venture?"
+        ],
+        [
+          "COUNTINGDRACULA",
+          "Vampire doing the books?"
+        ]
+      ]
+    },
+    {
+      "slug": "yoga-x-tech",
+      "title": "Namaste at Home",
+      "concepts": [
+        "yoga",
+        "tech"
+      ],
+      "entries": [
+        [
+          "NAMASTEATHOME",
+          "Greeting from a remote worker's mat?"
+        ],
+        [
+          "CHAKRACHARGER",
+          "Phone power for the energy centers?"
+        ],
+        [
+          "YOGAMATRIX",
+          "Where you practice in the simulation?"
+        ],
+        [
+          "ZENDESKTOP",
+          "Calm computer background?"
+        ]
+      ]
+    }
+  ]
+}

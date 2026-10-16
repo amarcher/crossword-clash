@@ -15,7 +15,7 @@
  */
 import { cloneGrid, slotsOf, type Grid, type Symmetry } from "./grid";
 import type { EngineRules, FillOutcome, SlotOptions } from "./ingrid";
-import { buildSkeleton, freePlacements, pairedPlacements } from "./layout";
+import { buildSkeleton, canPair, freePlacements, pairedPlacements } from "./layout";
 import { enumerateSkeletons, searchSkeleton } from "./skeletonSearch";
 
 export interface SkeletonEngine {
@@ -112,9 +112,13 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
   };
   const byQuality = (a: Candidate, b: Candidate) => b.floor - a.floor || b.min - a.min || b.mean - a.mean;
 
-  // A. Random symmetric layouts around the seeds.
+  // A. Random symmetric layouts around the seeds. Same-length seeds mirror each other whenever
+  // they can pair: a free draw once left two 14s in rows 3 and 8, and the engine filled their
+  // mirror slots with 14-letter entries. Sets that cannot pair keep the free draw (and stage B's
+  // free placements cover two 8s in a 9×9, which pair on paper but only fill crossing).
+  const placement = canPair({ size, symmetry, seeds }, random) ? "paired" : "free";
   for (let attempt = 0; attempt < req.attempts && Date.now() < started + budget / 4; attempt++) {
-    const drawn = buildSkeleton({ size, symmetry, seeds, random, maxBlockPct: attempt < req.attempts / 2 ? 0.22 : 0.26, maxRunLength: maxRun });
+    const drawn = buildSkeleton({ size, symmetry, seeds, random, maxBlockPct: attempt < req.attempts / 2 ? 0.22 : 0.26, maxRunLength: maxRun, placement });
     if (!drawn) continue;
     const hit = consider(drawn.grid);
     if (hit) return hit;

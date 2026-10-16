@@ -51,6 +51,8 @@ interface MultiplayerContextValue {
   multiplayerPlayers: (Player & { score: number })[];
   playerResults: PlayerResult[] | undefined;
   rejectedCell: string | null;
+  /** Wrong letters typed this session; counts every one, however fast. */
+  wrongLetters: number;
   setRejectedCell: (v: string | null) => void;
   triggerReject: (row: number, col: number) => void;
 
@@ -87,9 +89,11 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   } = game;
 
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
+  const [wrongLetters, setWrongLetters] = useState(0);
   const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const triggerReject = useCallback((row: number, col: number) => {
+    setWrongLetters((n) => n + 1);
     if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
     setRejectedCell(null);
     requestAnimationFrame(() => {
@@ -293,6 +297,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     multiplayerPlayers,
     playerResults,
     rejectedCell,
+    wrongLetters,
     setRejectedCell,
     triggerReject,
     soloInputLetter,

@@ -4,7 +4,7 @@
  * loads a fresh one, which re-reads the word list.
  */
 import type { EngineRules, FillOutcome, SlotOptions, Viability } from "./ingrid";
-import type { Grid, Symmetry } from "./grid";
+import { MAX_SHARED, type Grid, type Symmetry } from "./grid";
 import type { WorkerRequest } from "./engine.worker";
 import type { SkeletonResult } from "./skeletonFinder";
 
@@ -25,8 +25,7 @@ export function studioWordListUrl(override: string | undefined, dev: boolean, su
   if (!supabaseUrl) return "/seedgrid/words-production.dict";
   return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/seedgrid/words-production.dict`;
 }
-/** No two engine-filled entries may share a run of letters longer than this. */
-export const MAX_SHARED = 3;
+export { MAX_SHARED } from "./grid";
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 

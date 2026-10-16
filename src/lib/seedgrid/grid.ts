@@ -228,6 +228,9 @@ export function isThemeSlot(grid: Grid, cells: number[], symmetry: Symmetry): bo
 
 export const MIN_RUN = 3;
 
+/** No two engine-filled entries may share a run of letters longer than this (locked themers are the constructor's call). */
+export const MAX_SHARED = 3;
+
 /** Blacks `i` and its symmetric partners. False if any of them is locked or lettered. */
 export function setBlack(grid: Grid, i: number, symmetry: Symmetry): boolean {
   const group = partners(grid, i, symmetry);

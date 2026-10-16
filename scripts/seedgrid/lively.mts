@@ -90,7 +90,7 @@ for (const p of results.flat()) {
   if (word.length < 3 || word.length > 15 || known.has(word)) continue;
   known.add(word);
   const tags = `${p.proper ? "p" : ""}${p.abbreviation ? "a" : ""}${p.slang ? "s" : ""}`;
-  added.push({ word, score: p.tier === "clean" && !p.abbreviation ? 55 : 49, tags });
+  added.push({ word, score: p.tier === "clean" && !p.abbreviation ? 80 : 60, tags });
 }
 
 fs.writeFileSync(file, formatDict([...existing, ...added]));

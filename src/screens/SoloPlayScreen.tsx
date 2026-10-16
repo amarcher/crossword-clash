@@ -57,7 +57,7 @@ export function SoloPlayScreen() {
     soloTheme,
   } = game;
 
-  const { soloInputLetter, rejectedCell, completedClues } = mp;
+  const { soloInputLetter, rejectedCell, wrongLetters, completedClues } = mp;
 
   const gridInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,7 +110,7 @@ export function SoloPlayScreen() {
     playerCells,
     direction,
     activeClue,
-    rejectedCell,
+    wrongLetters,
     isComplete,
     mode: "solo",
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",

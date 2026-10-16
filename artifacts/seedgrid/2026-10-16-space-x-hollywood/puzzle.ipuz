@@ -1,0 +1,1197 @@
+{
+  "version": "http://ipuz.org/v2",
+  "kind": [
+    "http://ipuz.org/crossword#1"
+  ],
+  "dimensions": {
+    "width": 15,
+    "height": 15
+  },
+  "title": "Star System",
+  "author": "Crossword Clash",
+  "notes": "astronomy x Hollywood",
+  "block": "#",
+  "empty": 0,
+  "puzzle": [
+    [
+      1,
+      2,
+      3,
+      "#",
+      "#",
+      "#",
+      4,
+      5,
+      6,
+      "#",
+      "#",
+      7,
+      8,
+      9,
+      10
+    ],
+    [
+      11,
+      0,
+      0,
+      12,
+      13,
+      "#",
+      14,
+      0,
+      0,
+      15,
+      "#",
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      "#",
+      18,
+      0,
+      0,
+      0,
+      "#",
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      23,
+      0,
+      0,
+      0,
+      "#",
+      24,
+      0,
+      0,
+      "#",
+      "#",
+      25,
+      0,
+      0,
+      0,
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      26,
+      0,
+      0,
+      "#",
+      27,
+      28,
+      0,
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      29,
+      30,
+      31,
+      32,
+      0,
+      "#",
+      "#",
+      33,
+      0,
+      0,
+      "#",
+      34,
+      35,
+      36,
+      37
+    ],
+    [
+      38,
+      0,
+      0,
+      0,
+      0,
+      39,
+      40,
+      0,
+      0,
+      0,
+      41,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      42,
+      0,
+      0,
+      0,
+      "#",
+      43,
+      0,
+      0,
+      "#",
+      "#",
+      44,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      45,
+      0,
+      0,
+      "#",
+      46,
+      47,
+      0,
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      48,
+      49,
+      50,
+      0,
+      "#",
+      "#",
+      51,
+      0,
+      0,
+      "#",
+      52,
+      53,
+      54,
+      55
+    ],
+    [
+      "#",
+      56,
+      0,
+      0,
+      0,
+      57,
+      58,
+      0,
+      0,
+      0,
+      59,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      0,
+      0,
+      0,
+      "#",
+      61,
+      0,
+      0,
+      0,
+      "#",
+      62,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      63,
+      0,
+      0,
+      0,
+      "#",
+      64,
+      0,
+      0,
+      0,
+      "#",
+      65,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      66,
+      0,
+      0,
+      0,
+      "#",
+      "#",
+      67,
+      0,
+      0,
+      "#",
+      "#",
+      "#",
+      68,
+      0,
+      0
+    ]
+  ],
+  "solution": [
+    [
+      "I",
+      "T",
+      "S",
+      "#",
+      "#",
+      "#",
+      "G",
+      "A",
+      "P",
+      "#",
+      "#",
+      "D",
+      "A",
+      "T",
+      "A"
+    ],
+    [
+      "M",
+      "O",
+      "O",
+      "D",
+      "S",
+      "#",
+      "A",
+      "L",
+      "O",
+      "E",
+      "#",
+      "E",
+      "R",
+      "I",
+      "C"
+    ],
+    [
+      "A",
+      "N",
+      "D",
+      "I",
+      "E",
+      "#",
+      "B",
+      "I",
+      "L",
+      "L",
+      "#",
+      "C",
+      "O",
+      "M",
+      "E"
+    ],
+    [
+      "M",
+      "O",
+      "O",
+      "N",
+      "W",
+      "A",
+      "L",
+      "K",
+      "O",
+      "F",
+      "F",
+      "A",
+      "M",
+      "E",
+      "#"
+    ],
+    [
+      "S",
+      "W",
+      "I",
+      "G",
+      "#",
+      "S",
+      "E",
+      "E",
+      "#",
+      "#",
+      "A",
+      "F",
+      "A",
+      "R",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      "G",
+      "P",
+      "S",
+      "#",
+      "T",
+      "O",
+      "N",
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "O",
+      "H",
+      "B",
+      "O",
+      "Y",
+      "#",
+      "#",
+      "A",
+      "H",
+      "A",
+      "#",
+      "M",
+      "I",
+      "R",
+      "E"
+    ],
+    [
+      "D",
+      "A",
+      "R",
+      "K",
+      "M",
+      "A",
+      "T",
+      "T",
+      "E",
+      "R",
+      "D",
+      "A",
+      "M",
+      "O",
+      "N"
+    ],
+    [
+      "E",
+      "T",
+      "A",
+      "S",
+      "#",
+      "L",
+      "I",
+      "E",
+      "#",
+      "#",
+      "M",
+      "O",
+      "O",
+      "E",
+      "D"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      "#",
+      "T",
+      "E",
+      "N",
+      "#",
+      "G",
+      "A",
+      "S",
+      "#",
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "P",
+      "H",
+      "I",
+      "L",
+      "#",
+      "#",
+      "S",
+      "U",
+      "N",
+      "#",
+      "S",
+      "P",
+      "A",
+      "S"
+    ],
+    [
+      "#",
+      "R",
+      "E",
+      "D",
+      "C",
+      "A",
+      "R",
+      "P",
+      "E",
+      "T",
+      "G",
+      "I",
+      "A",
+      "N",
+      "T"
+    ],
+    [
+      "C",
+      "O",
+      "A",
+      "L",
+      "#",
+      "L",
+      "E",
+      "I",
+      "S",
+      "#",
+      "A",
+      "N",
+      "N",
+      "I",
+      "E"
+    ],
+    [
+      "P",
+      "A",
+      "V",
+      "E",
+      "#",
+      "I",
+      "B",
+      "E",
+      "T",
+      "#",
+      "L",
+      "E",
+      "T",
+      "M",
+      "E"
+    ],
+    [
+      "A",
+      "M",
+      "E",
+      "S",
+      "#",
+      "#",
+      "A",
+      "D",
+      "S",
+      "#",
+      "#",
+      "#",
+      "S",
+      "A",
+      "P"
+    ]
+  ],
+  "clues": {
+    "Across": [
+      [
+        1,
+        "\"___ a deal!\""
+      ],
+      [
+        4,
+        "Space between front teeth"
+      ],
+      [
+        7,
+        "Analyst's raw material"
+      ],
+      [
+        11,
+        "Ups and downs, say"
+      ],
+      [
+        14,
+        "Plant with a soothing gel"
+      ],
+      [
+        16,
+        "Clapton or Idle"
+      ],
+      [
+        17,
+        "MacDowell of \"Groundhog Day\""
+      ],
+      [
+        18,
+        "Duck's feature, or a waiter's delivery"
+      ],
+      [
+        19,
+        "\"___ again?\""
+      ],
+      [
+        20,
+        "Hollywood Boulevard, per Neil Armstrong?"
+      ],
+      [
+        23,
+        "Big gulp"
+      ],
+      [
+        24,
+        "Get the picture"
+      ],
+      [
+        25,
+        "From ___ (at a distance)"
+      ],
+      [
+        26,
+        "Road-trip voice, briefly"
+      ],
+      [
+        27,
+        "A whole lot"
+      ],
+      [
+        29,
+        "\"Here we go again!\""
+      ],
+      [
+        33,
+        "Lightbulb-moment cry"
+      ],
+      [
+        34,
+        "Bog down"
+      ],
+      [
+        38,
+        "Mysterious cosmic heartthrob?"
+      ],
+      [
+        42,
+        "Arrival guesses, briefly"
+      ],
+      [
+        43,
+        "Golfer's ball position"
+      ],
+      [
+        44,
+        "Made a pasture sound"
+      ],
+      [
+        45,
+        "Perfect score"
+      ],
+      [
+        46,
+        "What a pump pumps"
+      ],
+      [
+        48,
+        "Punxsutawney forecaster"
+      ],
+      [
+        51,
+        "Star of our system"
+      ],
+      [
+        52,
+        "Places to get wrapped up?"
+      ],
+      [
+        56,
+        "Enormous premiere arrival?"
+      ],
+      [
+        60,
+        "Stocking stuffer for the naughty"
+      ],
+      [
+        61,
+        "Honolulu hellos"
+      ],
+      [
+        62,
+        "Musical with \"Tomorrow\""
+      ],
+      [
+        63,
+        "Blacktop"
+      ],
+      [
+        64,
+        "\"Sure you did...\""
+      ],
+      [
+        65,
+        "\"___ guess...\""
+      ],
+      [
+        66,
+        "Iowa State's city"
+      ],
+      [
+        67,
+        "Commercial break fillers"
+      ],
+      [
+        68,
+        "Maple syrup source"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Friday prayer leaders"
+      ],
+      [
+        2,
+        "Up ___ (thus far)"
+      ],
+      [
+        3,
+        "\"Me too!\""
+      ],
+      [
+        4,
+        "Anne's \"Green\" home"
+      ],
+      [
+        5,
+        "Like peas in a pod"
+      ],
+      [
+        6,
+        "Sport played on horseback"
+      ],
+      [
+        7,
+        "Late-night coffee order"
+      ],
+      [
+        8,
+        "Bakery draw"
+      ],
+      [
+        9,
+        "Egg boiler's aid"
+      ],
+      [
+        10,
+        "Serve no one can touch"
+      ],
+      [
+        12,
+        "Parking lot souvenir"
+      ],
+      [
+        13,
+        "Hem, say"
+      ],
+      [
+        15,
+        "Workshop worker at the North Pole"
+      ],
+      [
+        21,
+        "Nile snake"
+      ],
+      [
+        22,
+        "Stadium face-painter"
+      ],
+      [
+        26,
+        "Dodgeball venue"
+      ],
+      [
+        27,
+        "Most common English word"
+      ],
+      [
+        28,
+        "Rowboat blade"
+      ],
+      [
+        29,
+        "Keats poem"
+      ],
+      [
+        30,
+        "Fedora or beret"
+      ],
+      [
+        31,
+        "Sports ___ (gym top)"
+      ],
+      [
+        32,
+        "Green-lights"
+      ],
+      [
+        33,
+        "Had dinner"
+      ],
+      [
+        34,
+        "___ jacket (high-collared coat)"
+      ],
+      [
+        35,
+        "Opinion intro, in texts"
+      ],
+      [
+        36,
+        "Sushi topping"
+      ],
+      [
+        37,
+        "Finale"
+      ],
+      [
+        39,
+        "Pub pour"
+      ],
+      [
+        40,
+        "Element Sn"
+      ],
+      [
+        41,
+        "Private notes, for short"
+      ],
+      [
+        45,
+        "Pampering, briefly"
+      ],
+      [
+        46,
+        "Party list"
+      ],
+      [
+        47,
+        "Picnic crasher"
+      ],
+      [
+        48,
+        "Golf event pairing stars and amateurs"
+      ],
+      [
+        49,
+        "Toss with effort"
+      ],
+      [
+        50,
+        "Runs in neutral"
+      ],
+      [
+        51,
+        "Caught sight of"
+      ],
+      [
+        52,
+        "Trig function"
+      ],
+      [
+        53,
+        "Breathes hard"
+      ],
+      [
+        54,
+        "Jungian soul"
+      ],
+      [
+        55,
+        "Like a black-diamond run"
+      ],
+      [
+        57,
+        "Muhammad of boxing"
+      ],
+      [
+        58,
+        "Country star McEntire"
+      ],
+      [
+        59,
+        "Pal"
+      ],
+      [
+        60,
+        "April 15 pro"
+      ]
+    ]
+  },
+  "com.crosswordclash:speedclues": {
+    "Across": [
+      [
+        1,
+        "\"___ a wrap!\""
+      ],
+      [
+        4,
+        "Opening"
+      ],
+      [
+        7,
+        "Facts and figures"
+      ],
+      [
+        11,
+        "Emotional states"
+      ],
+      [
+        14,
+        "Sunburn soother"
+      ],
+      [
+        16,
+        "Guitarist Clapton"
+      ],
+      [
+        17,
+        "Actress MacDowell"
+      ],
+      [
+        18,
+        "Restaurant check"
+      ],
+      [
+        19,
+        "Arrive"
+      ],
+      [
+        20,
+        "Lunar strip of star plaques?"
+      ],
+      [
+        23,
+        "Gulp"
+      ],
+      [
+        24,
+        "Understand"
+      ],
+      [
+        25,
+        "Far away"
+      ],
+      [
+        26,
+        "Car nav system: Abbr."
+      ],
+      [
+        27,
+        "2,000 pounds"
+      ],
+      [
+        29,
+        "\"Gee whiz!\""
+      ],
+      [
+        33,
+        "\"Eureka!\""
+      ],
+      [
+        34,
+        "Swampy ground"
+      ],
+      [
+        38,
+        "Unseen cosmic stuff + Bourne actor"
+      ],
+      [
+        42,
+        "Flight board figs."
+      ],
+      [
+        43,
+        "Fib"
+      ],
+      [
+        44,
+        "Sounded like a cow"
+      ],
+      [
+        45,
+        "Number after nine"
+      ],
+      [
+        46,
+        "Car fuel"
+      ],
+      [
+        48,
+        "TV's Dr. ___"
+      ],
+      [
+        51,
+        "Daytime star"
+      ],
+      [
+        52,
+        "Resorts with saunas"
+      ],
+      [
+        56,
+        "Huge star at a movie premiere?"
+      ],
+      [
+        60,
+        "Grill fuel"
+      ],
+      [
+        61,
+        "Hawaiian garlands"
+      ],
+      [
+        62,
+        "Little Orphan ___"
+      ],
+      [
+        63,
+        "Lay asphalt on"
+      ],
+      [
+        64,
+        "\"Yeah, right!\""
+      ],
+      [
+        65,
+        "\"___ explain\""
+      ],
+      [
+        66,
+        "Iowa college town"
+      ],
+      [
+        67,
+        "Commercials"
+      ],
+      [
+        68,
+        "Tree fluid"
+      ]
+    ],
+    "Down": [
+      [
+        1,
+        "Mosque leaders"
+      ],
+      [
+        2,
+        "Up ___ (so far)"
+      ],
+      [
+        3,
+        "\"Same here!\""
+      ],
+      [
+        4,
+        "Triangular roof parts"
+      ],
+      [
+        5,
+        "Similar"
+      ],
+      [
+        6,
+        "Collared knit shirt"
+      ],
+      [
+        7,
+        "Coffee without the buzz"
+      ],
+      [
+        8,
+        "Pleasant smell"
+      ],
+      [
+        9,
+        "Kitchen countdown device"
+      ],
+      [
+        10,
+        "Top playing card"
+      ],
+      [
+        12,
+        "Bell sound"
+      ],
+      [
+        13,
+        "Use a needle"
+      ],
+      [
+        15,
+        "Santa's helper"
+      ],
+      [
+        21,
+        "Egyptian cobra"
+      ],
+      [
+        22,
+        "Ceiling cooler"
+      ],
+      [
+        26,
+        "Workout place"
+      ],
+      [
+        27,
+        "Definite article"
+      ],
+      [
+        28,
+        "Paddle"
+      ],
+      [
+        29,
+        "Lyric poem"
+      ],
+      [
+        30,
+        "Head topper"
+      ],
+      [
+        31,
+        "Sports ___"
+      ],
+      [
+        32,
+        "Approves"
+      ],
+      [
+        33,
+        "Dined"
+      ],
+      [
+        34,
+        "Chairman ___"
+      ],
+      [
+        35,
+        "\"In my view,\" in texts"
+      ],
+      [
+        36,
+        "Fish eggs"
+      ],
+      [
+        37,
+        "Conclusion"
+      ],
+      [
+        39,
+        "Pub drink"
+      ],
+      [
+        40,
+        "Can metal"
+      ],
+      [
+        41,
+        "Social media messages"
+      ],
+      [
+        45,
+        "Tender loving care"
+      ],
+      [
+        46,
+        "Visitors"
+      ],
+      [
+        47,
+        "Colony insect"
+      ],
+      [
+        48,
+        "Mixed golf tourney"
+      ],
+      [
+        49,
+        "Big throw"
+      ],
+      [
+        50,
+        "Sits running at a light"
+      ],
+      [
+        51,
+        "Spotted"
+      ],
+      [
+        52,
+        "Cosine's partner"
+      ],
+      [
+        53,
+        "Slacks"
+      ],
+      [
+        54,
+        "Inner self, to Jung"
+      ],
+      [
+        55,
+        "Let tea sit"
+      ],
+      [
+        57,
+        "\"The Greatest\" boxer"
+      ],
+      [
+        58,
+        "Singer McEntire"
+      ],
+      [
+        59,
+        "Woman, informally"
+      ],
+      [
+        60,
+        "Accountant: Abbr."
+      ]
+    ]
+  }
+}

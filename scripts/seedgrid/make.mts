@@ -14,12 +14,14 @@
  * --model ID, --seed N (repeatable randomness).
  *
  * Writes <out>/<slug>/puzzle.ipuz (publish with `pnpm daily:add`) and
- * review.md (grid, heatmap, audit, clues, every decision Claude made).
+ * review.md (grid, heatmap, audit, clues, every decision Claude made). If
+ * Claude's review still wants an entry replaced after three refills, only
+ * review.md is written and the command exits 1.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { mergeDicts, normalizeEntry, parseDict, WordIndex, type DictEntry } from "../../src/lib/seedgrid/dictionary";
+import { liftDicts, mergeDicts, normalizeEntry, parseDict, WordIndex, type DictEntry } from "../../src/lib/seedgrid/dictionary";
 import { gridStats, gridToRows, slotsOf, slotText, type Grid, type Symmetry } from "../../src/lib/seedgrid/grid";
 import { FillEngine } from "../../src/lib/seedgrid/solver";
 import { buildSkeleton, placeSeeds, shapeSkeleton, tryBlock, type Skeleton } from "../../src/lib/seedgrid/layout";
@@ -65,8 +67,7 @@ if (!fs.existsSync(listFile(baseList))) {
 }
 const loadDict = (file: string) => (fs.existsSync(file) ? parseDict(fs.readFileSync(file, "utf8")) : []);
 const entries: DictEntry[] = mergeDicts(
-  loadDict(listFile(baseList)),
-  loadDict(listFile("lively.dict")),
+  liftDicts(loadDict(listFile(baseList)), loadDict(listFile("lively.dict"))),
   ...(flags.dict ?? []).map(loadDict),
   loadDict(listFile("rescore.dict")),
   loadDict(listFile("blocked.dict")),
@@ -370,7 +371,9 @@ async function main() {
     index = makeIndex();
   }
 
-  const fillOnce = (): Grid | null => {
+  // `keepRejections` is for refills after a review: dropping the rejections
+  // there would bring back the very entries the review said must go.
+  const fillOnce = (keepRejections = false): Grid | null => {
     const timeMs = skeleton.grid.width <= 7 ? 8_000 : 30_000;
     let grid = new FillEngine(skeleton.grid, index, { maxShared, approved, random, timeMs }).fill();
     if (!grid && Object.keys(approved).length) {
@@ -379,7 +382,7 @@ async function main() {
       grid = new FillEngine(skeleton.grid, index, { maxShared, approved: relaxed, random, timeMs }).fill();
       if (!grid) grid = new FillEngine(skeleton.grid, index, { maxShared, random, timeMs }).fill();
     }
-    if (!grid && rejected.size) {
+    if (!grid && rejected.size && !keepRejections) {
       log("  rejections over-constrain the grid; filling without them (review will flag what is left)");
       grid = new FillEngine(skeleton.grid, new WordIndex(mergeDicts(entries, seedEntries), minScore), { maxShared, random, timeMs }).fill();
     }
@@ -390,19 +393,24 @@ async function main() {
   // The skeleton search already found one fill; it is the fallback.
   let grid = fillOnce() ?? chosen.fill;
   let report = auditGrid(grid, index, maxShared);
-  for (let round = 1; useLlm && round <= 3; round++) {
+  // Up to three refills, each reviewed again; only a review with nothing
+  // "must" lets the puzzle ship.
+  const MAX_REFILLS = 3;
+  let unresolved: string[] = [];
+  for (let round = 1; useLlm && round <= MAX_REFILLS + 1; round++) {
     log(`Review round ${round}…`);
     const verdict = await review(grid, report, context);
     const must = verdict.replace.filter((r) => r.severity === "must" && !seeds.includes(normalizeEntry(r.answer)));
     notes.push(`## Review ${round}: ${verdict.verdict}`, verdict.notes, ...verdict.replace.map((r) => `- [${r.severity}] ${r.answer}: ${r.reason}`), "");
-    if (!must.length) break;
+    unresolved = must.map((r) => r.answer);
+    if (!must.length || round > MAX_REFILLS) break;
     for (const r of must) rejected.add(normalizeEntry(r.answer));
     approved = Object.fromEntries(Object.entries(approved).map(([k, ws]) => [k, ws.filter((w) => !rejected.has(w))]).filter(([, ws]) => ws.length));
     index = makeIndex();
     log(`  replacing ${must.map((r) => r.answer).join(", ")}`);
-    const next = fillOnce();
+    const next = fillOnce(true);
     if (!next) {
-      notes.push("Refill failed after those rejections; keeping the previous fill.");
+      notes.push("Refill failed after those rejections.");
       break;
     }
     grid = next;
@@ -413,8 +421,10 @@ async function main() {
   const weakest = report.entries.filter((e) => !e.locked).sort((a, b) => a.score - b.score).slice(0, 6);
   notes.push(`Lowest-scored entries: ${weakest.map((e) => `${e.answer} (${e.score})`).join(", ")}`, "");
 
+  if (unresolved.length) notes.push("## Not shipped", `The review still wants ${unresolved.join(", ")} replaced, so no puzzle.ipuz was written. Try another --seed, a different size, or other theme entries.`, "");
+
   const clues: Record<string, ClueSet> = {};
-  if (useLlm) {
+  if (useLlm && !unresolved.length) {
     log("Writing clues…");
     const answers = Object.fromEntries(slotsOf(grid).map((s) => [s.id, slotText(grid!, s)]));
     let rows = await writeClues(grid, context);
@@ -445,7 +455,7 @@ async function main() {
     author: flag("author") ?? "Crossword Clash",
     theme: explanation || theme || undefined,
   });
-  fs.writeFileSync(path.join(outDir, "puzzle.ipuz"), JSON.stringify(ipuz, null, 2) + "\n");
+  if (!unresolved.length) fs.writeFileSync(path.join(outDir, "puzzle.ipuz"), JSON.stringify(ipuz, null, 2) + "\n");
   fs.writeFileSync(
     path.join(outDir, "session.json"),
     JSON.stringify({ theme, title, explanation, seeds, symmetry, minScore, maxShared, skeleton: gridToRows(skeleton.grid), fill: gridToRows(grid), approved, rejected: [...rejected] }, null, 2) + "\n",
@@ -463,8 +473,13 @@ async function main() {
   log("");
   log(gridToRows(grid).join("\n"));
   log("");
-  log(`→ ${path.relative(process.cwd(), outDir)}/puzzle.ipuz and review.md`);
-  log(`  publish: pnpm daily:add YYYY-MM-DD ${path.relative(process.cwd(), path.join(outDir, "puzzle.ipuz"))}${title ? ` "${title}"` : ""}`);
+  if (unresolved.length) {
+    log(`✗ Not shipped: the review still wants ${unresolved.join(", ")} replaced. Details in ${path.relative(process.cwd(), outDir)}/review.md`);
+    process.exitCode = 1;
+  } else {
+    log(`→ ${path.relative(process.cwd(), outDir)}/puzzle.ipuz and review.md`);
+    log(`  publish: pnpm daily:add YYYY-MM-DD ${path.relative(process.cwd(), path.join(outDir, "puzzle.ipuz"))}${title ? ` "${title}"` : ""}`);
+  }
   if (useLlm) log(`  tokens: ${usage.input} in / ${usage.output} out`);
 }
 

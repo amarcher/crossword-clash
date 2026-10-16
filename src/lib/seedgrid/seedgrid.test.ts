@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle, normalizeTransferPuzzle } from "../puzzleNormalizer";
-import { WordIndex, parseDict, mergeDicts, normalizeEntry } from "./dictionary";
+import { WordIndex, parseDict, mergeDicts, liftDicts, normalizeEntry } from "./dictionary";
 import { gridFromRows, gridToRows, gridStats, slotsOf, slotText, partners, emptyGrid } from "./grid";
 import { FillEngine, conflicts } from "./solver";
 import { buildSkeleton, placeSeed, placeSeeds, shapeSkeleton, mirrorPlacement } from "./layout";
@@ -38,6 +38,16 @@ describe("dictionary", () => {
   it("later lists rescore earlier ones", () => {
     const merged = mergeDicts(parseDict("YEET;30"), parseDict("YEET;49;s"));
     expect(merged).toEqual([{ word: "YEET", score: 49, tags: "s" }]);
+  });
+
+  it("lifted lists raise scores but never lower them", () => {
+    const lifted = liftDicts(parseDict("SUITUP;90\nVEGOUT;40;s\nCAT;50"), parseDict("SUITUP;80;p\nVEGOUT;60\nHATTIP;80"));
+    expect(lifted).toEqual([
+      { word: "SUITUP", score: 90, tags: "p" },
+      { word: "VEGOUT", score: 60, tags: "s" },
+      { word: "CAT", score: 50, tags: "" },
+      { word: "HATTIP", score: 80, tags: "" },
+    ]);
   });
 
   it("drops words under the required score and matches patterns", () => {
@@ -194,8 +204,10 @@ describe("audit", () => {
   it("finds duplicates and niche crossings", () => {
     const index = new WordIndex(parseDict("NEON;55\nNEONS;55\nTED;49;p\nBAT;60"), 0);
     const g = gridFromRows(["NEON#", "#####", "NEONS"]);
-    const report = auditGrid(g, index);
-    expect(report.issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(true);
+    // NEON inside NEONS is a shared run of 4: a block when the limit is 3, only a warning at 4.
+    expect(auditGrid(g, index, 3).issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(true);
+    expect(auditGrid(g, index, 4).issues.some((i) => i.kind === "duplicate" && i.severity === "block")).toBe(false);
+    expect(auditGrid(g, index, 4).issues.some((i) => i.kind === "duplicate" && i.severity === "warn")).toBe(true);
   });
 
   it("checks clue length and give-aways", () => {
