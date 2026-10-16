@@ -14,7 +14,7 @@ import { bitIndices, intersects, popcount, popcount32, type Bits, type LengthBuc
 import { cloneGrid, crossingsOf, slotsOf, slotText, type Crossing, type Grid, type Slot } from "./grid";
 
 export interface FillOptions {
-  /** Longest run of letters two entries may share (Ingrid's "longest shared sequence"). Default 4. */
+  /** Longest run of letters two engine-filled entries may share (Ingrid's "longest shared sequence"). Default 3; entries the constructor locked are their call. */
   maxShared?: number;
   /** Slot id → the only words allowed there (the curator's approvals). */
   approved?: Record<string, string[]>;
@@ -65,7 +65,7 @@ export class FillEngine {
   constructor(grid: Grid, index: WordIndex, options: FillOptions = {}) {
     this.grid = grid;
     this.opts = {
-      maxShared: options.maxShared ?? 4,
+      maxShared: options.maxShared ?? 3,
       timeMs: options.timeMs ?? 10_000,
       maxSteps: options.maxSteps ?? 200_000,
       branch: options.branch ?? 24,
