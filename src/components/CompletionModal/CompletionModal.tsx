@@ -13,6 +13,7 @@ import { playWinSound } from "../../lib/winSound";
 import { computeViewerStanding } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import type { DailySlot } from "../../lib/dailyFeed";
 import { ChallengeFriendButton } from "./ChallengeFriendButton";
 import { LeaderboardSignForm } from "./LeaderboardSignForm";
 import { PlayLiveButton } from "./PlayLiveButton";
@@ -63,6 +64,8 @@ interface CompletionModalProps {
    * daily mini — routes the finisher to the cross-day board.
    */
   onViewLeaderboard?: () => void;
+  /** Which daily this was ("mini" | "large"), so the share text can say so. */
+  dailySlot?: DailySlot;
   /**
    * "Sign the board": present only when a daily time was just submitted under
    * the anonymous default name. `onSign` claims the entry (also fired when the
@@ -131,6 +134,7 @@ export function CompletionModal({
   nytHook,
   raceSeconds,
   onViewLeaderboard,
+  dailySlot,
   dailySign,
   raceStandings,
   coop,
@@ -520,6 +524,7 @@ export function CompletionModal({
               isTie={isAsync ? asyncTie : isTie}
               coop={coop}
               viewerStanding={viewerStanding ?? undefined}
+              dailySlot={dailySlot}
               darkMode={darkMode}
             />
             {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (

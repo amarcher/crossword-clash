@@ -17,9 +17,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
-import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
+import { leaderboardPath, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
@@ -102,9 +102,11 @@ export function SoloPlayScreen() {
     [challenge, soloResult],
   );
 
-  // Post a finished daily mini to the cross-day leaderboard (best-effort,
-  // no-op offline). Keyed by puzzle identity so imported puzzles never post.
-  const isDaily = useIsTodaysDaily(puzzle);
+  // Post a finished daily (mini or large) to its cross-day leaderboard
+  // (best-effort, no-op offline). Keyed by puzzle identity so imported
+  // puzzles never post.
+  const dailySlot = useTodaysDailySlot(puzzle);
+  const isDaily = dailySlot !== null;
   usePlayInsights({
     puzzle,
     playerCells,
@@ -118,17 +120,18 @@ export function SoloPlayScreen() {
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
-    if (!isDaily || !user) return;
+    if (!dailySlot || !user) return;
     dailySubmittedRef.current = true;
     void submitDailyResult({
       day: todayKey(),
+      slot: dailySlot,
       userId: user.id,
       displayName: game.displayName,
       mode: "solo",
       seconds: soloResult.finishSeconds,
       gameId: game.gameId,
     });
-  }, [soloResult, isDaily, user, game.displayName, game.gameId]);
+  }, [soloResult, dailySlot, user, game.displayName, game.gameId]);
 
   // "Sign the board": when the daily time was submitted under the anonymous
   // default, the modal offers a one-field claim. `boardSignedAs` latches the
@@ -142,9 +145,9 @@ export function SoloPlayScreen() {
       setBoardSignedAs(trimmed);
       game.setDisplayName(trimmed);
       savePlayerName(trimmed);
-      if (user) void updateDailyDisplayName(todayKey(), user.id, trimmed);
+      if (user) void updateDailyDisplayName(todayKey(), user.id, trimmed, dailySlot ?? "mini");
     },
-    [game, user],
+    [game, user, dailySlot],
   );
   const dailySign =
     isDaily && user && soloResult && (boardSignedAs || !isRealPlayerName(game.displayName))
@@ -348,7 +351,8 @@ export function SoloPlayScreen() {
         previousBest={soloResult?.previousBest}
         streakCount={soloResult?.streak.current}
         nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
+        onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
+        dailySlot={dailySlot ?? undefined}
         dailySign={dailySign}
         challengePuzzle={puzzle}
         challengerName={game.displayName}

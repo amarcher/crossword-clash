@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows } from "./grid";
 import { initialStudioState, type StudioState } from "./studioState";
-import { scheduleEntry, scheduleProblems, upcomingDays } from "./studioSchedule";
+import { defaultSlotFor, scheduleEntry, scheduleProblems, upcomingDays } from "./studioSchedule";
 import { parseDailyFeedEntry } from "../dailyFeed";
 
 const CLUES = {
@@ -24,6 +24,13 @@ describe("daily queue", () => {
     const draft = { ...ready(), title: "", clues: { ...CLUES, "0:across:3": "", "6:across:3": "Wed, briefly" } };
     expect(scheduleProblems(draft)).toEqual(["Give it a title.", "Clue 1A, 5A."]);
     expect(scheduleProblems({ ...ready(), grid: gridFromRows(["BA.", "ORE", "WED"]) })[0]).toBe("Fill every square.");
+  });
+
+  it("files 15×15s under the large slot and minis under the mini", () => {
+    expect(defaultSlotFor(15, 15)).toBe("large");
+    expect(defaultSlotFor(11, 11)).toBe("large");
+    expect(defaultSlotFor(5, 5)).toBe("mini");
+    expect(defaultSlotFor(7, 9)).toBe("mini");
   });
 
   it("builds a feed entry the app's daily feed accepts", () => {

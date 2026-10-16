@@ -119,6 +119,7 @@ export interface Database {
         Row: {
           id: string;
           day: string;
+          slot: string;
           user_id: string;
           display_name: string;
           mode: string;
@@ -129,6 +130,7 @@ export interface Database {
         Insert: {
           id?: string;
           day: string;
+          slot?: string;
           user_id: string;
           display_name?: string;
           mode: string;
@@ -139,6 +141,7 @@ export interface Database {
         Update: {
           id?: string;
           day?: string;
+          slot?: string;
           user_id?: string;
           display_name?: string;
           mode?: string;

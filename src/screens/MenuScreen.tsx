@@ -10,7 +10,10 @@ import { AccountMenuRow } from "../components/Account";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
-import { useDailyMini } from "../hooks/useDailyMini";
+import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
+import type { DailySlot } from "../lib/dailyFeed";
+import { leaderboardPath } from "../lib/dailyLeaderboard";
+import type { DailyMini } from "../lib/dailyMinis";
 import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
 import {
   ANDROID_PLAY_STORE_URL,
@@ -21,6 +24,90 @@ import {
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
+
+interface DailyHeroProps {
+  slot: DailySlot;
+  /** Null paints the loading placeholder (the mini while the feed answers). */
+  daily: DailyMini | null;
+  showFriends: boolean;
+  disabled: boolean;
+  /** Shown in the footer when positive (the mini carries the daily streak). */
+  streak?: number;
+  onPlay: () => void;
+  onRace: () => void;
+}
+
+/** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
+function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
+  const { t } = useTranslation();
+  return (
+    <Card className="overflow-hidden" aria-busy={!daily}>
+      <div className="flex items-start gap-5 p-5 sm:p-6">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Eyebrow className="text-brand-600">{t(slot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow")}</Eyebrow>
+            {daily?.theme && (
+              <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
+                {daily.theme}
+              </span>
+            )}
+          </div>
+          {daily ? (
+            <>
+              <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
+                {daily.puzzle.title}
+              </h1>
+              <p className="mt-1 text-sm text-muted tabular-nums">
+                {t("menu.dailyMeta", {
+                  width: daily.puzzle.width,
+                  height: daily.puzzle.height,
+                  count: daily.puzzle.clues.length,
+                })}
+              </p>
+            </>
+          ) : (
+            <div className="animate-pulse" aria-hidden="true">
+              <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
+              <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
+            </div>
+          )}
+        </div>
+        {daily ? (
+          <MiniGridThumb puzzle={daily.puzzle} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+        ) : (
+          <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
+        )}
+      </div>
+      <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
+        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily}>
+          {t("menu.dailyPlay")}
+        </Button>
+        {showFriends && (
+          <Button variant="secondary" size="lg" className="flex-1" onClick={onRace} disabled={disabled || !daily}>
+            <Swords className="size-4.5" aria-hidden="true" />
+            {t("menu.raceFriends")}
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
+        <Link
+          to={leaderboardPath(slot)}
+          onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+          {t("menu.dailyLeaderboard")}
+        </Link>
+        {streak > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-700">
+            <Flame className="size-4 text-gold-500" aria-hidden="true" />
+            {t("soloStats.streakDays", { count: streak })}
+          </span>
+        )}
+      </div>
+    </Card>
+  );
+}
 
 export function MenuScreen() {
   const { t } = useTranslation();
@@ -34,28 +121,37 @@ export function MenuScreen() {
   const desktop = useMemo(() => isDesktopBrowser(), []);
   const nytStreak = useMemo(() => getDisplayNytStreak(), []);
 
-  // Resolve once per render — deterministic per calendar day.
+  // Resolve once per render — deterministic per calendar day. The mini always
+  // has an answer (bundled fallback); the large exists only on days one was
+  // published, and its tile simply isn't there otherwise.
   const dailyMini = useDailyMini();
+  const dailyLarge = useDailyPuzzle("large");
 
-  const playDailyMini = useCallback(async () => {
-    track("mode_selected", { mode: "daily" });
-    // No import step: load the bundled mini straight into solo play. It carries
-    // no file buffer, so handleSoloPuzzleLoaded won't count it as an import.
-    if (!dailyMini) return;
-    await handleSoloPuzzleLoaded(dailyMini.puzzle);
-    setSoloTheme(dailyMini.theme);
-    navigate("/solo/play");
-  }, [dailyMini, handleSoloPuzzleLoaded, setSoloTheme, navigate]);
+  const playDaily = useCallback(
+    async (daily: DailyMini | null | undefined, slot: DailySlot) => {
+      track("mode_selected", { mode: "daily", slot });
+      // No import step: load the daily straight into solo play. It carries no
+      // file buffer, so handleSoloPuzzleLoaded won't count it as an import.
+      if (!daily) return;
+      await handleSoloPuzzleLoaded(daily.puzzle);
+      setSoloTheme(daily.theme);
+      navigate("/solo/play");
+    },
+    [handleSoloPuzzleLoaded, setSoloTheme, navigate],
+  );
 
-  const raceDailyMini = useCallback(() => {
-    track("mode_selected", { mode: "daily-race" });
-    // Hand today's mini to the existing host flow (name → lobby with share
-    // code/QR) — everyone is released into the SAME puzzle at the same instant
-    // when the host starts. Same lobby mechanic as any imported puzzle.
-    if (!dailyMini) return;
-    setUrlPuzzle(dailyMini.puzzle);
-    navigate("/host-game/name");
-  }, [dailyMini, setUrlPuzzle, navigate]);
+  const raceDaily = useCallback(
+    (daily: DailyMini | null | undefined, slot: DailySlot) => {
+      track("mode_selected", { mode: "daily-race", slot });
+      // Hand the daily to the existing host flow (name → lobby with share
+      // code/QR) — everyone is released into the SAME puzzle at the same instant
+      // when the host starts. Same lobby mechanic as any imported puzzle.
+      if (!daily) return;
+      setUrlPuzzle(daily.puzzle);
+      navigate("/host-game/name");
+    },
+    [setUrlPuzzle, navigate],
+  );
 
   const showFriends = Boolean(user) || loading;
   const nativeNyt = nativeNytImportAvailable();
@@ -75,73 +171,31 @@ export function MenuScreen() {
       <Title animate className="mb-8 sm:mb-10" />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
-        {/* Front door: today's mini. Never gated on auth loading; it waits only
-            for the daily feed's first answer of the day (see useDailyMini). */}
-        <Card className="overflow-hidden lg:sticky lg:top-8" aria-busy={!dailyMini}>
-          <div className="flex items-start gap-5 p-5 sm:p-6">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Eyebrow className="text-brand-600">{t("menu.dailyMiniEyebrow")}</Eyebrow>
-                {dailyMini?.theme && (
-                  <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
-                    {dailyMini.theme}
-                  </span>
-                )}
-              </div>
-              {dailyMini ? (
-                <>
-                  <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
-                    {dailyMini.puzzle.title}
-                  </h1>
-                  <p className="mt-1 text-sm text-muted tabular-nums">
-                    {t("menu.dailyMeta", {
-                      width: dailyMini.puzzle.width,
-                      height: dailyMini.puzzle.height,
-                      count: dailyMini.puzzle.clues.length,
-                    })}
-                  </p>
-                </>
-              ) : (
-                <div className="animate-pulse" aria-hidden="true">
-                  <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
-                  <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
-                </div>
-              )}
-            </div>
-            {dailyMini ? (
-              <MiniGridThumb puzzle={dailyMini.puzzle} className="w-24 shrink-0 sm:w-28 lg:w-36" />
-            ) : (
-              <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
-            )}
-          </div>
-          <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
-            <Button size="lg" className="flex-1" onClick={playDailyMini} disabled={!dailyMini}>
-              {t("menu.dailyPlay")}
-            </Button>
-            {showFriends && (
-              <Button variant="secondary" size="lg" className="flex-1" onClick={raceDailyMini} disabled={disabled || !dailyMini}>
-                <Swords className="size-4.5" aria-hidden="true" />
-                {t("menu.raceFriends")}
-              </Button>
-            )}
-          </div>
-          <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
-            <Link
-              to="/daily/leaderboard"
-              onClick={() => track("mode_selected", { mode: "leaderboard" })}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
-            >
-              <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-              {t("menu.dailyLeaderboard")}
-            </Link>
-            {streak > 0 && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-700">
-                <Flame className="size-4 text-gold-500" aria-hidden="true" />
-                {t("soloStats.streakDays", { count: streak })}
-              </span>
-            )}
-          </div>
-        </Card>
+        {/* Front door: today's dailies. Never gated on auth loading; the mini
+            waits only for the daily feed's first answer of the day (see
+            useDailyMini), and the large tile appears once its feed says there
+            is one today. */}
+        <div className="grid gap-4 lg:sticky lg:top-8">
+          <DailyHero
+            slot="mini"
+            daily={dailyMini}
+            showFriends={showFriends}
+            disabled={disabled}
+            streak={streak}
+            onPlay={() => void playDaily(dailyMini, "mini")}
+            onRace={() => raceDaily(dailyMini, "mini")}
+          />
+          {dailyLarge && (
+            <DailyHero
+              slot="large"
+              daily={dailyLarge}
+              showFriends={showFriends}
+              disabled={disabled}
+              onPlay={() => void playDaily(dailyLarge, "large")}
+              onRace={() => raceDaily(dailyLarge, "large")}
+            />
+          )}
+        </div>
 
         <div className="grid gap-8">
           {showFriends && (

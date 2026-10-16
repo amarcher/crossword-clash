@@ -1,16 +1,23 @@
 /**
  * Remote daily-puzzle feed.
  *
- * The bundled set in dailyMinis.ts is small and can only grow with a code
- * release. The feed lets a day's puzzle be published as a static file instead:
- * `public/daily-puzzles/YYYY-MM-DD.json` (added with `pnpm daily:add`), keyed by
- * the same local calendar day as the bundled rotation. A day with a feed file
- * uses it; any other day — or any failure to read the feed — falls back to the
- * bundled rotation, so the daily never depends on the network.
+ * Two daily slots share one feed: the **mini** (the original daily) and the
+ * **large** (original 15×15 themed puzzles). A day's puzzle for a slot can be
+ * published as a static file — `public/daily-puzzles/YYYY-MM-DD.json` for the
+ * mini, `public/daily-puzzles/large/YYYY-MM-DD.json` for the large (both
+ * written by `pnpm daily:add`) — or scheduled in Supabase, which api/daily.ts
+ * serves at the same URLs. Everything is keyed by the same local calendar day
+ * as the bundled rotation.
  *
- * The answer for a day is remembered in localStorage so repeat visits paint
- * instantly and `currentDailyMini()` (used by the leaderboard's "is this
- * today's daily?" check) stays synchronous.
+ * The two slots differ in what "nothing published" means. The mini falls back
+ * to the bundled set in dailyMinis.ts on any other day — or any failure to
+ * read the feed — so it never depends on the network. The large has no
+ * fallback: a day with nothing published simply has no large, and the menu
+ * shows no tile for it.
+ *
+ * The answer for a day is remembered in localStorage per slot, so repeat
+ * visits paint instantly and `currentDailyPuzzle()` (used by the
+ * leaderboard's "is this today's daily?" check) stays synchronous.
  *
  * The native apps have no feed of their own, so they read the website's
  * (vercel.json allows any origin, including on a missing day's 404).
@@ -20,8 +27,20 @@ import { dayKey } from "./soloStats";
 import { getDailyMini, type DailyMini } from "./dailyMinis";
 import { normalizeTransferPuzzle, type TransferPuzzle } from "./puzzleNormalizer";
 
+/** The two dailies. Mirrored (not imported) by api/daily.ts and the studio-schedule edge function. */
+export const DAILY_SLOTS = ["mini", "large"] as const;
+export type DailySlot = (typeof DAILY_SLOTS)[number];
+
+export function isDailySlot(value: unknown): value is DailySlot {
+  return (DAILY_SLOTS as readonly unknown[]).includes(value);
+}
+
 export const DAILY_FEED_PATH = "/daily-puzzles";
-const CACHE_KEY = "crossword-clash:daily-feed";
+const CACHE_KEYS: Record<DailySlot, string> = {
+  // The mini keeps its original key so a stored answer survives this change.
+  mini: "crossword-clash:daily-feed",
+  large: "crossword-clash:daily-feed:large",
+};
 const FETCH_TIMEOUT_MS = 2500;
 /** How long "no feed file for today" is trusted before the feed is asked again. */
 export const ABSENT_TTL_MS = 3 * 60 * 60 * 1000;
@@ -44,8 +63,13 @@ type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<{
 
 // --- Pure ---
 
-export function dailyFeedUrl(day: string, origin: string = FEED_ORIGIN): string {
-  return `${origin}${DAILY_FEED_PATH}/${day}.json`;
+/** The URL path of a slot's feed file for a day — also its path under public/. */
+export function dailyFeedPath(slot: DailySlot, day: string): string {
+  return slot === "mini" ? `${DAILY_FEED_PATH}/${day}.json` : `${DAILY_FEED_PATH}/${slot}/${day}.json`;
+}
+
+export function dailyFeedUrl(day: string, slot: DailySlot = "mini", origin: string = FEED_ORIGIN): string {
+  return `${origin}${dailyFeedPath(slot, day)}`;
 }
 
 /** Validate one feed file's JSON. Null when it is not a playable puzzle. */
@@ -60,7 +84,12 @@ export function parseDailyFeedEntry(data: unknown): DailyMini | null {
   }
 }
 
-// --- Cache: what the feed said for one day ---
+/** What a slot shows when the feed has nothing for the day: the bundled mini, or no large. */
+function fallback(slot: DailySlot, now: Date): DailyMini | null {
+  return slot === "mini" ? getDailyMini(now) : null;
+}
+
+// --- Cache: what the feed said for one day, per slot ---
 
 interface Known {
   day: string;
@@ -69,15 +98,15 @@ interface Known {
   checkedAt: number;
 }
 
-let memo: Known | undefined;
-let inflight: { day: string; promise: Promise<DailyMini> } | undefined;
+const memo: Partial<Record<DailySlot, Known>> = {};
+const inflight: Partial<Record<DailySlot, { day: string; promise: Promise<DailyMini | null> }>> = {};
 
-function remember(day: string, data: unknown, checkedAt: number, persist: boolean): DailyMini | null {
+function remember(slot: DailySlot, day: string, data: unknown, checkedAt: number, persist: boolean): DailyMini | null {
   const mini = data === null ? null : parseDailyFeedEntry(data);
-  memo = { day, mini, checkedAt };
+  memo[slot] = { day, mini, checkedAt };
   if (persist) {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ day, entry: mini ? data : null, checkedAt }));
+      localStorage.setItem(CACHE_KEYS[slot], JSON.stringify({ day, entry: mini ? data : null, checkedAt }));
     } catch {
       // storage unavailable — the in-memory answer still holds for this page
     }
@@ -85,9 +114,9 @@ function remember(day: string, data: unknown, checkedAt: number, persist: boolea
   return mini;
 }
 
-function readStored(day: string): Known | undefined {
+function readStored(slot: DailySlot, day: string): Known | undefined {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEYS[slot]);
     if (!raw) return undefined;
     const stored = JSON.parse(raw) as { day?: unknown; entry?: unknown; checkedAt?: unknown };
     if (stored.day !== day || typeof stored.checkedAt !== "number") return undefined;
@@ -100,69 +129,92 @@ function readStored(day: string): Known | undefined {
 }
 
 /** The feed's answer for `now`'s day if we have one: a puzzle, null (none), or undefined (not asked). */
-function known(now: Date): DailyMini | null | undefined {
+function known(slot: DailySlot, now: Date): DailyMini | null | undefined {
   const day = dayKey(now);
-  if (memo?.day !== day) memo = readStored(day);
-  if (!memo) return undefined;
-  if (memo.mini === null && now.getTime() - memo.checkedAt >= ABSENT_TTL_MS) return undefined;
-  return memo.mini;
+  if (memo[slot]?.day !== day) memo[slot] = readStored(slot, day);
+  const k = memo[slot];
+  if (!k) return undefined;
+  if (k.mini === null && now.getTime() - k.checkedAt >= ABSENT_TTL_MS) return undefined;
+  return k.mini;
 }
 
-// --- Public ---
+// --- Public: any slot ---
 
 /**
- * Today's daily if it can be named without waiting: the feed's puzzle, or the
- * bundled one when the feed is known to have none. Null while the feed has not
- * answered yet — callers show a placeholder and use `resolveDailyMini`.
+ * Today's puzzle in a slot if it can be named without waiting: the feed's
+ * puzzle, or the slot's fallback when the feed is known to have none (the
+ * bundled mini; no large). Undefined while the feed has not answered yet —
+ * callers show a placeholder (or nothing) and use `resolveDailyPuzzle`.
  */
-export function knownDailyMini(now: Date = new Date()): DailyMini | null {
-  const mini = known(now);
-  if (mini === undefined) return null;
-  return mini ?? getDailyMini(now);
+export function knownDailyPuzzle(slot: DailySlot, now: Date = new Date()): DailyMini | null | undefined {
+  const k = known(slot, now);
+  if (k === undefined) return undefined;
+  return k ?? fallback(slot, now);
 }
 
-/** Best synchronous answer for today's daily: the feed's puzzle if known, else the bundled one. */
-export function currentDailyMini(now: Date = new Date()): DailyMini {
-  return known(now) ?? getDailyMini(now);
+/** Best synchronous answer for a slot today: the feed's puzzle if known, else the slot's fallback. */
+export function currentDailyPuzzle(slot: DailySlot, now: Date = new Date()): DailyMini | null {
+  return known(slot, now) ?? fallback(slot, now);
 }
 
-/** Today's daily, asking the feed if it has not been asked recently. Never rejects. */
-export function resolveDailyMini(
+/** Today's puzzle in a slot, asking the feed if it has not been asked recently. Never rejects. */
+export function resolveDailyPuzzle(
+  slot: DailySlot,
   now: Date = new Date(),
   fetchImpl: FetchLike | undefined = typeof fetch === "function" ? (fetch as unknown as FetchLike) : undefined,
-): Promise<DailyMini> {
-  const ready = knownDailyMini(now);
-  if (ready || !fetchImpl) return Promise.resolve(ready ?? getDailyMini(now));
+): Promise<DailyMini | null> {
+  const ready = knownDailyPuzzle(slot, now);
+  if (ready !== undefined || !fetchImpl) return Promise.resolve(ready ?? fallback(slot, now));
 
   const day = dayKey(now);
-  if (inflight?.day === day) return inflight.promise;
+  const pending = inflight[slot];
+  if (pending?.day === day) return pending.promise;
 
   const promise = (async () => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     try {
-      const res = await fetchImpl(dailyFeedUrl(day), { signal: controller.signal });
+      const res = await fetchImpl(dailyFeedUrl(day, slot), { signal: controller.signal });
       if (res.ok) {
         // A host that falls back to index.html answers 200 with HTML; that is "no file".
         const data = await res.json().catch(() => null);
-        return remember(day, data, now.getTime(), true) ?? getDailyMini(now);
+        return remember(slot, day, data, now.getTime(), true) ?? fallback(slot, now);
       }
       // 404 is a real "nothing published"; anything else may be transient, so don't persist it.
-      remember(day, null, now.getTime(), res.status === 404);
+      remember(slot, day, null, now.getTime(), res.status === 404);
     } catch {
-      remember(day, null, now.getTime(), false);
+      remember(slot, day, null, now.getTime(), false);
     } finally {
       clearTimeout(timer);
-      inflight = undefined;
+      inflight[slot] = undefined;
     }
-    return getDailyMini(now);
+    return fallback(slot, now);
   })();
-  inflight = { day, promise };
+  inflight[slot] = { day, promise };
   return promise;
+}
+
+// --- Public: the mini, which always has an answer ---
+
+/** Today's mini if it can be named without waiting; null while the feed is being asked. */
+export function knownDailyMini(now: Date = new Date()): DailyMini | null {
+  return knownDailyPuzzle("mini", now) ?? null;
+}
+
+/** Best synchronous answer for today's mini: the feed's puzzle if known, else the bundled one. */
+export function currentDailyMini(now: Date = new Date()): DailyMini {
+  return known("mini", now) ?? getDailyMini(now);
+}
+
+/** Today's mini, asking the feed if it has not been asked recently. Never rejects. */
+export function resolveDailyMini(now: Date = new Date(), fetchImpl?: FetchLike): Promise<DailyMini> {
+  return resolveDailyPuzzle("mini", now, fetchImpl).then((mini) => mini ?? getDailyMini(now));
 }
 
 /** Test hook: forget everything held in memory. */
 export function resetDailyFeedMemory(): void {
-  memo = undefined;
-  inflight = undefined;
+  for (const slot of DAILY_SLOTS) {
+    memo[slot] = undefined;
+    inflight[slot] = undefined;
+  }
 }

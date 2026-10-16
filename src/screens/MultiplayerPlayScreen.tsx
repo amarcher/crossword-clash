@@ -20,9 +20,9 @@ import { useAccountContext } from "../contexts/AccountContext";
 import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
-import { useIsTodaysDaily } from "../hooks/useDailyMini";
+import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { leaderboardPath, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
 import { rankRaceStandings } from "../lib/raceResults";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -143,7 +143,8 @@ export function MultiplayerPlayScreen() {
   // each finisher posts their OWN time. Shared-grid modes (versus/coop) roll
   // the streak but do NOT post times — a team-shared grid time isn't
   // comparable to individual solves.
-  const isDaily = useIsTodaysDaily(puzzle);
+  const dailySlot = useTodaysDailySlot(puzzle);
+  const isDaily = dailySlot !== null;
   usePlayInsights({
     puzzle,
     playerCells,
@@ -158,13 +159,14 @@ export function MultiplayerPlayScreen() {
   });
   const dailySubmittedRef = useRef(false);
   useEffect(() => {
-    if (dailySubmittedRef.current || !isDaily || !user) return;
+    if (dailySubmittedRef.current || !dailySlot || !user) return;
     if (isAsync) {
       if (myFinishSeconds === undefined) return;
       dailySubmittedRef.current = true;
       recordDailyPlay();
       void submitDailyResult({
         day: todayKey(),
+        slot: dailySlot,
         userId: user.id,
         displayName: game.displayName,
         mode: "race",
@@ -176,7 +178,7 @@ export function MultiplayerPlayScreen() {
     if (gameStatus !== "completed") return;
     dailySubmittedRef.current = true;
     recordDailyPlay();
-  }, [gameStatus, isDaily, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
+  }, [gameStatus, dailySlot, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
 
   // NYT-bookmarklet return loop (mirrors SoloPlayScreen): a finished NYT
   // puzzle rolls the NYT streak for everyone in the room, including friends
@@ -440,7 +442,8 @@ export function MultiplayerPlayScreen() {
         raceStandings={raceStandings}
         coop={isCoop}
         nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={isDaily ? () => navigate("/daily/leaderboard") : undefined}
+        onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
+        dailySlot={dailySlot ?? undefined}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
