@@ -11,7 +11,8 @@
  *   pnpm seedgrid:large --seeds "..." --no-llm        # skeleton + best-scored fill, no API calls
  *
  * Flags: --title, --author, --difficulty easy|medium|hard, --min-score 50 (the score
- * the layout aims for), --seeds-floor 45 (the lowest floor to settle for), --fills 12,
+ * the layout aims for), --seeds-floor 48 (the lowest floor to settle for; 47 is the list's
+ * demoted catch-all tier), --fills 24,
  * --fill-ms 20000, --budget 120000 (skeleton search ms), --layouts 2 (skeletons to compare;
  * the one whose best quick fill scores highest wins), --allow-shared (themers may
  * share a run longer than the engine's limit), --bonus FILE (theme-bonus words; default
@@ -28,9 +29,8 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { initSync, Engine } from "../../src/lib/seedgrid/wasm/seedgrid_engine.js";
 import { IngridEngine, type EngineRules } from "../../src/lib/seedgrid/ingrid";
-import { MAX_SHARED } from "../../src/lib/seedgrid/engineClient";
 import { normalizeEntry, parseDict, WordIndex } from "../../src/lib/seedgrid/dictionary";
-import { blackBlocks, blackCorners, cloneGrid, gridStats, gridToRows, meetsGridStandards, slotsOf, slotText, type Grid, type Slot } from "../../src/lib/seedgrid/grid";
+import { blackBlocks, blackCorners, cloneGrid, gridStats, gridToRows, MAX_SHARED, meetsGridStandards, slotsOf, slotText, type Grid, type Slot } from "../../src/lib/seedgrid/grid";
 import { findSkeleton } from "../../src/lib/seedgrid/skeletonFinder";
 import { auditClues, auditGrid, clueBudget } from "../../src/lib/seedgrid/audit";
 import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
@@ -39,6 +39,7 @@ import { newPuzzleId, slotKey, type StudioState } from "../../src/lib/seedgrid/s
 import { mulberry32 } from "../../src/lib/seedgrid/random";
 import {
   longestSharedRun,
+  nestedEntries,
   parseWordSet,
   PARTIAL_PENALTY,
   SUBTIER_PENALTY,
@@ -66,7 +67,7 @@ const useLlm = !flags["no-llm"];
 const dryRun = Boolean(flags["dry-run"]);
 const size = Number(flag("size") ?? 15);
 const minScore = Number(flag("min-score") ?? 50);
-const seedsFloor = Number(flag("seeds-floor") ?? 45);
+const seedsFloor = Number(flag("seeds-floor") ?? 48);
 const fillCount = Number(flag("fills") ?? 24);
 const fillMs = Number(flag("fill-ms") ?? 20_000);
 const budgetMs = Number(flag("budget") ?? 120_000);
@@ -181,6 +182,8 @@ interface FillCandidate {
   seed: number;
   grid: Grid;
   score: FillScore;
+  /** Engine entries the audit would block (nested in another entry, or sharing too long a run with a themer). */
+  blocks: string[];
 }
 
 interface FillVerdict {
@@ -267,6 +270,28 @@ ${offers.map((o) => `${o.slot.id} currently ${o.current} (${scores.get(o.current
   return swaps;
 }
 
+async function reviewClues(grid: Grid, context: string, answers: Record<string, string>, clues: Record<string, ClueSet>): Promise<{ slot: string; problem: string }[]> {
+  const { problems } = await callJson<{ problems: { slot: string; problem: string }[] }>({
+    model,
+    system: CONSTRUCTOR,
+    prompt: `${context}
+Grid:
+${gridToRows(grid).join("\n")}
+
+Review these drafted clues as the editor before they ship. Flag only clues that break the content rule (crude, sad, gross, mocking a dialect, accent or group, or apologizing for the entry), are unfair or factually wrong, or give the answer away. Return an empty list when all are fine; one problem per flagged slot, in a few words.
+
+${Object.keys(answers).map((id) => `${id} ${answers[id]}: ${clues[id]?.standard ?? "(missing)"} / ${clues[id]?.speed ?? ""}`).join("\n")}`,
+    schema: {
+      type: "object",
+      properties: {
+        problems: { type: "array", items: { type: "object", properties: { slot: { type: "string" }, problem: { type: "string" } }, required: ["slot", "problem"] } },
+      },
+      required: ["problems"],
+    },
+  });
+  return problems.filter((p) => answers[p.slot]);
+}
+
 async function writeClues(grid: Grid, context: string, difficulty: Difficulty, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
   const req = cluesRequest(grid, context, { difficulty, fix });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
@@ -285,6 +310,7 @@ function swapIsClean(grid: Grid, slot: Slot, word: string): string | null {
     if (text === word) return `duplicates ${other.id}`;
     const run = longestSharedRun(word, text);
     if (!locked && (run.length > MAX_SHARED || text.includes(word) || word.includes(text))) return `shares ${run} with ${text}`;
+    if (locked && word.length >= 4 && text.includes(word)) return `sits inside ${text}`;
   }
   return null;
 }
@@ -293,11 +319,15 @@ function fmtSeconds(ms: number): string {
   return `${(ms / 1000).toFixed(0)}s`;
 }
 
+type Stage = "seeds" | "skeleton" | "fill" | "review" | "clues" | "output" | "done";
+/** Where buildTheme is, so an unexpected throw is reported against the right stage. */
+let stage: Stage = "seeds";
+
 interface ThemeOutcome {
   theme: string;
   title: string;
   ok: boolean;
-  stage: "seeds" | "skeleton" | "fill" | "review" | "clues" | "done";
+  stage: Stage;
   floor?: number;
   quality?: number;
   weak?: string[];
@@ -317,6 +347,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   const outcome = (o: Partial<ThemeOutcome> & Pick<ThemeOutcome, "ok" | "stage">): ThemeOutcome => ({ theme, title, ms: Date.now() - startedAt, ...o });
 
   // 1. Themers.
+  stage = "seeds";
   const validation = validateSeeds(spec.seeds, { size, maxShared: MAX_SHARED, allowShared: spec.allowShared });
   if (!validation.ok) {
     const error = validation.errors.join("\n");
@@ -345,6 +376,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   const vocab = new Set(dictEntries.filter((e) => e.score >= minScore).map((e) => e.word));
   const ctx: ScoreContext = { scores, ban, bonus, vocab, singleWords, cleanScore: minScore };
 
+  stage = "skeleton";
   // 2. Skeleton(s). The finder returns the first layout that fills; with several, the one whose
   // quick fills score best wins, since different layouts put the thin spots in different places.
   const floorSteps = [...new Set([5, 10, 15].filter((d) => minScore - d > seedsFloor).concat(minScore > seedsFloor ? [minScore - seedsFloor] : []))];
@@ -355,8 +387,12 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     floor: number;
     attempts: number;
     ms: number;
-    /** Best quality among a few quick fills (set when comparing layouts). */
+    /** Best quality per entry among a few quick fills (set when comparing layouts). */
     quality?: number;
+    /** Fewest flagged entries among those quick fills: the number the editor will see. */
+    flagged?: number;
+    /** Options in the tightest open slot at the floor; two means any rejection there kills the fill. */
+    tightest?: number;
   }
   const layouts: Layout[] = [];
   const wanted = dryRun ? 1 : Math.max(1, layoutCount);
@@ -385,7 +421,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     layouts.push({ grid: found.grid, floor: found.minScore, attempts: found.attempts, ms });
   }
   if (!layouts.length) {
-    const error = `No fillable skeleton at any floor from ${minScore} down to ${seedsFloor} within ${fmtSeconds(budgetMs)} per layout. Try --seeds-floor 40, a longer --budget, or different themers.`;
+    const error = `No fillable skeleton at any floor from ${minScore} down to ${seedsFloor} within ${fmtSeconds(budgetMs)} per layout. Try --seeds-floor 45 (the list's catch-all tier; stacked 13/14s usually need it), a longer --budget, or different themers.`;
     console.error(`✗ ${error}`);
     return outcome({ ok: false, stage: "skeleton", error });
   }
@@ -414,17 +450,28 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     const res = engine.fill(layout.grid, { minScore: layout.floor, rejected: [...banList, ...rejected] }, { timeoutMs: fillMs, seed });
     return res.ok ? tighten(layout.grid, layout.floor, res.grid, seed) : null;
   };
+  const tightestSlot = (layout: Layout): number => {
+    const h = engine.options(layout.grid, { minScore: layout.floor, rejected: banList });
+    const open = slotsOf(layout.grid).filter((s) => !s.cells.every((i) => layout.grid.locked[i]));
+    return Math.min(...open.map((s) => h.counts[s.id] ?? 0));
+  };
   if (layouts.length > 1) {
     for (const layout of layouts) {
-      const qualities = Array.from({ length: 4 }, () => quickFill(layout, Math.floor(random() * 2 ** 31)))
+      layout.tightest = tightestSlot(layout);
+      // Fewest flagged entries first (what the editor will have to fix), then quality per engine
+      // entry, so a choppy grid full of easy threes does not outscore an open one.
+      const fills = Array.from({ length: 4 }, () => quickFill(layout, Math.floor(random() * 2 ** 31)))
         .filter((g): g is Grid => Boolean(g))
         .map((g) => scoreFill(fillEntries(g), ctx))
-        .filter((sc) => !sc.banned.length)
-        .map((sc) => sc.total);
-      layout.quality = qualities.length ? Math.max(...qualities) : -Infinity;
+        .filter((sc) => !sc.banned.length && sc.count);
+      layout.quality = fills.length ? Math.max(...fills.map((sc) => sc.total / sc.count)) : -Infinity;
+      layout.flagged = fills.length ? Math.min(...fills.map((sc) => sc.weak.length)) : Infinity;
     }
-    layouts.sort((a, b) => (b.quality ?? -Infinity) - (a.quality ?? -Infinity) || b.floor - a.floor);
-    log(`Layouts by best quick fill: ${layouts.map((l) => `${l.quality === -Infinity ? "unfilled" : l.quality!.toFixed(0)} (floor ${l.floor})`).join(", ")}`);
+    // A skeleton whose tightest slot has under four options is fragile: Claude's first rejection
+    // there makes it unfillable. Then fewest flagged entries, then quality per entry.
+    const room = (l: Layout) => Math.min(l.tightest ?? 0, 4);
+    layouts.sort((a, b) => room(b) - room(a) || (a.flagged ?? Infinity) - (b.flagged ?? Infinity) || (b.quality ?? -Infinity) - (a.quality ?? -Infinity) || b.floor - a.floor);
+    log(`Layouts by quick fills (tightest slot, flagged entries, quality per entry): ${layouts.map((l) => `${l.tightest} options, ${l.flagged === Infinity ? "unfilled" : `${l.flagged} flagged, ${l.quality!.toFixed(1)}`} (floor ${l.floor})`).join("; ")}`);
   }
   const { grid: skeleton, floor } = layouts[0];
   const stats = gridStats(skeleton);
@@ -439,7 +486,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     "```",
     ...gridToRows(skeleton),
     "```",
-    `Fills at floor **${floor}**${floor < minScore ? ` (requested ${minScore}; the list runs thin around stacked themers at ${minScore})` : ""}. ${layouts.length > 1 ? `Best of ${layouts.length} layouts by quick-fill quality (${layouts.map((l) => `${l.quality === -Infinity ? "unfilled" : l.quality!.toFixed(0)} at floor ${l.floor}`).join(", ")}); this one took` : "Found after"} ${layouts[0].attempts} legal skeletons in ${fmtSeconds(layouts[0].ms)}.`,
+    `Fills at floor **${floor}**${floor < minScore ? ` (requested ${minScore}; the list runs thin around stacked themers at ${minScore})` : ""}. ${layouts.length > 1 ? `Best of ${layouts.length} layouts by tightest slot, then quick fills (${layouts.map((l) => `${l.tightest} options in the tightest slot, ${l.flagged === Infinity ? "unfilled" : `${l.flagged} flagged, quality ${l.quality!.toFixed(1)} per entry`} at floor ${l.floor}`).join("; ")}); this one took` : "Found after"} ${layouts[0].attempts} legal skeletons in ${fmtSeconds(layouts[0].ms)}.`,
     `${stats.words} words, ${stats.blocks} blocks (${(stats.blockPct * 100).toFixed(0)}%), average length ${stats.avgLength.toFixed(2)}, ${stats.threes} three-letter entries. Corners white, no 2×2 black block (grid standards).`,
     `Tightest open slots at floor ${floor}: ${tightest.map((t) => `${t.id} (${t.n} options)`).join(", ")}.`,
     "",
@@ -450,9 +497,28 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   }
 
   // 3. Fills.
+  stage = "fill";
   const rules = (): EngineRules => ({ minScore: floor, rejected: [...banList, ...rejected] });
   const seen = new Set<string>();
   let fillIndex = 0;
+  const index = new WordIndex(dictEntries, floor);
+  /**
+   * Engine entries an editor's audit blocks: nested inside another entry (ALE in ALEE; a 3-letter
+   * word inside a locked themer is allowed), or sharing a run longer than the limit with a themer.
+   */
+  const auditBlocks = (grid: Grid): string[] => {
+    const entries = fillEntries(grid);
+    const byId = new Map(entries.map((e) => [e.slotId, e]));
+    const out = new Set(nestedEntries(entries).map((n) => n.inner.answer));
+    for (const issue of auditGrid(grid, index, MAX_SHARED).issues) {
+      if (issue.severity !== "block" || issue.kind !== "duplicate") continue;
+      const [a, b] = issue.slots.map((id) => byId.get(id)!);
+      if (a.answer.includes(b.answer) || b.answer.includes(a.answer)) continue; // nesting: judged above
+      for (const e of [a, b]) if (!e.locked) out.add(e.answer);
+    }
+    return [...out];
+  };
+  const candidate = (grid: Grid, seed: number): FillCandidate => ({ index: ++fillIndex, seed, grid, score: scoreFill(fillEntries(grid), ctx), blocks: auditBlocks(grid) });
   const runFills = (count: number, label: string): FillCandidate[] => {
     const out: FillCandidate[] = [];
     log(`${label}: ${count} fills at floor ${floor}${floor < minScore ? `, each tightened toward ${minScore}` : ""}, up to ${fmtSeconds(fillMs)} each…`);
@@ -461,7 +527,10 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
       const res = engine.fill(skeleton, rules(), { timeoutMs: fillMs, seed });
       if (!res.ok) {
         log(`  fill ${i + 1}: ${res.reason} after ${fmtSeconds(res.ms)}`);
-        if (res.reason === "unfillable") break;
+        if (res.reason === "unfillable") {
+          if (rejected.size) notes.push(`The layout cannot be filled with ${[...rejected].join(", ")} rejected.`, "");
+          break;
+        }
         continue;
       }
       const grid = tighten(skeleton, floor, res.grid, seed);
@@ -471,16 +540,17 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
         continue;
       }
       seen.add(key);
-      const score = scoreFill(fillEntries(grid), ctx);
-      const cand: FillCandidate = { index: ++fillIndex, seed, grid, score };
+      const cand = candidate(grid, seed);
+      const { score } = cand;
       out.push(cand);
       const weak = score.weak.slice(0, 4).map((w) => `${w.answer} (${w.reasons.join(", ")})`).join(", ");
-      log(`  fill ${cand.index}: quality ${score.total.toFixed(0)}, mean ${score.mean.toFixed(1)}, ${score.weak.length} flagged${score.banned.length ? ` — REJECTED, banned: ${score.banned.join(", ")}` : weak ? ` — ${weak}${score.weak.length > 4 ? ", …" : ""}` : ""}`);
+      log(`  fill ${cand.index}: quality ${score.total.toFixed(0)}, mean ${score.mean.toFixed(1)}, ${score.weak.length} flagged${cand.blocks.length ? `, blocks: ${cand.blocks.join(", ")}` : ""}${score.banned.length ? ` — REJECTED, banned: ${score.banned.join(", ")}` : weak ? ` — ${weak}${score.weak.length > 4 ? ", …" : ""}` : ""}`);
     }
     return out;
   };
   const considered: FillCandidate[] = runFills(fillCount, "Filling");
-  const usable = (list: FillCandidate[]) => list.filter((f) => !f.score.banned.length).sort((a, b) => b.score.total - a.score.total);
+  // Block-free fills first, then by quality.
+  const usable = (list: FillCandidate[]) => list.filter((f) => !f.score.banned.length).sort((a, b) => a.blocks.length - b.blocks.length || b.score.total - a.score.total);
   let shortlist = usable(considered).slice(0, 3);
   if (!shortlist.length) {
     const error = `No usable fill: ${considered.length} produced, ${considered.filter((f) => f.score.banned.length).length} with banned words.`;
@@ -488,66 +558,188 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     return outcome({ ok: false, stage: "fill", error, floor });
   }
   const fillTable = (list: FillCandidate[]) => [
-    "| Fill | Quality | Mean score | Weak entries | Verdict |",
-    "|---|---|---|---|---|",
-    ...list.map((f) => `| ${f.index} | ${f.score.total.toFixed(0)} | ${f.score.mean.toFixed(1)} | ${f.score.weak.map((w) => `${w.answer} (${w.reasons.join(", ")})`).join(", ") || "—"} | ${f.score.banned.length ? `rejected: banned ${f.score.banned.join(", ")}` : shortlist.includes(f) ? "shortlist" : "—"} |`),
+    "| Fill | Quality | Mean score | Weak entries | Audit blocks | Verdict |",
+    "|---|---|---|---|---|---|",
+    ...list.map((f) => `| ${f.index} | ${f.score.total.toFixed(0)} | ${f.score.mean.toFixed(1)} | ${f.score.weak.map((w) => `${w.answer} (${w.reasons.join(", ")})`).join(", ") || "—"} | ${f.blocks.join(", ") || "—"} | ${f.score.banned.length ? `rejected: banned ${f.score.banned.join(", ")}` : shortlist.includes(f) ? "shortlist" : "—"} |`),
   ];
   notes.push(
     "## Fills considered",
-    `${considered.length} distinct fills${floor < minScore ? `, each re-filled at ${minScore} everywhere but the slots that need ${floor}` : ""}. Quality = Σ min(score, ${SCORE_CEILING}) − ${minScore} over engine entries; an entry under ${minScore} loses the gap again plus ${SUBTIER_PENALTY}; −${PARTIAL_PENALTY} per partial-looking entry, −15 when an entry sits inside another${bonus ? ", +10 per theme-bonus word" : ""}.`,
+    `${considered.length} distinct fills${floor < minScore ? `, each re-filled at ${minScore} everywhere but the slots that need ${floor}` : ""}. Quality = Σ min(score, ${SCORE_CEILING}) − ${minScore} over engine entries; an entry under ${minScore} loses the gap again plus ${SUBTIER_PENALTY}; −${PARTIAL_PENALTY} per partial-looking entry, −15 when an entry sits inside another${bonus ? ", +10 per theme-bonus word" : ""}. Fills with audit blocks rank last whatever their quality.`,
     "",
     ...fillTable(considered),
     "",
   );
   log(`Shortlist: ${shortlist.map((f) => `#${f.index} (${f.score.total.toFixed(0)})`).join(", ")}`);
 
-  // 4. Claude picks, rejects, and swaps.
+  // 4. Claude picks and rejects; audit blocks count as "must"; then local refills and swaps.
+  stage = "review";
   let chosen = shortlist[0];
   const context = [
     theme && `Theme idea: ${theme}`,
     title && `Title: ${title}`,
     `Theme entries (locked): ${seeds.join(", ")}`,
   ].filter(Boolean).join("\n");
-  if (useLlm) {
-    for (let round = 1; round <= 3; round++) {
-      log(`Review round ${round}…`);
-      const list = round === 1 ? shortlist : [chosen];
-      const verdict = await pickFill(list, context, round);
-      const picked = list.find((f) => f.index === verdict.pick) ?? list[0];
-      chosen = picked;
-      const must = verdict.replace.filter((r) => r.severity === "must").map((r) => ({ ...r, answer: normalizeEntry(r.answer) })).filter((r) => !seeds.includes(r.answer) && slotsOf(chosen.grid).some((s) => slotText(chosen.grid, s) === r.answer));
-      notes.push(`## Claude's review, round ${round}`, `Picked fill ${picked.index}. ${verdict.notes}`, ...verdict.replace.map((r) => `- [${r.severity}] ${r.answer}: ${r.reason}`), "");
-      log(`  picked fill ${picked.index}${must.length ? `; must replace ${must.map((r) => r.answer).join(", ")}` : "; nothing must go"}`);
-      if (!must.length) break;
-      for (const r of must) rejected.add(r.answer);
-      const refills = runFills(Math.max(4, Math.ceil(fillCount / 2)), "  Refilling");
-      considered.push(...refills);
-      const best = usable(refills)[0];
-      if (!best) {
-        notes.push(`Refill after rejecting ${must.map((r) => r.answer).join(", ")} produced nothing usable; keeping fill ${chosen.index}.`, "");
-        log("  refill failed; keeping the previous fill");
-        break;
+  /** "Must" entries Claude still wanted out of the shipped fill; the editor's to fix. */
+  const leftForEditor: string[] = [];
+  /** True unless the engine proves the skeleton unfillable under the current rejections. */
+  const fillableNow = (): boolean => {
+    const r = engine.fill(skeleton, rules(), { timeoutMs: 3000, seed: 7 });
+    return r.ok || r.reason === "timeout";
+  };
+  /**
+   * Rejects the named entries and refills. The pick is then the best block-free fill among
+   * every fill so far that avoids the rejections, not only the new batch, so repeated rounds
+   * cannot drift toward worse fills. A word the layout forces (rejecting it alone makes the
+   * skeleton unfillable) is kept, reported, and left for the editor.
+   */
+  const respectsRejections = (f: FillCandidate) => !fillEntries(f.grid).some((e) => !e.locked && rejected.has(e.answer));
+  const rejectAndRefill = (words: string[], label: string): boolean => {
+    for (const w of words) rejected.add(w);
+    if (!fillableNow()) {
+      for (const w of words) rejected.delete(w);
+      const forced: string[] = [];
+      for (const w of words) {
+        rejected.add(w);
+        if (!fillableNow()) {
+          rejected.delete(w);
+          forced.push(w);
+        }
       }
-      shortlist = [best];
-      notes.push(`Refilled without ${must.map((r) => r.answer).join(", ")}:`, "", ...fillTable(refills), "");
-      chosen = best;
+      if (forced.length) {
+        leftForEditor.push(...forced);
+        notes.push(`The layout forces ${forced.join(", ")}: rejecting ${forced.length === 1 ? "it" : "them"} leaves the skeleton unfillable, so ${forced.length === 1 ? "it stays" : "they stay"} for the editor.`, "");
+        log(`  forced by the layout, left for the editor: ${forced.join(", ")}`);
+      }
+      words = words.filter((w) => !forced.includes(w));
+      if (!words.length) return false;
     }
+    const refills = runFills(fillCount, label);
+    considered.push(...refills);
+    const best = usable(considered.filter(respectsRejections))[0];
+    if (!best) {
+      notes.push(`Refill after rejecting ${words.join(", ")} produced nothing usable; keeping fill ${chosen.index}.`, "");
+      log("  refill failed; keeping the previous fill");
+      return false;
+    }
+    shortlist = [best];
+    notes.push(`Refilled without ${words.join(", ")} (best of every fill so far that avoids the rejections: #${best.index}):`, "", ...fillTable(refills), "");
+    chosen = best;
+    return true;
+  };
+  /** The fill Claude last reviewed, so the closing review can be skipped when nothing changed. */
+  let lastReviewed: { key: string; clean: boolean } | null = null;
+  const reviewRound = async (list: FillCandidate[], round: number | "closing"): Promise<string[]> => {
+    log(`Review ${round === "closing" ? "of the fill that ships" : `round ${round}`}…`);
+    const verdict = await pickFill(list, context, typeof round === "number" ? round : 99);
+    const picked = list.find((f) => f.index === verdict.pick) ?? list[0];
+    chosen = picked;
+    const must = verdict.replace.filter((r) => r.severity === "must").map((r) => ({ ...r, answer: normalizeEntry(r.answer) })).filter((r) => !seeds.includes(r.answer) && slotsOf(chosen.grid).some((s) => slotText(chosen.grid, s) === r.answer));
+    notes.push(`## Claude's review${round === "closing" ? " of the fill that ships" : `, round ${round}`}`, `Picked fill ${picked.index}. ${verdict.notes}`, ...verdict.replace.map((r) => `- [${r.severity}] ${r.answer}: ${r.reason}`), "");
+    log(`  picked fill ${picked.index}${must.length ? `; must replace ${must.map((r) => r.answer).join(", ")}` : "; nothing must go"}`);
+    lastReviewed = { key: chosen.grid.cells.join(""), clean: !must.length };
+    return must.map((r) => r.answer);
+  };
+  if (useLlm) {
+    // Up to three refills driven by Claude's "must" entries; the fill that ships gets its own review at the end.
+    for (let round = 1; round <= 3; round++) {
+      const must = await reviewRound(round === 1 ? shortlist : [chosen], round);
+      if (!must.length) break;
+      if (!rejectAndRefill(must, "  Refilling")) break;
+    }
+  } else {
+    notes.push("## Pick", `No LLM (--no-llm): kept the best-scored fill, #${chosen.index}.`, "");
+  }
 
-    // In-place swaps: for the weakest entries, every alternative the engine says fits the crossings.
-    const grid = cloneGrid(chosen.grid);
-    const weakSlots = slotsOf(grid)
+  // Audit blocks are "must" entries too: reject the nested entry and refill until none is left.
+  // Around stacked themers a short entry can be forced (NOL between two themers), so when
+  // rejecting it leaves the layout unfillable, reject the host word instead.
+  for (let attempt = 0; attempt < 3 && chosen.blocks.length; attempt++) {
+    const inners = chosen.blocks;
+    log(`Audit blocks ${inners.join(", ")}; rejecting and refilling…`);
+    notes.push(`## Audit blocks, pass ${attempt + 1}`, `Fill ${chosen.index} has ${inners.join(", ")} nested in another entry; rejected.`, "");
+    if (rejectAndRefill(inners, "  Refilling")) continue;
+    const entries = fillEntries(chosen.grid);
+    const hosts = [...new Set(nestedEntries(entries).filter((n) => inners.includes(n.inner.answer) && !n.host.locked).map((n) => n.host.answer))];
+    for (const w of inners) rejected.delete(w);
+    if (!hosts.length) break;
+    notes.push(`The layout cannot be filled without ${inners.join(", ")}; rejecting the host entries ${hosts.join(", ")} instead.`, "");
+    log(`  ${inners.join(", ")} forced by the layout; rejecting ${hosts.join(", ")} instead`);
+    if (!rejectAndRefill(hosts, "  Refilling")) break;
+  }
+  if (chosen.blocks.length) {
+    const error = `Could not clear the audit blocks (${chosen.blocks.join(", ")}) in three refills.`;
+    console.error(`✗ ${error}`);
+    return outcome({ ok: false, stage: "review", error, floor });
+  }
+
+  // Local refills (the studio's pair-swap): for each flagged entry, reject it, blank it and its
+  // crossings' engine letters, and refill that neighborhood at the requested score. Kept only when
+  // the fill scores better and stays block-free.
+  const flaggedSlots = (grid: Grid, score: FillScore) =>
+    slotsOf(grid)
       .filter((s) => !s.cells.every((i) => grid.locked[i]))
       .map((s) => ({ s, text: slotText(grid, s), score: scores.get(slotText(grid, s)) ?? 0 }))
-      .filter((x) => x.score < minScore + 5 || chosen.score.partials.includes(x.text))
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 6);
+      .filter((x) => x.score < minScore || score.weak.some((w) => w.answer === x.text))
+      .sort((a, b) => a.score - b.score);
+  const localRefill = (grid: Grid, slot: Slot): Grid | null => {
+    const current = slotText(grid, slot);
+    const all = slotsOf(grid);
+    // Around stacked themers the first ring of crossings is often only a few free cells and the
+    // engine proves it has no alternative, so widen to the crossings' crossings when needed.
+    const ring = (depth: number): Slot[] => {
+      let set = [slot];
+      for (let d = 0; d < depth; d++) set = all.filter((o) => set.some((s) => s.cells.some((c) => o.cells.includes(c))));
+      return set;
+    };
+    let best: { grid: Grid; total: number } | null = null;
+    const baseline = scoreFill(fillEntries(grid), ctx).total;
+    for (const depth of [1, 2]) {
+      const blank = cloneGrid(grid);
+      for (const s of ring(depth)) for (const i of s.cells) if (!blank.locked[i]) blank.cells[i] = "";
+      let unfillable = true;
+      for (let t = 0; t < 3; t++) {
+        for (const minScoreHere of [...new Set([minScore, floor])]) {
+          const res = engine.fill(blank, { minScore: minScoreHere, rejected: [...banList, ...rejected, current] }, { timeoutMs: fillMs / 4, seed: Math.floor(random() * 2 ** 31) });
+          if (!res.ok) continue;
+          unfillable = false;
+          const sc = scoreFill(fillEntries(res.grid), ctx);
+          if (sc.banned.length || auditBlocks(res.grid).length) continue;
+          if (sc.total > (best?.total ?? baseline)) best = { grid: res.grid, total: sc.total };
+        }
+      }
+      if (!unfillable) break;
+    }
+    return best?.grid ?? null;
+  };
+  {
+    let grid = cloneGrid(chosen.grid);
+    const changes: string[] = [];
+    for (const { s, text } of flaggedSlots(grid, chosen.score)) {
+      if (slotText(grid, s) !== text) continue; // an earlier refill already changed it
+      const next = localRefill(grid, s);
+      if (!next) continue;
+      const before = new Map(fillEntries(grid).map((e) => [e.slotId, e.answer]));
+      const diff = fillEntries(next).filter((e) => before.get(e.slotId) !== e.answer).map((e) => `${e.slotId} ${before.get(e.slotId)} → ${e.answer}`);
+      changes.push(`- ${s.id} ${text}: ${diff.join(", ")}`);
+      log(`  local refill ${s.id} ${text}: ${diff.join(", ")}`);
+      grid = next;
+    }
+    notes.push("## Local refills", `Each flagged entry rejected and its neighborhood refilled at ${minScore}, kept when the fill scored better:`, ...(changes.length ? changes : ["- none improved the fill"]), "");
+    if (changes.length) chosen = candidate(grid, chosen.seed);
+  }
+
+  if (useLlm) {
+    // In-place swaps: for every flagged entry, the alternatives the engine lists for that slot with
+    // the crossings as they stand, at the requested score first and the floor second.
+    const grid = cloneGrid(chosen.grid);
     const offers: SwapOffer[] = [];
-    for (const { s, text } of weakSlots) {
+    for (const { s, text } of flaggedSlots(grid, chosen.score)) {
       const blank = cloneGrid(grid);
       for (const i of s.cells) if (!blank.locked[i]) blank.cells[i] = "";
-      const opts = engine.options(blank, rules(), s.id, 40);
-      const candidates = (opts.words ?? []).filter((c) => c.word !== text && !ban.has(c.word) && !rejected.has(c.word) && !swapIsClean(grid, s, c.word)).slice(0, 12);
-      if (candidates.length) offers.push({ slot: s, current: text, candidates });
+      const fits = (c: { word: string; score: number }) => c.word !== text && !ban.has(c.word) && !rejected.has(c.word) && !swapIsClean(grid, s, c.word);
+      let candidates = (engine.options(blank, { minScore, rejected: [...banList, ...rejected] }, s.id, 60).words ?? []).filter(fits);
+      if (!candidates.length && floor < minScore) candidates = (engine.options(blank, rules(), s.id, 60).words ?? []).filter(fits);
+      if (candidates.length) offers.push({ slot: s, current: text, candidates: candidates.slice(0, 12) });
     }
     if (offers.length) {
       log(`Offering swaps for ${offers.map((o) => `${o.slot.id} ${o.current}`).join(", ")}…`);
@@ -576,38 +768,54 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
         log(`  ${offer.slot.id}: ${offer.current} → ${word}`);
       }
       notes.push("");
-      if (changed) chosen = { ...chosen, grid, score: scoreFill(fillEntries(grid), ctx) };
+      if (changed) chosen = candidate(grid, chosen.seed);
     } else {
-      notes.push("## Swaps", "No weak entry had an engine-approved alternative that fits its crossings.", "");
+      notes.push("## Swaps", "No flagged entry had an engine-approved alternative that fits its crossings as they stand.", "");
     }
-  } else {
-    notes.push("## Pick", `No LLM (--no-llm): kept the best-scored fill, #${chosen.index}.`, "");
+  }
+
+  // The fill that ships always gets a review: audit refills, local refills and swaps happened after
+  // the last round. "Must" entries at this point are recorded for the editor, not silently kept.
+  const reviewed = (): { key: string; clean: boolean } | null => lastReviewed; // assigned in a closure, so read through one
+  const last = reviewed();
+  if (useLlm && !(last && last.key === chosen.grid.cells.join("") && last.clean)) {
+    const must = await reviewRound([chosen], "closing");
+    if (must.length) {
+      leftForEditor.push(...must);
+      notes.push(`Left in the grid for the editor to replace in the studio: ${must.join(", ")}.`, "");
+      log(`  left for the editor: ${must.join(", ")}`);
+    }
   }
 
   // 5. Final fill and audit.
   const grid = chosen.grid;
   const finalScore = scoreFill(fillEntries(grid), ctx);
-  if (finalScore.banned.length) {
-    const error = `Final fill contains banned words: ${finalScore.banned.join(", ")}`;
+  const finalBlocks = auditBlocks(grid);
+  if (finalScore.banned.length || finalBlocks.length) {
+    const error = finalScore.banned.length ? `Final fill contains banned words: ${finalScore.banned.join(", ")}` : `Final fill has audit blocks: ${finalBlocks.join(", ")}`;
     console.error(`✗ ${error}`);
     return outcome({ ok: false, stage: "review", error, floor });
   }
-  const index = new WordIndex(dictEntries, floor, rejected);
   const report = auditGrid(grid, index, MAX_SHARED);
   notes.push("## Final fill", "```", ...gridToRows(grid), "```", `Quality ${finalScore.total.toFixed(0)}, mean score ${finalScore.mean.toFixed(1)}.`, "", "## Audit");
   notes.push(...(report.issues.length ? report.issues.map((i) => `- [${i.severity}] ${i.message}`) : ["- clean"]), "");
   const weakest = report.entries.filter((e) => !e.locked).sort((a, b) => a.score - b.score).slice(0, 8);
   notes.push(`Lowest-scored entries: ${weakest.map((e) => `${e.answer} (${e.score})`).join(", ")}`, "");
-  if (finalScore.weak.length) notes.push(`Flagged for the editor: ${finalScore.weak.map((w) => `${w.answer} (${w.reasons.join(", ")})`).join(", ")}`, "");
+  const stillThere = new Set(fillEntries(grid).map((e) => e.answer));
+  leftForEditor.splice(0, leftForEditor.length, ...leftForEditor.filter((w) => stillThere.has(w)));
+  const editorFlags = [...leftForEditor.map((w) => `${w} (Claude: must replace)`), ...finalScore.weak.filter((w) => !leftForEditor.includes(w.answer)).map((w) => `${w.answer} (${w.reasons.join(", ")})`)];
+  if (editorFlags.length) notes.push(`Flagged for the editor: ${editorFlags.join(", ")}`, "");
 
   // 6. Clues.
+  stage = "clues";
   const clues: Record<string, ClueSet> = {};
   const answers = Object.fromEntries(slotsOf(grid).map((s) => [s.id, slotText(grid, s)]));
   if (useLlm) {
     log("Writing clues…");
     const sketches = Object.entries(spec.clueSketches ?? {}).filter(([a]) => seeds.includes(a));
     const clueContext = `${context}
-Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays on the mashup, e.g. TOUCHDOWNUNDER → "Six points scored in Australia?". The speed clue for a theme entry may be plainer.${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
+Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays on the mashup, e.g. TOUCHDOWNUNDER → "Six points scored in Australia?". The speed clue for a theme entry may be plainer.
+Content rule, same standard as the fill: nothing crude, sad or gross, no mockery of a dialect, accent or group ("in broken English" is out), nothing that needs a trigger warning. Clue a weak entry straight rather than by apologizing for it.${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
     let rows = await writeClues(grid, clueContext, difficulty);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
@@ -617,6 +825,17 @@ Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays o
         log(`  fixing ${problems.length} clue(s)`);
         rows = await writeClues(grid, clueContext, difficulty, problems);
       } else notes.push(`Clue problems left after the fix pass: ${problems.map((p) => `${p.slot} (${p.problem})`).join("; ")}`, "");
+    }
+    // A second look at content and fairness, not mechanics: the fix pass rewrites what it flags.
+    log("Reviewing clues…");
+    const content = await reviewClues(grid, clueContext, answers, clues);
+    notes.push("## Clue review", ...(content.length ? content.map((p) => `- ${p.slot} ${answers[p.slot]}: ${p.problem}`) : ["- nothing flagged"]), "");
+    if (content.length) {
+      log(`  rewriting ${content.length} clue(s) for content`);
+      const rows = await writeClues(grid, clueContext, difficulty, content);
+      for (const r of rows) if (answers[r.slot] && content.some((p) => p.slot === r.slot)) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
+      const left = clueProblems(answers, clues);
+      if (left.length) notes.push(`Mechanical problems after the content rewrite: ${left.map((p) => `${p.slot} (${p.problem})`).join("; ")}`, "");
     }
     const list = Object.entries(clues).map(([id, c]) => ({ slotId: id, answer: answers[id], clue: c.standard }));
     notes.push("## Clues", `Difficulty ${difficulty}. Budget: ${list.reduce((n, e) => n + e.clue.length, 0)} / ${clueBudget(list.length)} characters.`, "");
@@ -630,6 +849,7 @@ Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays o
   }
 
   // 7. Output.
+  stage = "output";
   title ||= theme || "Untitled";
   const outDir = path.join(outRoot, `${today()}-${slug}`);
   fs.mkdirSync(outDir, { recursive: true });
@@ -667,7 +887,8 @@ Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays o
   log(gridToRows(grid).join("\n"));
   log(`→ ${rel}/puzzle.ipuz, review.md, studio.json`);
   log(`  publish: pnpm daily:add YYYY-MM-DD ${rel}/puzzle.ipuz "${title}"`);
-  return outcome({ ok: true, stage: "done", floor, quality: finalScore.total, weak: finalScore.weak.map((w) => w.answer), dir: rel });
+  if (leftForEditor.length) log(`  left for the editor: ${leftForEditor.join(", ")}`);
+  return outcome({ ok: true, stage: "done", floor, quality: finalScore.total, weak: [...new Set([...leftForEditor, ...finalScore.weak.map((w) => w.answer)])], dir: rel });
 }
 
 // ---- Entry point ----
@@ -681,7 +902,7 @@ async function main() {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       console.error(`✗ ${spec.theme || spec.seeds.join(", ")}: ${error}`);
-      outcomes.push({ theme: spec.theme, title: spec.title ?? "", ok: false, stage: "fill", error, ms: 0 });
+      outcomes.push({ theme: spec.theme, title: spec.title ?? "", ok: false, stage, error, ms: 0 });
     }
   }
   if (useLlm && !dryRun) log(`tokens: ${usage.input} in / ${usage.output} out`);

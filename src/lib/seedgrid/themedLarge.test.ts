@@ -12,6 +12,8 @@ import {
   DUPLICATE_PENALTY,
   SUBTIER_PENALTY,
   SCORE_CEILING,
+  PARTIAL_EXEMPT_SCORE,
+  nestedEntries,
 } from "./themedLarge";
 
 const FOOTBALL = ["touchdown under", "goal post malone", "kickoffspring", "goal line dance"];
@@ -190,13 +192,28 @@ describe("scoreFill", () => {
     expect(a.total).toBe(SCORE_CEILING - 50);
   });
 
-  it("penalizes an entry that sits inside another entry, themers included", () => {
+  it("penalizes an entry that sits inside another engine entry", () => {
     const dict = new Map([["ALE", 60], ["ALEE", 55]]);
     const res = scoreFill([entry("1A", "ALE"), entry("2D", "ALEE")], { scores: dict, ban: new Set() });
     expect(res.total).toBe(10 + 5 - DUPLICATE_PENALTY);
     expect(res.weak).toEqual([{ slotId: "1A", answer: "ALE", score: 60, reasons: ["inside ALEE"] }]);
-    const themer = scoreFill([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE")], { scores: new Map([["LINE", 60]]), ban: new Set() });
-    expect(themer.weak[0].reasons).toEqual(["inside GOALLINEDANCE"]);
+  });
+
+  it("lets a three-letter word sit inside a locked themer but not a longer one", () => {
+    const dict = new Map([["OWN", 60], ["LINE", 60]]);
+    const fine = scoreFill([entry("1A", "TOUCHDOWNUNDER", true), entry("2D", "OWN")], { scores: dict, ban: new Set() });
+    expect(fine.weak).toEqual([]);
+    const dupe = scoreFill([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE")], { scores: dict, ban: new Set() });
+    expect(dupe.weak[0].reasons).toEqual(["inside GOALLINEDANCE"]);
+    expect(nestedEntries([entry("1A", "GOALLINEDANCE", true), entry("2D", "LINE"), entry("3D", "OWN")])).toEqual([
+      { inner: entry("2D", "LINE"), host: entry("1A", "GOALLINEDANCE", true) },
+    ]);
+  });
+
+  it("does not second-guess partial-looking entries the list scores highly", () => {
+    const dict = new Map([["AMANDA", PARTIAL_EXEMPT_SCORE], ["MANDA", 50], ["ANOTE", PARTIAL_EXEMPT_SCORE - 1], ["NOTE", 60]]);
+    const res = scoreFill([entry("1A", "AMANDA"), entry("2A", "ANOTE")], { scores: dict, ban: new Set() });
+    expect(res.partials).toEqual(["ANOTE"]);
   });
 });
 

@@ -4,7 +4,7 @@
  * loads a fresh one, which re-reads the word list.
  */
 import type { EngineRules, FillOutcome, SlotOptions, Viability } from "./ingrid";
-import type { Grid, Symmetry } from "./grid";
+import { MAX_SHARED, type Grid, type Symmetry } from "./grid";
 import type { WorkerRequest } from "./engine.worker";
 import type { SkeletonResult } from "./skeletonFinder";
 
@@ -13,9 +13,11 @@ import type { SkeletonResult } from "./skeletonFinder";
  * the local full list and every other build the licensable list in Supabase
  * Storage (`pnpm seedgrid:upload-dict`).
  */
-// Node (pnpm seedgrid:large) imports this module for MAX_SHARED and has no import.meta.env.
-const env: Partial<ImportMetaEnv> = import.meta.env ?? {};
-export const STUDIO_WORD_LIST_URL = studioWordListUrl(env.VITE_SEEDGRID_WORD_LIST as string | undefined, Boolean(env.DEV), env.VITE_SUPABASE_URL as string | undefined);
+export const STUDIO_WORD_LIST_URL = studioWordListUrl(
+  import.meta.env.VITE_SEEDGRID_WORD_LIST as string | undefined,
+  import.meta.env.DEV,
+  import.meta.env.VITE_SUPABASE_URL as string | undefined,
+);
 
 export function studioWordListUrl(override: string | undefined, dev: boolean, supabaseUrl: string | undefined): string {
   if (override) return override;
@@ -23,8 +25,7 @@ export function studioWordListUrl(override: string | undefined, dev: boolean, su
   if (!supabaseUrl) return "/seedgrid/words-production.dict";
   return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/seedgrid/words-production.dict`;
 }
-/** No two engine-filled entries may share a run of letters longer than this. */
-export const MAX_SHARED = 3;
+export { MAX_SHARED } from "./grid";
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 

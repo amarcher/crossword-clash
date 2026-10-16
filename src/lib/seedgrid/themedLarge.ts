@@ -129,9 +129,10 @@ function splitsIntoFunctionWords(entry: string): boolean {
 /**
  * Entries that read as a fragment of a longer phrase: all function words
  * (ASDOI, ORISIT), or an article glued to a word (ATUNING, ANOTE, THEEND).
- * A heuristic for ranking, not a ban: it also catches ATONE and NOONE, so pass
- * `singleWords` (ENABLE) to exempt real words, and expect a few phrases to be
- * marked "partial-looking" in the review.
+ * A heuristic for ranking, not a ban: it also reads AMANDA and ATONE as
+ * article + word, so `scoreFill` skips it for entries the list scores
+ * PARTIAL_EXEMPT_SCORE or higher, and `singleWords` (ENABLE) exempts real
+ * words when a caller has that list.
  */
 export function looksPartial(entry: string, vocab: Set<string>, singleWords?: Set<string>): boolean {
   if (entry.length < 4) return false;
@@ -148,6 +149,28 @@ export interface FillEntry {
   slotId: string;
   answer: string;
   locked: boolean;
+}
+
+export interface Nesting {
+  /** The engine-filled entry that sits inside another. */
+  inner: FillEntry;
+  host: FillEntry;
+}
+
+/**
+ * Engine-filled entries that appear inside another entry (ALE in ALEE): a
+ * duplicate an editor would reject. A three-letter word inside a locked
+ * themer (OWN in TOUCHDOWNUNDER) is unavoidable and standard, so it is not
+ * reported; inside another engine entry it still is.
+ */
+export function nestedEntries(entries: FillEntry[]): Nesting[] {
+  const out: Nesting[] = [];
+  for (const inner of entries) {
+    if (inner.locked) continue;
+    const host = entries.find((o) => o.answer !== inner.answer && o.answer.includes(inner.answer) && !(o.locked && inner.answer.length <= 3));
+    if (host) out.push({ inner, host });
+  }
+  return out;
 }
 
 export interface ScoreContext {
@@ -175,6 +198,8 @@ export interface WeakEntry {
 export interface FillScore {
   /** Higher is better; comparable between fills of the same skeleton. */
   total: number;
+  /** Engine-filled entries scored; `total / count` compares fills of different skeletons. */
+  count: number;
   /** Mean list score of the engine-filled entries. */
   mean: number;
   banned: string[];
@@ -188,6 +213,8 @@ export const PARTIAL_PENALTY = 8;
 export const BONUS_POINTS = 10;
 export const DUPLICATE_PENALTY = 15;
 export const SUBTIER_PENALTY = 10;
+/** Entries the list scores this high are not second-guessed by the partial heuristic. */
+export const PARTIAL_EXEMPT_SCORE = 60;
 /** Scores above this add nothing more: lively fill helps, but cannot pay for junk elsewhere. */
 export const SCORE_CEILING = 70;
 
@@ -195,9 +222,10 @@ export const SCORE_CEILING = 70;
  * Scores one fill by word quality. Each engine-filled entry contributes its
  * distance from the clean tier, capped at SCORE_CEILING; an entry below the
  * tier loses that distance again plus a flat SUBTIER_PENALTY, so a 45 costs
- * 20 and no number of 100-point phrases hides a pile of them. Partials and
- * entries sitting inside another entry (ALE in ALEE) lose points; theme-bonus
- * words gain them. A banned word is reported, and the caller must reject the fill.
+ * 20 and no number of 100-point phrases hides a pile of them. Partial-looking
+ * entries (unless the list scores them PARTIAL_EXEMPT_SCORE+) and entries
+ * nested inside another entry (`nestedEntries`) lose points; theme-bonus words
+ * gain them. A banned word is reported, and the caller must reject the fill.
  */
 export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
   const clean = ctx.cleanScore ?? 50;
@@ -209,6 +237,7 @@ export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
   const partials: string[] = [];
   const bonusHits: string[] = [];
   const weak: WeakEntry[] = [];
+  const nested = new Map(nestedEntries(entries).map((n) => [n.inner.answer, n.host.answer]));
   for (const e of entries) {
     if (e.locked) continue;
     const score = ctx.scores.get(e.answer) ?? 0;
@@ -224,15 +253,15 @@ export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
       banned.push(e.answer);
       reasons.push("banned");
     }
-    if (looksPartial(e.answer, vocab, ctx.singleWords)) {
+    if (score < PARTIAL_EXEMPT_SCORE && looksPartial(e.answer, vocab, ctx.singleWords)) {
       partials.push(e.answer);
       total -= PARTIAL_PENALTY;
       reasons.push("partial-looking");
     }
-    const host = entries.find((o) => o.answer !== e.answer && o.answer.includes(e.answer));
+    const host = nested.get(e.answer);
     if (host) {
       total -= DUPLICATE_PENALTY;
-      reasons.push(`inside ${host.answer}`);
+      reasons.push(`inside ${host}`);
     }
     if (ctx.bonus?.has(e.answer)) {
       bonusHits.push(e.answer);
@@ -241,7 +270,7 @@ export function scoreFill(entries: FillEntry[], ctx: ScoreContext): FillScore {
     if (reasons.length) weak.push({ slotId: e.slotId, answer: e.answer, score, reasons });
   }
   weak.sort((a, b) => Number(b.reasons.includes("banned")) - Number(a.reasons.includes("banned")) || a.score - b.score);
-  return { total, mean: n ? sum / n : 0, banned, partials, bonusHits, weak };
+  return { total, count: n, mean: n ? sum / n : 0, banned, partials, bonusHits, weak };
 }
 
 /** Parses a ban/bonus list: one entry per line, `;score` and `#` comments ignored. */
