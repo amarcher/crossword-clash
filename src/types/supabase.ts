@@ -148,6 +148,12 @@ export interface Database {
         };
         Relationships: [];
       };
+      studio_admins: {
+        Row: { user_id: string; note: string; created_at: string };
+        Insert: { user_id: string; note?: string; created_at?: string };
+        Update: { user_id?: string; note?: string; created_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

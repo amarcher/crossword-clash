@@ -10,6 +10,7 @@ import { slotsOf, slotText } from "./grid";
 import { toTransferPuzzle, type ClueSet } from "./ipuz";
 import { slotKey, type StudioState } from "./studioState";
 import { StudioClaudeError } from "./studioClaude";
+import { studioHeaders } from "../studioAuth";
 
 export interface ScheduledDay {
   day: string;
@@ -49,10 +50,10 @@ async function call<T>(token: string, body: unknown): Promise<T> {
   if (!url || !key) throw new StudioClaudeError("config", "Supabase isn't configured in this build.");
   const res = await fetch(`${url}/functions/v1/studio-schedule`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key, "x-studio-token": token },
+    headers: await studioHeaders(token),
     body: JSON.stringify(body),
   });
-  if (res.status === 401) throw new StudioClaudeError("token", "The studio token wasn't accepted.");
+  if (res.status === 401) throw new StudioClaudeError("token", "Sign in as a studio admin, or enter the studio token.");
   const data = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) throw new StudioClaudeError("failed", `Schedule request failed (${data.error ?? res.status}).`);
   return data;

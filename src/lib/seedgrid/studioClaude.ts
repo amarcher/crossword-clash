@@ -5,6 +5,7 @@
  */
 import { alternativesRequest, clueOk, clueProblems, cluesRequest, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
 import { slotsOf, slotText, type Grid } from "./grid";
+import { studioHeaders } from "../studioAuth";
 
 export const STUDIO_TOKEN_KEY = "crossword-clash:studio-token";
 
@@ -18,7 +19,7 @@ export class StudioClaudeError extends Error {
 
 export type ClaudeCaller = <T>(req: ClaudeJsonRequest) => Promise<T>;
 
-/** Calls the edge function with the constructor's token. */
+/** Calls the edge function as the signed-in admin and/or with the studio token. */
 export function edgeCaller(token: string): ClaudeCaller {
   return async <T,>(req: ClaudeJsonRequest): Promise<T> => {
     const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -26,10 +27,10 @@ export function edgeCaller(token: string): ClaudeCaller {
     if (!url || !key) throw new StudioClaudeError("config", "Supabase isn't configured in this build.");
     const res = await fetch(`${url}/functions/v1/studio-claude`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key, "x-studio-token": token },
+      headers: await studioHeaders(token),
       body: JSON.stringify(req),
     });
-    if (res.status === 401) throw new StudioClaudeError("token", "The studio token wasn't accepted.");
+    if (res.status === 401) throw new StudioClaudeError("token", "Sign in as a studio admin, or enter the studio token.");
     if (res.status === 402) throw new StudioClaudeError("budget", "This month's AI budget is used up.");
     if (res.status === 429) throw new StudioClaudeError("rate", "Too many Claude requests this hour. Try again later.");
     const body = (await res.json().catch(() => ({}))) as { result?: T; error?: string };

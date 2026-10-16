@@ -22,9 +22,10 @@ function label(day: string, today: string): string {
  * The admin daily queue: the next two weeks at a glance, and "Schedule this
  * puzzle" to make the open puzzle the daily on a chosen day. A scheduled day
  * is a snapshot; schedule again after editing to update it. Days left empty
- * fall back to the bundled rotation.
+ * fall back to the bundled rotation. Open to a signed-in studio admin or
+ * with the studio token.
  */
-export function DailyQueue({ state }: { state: StudioState }) {
+export function DailyQueue({ state, admin }: { state: StudioState; admin: boolean }) {
   const token = useStudioToken();
   const [tokenDraft, setTokenDraft] = useState("");
   const [days, setDays] = useState<ScheduledDay[] | null>(null);
@@ -65,13 +66,14 @@ export function DailyQueue({ state }: { state: StudioState }) {
   );
 
   useEffect(() => {
-    if (token) void refresh();
-  }, [token, refresh]);
+    if (token || admin) void refresh();
+  }, [token, admin, refresh]);
 
-  if (!token) {
+  if (!token && !admin) {
     return (
       <Card className="p-4">
         <Eyebrow as="h2">Daily queue</Eyebrow>
+        <p className="mt-1 text-sm text-muted">Sign in as a studio admin, or enter the studio token.</p>
         <form
           className="mt-2 flex flex-wrap items-center gap-2"
           onSubmit={(e) => {
