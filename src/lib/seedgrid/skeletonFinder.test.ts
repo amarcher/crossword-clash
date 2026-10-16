@@ -60,8 +60,10 @@ describe("findSkeleton with the fixture word list", () => {
   }, 20_000);
 
   it("lays out a rotational 15×15 around four long themers with white corners and no 2×2 block", () => {
-    expectFootballLayout(engine, 20_000);
-  }, 40_000);
+    // The finder slices its budget into stages, and CI runs the engine ~3× slower than a laptop:
+    // a 20 s budget gives up there before the paired placements are reached (~5 s locally).
+    expectFootballLayout(engine, 60_000);
+  }, 90_000);
 
   it("reports zero attempts when no legal layout holds the seeds", () => {
     // Three 14s cannot pair under rotational symmetry, and no free layout of a 15×15 holds them apart.
