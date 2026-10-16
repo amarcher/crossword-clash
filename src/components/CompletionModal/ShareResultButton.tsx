@@ -14,8 +14,11 @@ import {
   type ShareMethod,
 } from "../../lib/resultCard";
 import { buildResultShareUrl } from "../../lib/shareLinks";
+import type { DailySlot } from "../../lib/dailyFeed";
 
 interface ShareResultButtonProps extends ResultCardInput {
+  /** Set when the puzzle was today's daily: the caption names the slot ("Daily Large"). */
+  dailySlot?: DailySlot;
   darkMode?: boolean;
 }
 
@@ -109,7 +112,7 @@ function triggerDownload(blob: Blob, filename: string): void {
 }
 
 export function ShareResultButton(props: ShareResultButtonProps) {
-  const { darkMode, ...input } = props;
+  const { darkMode, dailySlot, ...input } = props;
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -155,6 +158,12 @@ export function ShareResultButton(props: ShareResultButtonProps) {
             url,
           });
     }
+    if (dailySlot) {
+      const daily = t(dailySlot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow");
+      return input.finishSeconds !== undefined
+        ? t("completion.shareCaptionDaily", { daily, title, time: formatDuration(input.finishSeconds), url })
+        : t("completion.shareCaptionDailyNoTime", { daily, title, url });
+    }
     return input.finishSeconds !== undefined
       ? t("completion.shareCaptionSolo", {
           title,
@@ -162,7 +171,7 @@ export function ShareResultButton(props: ShareResultButtonProps) {
           url,
         })
       : t("completion.shareCaptionSoloNoTime", { title, url });
-  }, [input, t]);
+  }, [input, dailySlot, t]);
 
   const handleShare = useCallback(async () => {
     if (busy) return;

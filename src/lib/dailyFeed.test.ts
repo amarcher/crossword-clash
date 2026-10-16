@@ -3,15 +3,20 @@ import { readFileSync, readdirSync } from "node:fs";
 import {
   ABSENT_TTL_MS,
   currentDailyMini,
+  currentDailyPuzzle,
+  dailyFeedPath,
   dailyFeedUrl,
+  isDailySlot,
   knownDailyMini,
+  knownDailyPuzzle,
   parseDailyFeedEntry,
   resetDailyFeedMemory,
   resolveDailyMini,
+  resolveDailyPuzzle,
   type DailyFeedEntry,
 } from "./dailyFeed";
 import { getDailyMini } from "./dailyMinis";
-import { isTodaysDaily } from "./dailyLeaderboard";
+import { isTodaysDaily, leaderboardPath, todaysDailySlot } from "./dailyLeaderboard";
 import { puzzleToTransferFormat } from "./puzzleNormalizer";
 
 const NOW = new Date(2026, 9, 14, 9, 0, 0);
@@ -68,9 +73,30 @@ describe("parseDailyFeedEntry", () => {
 describe("dailyFeedUrl", () => {
   it("is same-origin on the web and the public site in the apps", () => {
     expect(dailyFeedUrl("2026-10-14")).toBe("/daily-puzzles/2026-10-14.json");
-    expect(dailyFeedUrl("2026-10-14", "https://crosswordclash.com")).toBe(
+    expect(dailyFeedUrl("2026-10-14", "mini", "https://crosswordclash.com")).toBe(
       "https://crosswordclash.com/daily-puzzles/2026-10-14.json",
     );
+  });
+
+  it("keeps the large in its own folder, where vercel.json rewrites it", () => {
+    expect(dailyFeedPath("large", "2026-10-14")).toBe("/daily-puzzles/large/2026-10-14.json");
+    expect(dailyFeedUrl("2026-10-14", "large", "https://crosswordclash.com")).toBe(
+      "https://crosswordclash.com/daily-puzzles/large/2026-10-14.json",
+    );
+    const vercelPath = decodeURIComponent(new URL("../../vercel.json", import.meta.url).pathname);
+    const vercel = JSON.parse(new TextDecoder().decode(readFileSync(vercelPath))) as {
+      rewrites: { source: string; destination: string }[];
+    };
+    expect(vercel.rewrites).toContainEqual({ source: "/daily-puzzles/large/:day.json", destination: "/api/daily?day=:day&slot=large" });
+    expect(vercel.rewrites).toContainEqual({ source: "/daily-puzzles/:day.json", destination: "/api/daily?day=:day" });
+  });
+
+  it("knows its slots", () => {
+    expect(isDailySlot("mini")).toBe(true);
+    expect(isDailySlot("large")).toBe(true);
+    expect(isDailySlot("huge")).toBe(false);
+    expect(leaderboardPath("mini")).toBe("/daily/leaderboard");
+    expect(leaderboardPath("large")).toBe("/daily/leaderboard/large");
   });
 });
 
@@ -143,6 +169,43 @@ describe("resolveDailyMini", () => {
   });
 });
 
+describe("resolveDailyPuzzle('large')", () => {
+  it("has no large until the feed says so, then remembers it apart from the mini", async () => {
+    expect(knownDailyPuzzle("large", NOW)).toBeUndefined();
+    expect(currentDailyPuzzle("large", NOW)).toBeNull();
+
+    const { fetchImpl, calls } = respond(200, feedEntry);
+    const large = await resolveDailyPuzzle("large", NOW, fetchImpl);
+    expect(large?.puzzle.title).toBe(other.puzzle.title);
+    expect(calls).toEqual([dailyFeedUrl("2026-10-14", "large")]);
+
+    // The mini's cache is untouched, and the large survives a fresh page load.
+    expect(knownDailyMini(NOW)).toBeNull();
+    resetDailyFeedMemory();
+    expect(knownDailyPuzzle("large", NOW)?.puzzle.title).toBe(other.puzzle.title);
+  });
+
+  it("shows no large — not the bundled mini — when nothing is published", async () => {
+    const { fetchImpl, calls } = respond(404, null);
+    expect(await resolveDailyPuzzle("large", NOW, fetchImpl)).toBeNull();
+    // Known to be absent: answered without asking again.
+    expect(knownDailyPuzzle("large", NOW)).toBeNull();
+    await resolveDailyPuzzle("large", NOW, fetchImpl);
+    expect(calls).toHaveLength(1);
+    // The mini still falls back to its rotation.
+    expect(currentDailyMini(NOW)).toBe(bundled);
+  });
+
+  it("tells the two dailies apart for the leaderboards", async () => {
+    await resolveDailyPuzzle("large", NOW, respond(200, feedEntry).fetchImpl);
+    await resolveDailyMini(NOW, respond(404, null).fetchImpl);
+    expect(todaysDailySlot(other.puzzle, NOW)).toBe("large");
+    expect(todaysDailySlot(bundled.puzzle, NOW)).toBe("mini");
+    expect(isTodaysDaily(other.puzzle, NOW)).toBe(true);
+    expect(todaysDailySlot(getDailyMini(new Date(2026, 9, 16)).puzzle, NOW)).toBeNull();
+  });
+});
+
 describe("published feed files", () => {
   const dir = decodeURIComponent(new URL("../../public/daily-puzzles/", import.meta.url).pathname);
   // The directory does not exist until the first puzzle is published.
@@ -154,9 +217,17 @@ describe("published feed files", () => {
     }
   })();
 
+  const largeFiles = (() => {
+    try {
+      return readdirSync(dir + "large/").map((f) => "large/" + f);
+    } catch {
+      return [];
+    }
+  })();
+
   it("are all named for a date and parse as playable puzzles", () => {
-    for (const file of files) {
-      expect(file).toMatch(/^\d{4}-\d{2}-\d{2}\.json$/);
+    for (const file of [...files.filter((f) => f !== "large"), ...largeFiles]) {
+      expect(file).toMatch(/^(large\/)?\d{4}-\d{2}-\d{2}\.json$/);
       const data: unknown = JSON.parse(new TextDecoder().decode(readFileSync(dir + file)));
       expect(parseDailyFeedEntry(data), file).not.toBeNull();
     }
