@@ -38,7 +38,9 @@ export function Title({ className = "", animate = false }: TitleProps) {
       <img
         src="/logo.png"
         alt="Crossword Clash"
-        className="h-36 mx-auto object-contain"
+        width={2292}
+        height={500}
+        className="mx-auto h-28 w-auto"
       />
     </div>
   );

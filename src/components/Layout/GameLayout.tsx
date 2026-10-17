@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
+import { PAGE_GUTTER } from "../PageShell";
 
 interface GameLayoutProps {
   header: ReactNode;
@@ -27,7 +28,8 @@ export function GameLayout({ header, grid, clues, mobileClueBar, keyboard }: Gam
   }
   return (
     <div className={`h-dvh bg-canvas flex flex-col overflow-hidden ${mobileClueBar ? "grid-offset-mobile" : ""}`}>
-      <header className="bg-surface border-b border-line px-4 py-2 md:px-6 md:py-3 shrink-0">
+      {/* Same gutter as PageShell, so the title sits where the menu and inner pages put their content. */}
+      <header className={`bg-surface border-b border-line py-2 md:py-3 shrink-0 ${PAGE_GUTTER}`}>
         {header}
       </header>
       <main className={`flex-1 flex flex-col md:flex-row gap-2 md:gap-6 p-2 md:p-6 min-h-0 w-full items-center overflow-y-auto md:overflow-hidden ${mobileClueBar ? "pb-14 md:pb-6" : ""}`}>

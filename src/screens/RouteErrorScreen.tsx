@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 import { useTranslation } from "react-i18next";
 import { TriangleAlert, type LucideIcon } from "lucide-react";
-import { SiteBar } from "../components/SiteBar";
+import { PageShell } from "../components/PageShell";
 import { Card, buttonClass } from "../components/ui";
 import { isChunkLoadError, reloadOnceForChunkError } from "../lib/chunkReload";
 import { reportError } from "../lib/errorReporting";
@@ -20,10 +20,9 @@ export function NoticeScreen({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-dvh flex-col crossword-bg px-4 pb-10 pt-2">
-      {/* Plain anchor: this screen can render outside the app's providers, and a
-          full navigation also resets any broken app state. */}
-      <SiteBar plain />
+    // Plain anchors: this screen can render outside the app's providers, and a
+    // full navigation also resets any broken app state.
+    <PageShell as="main" width="md" grow bar={{ plain: true }}>
       <div className="flex flex-1 items-center justify-center py-8">
         <Card className="w-full max-w-sm p-6 text-center shadow-raised sm:p-8">
           <span className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
@@ -34,7 +33,7 @@ export function NoticeScreen({
           <div className="mt-6 flex flex-col gap-2.5">{children}</div>
         </Card>
       </div>
-    </main>
+    </PageShell>
   );
 }
 

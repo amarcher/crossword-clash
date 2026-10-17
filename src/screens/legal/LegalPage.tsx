@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
-import { SiteBar } from "../../components/SiteBar";
+import { PageShell } from "../../components/PageShell";
 import { Card } from "../../components/ui";
 import { LEGAL_CONTENT, LEGAL_LAST_UPDATED, type LegalDoc } from "./legalContent";
 
@@ -25,14 +25,8 @@ export function LegalPage({ kind }: LegalPageProps) {
   }, [title]);
 
   return (
-    <main
-      className="min-h-dvh crossword-bg px-4 pb-10 pt-2"
-      style={{ paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))" }}
-    >
-      <SiteBar backLabel={t("legal.back")} right={<LanguageSwitcher />} />
-      <Card
-        className="mx-auto mt-4 w-full max-w-2xl p-5 leading-relaxed text-ink-soft sm:mt-6 sm:p-8"
-      >
+    <PageShell as="main" width="2xl" bar={{ backLabel: t("legal.back"), right: <LanguageSwitcher /> }}>
+      <Card className="mt-4 p-5 leading-relaxed text-ink-soft sm:mt-6 sm:p-8">
         <article>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">{title}</h1>
           <p className="mb-6 mt-1.5 text-sm text-muted">
@@ -73,6 +67,6 @@ export function LegalPage({ kind }: LegalPageProps) {
           </nav>
         </article>
       </Card>
-    </main>
+    </PageShell>
   );
 }
