@@ -10,7 +10,12 @@ interface StoredCell {
 // Runs with or without Supabase env vars — the daily mini is bundled data.
 test("solo: complete today's mini", async ({ page }) => {
   await page.goto("/menu");
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  // The Daily Large tile has its own "Play" on days it is published, so scope
+  // to the mini's region.
+  await page
+    .getByRole("region", { name: "Daily Mini" })
+    .getByRole("button", { name: "Play", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/solo\/play/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 
