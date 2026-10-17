@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useHydrated } from "../lib/hydration";
 import { todaysDailySlot } from "../lib/dailyLeaderboard";
 import { DAILY_SLOTS, knownDailyPuzzle, resolveDailyPuzzle, type DailySlot } from "../lib/dailyFeed";
 import type { DailyMini } from "../lib/dailyMinis";
@@ -10,7 +11,11 @@ import type { Puzzle } from "../types/puzzle";
  * (only the large can be null — the mini falls back to the bundled rotation).
  */
 export function useDailyPuzzle(slot: DailySlot): DailyMini | null | undefined {
-  const [daily, setDaily] = useState<DailyMini | null | undefined>(() => knownDailyPuzzle(slot));
+  // The prerendered menu carries the placeholder (the answer is date-dependent
+  // and per-visitor), so hydration starts unknown too; the effect below reads
+  // the cached answer right after.
+  const hydrated = useHydrated();
+  const [daily, setDaily] = useState<DailyMini | null | undefined>(() => (hydrated ? knownDailyPuzzle(slot) : undefined));
   const unknown = daily === undefined;
 
   useEffect(() => {

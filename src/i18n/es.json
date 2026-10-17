@@ -507,5 +507,24 @@
     "syncedSolves_one": "{{count}} partida sincronizada con tu cuenta",
     "syncedSolves_other": "{{count}} partidas sincronizadas con tu cuenta",
     "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión."
+  },
+  "meta": {
+    "home": {
+      "title": "Crossword Clash — Crucigramas multijugador en tiempo real",
+      "description": "Compite con amigos en el crucigrama del NYT de hoy en tiempo real — importación en un clic para suscriptores — o juega 46 clásicos gratis, un mini diario y cualquier archivo .puz. También en solitario."
+    },
+    "classics": {
+      "title": "Crucigramas clásicos gratis de 1924 — Crossword Clash",
+      "description": "Juega crucigramas de dominio público de The Cross Word Puzzle Book (1924), el primer libro de crucigramas. Resuélvelos solo o compite con amigos en tiempo real."
+    },
+    "privacy": {
+      "description": "Cómo trata Crossword Clash tus datos: juego anónimo por defecto, cuentas opcionales, cookies de analítica y anuncios con consentimiento, y qué guardan las apps."
+    },
+    "terms": {
+      "description": "Las condiciones de uso de Crossword Clash: juego gratuito, importación de crucigramas a los que tengas derecho, juego limpio en las salas y los límites de un servicio gratuito."
+    },
+    "support": {
+      "description": "Ayuda con Crossword Clash: importar crucigramas, crear y unirse a salas multijugador, los crucigramas diarios, las cuentas y cómo contactarnos."
+    }
   }
 }

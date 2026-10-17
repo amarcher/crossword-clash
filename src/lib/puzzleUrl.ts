@@ -62,7 +62,7 @@ export function compressPuzzleToHash(puzzle: Puzzle): string {
  * Check if the current URL hash indicates an import is pending (`#import`).
  */
 export function hasImportHash(): boolean {
-  return window.location.hash === IMPORT_HASH;
+  return typeof window !== "undefined" && window.location.hash === IMPORT_HASH;
 }
 
 /**

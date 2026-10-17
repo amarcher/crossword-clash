@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
@@ -14,15 +13,9 @@ export function LegalPage({ kind }: LegalPageProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("es") ? "es" : "en";
   const doc: LegalDoc = LEGAL_CONTENT[lang][kind];
+  // The document title comes from the shared route meta (src/lib/pageMeta.ts,
+  // applied in main.tsx and written by the prerender), not from here.
   const title = t(`legal.${kind}Title`);
-
-  useEffect(() => {
-    const previous = document.title;
-    document.title = `${title} | Crossword Clash`;
-    return () => {
-      document.title = previous;
-    };
-  }, [title]);
 
   return (
     <PageShell as="main" width="2xl" bar={{ backLabel: t("legal.back"), right: <LanguageSwitcher /> }}>

@@ -39,8 +39,10 @@ export function ClassicLibraryScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
 
-  // Known on the first render when the route prefetched it (the normal path);
-  // fetched here only on a direct mount without that warm-up.
+  // Known on the first render when the route prefetched it (the normal path)
+  // or when the prerendered page embedded it (so hydration renders the same
+  // cards the HTML already shows); fetched here only on a direct mount
+  // without either.
   const [entries, setEntries] = useState<ClassicEntry[] | null>(() => knownClassicManifest());
   const [filter, setFilter] = useState<Filter>("all");
   const [hideSolved, setHideSolved] = useState(false);

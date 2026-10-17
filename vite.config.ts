@@ -1,27 +1,36 @@
 import fs from "node:fs";
-import path from "node:path";
+import path, { resolve } from "node:path";
 import { defineConfig, loadEnv } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import type { Connect, Plugin } from "vite";
+import { prerender } from "./scripts/prerender/plugin";
+import { PRERENDERED_ROUTES } from "./src/lib/pageMeta";
 
-// /install-bookmarklet is a static page (public/install-bookmarklet/index.html,
-// see CLAUDE.md). Vercel serves a folder's index.html; Vite's dev/preview
-// servers fall back to the SPA instead, so rewrite the bare folder path here.
-const rewriteBookmarkletPage: Connect.NextHandleFunction = (req, _res, next) => {
-  if (req.url && /^\/install-bookmarklet\/?(\?.*)?$/.test(req.url)) {
-    req.url = req.url.replace(/^\/install-bookmarklet\/?/, "/install-bookmarklet/index.html");
-  }
-  next();
-};
-const staticBookmarkletPage: Plugin = {
-  name: "static-bookmarklet-page",
+// Vercel serves a folder's index.html for its bare path; Vite's dev and
+// preview servers fall back to the SPA instead. Rewrite the paths that have
+// one: /install-bookmarklet (public/install-bookmarklet/index.html, see
+// CLAUDE.md) everywhere, and in preview the prerendered content routes
+// (dist/<route>/index.html, written by scripts/prerender/plugin.ts).
+function folderIndexPages(root: string, folders: readonly string[]): Connect.NextHandleFunction {
+  return (req, _res, next) => {
+    const pathname = req.url?.replace(/[?#].*$/, "").replace(/\/+$/, "");
+    if (pathname && folders.includes(pathname) && fs.existsSync(resolve(root, pathname.slice(1), "index.html"))) {
+      req.url = `${pathname}/index.html${req.url!.slice(pathname.length).replace(/^\/(?=\?|$)/, "")}`;
+    }
+    next();
+  };
+}
+const staticFolderPages: Plugin = {
+  name: "static-folder-pages",
   configureServer(server) {
-    server.middlewares.use(rewriteBookmarkletPage);
+    server.middlewares.use(folderIndexPages(resolve(server.config.root, "public"), ["/install-bookmarklet"]));
   },
   configurePreviewServer(server) {
-    server.middlewares.use(rewriteBookmarkletPage);
+    const dist = resolve(server.config.root, server.config.build.outDir);
+    const prerendered = PRERENDERED_ROUTES.filter((r) => r !== "/");
+    server.middlewares.use(folderIndexPages(dist, ["/install-bookmarklet", ...prerendered]));
   },
 };
 
@@ -58,7 +67,7 @@ function studioPlugins(env: Record<string, string>): Plugin[] {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), staticBookmarkletPage, ...studioPlugins(loadEnv(mode, process.cwd(), "VITE_")), ...(mode === "mobile" ? [{
+  plugins: [react(), tailwindcss(), staticFolderPages, prerender({ plugins: [react(), tailwindcss()] }), ...studioPlugins(loadEnv(mode, process.cwd(), "VITE_")), ...(mode === "mobile" ? [{
     name: "mobile-html",
     transformIndexHtml: {
       order: "pre" as const,

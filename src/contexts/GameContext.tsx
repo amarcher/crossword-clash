@@ -115,7 +115,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Compute initial state from URL params / localStorage (synchronous, no effects)
   const mpSession = useMemo(() => loadMpSession(), []);
 
-  const hasUrlPuzzleOnLoad = window.location.hash.startsWith("#puzzle=");
+  // No window during the build-time prerender (src/entry-server.tsx).
+  const hasUrlPuzzleOnLoad = typeof window !== "undefined" && window.location.hash.startsWith("#puzzle=");
   const [urlPuzzle, setUrlPuzzle] = useState<Puzzle | null>(() =>
     hasUrlPuzzleOnLoad ? extractPuzzleFromUrl() : null,
   );
@@ -167,6 +168,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const restoredRef = useRef(false);
 
   const initialJoinCode = useMemo(() => {
+    if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
     if (code && code.length === 6) {

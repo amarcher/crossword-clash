@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { useMaybeAccount } from "../contexts/AccountContext";
+import { useHydrated } from "../lib/hydration";
 import { getSolveHistoryState, subscribeSolveHistory, type SolveHistoryState, type SolveSummary } from "../lib/solveHistory";
 import { dayKey, effectiveStreak, getDisplayNytStreak, getDisplayStreak, loadSoloStats } from "../lib/soloStats";
 
@@ -33,17 +34,24 @@ export function useSolveHistory(): SolveHistory {
 /** Today's streaks to display: the account's when signed in and loaded, else this device's. */
 export function useStreaks(): { daily: number; nyt: number } {
   const { summary } = useSolveHistory();
+  // localStorage is per visitor, so the prerendered HTML shows no streak and
+  // hydration must agree; the device's stats appear on the render right after.
+  const hydrated = useHydrated();
   return useMemo(() => {
     if (summary) {
       const today = dayKey(new Date());
       return { daily: effectiveStreak(summary.streak, today), nyt: effectiveStreak(summary.nytStreak, today) };
     }
+    if (!hydrated) return { daily: 0, nyt: 0 };
     return { daily: getDisplayStreak(), nyt: getDisplayNytStreak() };
-  }, [summary]);
+  }, [summary, hydrated]);
 }
+
+const NO_TIMES: Record<string, number> = {};
 
 /** Best times by puzzle identity: the account's when signed in and loaded, else this device's. */
 export function useBestTimes(): Record<string, number> {
   const { summary } = useSolveHistory();
-  return useMemo(() => summary?.bestTimes ?? loadSoloStats().bestTimes, [summary]);
+  const hydrated = useHydrated();
+  return useMemo(() => summary?.bestTimes ?? (hydrated ? loadSoloStats().bestTimes : NO_TIMES), [summary, hydrated]);
 }

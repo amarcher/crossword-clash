@@ -507,5 +507,24 @@
     "syncedSolves_one": "{{count}} solve synced to your account",
     "syncedSolves_other": "{{count}} solves synced to your account",
     "syncOffline": "Your solves on this device are kept. They'll sync when you're back online."
+  },
+  "meta": {
+    "home": {
+      "title": "Crossword Clash — Real-Time Multiplayer Crossword Puzzles",
+      "description": "Race friends on today's NYT crossword in real time — one-click import for NYT subscribers — or play 46 free classic puzzles, a daily mini, and any .puz file. Solo play too."
+    },
+    "classics": {
+      "title": "Free Classic Crossword Puzzles from 1924 — Crossword Clash",
+      "description": "Play free public-domain crosswords from The Cross Word Puzzle Book (1924), the first crossword book ever published. Solve solo or race friends in real time."
+    },
+    "privacy": {
+      "description": "How Crossword Clash handles your data: anonymous play by default, optional accounts, analytics and ad cookies by consent, and what the native apps store."
+    },
+    "terms": {
+      "description": "The terms for using Crossword Clash: free play, puzzle imports you are entitled to, fair play in multiplayer rooms, and the limits of a free service."
+    },
+    "support": {
+      "description": "Get help with Crossword Clash: importing puzzles, hosting and joining multiplayer rooms, the daily puzzles, accounts, and how to reach us."
+    }
   }
 }
