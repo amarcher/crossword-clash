@@ -40,6 +40,20 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 | Thu | 2026-11-12 | Jazz Club | 7×7 | SUTURES, TRUMPET, ROPEIN |
 | Fri | 2026-11-13 | Lucky Thirteen | 5×5 | ABATE, SEVEN, PENNY |
 | Sat | 2026-11-14 | Bake Sale | 7×7 | BEDROLL, BROWNIE, CONTOUR |
+| Sun | 2026-11-15 | Apple Pie | 7×7 | |
+| Mon | 2026-11-16 | Cozy Night | 7×7 | |
+| Tue | 2026-11-17 | Bread Basket | 5×5 | |
+| Wed | 2026-11-18 | Mouse House | 5×5 | |
+| Thu | 2026-11-19 | Honest Abe | 7×7 | |
+| Fri | 2026-11-20 | Rivalry Week | 7×7 | |
+| Sat | 2026-11-21 | Hello There | 7×7 | |
+| Sun | 2026-11-22 | Sunday Roast | 7×7 | |
+| Mon | 2026-11-23 | By the Numbers | 5×5 | |
+| Tue | 2026-11-24 | Grocery Run | 5×5 | |
+| Wed | 2026-11-25 | Travel Day | 5×5 | |
+| Thu | 2026-11-26 | Turkey Day | 7×7 | |
+| Fri | 2026-11-27 | Doorbusters | 5×5 | |
+| Sat | 2026-11-28 | Main Street | 7×7 | |
 
 ## What we learned building these
 
@@ -47,4 +61,4 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 - 7×7s on the production list need `--min-score 60` or the review refuses the fill for junk.
 - Hand-picked `--seeds` beat a free brainstorm when a theme keeps failing (BLITZ/PUNT, SCARF/WOOL).
 - A title never repeats an entry; the midi of the same day must not reuse the mini's or the large's entries.
-- Keep two weeks ahead: the next batch should start by 2026-11-07.
+- Keep two weeks ahead: stock runs to 2026-11-28; the next batch should start by 2026-11-14.
