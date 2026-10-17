@@ -28,6 +28,7 @@ import { rankRaceStandings } from "../lib/raceResults";
 import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
+import { firstEmptyCell } from "../lib/gridUtils";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
@@ -251,7 +252,9 @@ export function MultiplayerPlayScreen() {
   }, [setCompletionModalDismissed, handleReset]);
 
   function handleClueClick(clue: PuzzleClue) {
-    selectCell(clue.row, clue.col);
+    // Land on the first empty cell of the word, not its first cell
+    const target = puzzle ? firstEmptyCell(puzzle, playerCells, clue) : null;
+    selectCell(target?.row ?? clue.row, target?.col ?? clue.col);
     setDirection(clue.direction);
     setClueSheetOpen(false);
     gridInputRef.current?.focus();

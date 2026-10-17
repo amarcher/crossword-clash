@@ -1,19 +1,36 @@
 import { memo } from "react";
 import type { PuzzleCell, CellState } from "../../types/puzzle";
 
+/** `--color-gold-400` from src/index.css: the cursor fill, and the tint laid over player colours. */
+const GOLD_400 = "#f5bd2c";
+/** How strong the active-word tint is when laid over a player's colour (≈ gold-100 over white). */
+const WORD_TINT_ALPHA = 0.35;
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+}
+
+type Rgb = [number, number, number];
+const WHITE: Rgb = [255, 255, 255];
+
+/** Composite a hex colour at `alpha` over an opaque rgb base. */
+function blendOver(hex: string, alpha: number, base: Rgb): Rgb {
+  const top = hexToRgb(hex);
+  return top.map((v, i) => Math.round(v * alpha + base[i] * (1 - alpha))) as Rgb;
+}
+
+function rgbString([r, g, b]: Rgb): string {
+  return `rgb(${r},${g},${b})`;
+}
+
 /** Blend a hex color at given alpha against white, returning an opaque rgb() string. */
 export function blendOnWhite(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgb(${Math.round(r * alpha + 255 * (1 - alpha))},${Math.round(g * alpha + 255 * (1 - alpha))},${Math.round(b * alpha + 255 * (1 - alpha))})`;
+  return rgbString(blendOver(hex, alpha, WHITE));
 }
 
 /** Convert hex to rgba() string. */
 export function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const [r, g, b] = hexToRgb(hex);
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
@@ -33,6 +50,14 @@ interface CellProps {
   wordCompleteDelay?: number;
 }
 
+/**
+ * One square of the solver grid. Selection is fills only, as in the studio
+ * grid: gold-400 under the cursor, gold-100 along the active word, and no
+ * outlines (a per-cell outline turned the word into a ladder of boxes). In
+ * multiplayer a player's tint stays visible under the word highlight — gold is
+ * composited over it — so the band reads as one continuous stroke across
+ * owned and unowned cells.
+ */
 export const Cell = memo(function Cell({
   cell,
   cellState,
@@ -46,7 +71,7 @@ export const Cell = memo(function Cell({
   wordCompleteDelay,
 }: CellProps) {
   if (cell.solution === null) {
-    return <div className="bg-black min-h-0 min-w-0 overflow-hidden" role="gridcell" aria-hidden="true" />;
+    return <div className="bg-ink min-h-0 min-w-0 overflow-hidden" role="gridcell" aria-hidden="true" />;
   }
 
   // Build accessible label: "Row 1, Column 3, 5 across, letter A"
@@ -55,32 +80,28 @@ export const Cell = memo(function Cell({
   if (cellState?.letter) parts.push(cellState.letter);
   const ariaLabel = `Row ${cell.row + 1}, Column ${cell.col + 1}${parts.length ? `, ${parts.join(", ")}` : ""}`;
 
-  // Pre-blend player color against white so it doesn't composite against the
-  // grid's black background. 18% tint gives a visible pastel with high text contrast.
-  const playerBg =
-    cellState?.playerId && playerColorMap?.[cellState.playerId]
-      ? blendOnWhite(playerColorMap[cellState.playerId], 0.18)
-      : undefined;
+  // A player's colour is pre-blended against white (18% reads as a pastel with
+  // high text contrast) so it never composites against the ink grid behind.
+  const playerHex = cellState?.playerId ? playerColorMap?.[cellState.playerId] : undefined;
+  const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : undefined;
 
-  // Background: player color is always visible (only overridden by selected yellow)
-  let bg = "bg-white";
-  if (isSelected) bg = "bg-yellow-200";
-  else if (playerBg) bg = "";
-  else if (isHighlighted) bg = "bg-amber-50";
-
-  const bgStyle = !isSelected && playerBg
-    ? { backgroundColor: playerBg }
-    : undefined;
-
-  // Outline for active word / selected cell (never obscures player color)
-  let outlineStyle: React.CSSProperties | undefined;
+  // Background priority: cursor > active word (over any player tint) > player tint > white.
+  let bg = "bg-surface";
+  let bgStyle: React.CSSProperties | undefined;
   if (isSelected) {
-    outlineStyle = { outline: "3px solid #b45309", outlineOffset: "-3px" };
+    bg = "bg-gold-400";
+  } else if (isHighlighted && playerTint) {
+    bg = "";
+    bgStyle = { backgroundColor: rgbString(blendOver(GOLD_400, WORD_TINT_ALPHA, playerTint)) };
   } else if (isHighlighted) {
-    outlineStyle = { outline: "2px solid rgba(180,83,9,0.75)", outlineOffset: "-2px" };
+    bg = "bg-gold-100";
+  } else if (playerTint) {
+    bg = "";
+    bgStyle = { backgroundColor: rgbString(playerTint) };
   }
 
-  // Build animation class + inline style for word-complete sweep
+  // Word-complete sweep runs on the cell; the fill pop runs on the letter span
+  // only, so the cell's own background never fades out and shows the ink grid.
   let animClass = "";
   let animStyle: React.CSSProperties | undefined;
   if (wordCompleteColor) {
@@ -89,9 +110,8 @@ export const Cell = memo(function Cell({
       "--sweep-color": hexToRgba(wordCompleteColor, 0.35),
       animationDelay: `${wordCompleteDelay ?? 0}ms`,
     } as React.CSSProperties;
-  } else if (animateFill) {
-    animClass = " cell-fill";
   }
+  const letterAnimClass = animateFill && !wordCompleteColor ? " cell-fill" : "";
 
   return (
     <div
@@ -99,13 +119,13 @@ export const Cell = memo(function Cell({
       aria-label={ariaLabel}
       aria-selected={isSelected || undefined}
       className={`${bg} relative ${onClick ? "cursor-pointer" : ""} select-none min-h-0 min-w-0 overflow-hidden${isRejected ? " cell-reject" : ""}${animClass}`}
-      style={{ containerType: "inline-size", ...bgStyle, ...outlineStyle, ...animStyle }}
+      style={{ containerType: "inline-size", ...bgStyle, ...animStyle }}
       onClick={onClick ? () => onClick(cell.row, cell.col) : undefined}
     >
       {cell.number != null && (
         <span
           aria-hidden="true"
-          className="absolute top-[2cqi] left-[4cqi] leading-none font-medium text-neutral-800"
+          className="absolute top-[2cqi] left-[4cqi] leading-none font-semibold text-ink-soft"
           style={{ fontSize: "min(25cqi, 17px)" }}
         >
           {cell.number}
@@ -114,7 +134,7 @@ export const Cell = memo(function Cell({
       {cellState?.letter && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 flex items-center justify-center font-bold leading-none text-black"
+          className={`absolute inset-0 flex items-center justify-center font-bold leading-none text-ink${letterAnimClass}`}
           style={{ fontSize: "55cqi" }}
         >
           {cellState.letter}

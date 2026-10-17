@@ -57,6 +57,29 @@ export type PuzzleAction =
 // --- Helpers ---
 
 /**
+ * The direction the cursor should take at (row, col) when it wants `wanted`.
+ * A square that belongs to only one word (common in the 1924 classics and in
+ * British grids, never in standard American ones) has a single-cell "word" in
+ * the other direction; landing there in that direction leaves a one-cell
+ * highlight and no clue. Flip to the real word instead.
+ */
+function settleDirection(
+  puzzle: Puzzle,
+  row: number,
+  col: number,
+  wanted: Direction,
+): Direction {
+  const other: Direction = wanted === "across" ? "down" : "across";
+  if (
+    getWordCells(puzzle, row, col, wanted).length === 1 &&
+    getWordCells(puzzle, row, col, other).length > 1
+  ) {
+    return other;
+  }
+  return wanted;
+}
+
+/**
  * After placing or skipping a letter at (row, col), advance the cursor:
  * 1. Skip to the next empty cell in the current word
  * 2. If the word is complete, jump to the first empty cell of the next word
@@ -96,7 +119,10 @@ function advanceCursor(
     const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
     const firstEmpty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.correct);
     if (firstEmpty) {
-      return { coord: firstEmpty, direction: clue.direction };
+      return {
+        coord: firstEmpty,
+        direction: settleDirection(puzzle, firstEmpty.row, firstEmpty.col, clue.direction),
+      };
     }
   }
 
@@ -133,7 +159,9 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         puzzle,
         playerCells: {},
         selectedCell: firstCell,
-        direction: "across",
+        direction: firstCell
+          ? settleDirection(puzzle, firstCell.row, firstCell.col, "across")
+          : "across",
         score: 0,
         totalWhiteCells: countWhiteCells(puzzle),
       };
@@ -146,23 +174,36 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       if (!state.puzzle || isBlack(state.puzzle, action.row, action.col)) {
         return state;
       }
-      // If clicking the already-selected cell, toggle direction
+      // If clicking the already-selected cell, toggle direction (unless the
+      // other direction is a single cell — then there is nothing to toggle to)
       if (
         state.selectedCell?.row === action.row &&
         state.selectedCell?.col === action.col
       ) {
-        return { ...state, direction: state.direction === "across" ? "down" : "across" };
+        const flipped: Direction = state.direction === "across" ? "down" : "across";
+        return {
+          ...state,
+          direction: settleDirection(state.puzzle, action.row, action.col, flipped),
+        };
       }
       return {
         ...state,
         selectedCell: { row: action.row, col: action.col },
+        direction: settleDirection(state.puzzle, action.row, action.col, state.direction),
       };
     }
 
     case "TOGGLE_DIRECTION": {
+      const flipped: Direction = state.direction === "across" ? "down" : "across";
+      if (!state.puzzle || !state.selectedCell) return { ...state, direction: flipped };
       return {
         ...state,
-        direction: state.direction === "across" ? "down" : "across",
+        direction: settleDirection(
+          state.puzzle,
+          state.selectedCell.row,
+          state.selectedCell.col,
+          flipped,
+        ),
       };
     }
 
@@ -246,26 +287,28 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
     case "MOVE_SELECTION": {
       if (!state.puzzle || !state.selectedCell) return state;
-      const nr = state.selectedCell.row + action.dr;
-      const nc = state.selectedCell.col + action.dc;
-      if (
-        nr < 0 ||
-        nr >= state.puzzle.height ||
-        nc < 0 ||
-        nc >= state.puzzle.width
-      ) {
+      if (action.dr === 0 && action.dc === 0) return state;
+      const { puzzle } = state;
+      // Walk in the arrow's direction, skipping over black squares, until a
+      // white cell; the grid edge is a stop (no wrap).
+      let nr = state.selectedCell.row + action.dr;
+      let nc = state.selectedCell.col + action.dc;
+      while (nr >= 0 && nr < puzzle.height && nc >= 0 && nc < puzzle.width) {
+        if (!isBlack(puzzle, nr, nc)) break;
+        nr += action.dr;
+        nc += action.dc;
+      }
+      if (nr < 0 || nr >= puzzle.height || nc < 0 || nc >= puzzle.width) {
         return state;
       }
-      if (isBlack(state.puzzle, nr, nc)) return state;
 
-      // Update direction to match movement
-      const newDir: Direction =
-        action.dr !== 0 ? "down" : action.dc !== 0 ? "across" : state.direction;
+      // Direction follows the arrow, unless that word is a single cell
+      const wanted: Direction = action.dr !== 0 ? "down" : "across";
 
       return {
         ...state,
         selectedCell: { row: nr, col: nc },
-        direction: newDir,
+        direction: settleDirection(puzzle, nr, nc, wanted),
       };
     }
 
