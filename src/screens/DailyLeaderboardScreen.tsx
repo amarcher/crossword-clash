@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flame, Loader2, Swords, Trophy, WifiOff } from "lucide-react";
@@ -15,7 +15,8 @@ import {
   type RankedDailyEntry,
 } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName, MAX_PLAYER_NAME_LENGTH } from "../lib/playerName";
-import { formatDuration, getDisplayStreak } from "../lib/soloStats";
+import { formatDuration } from "../lib/soloStats";
+import { useStreaks } from "../hooks/useSolveHistory";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 
@@ -54,7 +55,7 @@ export function DailyLeaderboardScreen() {
   // Undefined while the feed answers; null when there is no large today, in
   // which case the board still shows but there is nothing to play.
   const daily = useDailyPuzzle(slot);
-  const streak = useMemo(() => getDisplayStreak(), []);
+  const { daily: streak } = useStreaks();
 
   // null = loading; [] = loaded empty.
   const [entries, setEntries] = useState<RankedDailyEntry[] | null>(

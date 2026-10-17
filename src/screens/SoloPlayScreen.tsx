@@ -16,7 +16,9 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
 import { clearMpSession } from "../lib/sessionPersistence";
-import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
+import { clearSoloTimer, dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
+import { recordSolve, type SolveOutcome } from "../lib/solveHistory";
+import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
@@ -79,10 +81,11 @@ export function SoloPlayScreen() {
   useGridNavigation(navActions);
 
   // Elapsed timer + personal-best / streak tracking (solo only).
-  const { getElapsedSeconds, running: timerRunning, result: soloResult } = useSoloTimer(
+  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult } = useSoloTimer(
     puzzle,
     isComplete,
   );
+  const fromNyt = puzzle?.origin === "nyt-bookmarklet";
 
   // An accepted friend challenge for THIS puzzle — the ghost time to race.
   // Keyed by puzzle identity so a stale ghost never bleeds onto another puzzle.
@@ -135,6 +138,56 @@ export function SoloPlayScreen() {
     });
   }, [soloResult, dailySlot, user, game.displayName, game.gameId]);
 
+  // Signed-in solvers: file the finish in the account's solve history and
+  // judge best time and streak against that history, which every device
+  // shares, instead of this device's stats. A restored (reloaded) finish is
+  // not re-filed; it reads the loaded history instead.
+  const accountId = account.user?.id;
+  const history = useSolveHistory();
+  const [serverOutcome, setServerOutcome] = useState<SolveOutcome | null>(null);
+  const historyRecordedRef = useRef(false);
+  useEffect(() => {
+    if (!soloResult || !freshResult || !accountId || !puzzle || historyRecordedRef.current) return;
+    historyRecordedRef.current = true;
+    void recordSolve(accountId, {
+      puzzleKey: puzzleIdentity(puzzle),
+      title: puzzle.title,
+      source: isDaily ? "daily" : fromNyt ? "nyt" : "other",
+      mode: "solo",
+      seconds: soloResult.finishSeconds,
+    }).then((outcome) => outcome && setServerOutcome(outcome));
+  }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+
+  const shownResult = useMemo(() => {
+    if (!soloResult) return null;
+    if (serverOutcome) {
+      return {
+        bestSeconds: serverOutcome.bestSeconds ?? soloResult.bestSeconds,
+        isNewBest: serverOutcome.isNewBest,
+        previousBest: serverOutcome.previousBest,
+        streak: serverOutcome.streak.current,
+        nytStreak: serverOutcome.nytStreak.current,
+      };
+    }
+    if (!freshResult && history.summary && puzzle) {
+      const today = dayKey(new Date());
+      return {
+        bestSeconds: history.summary.bestTimes[puzzleIdentity(puzzle)] ?? soloResult.bestSeconds,
+        isNewBest: false,
+        previousBest: null,
+        streak: effectiveStreak(history.summary.streak, today),
+        nytStreak: effectiveStreak(history.summary.nytStreak, today),
+      };
+    }
+    return {
+      bestSeconds: soloResult.bestSeconds,
+      isNewBest: soloResult.isNewBest,
+      previousBest: soloResult.previousBest,
+      streak: soloResult.streak.current,
+      nytStreak: null,
+    };
+  }, [soloResult, serverOutcome, freshResult, history.summary, puzzle]);
+
   // "Sign the board": when the daily time was submitted under the anonymous
   // default, the modal offers a one-field claim. `boardSignedAs` latches the
   // signed name so the form flips to a confirmation instead of vanishing the
@@ -173,7 +226,6 @@ export function SoloPlayScreen() {
   // NYT-bookmarklet return loop: finishing an imported NYT puzzle rolls the
   // NYT streak (same-day repeats/reloads are no-ops) and the modal nudges
   // "same time tomorrow". Solo only needs the finish, not a server round-trip.
-  const fromNyt = puzzle?.origin === "nyt-bookmarklet";
   const [nytStreak, setNytStreak] = useState<number | null>(null);
   useEffect(() => {
     if (!isComplete || !fromNyt || nytStreak !== null) return;
@@ -350,11 +402,11 @@ export function SoloPlayScreen() {
         totalClues={puzzle.clues.length}
         soloScore={score}
         finishSeconds={soloResult?.finishSeconds}
-        bestSeconds={soloResult?.bestSeconds}
-        isNewBest={soloResult?.isNewBest}
-        previousBest={soloResult?.previousBest}
-        streakCount={soloResult?.streak.current}
-        nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
+        bestSeconds={shownResult?.bestSeconds}
+        isNewBest={shownResult?.isNewBest}
+        previousBest={shownResult?.previousBest}
+        streakCount={shownResult?.streak}
+        nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
         dailySlot={dailySlot ?? undefined}
         dailySign={dailySign}

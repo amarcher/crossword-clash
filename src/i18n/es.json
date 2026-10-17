@@ -501,6 +501,10 @@
     "signOut": "Cerrar sesión",
     "close": "Cerrar",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
-    "historyNote": "Tus partidas en este dispositivo se conservan. Sincronizarlas con tu cuenta será el siguiente paso."
+    "syncing": "Sincronizando tus partidas…",
+    "syncedNone": "Aún no hay partidas sincronizadas. Termina un crucigrama y quedará guardado aquí.",
+    "syncedSolves_one": "{{count}} partida sincronizada con tu cuenta",
+    "syncedSolves_other": "{{count}} partidas sincronizadas con tu cuenta",
+    "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión."
   }
 }

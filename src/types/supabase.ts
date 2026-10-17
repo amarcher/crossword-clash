@@ -171,6 +171,40 @@ export interface Database {
         Update: { user_id?: string; username?: string; display_name?: string | null; created_at?: string; updated_at?: string };
         Relationships: [];
       };
+      solves: {
+        Row: {
+          user_id: string;
+          /** soloStats.puzzleIdentity() of the puzzle. */
+          puzzle_key: string;
+          title: string;
+          source: "daily" | "nyt" | "other";
+          /** 'solo', a race mode, or 'import' for rows uploaded from pre-account localStorage. */
+          mode: "solo" | "versus" | "coop" | "async" | "import";
+          /** Personal finish time in whole seconds; null for a shared-grid race finish. */
+          seconds: number | null;
+          /** The player's local calendar day, "YYYY-MM-DD". */
+          completed_day: string;
+          completed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          puzzle_key: string;
+          title?: string;
+          source: "daily" | "nyt" | "other";
+          mode: "solo" | "versus" | "coop" | "async" | "import";
+          seconds?: number | null;
+          completed_day: string;
+          completed_at?: string;
+        };
+        Update: {
+          title?: string;
+          source?: "daily" | "nyt" | "other";
+          mode?: "solo" | "versus" | "coop" | "async" | "import";
+          seconds?: number | null;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
       narrator_sessions: {
         Row: {
           id: string;
@@ -206,6 +240,11 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      /** Upserts finishes for the calling account (user_id comes from the JWT); returns the resulting rows. */
+      record_solves: {
+        Args: { p_solves: unknown };
+        Returns: Database["public"]["Tables"]["solves"]["Row"][];
+      };
       /** Service role only (revoked from anon/authenticated): per-puzzle insights in a window. */
       insights_puzzles: {
         Args: { p_from: string; p_to: string };

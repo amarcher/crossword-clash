@@ -23,6 +23,11 @@ export interface SoloTimerApi {
   running: boolean;
   /** Populated once the puzzle is completed; drives the completion modal. */
   result: SoloCompletionResult | null;
+  /**
+   * True when `result` was recorded by this mount (the player just finished),
+   * false when it describes a finish restored from a reload.
+   */
+  fresh: boolean;
 }
 
 /**
@@ -46,6 +51,7 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
 
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SoloCompletionResult | null>(null);
+  const [fresh, setFresh] = useState(false);
 
   const getElapsedSeconds = useCallback(() => {
     const live = anchorRef.current != null ? Date.now() - anchorRef.current : 0;
@@ -104,11 +110,13 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
 
     if (recordedRef.current) {
       // Reload of a finished puzzle — surface stored result, do not re-record.
+      setFresh(false);
       setResult(describeRecordedCompletion(key, finishSeconds));
       return;
     }
     recordedRef.current = true;
     saveSoloTimer({ key, elapsedMs: baseMsRef.current, completed: true });
+    setFresh(true);
     setResult(recordSoloCompletion(key, finishSeconds));
   }, [key, isComplete]);
 
@@ -130,5 +138,5 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
     };
   }, [running, persist]);
 
-  return { getElapsedSeconds, running, result };
+  return { getElapsedSeconds, running, result, fresh };
 }
