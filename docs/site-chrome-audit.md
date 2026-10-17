@@ -29,7 +29,7 @@ for three separate reasons.
 ## Status
 
 **Items 1, 2, 3 and 5 shipped** (one page shell, PR "Site chrome: one page shell",
-2026-10-17). Items 4 and 6–11 are open.
+2026-10-17). Items 6–9 shipped next (below). Items 4, 10 and 11 are open.
 
 - `src/components/PageShell.tsx` — `width` token (`md | 2xl | 3xl | 4xl | 5xl | 7xl`,
   plus `widthLg` for the lobby's wider desktop column) puts the `SiteBar` and the
@@ -67,6 +67,41 @@ edge. Before, on `main` 633b859; after, this branch.
 | 390 | /join, /host-game/name | no logo; chevron on the left | | 0 | 0 |
 
 Back control: 44 px tall everywhere, 44×44 icon-only on phones.
+
+**Items 6–9 shipped** (stable first paint, PR #102, 2026-10-17). Measured with
+the same headless probe (production preview, cold cache, first visit of the
+day, no localStorage), three runs each:
+
+  | Page | Desktop before → after | Phone before → after |
+  |---|---|---|
+  | /menu, anonymous sign-in works | 0.001–0.002 → **0.000** | 0.153–0.163 → **0.000** |
+  | /menu, anonymous sign-in fails | 0.062 → **0.000** | 0.152 → **0.000** |
+  | /classics | 0.098 → **0.000** | 0.156–0.744 → **0.000** |
+
+  What changed: the friends section and Race friends buttons stay mounted
+  and merely disabled until auth has a user (hidden only when Supabase is
+  not configured at all, which is known synchronously); the Daily Large
+  slot holds a placeholder tile while its feed is unknown and collapses only
+  on a "none today" answer; the tiles' eyebrow row is a fixed 20 px (chip or
+  no chip, truncating long themes) so placeholder and loaded tiles are the
+  same height at both widths; the two latin woff2 files are preloaded from
+  `index.html` (Vite rewrites the hrefs to the hashed assets the bundled
+  Fontsource CSS uses) and `src/index.css` declares Capsize-style
+  metric-matched fallback faces over Arial and, for Android, Roboto; the
+  wordmark Lottie plays once per tab session and later menu visits render
+  `logo.png`, which is the animation's final frame at the same aspect;
+  `theme-color` is the canvas colour. The remaining /classics shift turned
+  out not to be the fonts (once matched, only one card of 46 differed in
+  wrap) but the manifest fetch answering after first paint, so the /classics
+  route's `lazy` now loads the manifest alongside the chunk and the screen
+  renders its cards on the first frame.
+
+  Known leftover: on a day with no Daily Large, the first phone visit of the
+  day still collapses the reserved slot once the feed answers "none"
+  (≈0.14, the same size as before on days that do have one); the feed caches
+  that answer so repeat visits that day are stable. Reserving the slot
+  permanently, or deciding from a bundled schedule, would need a product
+  call.
 
 ## Alignment — measured
 

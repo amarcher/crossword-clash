@@ -133,7 +133,16 @@ export const router = createBrowserRouter([
       { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
       { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },
       { path: "daily/leaderboard/:slot?", lazy: () => import("./screens/DailyLeaderboardScreen").then((m) => ({ Component: m.DailyLeaderboardScreen })) },
-      { path: "classics", lazy: () => import("./screens/ClassicLibraryScreen").then((m) => ({ Component: m.ClassicLibraryScreen })) },
+      // The manifest loads with the chunk so the library paints its cards on
+      // its first frame (no loading line that 46 cards then push aside).
+      {
+        path: "classics",
+        lazy: () =>
+          Promise.all([
+            import("./screens/ClassicLibraryScreen"),
+            import("./lib/classicLibrary").then((m) => m.prefetchClassicManifest()),
+          ]).then(([m]) => ({ Component: m.ClassicLibraryScreen })),
+      },
       { path: "host-game/name", lazy: () => import("./screens/HostNameScreen").then((m) => ({ Component: m.HostNameScreen })) },
       { path: "host-game/import", lazy: () => import("./screens/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
       { path: "lobby/:gameId", lazy: () => import("./screens/LobbyScreen").then((m) => ({ Component: m.LobbyScreen })) },

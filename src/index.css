@@ -2,11 +2,56 @@
 @import "@fontsource-variable/bricolage-grotesque";
 @import "tailwindcss";
 
+/* Metric-matched fallbacks so the web-font swap (Fontsource's font-display:
+   swap; the two latin files are also preloaded from index.html) does not
+   reflow the page: text set in the local face below occupies the same width
+   and line box as the web font, so when the real font lands nothing moves.
+   One face over Arial (macOS, iOS, Windows, and Linux via its Arial alias),
+   one over Roboto for Android, which has no Arial; the browser skips a face
+   whose local() source is missing.
+   Overrides follow Capsize: size-adjust = xWidthAvg(web) / xWidthAvg(local),
+   then ascent/descent/line-gap = the web font's metric / size-adjust.
+   Metrics (@capsizecss/metrics, hhea): Figtree 950/-250/0 x̄449 of 1000;
+   Bricolage Grotesque 930/-270/0 x̄470 of 1000; Arial 1854/-434/67 x̄913 of
+   2048; Roboto 1900/-500/0 x̄911 of 2048. */
+@font-face {
+  font-family: "Figtree Fallback";
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 100.72%;
+  ascent-override: 94.32%;
+  descent-override: 24.82%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Figtree Fallback Android";
+  src: local("Roboto"), local("Roboto-Regular");
+  size-adjust: 100.94%;
+  ascent-override: 94.12%;
+  descent-override: 24.77%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Bricolage Grotesque Fallback";
+  src: local("Arial"), local("ArialMT");
+  size-adjust: 105.43%;
+  ascent-override: 88.21%;
+  descent-override: 25.61%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Bricolage Grotesque Fallback Android";
+  src: local("Roboto"), local("Roboto-Regular");
+  size-adjust: 105.66%;
+  ascent-override: 88.02%;
+  descent-override: 25.55%;
+  line-gap-override: 0%;
+}
+
 /* Design tokens — "refined brand": neutral surfaces, the logo's blue as the one
    action color, the logo's gold only for highlights (streaks, the active word). */
 @theme {
-  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Bricolage Grotesque Variable", "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree Variable", "Figtree Fallback", "Figtree Fallback Android", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque Fallback", "Bricolage Grotesque Fallback Android", ui-sans-serif, system-ui, sans-serif;
 
   --color-ink: #141a26;
   --color-ink-soft: #3a4252;

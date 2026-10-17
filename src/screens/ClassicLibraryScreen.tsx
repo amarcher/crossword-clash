@@ -9,6 +9,7 @@ import { useGame } from "../contexts/GameContext";
 import {
   SIZE_BUCKETS,
   filterEntries,
+  knownClassicManifest,
   loadClassicManifest,
   loadClassicPuzzle,
   pickRandom,
@@ -38,13 +39,16 @@ export function ClassicLibraryScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
 
-  const [entries, setEntries] = useState<ClassicEntry[] | null>(null);
+  // Known on the first render when the route prefetched it (the normal path);
+  // fetched here only on a direct mount without that warm-up.
+  const [entries, setEntries] = useState<ClassicEntry[] | null>(() => knownClassicManifest());
   const [filter, setFilter] = useState<Filter>("all");
   const [hideSolved, setHideSolved] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (entries !== null) return;
     let cancelled = false;
     loadClassicManifest().then((list) => {
       if (!cancelled) setEntries(list);
@@ -52,7 +56,7 @@ export function ClassicLibraryScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [entries]);
 
   // Best times are keyed by puzzle identity, which the manifest carries — so
   // "solved" + PB come straight from the account's history (or localStorage
