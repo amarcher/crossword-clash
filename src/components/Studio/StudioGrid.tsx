@@ -21,7 +21,16 @@ interface StudioGridProps {
  */
 const SENTINEL = "\u200b";
 
-const HEAT_BG = { dead: "bg-red-200", tight: "bg-orange-100", snug: "bg-amber-50", open: "bg-surface" } as const;
+/**
+ * Heat sits on a cool, neutral ramp so gold is reserved for the selection: a
+ * snug run must never read as a second highlighted word.
+ */
+const HEAT_BG = { dead: "bg-red-200", tight: "bg-brand-100", snug: "bg-surface-sunken", open: "bg-surface" } as const;
+/**
+ * On the active word the gold fill wins, so those cells carry their heat as a
+ * corner dot instead (a translucent gold wash over the heat turned to khaki).
+ */
+const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle", open: null } as const;
 
 /**
  * Editable construction grid. Keys go through one visually hidden input so
@@ -69,7 +78,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
                 role="gridcell"
                 aria-label="Block"
                 aria-selected={i === cursor}
-                className={`aspect-square bg-ink ${i === cursor ? "outline-3 -outline-offset-3 outline-gold-400" : ""}`}
+                className={`aspect-square bg-ink cursor-pointer ${i === cursor ? "outline-3 -outline-offset-3 outline-gold-400" : ""}`}
                 onClick={() => {
                   onSelect(i);
                   input.current?.focus();
@@ -77,12 +86,19 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
               />
             );
           }
-          const bg = i === cursor ? "bg-gold-400" : active.has(i) ? "bg-gold-100" : heat ? HEAT_BG[heatLevel(heat[i])] : "bg-surface";
+          const isCursor = i === cursor;
+          const isActive = active.has(i);
+          const level = heat ? heatLevel(heat[i]) : "open";
+          const dot = isCursor || isActive ? HEAT_DOT[level] : null;
+          const bg = isCursor ? "bg-gold-400" : isActive ? "bg-gold-100" : HEAT_BG[level];
+          // Every letter on the cursor cell is ink: brand blue on gold misses AA contrast,
+          // so there the engine/locked distinction is carried by weight alone.
+          const letter = grid.locked[i] ? "font-bold text-ink" : isCursor ? "font-medium text-ink" : "font-medium text-brand-600";
           return (
             <div
               key={i}
               role="gridcell"
-              aria-selected={i === cursor}
+              aria-selected={isCursor}
               className={`relative aspect-square flex items-center justify-center ${bg} cursor-pointer`}
               onClick={() => {
                 onSelect(i);
@@ -90,14 +106,21 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, activeCells, 
               }}
             >
               {numbers.has(i) && (
-                <span className="absolute top-[3%] left-[6%] leading-none text-ink-soft font-semibold" style={{ fontSize: `${26 / w}cqi` }}>
+                <span
+                  className="absolute top-[3%] left-[6%] leading-none text-ink-soft font-semibold"
+                  style={{ fontSize: `min(${26 / w}cqi, 1rem)` }}
+                >
                   {numbers.get(i)}
                 </span>
               )}
-              <span
-                className={`leading-none uppercase ${grid.locked[i] ? "font-bold text-ink" : "font-medium text-brand-600"}`}
-                style={{ fontSize: `${56 / w}cqi` }}
-              >
+              {dot && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-[8%] right-[8%] rounded-full ${dot}`}
+                  style={{ width: `clamp(5px, ${18 / w}cqi, 10px)`, height: `clamp(5px, ${18 / w}cqi, 10px)` }}
+                />
+              )}
+              <span className={`leading-none uppercase ${letter}`} style={{ fontSize: `${56 / w}cqi` }}>
                 {cell}
               </span>
             </div>
