@@ -7,6 +7,8 @@ import { ClassicLibraryScreen } from "./ClassicLibraryScreen";
 import type { ClassicEntry } from "../lib/classicLibrary";
 
 const navigate = vi.fn();
+// The screen navigates through the site cross-fade; the hook is the seam.
+vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("react-router", async () => {
   const actual = await vi.importActual<typeof import("react-router")>("react-router");
   return { ...actual, useNavigate: () => navigate };

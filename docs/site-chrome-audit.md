@@ -29,7 +29,7 @@ for three separate reasons.
 ## Status
 
 **Items 1, 2, 3 and 5 shipped** (one page shell, PR "Site chrome: one page shell",
-2026-10-17). Items 6–9 shipped next (below). Items 4, 10 and 11 are open.
+2026-10-17). Items 6–9 and 10–11 shipped next (below). Item 4 is open.
 
 - `src/components/PageShell.tsx` — `width` token (`md | 2xl | 3xl | 4xl | 5xl | 7xl`,
   plus `widthLg` for the lobby's wider desktop column) puts the `SiteBar` and the
@@ -102,6 +102,20 @@ day, no localStorage), three runs each:
   that answer so repeat visits that day are stable. Reserving the slot
   permanently, or deciding from a bundled schedule, would need a product
   call.
+
+**Items 10 + 11 shipped** (route transitions, PR #103, 2026-10-17): prefetch on
+intent (`src/routeModules.ts`, triggered by `TransitionLink` and the daily
+Play/Race buttons), the 150 ms pending bar (`NavigationProgress`), scroll
+restoration and the route cross-fade (`lib/transitionNavigate.ts` +
+`lib/viewTransition.ts`, CSS in `index.css`). Both live in a pathless
+`SiteFrame` route around every route, so the legal pages and `/host` get them
+too. Screenshots: `docs/site-chrome-transitions/`. Two findings on the way:
+`{ flushSync: true }` needs the `RouterProvider` from `react-router/dom` (the
+plain one warns and defers), and even then a route's *first* render commits
+~4 ms after `navigate` resolves, so the transition also waits for a commit
+signal from `SiteFrame` (`lib/routeCommit.ts`). The shared-element names are
+`.vt-site-bar` on the shell's bar and `.vt-brand` on its logo image and on the
+menu wordmark (the Lottie box on the first visit, the still afterwards).
 
 ## Alignment — measured
 

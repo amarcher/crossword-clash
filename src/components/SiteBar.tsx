@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { TransitionLink } from "./ui/TransitionLink";
 import { ArrowLeft } from "lucide-react";
 
 export interface SiteBarProps {
@@ -20,7 +20,10 @@ const LOGO = "inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visibl
 /**
  * Top bar for inner pages: logo (home link) on the left; optional right slot
  * and back control on the right. Width-agnostic — it fills whatever column
- * PageShell puts it in, so its edges are the page's edges.
+ * PageShell puts it in, so its edges are the page's edges. Named for view
+ * transitions: the bar (`site-bar`) holds still between inner pages and the
+ * logo image (`brand`) is what the menu's wordmark morphs into. Its links
+ * warm the next chunk on intent.
  */
 export function SiteBar({ backLabel, backTo = "/", onBack, plain, right }: SiteBarProps) {
   const backInner = (
@@ -31,7 +34,7 @@ export function SiteBar({ backLabel, backTo = "/", onBack, plain, right }: SiteB
   );
   // The asset is cropped to the wordmark, so these heights are the visible
   // height: 36px keeps each letter tile legible on phones, 44px from sm up.
-  const logo = <img src="/logo.png" alt="Crossword Clash" width={2292} height={500} className="h-9 w-auto sm:h-11" />;
+  const logo = <img src="/logo.png" alt="Crossword Clash" width={2292} height={500} className="vt-brand h-9 w-auto sm:h-11" />;
   let back: ReactNode = null;
   if (backLabel) {
     back = onBack ? (
@@ -39,15 +42,15 @@ export function SiteBar({ backLabel, backTo = "/", onBack, plain, right }: SiteB
     ) : plain ? (
       <a href={backTo} className={LINK}>{backInner}</a>
     ) : (
-      <Link to={backTo} className={LINK}>{backInner}</Link>
+      <TransitionLink to={backTo} className={LINK}>{backInner}</TransitionLink>
     );
   }
   return (
-    <header data-site-bar className="flex w-full items-center justify-between gap-3">
+    <header data-site-bar className="vt-site-bar flex w-full items-center justify-between gap-3">
       {plain ? (
         <a href="/" className={LOGO}>{logo}</a>
       ) : (
-        <Link to="/" className={LOGO}>{logo}</Link>
+        <TransitionLink to="/" className={LOGO}>{logo}</TransitionLink>
       )}
       <div data-site-bar-right className="flex items-center gap-2">
         {right}

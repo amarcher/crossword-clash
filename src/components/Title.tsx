@@ -59,11 +59,14 @@ export function Title({ className = "", animate = false }: TitleProps) {
   if (animate) {
     return (
       <div className={`text-center ${className}`}>
+        {/* `vt-brand` (on the player box, or on the still itself): during a
+            route transition the wordmark morphs into the site bar's logo
+            image, which carries the same name. */}
         {play ? (
           /* fallback reserves the box (transparent) so layout doesn't shift while
              the chunk/JSON load, then the wordmark flips into it. */
           <Suspense fallback={<div className="mx-auto" style={ANIM_BOX} />}>
-            <AnimatedLogo className="mx-auto" style={ANIM_BOX} autoplay />
+            <AnimatedLogo className="vt-brand mx-auto" style={ANIM_BOX} autoplay />
           </Suspense>
         ) : (
           /* The animation's final frame as a still, without loading lottie (also
@@ -72,7 +75,7 @@ export function Title({ className = "", animate = false }: TitleProps) {
              its opaque pixels, which the comp pads by 76px on every side — so it
              sits centred in the animation's box at the wordmark's share of it. */
           <div className="mx-auto flex items-center justify-center" style={ANIM_BOX}>
-            <img src="/logo.png" alt="Crossword Clash" width={2292} height={500} className="h-auto" style={STILL_WIDTH} />
+            <img src="/logo.png" alt="Crossword Clash" width={2292} height={500} className="vt-brand h-auto" style={STILL_WIDTH} />
           </div>
         )}
       </div>
