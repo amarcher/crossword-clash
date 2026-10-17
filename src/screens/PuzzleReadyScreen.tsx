@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { PuzzleReady } from "../components/PuzzleReady";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { compressPuzzleToHash } from "../lib/puzzleUrl";
-import { getDisplayNytStreak } from "../lib/soloStats";
+import { useStreaks } from "../hooks/useSolveHistory";
 import { track } from "../lib/analytics";
 
 export function PuzzleReadyScreen() {
@@ -26,10 +26,8 @@ export function PuzzleReadyScreen() {
     });
   }, [game.urlPuzzle]);
 
-  const nytStreak = useMemo(
-    () => (game.urlPuzzle?.origin === "nyt-bookmarklet" ? getDisplayNytStreak() : 0),
-    [game.urlPuzzle],
-  );
+  const streaks = useStreaks();
+  const nytStreak = game.urlPuzzle?.origin === "nyt-bookmarklet" ? streaks.nyt : 0;
 
   const handlePlaySolo = useCallback(async () => {
     if (!game.urlPuzzle) return;

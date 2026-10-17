@@ -23,7 +23,8 @@ import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
-import { recordDailyPlay, recordNytPlay, formatDuration } from "../lib/soloStats";
+import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
+import { recordSolve } from "../lib/solveHistory";
 import { rankRaceStandings } from "../lib/raceResults";
 import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
@@ -193,6 +194,33 @@ export function MultiplayerPlayScreen() {
     if (!finished) return;
     setNytStreak(recordNytPlay().current);
   }, [fromNyt, nytStreak, isAsync, myFinishSeconds, gameStatus]);
+
+  // Signed-in solvers: file the finish in the account's solve history. An
+  // async race carries a personal time; a shared-grid finish (versus, co-op)
+  // has none and counts toward streaks only. Once per game: a rematch is a
+  // new game id.
+  const accountId = account.user?.id;
+  const [serverNytStreak, setServerNytStreak] = useState<number | null>(null);
+  const historyRecordedRef = useRef(false);
+  useEffect(() => {
+    historyRecordedRef.current = false;
+    setServerNytStreak(null);
+  }, [game.gameId]);
+  useEffect(() => {
+    if (!accountId || !puzzle || historyRecordedRef.current) return;
+    const finished = isAsync ? myFinishSeconds !== undefined : gameStatus === "completed";
+    if (!finished) return;
+    historyRecordedRef.current = true;
+    void recordSolve(accountId, {
+      puzzleKey: puzzleIdentity(puzzle),
+      title: puzzle.title,
+      source: dailySlot ? "daily" : fromNyt ? "nyt" : "other",
+      mode: raceMode,
+      seconds: isAsync ? (myFinishSeconds ?? null) : null,
+    }).then((outcome) => {
+      if (outcome && fromNyt) setServerNytStreak(outcome.nytStreak.current);
+    });
+  }, [accountId, puzzle, isAsync, myFinishSeconds, gameStatus, dailySlot, fromNyt, raceMode]);
 
   const handleReset = useCallback(async () => {
     await mp.leaveGame();
@@ -442,7 +470,7 @@ export function MultiplayerPlayScreen() {
         raceSeconds={isAsync ? myFinishSeconds ?? null : raceSeconds}
         raceStandings={raceStandings}
         coop={isCoop}
-        nytHook={fromNyt ? { streak: nytStreak ?? 0 } : undefined}
+        nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
         dailySlot={dailySlot ?? undefined}
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}

@@ -4,6 +4,7 @@ import { LogOut, UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { accountName, AUTH_PROVIDERS, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
 import { track } from "../../lib/analytics";
+import { useSolveHistory } from "../../hooks/useSolveHistory";
 import { Button } from "../ui";
 import { UsernamePicker } from "./UsernamePicker";
 import type { AccountContextValue } from "../../contexts/AccountContext";
@@ -34,6 +35,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const { user, profile } = account;
+  const history = useSolveHistory();
 
   const handleEscape = useCallback(() => onClose(), [onClose]);
   useFocusTrap(panelRef, handleEscape);
@@ -143,7 +145,15 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
               <Button variant="ghost" size="md" block disabled={busy} onClick={handleSignOut}>
                 <LogOut className="size-4" aria-hidden="true" /> {t("account.signOut")}
               </Button>
-              <p className="text-center text-xs leading-relaxed text-subtle">{t("account.historyNote")}</p>
+              <p className="text-center text-xs leading-relaxed text-subtle">
+                {history.summary
+                  ? history.summary.solveCount === 0
+                    ? t("account.syncedNone")
+                    : t("account.syncedSolves", { count: history.summary.solveCount })
+                  : history.failed
+                    ? t("account.syncOffline")
+                    : t("account.syncing")}
+              </p>
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">

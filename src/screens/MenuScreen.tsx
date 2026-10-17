@@ -14,7 +14,7 @@ import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import type { DailySlot } from "../lib/dailyFeed";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
-import { getDisplayNytStreak, getDisplayStreak } from "../lib/soloStats";
+import { useStreaks } from "../hooks/useSolveHistory";
 import {
   ANDROID_PLAY_STORE_URL,
   IOS_APP_STORE_URL,
@@ -115,11 +115,11 @@ export function MenuScreen() {
   const navigate = useNavigate();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const disabled = loading;
-  const streak = useMemo(() => getDisplayStreak(), []);
+  // The account's streaks when signed in, this device's otherwise.
+  const { daily: streak, nyt: nytStreak } = useStreaks();
   // Bookmarklet promotion is desktop-only: it needs a bookmarks bar, so on a
   // phone or tablet the row would be a dead end.
   const desktop = useMemo(() => isDesktopBrowser(), []);
-  const nytStreak = useMemo(() => getDisplayNytStreak(), []);
 
   // Resolve once per render — deterministic per calendar day. The mini always
   // has an answer (bundled fallback); the large exists only on days one was

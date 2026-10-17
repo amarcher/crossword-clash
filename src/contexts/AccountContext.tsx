@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useAccount, type Account } from "../hooks/useAccount";
 import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
+import { clearSolveHistory, ensureSolveHistory } from "../lib/solveHistory";
 
 export interface OpenAccountOptions {
   /**
@@ -52,8 +53,16 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     };
   }, [available]);
 
-  // First sign-in: once the profile lookup settles with no username, ask for one.
+  // An account's solve history: loaded once it appears (and this device's
+  // pre-account history uploaded once), forgotten when it goes.
   const { user, profile, profileReady } = account;
+  const userId = user?.id;
+  useEffect(() => {
+    if (userId) void ensureSolveHistory(userId);
+    else clearSolveHistory();
+  }, [userId]);
+
+  // First sign-in: once the profile lookup settles with no username, ask for one.
   useEffect(() => {
     if (!justReturned || !user || !profileReady) return;
     setJustReturned(false);
@@ -80,6 +89,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       )}
     </AccountContext.Provider>
   );
+}
+
+/** The account context, or null outside the provider (tests, isolated trees). */
+export function useMaybeAccount(): AccountContextValue | null {
+  return useContext(AccountContext);
 }
 
 export function useAccountContext(): AccountContextValue {

@@ -501,6 +501,10 @@
     "signOut": "Sign out",
     "close": "Close",
     "genericError": "Something went wrong. Please try again.",
-    "historyNote": "Your solves on this device are kept. Syncing them to your account comes next."
+    "syncing": "Syncing your solves…",
+    "syncedNone": "No solves synced yet. Finish a puzzle and it's kept here.",
+    "syncedSolves_one": "{{count}} solve synced to your account",
+    "syncedSolves_other": "{{count}} solves synced to your account",
+    "syncOffline": "Your solves on this device are kept. They'll sync when you're back online."
   }
 }

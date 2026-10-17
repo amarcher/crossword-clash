@@ -16,7 +16,8 @@ import {
   type ClassicEntry,
   type SizeBucket,
 } from "../lib/classicLibrary";
-import { formatDuration, loadSoloStats } from "../lib/soloStats";
+import { formatDuration } from "../lib/soloStats";
+import { useBestTimes } from "../hooks/useSolveHistory";
 import { track } from "../lib/analytics";
 
 type Filter = SizeBucket | "all";
@@ -53,9 +54,10 @@ export function ClassicLibraryScreen() {
     };
   }, []);
 
-  // Solo best times are keyed by puzzle identity, which the manifest carries —
-  // so "solved" + PB come straight from localStorage, no puzzle parsing.
-  const bestTimes = useMemo(() => loadSoloStats().bestTimes, []);
+  // Best times are keyed by puzzle identity, which the manifest carries — so
+  // "solved" + PB come straight from the account's history (or localStorage
+  // when anonymous), no puzzle parsing.
+  const bestTimes = useBestTimes();
   const solved = useMemo(() => new Set(Object.keys(bestTimes)), [bestTimes]);
   const solvedCount = useMemo(
     () => (entries ?? []).filter((e) => solved.has(e.identity)).length,
