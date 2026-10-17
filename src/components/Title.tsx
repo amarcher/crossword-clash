@@ -27,7 +27,9 @@ export function Title({ className = "", animate = false }: TitleProps) {
             the chunk/JSON load, then the wordmark flips into it. Under reduced
             motion the logo rests on its final assembled frame. */}
         <Suspense fallback={<div className="mx-auto" style={ANIM_BOX} />}>
-          <AnimatedLogo className="mx-auto" style={ANIM_BOX} autoplay={!reduceMotion} />
+          {/* `vt-brand`: during a route transition this box morphs into the
+              site bar's logo (SiteBar), which carries the same name. */}
+          <AnimatedLogo className="vt-brand mx-auto" style={ANIM_BOX} autoplay={!reduceMotion} />
         </Suspense>
       </div>
     );

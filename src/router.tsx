@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
+import { SiteFrame } from "./layouts/SiteFrame";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
+import { screenModules as m } from "./routeModules";
 import { RouteErrorScreen } from "./screens/RouteErrorScreen";
 import { NotFoundScreen } from "./screens/NotFoundScreen";
 
@@ -111,37 +113,43 @@ export { IndexRedirect, HostIndexRedirect };
 // It is intentionally NOT a React route — see PR #36 for the Safe
 // Browsing rationale. Edit the HTML template, not React.
 export const router = createBrowserRouter([
-  { path: "/watch/:code?", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/SpectatorScreen").then(m => ({ Component: m.SpectatorScreen })) },
-  // Static legal pages: top-level so they skip the game/auth providers (no
-  // anonymous sign-in just to read a policy).
-  { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/PrivacyScreen").then((m) => ({ Component: m.PrivacyScreen })) },
-  { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/TermsScreen").then((m) => ({ Component: m.TermsScreen })) },
-  { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/legal/SupportScreen").then((m) => ({ Component: m.SupportScreen })) },
-  // Construction studio: dev builds only until its word list and Claude features are hosted.
-  ...(import.meta.env.DEV || import.meta.env.VITE_STUDIO === "1"
-    ? [{ path: "/studio", errorElement: <RouteErrorScreen />, lazy: () => import("./screens/StudioScreen").then((m) => ({ Component: m.StudioScreen })) }]
-    : []),
   {
-    path: "/",
-    Component: RootLayout,
+    // Pathless frame around EVERY route (the legal pages and /host live outside
+    // RootLayout's providers on purpose): scroll restoration + the pending bar.
+    Component: SiteFrame,
     errorElement: <RouteErrorScreen />,
     children: [
-      { index: true, Component: IndexRedirect },
-      { path: "menu", Component: MenuScreen },
-      { path: "nyt-import", lazy: () => import("./screens/NytImportScreen").then((m) => ({ Component: m.NytImportScreen })) },
-      { path: "solo/import", lazy: () => import("./screens/SoloImportScreen").then((m) => ({ Component: m.SoloImportScreen })) },
-      { path: "solo/play", lazy: () => import("./screens/SoloPlayScreen").then((m) => ({ Component: m.SoloPlayScreen })) },
-      { path: "join", lazy: () => import("./screens/JoinScreen").then((m) => ({ Component: m.JoinScreen })) },
-      { path: "daily/leaderboard/:slot?", lazy: () => import("./screens/DailyLeaderboardScreen").then((m) => ({ Component: m.DailyLeaderboardScreen })) },
-      { path: "classics", lazy: () => import("./screens/ClassicLibraryScreen").then((m) => ({ Component: m.ClassicLibraryScreen })) },
-      { path: "host-game/name", lazy: () => import("./screens/HostNameScreen").then((m) => ({ Component: m.HostNameScreen })) },
-      { path: "host-game/import", lazy: () => import("./screens/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
-      { path: "lobby/:gameId", lazy: () => import("./screens/LobbyScreen").then((m) => ({ Component: m.LobbyScreen })) },
-      { path: "play/:gameId", lazy: () => import("./screens/MultiplayerPlayScreen").then((m) => ({ Component: m.MultiplayerPlayScreen })) },
-      { path: "puzzle-ready", lazy: () => import("./screens/PuzzleReadyScreen").then((m) => ({ Component: m.PuzzleReadyScreen })) },
-      { path: "challenge", lazy: () => import("./screens/ChallengeScreen").then((m) => ({ Component: m.ChallengeScreen })) },
-      { path: "importing", lazy: () => import("./screens/ImportingScreen").then((m) => ({ Component: m.ImportingScreen })) },
-      { path: "rejoin", lazy: () => import("./screens/RejoinScreen").then((m) => ({ Component: m.RejoinScreen })) },
+      { path: "/watch/:code?", errorElement: <RouteErrorScreen />, lazy: () => m.spectator().then((s) => ({ Component: s.SpectatorScreen })) },
+      // Static legal pages: top-level so they skip the game/auth providers (no
+      // anonymous sign-in just to read a policy).
+      { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => m.privacy().then((s) => ({ Component: s.PrivacyScreen })) },
+      { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => m.terms().then((s) => ({ Component: s.TermsScreen })) },
+      { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => m.support().then((s) => ({ Component: s.SupportScreen })) },
+      // Construction studio: dev builds only until its word list and Claude features are hosted.
+      ...(import.meta.env.DEV || import.meta.env.VITE_STUDIO === "1"
+        ? [{ path: "/studio", errorElement: <RouteErrorScreen />, lazy: () => m.studio().then((s) => ({ Component: s.StudioScreen })) }]
+        : []),
+      {
+        path: "/",
+        Component: RootLayout,
+        errorElement: <RouteErrorScreen />,
+        children: [
+          { index: true, Component: IndexRedirect },
+          { path: "menu", Component: MenuScreen },
+          { path: "nyt-import", lazy: () => m.nytImport().then((s) => ({ Component: s.NytImportScreen })) },
+          { path: "solo/import", lazy: () => m.soloImport().then((s) => ({ Component: s.SoloImportScreen })) },
+          { path: "solo/play", lazy: () => m.soloPlay().then((s) => ({ Component: s.SoloPlayScreen })) },
+          { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
+          { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
+          { path: "classics", lazy: () => m.classics().then((s) => ({ Component: s.ClassicLibraryScreen })) },
+          { path: "host-game/name", lazy: () => m.hostName().then((s) => ({ Component: s.HostNameScreen })) },
+          { path: "host-game/import", lazy: () => m.hostImport().then((s) => ({ Component: s.HostImportScreen })) },
+          { path: "lobby/:gameId", lazy: () => m.lobby().then((s) => ({ Component: s.LobbyScreen })) },
+          { path: "play/:gameId", lazy: () => m.multiplayerPlay().then((s) => ({ Component: s.MultiplayerPlayScreen })) },
+          { path: "puzzle-ready", lazy: () => m.puzzleReady().then((s) => ({ Component: s.PuzzleReadyScreen })) },
+          { path: "challenge", lazy: () => m.challenge().then((s) => ({ Component: s.ChallengeScreen })) },
+          { path: "importing", lazy: () => m.importing().then((s) => ({ Component: s.ImportingScreen })) },
+          { path: "rejoin", lazy: () => m.rejoin().then((s) => ({ Component: s.RejoinScreen })) },
     ],
   },
   {
@@ -150,13 +158,15 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorScreen />,
     children: [
       { index: true, Component: HostIndexRedirect },
-      { path: "import", lazy: () => import("./screens/host/HostImportScreen").then((m) => ({ Component: m.HostImportScreen })) },
-      { path: "lobby/:gameId", lazy: () => import("./screens/host/HostLobbyScreen").then((m) => ({ Component: m.HostLobbyScreen })) },
-      { path: "spectate/:gameId", lazy: () => import("./screens/host/HostSpectateScreen").then((m) => ({ Component: m.HostSpectateScreen })) },
-      { path: "puzzle-ready", lazy: () => import("./screens/host/HostPuzzleReadyScreen").then((m) => ({ Component: m.HostPuzzleReadyScreen })) },
-      { path: "importing", lazy: () => import("./screens/host/HostImportingScreen").then((m) => ({ Component: m.HostImportingScreen })) },
-      { path: "rejoin", lazy: () => import("./screens/host/HostRejoinScreen").then((m) => ({ Component: m.HostRejoinScreen })) },
+      { path: "import", lazy: () => m.tvImport().then((s) => ({ Component: s.HostImportScreen })) },
+      { path: "lobby/:gameId", lazy: () => m.tvLobby().then((s) => ({ Component: s.HostLobbyScreen })) },
+      { path: "spectate/:gameId", lazy: () => m.tvSpectate().then((s) => ({ Component: s.HostSpectateScreen })) },
+      { path: "puzzle-ready", lazy: () => m.tvPuzzleReady().then((s) => ({ Component: s.HostPuzzleReadyScreen })) },
+      { path: "importing", lazy: () => m.tvImporting().then((s) => ({ Component: s.HostImportingScreen })) },
+      { path: "rejoin", lazy: () => m.tvRejoin().then((s) => ({ Component: s.HostRejoinScreen })) },
     ],
   },
   { path: "*", Component: NotFoundScreen },
+    ],
+  },
 ]);

@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { TransitionLink } from "./ui/TransitionLink";
 import { useTranslation } from "react-i18next";
 import { openConsentSettings } from "../lib/consentStore";
 
@@ -12,17 +12,17 @@ export function LegalLinks({ className = "" }: { className?: string }) {
       aria-label={t("legal.footerLabel")}
       className={`flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted ${className}`}
     >
-      <Link to="/privacy" className={link}>
+      <TransitionLink to="/privacy" className={link}>
         {t("legal.privacy")}
-      </Link>
+      </TransitionLink>
       <span aria-hidden="true">·</span>
-      <Link to="/terms" className={link}>
+      <TransitionLink to="/terms" className={link}>
         {t("legal.terms")}
-      </Link>
+      </TransitionLink>
       <span aria-hidden="true">·</span>
-      <Link to="/support" className={link}>
+      <TransitionLink to="/support" className={link}>
         {t("legal.support")}
-      </Link>
+      </TransitionLink>
       {/* The native apps have no analytics or ad cookies to configure. */}
       {import.meta.env.MODE !== "mobile" && (
         <>

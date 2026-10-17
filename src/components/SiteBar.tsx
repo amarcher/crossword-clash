@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { TransitionLink } from "./ui/TransitionLink";
 import { ArrowLeft } from "lucide-react";
 
 interface SiteBarProps {
@@ -14,9 +14,14 @@ interface SiteBarProps {
 const LINK =
   "inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg max-sm:min-w-11 max-sm:justify-center text-sm font-semibold text-ink-soft hover:text-brand-700 active:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500";
 const LOGO =
-  "-ml-1 inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-brand-500";
+  "vt-brand -ml-1 inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-brand-500";
 
-/** Top bar for inner pages: logo (home link) on the left; back link + optional right slot on the right. */
+/**
+ * Top bar for inner pages: logo (home link) on the left; back link + optional
+ * right slot on the right. Named for view transitions: the bar (`site-bar`)
+ * holds still between inner pages and the logo (`brand`) is what the menu's
+ * wordmark morphs into. Its links warm the next chunk on intent.
+ */
 export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps) {
   const backInner = (
     <>
@@ -28,11 +33,11 @@ export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps)
   // letter tile readable on phones, 56px from sm up.
   const logo = <img src="/logo.png" alt="Crossword Clash" className="h-12 w-auto object-contain sm:h-14" />;
   return (
-    <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+    <header className="vt-site-bar mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
       {plain ? (
         <a href="/" className={LOGO}>{logo}</a>
       ) : (
-        <Link to="/" className={LOGO}>{logo}</Link>
+        <TransitionLink to="/" className={LOGO}>{logo}</TransitionLink>
       )}
       <div className="flex items-center gap-2">
         {right}
@@ -40,7 +45,7 @@ export function SiteBar({ backLabel, backTo = "/", plain, right }: SiteBarProps)
           (plain ? (
             <a href={backTo} className={LINK}>{backInner}</a>
           ) : (
-            <Link to={backTo} className={LINK}>{backInner}</Link>
+            <TransitionLink to={backTo} className={LINK}>{backInner}</TransitionLink>
           ))}
       </div>
     </header>

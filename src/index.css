@@ -465,3 +465,54 @@ select,
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: none; }
 }
+
+/* Route transitions — a short root cross-fade between pages (lib/viewTransition
+   + lib/transitionNavigate). The site bar and the logo carry their own names so
+   they hold still, or morph (the menu's wordmark shrinks into the bar's logo),
+   while only the body fades. The UA keyframes are kept: `::view-transition-old`
+   fades out and `::view-transition-new` fades in with plus-lighter blending,
+   so the cross-fade never dips in brightness; only the timing is ours. */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 160ms;
+  animation-timing-function: ease-out;
+}
+.vt-site-bar { view-transition-name: site-bar; }
+.vt-brand { view-transition-name: brand; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Pending navigation — a 2px brand bar along the top (components/NavigationProgress),
+   shown once a route chunk has been loading for 150ms. Kept below the notch in
+   the native apps. */
+.nav-progress {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  height: 2px;
+  overflow: hidden;
+  background: var(--color-brand-100);
+  pointer-events: none;
+}
+.nav-progress-sweep {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--color-brand-500);
+  animation: nav-progress-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes nav-progress-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress-sweep { width: 100%; animation: none; }
+}

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { BookOpen, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
@@ -23,7 +23,8 @@ import {
   isIosBrowser,
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
-import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
+import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../components/ui";
+import { prefetchOnIntent } from "../routeModules";
 
 interface DailyHeroProps {
   slot: DailySlot;
@@ -82,25 +83,33 @@ function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onR
         )}
       </div>
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
-        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily}>
+        {/* Buttons, not links, so they warm their screens' chunks by hand. */}
+        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
           {t("menu.dailyPlay")}
         </Button>
         {showFriends && (
-          <Button variant="secondary" size="lg" className="flex-1" onClick={onRace} disabled={disabled || !daily}>
+          <Button
+            variant="secondary"
+            size="lg"
+            className="flex-1"
+            onClick={onRace}
+            disabled={disabled || !daily}
+            {...prefetchOnIntent("/host-game/name")}
+          >
             <Swords className="size-4.5" aria-hidden="true" />
             {t("menu.raceFriends")}
           </Button>
         )}
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
-        <Link
+        <TransitionLink
           to={leaderboardPath(slot)}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
           className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
           {t("menu.dailyLeaderboard")}
-        </Link>
+        </TransitionLink>
         {streak > 0 && (
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-700">
             <Flame className="size-4 text-gold-500" aria-hidden="true" />
@@ -115,7 +124,9 @@ function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onR
 export function MenuScreen() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  // Pushes run inside the site cross-fade; the play screen gets a plain fade
+  // (no bar to morph into) and the grid itself is never a named element.
+  const navigate = useTransitionNavigate();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const disabled = loading;
   // The account's streaks when signed in, this device's otherwise.
@@ -230,12 +241,12 @@ export function MenuScreen() {
                   onClick={() => track("mode_selected", { mode: "tv" })}
                 />
               </ListGroup>
-              <Link
+              <TransitionLink
                 to="/watch"
                 className="justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
               >
                 {t("menu.watchLink")}
-              </Link>
+              </TransitionLink>
             </section>
           )}
 

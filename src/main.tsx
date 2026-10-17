@@ -1,7 +1,10 @@
 import i18n from "./i18n/i18n";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router";
+// The /dom provider is the one that hands ReactDOM.flushSync to the router;
+// without it `navigate(to, { flushSync: true })` is a warning and a deferred
+// commit, which breaks the route cross-fade (lib/transitionNavigate).
+import { RouterProvider } from "react-router/dom";
 import { ConfirmProvider } from "./components/ConfirmDialog";
 import { ConsentBanner } from "./components/ConsentBanner";
 import { DeferredAnalytics } from "./components/DeferredAnalytics";

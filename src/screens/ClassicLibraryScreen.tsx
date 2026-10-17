@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { useTranslation } from "react-i18next";
 import { BookOpen, Check, Dices, EyeOff, Swords } from "lucide-react";
 import { SiteBar } from "../components/SiteBar";
@@ -34,7 +34,7 @@ type Filter = SizeBucket | "all";
  */
 export function ClassicLibraryScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
 
