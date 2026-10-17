@@ -27,8 +27,8 @@ import { dayKey } from "./soloStats";
 import { getDailyMini, type DailyMini } from "./dailyMinis";
 import { normalizeTransferPuzzle, type TransferPuzzle } from "./puzzleNormalizer";
 
-/** The two dailies. Mirrored (not imported) by api/daily.ts and the studio-schedule edge function. */
-export const DAILY_SLOTS = ["mini", "large"] as const;
+/** The three dailies, smallest first. Mirrored (not imported) by api/daily.ts and the studio-schedule edge function. */
+export const DAILY_SLOTS = ["mini", "midi", "large"] as const;
 export type DailySlot = (typeof DAILY_SLOTS)[number];
 
 export function isDailySlot(value: unknown): value is DailySlot {
@@ -39,6 +39,7 @@ export const DAILY_FEED_PATH = "/daily-puzzles";
 const CACHE_KEYS: Record<DailySlot, string> = {
   // The mini keeps its original key so a stored answer survives this change.
   mini: "crossword-clash:daily-feed",
+  midi: "crossword-clash:daily-feed:midi",
   large: "crossword-clash:daily-feed:large",
 };
 const FETCH_TIMEOUT_MS = 2500;
@@ -84,7 +85,7 @@ export function parseDailyFeedEntry(data: unknown): DailyMini | null {
   }
 }
 
-/** What a slot shows when the feed has nothing for the day: the bundled mini, or no large. */
+/** What a slot shows when the feed has nothing for the day: the bundled mini; no midi or large. */
 function fallback(slot: DailySlot, now: Date): DailyMini | null {
   return slot === "mini" ? getDailyMini(now) : null;
 }

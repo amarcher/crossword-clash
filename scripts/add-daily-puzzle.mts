@@ -2,6 +2,7 @@
  * Publishes a puzzle to the daily feed for one calendar day.
  *
  *   pnpm daily:add 2026-11-01 path/to/puzzle.puz ["Theme"]
+ *   pnpm daily:add --slot midi 2026-11-01 path/to/midi.ipuz ["Theme"]
  *   pnpm daily:add --slot large 2026-11-01 path/to/large.ipuz ["Theme"]
  *
  * Accepts anything the importer does (.puz/.ipuz/.jpz/.xd) and writes
@@ -18,7 +19,7 @@ import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle, puzzleToTransferFormat } from "../src/lib/puzzleNormalizer";
 import { dailyFeedPath, isDailySlot, parseDailyFeedEntry, type DailyFeedEntry, type DailySlot } from "../src/lib/dailyFeed";
 
-const USAGE = 'Usage: pnpm daily:add [--slot mini|large] YYYY-MM-DD path/to/puzzle.(puz|ipuz|jpz|xd) ["Theme"]';
+const USAGE = 'Usage: pnpm daily:add [--slot mini|midi|large] YYYY-MM-DD path/to/puzzle.(puz|ipuz|jpz|xd) ["Theme"]';
 
 /** Pull `--slot X` / `--slot=X` out of the arguments; what's left is positional. */
 function parseArgs(argv: string[]): { slot: DailySlot; rest: string[] } {

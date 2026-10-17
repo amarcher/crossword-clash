@@ -159,7 +159,7 @@ export function ShareResultButton(props: ShareResultButtonProps) {
           });
     }
     if (dailySlot) {
-      const daily = t(dailySlot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow");
+      const daily = t(dailySlot === "large" ? "menu.dailyLargeEyebrow" : dailySlot === "midi" ? "menu.dailyMidiEyebrow" : "menu.dailyMiniEyebrow");
       return input.finishSeconds !== undefined
         ? t("completion.shareCaptionDaily", { daily, title, time: formatDuration(input.finishSeconds), url })
         : t("completion.shareCaptionDailyNoTime", { daily, title, url });

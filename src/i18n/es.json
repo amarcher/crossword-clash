@@ -42,7 +42,8 @@
     "iosApp": "Descarga la app para iPhone y iPad",
     "iosAppSubtitle": "Gratis en el App Store, con un teclado hecho para crucigramas",
     "androidApp": "Descarga la app para Android",
-    "androidAppSubtitle": "Gratis en Google Play, con un teclado hecho para crucigramas"
+    "androidAppSubtitle": "Gratis en Google Play, con un teclado hecho para crucigramas",
+    "dailyMidiEyebrow": "Midi del día"
   },
   "hostName": {
     "heading": "Crear una partida",
@@ -260,7 +261,9 @@
     "signPrompt": "Estás en la clasificación de hoy como “{{name}}”",
     "signPlaceholder": "Tu nombre",
     "signSave": "Guardar",
-    "signedAs": "En la clasificación como {{name}} ✓"
+    "signedAs": "En la clasificación como {{name}} ✓",
+    "titleMidi": "Clasificación del Midi del día",
+    "playTodayMidi": "Jugar el Midi de hoy"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",

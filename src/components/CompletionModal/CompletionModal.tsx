@@ -64,7 +64,7 @@ interface CompletionModalProps {
    * daily mini — routes the finisher to the cross-day board.
    */
   onViewLeaderboard?: () => void;
-  /** Which daily this was ("mini" | "large"), so the share text can say so. */
+  /** Which daily this was ("mini" | "midi" | "large"), so the share text can say so. */
   dailySlot?: DailySlot;
   /**
    * "Sign the board": present only when a daily time was just submitted under

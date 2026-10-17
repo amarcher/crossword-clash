@@ -45,7 +45,7 @@ export function useDailyMini(): DailyMini | null {
 }
 
 /**
- * Which daily the loaded puzzle is ("mini", "large", or null). Re-checks
+ * Which daily the loaded puzzle is ("mini", "midi", "large", or null). Re-checks
  * once every slot's feed has answered, so a player who arrived straight on
  * a play screen (a race joiner, a refresh) is still matched against the
  * feed's puzzles.

@@ -42,7 +42,8 @@
     "iosApp": "Get the iPhone and iPad app",
     "iosAppSubtitle": "Free on the App Store, with a keyboard made for crosswords",
     "androidApp": "Get the Android app",
-    "androidAppSubtitle": "Free on Google Play, with a keyboard made for crosswords"
+    "androidAppSubtitle": "Free on Google Play, with a keyboard made for crosswords",
+    "dailyMidiEyebrow": "Daily Midi"
   },
   "hostName": {
     "heading": "Host a game",
@@ -260,7 +261,9 @@
     "signPrompt": "You're on today's board as “{{name}}”",
     "signPlaceholder": "Your name",
     "signSave": "Save",
-    "signedAs": "On the board as {{name}} ✓"
+    "signedAs": "On the board as {{name}} ✓",
+    "titleMidi": "Daily Midi Leaderboard",
+    "playTodayMidi": "Play Today's Midi"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",

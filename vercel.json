@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/share", "destination": "/api/share" },
+    { "source": "/daily-puzzles/midi/:day.json", "destination": "/api/daily?day=:day&slot=midi" },
     { "source": "/daily-puzzles/large/:day.json", "destination": "/api/daily?day=:day&slot=large" },
     { "source": "/daily-puzzles/:day.json", "destination": "/api/daily?day=:day" },
     { "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)", "destination": "/index.html" }

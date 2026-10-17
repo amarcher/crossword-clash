@@ -43,10 +43,12 @@ interface DailyHeroProps {
   onRace: () => void;
 }
 
+const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
+
 /** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
 function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
-  const label = t(slot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow");
+  const label = t(SLOT_EYEBROW[slot]);
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
@@ -160,6 +162,7 @@ export function MenuScreen() {
   // has an answer (bundled fallback); the large exists only on days one was
   // published, and its tile simply isn't there otherwise.
   const dailyMini = useDailyMini();
+  const dailyMidi = useDailyPuzzle("midi");
   const dailyLarge = useDailyPuzzle("large");
 
   const playDaily = useCallback(
@@ -222,6 +225,16 @@ export function MenuScreen() {
             onPlay={() => void playDaily(dailyMini, "mini")}
             onRace={() => raceDaily(dailyMini, "mini")}
           />
+          {dailyMidi !== null && (
+            <DailyHero
+              slot="midi"
+              daily={dailyMidi ?? null}
+              multiplayer={multiplayer}
+              disabled={disabled}
+              onPlay={() => void playDaily(dailyMidi, "midi")}
+              onRace={() => raceDaily(dailyMidi, "midi")}
+            />
+          )}
           {dailyLarge !== null && (
             <DailyHero
               slot="large"

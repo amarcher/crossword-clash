@@ -26,11 +26,13 @@ describe("daily queue", () => {
     expect(scheduleProblems({ ...ready(), grid: gridFromRows(["BA.", "ORE", "WED"]) })[0]).toBe("Fill every square.");
   });
 
-  it("files 15×15s under the large slot and minis under the mini", () => {
+  it("files 15×15s under the large slot, 9×9s under the midi and minis under the mini", () => {
     expect(defaultSlotFor(15, 15)).toBe("large");
     expect(defaultSlotFor(11, 11)).toBe("large");
+    expect(defaultSlotFor(9, 9)).toBe("midi");
+    expect(defaultSlotFor(7, 9)).toBe("midi");
     expect(defaultSlotFor(5, 5)).toBe("mini");
-    expect(defaultSlotFor(7, 9)).toBe("mini");
+    expect(defaultSlotFor(7, 7)).toBe("mini");
   });
 
   it("builds a feed entry the app's daily feed accepts", () => {

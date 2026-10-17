@@ -117,7 +117,7 @@ export function DailyLeaderboardScreen() {
             <Trophy className="size-6" aria-hidden="true" />
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-            {t(slot === "large" ? "leaderboard.titleLarge" : "leaderboard.title")}
+            {t(slot === "large" ? "leaderboard.titleLarge" : slot === "midi" ? "leaderboard.titleMidi" : "leaderboard.title")}
           </h1>
           {daily?.theme && (
             <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: daily.theme })}</p>
@@ -223,7 +223,7 @@ export function DailyLeaderboardScreen() {
         {daily !== null && (
           <div className="grid gap-2.5">
             <Button size="lg" block onClick={playToday} disabled={!daily}>
-              {t(slot === "large" ? "leaderboard.playTodayLarge" : "leaderboard.playToday")}
+              {t(slot === "large" ? "leaderboard.playTodayLarge" : slot === "midi" ? "leaderboard.playTodayMidi" : "leaderboard.playToday")}
             </Button>
             {user && (
               <Button size="lg" variant="secondary" block onClick={raceFriends} disabled={!daily}>
