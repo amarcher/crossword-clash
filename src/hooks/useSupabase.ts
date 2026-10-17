@@ -34,8 +34,16 @@ export function useSupabase() {
 
     // Listen for auth changes
     const { data: { subscription } } = client.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setUser(session?.user ?? null);
+        // Signing out of an account (src/lib/account.ts) ends the session the
+        // app runs on, so start a fresh anonymous one: play never needs an
+        // account, and nothing should wait for one.
+        if (event === "SIGNED_OUT") {
+          client.auth.signInAnonymously().then(({ error }) => {
+            if (error) console.error("Anonymous sign-in failed:", error);
+          });
+        }
       },
     );
 

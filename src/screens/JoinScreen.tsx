@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { JoinGame } from "../components/GameLobby";
 import { useAuth } from "../contexts/AuthContext";
+import { useAccountContext } from "../contexts/AccountContext";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { joinGame } from "../lib/puzzleService";
 import { clearMpSession } from "../lib/sessionPersistence";
@@ -12,6 +13,7 @@ export function JoinScreen() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const game = useGame();
+  const { profile } = useAccountContext();
 
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -106,6 +108,7 @@ export function JoinScreen() {
       connecting={waitingForAuth}
       error={joinError}
       initialCode={initialCode}
+      initialName={profile?.username}
     />
   );
 }

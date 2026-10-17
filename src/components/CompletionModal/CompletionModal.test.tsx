@@ -274,4 +274,16 @@ describe("CompletionModal", () => {
     expect(queryByPlaceholderText("Your name")).toBeNull();
     expect(getByText("On the board as Andy ✓")).toBeTruthy();
   });
+
+  it("nudges an anonymous finisher to save their history only when asked to", () => {
+    const { queryByTestId } = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(queryByTestId("account-hook")).toBeNull();
+    cleanup();
+
+    const onSignIn = vi.fn();
+    const { getByTestId, getByRole } = render(<CompletionModal {...SOLO_PROPS} onSignIn={onSignIn} />);
+    expect(getByTestId("account-hook").textContent).toContain("Keep this solve");
+    fireEvent.click(getByRole("button", { name: "Sign in" }));
+    expect(onSignIn).toHaveBeenCalledTimes(1);
+  });
 });

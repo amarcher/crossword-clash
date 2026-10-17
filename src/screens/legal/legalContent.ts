@@ -40,7 +40,13 @@ const en: LegalContent = {
       {
         heading: "Playing without an account",
         paragraphs: [
-          "There are no accounts, emails or passwords. When you use multiplayer features or the daily leaderboard, the app signs you in anonymously with Supabase, which creates a random ID stored in your browser or app. That ID is not linked to your name, email or device by us.",
+          "You don't need an account, and there are no passwords. When you use multiplayer features or the daily leaderboard, the app signs you in anonymously with Supabase, which creates a random ID stored in your browser or app. That ID is not linked to your name, email or device by us.",
+        ],
+      },
+      {
+        heading: "Accounts (optional)",
+        paragraphs: [
+          "On the website you can sign in with Apple or Google to keep your solve history across devices and to have a public username. Signing in is optional: everything in the game works without it. When you sign in, Supabase links the provider to your existing anonymous ID, so your games and times stay with you, and stores the provider's user ID and the email address the provider shares with us (Apple lets you hide it). We also store the username you choose, which is public: it appears wherever your display name would, such as in games and on leaderboards. We never see your password. To delete your account and everything linked to it, email us at " + C + " from the signed-in address.",
         ],
       },
       {
@@ -251,7 +257,13 @@ const es: LegalContent = {
       {
         heading: "Jugar sin cuenta",
         paragraphs: [
-          "No hay cuentas, correos ni contraseñas. Cuando usas las funciones multijugador o la clasificación diaria, la app inicia sesión de forma anónima con Supabase, que crea un identificador aleatorio guardado en tu navegador o app. Nosotros no lo vinculamos a tu nombre, correo ni dispositivo.",
+          "No necesitas una cuenta y no hay contraseñas. Cuando usas las funciones multijugador o la clasificación diaria, la app inicia sesión de forma anónima con Supabase, que crea un identificador aleatorio guardado en tu navegador o app. Nosotros no lo vinculamos a tu nombre, correo ni dispositivo.",
+        ],
+      },
+      {
+        heading: "Cuentas (opcional)",
+        paragraphs: [
+          "En el sitio web puedes iniciar sesión con Apple o Google para conservar tu historial de partidas en todos tus dispositivos y tener un nombre de usuario público. Iniciar sesión es opcional: todo el juego funciona sin cuenta. Al iniciar sesión, Supabase vincula el proveedor a tu identificador anónimo existente, así tus partidas y tiempos siguen siendo tuyos, y guarda el identificador de usuario del proveedor y el correo que este nos comparte (Apple permite ocultarlo). También guardamos el nombre de usuario que elijas, que es público: aparece donde aparecería tu nombre visible, por ejemplo en las partidas y en las clasificaciones. Nunca vemos tu contraseña. Para eliminar tu cuenta y todo lo vinculado a ella, escríbenos a " + C + " desde el correo con el que iniciaste sesión.",
         ],
       },
       {

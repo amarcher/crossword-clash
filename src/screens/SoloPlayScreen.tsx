@@ -14,6 +14,7 @@ import { SoloTimer } from "../components/SoloTimer";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useAccountContext } from "../contexts/AccountContext";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
@@ -31,6 +32,7 @@ export function SoloPlayScreen() {
   const game = useGame();
   const mp = useMultiplayerContext();
   const { user } = useAuth();
+  const account = useAccountContext();
 
   const {
     puzzle,
@@ -360,6 +362,7 @@ export function SoloPlayScreen() {
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
+        onSignIn={account.available && account.ready && !account.user ? () => account.openAccount({ returnTo: "/", placement: "completion" }) : undefined}
       />
     </>
   );

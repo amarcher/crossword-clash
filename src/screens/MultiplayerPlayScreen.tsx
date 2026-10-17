@@ -16,6 +16,7 @@ import { CompletionModal } from "../components/CompletionModal";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useAccountContext } from "../contexts/AccountContext";
 import { createNextGame } from "../lib/puzzleService";
 import { supabase } from "../lib/supabaseClient";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
@@ -33,6 +34,7 @@ export function MultiplayerPlayScreen() {
   const confirm = useConfirm();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const account = useAccountContext();
   const game = useGame();
   const mp = useMultiplayerContext();
 
@@ -446,6 +448,7 @@ export function MultiplayerPlayScreen() {
         onRematch={canChooseNewPuzzle ? handleRematch : undefined}
         onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
+        onSignIn={account.available && account.ready && !account.user ? () => account.openAccount({ returnTo: "/", placement: "completion" }) : undefined}
       />
     </>
   );

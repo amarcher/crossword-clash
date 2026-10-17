@@ -239,7 +239,9 @@
     "shareCaptionCoopNoTime": "Resolvimos \"{{title}}\" juntos en Crossword Clash 🤝 {{url}}",
     "viewLeaderboard": "Clasificación diaria",
     "nytTomorrow": "¿Mañana a la misma hora? Abre el crucigrama del NYT de mañana y vuelve a hacer clic en el marcador.",
-    "nytStreak": "Racha NYT de {{count}} días"
+    "nytStreak": "Racha NYT de {{count}} días",
+    "saveHistory": "Conserva esta partida",
+    "saveHistoryHint": "Inicia sesión para guardar tus rachas y tiempos en todos tus dispositivos."
   },
   "leaderboard": {
     "title": "Clasificación diaria",
@@ -469,5 +471,36 @@
     "privacyLink": "Política de privacidad",
     "settings": "Configuración de cookies",
     "close": "Cerrar"
+  },
+  "account": {
+    "signIn": "Iniciar sesión",
+    "menuRow": "Guarda tu historial",
+    "menuRowSubtitle": "Opcional: inicia sesión con Apple o Google para conservar rachas y tiempos en todos tus dispositivos",
+    "accountRowSubtitle": "Sesión iniciada · toca para gestionar tu cuenta",
+    "sheetTitle": "Guarda tu historial",
+    "sheetBody": "Inicia sesión para conservar tus rachas y tiempos en todos tus dispositivos y elegir un nombre de usuario público. Jugar sin cuenta sigue igual que siempre.",
+    "continueApple": "Continuar con Apple",
+    "continueGoogle": "Continuar con Google",
+    "noProviders": "El inicio de sesión aún no está activado. Vuelve pronto.",
+    "signedInAs": "Sesión iniciada como {{name}}",
+    "noUsernameYet": "Aún sin nombre de usuario",
+    "changeUsername": "Cambiar nombre de usuario",
+    "chooseUsername": "Elige un nombre de usuario",
+    "usernameBody": "Así te verán tus amigos y las clasificaciones. Letras, números y guiones bajos, de 3 a 20 caracteres.",
+    "usernameLabel": "Nombre de usuario",
+    "checking": "Comprobando…",
+    "available": "Disponible",
+    "taken": "Ya está en uso",
+    "tooShort": "Al menos 3 caracteres",
+    "tooLong": "Como máximo 20 caracteres",
+    "invalidChars": "Solo letras, números y guiones bajos",
+    "reserved": "Ese está reservado",
+    "saveUsername": "Guardar nombre de usuario",
+    "saving": "Guardando…",
+    "later": "Más tarde",
+    "signOut": "Cerrar sesión",
+    "close": "Cerrar",
+    "genericError": "Algo salió mal. Inténtalo de nuevo.",
+    "historyNote": "Tus partidas en este dispositivo se conservan. Sincronizarlas con tu cuenta será el siguiente paso."
   }
 }

@@ -6,6 +6,7 @@ import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
+import { AccountMenuRow } from "../components/Account";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
@@ -294,6 +295,10 @@ export function MenuScreen() {
               )}
             </ListGroup>
           </section>
+
+          {/* Optional account: a benefit for anonymous visitors, the username
+              once signed in. Renders nothing where accounts aren't offered. */}
+          <AccountMenuRow />
         </div>
       </div>
 
