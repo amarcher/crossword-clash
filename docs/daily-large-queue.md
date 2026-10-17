@@ -35,6 +35,20 @@ constructor's machine.
 | Fri | 2026-10-30 | Full Stack Kitchen | Cooking × programming | KERNEL SANDERS, SPAGHETTI CODE, HASH BROWNIES, COOKIE BANNER | easy |
 | Sat | 2026-10-31 | Table Stakes | Poker × startups | POKER FACEBOOK, SHOWDOWN ROUND, BURN RATE, DEAL FLOW | easy |
 | Sun | 2026-11-01 | Flow State | Yoga × tech | NAMASTE AT HOME, CHAKRA CHARGER, YOGA MATRIX, ZENDESKTOP | medium |
+| Mon | 2026-11-02 | Sunken Treasure | Ocean × finance | CURRENT ACCOUNT, UNDERWATER LOAN, SHELL COMPANY, LIQUID ASSETS | easy |
+| Tue | 2026-11-03 | Ballot Measures | Elections × food | CAUCUS COUSCOUS, SWING STATE FAIR, PRIMARY RIBS, LANDSLIDERS | easy |
+| Wed | 2026-11-04 | Seventh-Inning Stretch | Baseball × music | BULLPENTATONIX, DOUBLE PLAYLIST, HOME RUN DMC, DUGOUT KAST | easy |
+| Thu | 2026-11-05 | Working Like a Dog | Dogs × office life | LEASH AGREEMENT, PUPPERFORMANCE, PAWPERWORK, FETCH QUOTA | easy |
+| Fri | 2026-11-06 | Stage Combat | Theater × military | THEATER OF WAR, SCENE STEALTH, CASTING CALL SIGN | easy |
+| Sat | 2026-11-07 | Forecast: Hits | Weather × music | NOVEMBER RAIN, WIND OF CHANGE, HEAT WAVE, COLDPLAY | easy |
+| Sun | 2026-11-08 | Nineteenth Hole | Golf × music | DRIVERS LICENSE, EAGLE EYE CHERRY, FORE FIGHTERS, GREEN DAY PASS | medium |
+| Mon | 2026-11-09 | Busy Bees | Bees × business | HIVE MIND SHARE, BUZZKILLER APP, WORKER BEENEFITS | easy |
+| Tue | 2026-11-10 | Dinner and a Show | Bands × food | CRANBERRY SAUCE, BREAD AND BUTTER, PEARL JAM JAR, HOT CHIPOTLE | easy |
+| Wed | 2026-11-11 | Fur and Games | Cats × sports | PURRFECT GAME, FELINEBACKER, LITTER BOX SCORES | easy |
+| Thu | 2026-11-12 | Walk the Plank | Pirates × tech | EYEPATCH UPDATE, PARLEY PROTOCOL, HOOK HANDSHAKE, SCUTTLEBUTTON | easy |
+| Fri | 2026-11-13 | Deep Dish Data | Pizza × tech | GLUTEN FREEWARE, EXTRA SAUCE CODE, SICILIAN SILICON | easy |
+| Sat | 2026-11-14 | Icing Call | Hockey × food | STANLEY CUPCAKE, FACE OFF THE BONE, SLAPSHOT GLASS | easy |
+| Sun | 2026-11-15 | Something Borrowed | Weddings × sports | RECEPTION YARDS, AISLE RUNNERS UP, HONEYMOON SHOT, BOUQUET TOSS UP | medium |
 
 ## Keeping the queue filled
 
