@@ -15,7 +15,8 @@
  * demoted catch-all tier), --fills 24,
  * --fill-ms 20000, --budget 120000 (skeleton search ms), --layouts 2 (skeletons to compare;
  * the one whose best quick fill scores highest wins), --allow-shared (themers may
- * share a run longer than the engine's limit), --bonus FILE (theme-bonus words; default
+ * share a run longer than the engine's limit), --difficulty easy|medium|hard, --context "…" (dated
+ * hooks — holidays, anniversaries, events — the clue writer may use where an entry fits), --bonus FILE (theme-bonus words; default
  * wordlists/theme-bonus/<slug>.dict), --dict FILE (word list; default the studio's
  * production list), --out DIR (default artifacts/seedgrid), --model ID, --seed N.
  *
@@ -85,6 +86,8 @@ interface ThemeSpec {
   title?: string;
   author?: string;
   difficulty?: Difficulty;
+  /** Dated hooks for the clue writer (current events, holidays), used only where an entry fits. */
+  context?: string;
   /** Theme-bonus list path, overriding wordlists/theme-bonus/<slug>.dict. */
   bonus?: string;
   allowShared?: boolean;
@@ -107,6 +110,7 @@ function specsFromFlags(): ThemeSpec[] {
       title: flag("title"),
       author: flag("author"),
       difficulty: flag("difficulty") as Difficulty | undefined,
+      context: flag("context"),
       bonus: flag("bonus"),
       allowShared: Boolean(flags["allow-shared"]),
     },
@@ -137,6 +141,7 @@ function specsFromFile(file: string): ThemeSpec[] {
         title: t.title ? String(t.title) : flag("title"),
         author: t.author ? String(t.author) : flag("author"),
         difficulty: (t.difficulty as Difficulty | undefined) ?? (flag("difficulty") as Difficulty | undefined),
+        context: (t.context as string | undefined) ?? flag("context"),
         bonus: t.bonus ? String(t.bonus) : undefined,
         allowShared: Boolean(t.allowShared ?? t["allow-shared"] ?? flags["allow-shared"]),
         slug: t.slug ? String(t.slug) : undefined,
@@ -834,7 +839,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     const sketches = Object.entries(spec.clueSketches ?? {}).filter(([a]) => seeds.includes(a));
     const clueContext = `${context}
 Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays on the mashup, e.g. TOUCHDOWNUNDER → "Six points scored in Australia?". The speed clue for a theme entry may be plainer.
-Content rule, same standard as the fill: nothing crude, sad or gross, no mockery of a dialect, accent or group ("in broken English" is out), nothing that needs a trigger warning. Clue a weak entry straight rather than by apologizing for it.${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
+Content rule, same standard as the fill: nothing crude, sad or gross, no mockery of a dialect, accent or group ("in broken English" is out), nothing that needs a trigger warning. Clue a weak entry straight rather than by apologizing for it.${spec.context ? `\nTimely hooks for the day this puzzle runs (use one only where an entry fits naturally; never force it, never more than a handful): ${spec.context}` : ""}${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
     let rows = await writeClues(grid, clueContext, difficulty);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };

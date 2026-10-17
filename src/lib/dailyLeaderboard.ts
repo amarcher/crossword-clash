@@ -42,7 +42,7 @@ export function todayKey(now: Date = new Date()): string {
 }
 
 /**
- * Which daily a loaded puzzle IS for the given moment — "mini", "large", or
+ * Which daily a loaded puzzle IS for the given moment — "mini", "midi", "large", or
  * null for neither. Compared by puzzle identity (title + dimensions +
  * solution grid), so an imported copy of an unrelated puzzle can never post
  * to a daily board. A slot whose feed hasn't answered yet can't match; the

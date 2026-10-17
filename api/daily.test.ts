@@ -8,6 +8,7 @@ describe("selectDaily", () => {
 
   it("serves the large slot from its own path's rewrite", () => {
     expect(selectDaily("https://x.test/api/daily?day=2026-10-16&slot=large")).toEqual({ day: "2026-10-16", slot: "large" });
+    expect(selectDaily("https://x.test/api/daily?day=2026-10-16&slot=midi")).toEqual({ day: "2026-10-16", slot: "midi" });
   });
 
   it("refuses malformed days and unknown slots", () => {

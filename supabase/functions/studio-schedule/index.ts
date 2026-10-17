@@ -15,7 +15,7 @@ import { studioAllowed } from "../_shared/studioAuth.ts";
  */
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Mirrors DAILY_SLOTS in src/lib/dailyFeed.ts. */
-const SLOTS = ["mini", "large"];
+const SLOTS = ["mini", "midi", "large"];
 const slotOf = (value: unknown): string | null => (value === undefined ? "mini" : SLOTS.includes(value as string) ? (value as string) : null);
 const MAX_ENTRY_CHARS = 200_000;
 

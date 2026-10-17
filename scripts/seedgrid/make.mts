@@ -10,7 +10,9 @@
  *   pnpm seedgrid --size 7 --no-llm             # grid only, no API calls
  *
  * Flags: --size N, --symmetry rotational|mirror|diagonal|none, --min-score 49|50,
- * --max-shared 3, --title, --author, --dict extra.dict (repeatable), --out DIR,
+ * --max-shared 3, --difficulty easy|medium|hard (clue register, default medium),
+ * --context "…" (dated hooks — holidays, anniversaries, events — the clue writer may use where an entry fits),
+ * --title, --author, --dict extra.dict (repeatable), --out DIR,
  * --model ID, --seed N (repeatable randomness).
  *
  * Writes <out>/<slug>/puzzle.ipuz (publish with `pnpm daily:add`) and
@@ -26,7 +28,7 @@ import { gridStats, gridToRows, slotsOf, slotText, type Grid, type Symmetry } fr
 import { FillEngine } from "../../src/lib/seedgrid/solver";
 import { buildSkeleton, placeSeeds, shapeSkeleton, tryBlock, type Skeleton } from "../../src/lib/seedgrid/layout";
 import { auditClues, auditGrid, clueBudget, type AuditReport } from "../../src/lib/seedgrid/audit";
-import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow } from "../../src/lib/seedgrid/cluePrompt";
+import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
 
@@ -47,6 +49,8 @@ let symmetry = (flag("symmetry") ?? "rotational") as Symmetry;
 let minScore = Number(flag("min-score") ?? 50);
 const maxShared = Number(flag("max-shared") ?? 3);
 const model = flag("model") ?? DEFAULT_MODEL;
+const difficulty = (flag("difficulty") ?? "medium") as Difficulty;
+const extraContext = flag("context") ?? "";
 let seedState = Number(flag("seed") ?? Date.now() % 2 ** 31);
 const random = () => {
   seedState = (seedState + 0x6d2b79f5) | 0;
@@ -206,7 +210,8 @@ For a pile-up, name the single entry whose removal helps most. Never list LOCKED
 
 
 async function writeClues(grid: Grid, context: string, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
-  const req = cluesRequest(grid, context, { fix });
+  const timely = extraContext ? `${context}\nTimely hooks for the day this puzzle runs (use one only where an entry fits naturally; never force it, never more than a handful): ${extraContext}` : context;
+  const req = cluesRequest(grid, timely, { fix, difficulty });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
 }

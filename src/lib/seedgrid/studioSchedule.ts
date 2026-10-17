@@ -21,12 +21,14 @@ export interface ScheduledDay {
   studio_id: string | null;
 }
 
-/** Grids this wide or taller go to the large slot by default. */
+/** Grids this wide or taller go to the large slot by default; from MIDI_MIN_SIZE up to it, the midi. */
 export const LARGE_MIN_SIZE = 11;
+export const MIDI_MIN_SIZE = 8;
 
-/** The slot a puzzle of this size belongs in: 15×15s are larges, minis are minis. */
+/** The slot a puzzle of this size belongs in: 15×15s are larges, 9×9s midis, 5×5s and 7×7s minis. */
 export function defaultSlotFor(width: number, height: number): DailySlot {
-  return Math.max(width, height) >= LARGE_MIN_SIZE ? "large" : "mini";
+  const size = Math.max(width, height);
+  return size >= LARGE_MIN_SIZE ? "large" : size >= MIDI_MIN_SIZE ? "midi" : "mini";
 }
 
 /** The next `count` local calendar days, starting today. */

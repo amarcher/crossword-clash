@@ -10,9 +10,9 @@ import type { StudioState } from "../../lib/seedgrid/studioState";
 const SHOWN_DAYS = 14;
 const PICKABLE_DAYS = 60;
 
-const SLOT_LABEL: Record<DailySlot, string> = { mini: "Mini", large: "Large" };
+const SLOT_LABEL: Record<DailySlot, string> = { mini: "Mini", midi: "Midi", large: "Large" };
 /** What a day shows in a slot nobody has scheduled: the mini has a bundled rotation, the large has nothing. */
-const EMPTY_LABEL: Record<DailySlot, string> = { mini: "Rotation", large: "—" };
+const EMPTY_LABEL: Record<DailySlot, string> = { mini: "Rotation", midi: "—", large: "—" };
 
 const INPUT =
   "h-10 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base md:text-sm text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500";

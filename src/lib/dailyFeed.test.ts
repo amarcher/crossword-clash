@@ -88,15 +88,19 @@ describe("dailyFeedUrl", () => {
       rewrites: { source: string; destination: string }[];
     };
     expect(vercel.rewrites).toContainEqual({ source: "/daily-puzzles/large/:day.json", destination: "/api/daily?day=:day&slot=large" });
+    expect(vercel.rewrites).toContainEqual({ source: "/daily-puzzles/midi/:day.json", destination: "/api/daily?day=:day&slot=midi" });
+    expect(dailyFeedPath("midi", "2026-10-14")).toBe("/daily-puzzles/midi/2026-10-14.json");
     expect(vercel.rewrites).toContainEqual({ source: "/daily-puzzles/:day.json", destination: "/api/daily?day=:day" });
   });
 
   it("knows its slots", () => {
     expect(isDailySlot("mini")).toBe(true);
     expect(isDailySlot("large")).toBe(true);
+    expect(isDailySlot("midi")).toBe(true);
     expect(isDailySlot("huge")).toBe(false);
     expect(leaderboardPath("mini")).toBe("/daily/leaderboard");
     expect(leaderboardPath("large")).toBe("/daily/leaderboard/large");
+    expect(leaderboardPath("midi")).toBe("/daily/leaderboard/midi");
   });
 });
 

@@ -1,14 +1,15 @@
 /**
  * GET /daily-puzzles/<day>.json        (slot "mini")
+ * GET /daily-puzzles/midi/<day>.json   (slot "midi")
  * GET /daily-puzzles/large/<day>.json  (slot "large")
  *
- * Both are rewritten here by vercel.json (`?day=…&slot=…`) → that day's
+ * All three are rewritten here by vercel.json (`?day=…&slot=…`) → that day's
  * scheduled daily for that slot from Supabase `daily_schedule`, in the same
  * JSON shape as a static feed file. Static files in public/daily-puzzles/ are
  * served first by Vercel's filesystem check, so they still win; this answers
  * every other day, with a real 404 when nothing is scheduled (dailyFeed.ts
- * treats that as "use the bundled rotation" for the mini and "no large today"
- * for the large). Row-level security hides days that haven't started.
+ * treats that as "use the bundled rotation" for the mini and "nothing today"
+ * for the midi and large). Row-level security hides days that haven't started.
  */
 
 // Vercel's Node runtime provides process.env; api/ has no @types/node.
@@ -16,7 +17,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /** Mirrors DAILY_SLOTS in src/lib/dailyFeed.ts (api/ can't import from src/). */
-const SLOTS = ["mini", "large"] as const;
+const SLOTS = ["mini", "midi", "large"] as const;
 export type DailySlot = (typeof SLOTS)[number];
 
 /** Which day and slot a request asks for; null when the URL isn't a daily we serve. */
