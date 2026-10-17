@@ -805,6 +805,154 @@
           "Calm computer background?"
         ]
       ]
+    },
+    {
+      "slug": "ocean-x-finance",
+      "title": "Sunken Treasure",
+      "concepts": [
+        "ocean",
+        "finance"
+      ],
+      "entries": [
+        [
+          "CURRENT ACCOUNT",
+          "Checking, in the UK — or a sea flow with a balance?"
+        ],
+        [
+          "UNDERWATER LOAN",
+          "Mortgage that owes more than the house is worth"
+        ],
+        [
+          "SHELL COMPANY",
+          "Front with no real business (or no real mollusk)"
+        ],
+        [
+          "LIQUID ASSETS",
+          "Cash and near-cash — the wettest kind of wealth"
+        ]
+      ]
+    },
+    {
+      "slug": "election-x-food",
+      "title": "Ballot Measures",
+      "concepts": [
+        "elections",
+        "food"
+      ],
+      "entries": [
+        [
+          "CAUCUS COUSCOUS",
+          "Grain dish served at an Iowa gathering?"
+        ],
+        [
+          "SWING STATE FAIR",
+          "Where Ohio voters eat fried butter?"
+        ],
+        [
+          "PRIMARY RIBS",
+          "Cut of meat on the first ballot?"
+        ],
+        [
+          "LANDSLIDERS",
+          "Mini burgers won by a huge margin?"
+        ]
+      ]
+    },
+    {
+      "slug": "dogs-x-office",
+      "title": "Working Like a Dog",
+      "concepts": [
+        "dogs",
+        "office life"
+      ],
+      "entries": [
+        [
+          "LEASH AGREEMENT",
+          "Contract for a pup's walk schedule?"
+        ],
+        [
+          "PUPPERFORMANCE",
+          "Annual review for a good boy?"
+        ],
+        [
+          "PAWPERWORK",
+          "Forms a dog files?"
+        ],
+        [
+          "FETCH QUOTA",
+          "Target number of tennis balls returned?"
+        ]
+      ]
+    },
+    {
+      "slug": "weather-x-music",
+      "title": "Forecast: Hits",
+      "concepts": [
+        "weather",
+        "music"
+      ],
+      "entries": [
+        [
+          "NOVEMBER RAIN",
+          "Guns N' Roses epic for this month"
+        ],
+        [
+          "WIND OF CHANGE",
+          "Scorpions ballad with a whistled intro"
+        ],
+        [
+          "HEAT WAVE",
+          "Martha and the Vandellas hit"
+        ],
+        [
+          "COLDPLAY",
+          "\"Yellow\" band"
+        ]
+      ]
+    },
+    {
+      "slug": "cats-x-sports",
+      "title": "Fur and Games",
+      "concepts": [
+        "cats",
+        "sports"
+      ],
+      "entries": [
+        [
+          "PURRFECT GAME",
+          "27 up, 27 down, for a contented pitcher?"
+        ],
+        [
+          "FELINEBACKER",
+          "Defender who pounces on the ball carrier?"
+        ],
+        [
+          "LITTER BOX SCORES",
+          "Stats page for the cat's bathroom league?"
+        ]
+      ]
+    },
+    {
+      "slug": "hockey-x-food",
+      "title": "Icing Call",
+      "concepts": [
+        "hockey",
+        "food"
+      ],
+      "entries": [
+        [
+          "STANLEY CUPCAKE",
+          "Champion's frosted treat?"
+        ],
+        [
+          "FACE OFF THE BONE",
+          "Ribs so tender they drop the puck?"
+        ],
+        [
+          "SLAPSHOT GLASS",
+          "Tiny tumbler for a hard shot?"
+        ]
+      ]
     }
   ]
 }
