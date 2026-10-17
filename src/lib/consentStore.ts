@@ -56,8 +56,12 @@ export function getConsentState(): ConsentState {
   return state;
 }
 
+/** What the prerender saw: no stored choice, detection not yet run. Hydration must match it. */
+const SERVER_STATE: ConsentState = { status: "detecting", choice: null, settingsOpen: false };
+const getServerConsentState = () => SERVER_STATE;
+
 export function useConsent(): ConsentState {
-  return useSyncExternalStore(subscribe, getConsentState, getConsentState);
+  return useSyncExternalStore(subscribe, getConsentState, getServerConsentState);
 }
 
 /** Whether first-party analytics (e.g. play insights) may be collected for this visitor right now. */

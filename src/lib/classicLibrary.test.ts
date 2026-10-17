@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { parse } from "@xwordly/xword-parser";
 import {
+  CLASSIC_MANIFEST_SCRIPT_ID,
   filterEntries,
   isClassicEntry,
+  knownClassicManifest,
   parseManifest,
   pickRandom,
+  preloadClassicManifest,
   sizeBucket,
   type ClassicEntry,
 } from "./classicLibrary";
@@ -107,6 +110,32 @@ describe("pickRandom", () => {
  * would compute at runtime — otherwise "solved" badges silently never show.
  * Regenerate with `pnpm build:classics` if this fails after adding puzzles.
  */
+describe("knownClassicManifest", () => {
+  const doc = (json: string | null) => ({
+    getElementById: (id: string) => (id === CLASSIC_MANIFEST_SCRIPT_ID && json !== null ? ({ textContent: json } as HTMLElement) : null),
+  });
+
+  it("is null with nothing preloaded and no embedded script (the fetch path)", () => {
+    preloadClassicManifest(null);
+    expect(knownClassicManifest(doc(null))).toBeNull();
+    expect(knownClassicManifest(undefined)).toBeNull();
+  });
+
+  it("reads the manifest the prerendered page embeds, in book order, ignoring junk", () => {
+    preloadClassicManifest(null);
+    const json = JSON.stringify([entry({ number: 2, file: "cwpb2.puz" }), { nope: true }, entry()]);
+    expect(knownClassicManifest(doc(json))?.map((e) => e.number)).toEqual([1, 2]);
+    expect(knownClassicManifest(doc("not json"))).toBeNull();
+    expect(knownClassicManifest(doc("[]"))).toBeNull();
+  });
+
+  it("prefers what the prerender preloaded", () => {
+    preloadClassicManifest([entry({ number: 7 })]);
+    expect(knownClassicManifest(doc(JSON.stringify([entry()])))?.map((e) => e.number)).toEqual([7]);
+    preloadClassicManifest(null);
+  });
+});
+
 describe("public/classic-puzzles/manifest.json", () => {
   const dir = decodeURIComponent(new URL("../../public/classic-puzzles/", import.meta.url).pathname);
   const readText = (file: string) => new TextDecoder().decode(readFileSync(dir + file));

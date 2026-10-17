@@ -57,7 +57,7 @@ vi.mock("./screens/host/HostRejoinScreen", () => ({ HostRejoinScreen: () => null
 
 // --- Imports (after mocks) ---
 
-import { IndexRedirect, HostIndexRedirect } from "./router";
+import { IndexRedirect, HostIndexRedirect } from "./routes";
 import { useGame } from "./contexts/GameContext";
 import { useHostContext } from "./layouts/HostLayout";
 import { loadMpSession, loadHostSession } from "./lib/sessionPersistence";

@@ -10,6 +10,7 @@ import { AccountMenuRow } from "../components/Account";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
+import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import type { DailySlot } from "../lib/dailyFeed";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
@@ -120,9 +121,13 @@ export function MenuScreen() {
   const disabled = loading;
   // The account's streaks when signed in, this device's otherwise.
   const { daily: streak, nyt: nytStreak } = useStreaks();
+  // Device-dependent rows (bookmarklet, app store links) are absent from the
+  // prerendered HTML and from the hydration pass, then appear on the next
+  // render; a plain client render has them from the start as before.
+  const hydrated = useHydrated();
   // Bookmarklet promotion is desktop-only: it needs a bookmarks bar, so on a
   // phone or tablet the row would be a dead end.
-  const desktop = useMemo(() => isDesktopBrowser(), []);
+  const desktop = useMemo(() => hydrated && isDesktopBrowser(), [hydrated]);
 
   // Resolve once per render — deterministic per calendar day. The mini always
   // has an answer (bundled fallback); the large exists only on days one was
@@ -160,12 +165,12 @@ export function MenuScreen() {
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
   const iosAppUrl = useMemo(
-    () => (import.meta.env.MODE !== "mobile" && isIosBrowser() ? IOS_APP_STORE_URL : null),
-    [],
+    () => (hydrated && import.meta.env.MODE !== "mobile" && isIosBrowser() ? IOS_APP_STORE_URL : null),
+    [hydrated],
   );
   const androidAppUrl = useMemo(
-    () => (import.meta.env.MODE !== "mobile" && isAndroidBrowser() ? ANDROID_PLAY_STORE_URL : null),
-    [],
+    () => (hydrated && import.meta.env.MODE !== "mobile" && isAndroidBrowser() ? ANDROID_PLAY_STORE_URL : null),
+    [hydrated],
   );
 
   return (

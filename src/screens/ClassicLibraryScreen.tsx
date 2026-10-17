@@ -9,6 +9,7 @@ import { useGame } from "../contexts/GameContext";
 import {
   SIZE_BUCKETS,
   filterEntries,
+  knownClassicManifest,
   loadClassicManifest,
   loadClassicPuzzle,
   pickRandom,
@@ -38,13 +39,16 @@ export function ClassicLibraryScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
 
-  const [entries, setEntries] = useState<ClassicEntry[] | null>(null);
+  // The prerendered page carries the manifest, so the cards are in the HTML
+  // and hydration renders them too; otherwise fetch it.
+  const [entries, setEntries] = useState<ClassicEntry[] | null>(() => knownClassicManifest());
   const [filter, setFilter] = useState<Filter>("all");
   const [hideSolved, setHideSolved] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (entries !== null) return;
     let cancelled = false;
     loadClassicManifest().then((list) => {
       if (!cancelled) setEntries(list);
@@ -52,6 +56,8 @@ export function ClassicLibraryScreen() {
     return () => {
       cancelled = true;
     };
+    // Only the initial null needs a fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Best times are keyed by puzzle identity, which the manifest carries — so

@@ -31,6 +31,8 @@ export interface ClassicEntry {
 }
 
 export const CLASSIC_MANIFEST_URL = "/classic-puzzles/manifest.json";
+/** id of the `<script type="application/json">` the prerendered /classics page embeds the manifest in. */
+export const CLASSIC_MANIFEST_SCRIPT_ID = "classic-manifest";
 
 /** Coarse size buckets for the library filter. Keyed by the longer side. */
 export type SizeBucket = "small" | "medium" | "large" | "giant";
@@ -64,6 +66,31 @@ export function isClassicEntry(value: unknown): value is ClassicEntry {
 export function parseManifest(data: unknown): ClassicEntry[] {
   if (!Array.isArray(data)) return [];
   return data.filter(isClassicEntry).sort((a, b) => a.number - b.number);
+}
+
+let preloaded: ClassicEntry[] | null = null;
+
+/** Hand the manifest to the library before rendering (the build-time prerender does this). */
+export function preloadClassicManifest(entries: ClassicEntry[] | null): void {
+  preloaded = entries;
+}
+
+/**
+ * The manifest without a network round trip: one preloaded by the prerender,
+ * or the one it embedded in the page (so hydrating /classics renders the same
+ * cards the HTML already shows). Null anywhere else, e.g. after navigating to
+ * /classics from the menu, where loadClassicManifest() fetches it.
+ */
+export function knownClassicManifest(doc: Pick<Document, "getElementById"> | undefined = typeof document === "undefined" ? undefined : document): ClassicEntry[] | null {
+  if (preloaded) return preloaded;
+  const el = doc?.getElementById(CLASSIC_MANIFEST_SCRIPT_ID);
+  if (!el?.textContent) return null;
+  try {
+    const entries = parseManifest(JSON.parse(el.textContent));
+    return entries.length > 0 ? entries : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

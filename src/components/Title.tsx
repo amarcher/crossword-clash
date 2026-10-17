@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { useHydrated } from "../lib/hydration";
 
 // Lazy so lottie-react + the animation JSON load only where the logo animates.
 const AnimatedLogo = lazy(() => import("./AnimatedLogo"));
@@ -19,16 +20,27 @@ export function Title({ className = "", animate = false }: TitleProps) {
   const reduceMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // The prerendered menu (and its hydration pass) carries only the reserved
+  // box: a Suspense boundary that suspends under renderToString is emitted as
+  // "client-render me", which React then reports as a hydration error. The
+  // Lottie mounts on the render after hydration; a plain client render mounts
+  // it straight away as before.
+  const hydrated = useHydrated();
 
   if (animate) {
+    // The box reserves the space (transparent) so layout doesn't shift while
+    // the chunk/JSON load, then the wordmark flips into it. Under reduced
+    // motion the logo rests on its final assembled frame.
+    const box = <div className="mx-auto" style={ANIM_BOX} />;
     return (
       <div className={`text-center ${className}`}>
-        {/* fallback reserves the box (transparent) so layout doesn't shift while
-            the chunk/JSON load, then the wordmark flips into it. Under reduced
-            motion the logo rests on its final assembled frame. */}
-        <Suspense fallback={<div className="mx-auto" style={ANIM_BOX} />}>
-          <AnimatedLogo className="mx-auto" style={ANIM_BOX} autoplay={!reduceMotion} />
-        </Suspense>
+        {hydrated ? (
+          <Suspense fallback={box}>
+            <AnimatedLogo className="mx-auto" style={ANIM_BOX} autoplay={!reduceMotion} />
+          </Suspense>
+        ) : (
+          box
+        )}
       </div>
     );
   }
