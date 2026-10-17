@@ -80,7 +80,8 @@ export const Cell = memo(function Cell({
     outlineStyle = { outline: "2px solid rgba(180,83,9,0.75)", outlineOffset: "-2px" };
   }
 
-  // Build animation class + inline style for word-complete sweep
+  // Word-complete sweep runs on the cell; the fill pop runs on the letter span
+  // only, so the cell's own background never fades out and shows the ink grid.
   let animClass = "";
   let animStyle: React.CSSProperties | undefined;
   if (wordCompleteColor) {
@@ -89,9 +90,8 @@ export const Cell = memo(function Cell({
       "--sweep-color": hexToRgba(wordCompleteColor, 0.35),
       animationDelay: `${wordCompleteDelay ?? 0}ms`,
     } as React.CSSProperties;
-  } else if (animateFill) {
-    animClass = " cell-fill";
   }
+  const letterAnimClass = animateFill && !wordCompleteColor ? " cell-fill" : "";
 
   return (
     <div
@@ -114,7 +114,7 @@ export const Cell = memo(function Cell({
       {cellState?.letter && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 flex items-center justify-center font-bold leading-none text-black"
+          className={`absolute inset-0 flex items-center justify-center font-bold leading-none text-black${letterAnimClass}`}
           style={{ fontSize: "55cqi" }}
         >
           {cellState.letter}
