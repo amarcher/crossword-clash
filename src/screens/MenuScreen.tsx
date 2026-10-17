@@ -40,12 +40,15 @@ interface DailyHeroProps {
 /** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
 function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
+  const label = t(slot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow");
   return (
-    <Card className="overflow-hidden" aria-busy={!daily}>
+    // A named region, so the two dailies' identical "Play" buttons can be told
+    // apart by assistive tech and by the e2e suite.
+    <Card role="region" aria-label={label} className="overflow-hidden" aria-busy={!daily}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Eyebrow className="text-brand-600">{t(slot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow")}</Eyebrow>
+            <Eyebrow className="text-brand-600">{label}</Eyebrow>
             {daily?.theme && (
               <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
                 {daily.theme}
