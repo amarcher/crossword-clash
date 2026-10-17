@@ -53,3 +53,24 @@ constructor's machine.
 4. A title never repeats one of its own theme entries (Andrew, 2026-10-16): it should hint at the mashup, not hand over an answer.
 5. Aim to stay two weeks ahead. Repeat themers or fill words across nearby
    days are worth avoiding; the review notes list every entry.
+
+## Daily Midi queue
+
+The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` via `pnpm daily:add --slot midi`. Each one bridges the day's mini and large where a large exists (16 Oct – 1 Nov: Pumpkin Spice + gardening×finance → Pumpkin Patch, Taco Tuesday + tennis×romance → Date Night…); from 2 November the midis follow the mini's theme until the larges catch up. Built with `pnpm seedgrid --size 9 --difficulty easy --seeds "<mirrored pair>"` — a free brainstorm at 9×9 often loses its theme in the fill, a mirrored seed pair almost never does. A midi must not reuse the large's title or themers, nor the mini's (the cross-check compares all three per day).
+
+| Day | Date | Title | Theme |
+|---|---|---|---|
+| Sun | 2026-11-01 | Inner Peace | Inner Peace |
+| Mon | 2026-11-02 | Clockwork | Clockwork |
+| Tue | 2026-11-03 | Civics Class | Civics Class |
+| Wed | 2026-11-04 | Comfort Food | Comfort Food |
+| Thu | 2026-11-05 | Knit One | Knit One |
+| Fri | 2026-11-06 | Delivery | Delivery |
+| Sat | 2026-11-07 | Rest Stop | Rest Stop |
+| Sun | 2026-11-08 | Brunch | Brunch |
+| Mon | 2026-11-09 | Nine to Five | Nine to Five |
+| Tue | 2026-11-10 | Moonshot | Moonshot |
+| Wed | 2026-11-11 | Parade Day | Parade Day |
+| Thu | 2026-11-12 | Big Band | Big Band |
+| Fri | 2026-11-13 | Superstitions | Superstitions |
+| Sat | 2026-11-14 | Cookie Jar | Cookie Jar |
