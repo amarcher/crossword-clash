@@ -28,7 +28,7 @@ import { gridStats, gridToRows, slotsOf, slotText, type Grid, type Symmetry } fr
 import { FillEngine } from "../../src/lib/seedgrid/solver";
 import { buildSkeleton, placeSeeds, shapeSkeleton, tryBlock, type Skeleton } from "../../src/lib/seedgrid/layout";
 import { auditClues, auditGrid, clueBudget, type AuditReport } from "../../src/lib/seedgrid/audit";
-import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
+import { clueProblems, cluesRequest, CONSTRUCTOR, timelyContext, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
 
@@ -210,7 +210,7 @@ For a pile-up, name the single entry whose removal helps most. Never list LOCKED
 
 
 async function writeClues(grid: Grid, context: string, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
-  const timely = extraContext ? `${context}\nTimely hooks for the day this puzzle runs (use one only where an entry fits naturally; never force it, never more than a handful): ${extraContext}` : context;
+  const timely = extraContext ? `${context}\n${timelyContext(extraContext)}` : context;
   const req = cluesRequest(grid, timely, { fix, difficulty });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
