@@ -34,7 +34,7 @@ import { normalizeEntry, parseDict, WordIndex } from "../../src/lib/seedgrid/dic
 import { blackBlocks, blackCorners, cloneGrid, gridStats, gridToRows, MAX_SHARED, meetsGridStandards, slotsOf, slotText, type Grid, type Slot } from "../../src/lib/seedgrid/grid";
 import { findSkeleton } from "../../src/lib/seedgrid/skeletonFinder";
 import { auditClues, auditGrid, clueBudget } from "../../src/lib/seedgrid/audit";
-import { clueProblems, cluesRequest, CONSTRUCTOR, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
+import { clueProblems, cluesRequest, CONSTRUCTOR, CONTENT_RULE, contentReviewRequest, timelyContext, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { newPuzzleId, slotKey, type StudioState } from "../../src/lib/seedgrid/studioState";
 import { mulberry32 } from "../../src/lib/seedgrid/random";
@@ -285,24 +285,7 @@ ${offers.map((o) => `${o.slot.id} currently ${o.current} (${scores.get(o.current
 }
 
 async function reviewClues(grid: Grid, context: string, answers: Record<string, string>, clues: Record<string, ClueSet>): Promise<{ slot: string; problem: string }[]> {
-  const { problems } = await callJson<{ problems: { slot: string; problem: string }[] }>({
-    model,
-    system: CONSTRUCTOR,
-    prompt: `${context}
-Grid:
-${gridToRows(grid).join("\n")}
-
-Review these drafted clues as the editor before they ship. Flag only clues that break the content rule (crude, sad, gross, mocking a dialect, accent or group, or apologizing for the entry), are unfair or factually wrong, or give the answer away. Return an empty list when all are fine; one problem per flagged slot, in a few words.
-
-${Object.keys(answers).map((id) => `${id} ${answers[id]}: ${clues[id]?.standard ?? "(missing)"} / ${clues[id]?.speed ?? ""}`).join("\n")}`,
-    schema: {
-      type: "object",
-      properties: {
-        problems: { type: "array", items: { type: "object", properties: { slot: { type: "string" }, problem: { type: "string" } }, required: ["slot", "problem"] } },
-      },
-      required: ["problems"],
-    },
-  });
+  const { problems } = await callJson<{ problems: { slot: string; problem: string }[] }>({ model, ...contentReviewRequest(grid, context, answers, clues) });
   return problems.filter((p) => answers[p.slot]);
 }
 
@@ -839,7 +822,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     const sketches = Object.entries(spec.clueSketches ?? {}).filter(([a]) => seeds.includes(a));
     const clueContext = `${context}
 Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays on the mashup, e.g. TOUCHDOWNUNDER → "Six points scored in Australia?". The speed clue for a theme entry may be plainer.
-Content rule, same standard as the fill: nothing crude, sad or gross, no mockery of a dialect, accent or group ("in broken English" is out), nothing that needs a trigger warning. Clue a weak entry straight rather than by apologizing for it.${spec.context ? `\nTimely hooks for the day this puzzle runs (use one only where an entry fits naturally; never force it, never more than a handful): ${spec.context}` : ""}${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
+${CONTENT_RULE}${spec.context ? `\n${timelyContext(spec.context)}` : ""}${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
     let rows = await writeClues(grid, clueContext, difficulty);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };

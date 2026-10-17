@@ -2,7 +2,7 @@
  * iPUZ v2 export. Speed clues (the plain fallback tier) ride along in an
  * extension field; standard readers ignore it.
  */
-import { slotsOf, slotText, type Grid } from "./grid";
+import { gridFromRows, slotsOf, slotText, type Grid } from "./grid";
 
 export interface ClueSet {
   /** Mid-week difficulty, the clue players see. */
@@ -75,4 +75,44 @@ export function toTransferPuzzle(grid: Grid, clues: Record<string, ClueSet>, met
     },
     answers: { across: side("across").map((s) => slotText(grid, s)), down: side("down").map((s) => slotText(grid, s)) },
   };
+}
+
+/** The subset of an iPUZ file the editing CLIs read back (`gridFromIpuz`, `cluesFromIpuz`). */
+export interface IpuzFile {
+  title?: string;
+  author?: string;
+  notes?: string;
+  copyright?: string;
+  dimensions?: { width: number; height: number };
+  solution: (string | number | null)[][];
+  clues: { Across: [number, string][]; Down: [number, string][] };
+  [SPEED_CLUES_KEY]?: { Across: [number, string][]; Down: [number, string][] };
+}
+
+/**
+ * The grid a `toIpuz` file describes. Nothing is locked: callers who know the
+ * theme entries (a session.json's seeds, a studio.json's locks) set that.
+ */
+export function gridFromIpuz(ipuz: Pick<IpuzFile, "solution">): Grid {
+  return gridFromRows(ipuz.solution.map((row) => row.map((c) => (c === "#" || c === null || c === 0 ? "#" : String(c))).join("")));
+}
+
+/**
+ * Slot id → clue tiers, from the file's standard list and the speed-clue
+ * extension. `toIpuz` writes the answer itself where a slot has no clue, so a
+ * clue equal to its answer is read back as missing.
+ */
+export function cluesFromIpuz(ipuz: Pick<IpuzFile, "clues" | typeof SPEED_CLUES_KEY>, grid: Grid): Record<string, ClueSet> {
+  const byNumber = (list: [number, string][] | undefined) => new Map((list ?? []).map(([n, text]) => [n, text]));
+  const standard = { across: byNumber(ipuz.clues?.Across), down: byNumber(ipuz.clues?.Down) };
+  const speedLists = ipuz[SPEED_CLUES_KEY];
+  const speed = speedLists ? { across: byNumber(speedLists.Across), down: byNumber(speedLists.Down) } : null;
+  const clues: Record<string, ClueSet> = {};
+  for (const s of slotsOf(grid)) {
+    const text = standard[s.dir].get(s.number);
+    if (text === undefined || text === slotText(grid, s)) continue;
+    const fast = speed?.[s.dir].get(s.number);
+    clues[s.id] = { standard: text, ...(fast !== undefined && fast !== text ? { speed: fast } : {}) };
+  }
+  return clues;
 }

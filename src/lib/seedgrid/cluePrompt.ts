@@ -114,3 +114,37 @@ export function clueProblems(answers: Record<string, string>, clues: Record<stri
 export function clueOk(answer: string, clue: string): boolean {
   return !auditClues([{ slotId: "", answer, clue }]).some((i) => i.severity === "block");
 }
+
+/** The content standard every clue pass states to the writer and the reviewer. */
+export const CONTENT_RULE = `Content rule, same standard as the fill: nothing crude, sad or gross, no mockery of a dialect, accent or group ("in broken English" is out), nothing that needs a trigger warning. Clue a weak entry straight rather than by apologizing for it.`;
+
+/** How the writer should treat dated hooks (holidays, anniversaries, sports): a light touch, never forced. */
+export function timelyContext(hooks: string): string {
+  return `Timely hooks for the day this puzzle runs (use one only where an entry fits naturally; never force it, never more than a handful): ${hooks}`;
+}
+
+/**
+ * The editor's second look at a drafted set: content and fairness, not
+ * mechanics (`clueProblems` covers those). The answer is a list of flagged
+ * slots for a fix pass.
+ */
+export function contentReviewRequest(grid: Grid, context: string, answers: Record<string, string>, clues: Record<string, { standard: string; speed?: string }>): ClaudeJsonRequest {
+  return {
+    system: CONSTRUCTOR,
+    prompt: `${context}
+Grid:
+${gridToRows(grid).join("\n")}
+
+Review these drafted clues as the editor before they ship. Flag only clues that break the content rule (crude, sad, gross, mocking a dialect, accent or group, or apologizing for the entry), are unfair or factually wrong, or give the answer away. Return an empty list when all are fine; one problem per flagged slot, in a few words.
+
+${Object.keys(answers).map((id) => `${id} ${answers[id]}: ${clues[id]?.standard ?? "(missing)"} / ${clues[id]?.speed ?? ""}`).join("\n")}`,
+    schema: {
+      type: "object",
+      properties: {
+        problems: { type: "array", items: { type: "object", properties: { slot: { type: "string" }, problem: { type: "string" } }, required: ["slot", "problem"] } },
+      },
+      required: ["problems"],
+    },
+    maxTokens: 4000,
+  };
+}
