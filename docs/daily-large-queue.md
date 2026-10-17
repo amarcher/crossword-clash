@@ -88,3 +88,17 @@ The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` 
 | Thu | 2026-11-12 | Big Band | Big Band |
 | Fri | 2026-11-13 | Superstitions | Superstitions |
 | Sat | 2026-11-14 | Cookie Jar | Cookie Jar |
+| Sun | 2026-11-15 | Slice of Life | Slice of Life |
+| Mon | 2026-11-16 | Hearth and Home | Hearth and Home |
+| Tue | 2026-11-17 | Rise and Shine | Rise and Shine |
+| Wed | 2026-11-18 | Cartoon Classics | Cartoon Classics |
+| Thu | 2026-11-19 | Penny Wise | Penny Wise |
+| Fri | 2026-11-20 | Parking Lot Party | Parking Lot Party |
+| Sat | 2026-11-21 | Pen Pals | Pen Pals |
+| Sun | 2026-11-22 | Carving Station | Carving Station |
+| Mon | 2026-11-23 | Math Class | Math Class |
+| Tue | 2026-11-24 | Checkout Line | Checkout Line |
+| Wed | 2026-11-25 | Airport Dash | Airport Dash |
+| Thu | 2026-11-26 | Giving Thanks | Giving Thanks |
+| Fri | 2026-11-27 | Shopping Spree | Shopping Spree |
+| Sat | 2026-11-28 | Corner Store | Corner Store |
