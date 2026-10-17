@@ -8,6 +8,12 @@ and the fill / word-complete / reject animations, in the solver
 375 px, with animations frozen mid-keyframe where a screenshot could not catch
 them.
 
+## Status
+
+Items 1–10 shipped for the solver grid (October 2026; screenshots in
+`docs/grid-ui-audit/`). Still open: 11–12 (hover affordance, selection
+announcement), 13–17 (studio grid) and 18 (shared hidden input).
+
 ## Verdict
 
 The solver grid predates the September facelift and never got its tokens: it
