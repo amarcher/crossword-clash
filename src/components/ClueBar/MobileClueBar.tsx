@@ -76,11 +76,7 @@ export function MobileClueBar({
         aria-label={t('clueBar.directionLabel', { direction: direction === "across" ? t('clueBar.directionAcross') : t('clueBar.directionDown') })}
       >
         <span
-          className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded ${
-            direction === "across"
-              ? "bg-brand-100 text-brand-700"
-              : "bg-gold-100 text-gold-700"
-          }`}
+          className="text-xs font-bold w-6 h-6 flex items-center justify-center rounded bg-gold-100 text-ink"
         >
           {direction === "across" ? t('clueBar.directionAbbrevAcross') : t('clueBar.directionAbbrevDown')}
         </span>

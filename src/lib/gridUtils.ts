@@ -55,6 +55,21 @@ export function getWordCells(
   return cells;
 }
 
+/**
+ * The first cell of a clue's word that is not yet correctly filled, or the
+ * word's first cell when the word is complete (or has no cells). Where a clue
+ * click should land.
+ */
+export function firstEmptyCell(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+  clue: PuzzleClue,
+): CellCoord {
+  const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
+  const empty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.correct);
+  return empty ?? cells[0] ?? { row: clue.row, col: clue.col };
+}
+
 /** Get the clue for the word at (row, col) in the given direction */
 export function getClueForCell(
   puzzle: Puzzle,

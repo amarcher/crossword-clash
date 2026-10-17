@@ -43,7 +43,7 @@ describe("Cell", () => {
     const { container } = render(
       <Cell cell={blackCell()} isSelected={false} isHighlighted={false} />,
     );
-    expect(container.firstElementChild!.className).toContain("bg-black");
+    expect(container.firstElementChild!.className).toContain("bg-ink");
   });
 
   it("renders a white cell with number and no letter", () => {
@@ -54,32 +54,34 @@ describe("Cell", () => {
     expect(screen.queryByText("A")).toBeNull();
   });
 
-  it("renders letter in text-black when cell has state", () => {
+  it("renders letter in ink when cell has state", () => {
     const state: CellState = { letter: "A", correct: true };
     const { container } = render(
       <Cell cell={whiteCell()} cellState={state} isSelected={false} isHighlighted={false} />,
     );
     const letterSpan = screen.getByText("A");
-    expect(letterSpan.className).toContain("text-black");
-    // Cell background should be white (no player color)
-    expect(container.firstElementChild!.className).toContain("bg-white");
+    expect(letterSpan.className).toContain("text-ink");
+    // Cell background should be the plain surface (no player color)
+    expect(container.firstElementChild!.className).toContain("bg-surface");
   });
 
-  it("applies yellow background when selected", () => {
+  it("fills the cursor cell gold-400 with no outline", () => {
     const { container } = render(
       <Cell cell={whiteCell()} isSelected={true} isHighlighted={false} />,
     );
-    expect(container.firstElementChild!.className).toContain("bg-yellow-200");
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.className).toContain("bg-gold-400");
+    expect(el.style.outline).toBe("");
   });
 
-  it("applies amber background and outline when highlighted", () => {
+  it("fills active-word cells gold-100 with no outline", () => {
     const { container } = render(
       <Cell cell={whiteCell()} isSelected={false} isHighlighted={true} />,
     );
     const el = container.firstElementChild as HTMLElement;
-    expect(el.className).toContain("bg-amber-50");
-    expect(el.style.outline).toBe("2px solid rgba(180,83,9,0.75)");
-    expect(el.style.outlineOffset).toBe("-2px");
+    expect(el.className).toContain("bg-gold-100");
+    expect(el.style.outline).toBe("");
+    expect(el.style.boxShadow).toBe("");
   });
 
   it("selected takes priority over highlighted", () => {
@@ -87,10 +89,18 @@ describe("Cell", () => {
       <Cell cell={whiteCell()} isSelected={true} isHighlighted={true} />,
     );
     const el = container.firstElementChild as HTMLElement;
-    expect(el.className).toContain("bg-yellow-200");
-    expect(el.className).not.toContain("bg-amber-50");
-    expect(el.style.outline).toBe("3px solid #b45309");
-    expect(el.style.outlineOffset).toBe("-3px");
+    expect(el.className).toContain("bg-gold-400");
+    expect(el.className).not.toContain("bg-gold-100");
+    expect(el.style.outline).toBe("");
+  });
+
+  it("puts the fill pop on the letter span, not the cell", () => {
+    const state: CellState = { letter: "A", correct: true, playerId: "p2" };
+    const { container } = render(
+      <Cell cell={whiteCell()} cellState={state} isSelected={false} isHighlighted={false} animateFill />,
+    );
+    expect(container.firstElementChild!.className).not.toContain("cell-fill");
+    expect(container.querySelector("span.cell-fill")?.textContent).toBe("A");
   });
 
   it("applies opaque blended player color as inline style", () => {
@@ -106,8 +116,8 @@ describe("Cell", () => {
       />,
     );
     const el = container.firstElementChild as HTMLElement;
-    // Should NOT have bg-white (replaced by inline style)
-    expect(el.className).not.toContain("bg-white");
+    // Should NOT have bg-surface (replaced by inline style)
+    expect(el.className).not.toContain("bg-surface");
     // Should have an opaque rgb backgroundColor
     expect(el.style.backgroundColor).toMatch(/^rgb\(/);
     expect(el.style.backgroundColor).not.toContain("rgba");
@@ -126,29 +136,34 @@ describe("Cell", () => {
       />,
     );
     const el = container.firstElementChild as HTMLElement;
-    expect(el.className).toContain("bg-yellow-200");
+    expect(el.className).toContain("bg-gold-400");
     expect(el.style.backgroundColor).toBe("");
-    expect(el.style.outline).toBe("3px solid #b45309");
+    expect(el.style.outline).toBe("");
   });
 
-  it("highlighted cell preserves player color background", () => {
+  it("lays the word highlight over a player's tint instead of replacing it", () => {
     const state: CellState = { letter: "A", correct: true, playerId: "p1" };
     const colorMap = { p1: "#3b82f6" };
+    const plain = render(
+      <Cell cell={whiteCell()} cellState={state} isSelected={false} isHighlighted={false} playerColorMap={colorMap} />,
+    );
+    const tint = (plain.container.firstElementChild as HTMLElement).style.backgroundColor;
+    plain.unmount();
+
     const { container } = render(
-      <Cell
-        cell={whiteCell()}
-        cellState={state}
-        isSelected={false}
-        isHighlighted={true}
-        playerColorMap={colorMap}
-      />,
+      <Cell cell={whiteCell()} cellState={state} isSelected={false} isHighlighted={true} playerColorMap={colorMap} />,
     );
     const el = container.firstElementChild as HTMLElement;
-    // Player color background is preserved (not replaced by amber-50)
-    expect(el.style.backgroundColor).toMatch(/^rgb\(/);
-    expect(el.className).not.toContain("bg-amber-50");
-    // Outline still applied
-    expect(el.style.outline).toBe("2px solid rgba(180,83,9,0.75)");
+    expect(el.className).not.toContain("bg-gold-100");
+    expect(el.style.outline).toBe("");
+    const over = el.style.backgroundColor;
+    expect(over).toMatch(/^rgb\(/);
+    expect(over).not.toBe(tint);
+    // Gold over a blue tint: the blue channel drops and red now leads blue.
+    const [, , tb] = tint.match(/\d+/g)!.map(Number);
+    const [or, , ob] = over.match(/\d+/g)!.map(Number);
+    expect(ob).toBeLessThan(tb);
+    expect(or).toBeGreaterThan(ob);
   });
 
   it("non-highlighted non-selected cell has no outline", () => {
@@ -176,11 +191,11 @@ describe("Cell", () => {
     expect(container.firstElementChild!.className).not.toContain("cursor-pointer");
   });
 
-  it("renders cell number in text-neutral-800", () => {
+  it("renders cell number in text-ink-soft", () => {
     render(
       <Cell cell={whiteCell({ number: 42 })} isSelected={false} isHighlighted={false} />,
     );
     const numberSpan = screen.getByText("42");
-    expect(numberSpan.className).toContain("text-neutral-800");
+    expect(numberSpan.className).toContain("text-ink-soft");
   });
 });

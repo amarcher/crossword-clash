@@ -13,6 +13,7 @@ import {
   countCluesPerPlayer,
   getNewlyCompletedClues,
   computeCellNumbers,
+  firstEmptyCell,
 } from "./gridUtils";
 import type { Puzzle } from "../types/puzzle";
 
@@ -160,6 +161,32 @@ describe("getPrevCell", () => {
   it("returns null at start", () => {
     expect(getPrevCell(puzzle, 0, 0, "across")).toBeNull();
     expect(getPrevCell(puzzle, 0, 0, "down")).toBeNull();
+  });
+});
+
+describe("firstEmptyCell", () => {
+  const puzzle = makeTestPuzzle();
+  const across1 = puzzle.clues[0];
+
+  it("is the first cell of an untouched word", () => {
+    expect(firstEmptyCell(puzzle, {}, across1)).toEqual({ row: 0, col: 0 });
+  });
+
+  it("skips cells that are already correct", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+    };
+    expect(firstEmptyCell(puzzle, cells, across1)).toEqual({ row: 0, col: 2 });
+  });
+
+  it("falls back to the first cell when the word is complete", () => {
+    const cells = {
+      "0,0": { letter: "C", correct: true },
+      "0,1": { letter: "A", correct: true },
+      "0,2": { letter: "T", correct: true },
+    };
+    expect(firstEmptyCell(puzzle, cells, across1)).toEqual({ row: 0, col: 0 });
   });
 });
 

@@ -299,7 +299,7 @@ export function CrosswordGrid({
       <div
         role="grid"
         aria-label={t('grid.crosswordInput')}
-        className="grid border-2 border-black bg-black"
+        className="grid rounded-lg overflow-hidden border-2 border-ink bg-ink"
         style={{
           width: gridWidth,
           height: gridHeight,
