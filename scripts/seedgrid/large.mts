@@ -15,7 +15,9 @@
  * demoted catch-all tier), --fills 24,
  * --fill-ms 20000, --budget 120000 (skeleton search ms), --layouts 2 (skeletons to compare;
  * the one whose best quick fill scores highest wins), --allow-shared (themers may
- * share a run longer than the engine's limit), --difficulty easy|medium|hard, --context "…" (dated
+ * share a run longer than the engine's limit), --paired (refuse crossing placements, so no unthemed
+ * slot ever mirrors a themer; the layout fails instead), --reject "nest, nemo" (entries the engine may
+ * never use, e.g. the same day's mini and midi answers), --difficulty easy|medium|hard, --context "…" (dated
  * hooks — holidays, anniversaries, events — the clue writer may use where an entry fits), --bonus FILE (theme-bonus words; default
  * wordlists/theme-bonus/<slug>.dict), --dict FILE (word list; default the studio's
  * production list), --out DIR (default artifacts/seedgrid), --model ID, --seed N.
@@ -91,6 +93,10 @@ interface ThemeSpec {
   /** Theme-bonus list path, overriding wordlists/theme-bonus/<slug>.dict. */
   bonus?: string;
   allowShared?: boolean;
+  /** Refuse crossing placements: every themer mirrors another, or the layout fails. */
+  paired?: boolean;
+  /** Extra words the engine may never use, e.g. entries of the same day's mini and midi. */
+  reject?: string[];
   /** Folder and bonus-file name; derived from the title or theme when absent. */
   slug?: string;
   /** Themer → clue sketch from the backlog, handed to the clue writer as a starting point. */
@@ -113,6 +119,8 @@ function specsFromFlags(): ThemeSpec[] {
       context: flag("context"),
       bonus: flag("bonus"),
       allowShared: Boolean(flags["allow-shared"]),
+      paired: Boolean(flags.paired),
+      reject: flag("reject")?.split(/[,\n]/).map((w) => normalizeEntry(w)).filter(Boolean),
     },
   ];
 }
@@ -144,6 +152,8 @@ function specsFromFile(file: string): ThemeSpec[] {
         context: (t.context as string | undefined) ?? flag("context"),
         bonus: t.bonus ? String(t.bonus) : undefined,
         allowShared: Boolean(t.allowShared ?? t["allow-shared"] ?? flags["allow-shared"]),
+        paired: Boolean(t.paired ?? flags.paired),
+        reject: [...(Array.isArray(t.reject) ? (t.reject as unknown[]).map((w) => normalizeEntry(String(w))) : []), ...(flag("reject")?.split(/[,\n]/).map((w) => normalizeEntry(w)).filter(Boolean) ?? [])],
         slug: t.slug ? String(t.slug) : undefined,
         clueSketches: Object.fromEntries(entries.filter(([, c]) => c).map(([a, c]) => [normalizeEntry(a), c])),
       } satisfies ThemeSpec;
@@ -395,7 +405,8 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   // 2. Skeleton(s). The finder returns the first layout that fills; with several, the one whose
   // quick fills score best wins, since different layouts put the thin spots in different places.
   const floorSteps = [...new Set([5, 10, 15].filter((d) => minScore - d > seedsFloor).concat(minScore > seedsFloor ? [minScore - seedsFloor] : []))];
-  const banList = [...ban];
+  const banList = [...new Set([...ban, ...(spec.reject ?? [])])];
+  if (spec.reject?.length) log(`Rejecting ${spec.reject.length} extra entries for this day: ${spec.reject.join(", ")}`);
   const rejected = new Set<string>();
   interface Layout {
     grid: Grid;
@@ -414,7 +425,7 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
   for (let n = 1; n <= wanted; n++) {
     log(`Laying out a ${size}×${size}${wanted > 1 ? ` (layout ${n} of ${wanted})` : ""}: score ${minScore}, settling as low as ${seedsFloor}, budget ${fmtSeconds(budgetMs)}…`);
     const t0 = Date.now();
-    const found = findSkeleton(engine, { size, symmetry: "rotational", seeds, rules: { minScore, rejected: banList }, attempts: 60 }, { random, budgetMs, floorSteps });
+    const found = findSkeleton(engine, { size, symmetry: "rotational", seeds, rules: { minScore, rejected: banList }, attempts: 60, placement: spec.paired ? "paired" : "auto" }, { random, budgetMs, floorSteps });
     const ms = Date.now() - t0;
     if (!found.grid) {
       log(`  no fillable skeleton in ${fmtSeconds(ms)} (${found.attempts} legal skeletons examined)`);

@@ -31,6 +31,11 @@ export interface SkeletonRequest {
   rules: Pick<EngineRules, "minScore" | "rejected">;
   /** Random draws to try in stage A. */
   attempts: number;
+  /**
+   * "paired" refuses crossing (free) placements altogether, so no unthemed slot ever mirrors a
+   * themer; the default lets stage B fall back to free placements when nothing paired fills.
+   */
+  placement?: "paired" | "auto";
 }
 
 export interface SkeletonResult {
@@ -116,7 +121,8 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
   // they can pair: a free draw once left two 14s in rows 3 and 8, and the engine filled their
   // mirror slots with 14-letter entries. Sets that cannot pair keep the free draw (and stage B's
   // free placements cover two 8s in a 9×9, which pair on paper but only fill crossing).
-  const placement = canPair({ size, symmetry, seeds }, random) ? "paired" : "free";
+  const pairedOnly = req.placement === "paired";
+  const placement = pairedOnly || canPair({ size, symmetry, seeds }, random) ? "paired" : "free";
   for (let attempt = 0; attempt < req.attempts && Date.now() < started + budget / 4; attempt++) {
     const drawn = buildSkeleton({ size, symmetry, seeds, random, maxBlockPct: attempt < req.attempts / 2 ? 0.22 : 0.26, maxRunLength: maxRun, placement });
     if (!drawn) continue;
@@ -126,7 +132,7 @@ export function findSkeleton(engine: SkeletonEngine, req: SkeletonRequest, opts:
 
   // B. Column-by-column skeletons around each way of pairing the seeds, then around free
   // placements (crossings first: two 8s in a 9×9 only work that way).
-  const starts = [...pairedPlacements({ size, symmetry, seeds, random }, 48), ...freePlacements({ size, symmetry, seeds, random }, 48)];
+  const starts = [...pairedPlacements({ size, symmetry, seeds, random }, 48), ...(pairedOnly ? [] : freePlacements({ size, symmetry, seeds, random }, 48))];
   const halfway = started + budget / 2;
   for (const start of starts) {
     if (Date.now() > halfway) break;
