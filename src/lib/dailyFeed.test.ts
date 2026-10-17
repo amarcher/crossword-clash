@@ -13,8 +13,7 @@ import {
   resetDailyFeedMemory,
   resolveDailyMini,
   resolveDailyPuzzle,
-  type DailyFeedEntry,
-} from "./dailyFeed";
+  type DailyFeedEntry, DAILY_SLOTS } from "./dailyFeed";
 import { getDailyMini } from "./dailyMinis";
 import { isTodaysDaily, leaderboardPath, todaysDailySlot } from "./dailyLeaderboard";
 import { puzzleToTransferFormat } from "./puzzleNormalizer";
@@ -221,17 +220,19 @@ describe("published feed files", () => {
     }
   })();
 
-  const largeFiles = (() => {
+  // Every slot but the mini lives in its own folder (see dailyFeedPath).
+  const slotFiles = DAILY_SLOTS.filter((s) => s !== "mini").flatMap((slot) => {
     try {
-      return readdirSync(dir + "large/").map((f) => "large/" + f);
+      return readdirSync(dir + slot + "/").map((f) => slot + "/" + f);
     } catch {
       return [];
     }
-  })();
+  });
 
   it("are all named for a date and parse as playable puzzles", () => {
-    for (const file of [...files.filter((f) => f !== "large"), ...largeFiles]) {
-      expect(file).toMatch(/^(large\/)?\d{4}-\d{2}-\d{2}\.json$/);
+    const folders = new Set<string>(DAILY_SLOTS);
+    for (const file of [...files.filter((f) => !folders.has(f)), ...slotFiles]) {
+      expect(file).toMatch(/^(?:[a-z]+\/)?\d{4}-\d{2}-\d{2}\.json$/);
       const data: unknown = JSON.parse(new TextDecoder().decode(readFileSync(dir + file)));
       expect(parseDailyFeedEntry(data), file).not.toBeNull();
     }
