@@ -953,6 +953,372 @@
           "Tiny tumbler for a hard shot?"
         ]
       ]
+    },
+    {
+      "slug": "home-improvement-x-rock",
+      "title": "Garage Band",
+      "concepts": [
+        "home improvement",
+        "rock bands"
+      ],
+      "entries": [
+        [
+          "SHEDZEPPELIN",
+          "Stairway to the backyard tool storage?"
+        ],
+        [
+          "RADIATORHEAD",
+          "'Creep' band that keeps the house warm?"
+        ],
+        [
+          "FOOFIXTURES",
+          "Dave Grohl's band, installed by a plumber?"
+        ],
+        [
+          "DECKLEPPARD",
+          "'Pour Some Sugar on Me' band that plays the patio?"
+        ]
+      ],
+      "notes": "Nov 16 2026 (bridges the Cozy Night mini and Hearth and Home midi). The first draw forced NODDLES above FOOFIXTURES; --seed 2 gave a clean grid at 50."
+    },
+    {
+      "slug": "breakfast-x-crime",
+      "title": "Breakfast Blotter",
+      "concepts": [
+        "breakfast",
+        "crime"
+      ],
+      "entries": [
+        [
+          "CEREALKILLER",
+          "Repeat offender in the Cheerios aisle?"
+        ],
+        [
+          "SUNNYSIDEJOB",
+          "Heist pulled off by an egg?"
+        ],
+        [
+          "POACHEDEGGS",
+          "Brunch order, or a farm theft?"
+        ],
+        [
+          "OMELETYOUGO",
+          "'You're free, but first a Denver scramble'?"
+        ]
+      ],
+      "notes": "Nov 17 2026 (Rise and Shine midi)."
+    },
+    {
+      "slug": "cartoons-x-food",
+      "title": "Looney Spoons",
+      "concepts": [
+        "cartoon characters",
+        "food"
+      ],
+      "entries": [
+        [
+          "DAFFYDUCKCONFIT",
+          "Looney Tunes star, slow-cooked the French way?"
+        ],
+        [
+          "SCOOBYDOUGH",
+          "Mystery Machine pizza base?"
+        ],
+        [
+          "TOMANDJERRY",
+          "Cat-and-mouse duo, or a hot holiday cocktail"
+        ]
+      ],
+      "notes": "Nov 18 2026, Mickey's birthday (Mouse House mini, Cartoon Classics midi; the mini has GOOFY and PLUTO). The four-set YOGIBEARNAISE/PORKYPIGROAST + SCOOBYDOUGH/TOMANDJERRY found no skeleton at 48 and filled only with junk at 45 (GELER, EHD, STITEST); the centered 15 + 11/11 shape filled at 50 with nothing flagged."
+    },
+    {
+      "slug": "money-x-music",
+      "title": "Sound Investment",
+      "concepts": [
+        "money",
+        "musicians"
+      ],
+      "entries": [
+        [
+          "COMMONCENTS",
+          "Good judgment, in pennies?"
+        ],
+        [
+          "BILLWITHERS",
+          "'Lean on Me' singer whose name is paper money?"
+        ],
+        [
+          "NICKELBACK",
+          "Canadian rockers you'd get as change?"
+        ],
+        [
+          "JOHNNYCASH",
+          "Man in Black whose surname is legal tender?"
+        ]
+      ],
+      "notes": "Nov 19 2026 (Honest Abe mini, Penny Wise midi — the midi has PENNYANTE and DIMESTORE, so no penny or dime entries here)."
+    },
+    {
+      "slug": "football-x-tech",
+      "title": "Instant Replay",
+      "concepts": [
+        "football",
+        "tech"
+      ],
+      "entries": [
+        [
+          "TOUCHDOWNSCREEN",
+          "Six points on a phone display?"
+        ],
+        [
+          "WIFIRECEIVER",
+          "Wideout who catches a wireless signal?"
+        ],
+        [
+          "TIGHTENDUSER",
+          "Blocker who reads the software manual?"
+        ]
+      ],
+      "notes": "Nov 20 2026 (Rivalry Week mini, Parking Lot Party midi). FIRSTDOWNLOAD/QUARTERBACKUP + the 12s found no skeleton even at 45 (the 13s' letters); TOUCHDOWNSCREEN centered + 12/12 filled at 50."
+    },
+    {
+      "slug": "mail-x-idioms",
+      "title": "Special Delivery",
+      "concepts": [
+        "the post office",
+        "idioms"
+      ],
+      "entries": [
+        [
+          "RETURNTOSENDER",
+          "Elvis hit, or a stamp on an undeliverable letter"
+        ],
+        [
+          "LETTEROFTHELAW",
+          "Strict reading of a statute, with postal help?"
+        ],
+        [
+          "PUSHTHEENVELOPE",
+          "Test the limits, or shove some mail?"
+        ]
+      ],
+      "notes": "Nov 21 2026, World Hello Day (Hello There mini, Pen Pals midi — the midi has POSTCARD and STAMPS)."
+    },
+    {
+      "slug": "steak-x-music",
+      "title": "Rare Groove",
+      "concepts": [
+        "steak cuts",
+        "musicians"
+      ],
+      "entries": [
+        [
+          "FLANKSINATRA",
+          "Ol' Blue Eyes, as a cut from the belly?"
+        ],
+        [
+          "BONEINTHEUSA",
+          "Springsteen anthem about a porterhouse?"
+        ],
+        [
+          "CHUCKBERRY",
+          "'Johnny B. Goode' legend, or a shoulder cut with fruit?"
+        ],
+        [
+          "RUMPSHAKER",
+          "1992 Wreckx-n-Effect hit, or a roast on a vibrating plate?"
+        ]
+      ],
+      "notes": "Nov 22 2026, Sunday, medium (Sunday Roast mini has SIRLOIN and BRISKET; Carving Station midi has DRUMSTICK — none of them here). The first run (free placement) put three themers down and an unthemed CLYTEMNESTRA mirroring FLANKSINATRA; --paired rebuilt it with all four across at floor 50."
+    },
+    {
+      "slug": "math-x-movies",
+      "title": "Show Your Work",
+      "concepts": [
+        "math",
+        "pop culture"
+      ],
+      "entries": [
+        [
+          "ALGEBRACADABRA",
+          "Magic word for solving for x?"
+        ],
+        [
+          "SINEOFTHETIMES",
+          "Harry Styles hit, in trigonometry class?"
+        ],
+        [
+          "MEANGIRLS",
+          "Teen comedy about averages?"
+        ],
+        [
+          "ODDCOUPLE",
+          "Neil Simon play, or 3 and 5?"
+        ]
+      ],
+      "notes": "Nov 23 2026, Fibonacci Day (By the Numbers mini, Math Class midi)."
+    },
+    {
+      "slug": "supermarket-x-music",
+      "title": "Supermarket Sweep",
+      "concepts": [
+        "the supermarket",
+        "musicians"
+      ],
+      "entries": [
+        [
+          "BAGBOYGEORGE",
+          "Culture Club singer who packs your groceries?"
+        ],
+        [
+          "LOYALTYCARDI",
+          "Rapper who racks up rewards points?"
+        ],
+        [
+          "DAIRYQUEEN",
+          "Fast-food chain, or a monarch of the milk aisle?"
+        ],
+        [
+          "SPICEGIRLS",
+          "Girl group found in aisle 7?"
+        ]
+      ],
+      "notes": "Nov 24 2026 (Grocery Run mini has AISLE and CARTS; Checkout Line midi has COUPONS and RECEIPTS). SHOPPINGLISZT/COUPONCLAPTON + BAGBOYGEORGE/DELIMEATLOAF found no skeleton at 48 (SZT and F endings) and only junk at 45; DELIMEATLOAF/CHECKOUTKAST + DAIRYQUEEN/SPICEGIRLS found no paired skeleton either; this 12/12 + 10/10 set filled at 50 with nothing flagged."
+    },
+    {
+      "slug": "air-travel-x-music",
+      "title": "In-Flight Entertainment",
+      "concepts": [
+        "air travel",
+        "music"
+      ],
+      "entries": [
+        [
+          "LAYOVERTURE",
+          "Orchestral piece between connecting flights?"
+        ],
+        [
+          "COCKPITBULL",
+          "Mr. Worldwide, flying the plane?"
+        ],
+        [
+          "COACHELLA",
+          "Music festival for economy fliers?"
+        ],
+        [
+          "STANDBYME",
+          "Ben E. King classic for a passenger without a seat?"
+        ]
+      ],
+      "notes": "Nov 25 2026, Thanksgiving Eve (Travel Day mini, Airport Dash midi has BOARDING and CARRYON). Spare center if a layout is needed: CHECKEDBAGPIPES (15)."
+    },
+    {
+      "slug": "thanksgiving-x-football",
+      "title": "Turkey Bowl",
+      "concepts": [
+        "Thanksgiving dinner",
+        "football"
+      ],
+      "entries": [
+        [
+          "CRANBERRYSACK",
+          "Quarterback takedown with a side of sauce?"
+        ],
+        [
+          "APPLETURNOVER",
+          "Fumbled dessert?"
+        ],
+        [
+          "HAILMARYPIE",
+          "Last-second dessert thrown up from midfield?"
+        ],
+        [
+          "SPIKEDCIDER",
+          "Hot drink celebrated in the end zone?"
+        ]
+      ],
+      "notes": "Nov 26 2026, Thanksgiving (Turkey Day mini has TURKEY and GRAVY; Giving Thanks midi — none repeated)."
+    },
+    {
+      "slug": "black-friday-x-movies",
+      "title": "Opening Weekend",
+      "concepts": [
+        "Black Friday",
+        "movies"
+      ],
+      "entries": [
+        [
+          "BIGBOXOFFICE",
+          "Ticket sales at the warehouse store?"
+        ],
+        [
+          "REBATESMOTEL",
+          "Hitchcock lodging with mail-in savings?"
+        ],
+        [
+          "STOREWARS",
+          "Sci-fi saga about rival retailers?"
+        ],
+        [
+          "SALEMSLOT",
+          "Stephen King town with a markdown?"
+        ]
+      ],
+      "notes": "Nov 27 2026, Black Friday (Doorbusters mini has SALES; Shopping Spree midi has BARGAINS and SHOPPING). Alternate 12: EARLYBIRDMAN."
+    },
+    {
+      "slug": "small-business-x-showbiz",
+      "title": "Open for Business",
+      "concepts": [
+        "small businesses",
+        "showbiz"
+      ],
+      "entries": [
+        [
+          "FLORISTGUMP",
+          "Tom Hanks character arranging bouquets?"
+        ],
+        [
+          "TAILORSWIFT",
+          "Pop superstar who hems your pants?"
+        ],
+        [
+          "LOCKSMITHS",
+          "Morrissey's band, cutting keys?"
+        ],
+        [
+          "THRIFTSHOP",
+          "Macklemore hit set among secondhand racks"
+        ]
+      ],
+      "notes": "Nov 28 2026, Small Business Saturday (Main Street mini has BAKERY and BARBER, so no baker or barber entries; Corner Store midi has REGULARS and REGISTER)."
+    },
+    {
+      "slug": "leftovers-x-idioms",
+      "title": "Second Helpings",
+      "concepts": [
+        "Thanksgiving leftovers",
+        "idioms"
+      ],
+      "entries": [
+        [
+          "BUTTERFINGERS",
+          "Clumsy sort, or the state of your hands after the rolls?"
+        ],
+        [
+          "SMALLPOTATOES",
+          "Trivial matters, or the last of the mash?"
+        ],
+        [
+          "COLDTURKEY",
+          "Abruptly, or Friday's sandwich filling?"
+        ],
+        [
+          "GRAVYTRAIN",
+          "Easy money, or what keeps the leftovers coming?"
+        ]
+      ],
+      "notes": "Nov 29 2026, Sunday after Thanksgiving, medium."
     }
   ]
 }

@@ -7,14 +7,16 @@ served as soon as the commit deploys (a day with no file has no large; the menu
 shows no second tile). The studio's Daily queue (`daily_schedule` in Supabase)
 can also fill a day, but a static file wins when both exist.
 
-Every puzzle below came out of `pnpm seedgrid:large` on 2026-10-16 (plus the
-hand-built Halftime Show), passes the grid standards (white corners, no 2×2
+Every puzzle below came out of `pnpm seedgrid:large` (plus the hand-built
+Halftime Show; the 16–29 November fortnight was built on 2026-10-17 with
+`--context` hooks for Thanksgiving week), passes the grid standards (white corners, no 2×2
 black block, no shared letter run over 3), and has a full clue set with speed
 clues. Monday–Saturday clues were written at the **easy** register, Sunday at
 **medium**: the first two weeks are deliberately gentle, and play insights will
 tell us where a steeper weekday gradient belongs. Source folders (grid, review
 notes, every fill and clue decision) are in `artifacts/large/` on the
-constructor's machine.
+constructor's machine (the 16–29 November set under `2026-10-17-*` and
+`retry-*/`, one folder per build attempt).
 
 | Day | Date | Title | Theme | Themers | Clues |
 |---|---|---|---|---|---|
@@ -49,6 +51,20 @@ constructor's machine.
 | Fri | 2026-11-13 | Deep Dish Data | Pizza × tech | GLUTEN FREEWARE, EXTRA SAUCE CODE, SICILIAN SILICON | easy |
 | Sat | 2026-11-14 | Icing Call | Hockey × food | STANLEY CUPCAKE, FACE OFF THE BONE, SLAPSHOT GLASS | easy |
 | Sun | 2026-11-15 | Something Borrowed | Weddings × sports | RECEPTION YARDS, AISLE RUNNERS UP, HONEYMOON SHOT, BOUQUET TOSS UP | medium |
+| Mon | 2026-11-16 | Garage Band | Home improvement × rock bands | SHED ZEPPELIN, RADIATORHEAD, FOO FIXTURES, DECK LEPPARD | easy |
+| Tue | 2026-11-17 | Breakfast Blotter | Breakfast × crime | CEREAL KILLER, SUNNY SIDE JOB, POACHED EGGS, OMELET YOU GO | easy |
+| Wed | 2026-11-18 | Looney Spoons | Cartoons × food | DAFFY DUCK CONFIT, SCOOBY DOUGH, TOM AND JERRY | easy |
+| Thu | 2026-11-19 | Sound Investment | Money × musicians | COMMON CENTS, BILL WITHERS, NICKELBACK, JOHNNY CASH | easy |
+| Fri | 2026-11-20 | Instant Replay | Football × tech | TOUCHDOWN SCREEN, WIFI RECEIVER, TIGHT END USER | easy |
+| Sat | 2026-11-21 | Special Delivery | The post office × idioms | RETURN TO SENDER, LETTER OF THE LAW, PUSH THE ENVELOPE | easy |
+| Sun | 2026-11-22 | Rare Groove | Steak cuts × musicians | FLANK SINATRA, BONE IN THE USA, CHUCK BERRY, RUMP SHAKER | medium |
+| Mon | 2026-11-23 | Show Your Work | Math × pop culture | ALGEBRACADABRA, SINE OF THE TIMES, MEAN GIRLS, ODD COUPLE | easy |
+| Tue | 2026-11-24 | Supermarket Sweep | The supermarket × musicians | BAG BOY GEORGE, LOYALTY CARDI, DAIRY QUEEN, SPICE GIRLS | easy |
+| Wed | 2026-11-25 | In-Flight Entertainment | Air travel × music | LAYOVERTURE, COCKPITBULL, COACHELLA, STAND BY ME | easy |
+| Thu | 2026-11-26 | Turkey Bowl | Thanksgiving dinner × football | CRANBERRY SACK, APPLE TURNOVER, HAIL MARY PIE, SPIKED CIDER | easy |
+| Fri | 2026-11-27 | Opening Weekend | Black Friday × movies | BIG BOX OFFICE, REBATES MOTEL, STORE WARS, SALEM'S LOT | easy |
+| Sat | 2026-11-28 | Open for Business | Small businesses × showbiz | FLORIST GUMP, TAILOR SWIFT, LOCKSMITHS, THRIFT SHOP | easy |
+| Sun | 2026-11-29 | Second Helpings | Thanksgiving leftovers × idioms | BUTTERFINGERS, SMALL POTATOES, COLD TURKEY, GRAVY TRAIN | medium |
 
 ## Keeping the queue filled
 
@@ -60,17 +76,30 @@ constructor's machine.
    is the sweet spot: every five-entry backlog set (two pairs plus a centered 15)
    failed to find a skeleton on 2026-10-16, and all three filled once the 15 was
    dropped. Some four-sets still fail on their letters alone (cars × anatomy).
+   Two flags from the November batch: `--paired` refuses crossing placements
+   (without it, steak × music put three themers down and left an unthemed 12
+   mirroring FLANK SINATRA), and `--reject "nest, nemo"` keeps the same day's
+   mini and midi answers out of the fill from the start (a 4-letter collision
+   that the local refill cannot clear usually needs a fresh skeleton). Stacked
+   13/13 + 12/12 sets with awkward endings (SHOPPING LISZT, QUARTERBACKUP)
+   found no skeleton at 48 and only junk at 45; a centered 15 or a 12/12 +
+   10/10 shape filled at 50 every time.
 2. Read `review.md`: anything "Flagged for the editor" or "forced by the
    layout" needs a studio pass (import `studio.json`, reject the word, Fill).
 3. `pnpm daily:add --slot large <date> <folder>/puzzle.ipuz "<Theme>"`, commit
    the JSON, open a PR. The day goes live on deploy; nothing in the apps changes.
 4. A title never repeats one of its own theme entries (Andrew, 2026-10-16): it should hint at the mashup, not hand over an answer.
 5. Aim to stay two weeks ahead. Repeat themers or fill words across nearby
-   days are worth avoiding; the review notes list every entry.
+   days are worth avoiding; the review notes list every entry. Before
+   publishing, compare the day's three puzzles: no entry of 4+ letters may
+   appear in two of them, and no title may be one of their entries.
 
 ## Daily Midi queue
 
-The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` via `pnpm daily:add --slot midi`. Each one bridges the day's mini and large where a large exists (16 Oct – 1 Nov: Pumpkin Spice + gardening×finance → Pumpkin Patch, Taco Tuesday + tennis×romance → Date Night…); from 2 November the midis follow the mini's theme until the larges catch up. Built with `pnpm seedgrid --size 9 --difficulty easy --seeds "<mirrored pair>"` — a free brainstorm at 9×9 often loses its theme in the fill, a mirrored seed pair almost never does. A midi must not reuse the large's title or themers, nor the mini's (the cross-check compares all three per day).
+The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` via `pnpm daily:add --slot midi`. Each one bridges the day's mini and large where a large exists (16 Oct – 1 Nov: Pumpkin Spice + gardening×finance → Pumpkin Patch, Taco Tuesday + tennis×romance → Date Night…); from 2 November the midis follow the mini's theme until the larges catch up
+(the 16–28 November larges were built after those midis; they were cross-checked
+against them rather than re-bridged). From 29 November the table's last column
+lists the midi's two seed entries. Built with `pnpm seedgrid --size 9 --difficulty easy --seeds "<mirrored pair>"` — a free brainstorm at 9×9 often loses its theme in the fill, a mirrored seed pair almost never does. A midi must not reuse the large's title or themers, nor the mini's (the cross-check compares all three per day).
 
 | Day | Date | Title | Theme |
 |---|---|---|---|
@@ -102,3 +131,17 @@ The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` 
 | Thu | 2026-11-26 | Giving Thanks | Giving Thanks |
 | Fri | 2026-11-27 | Shopping Spree | Shopping Spree |
 | Sat | 2026-11-28 | Corner Store | Corner Store |
+| Sun | 2026-11-29 | Couch Time | INAMESS, REMOTES |
+| Mon | 2026-11-30 | Tracking Number | DOORSTEP, TRACKING |
+| Tue | 2026-12-01 | Pay It Forward | SEANPENN, DONATION |
+| Wed | 2026-12-02 | All Aglow | STRINGS, TWINKLE |
+| Thu | 2026-12-03 | Bundle Up | THERMOS, MITTENS |
+| Fri | 2026-12-04 | Eight Nights | MENORAHS, DREIDELS |
+| Sat | 2026-12-05 | Trophy Case | CONFETTI, TROPHIES |
+| Sun | 2026-12-06 | Candy Counter | CARAMELS, TRUFFLES |
+| Mon | 2026-12-07 | Sled Hill | TOBOGGAN, SONGBIRD |
+| Tue | 2026-12-08 | Secret Santa | SURPRISE, WISHLIST |
+| Wed | 2026-12-09 | Flaky Layers | DANISHES, STRUDELS |
+| Thu | 2026-12-10 | Lab Coats | MOLECULE, PRIMECUT |
+| Fri | 2026-12-11 | Tacky Knits | REINDEER, SWEATERS |
+| Sat | 2026-12-12 | Make a Wish | STARGAZER, TELESCOPE |

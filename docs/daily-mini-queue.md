@@ -54,6 +54,20 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 | Thu | 2026-11-26 | Turkey Day | 7×7 | |
 | Fri | 2026-11-27 | Doorbusters | 5×5 | |
 | Sat | 2026-11-28 | Main Street | 7×7 | |
+| Sun | 2026-11-29 | Advent Calendar | 7×7 | SHORES, UTOPIA, MARCUS |
+| Mon | 2026-11-30 | Add to Cart | 5×5 | ONSET, SEETO, DONOT |
+| Tue | 2026-12-01 | Giving Tuesday | 5×5 | OLSEN, SALVE, GESSO |
+| Wed | 2026-12-02 | Tree Lighting | 5×5 | MOTOR, EGRET, CRATE |
+| Thu | 2026-12-03 | Hot Cocoa | 7×7 | DIEDOWN, SNOOZED, SWEEPS |
+| Fri | 2026-12-04 | Cookie Day | 5×5 | IGIVE, MARIO, WAFER |
+| Sat | 2026-12-05 | Pep Rally | 7×7 | STROLLS, IRONMEN, STREAM |
+| Sun | 2026-12-06 | St. Nick | 7×7 | EMAILER, NARRATE, SNARLAT |
+| Mon | 2026-12-07 | Snow Day | 5×5 | SLEDS, PLOWS, PEALS |
+| Tue | 2026-12-08 | Gift Wrap | 5×5 | ISAAC, GUISE, SCENE |
+| Wed | 2026-12-09 | Pastry Case | 5×5 | INLAW, GLAZE, UNLIT |
+| Thu | 2026-12-10 | Nobel Prize | 7×7 | ADDEDIN, GRINDER, MANDELA |
+| Fri | 2026-12-11 | Office Party | 5×5 | ELLEN, CHEER, HALVE |
+| Sat | 2026-12-12 | Deck the Halls | 7×7 | TOENAIL, LETPASS, TINSEL |
 
 ## What we learned building these
 
@@ -61,4 +75,9 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 - 7×7s on the production list need `--min-score 60` or the review refuses the fill for junk.
 - Hand-picked `--seeds` beat a free brainstorm when a theme keeps failing (BLITZ/PUNT, SCARF/WOOL).
 - A title never repeats an entry; the midi of the same day must not reuse the mini's or the large's entries.
-- Keep two weeks ahead: stock runs to 2026-11-28; the next batch should start by 2026-11-14.
+- Keep two weeks ahead: stock runs to 2026-12-12; the next batch should start by 2026-11-28.
+- The 29 Nov – 12 Dec minis (built 2026-10-17) took their dated hooks through `--context`
+  (Cyber Monday, Giving Tuesday, the Rockefeller tree lighting, Hanukkah's first candle on
+  4 Dec, championship Saturday, St. Nicholas Day, Nobel Day, the Army–Navy game) and a
+  seeded pair whenever the free brainstorm kept failing review (Snow Day: SLEDS/PLOWS,
+  Office Party: TOAST/CHEER, Pastry Case: GLAZE/FLAKY).
