@@ -1,7 +1,8 @@
 {
   "common": {
     "defaultPlayerName": "Player",
-    "back": "Back"
+    "back": "Back",
+    "loadingPage": "Loading page…"
   },
   "menu": {
     "friendsHeading": "Play with friends",

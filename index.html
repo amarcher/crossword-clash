@@ -26,7 +26,15 @@
     <!-- AdSense site ownership (meta-tag verification). Loads nothing; the ad
          script itself is injected by AdSlot only after consent where required. -->
     <meta name="google-adsense-account" content="ca-pub-0897728874858477" />
-    <meta name="theme-color" content="#1e1e2e" />
+    <!-- The canvas colour (--color-canvas in src/index.css): tints the browser
+         chrome on Android Chrome and iOS Safari to match the page. -->
+    <meta name="theme-color" content="#f4f6fa" />
+    <!-- The two latin web fonts, so they arrive with the first paint instead of
+         ~90ms after it. Vite rewrites these to the same hashed asset URLs the
+         bundled Fontsource CSS uses. Each face needs `crossorigin` (fonts are
+         always fetched in CORS mode) or the browser fetches them twice. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="icon" href="/favicon.ico" sizes="any" />

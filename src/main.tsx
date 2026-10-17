@@ -1,6 +1,9 @@
 import i18n from "./i18n/i18n";
 import { createRoot, hydrateRoot } from "react-dom/client";
-import { RouterProvider } from "react-router";
+// The /dom provider is the one that hands ReactDOM.flushSync to the router;
+// without it `navigate(to, { flushSync: true })` is a warning and a deferred
+// commit, which breaks the route cross-fade (lib/transitionNavigate).
+import { RouterProvider } from "react-router/dom";
 import { AppShell } from "./AppShell";
 import "./index.css";
 import { reloadOnceForChunkError } from "./lib/chunkReload";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { TransitionLink } from "./TransitionLink";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
 interface ListRowProps {
@@ -46,9 +46,9 @@ export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabl
   }
   if (to) {
     return (
-      <Link to={to} onClick={onClick} aria-disabled={disabled || undefined} className={ROW}>
+      <TransitionLink to={to} onClick={onClick} aria-disabled={disabled || undefined} className={ROW}>
         {body}
-      </Link>
+      </TransitionLink>
     );
   }
   return (

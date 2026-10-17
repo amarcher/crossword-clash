@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { BookOpen, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
@@ -8,6 +8,7 @@ import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { AccountMenuRow } from "../components/Account";
 import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { useHydrated } from "../lib/hydration";
@@ -24,13 +25,17 @@ import {
   isIosBrowser,
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
-import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
+import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../components/ui";
+import { PAGE_GUTTER } from "../components/PageShell";
+import { prefetchOnIntent } from "../routeModules";
 
 interface DailyHeroProps {
   slot: DailySlot;
-  /** Null paints the loading placeholder (the mini while the feed answers). */
+  /** Null paints the loading placeholder, sized exactly like the loaded tile. */
   daily: DailyMini | null;
-  showFriends: boolean;
+  /** Whether a "Race friends" button exists at all (multiplayer configured). */
+  multiplayer: boolean;
+  /** Race friends is disabled (not unmounted) until auth has a user. */
   disabled: boolean;
   /** Shown in the footer when positive (the mini carries the daily streak). */
   streak?: number;
@@ -39,7 +44,7 @@ interface DailyHeroProps {
 }
 
 /** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
-function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
+function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(slot === "large" ? "menu.dailyLargeEyebrow" : "menu.dailyMiniEyebrow");
   return (
@@ -48,10 +53,16 @@ function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onR
     <Card role="region" aria-label={label} className="overflow-hidden" aria-busy={!daily}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Eyebrow className="text-brand-600">{label}</Eyebrow>
+          {/* One 20px row whatever the feed says: the theme chip is 20px and the
+              eyebrow alone 16px (min-h-5), and a long theme truncates rather
+              than wrapping, so the loaded tile is exactly the placeholder's height. */}
+          <div className="flex min-h-5 items-center gap-2">
+            <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
             {daily?.theme && (
-              <span className="rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
+              <span
+                className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100"
+                title={daily.theme}
+              >
                 {daily.theme}
               </span>
             )}
@@ -83,25 +94,33 @@ function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onR
         )}
       </div>
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
-        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily}>
+        {/* Buttons, not links, so they warm their screens' chunks by hand. */}
+        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
           {t("menu.dailyPlay")}
         </Button>
-        {showFriends && (
-          <Button variant="secondary" size="lg" className="flex-1" onClick={onRace} disabled={disabled || !daily}>
+        {multiplayer && (
+          <Button
+            variant="secondary"
+            size="lg"
+            className="flex-1"
+            onClick={onRace}
+            disabled={disabled || !daily}
+            {...prefetchOnIntent("/host-game/name")}
+          >
             <Swords className="size-4.5" aria-hidden="true" />
             {t("menu.raceFriends")}
           </Button>
         )}
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
-        <Link
+        <TransitionLink
           to={leaderboardPath(slot)}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
           className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
           {t("menu.dailyLeaderboard")}
-        </Link>
+        </TransitionLink>
         {streak > 0 && (
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-700">
             <Flame className="size-4 text-gold-500" aria-hidden="true" />
@@ -116,9 +135,17 @@ function DailyHero({ slot, daily, showFriends, disabled, streak = 0, onPlay, onR
 export function MenuScreen() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  // Pushes run inside the site cross-fade; the play screen gets a plain fade
+  // (no bar to morph into) and the grid itself is never a named element.
+  const navigate = useTransitionNavigate();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
-  const disabled = loading;
+  // Multiplayer needs a Supabase user. Whether Supabase is configured at all is
+  // known synchronously, so hiding the friends UI in an offline build costs no
+  // layout shift; whether auth has resolved is not, so while it is pending (or
+  // failed) the friends UI stays mounted and merely disabled — unmounting it
+  // after first paint moved everything below by 341px (site-chrome audit, item 6).
+  const multiplayer = supabase !== null;
+  const disabled = loading || !user;
   // The account's streaks when signed in, this device's otherwise.
   const { daily: streak, nyt: nytStreak } = useStreaks();
   // Device-dependent rows (bookmarklet, app store links) are absent from the
@@ -161,7 +188,6 @@ export function MenuScreen() {
     [setUrlPuzzle, navigate],
   );
 
-  const showFriends = Boolean(user) || loading;
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
   const iosAppUrl = useMemo(
@@ -174,30 +200,33 @@ export function MenuScreen() {
   );
 
   return (
-    <div className="min-h-dvh crossword-bg px-4 pb-8 pt-8 sm:pt-12">
-      {/* The wordmark constructs via a one-shot Lottie on every menu visit. */}
+    <div className={`min-h-dvh crossword-bg pb-8 pt-8 sm:pt-12 ${PAGE_GUTTER}`}>
+      {/* The wordmark constructs via a one-shot Lottie on the first menu visit of
+          the session; later visits show its final frame (see Title). */}
       <Title animate className="mb-8 sm:mb-10" />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Front door: today's dailies. Never gated on auth loading; the mini
             waits only for the daily feed's first answer of the day (see
-            useDailyMini), and the large tile appears once its feed says there
-            is one today. */}
+            useDailyMini). The large's slot is reserved with a placeholder tile
+            while its feed is still unknown (undefined) and collapses only once
+            the feed says there is none today (null), so a published large never
+            pushes the page down after first paint. */}
         <div className="grid gap-4 lg:sticky lg:top-8">
           <DailyHero
             slot="mini"
             daily={dailyMini}
-            showFriends={showFriends}
+            multiplayer={multiplayer}
             disabled={disabled}
             streak={streak}
             onPlay={() => void playDaily(dailyMini, "mini")}
             onRace={() => raceDaily(dailyMini, "mini")}
           />
-          {dailyLarge && (
+          {dailyLarge !== null && (
             <DailyHero
               slot="large"
-              daily={dailyLarge}
-              showFriends={showFriends}
+              daily={dailyLarge ?? null}
+              multiplayer={multiplayer}
               disabled={disabled}
               onPlay={() => void playDaily(dailyLarge, "large")}
               onRace={() => raceDaily(dailyLarge, "large")}
@@ -206,8 +235,8 @@ export function MenuScreen() {
         </div>
 
         <div className="grid gap-8">
-          {showFriends && (
-            <section className="grid gap-3">
+          {multiplayer && (
+            <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>
               <ListGroup>
                 <ListRow
@@ -235,12 +264,12 @@ export function MenuScreen() {
                   onClick={() => track("mode_selected", { mode: "tv" })}
                 />
               </ListGroup>
-              <Link
+              <TransitionLink
                 to="/watch"
                 className="justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
               >
                 {t("menu.watchLink")}
-              </Link>
+              </TransitionLink>
             </section>
           )}
 

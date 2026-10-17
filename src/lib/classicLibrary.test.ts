@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { parse } from "@xwordly/xword-parser";
 import {
@@ -11,6 +11,8 @@ import {
   preloadClassicManifest,
   sizeBucket,
   type ClassicEntry,
+  loadClassicManifest,
+  prefetchClassicManifest,
 } from "./classicLibrary";
 import { normalizePuzzle } from "./puzzleNormalizer";
 import { puzzleIdentity } from "./soloStats";
@@ -164,6 +166,24 @@ describe("public/classic-puzzles/manifest.json", () => {
       expect({ file: e.file, w: puzzle.width, h: puzzle.height, clues: puzzle.clues.length, id: puzzleIdentity(puzzle) })
         .toEqual({ file: e.file, w: e.width, h: e.height, clues: e.clues, id: e.identity });
       expect(puzzle.title).toBe(e.title);
+    }
+  });
+});
+
+describe("manifest cache", () => {
+  it("is empty until a non-empty manifest has been fetched, then answers synchronously", async () => {
+    const entry = { file: "cwpb1.puz", number: 1, title: "A", author: "B", width: 5, height: 5, clues: 4, identity: "x", blurb: "" };
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [entry] }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      expect(knownClassicManifest()).toBeNull();
+      await prefetchClassicManifest();
+      expect(knownClassicManifest()).toEqual([entry]);
+      // A second load is served from the cache.
+      expect(await loadClassicManifest()).toEqual([entry]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 });

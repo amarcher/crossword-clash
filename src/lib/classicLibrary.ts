@@ -68,21 +68,22 @@ export function parseManifest(data: unknown): ClassicEntry[] {
   return data.filter(isClassicEntry).sort((a, b) => a.number - b.number);
 }
 
+// The manifest without a network round trip, in priority order: one the
+// build-time prerender handed over before rendering, one already fetched this
+// page load (so a screen renders its list on the first frame instead of a
+// loading line that 46 cards then push aside — site-chrome audit, item 7), or
+// the one the prerendered /classics page embeds as JSON (so hydrating it
+// renders the same cards the HTML already shows). Failures aren't cached: the
+// next visit retries.
 let preloaded: ClassicEntry[] | null = null;
+let cachedManifest: ClassicEntry[] | null = null;
 
 /** Hand the manifest to the library before rendering (the build-time prerender does this). */
 export function preloadClassicManifest(entries: ClassicEntry[] | null): void {
   preloaded = entries;
 }
 
-/**
- * The manifest without a network round trip: one preloaded by the prerender,
- * or the one it embedded in the page (so hydrating /classics renders the same
- * cards the HTML already shows). Null anywhere else, e.g. after navigating to
- * /classics from the menu, where loadClassicManifest() fetches it.
- */
-export function knownClassicManifest(doc: Pick<Document, "getElementById"> | undefined = typeof document === "undefined" ? undefined : document): ClassicEntry[] | null {
-  if (preloaded) return preloaded;
+function embeddedManifest(doc: Pick<Document, "getElementById"> | undefined): ClassicEntry[] | null {
   const el = doc?.getElementById(CLASSIC_MANIFEST_SCRIPT_ID);
   if (!el?.textContent) return null;
   try {
@@ -93,18 +94,38 @@ export function knownClassicManifest(doc: Pick<Document, "getElementById"> | und
   }
 }
 
+/** The manifest if it is already known (see above), else null. */
+export function knownClassicManifest(
+  doc: Pick<Document, "getElementById"> | undefined = typeof document === "undefined" ? undefined : document,
+): ClassicEntry[] | null {
+  return preloaded ?? cachedManifest ?? embeddedManifest(doc);
+}
+
 /**
  * Fetch + validate the manifest. Resolves to `[]` on any failure so callers
  * can simply hide the section — the library is a bonus, never a blocker.
  */
 export async function loadClassicManifest(): Promise<ClassicEntry[]> {
+  const known = knownClassicManifest();
+  if (known) return known;
   try {
     const res = await fetch(CLASSIC_MANIFEST_URL);
     if (!res.ok) return [];
-    return parseManifest(await res.json());
+    const entries = parseManifest(await res.json());
+    if (entries.length > 0) cachedManifest = entries;
+    return entries;
   } catch {
     return [];
   }
+}
+
+/**
+ * Warm the cache alongside a route's chunk (see the /classics route) so the
+ * library screen mounts with its entries already known. Never rejects, so a
+ * missing manifest still lets the screen load and show its empty state.
+ */
+export function prefetchClassicManifest(): Promise<void> {
+  return loadClassicManifest().then(() => undefined);
 }
 
 /** Fetch, parse and normalize one classic; reports the import to analytics. */
