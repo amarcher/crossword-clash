@@ -26,6 +26,97 @@ slow networks (prefetch on intent, a progress bar after ~150 ms), not raw
 speed. The one real jank is the menu's first paint, which moves after render
 for three separate reasons.
 
+## Status
+
+**Items 1, 2, 3 and 5 shipped** (one page shell, PR "Site chrome: one page shell",
+2026-10-17). Items 6–9 and 10–11 shipped next (below). Item 4 is open.
+
+- `src/components/PageShell.tsx` — `width` token (`md | 2xl | 3xl | 4xl | 5xl | 7xl`,
+  plus `widthLg` for the lobby's wider desktop column) puts the `SiteBar` and the
+  page content in one `mx-auto w-full max-w-* px-4 md:px-6` column. `PAGE_GUTTER`
+  is the shared gutter; `GameLayout`'s header and the menu use it too, so the
+  title's x position no longer differs between menu, inner pages and play.
+  `below` renders full-width content after the column (the classics' sticky
+  filter band, whose inner row uses `pageColumnClass("5xl")`).
+- `SiteBar` is width-agnostic (`w-full`, no max-width, no `-ml-1`) and gained
+  `onBack` for the flow screens; `FlowPage` renders it (logo left, back +
+  `action` right) instead of its own chevron row, and `HostImportScreen` passes
+  its back target into the hub's bar instead of stacking a second header.
+- `public/logo.png` is cropped to the wordmark (2292×500, 46.9 kB from 53.6 kB).
+  Heights were rescaled to keep the visible size: SiteBar `h-9 sm:h-11` (was
+  `h-12 sm:h-14` of the padded asset), `Title` static `h-28` (was `h-36`),
+  `TVBrand` 2.76u (was 3.6u), bookmarklet page 37/43 px (was 48/56).
+
+Measured with `scripts/chrome-alignment.mjs` (dev server, 1280×900 and 390×844):
+Δ logo = logo's first opaque pixel column minus the column's content-box left
+edge, Δ right = the bar's right slot's right edge minus the content-box right
+edge. Before, on `main` 633b859; after, this branch.
+
+| width | route | before Δ logo | before Δ right | after Δ logo | after Δ right |
+|---|---|---|---|---|---|
+| 1280 | /privacy | −205.5 | +208 | 0 | 0 |
+| 1280 | /daily/leaderboard | −285.5 | +288 | 0 | 0 |
+| 1280 | /nyt-import | −285.5 | +288 | 0 | 0 |
+| 1280 | /solo/import | −125.5 | +128 | 0 | 0 |
+| 1280 | /classics | −13.5 | +16 | 0 | 0 |
+| 1280 | /studio | +114.5 | −112 | 0 | 0 |
+| 1280 | /join, /host-game/name | no logo; chevron on the left | | 0 | 0 |
+| 1280 | /host-game/import | −125.5 (two headers) | +128 | 0 | 0 |
+| 390 | /privacy | −18.4 | +20 | 0 | 0 |
+| 390 | every other SiteBar page | +1.6 | 0 | 0 | 0 |
+| 390 | /join, /host-game/name | no logo; chevron on the left | | 0 | 0 |
+
+Back control: 44 px tall everywhere, 44×44 icon-only on phones.
+
+**Items 6–9 shipped** (stable first paint, PR #102, 2026-10-17). Measured with
+the same headless probe (production preview, cold cache, first visit of the
+day, no localStorage), three runs each:
+
+  | Page | Desktop before → after | Phone before → after |
+  |---|---|---|
+  | /menu, anonymous sign-in works | 0.001–0.002 → **0.000** | 0.153–0.163 → **0.000** |
+  | /menu, anonymous sign-in fails | 0.062 → **0.000** | 0.152 → **0.000** |
+  | /classics | 0.098 → **0.000** | 0.156–0.744 → **0.000** |
+
+  What changed: the friends section and Race friends buttons stay mounted
+  and merely disabled until auth has a user (hidden only when Supabase is
+  not configured at all, which is known synchronously); the Daily Large
+  slot holds a placeholder tile while its feed is unknown and collapses only
+  on a "none today" answer; the tiles' eyebrow row is a fixed 20 px (chip or
+  no chip, truncating long themes) so placeholder and loaded tiles are the
+  same height at both widths; the two latin woff2 files are preloaded from
+  `index.html` (Vite rewrites the hrefs to the hashed assets the bundled
+  Fontsource CSS uses) and `src/index.css` declares Capsize-style
+  metric-matched fallback faces over Arial and, for Android, Roboto; the
+  wordmark Lottie plays once per tab session and later menu visits render
+  `logo.png`, which is the animation's final frame at the same aspect;
+  `theme-color` is the canvas colour. The remaining /classics shift turned
+  out not to be the fonts (once matched, only one card of 46 differed in
+  wrap) but the manifest fetch answering after first paint, so the /classics
+  route's `lazy` now loads the manifest alongside the chunk and the screen
+  renders its cards on the first frame.
+
+  Known leftover: on a day with no Daily Large, the first phone visit of the
+  day still collapses the reserved slot once the feed answers "none"
+  (≈0.14, the same size as before on days that do have one); the feed caches
+  that answer so repeat visits that day are stable. Reserving the slot
+  permanently, or deciding from a bundled schedule, would need a product
+  call.
+
+**Items 10 + 11 shipped** (route transitions, PR #103, 2026-10-17): prefetch on
+intent (`src/routeModules.ts`, triggered by `TransitionLink` and the daily
+Play/Race buttons), the 150 ms pending bar (`NavigationProgress`), scroll
+restoration and the route cross-fade (`lib/transitionNavigate.ts` +
+`lib/viewTransition.ts`, CSS in `index.css`). Both live in a pathless
+`SiteFrame` route around every route, so the legal pages and `/host` get them
+too. Screenshots: `docs/site-chrome-transitions/`. Two findings on the way:
+`{ flushSync: true }` needs the `RouterProvider` from `react-router/dom` (the
+plain one warns and defers), and even then a route's *first* render commits
+~4 ms after `navigate` resolves, so the transition also waits for a commit
+signal from `SiteFrame` (`lib/routeCommit.ts`). The shared-element names are
+`.vt-site-bar` on the shell's bar and `.vt-brand` on its logo image and on the
+menu wordmark (the Lottie box on the first visit, the still afterwards).
+
 ## Alignment — measured
 
 Left edge of the logo's *visible* pixels vs the left edge of the page's
@@ -207,23 +298,3 @@ classics → menu 10–13 ms; menu → import hub 16 ms. So:
    held, prefetch on intent, pending bar, scroll restoration. Depends on 1.
 4. Item 9 as polish (theme-color is a one-liner; the narrator chunk split
    is a separate, larger change).
-
-## Status
-
-- **Items 10 + 11 — shipped** (branch `claude/elegant-bun-a70593`): prefetch on
-  intent (`src/routeModules.ts`, triggered by `TransitionLink` and the daily
-  Play/Race buttons), the 150 ms pending bar (`NavigationProgress`), scroll
-  restoration and the route cross-fade (`lib/transitionNavigate.ts` +
-  `lib/viewTransition.ts`, CSS in `index.css`). Both live in a pathless
-  `SiteFrame` route around every route, so the legal pages and `/host` get them
-  too. Screenshots: `docs/site-chrome-transitions/`. Two findings on the way:
-  `{ flushSync: true }` needs the `RouterProvider` from `react-router/dom`
-  (the plain one warns and defers), and even then a route's *first* render
-  commits ~4 ms after `navigate` resolves, so the transition also waits for a
-  commit signal from `SiteFrame` (`lib/routeCommit.ts`). Shared-element names
-  (`site-bar`, `brand`) are on today's `SiteBar` and the menu wordmark; when
-  the page-shell work (item 1) lands, move the class names onto its bar.
-  Restoring scroll *into* the classics list on back/forward still lands at
-  the top because the list renders empty until its manifest answers — a
-  content-loading limitation, not a router one.
-- Items 1–9: open.

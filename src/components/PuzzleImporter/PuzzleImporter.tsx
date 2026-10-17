@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, BookOpen, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
-import { SiteBar } from "../SiteBar";
+import { PageShell } from "../PageShell";
 import { Eyebrow, MiniGridThumb } from "../ui";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
@@ -19,6 +19,9 @@ import { nativeNytImportAvailable } from "../../lib/nativeNytImport";
 
 interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
+  /** Back control in the bar's right slot (the host flow returns to the name step); the logo is always the home link. */
+  backTo?: string;
+  backLabel?: string;
 }
 
 /** How many classics the hub previews before pointing at /classics. */
@@ -74,7 +77,7 @@ function SourceCard({
   );
 }
 
-export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
+export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImporterProps) {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -175,9 +178,8 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
   const nativeApp = import.meta.env.MODE === "mobile";
 
   return (
-    <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
-      <SiteBar />
-      <div className="mx-auto w-full max-w-3xl">
+    <PageShell width="3xl" bar={{ backTo, backLabel }}>
+      <div>
         <div className="pb-6 pt-4 text-center sm:pt-6">
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("importer.hubTitle")}
@@ -336,6 +338,6 @@ export function PuzzleImporter({ onPuzzleLoaded }: PuzzleImporterProps) {
           <AdSlot placement="import-bottom" />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

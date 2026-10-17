@@ -15,7 +15,13 @@ export const screenModules = {
   soloPlay: () => import("./screens/SoloPlayScreen"),
   join: () => import("./screens/JoinScreen"),
   dailyLeaderboard: () => import("./screens/DailyLeaderboardScreen"),
-  classics: () => import("./screens/ClassicLibraryScreen"),
+  // The manifest loads with the chunk (and so on intent) so the library paints
+  // its cards on its first frame — no loading line that 46 cards then push aside.
+  classics: () =>
+    Promise.all([
+      import("./screens/ClassicLibraryScreen"),
+      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
+    ]).then(([screen]) => screen),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),

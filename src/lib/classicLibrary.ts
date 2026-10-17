@@ -66,18 +66,40 @@ export function parseManifest(data: unknown): ClassicEntry[] {
   return data.filter(isClassicEntry).sort((a, b) => a.number - b.number);
 }
 
+// The manifest once fetched, so a screen can render its list on the first
+// frame instead of painting a loading line and then shifting 46 cards in
+// (site-chrome audit, item 7). Failures aren't cached: the next visit retries.
+let cachedManifest: ClassicEntry[] | null = null;
+
+/** The manifest if it has already been fetched this page load, else null. */
+export function knownClassicManifest(): ClassicEntry[] | null {
+  return cachedManifest;
+}
+
 /**
  * Fetch + validate the manifest. Resolves to `[]` on any failure so callers
  * can simply hide the section — the library is a bonus, never a blocker.
  */
 export async function loadClassicManifest(): Promise<ClassicEntry[]> {
+  if (cachedManifest) return cachedManifest;
   try {
     const res = await fetch(CLASSIC_MANIFEST_URL);
     if (!res.ok) return [];
-    return parseManifest(await res.json());
+    const entries = parseManifest(await res.json());
+    if (entries.length > 0) cachedManifest = entries;
+    return entries;
   } catch {
     return [];
   }
+}
+
+/**
+ * Warm the cache alongside a route's chunk (see the /classics route) so the
+ * library screen mounts with its entries already known. Never rejects, so a
+ * missing manifest still lets the screen load and show its empty state.
+ */
+export function prefetchClassicManifest(): Promise<void> {
+  return loadClassicManifest().then(() => undefined);
 }
 
 /** Fetch, parse and normalize one classic; reports the import to analytics. */

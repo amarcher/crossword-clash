@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Flame, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
-import { SiteBar } from "../components/SiteBar";
+import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
@@ -312,14 +312,21 @@ export function StudioScreen() {
     engine.kind === "ready" ? `${engine.words.toLocaleString()} words` : engine.kind === "loading" ? "Loading words…" : "No word list";
 
   return (
-    <div className="min-h-dvh bg-canvas px-4 pb-10 pt-2">
-      <SiteBar backLabel="Menu" backTo="/menu" right={
+    <PageShell
+      width="7xl"
+      background="canvas"
+      bar={{
+        backLabel: "Menu",
+        backTo: "/menu",
+        right: (
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted tabular-nums sm:inline">{status}</span>
             <StudioAccount account={account} />
           </div>
-        } />
-      <main className="mx-auto mt-4 grid w-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
+        ),
+      }}
+    >
+      <main className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
         {engine.kind === "error" && <EngineError className="lg:col-span-3" listUrl={STUDIO_WORD_LIST_URL} message={engine.message} />}
 
         {/* Grid: first on phones */}
@@ -526,6 +533,6 @@ export function StudioScreen() {
           <Insights admin={account.admin} />
         </section>
       </main>
-    </div>
+    </PageShell>
   );
 }

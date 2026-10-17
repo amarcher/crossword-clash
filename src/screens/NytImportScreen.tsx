@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CheckCircle2, Newspaper } from "lucide-react";
-import { SiteBar } from "../components/SiteBar";
+import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, Select, buttonClass } from "../components/ui";
 import { useGame } from "../contexts/GameContext";
 import { importNativeNytPuzzle, loadNativeNytImport, nativeNytImportAvailable } from "../lib/nativeNytImport";
@@ -44,9 +44,8 @@ export function NytImportScreen() {
   }
 
   return (
-    <main className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
-      <SiteBar backTo="/menu" backLabel={t("nytImport.back")} />
-      <div className="mx-auto mt-4 grid w-full max-w-md gap-4">
+    <PageShell as="main" width="md" bar={{ backTo: "/menu", backLabel: t("nytImport.back") }}>
+      <div className="mt-4 grid gap-4">
         <Card className="p-5 sm:p-6">
           <span className="grid size-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
             <Newspaper className="size-5.5" aria-hidden="true" />
@@ -96,6 +95,6 @@ export function NytImportScreen() {
           }}>{t("nytImport.continue")}</Button>
         </Card>}
       </div>
-    </main>
+    </PageShell>
   );
 }
