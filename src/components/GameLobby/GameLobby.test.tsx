@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, cleanup, type RenderOptions } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router";
 import { GameLobby } from "./GameLobby";
 import type { Player } from "../../types/game";
+
+// The shared site bar's logo is a router Link, so the screen needs a router around it.
+const render = (ui: ReactElement, options?: RenderOptions) => rtlRender(ui, { wrapper: MemoryRouter, ...options });
 
 afterEach(cleanup);
 
