@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flame, Loader2, Swords, Trophy, WifiOff } from "lucide-react";
-import { SiteBar } from "../components/SiteBar";
+import { PageShell } from "../components/PageShell";
 import { Button, Card } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
@@ -110,10 +110,8 @@ export function DailyLeaderboardScreen() {
   }, [game, daily, slot, navigate]);
 
   return (
-    <div className="min-h-dvh crossword-bg px-4 pb-10 pt-2">
-      <SiteBar backLabel={t("completion.backToMenu")} />
-
-      <div className="mx-auto mt-4 grid w-full max-w-md gap-4 sm:mt-6">
+    <PageShell width="md" bar={{ backLabel: t("completion.backToMenu") }}>
+      <div className="mt-4 grid gap-4 sm:mt-6">
         <div className="text-center">
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
             <Trophy className="size-6" aria-hidden="true" />
@@ -236,6 +234,6 @@ export function DailyLeaderboardScreen() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -25,6 +25,7 @@ import {
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
+import { PAGE_GUTTER } from "../components/PageShell";
 
 interface DailyHeroProps {
   slot: DailySlot;
@@ -183,7 +184,7 @@ export function MenuScreen() {
   );
 
   return (
-    <div className="min-h-dvh crossword-bg px-4 pb-8 pt-8 sm:pt-12">
+    <div className={`min-h-dvh crossword-bg pb-8 pt-8 sm:pt-12 ${PAGE_GUTTER}`}>
       {/* The wordmark constructs via a one-shot Lottie on the first menu visit of
           the session; later visits show its final frame (see Title). */}
       <Title animate className="mb-8 sm:mb-10" />

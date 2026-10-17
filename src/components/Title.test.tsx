@@ -38,8 +38,10 @@ describe("Title", () => {
     expect(screen.queryByTestId("lottie")).toBeNull();
     const still = screen.getByRole("img", { name: "Crossword Clash" });
     expect(still.tagName).toBe("IMG");
-    // Same box as the animation so the menu's layout is identical either way.
-    expect(still.style.aspectRatio).toBe("1222 / 326");
+    // Same box as the animation so the menu's layout is identical either way,
+    // with the cropped wordmark at its share of the comp's width inside it.
+    expect(still.parentElement?.style.aspectRatio).toBe("1222 / 326");
+    expect(still.style.width).toBe("93.781%");
   });
 
   it("shows the still under reduced motion without marking the intro played", () => {

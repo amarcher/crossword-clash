@@ -8,11 +8,69 @@ the dev server in the browser pane. Numbers below are from the production
 build on localhost, so load times are near zero and only the *shape* of the
 transition behaviour transfers to real networks.
 
+## Verdict
+
+There are four different page shells and they do not share an edge. The site
+bar is always a 1024 px column, while the page under it is 448, 672, 768 or
+1280 px wide, so on most inner pages the logo floats far to the left of the
+content and on the studio it sits inside it. The flow screens use a third
+pattern (chevron on the left, no logo) and the play screens a fourth. One
+shell component that puts the bar *inside* the page's own column fixes the
+alignment everywhere at once and is the prerequisite for a stable header
+during page transitions.
+
+Transitions themselves are instant swaps with no motion, no pending state,
+and no prefetch; locally they take 10–20 ms, so the smoothness work is
+choreography (a short cross-fade with the bar held still) and resilience on
+slow networks (prefetch on intent, a progress bar after ~150 ms), not raw
+speed. The one real jank is the menu's first paint, which moves after render
+for three separate reasons.
+
 ## Status
 
-- **Items 6–9 (stable first paint) — done, 2026-10-17.** Measured with the
-  same headless probe (production preview, cold cache, first visit of the
-  day, no localStorage), three runs each:
+**Items 1, 2, 3 and 5 shipped** (one page shell, PR "Site chrome: one page shell",
+2026-10-17). Items 6–9 shipped next (below). Items 4, 10 and 11 are open.
+
+- `src/components/PageShell.tsx` — `width` token (`md | 2xl | 3xl | 4xl | 5xl | 7xl`,
+  plus `widthLg` for the lobby's wider desktop column) puts the `SiteBar` and the
+  page content in one `mx-auto w-full max-w-* px-4 md:px-6` column. `PAGE_GUTTER`
+  is the shared gutter; `GameLayout`'s header and the menu use it too, so the
+  title's x position no longer differs between menu, inner pages and play.
+  `below` renders full-width content after the column (the classics' sticky
+  filter band, whose inner row uses `pageColumnClass("5xl")`).
+- `SiteBar` is width-agnostic (`w-full`, no max-width, no `-ml-1`) and gained
+  `onBack` for the flow screens; `FlowPage` renders it (logo left, back +
+  `action` right) instead of its own chevron row, and `HostImportScreen` passes
+  its back target into the hub's bar instead of stacking a second header.
+- `public/logo.png` is cropped to the wordmark (2292×500, 46.9 kB from 53.6 kB).
+  Heights were rescaled to keep the visible size: SiteBar `h-9 sm:h-11` (was
+  `h-12 sm:h-14` of the padded asset), `Title` static `h-28` (was `h-36`),
+  `TVBrand` 2.76u (was 3.6u), bookmarklet page 37/43 px (was 48/56).
+
+Measured with `scripts/chrome-alignment.mjs` (dev server, 1280×900 and 390×844):
+Δ logo = logo's first opaque pixel column minus the column's content-box left
+edge, Δ right = the bar's right slot's right edge minus the content-box right
+edge. Before, on `main` 633b859; after, this branch.
+
+| width | route | before Δ logo | before Δ right | after Δ logo | after Δ right |
+|---|---|---|---|---|---|
+| 1280 | /privacy | −205.5 | +208 | 0 | 0 |
+| 1280 | /daily/leaderboard | −285.5 | +288 | 0 | 0 |
+| 1280 | /nyt-import | −285.5 | +288 | 0 | 0 |
+| 1280 | /solo/import | −125.5 | +128 | 0 | 0 |
+| 1280 | /classics | −13.5 | +16 | 0 | 0 |
+| 1280 | /studio | +114.5 | −112 | 0 | 0 |
+| 1280 | /join, /host-game/name | no logo; chevron on the left | | 0 | 0 |
+| 1280 | /host-game/import | −125.5 (two headers) | +128 | 0 | 0 |
+| 390 | /privacy | −18.4 | +20 | 0 | 0 |
+| 390 | every other SiteBar page | +1.6 | 0 | 0 | 0 |
+| 390 | /join, /host-game/name | no logo; chevron on the left | | 0 | 0 |
+
+Back control: 44 px tall everywhere, 44×44 icon-only on phones.
+
+**Items 6–9 shipped** (stable first paint, PR #102, 2026-10-17). Measured with
+the same headless probe (production preview, cold cache, first visit of the
+day, no localStorage), three runs each:
 
   | Page | Desktop before → after | Phone before → after |
   |---|---|---|
@@ -44,25 +102,6 @@ transition behaviour transfers to real networks.
   that answer so repeat visits that day are stable. Reserving the slot
   permanently, or deciding from a bundled schedule, would need a product
   call.
-- Items 1–5, 10, 11: open.
-
-## Verdict
-
-There are four different page shells and they do not share an edge. The site
-bar is always a 1024 px column, while the page under it is 448, 672, 768 or
-1280 px wide, so on most inner pages the logo floats far to the left of the
-content and on the studio it sits inside it. The flow screens use a third
-pattern (chevron on the left, no logo) and the play screens a fourth. One
-shell component that puts the bar *inside* the page's own column fixes the
-alignment everywhere at once and is the prerequisite for a stable header
-during page transitions.
-
-Transitions themselves are instant swaps with no motion, no pending state,
-and no prefetch; locally they take 10–20 ms, so the smoothness work is
-choreography (a short cross-fade with the bar held still) and resilience on
-slow networks (prefetch on intent, a progress bar after ~150 ms), not raw
-speed. The one real jank is the menu's first paint, which moves after render
-for three separate reasons.
 
 ## Alignment — measured
 

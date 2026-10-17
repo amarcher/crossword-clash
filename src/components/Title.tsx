@@ -14,6 +14,8 @@ interface TitleProps {
 // Two rows of crossword cells — wide and short — sized by width so it scales
 // down on narrow screens.
 const ANIM_BOX = { width: "min(92vw, 600px)", aspectRatio: "1222 / 326" } as const;
+// The wordmark's width inside the comp: 2292 of 2444 (= 1222 × 2) units.
+const STILL_WIDTH = { width: `${((2292 / 2444) * 100).toFixed(3)}%` } as const;
 
 /** Set once the intro has played this tab session; later menu visits rest on the still. */
 export const LOGO_INTRO_PLAYED_KEY = "crossword-clash:logo-intro-played";
@@ -64,11 +66,14 @@ export function Title({ className = "", animate = false }: TitleProps) {
             <AnimatedLogo className="mx-auto" style={ANIM_BOX} autoplay />
           </Suspense>
         ) : (
-          /* The animation's final frame as a still: logo.png is rendered from the
-             same comp (crossword-lottie/scripts/render-still.mjs) at the same
-             aspect, so it fills the box pixel-for-pixel without loading lottie.
-             Also what reduced motion gets. */
-          <img src="/logo.png" alt="Crossword Clash" className="mx-auto object-contain" style={ANIM_BOX} />
+          /* The animation's final frame as a still, without loading lottie (also
+             what reduced motion gets). logo.png is the wordmark rendered from the
+             same comp (crossword-lottie/scripts/render-still.mjs) and cropped to
+             its opaque pixels, which the comp pads by 76px on every side — so it
+             sits centred in the animation's box at the wordmark's share of it. */
+          <div className="mx-auto flex items-center justify-center" style={ANIM_BOX}>
+            <img src="/logo.png" alt="Crossword Clash" width={2292} height={500} className="h-auto" style={STILL_WIDTH} />
+          </div>
         )}
       </div>
     );
@@ -79,7 +84,9 @@ export function Title({ className = "", animate = false }: TitleProps) {
       <img
         src="/logo.png"
         alt="Crossword Clash"
-        className="h-36 mx-auto object-contain"
+        width={2292}
+        height={500}
+        className="mx-auto h-28 w-auto"
       />
     </div>
   );
