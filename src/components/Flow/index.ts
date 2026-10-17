@@ -1,2 +1,2 @@
-export { FlowPage, BackButton } from "./FlowPage";
+export { FlowPage } from "./FlowPage";
 export { TextField, inputClass } from "./TextField";
