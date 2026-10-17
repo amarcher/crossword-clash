@@ -90,6 +90,25 @@ describe("puzzleReducer", () => {
       });
       expect(state.direction).toBe("down");
     });
+
+    it("keeps the direction when both words through the cell are real", () => {
+      const state = puzzleReducer(loadedState(), { type: "SELECT_CELL", row: 0, col: 1 });
+      expect(state.direction).toBe("across");
+    });
+
+    it("flips to the other direction on a square that belongs to one word only", () => {
+      // (1,0) sits in 1-Down (CAB) but its across "word" is the single cell
+      const state = puzzleReducer(loadedState(), { type: "SELECT_CELL", row: 1, col: 0 });
+      expect(state.selectedCell).toEqual({ row: 1, col: 0 });
+      expect(state.direction).toBe("down");
+    });
+
+    it("does not toggle onto a single-cell word when clicking the same cell", () => {
+      let state = puzzleReducer(loadedState(), { type: "SELECT_CELL", row: 1, col: 0 });
+      expect(state.direction).toBe("down");
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 1, col: 0 });
+      expect(state.direction).toBe("down");
+    });
   });
 
   describe("INPUT_LETTER", () => {
@@ -343,6 +362,13 @@ describe("puzzleReducer", () => {
   });
 
   describe("TOGGLE_DIRECTION", () => {
+    it("stays put on a square that belongs to one word only", () => {
+      let state = puzzleReducer(loadedState(), { type: "SELECT_CELL", row: 1, col: 2 });
+      expect(state.direction).toBe("down");
+      state = puzzleReducer(state, { type: "TOGGLE_DIRECTION" });
+      expect(state.direction).toBe("down");
+    });
+
     it("switches from across to down", () => {
       const state = puzzleReducer(loadedState(), { type: "TOGGLE_DIRECTION" });
       expect(state.direction).toBe("down");
@@ -451,12 +477,65 @@ describe("puzzleReducer", () => {
       expect(state.direction).toBe("down");
     });
 
-    it("does not move into black cells", () => {
+    it("moves cursor right and sets direction across", () => {
+      let state = puzzleReducer(loadedState(), { type: "TOGGLE_DIRECTION" });
+      expect(state.direction).toBe("down");
+      state = puzzleReducer(state, { type: "MOVE_SELECTION", dr: 0, dc: 1 });
+      expect(state.selectedCell).toEqual({ row: 0, col: 1 });
+      expect(state.direction).toBe("across");
+    });
+
+    it("skips over black cells to the next white cell", () => {
       let state = loadedState();
       state = puzzleReducer(state, { type: "SELECT_CELL", row: 1, col: 0 });
       state = puzzleReducer(state, { type: "MOVE_SELECTION", dr: 0, dc: 1 });
-      // (1,1) is black, should stay at (1,0)
-      expect(state.selectedCell).toEqual({ row: 1, col: 0 });
+      // (1,1) is black: land on (1,2). Its across word is the single cell, so
+      // the cursor settles on 2-Down, the only word through it.
+      expect(state.selectedCell).toEqual({ row: 1, col: 2 });
+      expect(state.direction).toBe("down");
+    });
+
+    it("skips several black cells in a row", () => {
+      const puzzle: Puzzle = {
+        title: "Wide",
+        author: "Test",
+        width: 4,
+        height: 1,
+        cells: [
+          [
+            { row: 0, col: 0, solution: "A", number: 1 },
+            { row: 0, col: 1, solution: null },
+            { row: 0, col: 2, solution: null },
+            { row: 0, col: 3, solution: "B", number: 2 },
+          ],
+        ],
+        clues: [],
+      };
+      let state = puzzleReducer(initialState, { type: "LOAD_PUZZLE", puzzle });
+      state = puzzleReducer(state, { type: "MOVE_SELECTION", dr: 0, dc: 1 });
+      expect(state.selectedCell).toEqual({ row: 0, col: 3 });
+      state = puzzleReducer(state, { type: "MOVE_SELECTION", dr: 0, dc: -1 });
+      expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+    });
+
+    it("stops at the grid edge when only black cells remain", () => {
+      const puzzle: Puzzle = {
+        title: "Edge",
+        author: "Test",
+        width: 3,
+        height: 1,
+        cells: [
+          [
+            { row: 0, col: 0, solution: "A", number: 1 },
+            { row: 0, col: 1, solution: null },
+            { row: 0, col: 2, solution: null },
+          ],
+        ],
+        clues: [],
+      };
+      const loaded = puzzleReducer(initialState, { type: "LOAD_PUZZLE", puzzle });
+      const state = puzzleReducer(loaded, { type: "MOVE_SELECTION", dr: 0, dc: 1 });
+      expect(state).toBe(loaded);
     });
 
     it("does not move out of bounds", () => {
@@ -466,6 +545,31 @@ describe("puzzleReducer", () => {
         dc: 0,
       });
       expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+    });
+  });
+
+  describe("LOAD_PUZZLE direction", () => {
+    it("starts down when the first white cell has no across word", () => {
+      const puzzle: Puzzle = {
+        title: "Tall",
+        author: "Test",
+        width: 2,
+        height: 2,
+        cells: [
+          [
+            { row: 0, col: 0, solution: "A", number: 1 },
+            { row: 0, col: 1, solution: null },
+          ],
+          [
+            { row: 1, col: 0, solution: "B" },
+            { row: 1, col: 1, solution: "C", number: 2 },
+          ],
+        ],
+        clues: [],
+      };
+      const state = puzzleReducer(initialState, { type: "LOAD_PUZZLE", puzzle });
+      expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+      expect(state.direction).toBe("down");
     });
   });
 });
