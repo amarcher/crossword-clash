@@ -27,7 +27,11 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     // Host: menu → Race friends → name → lobby.
     await host.goto("/menu");
     await waitForAnonAuth(host, "host");
-    await host.getByRole("button", { name: /Race friends/i }).click();
+    // Every daily tile has its own "Race friends", so scope to the mini's region.
+    await host
+      .getByRole("region", { name: "Daily Mini" })
+      .getByRole("button", { name: /Race friends/i })
+      .click();
     await expect(host).toHaveURL(/\/host-game\/name/);
     await host.getByRole("textbox", { name: /Your name/i }).fill("E2E Host");
     await host.getByRole("button", { name: /Create Room/i }).click();
