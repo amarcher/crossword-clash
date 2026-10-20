@@ -11,8 +11,15 @@ them.
 ## Status
 
 Items 1–10 shipped for the solver grid (October 2026; screenshots in
-`docs/grid-ui-audit/`). Still open: 11–12 (hover affordance, selection
-announcement), 13–17 (studio grid) and 18 (shared hidden input).
+`docs/grid-ui-audit/`), 13–16 for the studio grid. Items 11, 12, 17 and 18
+shipped together as the polish pass: white cells take a `surface-sunken`
+tint under a mouse (Tailwind's `hover:` is already gated on
+`@media (hover: hover)`), the hidden input names the cursor cell through
+`aria-activedescendant` and a `.grid-shell:focus-within` ring shows the grid
+owns the keyboard on pointer devices, the studio's block cursor carries a
+gold disc with a ▸/▾ glyph, and both grids share
+`src/hooks/useHiddenGridInput.ts` (zero-width sentinel, 16 px, synchronous
+focus). Nothing is open.
 
 ## Verdict
 

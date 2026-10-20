@@ -36,6 +36,8 @@ export function hexToRgba(hex: string, alpha: number): string {
 
 interface CellProps {
   cell: PuzzleCell;
+  /** DOM id, so the grid's hidden input can point aria-activedescendant at the cursor cell. */
+  id?: string;
   cellState?: CellState;
   isSelected: boolean;
   isHighlighted: boolean;
@@ -60,6 +62,7 @@ interface CellProps {
  */
 export const Cell = memo(function Cell({
   cell,
+  id,
   cellState,
   isSelected,
   isHighlighted,
@@ -86,7 +89,10 @@ export const Cell = memo(function Cell({
   const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : undefined;
 
   // Background priority: cursor > active word (over any player tint) > player tint > white.
-  let bg = "bg-surface";
+  // A plain white cell takes a faint sunken tint under a mouse (Tailwind's
+  // `hover:` is already gated on `@media (hover: hover)`, so touch never sees
+  // it); selection changes stay instant, with no transition anywhere.
+  let bg = onClick ? "bg-surface hover:bg-surface-sunken" : "bg-surface";
   let bgStyle: React.CSSProperties | undefined;
   if (isSelected) {
     bg = "bg-gold-400";
@@ -115,6 +121,7 @@ export const Cell = memo(function Cell({
 
   return (
     <div
+      id={id}
       role="gridcell"
       aria-label={ariaLabel}
       aria-selected={isSelected || undefined}

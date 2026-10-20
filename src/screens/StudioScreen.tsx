@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Flame, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
+import type { HiddenGridInputHandlers } from "../hooks/useHiddenGridInput";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
@@ -255,27 +256,19 @@ export function StudioScreen() {
     }
   }, [client, seedsText, size, state.symmetry, state.minScore, state.rejected, state.grid]);
 
-  const onKey = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
-    if (/^[a-z]$/i.test(e.key)) dispatch({ type: "TYPE", letter: e.key });
-    else if (e.key === "Backspace" || e.key === "Delete") dispatch({ type: "ERASE" });
-    else if (e.key === "." ) dispatch({ type: "TOGGLE_BLOCK" });
-    else if (e.key === " " || e.key === "Enter") dispatch({ type: "TOGGLE_DIR" });
-    else if (moves[e.key]) dispatch({ type: "MOVE", dRow: moves[e.key][0], dCol: moves[e.key][1] });
-    else return;
-    e.preventDefault();
-  }, []);
-
-  const onLetters = useCallback((text: string) => {
-    for (const ch of text) {
-      if (/[a-z]/i.test(ch)) dispatch({ type: "TYPE", letter: ch });
-      else if (ch === ".") dispatch({ type: "TOGGLE_BLOCK" });
-      else if (ch === " ") dispatch({ type: "TOGGLE_DIR" });
-    }
-  }, []);
-
-  const onErase = useCallback(() => dispatch({ type: "ERASE" }), []);
+  // The grid's hidden input (useHiddenGridInput) maps keys and soft-keyboard
+  // text onto these; Enter doubles as a direction toggle in the studio.
+  const gridInput = useMemo<HiddenGridInputHandlers>(
+    () => ({
+      onLetter: (letter) => dispatch({ type: "TYPE", letter }),
+      onErase: () => dispatch({ type: "ERASE" }),
+      onMove: (dRow, dCol) => dispatch({ type: "MOVE", dRow, dCol }),
+      onToggleDirection: () => dispatch({ type: "TOGGLE_DIR" }),
+      onToggleBlock: () => dispatch({ type: "TOGGLE_BLOCK" }),
+      onEnter: () => dispatch({ type: "TOGGLE_DIR" }),
+    }),
+    [],
+  );
 
   const heat = useMemo(() => (showHeat && heatCounts ? cellHeat(base, heatCounts) : undefined), [showHeat, heatCounts, base]);
   const stats = gridStats(state.grid);
@@ -342,12 +335,11 @@ export function StudioScreen() {
             <StudioGrid
               grid={state.grid}
               cursor={state.cursor}
+              direction={state.dir}
               activeCells={slot?.cells ?? []}
               heat={heat}
               onSelect={(cell) => dispatch({ type: "SELECT", cell })}
-              onKey={onKey}
-              onLetters={onLetters}
-              onErase={onErase}
+              input={gridInput}
             />
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {busy ? (
