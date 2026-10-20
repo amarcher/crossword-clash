@@ -13,6 +13,7 @@ import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import { loadPlayerName } from "../lib/playerName";
 import type { PendingDailyResult } from "../lib/dailyLeaderboard";
+import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -147,7 +148,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     () => mpSession?.displayName ?? loadPlayerName() ?? tStatic('common.defaultPlayerName'),
   );
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
-  const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
+  // A finished solo puzzle restored at launch has had its celebration already:
+  // the play screen opens on the solved grid with the modal closed (its header
+  // can re-open it). A fresh finish starts with the modal shown.
+  const [completionModalDismissed, setCompletionModalDismissed] = useState(() => {
+    const saved = initialSavedSession?.puzzle;
+    if (!saved) return false;
+    const timer = loadSoloTimer();
+    return !!timer?.completed && timer.key === puzzleIdentity(saved);
+  });
   const [pendingDailyResult, setPendingDailyResult] = useState<PendingDailyResult | null>(null);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);

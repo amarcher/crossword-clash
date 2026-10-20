@@ -199,3 +199,35 @@ describe("Cell", () => {
     expect(numberSpan.className).toContain("text-ink-soft");
   });
 });
+
+describe("Cell hover and announcement", () => {
+  it("carries the id the grid's hidden input points aria-activedescendant at", () => {
+    const { container } = render(
+      <Cell cell={whiteCell()} id="g-0-0" isSelected={true} isHighlighted={false} />,
+    );
+    expect(container.firstElementChild!.id).toBe("g-0-0");
+    expect(container.firstElementChild!.getAttribute("aria-label")).toBe("Row 1, Column 1, 1");
+  });
+
+  it("tints a plain clickable cell on hover only", () => {
+    const onClick = vi.fn();
+    const plain = render(
+      <Cell cell={whiteCell()} isSelected={false} isHighlighted={false} onClick={onClick} />,
+    );
+    expect(plain.container.firstElementChild!.className).toContain("hover:bg-surface-sunken");
+    plain.unmount();
+
+    for (const props of [{ isSelected: true, isHighlighted: false }, { isSelected: false, isHighlighted: true }]) {
+      const { container, unmount } = render(<Cell cell={whiteCell()} onClick={onClick} {...props} />);
+      expect(container.firstElementChild!.className).not.toContain("hover:");
+      unmount();
+    }
+  });
+
+  it("has no hover tint when it is not clickable", () => {
+    const { container } = render(
+      <Cell cell={whiteCell()} isSelected={false} isHighlighted={false} />,
+    );
+    expect(container.firstElementChild!.className).not.toContain("hover:");
+  });
+});

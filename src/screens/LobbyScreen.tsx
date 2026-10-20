@@ -47,7 +47,7 @@ export function LobbyScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [mp, game, navigate, confirm]);
 
   const handleLeave = useCallback(async () => {
@@ -57,7 +57,7 @@ export function LobbyScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [mp, game, navigate]);
 
   if (!game.puzzle) return <Navigate to="/" replace />;

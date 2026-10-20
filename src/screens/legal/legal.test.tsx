@@ -58,7 +58,7 @@ describe("NotFoundScreen", () => {
     render(<NotFoundScreen />, { wrapper: Router });
     expect(screen.getByText("Page not found")).toBeTruthy();
     const link = screen.getByRole("link", { name: "Back to menu" });
-    expect(link.getAttribute("href")).toBe("/");
+    expect(link.getAttribute("href")).toBe("/menu");
   });
 });
 
@@ -81,7 +81,7 @@ describe("RouteErrorScreen", () => {
     render(<RouterProvider router={boom("kaboom")} />);
     expect(await screen.findByText("Something went wrong")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Back to menu" }).getAttribute("href")).toBe("/");
+    expect(screen.getByRole("link", { name: "Back to menu" }).getAttribute("href")).toBe("/menu");
     expect(screen.queryByText(/Unexpected Application Error/)).toBeNull();
   });
 

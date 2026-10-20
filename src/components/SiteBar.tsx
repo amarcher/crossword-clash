@@ -25,7 +25,9 @@ const LOGO = "inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visibl
  * logo image (`brand`) is what the menu's wordmark morphs into. Its links
  * warm the next chunk on intent.
  */
-export function SiteBar({ backLabel, backTo = "/", onBack, plain, right }: SiteBarProps) {
+// "/" is the cold-start resolver (it resumes a saved game or room); in-app
+// links that mean "the menu" go to /menu so they never land in a puzzle.
+export function SiteBar({ backLabel, backTo = "/menu", onBack, plain, right }: SiteBarProps) {
   const backInner = (
     <>
       <ArrowLeft className="size-4" aria-hidden="true" />
@@ -48,9 +50,9 @@ export function SiteBar({ backLabel, backTo = "/", onBack, plain, right }: SiteB
   return (
     <header data-site-bar className="vt-site-bar flex w-full items-center justify-between gap-3">
       {plain ? (
-        <a href="/" className={LOGO}>{logo}</a>
+        <a href="/menu" className={LOGO}>{logo}</a>
       ) : (
-        <TransitionLink to="/" className={LOGO}>{logo}</TransitionLink>
+        <TransitionLink to="/menu" className={LOGO}>{logo}</TransitionLink>
       )}
       <div data-site-bar-right className="flex items-center gap-2">
         {right}

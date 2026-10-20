@@ -7,7 +7,7 @@ export function NotFoundScreen() {
   const { t } = useTranslation();
   return (
     <NoticeScreen icon={Compass} title={t("errors.notFoundTitle")} body={t("errors.notFoundBody")}>
-      <Link to="/" className={primaryButtonClass}>
+      <Link to="/menu" className={primaryButtonClass}>
         {t("errors.backToMenu")}
       </Link>
     </NoticeScreen>

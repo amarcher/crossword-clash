@@ -84,7 +84,7 @@ export async function fetchEnabledProviders(): Promise<Record<AuthProvider, bool
 
 /**
  * Starts the provider's sign-in; the page navigates away on success and comes
- * back to `returnTo` (default: the current page). Pass `returnTo: "/"` from a
+ * back to `returnTo` (default: the current page). Pass `returnTo: "/menu"` from a
  * screen that cannot finish a sign-in itself (for example a play screen), so
  * the menu, which calls resumeSignIn, picks it up.
  */
@@ -157,6 +157,17 @@ export function resumeSignIn(): Promise<SignInReturn> {
  */
 export async function signOut(): Promise<void> {
   await client().auth.signOut();
+}
+
+/**
+ * Permanently deletes the signed-in account and its data (the delete-account
+ * edge function), then signs out here; play continues anonymously.
+ */
+export async function deleteAccount(): Promise<void> {
+  const { error } = await client().functions.invoke("delete-account", { body: {} });
+  if (error) throw error;
+  // The server session is already gone; just drop the local one.
+  await client().auth.signOut({ scope: "local" });
 }
 
 // ---- Profiles ----

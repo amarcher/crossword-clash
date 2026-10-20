@@ -231,6 +231,38 @@ i.e. the *same puzzle* in the same room; New puzzle → `/host-game/import`.
     to the importer rather than the menu; on the native app the importer
     is the wrong fallback, so make that redirect `/menu`.
 
+### Status (§4, 2026-10-20)
+
+Items 12–15 shipped together (branch `claude/blissful-lalande-17c062`):
+
+- **12** — `SiteBar`'s default `backTo` and its logo link are `/menu`; so are
+  the error/not-found screens, the importing screen's "Back to menu", and
+  every `navigate("/")` that had already cleared its own state (host name,
+  lobby close/leave, join back, puzzle-ready back, solo and multiplayer
+  reset, the room-closed handlers). The account sheet's `returnTo` from the
+  play screens is `/menu`. `/` is now only the cold-start resolver; the
+  deep-linked screens' `<Navigate to="/">` guards (no puzzle → resolve) are
+  unchanged. Router test: the bar's back lands on `/menu` with both a saved
+  solo session and a saved room session armed.
+- **13** — `MpSession.savedAt` (`SESSION_VERSION` 2; a v1 payload is parsed
+  but counts as expired). `loadMpSession()` returns null past 12 h, so the
+  cold-start resolver, `GameProvider` and the rejoin effect all ignore it.
+  Re-saving the *same* room keeps its stamp (a cold start cannot refresh the
+  session it is judging); `touchMpSession()` renews it every minute and on
+  hide/pagehide while the player is in the room. The rejoin effect refuses
+  a `waiting` room unless the session was touched within the hour. Clearing
+  on room close / game finish / host leaving the lobby already existed; a
+  finished game is no longer re-saved when the display name changes.
+- **14** — `completionModalDismissed` starts true when the restored solo
+  puzzle's timer record says it was finished, and is set before the modal
+  navigates to the leaderboard or the sign-in sheet. The game header shows
+  `FinishedBar` ("Solved in 1:42" chip + Share, which re-opens the modal,
+  + Leaderboard for a daily, which goes straight to the board) in place of
+  the running clock (solo) / the room code (multiplayer). Loading a new solo
+  puzzle resets the flag (previously a dismissed celebration also hid the
+  next puzzle's).
+- **15** — `/solo/play` with no puzzle redirects to `/menu`.
+
 ## 5. Native app specifics (from code)
 
 - `MODE === "mobile"` swaps the importer's copy but still shows the file

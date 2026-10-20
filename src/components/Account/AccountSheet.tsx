@@ -2,14 +2,14 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LogOut, UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
-import { accountName, AUTH_PROVIDERS, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
+import { accountName, AUTH_PROVIDERS, deleteAccount, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
 import { track } from "../../lib/analytics";
 import { useSolveHistory } from "../../hooks/useSolveHistory";
 import { Button } from "../ui";
 import { UsernamePicker } from "./UsernamePicker";
 import type { AccountContextValue } from "../../contexts/AccountContext";
 
-export type AccountSheetView = "account" | "username";
+export type AccountSheetView = "account" | "username" | "delete";
 
 interface AccountSheetProps {
   account: AccountContextValue;
@@ -25,6 +25,7 @@ interface AccountSheetProps {
  * buttons (disabled when Supabase has a provider off). Signed in: who you are,
  * your username (or a nudge to pick one) and sign out. The username view is
  * the picker, shown once after the first sign-in and again on "Change".
+ * "Delete account" asks once before it deletes.
  */
 export function AccountSheet({ account, initialView, initialError, returnTo, placement, onClose }: AccountSheetProps) {
   const { t } = useTranslation();
@@ -75,9 +76,16 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
       setBusy(false);
     });
 
+  const handleDelete = () =>
+    void act(async () => {
+      await deleteAccount();
+      track("account_deleted");
+    });
+
   const username = profile?.username ?? null;
   const name = user ? username ?? accountName(user) : "";
-  const title = view === "username" ? t("account.chooseUsername") : user ? name : t("account.sheetTitle");
+  const title =
+    view === "username" ? t("account.chooseUsername") : view === "delete" ? t("account.deleteTitle") : user ? name : t("account.sheetTitle");
 
   return (
     <div
@@ -107,6 +115,8 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             </h2>
             {view === "username" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.usernameBody")}</p>
+            ) : view === "delete" ? (
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
             ) : user ? (
               <p className="mt-1 truncate text-sm text-muted">{username ? accountName(user) : t("account.noUsernameYet")}</p>
             ) : (
@@ -137,6 +147,15 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
               onCancel={username ? () => setView("account") : onClose}
               cancelLabel={username ? t("account.close") : t("account.later")}
             />
+          ) : view === "delete" && user ? (
+            <div className="flex flex-col gap-2.5">
+              <Button variant="danger" size="lg" block disabled={busy} aria-busy={busy || undefined} onClick={handleDelete}>
+                {t("account.deleteConfirm")}
+              </Button>
+              <Button variant="ghost" size="md" block disabled={busy} onClick={() => setView("account")}>
+                {t("account.cancel")}
+              </Button>
+            </div>
           ) : user ? (
             <div className="flex flex-col gap-2.5">
               <Button variant="secondary" size="lg" block onClick={() => setView("username")}>
@@ -154,6 +173,13 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
                     ? t("account.syncOffline")
                     : t("account.syncing")}
               </p>
+              <button
+                type="button"
+                onClick={() => setView("delete")}
+                className="mx-auto mt-1 min-h-11 rounded-lg px-3 text-xs text-subtle underline-offset-2 hover:text-muted hover:underline active:text-muted focus-visible:outline-2 focus-visible:outline-brand-500"
+              >
+                {t("account.deleteAccount")}
+              </button>
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">

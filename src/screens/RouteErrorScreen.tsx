@@ -71,7 +71,7 @@ export function RouteErrorScreen() {
       <button type="button" onClick={() => window.location.reload()} className={primaryButtonClass}>
         {t("errors.reload")}
       </button>
-      <a href="/" className={secondaryButtonClass}>
+      <a href="/menu" className={secondaryButtonClass}>
         {t("errors.backToMenu")}
       </a>
     </NoticeScreen>
