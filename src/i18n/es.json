@@ -509,7 +509,12 @@
     "syncedNone": "Aún no hay partidas sincronizadas. Termina un crucigrama y quedará guardado aquí.",
     "syncedSolves_one": "{{count}} partida sincronizada con tu cuenta",
     "syncedSolves_other": "{{count}} partidas sincronizadas con tu cuenta",
-    "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión."
+    "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión.",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteTitle": "¿Eliminar tu cuenta?",
+    "deleteBody": "Se eliminarán tu cuenta y sus datos de forma permanente. Esta acción no se puede deshacer.",
+    "deleteConfirm": "Eliminar cuenta",
+    "cancel": "Cancelar"
   },
   "meta": {
     "home": {

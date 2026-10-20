@@ -18,15 +18,22 @@ function chain(): Record<string, unknown> {
   return self;
 }
 
+let invokeError: Error | null = null;
+
 vi.mock("./supabaseClient", () => ({
-  supabase: { from: (table: string) => (calls.push({ method: "from", args: [table] }), chain()) },
+  supabase: {
+    from: (table: string) => (calls.push({ method: "from", args: [table] }), chain()),
+    functions: { invoke: (name: string, opts: unknown) => (calls.push({ method: "invoke", args: [name, opts] }), Promise.resolve({ data: null, error: invokeError })) },
+    auth: { signOut: (opts: unknown) => (calls.push({ method: "signOut", args: [opts] }), Promise.resolve({ error: null })) },
+  },
 }));
 
-import { fetchProfile, isUsernameTaken, saveUsername } from "./account";
+import { deleteAccount, fetchProfile, isUsernameTaken, saveUsername } from "./account";
 
 beforeEach(() => {
   calls.length = 0;
   nextResult = { data: null, error: null };
+  invokeError = null;
 });
 
 const names = () => calls.map((c) => c.method);
@@ -83,5 +90,21 @@ describe("saveUsername", () => {
   it("passes other failures through with their message", async () => {
     nextResult = { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };
     await expect(saveUsername("u1", "ada")).resolves.toEqual({ ok: false, reason: "error", message: "new row violates row-level security policy" });
+  });
+});
+
+describe("deleteAccount", () => {
+  it("deletes on the server, then drops the local session", async () => {
+    await deleteAccount();
+    expect(calls).toEqual([
+      { method: "invoke", args: ["delete-account", { body: {} }] },
+      { method: "signOut", args: [{ scope: "local" }] },
+    ]);
+  });
+
+  it("stays signed in when the server refuses", async () => {
+    invokeError = new Error("unauthorized");
+    await expect(deleteAccount()).rejects.toThrow("unauthorized");
+    expect(names()).not.toContain("signOut");
   });
 });
