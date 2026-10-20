@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Check, Dices, EyeOff, Swords } from "lucide-react";
+import { BookOpen, Check, Dices, EyeOff } from "lucide-react";
 import { PageShell, pageColumnClass } from "../components/PageShell";
+import { ClassicList } from "../components/ClassicList";
 import { Button } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
@@ -13,11 +14,9 @@ import {
   loadClassicManifest,
   loadClassicPuzzle,
   pickRandom,
-  sizeBucket,
   type ClassicEntry,
   type SizeBucket,
 } from "../lib/classicLibrary";
-import { formatDuration } from "../lib/soloStats";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { track } from "../lib/analytics";
 
@@ -189,72 +188,15 @@ export function ClassicLibraryScreen() {
             ) : visible.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted">{t("classics.emptyFilter")}</p>
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((entry) => {
-                  const best = bestTimes[entry.identity];
-                  const isSolved = typeof best === "number";
-                  const isBusy = busy === entry.file;
-                  return (
-                    <li
-                      key={entry.file}
-                      className={`relative flex flex-col rounded-2xl border bg-surface p-4 shadow-card transition-[box-shadow,border-color] duration-150 hover:shadow-raised ${
-                        isSolved ? "border-brand-200" : "border-line hover:border-line-strong"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="min-w-0 text-xs font-semibold uppercase tracking-[0.06em] text-subtle tabular-nums">
-                          {t("classics.cardEyebrow", {
-                            number: entry.number,
-                            size: `${entry.width}×${entry.height}`,
-                            clues: entry.clues,
-                          })}
-                          {" · "}
-                          {t(`classics.size.${sizeBucket(entry)}`)}
-                        </p>
-                        {isSolved && (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 tabular-nums ring-1 ring-brand-100">
-                            <Check className="size-3.5" aria-hidden="true" />
-                            {formatDuration(best)}
-                          </span>
-                        )}
-                      </div>
-                      <h2 className="mt-1.5 font-display text-lg font-semibold leading-snug tracking-tight text-ink">
-                        {entry.title}
-                      </h2>
-                      <p className="text-sm text-muted">{t("classics.by", { author: entry.author })}</p>
-                      {entry.blurb && (
-                        <p className="mt-2 line-clamp-3 text-sm italic leading-snug text-ink-soft">“{entry.blurb}”</p>
-                      )}
-                      <div className="mt-auto flex gap-2 pt-4">
-                        {/* The play button's ::after stretches over the whole card, so the card itself is the "play solo" target. */}
-                        <Button
-                          variant={isSolved ? "secondary" : "soft"}
-                          onClick={() => void playSolo(entry)}
-                          disabled={busy !== null}
-                          className="flex-1 after:absolute after:inset-0 after:rounded-2xl"
-                        >
-                          {isBusy
-                            ? t("classics.loadingPuzzle")
-                            : isSolved
-                              ? t("classics.playAgain")
-                              : t("classics.playSolo")}
-                        </Button>
-                        {canRace && (
-                          <Button
-                            variant="ghost"
-                            onClick={() => void raceFriends(entry)}
-                            disabled={busy !== null || authLoading}
-                            className="relative z-10"
-                          >
-                            <Swords className="size-4" aria-hidden="true" />
-                            {t("classics.raceFriends")}
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <ClassicList
+                entries={visible}
+                bestTimes={bestTimes}
+                busy={busy}
+                intent="library"
+                onPrimary={(entry) => void playSolo(entry)}
+                onRace={canRace ? (entry) => void raceFriends(entry) : undefined}
+                raceDisabled={authLoading}
+              />
             )}
 
             <p className="mx-auto mt-10 max-w-2xl px-2 text-center text-xs leading-snug text-subtle">

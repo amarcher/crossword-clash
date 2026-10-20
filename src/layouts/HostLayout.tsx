@@ -12,7 +12,6 @@ import {
   createGame,
   createNextGame,
 } from "../lib/puzzleService";
-import { supabase } from "../lib/supabaseClient";
 import { loadHostSession, saveHostSession, clearHostSession } from "../lib/sessionPersistence";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import {
@@ -119,8 +118,8 @@ export interface HostContextValue {
   handlePuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer) => Promise<void>;
   handleStartGame: () => Promise<void>;
   handleCloseRoom: () => Promise<void>;
+  /** "Next puzzle, same room": the TV importer, which reuses the share code (createNextGame). */
   handleNewPuzzle: () => void;
-  handleRematch: () => Promise<void>;
   handleBackToMenu: () => void;
 }
 
@@ -511,27 +510,6 @@ export function HostLayout() {
     navigate("/host/import");
   }, [navigate]);
 
-  const handleRematch = useCallback(async () => {
-    if (!user || !supabase || !multiplayer.shareCode || !gameId) return;
-    const { data: prev } = await supabase
-      .from("games")
-      .select("puzzle_id")
-      .eq("id", gameId)
-      .single();
-    if (!prev?.puzzle_id) return;
-
-    const result = await createNextGame(prev.puzzle_id, user.id, multiplayer.shareCode, {
-      spectator: true,
-    });
-    if (!result) return;
-
-    multiplayer.broadcastNewGame(result.gameId);
-    setGameId(result.gameId);
-    saveHostSession({ gameId: result.gameId });
-    setCompletionModalDismissed(true);
-    navigate(`/host/lobby/${result.gameId}`);
-  }, [user, multiplayer, gameId, navigate]);
-
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
     setGameId(null);
@@ -645,7 +623,6 @@ export function HostLayout() {
     handleStartGame,
     handleCloseRoom,
     handleNewPuzzle,
-    handleRematch,
     handleBackToMenu,
   };
 

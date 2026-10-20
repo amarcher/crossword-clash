@@ -145,6 +145,7 @@ export const routes: RouteObject[] = [
           { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
           { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
           { path: "classics", lazy: () => m.classics().then((s) => ({ Component: s.ClassicLibraryScreen })) },
+          { path: "pick-puzzle", lazy: () => m.puzzlePicker().then((s) => ({ Component: s.PuzzlePickerScreen })) },
           { path: "host-game/name", lazy: () => m.hostName().then((s) => ({ Component: s.HostNameScreen })) },
           { path: "host-game/import", lazy: () => m.hostImport().then((s) => ({ Component: s.HostImportScreen })) },
           { path: "lobby/:gameId", lazy: () => m.lobby().then((s) => ({ Component: s.LobbyScreen })) },

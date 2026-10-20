@@ -209,8 +209,6 @@
     "clues": "Pistas",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} celdas completadas",
-    "newPuzzle": "Elegir otro crucigrama",
-    "playAgain": "Jugar de nuevo",
     "backToMenu": "Volver al menú",
     "ariaLabel": "Crucigrama completo",
     "share": "Compartir resultado",
@@ -247,7 +245,17 @@
     "nytTomorrow": "¿Mañana a la misma hora? Abre el crucigrama del NYT de mañana y vuelve a hacer clic en el marcador.",
     "nytStreak": "Racha NYT de {{count}} días",
     "saveHistory": "Conserva esta partida",
-    "saveHistoryHint": "Inicia sesión para guardar tus rachas y tiempos en todos tus dispositivos."
+    "saveHistoryHint": "Inicia sesión para guardar tus rachas y tiempos en todos tus dispositivos.",
+    "shareTime": "Compartir tu tiempo",
+    "upNext": "A continuación",
+    "nextClassic": "Siguiente clásico: n.º {{number}}",
+    "nextClassicSubtitle": "{{title}} · {{size}}",
+    "browseLibrary": "Explorar la biblioteca",
+    "browseLibraryHint": "Clásicos gratis del primer libro de crucigramas",
+    "raceFresh": "Carrera en vivo con un amigo",
+    "raceFreshHint": "Organiza un crucigrama nuevo: invita por enlace o QR",
+    "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
+    "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene"
   },
   "leaderboard": {
     "title": "Clasificación diaria",
@@ -267,7 +275,10 @@
     "signSave": "Guardar",
     "signedAs": "En la clasificación como {{name}} ✓",
     "titleMidi": "Clasificación del Midi del día",
-    "playTodayMidi": "Jugar el Midi de hoy"
+    "playTodayMidi": "Jugar el Midi de hoy",
+    "solvedIn": "Resuelto en {{time}}",
+    "rankToday": "n.º {{rank}} hoy",
+    "posting": "Publicando tu tiempo…"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",
@@ -291,10 +302,7 @@
     "shareCaption": "Resolví \"{{title}}\" en {{time}} en Crossword Clash, ¿puedes superarme? {{url}}",
     "resultBeat": "¡Superaste a {{name}} por {{delta}}! 🎉",
     "resultLost": "{{name}} fue más rápido por {{delta}}",
-    "resultTied": "¡Empate técnico con {{name}}!",
-    "playLive": "Jugar en vivo",
-    "rematchLive": "Revancha en vivo",
-    "playLiveHint": "Organiza un crucigrama nuevo cara a cara: invita por enlace o QR."
+    "resultTied": "¡Empate técnico con {{name}}!"
   },
   "tts": {
     "unmute": "Activar sonido",
@@ -538,5 +546,17 @@
     "support": {
       "description": "Ayuda con Crossword Clash: importar crucigramas, crear y unirse a salas multijugador, los crucigramas diarios, las cuentas y cómo contactarnos."
     }
+  },
+  "picker": {
+    "title": "Elige un crucigrama",
+    "subtitleRace": "Todos compiten en el mismo crucigrama nuevo. Recibirás un código de sala para compartir.",
+    "subtitleNext": "La sala conserva su código: los jugadores te siguen al nuevo crucigrama.",
+    "todaysDailies": "Los diarios de hoy",
+    "allDailiesSolved": "Ya resolviste todos los diarios de hoy; elige un clásico abajo.",
+    "classics": "Biblioteca clásica",
+    "pick": "Elegir",
+    "setting": "Preparando…",
+    "error": "No se pudo preparar ese crucigrama. Prueba con otro.",
+    "back": "Atrás"
   }
 }

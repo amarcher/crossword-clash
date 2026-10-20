@@ -25,6 +25,20 @@ the finished puzzle (measured), and with a stale room session on the device
 it drops the player into that room's lobby, which is the "host the game
 screen" you hit on the phone.
 
+## Status
+
+- **§2 (items 5–8) and §3 (items 9–11)** shipped (this PR): the modal is
+  Share-first with an "Up next" list and a fresh-puzzle race; the multiplayer
+  "Next puzzle, same room" and the board's race go through the new picker
+  (`/pick-puzzle`), never the solved puzzle; the board awaits the pending
+  submission, shows the finisher's own row at once, refetches on
+  `visibilitychange`, and replaces "Play Today's Mini" with "Solved in … · #n
+  today" once the viewer has solved the slot; one `BoardSignForm` serves the
+  modal and the board. Screenshots in `docs/navigation-finish/`.
+- **§4** (back targets, session expiry, finished-state return) is in a
+  sibling branch. **§1** (the result block, merged share/challenge, native
+  share sheet) is next; `ShareResultButton` was only re-labelled and moved.
+
 ## 1. Sharing — the viral loop
 
 ### What happens today

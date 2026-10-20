@@ -18,9 +18,8 @@ import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
-import { createNextGame } from "../lib/puzzleService";
-import { supabase } from "../lib/supabaseClient";
-import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
+import { clearMpSession } from "../lib/sessionPersistence";
+import { pickerPath } from "./PuzzlePickerScreen";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
@@ -162,27 +161,24 @@ export function MultiplayerPlayScreen() {
     signedIn: !!user && !user.is_anonymous,
   });
   const dailySubmittedRef = useRef(false);
+  const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (dailySubmittedRef.current || !dailySlot || !user) return;
     if (isAsync) {
       if (myFinishSeconds === undefined) return;
       dailySubmittedRef.current = true;
       recordDailyPlay();
-      void submitDailyResult({
-        day: todayKey(),
-        slot: dailySlot,
-        userId: user.id,
-        displayName: game.displayName,
-        mode: "race",
-        seconds: myFinishSeconds,
-        gameId: game.gameId,
-      });
+      // Parked in context too, so the board awaits the post (audit §3, item 9).
+      const day = todayKey();
+      const entry = { userId: user.id, displayName: game.displayName, mode: "race" as const, seconds: Math.max(0, Math.floor(myFinishSeconds)) };
+      const settled = submitDailyResult({ day, slot: dailySlot, ...entry, gameId: game.gameId });
+      setPendingDailyResult({ day, slot: dailySlot, entry, settled });
       return;
     }
     if (gameStatus !== "completed") return;
     dailySubmittedRef.current = true;
     recordDailyPlay();
-  }, [gameStatus, dailySlot, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
+  }, [gameStatus, dailySlot, user, isAsync, myFinishSeconds, game.displayName, game.gameId, setPendingDailyResult]);
 
   // NYT-bookmarklet return loop (mirrors SoloPlayScreen): a finished NYT
   // puzzle rolls the NYT streak for everyone in the room, including friends
@@ -245,35 +241,13 @@ export function MultiplayerPlayScreen() {
     handleReset();
   }, [mp, handleReset, confirm, t]);
 
-  const handleNewPuzzle = useCallback(() => {
+  // "Next puzzle, same room" (audit §2, item 6): the picker chooses a FRESH
+  // puzzle and calls createNextGame with ITS id, so the room code stays and
+  // nobody replays the grid they have all just seen.
+  const handleNextPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
-    navigate("/host-game/import");
+    navigate(pickerPath("next"));
   }, [setCompletionModalDismissed, navigate]);
-
-  const handleRematch = useCallback(async () => {
-    if (!user || !supabase || !shareCode || !game.gameId) return;
-    const { data: prev } = await supabase
-      .from("games")
-      .select("puzzle_id")
-      .eq("id", game.gameId)
-      .single();
-    if (!prev?.puzzle_id) return;
-
-    const result = await createNextGame(prev.puzzle_id, user.id, shareCode, {
-      displayName: game.displayName,
-    });
-    if (!result) return;
-
-    mp.broadcastNewGame(result.gameId);
-    game.setGameId(result.gameId);
-    saveMpSession({
-      gameId: result.gameId,
-      shareCode: result.shortCode,
-      displayName: game.displayName,
-    });
-    setCompletionModalDismissed(true);
-    navigate(`/lobby/${result.gameId}`);
-  }, [user, shareCode, game, mp, setCompletionModalDismissed, navigate]);
 
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
@@ -499,8 +473,7 @@ export function MultiplayerPlayScreen() {
         nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
-        onRematch={canChooseNewPuzzle ? handleRematch : undefined}
-        onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
+        onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
       />

@@ -209,8 +209,6 @@
     "clues": "Clues",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} cells filled",
-    "newPuzzle": "New puzzle",
-    "playAgain": "Play again",
     "backToMenu": "Back to menu",
     "ariaLabel": "Puzzle complete",
     "share": "Share result",
@@ -247,7 +245,17 @@
     "nytTomorrow": "Same time tomorrow? Open tomorrow's NYT puzzle and click the bookmark again.",
     "nytStreak": "{{count}}-day NYT streak",
     "saveHistory": "Keep this solve",
-    "saveHistoryHint": "Sign in to save your streaks and times across devices."
+    "saveHistoryHint": "Sign in to save your streaks and times across devices.",
+    "shareTime": "Share your time",
+    "upNext": "Up next",
+    "nextClassic": "Next classic: No. {{number}}",
+    "nextClassicSubtitle": "{{title}} · {{size}}",
+    "browseLibrary": "Browse the library",
+    "browseLibraryHint": "Free classics from the first crossword book",
+    "raceFresh": "Race a friend live",
+    "raceFreshHint": "Host a fresh puzzle — invite by link or QR",
+    "nextPuzzleSameRoom": "Next puzzle, same room",
+    "nextPuzzleSameRoomHint": "Pick a fresh puzzle — the room code stays"
   },
   "leaderboard": {
     "title": "Daily Leaderboard",
@@ -267,7 +275,10 @@
     "signSave": "Save",
     "signedAs": "On the board as {{name}} ✓",
     "titleMidi": "Daily Midi Leaderboard",
-    "playTodayMidi": "Play Today's Midi"
+    "playTodayMidi": "Play Today's Midi",
+    "solvedIn": "Solved in {{time}}",
+    "rankToday": "#{{rank}} today",
+    "posting": "Posting your time…"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",
@@ -291,10 +302,7 @@
     "shareCaption": "I solved \"{{title}}\" in {{time}} on Crossword Clash — can you beat me? {{url}}",
     "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
     "resultLost": "{{name}} was faster by {{delta}}",
-    "resultTied": "Dead heat with {{name}}!",
-    "playLive": "Play live",
-    "rematchLive": "Rematch live",
-    "playLiveHint": "Host a fresh puzzle head-to-head — invite by link or QR."
+    "resultTied": "Dead heat with {{name}}!"
   },
   "tts": {
     "unmute": "Unmute",
@@ -538,5 +546,17 @@
     "support": {
       "description": "Get help with Crossword Clash: importing puzzles, hosting and joining multiplayer rooms, the daily puzzles, accounts, and how to reach us."
     }
+  },
+  "picker": {
+    "title": "Pick a puzzle",
+    "subtitleRace": "Everyone races the same fresh puzzle. You'll get a room code to share.",
+    "subtitleNext": "The room keeps its code — players follow you to the new puzzle.",
+    "todaysDailies": "Today's dailies",
+    "allDailiesSolved": "You've solved all of today's dailies — pick a classic below.",
+    "classics": "Classic library",
+    "pick": "Pick",
+    "setting": "Setting up…",
+    "error": "Couldn't set that puzzle up. Please try another.",
+    "back": "Back"
   }
 }
