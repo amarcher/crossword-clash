@@ -20,6 +20,10 @@ import { clearSoloTimer, dayKey, effectiveStreak, formatDuration, puzzleIdentity
 import { recordSolve, type SolveOutcome } from "../lib/solveHistory";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
+import { useNextUp } from "../hooks/useNextUp";
+import type { NextUpItem } from "../lib/nextUp";
+import { loadClassicPuzzle } from "../lib/classicLibrary";
+import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
@@ -122,21 +126,31 @@ export function SoloPlayScreen() {
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
     signedIn: !!user && !user.is_anonymous,
   });
+  // The finish is also parked in context as a pending result, so the board
+  // can await the round trip instead of racing it (audit §3, item 9).
   const dailySubmittedRef = useRef(false);
+  const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
     if (!dailySlot || !user) return;
     dailySubmittedRef.current = true;
-    void submitDailyResult({
-      day: todayKey(),
-      slot: dailySlot,
-      userId: user.id,
-      displayName: game.displayName,
-      mode: "solo",
-      seconds: soloResult.finishSeconds,
-      gameId: game.gameId,
-    });
-  }, [soloResult, dailySlot, user, game.displayName, game.gameId]);
+    const day = todayKey();
+    const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)) };
+    const settled = submitDailyResult({ day, slot: dailySlot, ...entry, gameId: game.gameId });
+    setPendingDailyResult({ day, slot: dailySlot, entry, settled });
+  }, [soloResult, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult]);
+
+  // "Up next" moves the next daily into THIS screen, so everything latched
+  // "once per puzzle" above resets when the puzzle changes.
+  const puzzleKey = puzzle ? puzzleIdentity(puzzle) : null;
+  useEffect(() => {
+    dailySubmittedRef.current = false;
+    historyRecordedRef.current = false;
+    completionReportedRef.current = false;
+    setServerOutcome(null);
+    setBoardSignedAs(null);
+    setNytStreak(null);
+  }, [puzzleKey]);
 
   // Signed-in solvers: file the finish in the account's solve history and
   // judge best time and streak against that history, which every device
@@ -200,6 +214,8 @@ export function SoloPlayScreen() {
       setBoardSignedAs(trimmed);
       game.setDisplayName(trimmed);
       savePlayerName(trimmed);
+      // The board's optimistic row shows the signed name at once.
+      game.setPendingDailyResult((prev) => (prev ? { ...prev, entry: { ...prev.entry, displayName: trimmed } } : prev));
       if (user) void updateDailyDisplayName(todayKey(), user.id, trimmed, dailySlot ?? "mini");
     },
     [game, user, dailySlot],
@@ -243,35 +259,38 @@ export function SoloPlayScreen() {
     navigate("/");
   }, [reset, game, navigate]);
 
-  const handleNewPuzzle = useCallback(() => {
-    setCompletionModalDismissed(true);
-    clearChallenge();
-    navigate("/solo/import");
-  }, [setCompletionModalDismissed, navigate]);
-
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
     handleReset();
   }, [setCompletionModalDismissed, handleReset]);
 
-  // Live bridge: take the finisher into the EXISTING host-as-player flow to host
-  // a FRESH puzzle head-to-head (name → import → lobby with share code / QR).
-  // We deliberately tear down all solo/challenge state so the next puzzle is new
-  // to both players — the already-solved puzzle is never re-raced live (the
-  // unfair case). No new room/realtime code: this is pure routing into the
-  // existing stack. The finisher's name (if they signed one) rides along, so the
-  // host name field is pre-filled.
-  const handlePlayLive = useCallback(() => {
+  // "Up next" (audit §2, item 8): today's other dailies, else a classic, else
+  // the library. A daily or classic loads straight into this screen, the same
+  // path the menu's "Play" takes.
+  const nextUp = useNextUp(soloResult ? puzzleKey : null, isComplete);
+  const handleNextUp = useCallback(
+    async (item: NextUpItem) => {
+      clearChallenge();
+      if (item.kind === "library") {
+        setCompletionModalDismissed(true);
+        navigate("/classics");
+        return;
+      }
+      track("mode_selected", item.kind === "daily" ? { mode: "daily", slot: item.slot, from: "completion" } : { mode: "classic", from: "completion" });
+      const next = item.kind === "daily" ? item.daily.puzzle : await loadClassicPuzzle(item.entry);
+      await game.handleSoloPuzzleLoaded(next);
+      game.setSoloTheme(item.kind === "daily" ? item.daily.theme : null);
+    },
+    [game, navigate, setCompletionModalDismissed],
+  );
+
+  // "Race a friend live": a FRESH puzzle through the picker, never the one
+  // just solved. The picker tears down the solo state and hands the choice to
+  // the existing host flow (name → lobby with share code / QR).
+  const handleRaceFresh = useCallback(() => {
     setCompletionModalDismissed(true);
-    reset();
-    game.setGameId(null);
-    game.setIsMultiplayer(false);
-    localStorage.removeItem(STORAGE_KEY);
-    clearMpSession();
-    clearSoloTimer();
-    clearChallenge();
-    navigate("/host-game/name");
-  }, [setCompletionModalDismissed, reset, game, navigate]);
+    navigate(pickerPath("race"));
+  }, [setCompletionModalDismissed, navigate]);
 
   function handleClueClick(clue: PuzzleClue) {
     // Land on the first empty cell of the word, not its first cell
@@ -413,9 +432,10 @@ export function SoloPlayScreen() {
         challengePuzzle={puzzle}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
-        onPlayLive={user ? handlePlayLive : undefined}
+        nextUp={nextUp}
+        onNextUp={(item) => void handleNextUp(item)}
+        onRaceFresh={user ? handleRaceFresh : undefined}
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
-        onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? () => account.openAccount({ returnTo: "/", placement: "completion" }) : undefined}
       />

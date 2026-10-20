@@ -5,6 +5,8 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("./supabaseClient", () => ({ supabase: null }));
 import {
   isTodaysDaily,
+  mergeOwnResult,
+  pendingResultFor,
   rankEntries,
   shouldReplace,
   todayKey,
@@ -91,5 +93,42 @@ describe("updateDailyDisplayName", () => {
     await expect(
       updateDailyDisplayName("2026-07-05", "user-1", "Andy"),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("mergeOwnResult", () => {
+  const board = rankEntries([entry("a", 60), entry("b", 90)]);
+
+  it("returns the board untouched without an own finish", () => {
+    expect(mergeOwnResult(board, null)).toEqual(board);
+    expect(mergeOwnResult(board, undefined)).not.toBe(board);
+  });
+
+  it("adds a missing own row and re-ranks", () => {
+    const merged = mergeOwnResult(board, entry("me", 75, "race"));
+    expect(merged.map((e) => [e.userId, e.rank])).toEqual([
+      ["a", 1],
+      ["me", 2],
+      ["b", 3],
+    ]);
+    expect(merged[1].mode).toBe("race");
+  });
+
+  it("keeps a fetched own row but never a slower time than the finish just made", () => {
+    const withMe = rankEntries([entry("a", 60), { ...entry("me", 100), displayName: "Signed" }]);
+    const faster = mergeOwnResult(withMe, entry("me", 80));
+    expect(faster.find((e) => e.userId === "me")).toMatchObject({ seconds: 80, displayName: "Signed", rank: 2 });
+    const slower = mergeOwnResult(withMe, entry("me", 120));
+    expect(slower.find((e) => e.userId === "me")).toMatchObject({ seconds: 100, rank: 2 });
+  });
+});
+
+describe("pendingResultFor", () => {
+  const pending = { day: "2026-10-20", slot: "mini" as const, entry: entry("me", 50), settled: Promise.resolve() };
+  it("matches only the same day and slot", () => {
+    expect(pendingResultFor(pending, "2026-10-20", "mini")).toBe(pending);
+    expect(pendingResultFor(pending, "2026-10-20", "midi")).toBeNull();
+    expect(pendingResultFor(pending, "2026-10-21", "mini")).toBeNull();
+    expect(pendingResultFor(null, "2026-10-20", "mini")).toBeNull();
   });
 });

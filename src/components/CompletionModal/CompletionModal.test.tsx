@@ -4,6 +4,9 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
 import { track } from "../../lib/analytics";
+import type { NextUpItem } from "../../lib/nextUp";
+import type { ClassicEntry } from "../../lib/classicLibrary";
+import type { Puzzle } from "../../types/puzzle";
 
 vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
 
@@ -18,6 +21,15 @@ const SOLO_PROPS = {
   totalClues: 4,
   soloScore: 8,
 } as const;
+
+function fakePuzzle(title: string, size: number): Puzzle {
+  return { title, author: "", width: size, height: size, cells: [], clues: [] } as unknown as Puzzle;
+}
+const CLASSIC: ClassicEntry = { file: "cwpb7.puz", number: 7, title: "Seven", author: "A", width: 13, height: 13, clues: 60, identity: "c7", blurb: "" };
+const NEXT_DAILIES: NextUpItem[] = [
+  { kind: "daily", slot: "midi", daily: { theme: "Jazz", puzzle: fakePuzzle("Blue Note", 9) } },
+  { kind: "daily", slot: "large", daily: { theme: "Film", puzzle: fakePuzzle("Reel Deal", 15) } },
+];
 
 function makePlayers(): PlayerResult[] {
   return [
@@ -84,13 +96,36 @@ describe("CompletionModal", () => {
     expect(rows).toHaveLength(2);
   });
 
-  it("calls onNewPuzzle when button clicked", () => {
-    const onNewPuzzle = vi.fn();
-    const { getByText } = render(
-      <CompletionModal {...SOLO_PROPS} onNewPuzzle={onNewPuzzle} />,
+  it("never offers the importer: no 'New puzzle' action", () => {
+    const { queryByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} onBackToMenu={() => {}} />);
+    expect(queryByText("New puzzle")).toBeNull();
+    expect(queryByText("Play again")).toBeNull();
+  });
+
+  it("makes Share the primary action, labelled 'Share your time' after a daily", () => {
+    const { getByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+    const share = getByRole("button", { name: "Share result" });
+    expect(share.className).toContain("bg-brand-600");
+
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySlot="mini" />);
+    expect(getByRole("button", { name: "Share your time" }).className).toContain("bg-brand-600");
+  });
+
+  it("shows the leaderboard and challenge actions as the secondary row", () => {
+    const onViewLeaderboard = vi.fn();
+    const { getByRole } = render(
+      <CompletionModal
+        {...SOLO_PROPS}
+        finishSeconds={90}
+        dailySlot="mini"
+        onViewLeaderboard={onViewLeaderboard}
+        challengePuzzle={fakePuzzle("Deep Blue", 5)}
+        challengerName="Andy"
+      />,
     );
-    fireEvent.click(getByText("New puzzle"));
-    expect(onNewPuzzle).toHaveBeenCalledOnce();
+    fireEvent.click(getByRole("button", { name: "Daily leaderboard" }));
+    expect(onViewLeaderboard).toHaveBeenCalledOnce();
+    expect(getByRole("button", { name: /Challenge a friend/ })).toBeTruthy();
   });
 
   it("calls onBackToMenu when button clicked", () => {
@@ -100,19 +135,6 @@ describe("CompletionModal", () => {
     );
     fireEvent.click(getByText("Back to menu"));
     expect(onBackToMenu).toHaveBeenCalledOnce();
-  });
-
-  it("hides new puzzle button when onNewPuzzle is undefined", () => {
-    const { queryByText } = render(
-      <CompletionModal
-        open={true}
-        totalCells={8}
-        totalClues={4}
-        onNewPuzzle={undefined}
-        onBackToMenu={() => {}}
-      />,
-    );
-    expect(queryByText("New puzzle")).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {
@@ -161,68 +183,83 @@ describe("CompletionModal", () => {
     expect(canvases.length).toBe(1);
   });
 
-  it("renders Play Again button when onRematch is provided", () => {
-    const onRematch = vi.fn();
-    const { getByText } = render(
-      <CompletionModal {...SOLO_PROPS} players={makePlayers()} onRematch={onRematch} />,
+  it("multiplayer host: 'Next puzzle, same room' opens the picker; never a rematch of the solved puzzle", () => {
+    const onNextPuzzle = vi.fn();
+    const { getByRole, queryByText } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} onNextPuzzle={onNextPuzzle} />,
     );
-    fireEvent.click(getByText("Play again"));
-    expect(onRematch).toHaveBeenCalledOnce();
-  });
-
-  it("hides Play Again button when onRematch is undefined", () => {
-    const { queryByText } = render(
-      <CompletionModal {...SOLO_PROPS} players={makePlayers()} />,
-    );
+    fireEvent.click(getByRole("button", { name: /Next puzzle, same room/ }));
+    expect(onNextPuzzle).toHaveBeenCalledOnce();
     expect(queryByText("Play again")).toBeNull();
+    expect(queryByText("Up next")).toBeNull();
   });
 
-  it("hides the live CTA when onPlayLive is undefined (multiplayer unavailable)", () => {
-    const { queryByText } = render(
-      <CompletionModal {...SOLO_PROPS} finishSeconds={90} />,
+  it("multiplayer guest: no next-puzzle row without onNextPuzzle", () => {
+    const { queryByText } = render(<CompletionModal {...SOLO_PROPS} players={makePlayers()} />);
+    expect(queryByText(/Next puzzle, same room/)).toBeNull();
+  });
+
+  it("hides the fresh race row when onRaceFresh is undefined (multiplayer unavailable)", () => {
+    const { queryByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+    expect(queryByText("Race a friend live")).toBeNull();
+  });
+
+  it("'Race a friend live' calls onRaceFresh and emits the live_bridge funnel event", () => {
+    const onRaceFresh = vi.fn();
+    const { getByRole } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleSize="15x15" onRaceFresh={onRaceFresh} />,
     );
-    expect(queryByText("Play live")).toBeNull();
-    expect(queryByText("Rematch live")).toBeNull();
+    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    expect(onRaceFresh).toHaveBeenCalledOnce();
+    expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "solo", size: "15x15" });
   });
 
-  it("shows 'Play Live' on a plain solo finish and calls onPlayLive", () => {
-    const onPlayLive = vi.fn();
-    const { getByText } = render(
-      <CompletionModal {...SOLO_PROPS} finishSeconds={90} onPlayLive={onPlayLive} />,
-    );
-    fireEvent.click(getByText("Play live"));
-    expect(onPlayLive).toHaveBeenCalledOnce();
-  });
-
-  it("shows 'Rematch Live' after racing a challenge ghost", () => {
-    const { getByText, queryByText } = render(
-      <CompletionModal
-        {...SOLO_PROPS}
-        finishSeconds={90}
-        onPlayLive={() => {}}
-        challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
-      />,
-    );
-    expect(getByText("Rematch live")).toBeTruthy();
-    expect(queryByText("Play live")).toBeNull();
-  });
-
-  it("emits a distinct live_bridge analytics event (not puzzle_imported)", () => {
-    const { getByText } = render(
+  it("marks the live bridge as a challenge rematch after racing a ghost", () => {
+    const { getByRole } = render(
       <CompletionModal
         {...SOLO_PROPS}
         finishSeconds={90}
         puzzleSize="15x15"
-        onPlayLive={() => {}}
+        onRaceFresh={() => {}}
         challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
       />,
     );
-    fireEvent.click(getByText("Rematch live"));
-    expect(track).toHaveBeenCalledWith("live_bridge", {
-      mode: "live",
-      from: "challenge_result",
-      size: "15x15",
-    });
+    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "challenge_result", size: "15x15" });
+  });
+
+  it("lists 'Up next' dailies with size and theme, and hands the picked item back", () => {
+    const onNextUp = vi.fn();
+    const { getByText, getByRole, getByTestId } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={NEXT_DAILIES} onNextUp={onNextUp} />,
+    );
+    expect(getByText("Up next")).toBeTruthy();
+    const rows = getByTestId("up-next").querySelectorAll("button");
+    expect(rows).toHaveLength(2);
+    expect(getByText("9×9 · Jazz")).toBeTruthy();
+    fireEvent.click(getByRole("button", { name: /Daily Large/ }));
+    expect(onNextUp).toHaveBeenCalledWith(NEXT_DAILIES[1]);
+  });
+
+  it("offers a classic, or the library, when the dailies are done", () => {
+    const onNextUp = vi.fn();
+    const { getByRole, rerender } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "classic", entry: CLASSIC }]} onNextUp={onNextUp} />,
+    );
+    fireEvent.click(getByRole("button", { name: /Next classic: No\. 7/ }));
+    expect(onNextUp).toHaveBeenCalledWith({ kind: "classic", entry: CLASSIC });
+
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "library" }]} onNextUp={onNextUp} />);
+    fireEvent.click(getByRole("button", { name: /Browse the library/ }));
+    expect(onNextUp).toHaveBeenLastCalledWith({ kind: "library" });
+  });
+
+  it("shows no 'Up next' heading when there is nothing to suggest yet", () => {
+    const { queryByText, getByRole } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[]} onNextUp={() => {}} onRaceFresh={() => {}} />,
+    );
+    expect(queryByText("Up next")).toBeNull();
+    expect(getByRole("button", { name: /Race a friend live/ })).toBeTruthy();
   });
 
   it("hides the sign-the-board form when dailySign is absent", () => {

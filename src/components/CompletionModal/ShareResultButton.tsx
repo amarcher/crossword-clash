@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Share2 } from "lucide-react";
-import { buttonClass } from "../ui";
+import { buttonClass, type ButtonSize, type ButtonVariant } from "../ui";
 import { track } from "../../lib/analytics";
 import { formatDuration } from "../../lib/soloStats";
 import {
@@ -20,6 +20,11 @@ interface ShareResultButtonProps extends ResultCardInput {
   /** Set when the puzzle was today's daily: the caption names the slot ("Daily Large"). */
   dailySlot?: DailySlot;
   darkMode?: boolean;
+  /** Button look; defaults to the secondary (or stage, in dark mode) style. */
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** Idle label; defaults to "Share result". */
+  label?: string;
 }
 
 const CARD_W = 1200;
@@ -112,7 +117,7 @@ function triggerDownload(blob: Blob, filename: string): void {
 }
 
 export function ShareResultButton(props: ShareResultButtonProps) {
-  const { darkMode, dailySlot, ...input } = props;
+  const { darkMode, dailySlot, variant, size = "md", label, ...input } = props;
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -267,10 +272,10 @@ export function ShareResultButton(props: ShareResultButtonProps) {
     <button
       onClick={handleShare}
       disabled={busy}
-      className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}
+      className={buttonClass(variant ?? (darkMode ? "stage" : "secondary"), size, "w-full")}
     >
       {!toast && !busy && <Share2 className="size-4" aria-hidden="true" />}
-      {toast ?? (busy ? t("completion.sharing") : t("completion.share"))}
+      {toast ?? (busy ? t("completion.sharing") : (label ?? t("completion.share")))}
     </button>
   );
 }

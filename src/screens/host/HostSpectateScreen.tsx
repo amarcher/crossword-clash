@@ -36,7 +36,6 @@ export function HostSpectateScreen() {
     joinUrl,
     handleCloseRoom,
     handleNewPuzzle,
-    handleRematch,
     handleBackToMenu,
     narrator,
   } = host;
@@ -172,8 +171,7 @@ export function HostSpectateScreen() {
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         players={playerResults}
-        onRematch={handleRematch}
-        onNewPuzzle={handleNewPuzzle}
+        onNextPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
         darkMode
       />

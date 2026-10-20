@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Flame, Newspaper, Trophy, UserRound } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -15,8 +15,9 @@ import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { ChallengeFriendButton } from "./ChallengeFriendButton";
-import { LeaderboardSignForm } from "./LeaderboardSignForm";
-import { PlayLiveButton } from "./PlayLiveButton";
+import { BoardSignForm } from "../BoardSignForm";
+import { track } from "../../lib/analytics";
+import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
 import type { Puzzle } from "../../types/puzzle";
@@ -100,16 +101,24 @@ interface CompletionModalProps {
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
   /**
-   * Bridge into a FAIR live rematch: when provided, a "Play Live" / "Rematch
-   * Live" CTA funnels the finisher into the existing host-as-player flow on a
-   * FRESH puzzle. Passed only when multiplayer is actually available (Supabase
-   * configured + anonymous auth); absent → the CTA is hidden entirely.
+   * "Up next" rows (at most two): today's unsolved dailies, else one unplayed
+   * classic, else the library — from `nextUpSuggestions`. Solo/daily only.
    */
-  onPlayLive?: () => void;
+  nextUp?: NextUpItem[];
+  onNextUp?: (item: NextUpItem) => void;
+  /**
+   * "Race a friend live": host a FRESH puzzle through the picker, never the
+   * one just solved. Passed only when multiplayer is available; absent → the
+   * row is hidden.
+   */
+  onRaceFresh?: () => void;
   /** Puzzle size (e.g. "15x15") for the live-bridge analytics dimension. */
   puzzleSize?: string;
-  onNewPuzzle?: () => void;
-  onRematch?: () => void;
+  /**
+   * Multiplayer host: "Next puzzle, same room" — the picker, then
+   * `createNextGame` with the chosen puzzle (the room code stays).
+   */
+  onNextPuzzle?: () => void;
   onBackToMenu?: () => void;
   /**
    * Anonymous finisher in a build that offers accounts: a quiet "keep this
@@ -143,10 +152,11 @@ export function CompletionModal({
   challengePuzzle,
   challengerName,
   challengeOutcome,
-  onPlayLive,
+  nextUp,
+  onNextUp,
+  onRaceFresh,
   puzzleSize,
-  onNewPuzzle,
-  onRematch,
+  onNextPuzzle,
   onBackToMenu,
   onSignIn,
   darkMode,
@@ -219,6 +229,8 @@ export function CompletionModal({
     : isMultiplayer && !coop
       ? computeViewerStanding(ranked, currentUserId)
       : null;
+
+  const hasNextUp = !!nextUp && nextUp.length > 0 && !!onNextUp;
 
   const bg = darkMode ? "bg-stage-raised ring-1 ring-stage-line" : "bg-surface";
   const text = darkMode ? "text-white" : "text-ink";
@@ -439,10 +451,12 @@ export function CompletionModal({
             )}
 
             {dailySign && (
-              <LeaderboardSignForm
+              <BoardSignForm
+                currentName={t("common.defaultPlayerName")}
                 signedAs={dailySign.signedAs}
                 onSign={dailySign.onSign}
                 darkMode={darkMode}
+                className="mb-5"
               />
             )}
 
@@ -496,61 +510,94 @@ export function CompletionModal({
           </div>
         )}
 
-        {/* Actions: exactly one primary (Rematch › New puzzle), then a grid of
-            secondary share/next-step actions, then a quiet way out. */}
+        {/* Actions (navigation audit §2): Share is the one primary; then the
+            board and the challenge link; then "Up next" and the fresh-puzzle
+            race; "Back to menu" is the quiet exit. The importer is never
+            offered here — the game header keeps "Load different puzzle". */}
         <div className="flex flex-col gap-2.5">
-          {onRematch && (
-            <button onClick={onRematch} className={buttonClass("primary", "lg", "w-full")} autoFocus>
-              {t('completion.playAgain')}
-            </button>
+          <ShareResultButton
+            mode={isMultiplayer ? "multiplayer" : "solo"}
+            puzzleTitle={puzzleTitle}
+            finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
+            bestSeconds={bestSeconds}
+            isNewBest={isNewBest}
+            winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
+            isTie={isAsync ? asyncTie : isTie}
+            coop={coop}
+            viewerStanding={viewerStanding ?? undefined}
+            dailySlot={dailySlot}
+            darkMode={darkMode}
+            variant="primary"
+            size="lg"
+            label={dailySlot && !isMultiplayer ? t("completion.shareTime") : undefined}
+          />
+          {(onViewLeaderboard || (!isMultiplayer && challengePuzzle && finishSeconds !== undefined)) && (
+            <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+              {onViewLeaderboard && (
+                <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
+                  <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+                  {t('completion.viewLeaderboard')}
+                </button>
+              )}
+              {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
+                <ChallengeFriendButton
+                  puzzle={challengePuzzle}
+                  challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+                  finishSeconds={finishSeconds}
+                  onNameSigned={dailySign?.onSign}
+                  darkMode={darkMode}
+                />
+              )}
+            </div>
           )}
-          {onNewPuzzle && (
-            <button
-              onClick={onNewPuzzle}
-              className={buttonClass(onRematch ? (darkMode ? "stage" : "secondary") : "primary", "lg", "w-full")}
-              autoFocus={!onRematch}
-            >
-              {t('completion.newPuzzle')}
-            </button>
+
+          {!isMultiplayer && (hasNextUp || onRaceFresh) && (
+            <section aria-labelledby={hasNextUp ? "completion-up-next" : undefined} data-testid="up-next" className="mt-1">
+              {hasNextUp && (
+                <h3 id="completion-up-next" className={`mb-1.5 px-1 text-xs font-semibold uppercase tracking-[0.08em] ${tableHeader}`}>
+                  {t('completion.upNext')}
+                </h3>
+              )}
+              <RowGroup darkMode={darkMode}>
+                {hasNextUp &&
+                  nextUp.map((item) => (
+                    <NextUpRow
+                      key={item.kind === "daily" ? `daily-${item.slot}` : item.kind === "classic" ? `classic-${item.entry.file}` : "library"}
+                      item={item}
+                      onSelect={() => onNextUp(item)}
+                      darkMode={darkMode}
+                    />
+                  ))}
+                {onRaceFresh && (
+                  <ModalRow
+                    icon={Swords}
+                    tone="brand"
+                    title={t('completion.raceFresh')}
+                    subtitle={t('completion.raceFreshHint')}
+                    onClick={() => {
+                      // The live-bridge funnel event, kept from the old "Play live" CTA.
+                      track("live_bridge", { mode: "live", from: challengeOutcome ? "challenge_result" : "solo", size: puzzleSize });
+                      onRaceFresh();
+                    }}
+                    darkMode={darkMode}
+                  />
+                )}
+              </RowGroup>
+            </section>
           )}
-          <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
-            <ShareResultButton
-              mode={isMultiplayer ? "multiplayer" : "solo"}
-              puzzleTitle={puzzleTitle}
-              finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
-              bestSeconds={bestSeconds}
-              isNewBest={isNewBest}
-              winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
-              isTie={isAsync ? asyncTie : isTie}
-              coop={coop}
-              viewerStanding={viewerStanding ?? undefined}
-              dailySlot={dailySlot}
-              darkMode={darkMode}
-            />
-            {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
-              <ChallengeFriendButton
-                puzzle={challengePuzzle}
-                challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
-                finishSeconds={finishSeconds}
-                onNameSigned={dailySign?.onSign}
+          {isMultiplayer && onNextPuzzle && (
+            <RowGroup darkMode={darkMode}>
+              <ModalRow
+                icon={Swords}
+                tone="brand"
+                title={t('completion.nextPuzzleSameRoom')}
+                subtitle={t('completion.nextPuzzleSameRoomHint')}
+                onClick={onNextPuzzle}
                 darkMode={darkMode}
               />
-            )}
-            {onViewLeaderboard && (
-              <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
-                <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-                {t('completion.viewLeaderboard')}
-              </button>
-            )}
-            {onPlayLive && (
-              <PlayLiveButton
-                onPlayLive={onPlayLive}
-                intent={challengeOutcome ? "rematch" : "solo"}
-                size={puzzleSize}
-                darkMode={darkMode}
-              />
-            )}
-          </div>
+            </RowGroup>
+          )}
+
           {onBackToMenu && (
             <button onClick={onBackToMenu} className={buttonClass("ghost", "md", `w-full ${darkMode ? "text-white/60 hover:text-white hover:bg-white/10" : ""}`)}>
               {t('completion.backToMenu')}
@@ -569,5 +616,90 @@ export function CompletionModal({
         </div>
       </div>
     </div>
+  );
+}
+
+const ROW_TONES = {
+  brand: { light: "bg-brand-50 text-brand-600", dark: "bg-brand-500/20 text-brand-200" },
+  gold: { light: "bg-gold-50 text-gold-700", dark: "bg-gold-500/15 text-gold-400" },
+} as const;
+
+function RowGroup({ darkMode, children }: { darkMode?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`flex flex-col overflow-hidden rounded-2xl ${darkMode ? "divide-y divide-stage-line ring-1 ring-stage-line" : "divide-y divide-line ring-1 ring-line"}`}>
+      {children}
+    </div>
+  );
+}
+
+/** One tappable row of the modal's "what next" list: icon tile, title + subtitle, chevron. */
+function ModalRow({
+  icon: Icon,
+  tone,
+  title,
+  subtitle,
+  onClick,
+  darkMode,
+}: {
+  icon: LucideIcon;
+  tone: keyof typeof ROW_TONES;
+  title: string;
+  subtitle?: string;
+  onClick: () => void;
+  darkMode?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex min-h-14 w-full items-center gap-3 px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 ${
+        darkMode ? "hover:bg-white/5 active:bg-white/10" : "hover:bg-surface-sunken/70 active:bg-surface-sunken"
+      }`}
+    >
+      <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${ROW_TONES[tone][darkMode ? "dark" : "light"]}`}>
+        <Icon className="size-4.5" strokeWidth={2} aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate text-sm font-semibold leading-snug ${darkMode ? "text-white" : "text-ink"}`}>{title}</span>
+        {subtitle && <span className={`mt-0.5 block truncate text-xs leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>{subtitle}</span>}
+      </span>
+      <ChevronRight className={`size-4 shrink-0 transition-transform group-hover:translate-x-0.5 ${darkMode ? "text-white/40" : "text-subtle"}`} aria-hidden="true" />
+    </button>
+  );
+}
+
+const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
+
+function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: () => void; darkMode?: boolean }) {
+  const { t } = useTranslation();
+  if (item.kind === "daily") {
+    const { puzzle } = item.daily;
+    const size = `${puzzle.width}×${puzzle.height}`;
+    return (
+      <ModalRow
+        icon={CalendarDays}
+        tone="gold"
+        title={t(SLOT_EYEBROW[item.slot])}
+        subtitle={item.daily.theme ? `${size} · ${item.daily.theme}` : size}
+        onClick={onSelect}
+        darkMode={darkMode}
+      />
+    );
+  }
+  if (item.kind === "classic") {
+    const { entry } = item;
+    return (
+      <ModalRow
+        icon={BookOpen}
+        tone="gold"
+        title={t("completion.nextClassic", { number: entry.number })}
+        subtitle={t("completion.nextClassicSubtitle", { title: entry.title, size: `${entry.width}×${entry.height}` })}
+        onClick={onSelect}
+        darkMode={darkMode}
+      />
+    );
+  }
+  return (
+    <ModalRow icon={BookOpen} tone="gold" title={t("completion.browseLibrary")} subtitle={t("completion.browseLibraryHint")} onClick={onSelect} darkMode={darkMode} />
   );
 }

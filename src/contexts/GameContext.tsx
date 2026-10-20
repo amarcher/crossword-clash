@@ -12,6 +12,7 @@ import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import { loadPlayerName } from "../lib/playerName";
+import type { PendingDailyResult } from "../lib/dailyLeaderboard";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -81,6 +82,13 @@ interface GameContextValue {
   setLockedUntil: (v: number) => void;
   completionModalDismissed: boolean;
   setCompletionModalDismissed: (v: boolean) => void;
+  /**
+   * The daily finish most recently posted from this tab (solo or async race),
+   * kept so the leaderboard can await the submission instead of racing it
+   * and show the viewer's own row at once. Replaced by each new finish.
+   */
+  pendingDailyResult: PendingDailyResult | null;
+  setPendingDailyResult: React.Dispatch<React.SetStateAction<PendingDailyResult | null>>;
   clueSheetOpen: boolean;
   setClueSheetOpen: (v: boolean) => void;
   importFailed: boolean;
@@ -140,6 +148,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   );
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
   const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
+  const [pendingDailyResult, setPendingDailyResult] = useState<PendingDailyResult | null>(null);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
   const [raceMode, setRaceMode] = useState<RaceMode>("versus");
@@ -222,6 +231,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // A new solo puzzle must never write into a previous game's server row.
       setGameId(null);
       setIsMultiplayer(false);
+      // A fresh puzzle gets its own finish: the previous modal's dismissal
+      // must not hide this one (the finish screen's "Up next" loads the next
+      // daily into this same screen).
+      setCompletionModalDismissed(false);
       fileBufferRef.current = fileBuffer ?? null;
       // Imported / sample puzzles carry no theme — clear any prior daily theme
       // so a stale "Today's theme" banner never bleeds onto a new puzzle.
@@ -270,6 +283,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setLockedUntil,
     completionModalDismissed,
     setCompletionModalDismissed,
+    pendingDailyResult,
+    setPendingDailyResult,
     clueSheetOpen,
     setClueSheetOpen,
     importFailed,
