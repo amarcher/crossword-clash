@@ -23,6 +23,12 @@ export const screenModules = {
       import("./screens/ClassicLibraryScreen"),
       import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
     ]).then(([screen]) => screen),
+  // The picker lists classics too, so it warms the manifest the same way.
+  puzzlePicker: () =>
+    Promise.all([
+      import("./screens/PuzzlePickerScreen"),
+      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
+    ]).then(([screen]) => screen),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -59,6 +65,7 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/daily/leaderboard": screenModules.dailyLeaderboard,
   "/daily": screenModules.dailyPuzzle,
   "/classics": screenModules.classics,
+  "/pick-puzzle": screenModules.puzzlePicker,
   "/host-game/name": screenModules.hostName,
   "/host-game/import": screenModules.hostImport,
   "/lobby": screenModules.lobby,

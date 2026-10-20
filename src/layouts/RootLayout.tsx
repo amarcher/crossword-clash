@@ -9,7 +9,7 @@ import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
-import { loadMpSession, clearMpSession, saveMpSession } from "../lib/sessionPersistence";
+import { loadMpSession, clearMpSession, saveMpSession, isRecentMpSession } from "../lib/sessionPersistence";
 import { rejoinGame } from "../lib/puzzleService";
 import { ToastViewport } from "../components/ToastViewport";
 import { usePageViews } from "../hooks/usePageViews";
@@ -66,7 +66,7 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     game.setIsMultiplayer(false);
     localStorage.removeItem("crossword-clash-solo");
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [game, navigate]);
 
   // Host's own room close still navigates immediately (host owns the action).
@@ -77,7 +77,7 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
       game.setIsMultiplayer(false);
       localStorage.removeItem("crossword-clash-solo");
       clearMpSession();
-      navigate("/");
+      navigate("/menu");
     }
   }, [mp.isRoomClosed, mp.isHost, game, navigate]);
 
@@ -145,6 +145,17 @@ export function useRejoinEffect() {
     rejoinGame(session.gameId, user.id, session.displayName).then((result) => {
       if (!result) {
         clearMpSession();
+        navigate("/", { replace: true });
+        return;
+      }
+
+      // A room that never started is only worth walking back into when the
+      // player was in it recently; an hour-old lobby on launch is the stale
+      // room they closed the app on, not the game they want to play.
+      if (result.status === "waiting" && !isRecentMpSession(session)) {
+        clearMpSession();
+        game.setGameId(null);
+        game.setIsMultiplayer(false);
         navigate("/", { replace: true });
         return;
       }

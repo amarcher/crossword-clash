@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext";
 import { useGame } from "./GameContext";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { getCompletedClues, getCompletedCluesByPlayer, countCluesPerPlayer } from "../lib/gridUtils";
-import { saveMpSession, clearMpSession } from "../lib/sessionPersistence";
+import { saveMpSession, clearMpSession, touchMpSession } from "../lib/sessionPersistence";
 import { resolveRaceMode } from "../lib/gameSettings";
 import type { Player, GameSettings, RaceMode } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
@@ -139,17 +139,37 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
 
   const multiplayerActive = isMultiplayer && gameId !== null;
 
-  // Save multiplayer session to localStorage
+  // Save multiplayer session to localStorage. A finished game is never
+  // re-saved (signing the leaderboard after a race changes displayName).
   useEffect(() => {
-    if (!isMultiplayer || !gameId) return;
+    if (!isMultiplayer || !gameId || multiplayer.gameStatus === "completed") return;
     saveMpSession({ gameId, shareCode: multiplayer.shareCode, displayName });
-  }, [isMultiplayer, gameId, multiplayer.shareCode, displayName]);
+  }, [isMultiplayer, gameId, multiplayer.shareCode, displayName, multiplayer.gameStatus]);
 
   // Clear MP session when game completes
   useEffect(() => {
     if (multiplayerActive && multiplayer.gameStatus === "completed") {
       clearMpSession();
     }
+  }, [multiplayerActive, multiplayer.gameStatus]);
+
+  // Keep the session's `savedAt` current while the player is in the room, so a
+  // cold start can tell a lobby they just backgrounded from one abandoned hours
+  // ago (sessionPersistence: 12 h hard expiry, 1 h for auto-rejoining a lobby).
+  useEffect(() => {
+    if (!multiplayerActive || multiplayer.gameStatus === "completed") return;
+    const id = window.setInterval(() => touchMpSession(), 60_000);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") touchMpSession();
+    };
+    const onPageHide = () => touchMpSession();
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onPageHide);
+    };
   }, [multiplayerActive, multiplayer.gameStatus]);
 
   // Build playerColorMap

@@ -97,7 +97,7 @@ export function JoinScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [game, navigate]);
 
   return (

@@ -148,6 +148,7 @@ export const routes: RouteObject[] = [
           // "leaderboard" segment above outranks the :day param.
           { path: "daily/:day/:slot", lazy: () => m.dailyPuzzle().then((s) => ({ Component: s.DailyPuzzleScreen })) },
           { path: "classics", lazy: () => m.classics().then((s) => ({ Component: s.ClassicLibraryScreen })) },
+          { path: "pick-puzzle", lazy: () => m.puzzlePicker().then((s) => ({ Component: s.PuzzlePickerScreen })) },
           { path: "host-game/name", lazy: () => m.hostName().then((s) => ({ Component: s.HostNameScreen })) },
           { path: "host-game/import", lazy: () => m.hostImport().then((s) => ({ Component: s.HostImportScreen })) },
           { path: "lobby/:gameId", lazy: () => m.lobby().then((s) => ({ Component: s.LobbyScreen })) },

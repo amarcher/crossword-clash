@@ -169,7 +169,11 @@
     "newPuzzle": "New Puzzle",
     "loadDifferent": "Load Different Puzzle",
     "closeRoomConfirm": "Close this room? All players will be disconnected.",
-    "reconnecting": "Reconnecting to game..."
+    "reconnecting": "Reconnecting to game...",
+    "solvedIn": "Solved in {{time}}",
+    "solved": "Solved",
+    "share": "Share",
+    "leaderboard": "Leaderboard"
   },
   "cluePanel": {
     "across": "Across",
@@ -205,8 +209,6 @@
     "clues": "Clues",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} cells filled",
-    "newPuzzle": "New puzzle",
-    "playAgain": "Play again",
     "backToMenu": "Back to menu",
     "ariaLabel": "Puzzle complete",
     "share": "Share",
@@ -238,7 +240,16 @@
     "playIt": "Play it",
     "resultCopied": "Result copied — paste it anywhere",
     "shareFailed": "Couldn’t share — try again",
-    "saveImage": "Save image"
+    "saveImage": "Save image",
+    "upNext": "Up next",
+    "nextClassic": "Next classic: No. {{number}}",
+    "nextClassicSubtitle": "{{title}} · {{size}}",
+    "browseLibrary": "Browse the library",
+    "browseLibraryHint": "Free classics from the first crossword book",
+    "raceFresh": "Race a friend live",
+    "raceFreshHint": "Host a fresh puzzle — invite by link or QR",
+    "nextPuzzleSameRoom": "Next puzzle, same room",
+    "nextPuzzleSameRoomHint": "Pick a fresh puzzle — the room code stays"
   },
   "leaderboard": {
     "title": "Daily Leaderboard",
@@ -258,7 +269,10 @@
     "signSave": "Save",
     "signedAs": "On the board as {{name}} ✓",
     "titleMidi": "Daily Midi Leaderboard",
-    "playTodayMidi": "Play Today's Midi"
+    "playTodayMidi": "Play Today's Midi",
+    "solvedIn": "Solved in {{time}}",
+    "rankToday": "#{{rank}} today",
+    "posting": "Posting your time…"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",
@@ -276,10 +290,7 @@
     "unsignedName": "A friend",
     "resultBeat": "You beat {{name}} by {{delta}}! 🎉",
     "resultLost": "{{name}} was faster by {{delta}}",
-    "resultTied": "Dead heat with {{name}}!",
-    "playLive": "Play live",
-    "rematchLive": "Rematch live",
-    "playLiveHint": "Host a fresh puzzle head-to-head — invite by link or QR."
+    "resultTied": "Dead heat with {{name}}!"
   },
   "tts": {
     "unmute": "Unmute",
@@ -498,7 +509,12 @@
     "syncedNone": "No solves synced yet. Finish a puzzle and it's kept here.",
     "syncedSolves_one": "{{count}} solve synced to your account",
     "syncedSolves_other": "{{count}} solves synced to your account",
-    "syncOffline": "Your solves on this device are kept. They'll sync when you're back online."
+    "syncOffline": "Your solves on this device are kept. They'll sync when you're back online.",
+    "deleteAccount": "Delete account",
+    "deleteTitle": "Delete your account?",
+    "deleteBody": "This permanently deletes your account and its data. This can't be undone.",
+    "deleteConfirm": "Delete account",
+    "cancel": "Cancel"
   },
   "meta": {
     "home": {
@@ -523,5 +539,17 @@
     "loading": "Loading the {{daily}} for {{date}}…",
     "missingTitle": "No {{daily}} for {{date}}",
     "missingBody": "There is nothing published for that day. Today’s puzzles are on the menu."
+  },
+  "picker": {
+    "title": "Pick a puzzle",
+    "subtitleRace": "Everyone races the same fresh puzzle. You'll get a room code to share.",
+    "subtitleNext": "The room keeps its code — players follow you to the new puzzle.",
+    "todaysDailies": "Today's dailies",
+    "allDailiesSolved": "You've solved all of today's dailies — pick a classic below.",
+    "classics": "Classic library",
+    "pick": "Pick",
+    "setting": "Setting up…",
+    "error": "Couldn't set that puzzle up. Please try another.",
+    "back": "Back"
   }
 }

@@ -169,7 +169,11 @@
     "newPuzzle": "Nuevo crucigrama",
     "loadDifferent": "Cargar otro crucigrama",
     "closeRoomConfirm": "¿Cerrar esta sala? Todos los jugadores serán desconectados.",
-    "reconnecting": "Reconectando a la partida..."
+    "reconnecting": "Reconectando a la partida...",
+    "solvedIn": "Resuelto en {{time}}",
+    "solved": "Resuelto",
+    "share": "Compartir",
+    "leaderboard": "Clasificación"
   },
   "cluePanel": {
     "across": "→",
@@ -205,8 +209,6 @@
     "clues": "Pistas",
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} celdas completadas",
-    "newPuzzle": "Elegir otro crucigrama",
-    "playAgain": "Jugar de nuevo",
     "backToMenu": "Volver al menú",
     "ariaLabel": "Crucigrama completo",
     "share": "Compartir",
@@ -238,7 +240,16 @@
     "playIt": "Juégalo",
     "resultCopied": "Resultado copiado: pégalo donde quieras",
     "shareFailed": "No se pudo compartir, inténtalo de nuevo",
-    "saveImage": "Guardar imagen"
+    "saveImage": "Guardar imagen",
+    "upNext": "A continuación",
+    "nextClassic": "Siguiente clásico: n.º {{number}}",
+    "nextClassicSubtitle": "{{title}} · {{size}}",
+    "browseLibrary": "Explorar la biblioteca",
+    "browseLibraryHint": "Clásicos gratis del primer libro de crucigramas",
+    "raceFresh": "Carrera en vivo con un amigo",
+    "raceFreshHint": "Organiza un crucigrama nuevo: invita por enlace o QR",
+    "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
+    "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene"
   },
   "leaderboard": {
     "title": "Clasificación diaria",
@@ -258,7 +269,10 @@
     "signSave": "Guardar",
     "signedAs": "En la clasificación como {{name}} ✓",
     "titleMidi": "Clasificación del Midi del día",
-    "playTodayMidi": "Jugar el Midi de hoy"
+    "playTodayMidi": "Jugar el Midi de hoy",
+    "solvedIn": "Resuelto en {{time}}",
+    "rankToday": "n.º {{rank}} hoy",
+    "posting": "Publicando tu tiempo…"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",
@@ -276,10 +290,7 @@
     "unsignedName": "Un amigo",
     "resultBeat": "¡Superaste a {{name}} por {{delta}}! 🎉",
     "resultLost": "{{name}} fue más rápido por {{delta}}",
-    "resultTied": "¡Empate técnico con {{name}}!",
-    "playLive": "Jugar en vivo",
-    "rematchLive": "Revancha en vivo",
-    "playLiveHint": "Organiza un crucigrama nuevo cara a cara: invita por enlace o QR."
+    "resultTied": "¡Empate técnico con {{name}}!"
   },
   "tts": {
     "unmute": "Activar sonido",
@@ -498,7 +509,12 @@
     "syncedNone": "Aún no hay partidas sincronizadas. Termina un crucigrama y quedará guardado aquí.",
     "syncedSolves_one": "{{count}} partida sincronizada con tu cuenta",
     "syncedSolves_other": "{{count}} partidas sincronizadas con tu cuenta",
-    "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión."
+    "syncOffline": "Tus partidas en este dispositivo se conservan. Se sincronizarán cuando vuelvas a tener conexión.",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteTitle": "¿Eliminar tu cuenta?",
+    "deleteBody": "Se eliminarán tu cuenta y sus datos de forma permanente. Esta acción no se puede deshacer.",
+    "deleteConfirm": "Eliminar cuenta",
+    "cancel": "Cancelar"
   },
   "meta": {
     "home": {
@@ -523,5 +539,17 @@
     "loading": "Cargando el {{daily}} del {{date}}…",
     "missingTitle": "No hay {{daily}} para el {{date}}",
     "missingBody": "No hay nada publicado para ese día. Los crucigramas de hoy están en el menú."
+  },
+  "picker": {
+    "title": "Elige un crucigrama",
+    "subtitleRace": "Todos compiten en el mismo crucigrama nuevo. Recibirás un código de sala para compartir.",
+    "subtitleNext": "La sala conserva su código: los jugadores te siguen al nuevo crucigrama.",
+    "todaysDailies": "Los diarios de hoy",
+    "allDailiesSolved": "Ya resolviste todos los diarios de hoy; elige un clásico abajo.",
+    "classics": "Biblioteca clásica",
+    "pick": "Elegir",
+    "setting": "Preparando…",
+    "error": "No se pudo preparar ese crucigrama. Prueba con otro.",
+    "back": "Atrás"
   }
 }

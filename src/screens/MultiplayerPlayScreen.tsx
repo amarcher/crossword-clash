@@ -13,13 +13,13 @@ import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
 import { MultiplayerScoreboard } from "../components/Scoreboard/MultiplayerScoreboard";
 import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
+import { FinishedBar } from "../components/FinishedBar";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
-import { createNextGame } from "../lib/puzzleService";
-import { supabase } from "../lib/supabaseClient";
-import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
+import { clearMpSession } from "../lib/sessionPersistence";
+import { pickerPath } from "./PuzzlePickerScreen";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
@@ -162,27 +162,24 @@ export function MultiplayerPlayScreen() {
     signedIn: !!user && !user.is_anonymous,
   });
   const dailySubmittedRef = useRef(false);
+  const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (dailySubmittedRef.current || !dailySlot || !user) return;
     if (isAsync) {
       if (myFinishSeconds === undefined) return;
       dailySubmittedRef.current = true;
       recordDailyPlay();
-      void submitDailyResult({
-        day: todayKey(),
-        slot: dailySlot,
-        userId: user.id,
-        displayName: game.displayName,
-        mode: "race",
-        seconds: myFinishSeconds,
-        gameId: game.gameId,
-      });
+      // Parked in context too, so the board awaits the post (audit §3, item 9).
+      const day = todayKey();
+      const entry = { userId: user.id, displayName: game.displayName, mode: "race" as const, seconds: Math.max(0, Math.floor(myFinishSeconds)) };
+      const settled = submitDailyResult({ day, slot: dailySlot, ...entry, gameId: game.gameId });
+      setPendingDailyResult({ day, slot: dailySlot, entry, settled });
       return;
     }
     if (gameStatus !== "completed") return;
     dailySubmittedRef.current = true;
     recordDailyPlay();
-  }, [gameStatus, dailySlot, user, isAsync, myFinishSeconds, game.displayName, game.gameId]);
+  }, [gameStatus, dailySlot, user, isAsync, myFinishSeconds, game.displayName, game.gameId, setPendingDailyResult]);
 
   // NYT-bookmarklet return loop (mirrors SoloPlayScreen): a finished NYT
   // puzzle rolls the NYT streak for everyone in the room, including friends
@@ -231,7 +228,7 @@ export function MultiplayerPlayScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [mp, reset, game, navigate]);
 
   const handleCloseRoom = useCallback(async () => {
@@ -245,40 +242,33 @@ export function MultiplayerPlayScreen() {
     handleReset();
   }, [mp, handleReset, confirm, t]);
 
-  const handleNewPuzzle = useCallback(() => {
+  // "Next puzzle, same room" (audit §2, item 6): the picker chooses a FRESH
+  // puzzle and calls createNextGame with ITS id, so the room code stays and
+  // nobody replays the grid they have all just seen.
+  const handleNextPuzzle = useCallback(() => {
     setCompletionModalDismissed(true);
-    navigate("/host-game/import");
+    navigate(pickerPath("next"));
   }, [setCompletionModalDismissed, navigate]);
-
-  const handleRematch = useCallback(async () => {
-    if (!user || !supabase || !shareCode || !game.gameId) return;
-    const { data: prev } = await supabase
-      .from("games")
-      .select("puzzle_id")
-      .eq("id", game.gameId)
-      .single();
-    if (!prev?.puzzle_id) return;
-
-    const result = await createNextGame(prev.puzzle_id, user.id, shareCode, {
-      displayName: game.displayName,
-    });
-    if (!result) return;
-
-    mp.broadcastNewGame(result.gameId);
-    game.setGameId(result.gameId);
-    saveMpSession({
-      gameId: result.gameId,
-      shareCode: result.shortCode,
-      displayName: game.displayName,
-    });
-    setCompletionModalDismissed(true);
-    navigate(`/lobby/${result.gameId}`);
-  }, [user, shareCode, game, mp, setCompletionModalDismissed, navigate]);
 
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
     handleReset();
   }, [setCompletionModalDismissed, handleReset]);
+
+  // Leaving the finished grid for the board (or the sign-in sheet) dismisses
+  // the celebration; the header's finished state can re-open it.
+  const handleViewLeaderboard = useCallback(() => {
+    if (!dailySlot) return;
+    setCompletionModalDismissed(true);
+    navigate(leaderboardPath(dailySlot));
+  }, [dailySlot, setCompletionModalDismissed, navigate]);
+
+  const handleSignIn = useCallback(() => {
+    setCompletionModalDismissed(true);
+    account.openAccount({ returnTo: "/menu", placement: "completion" });
+  }, [setCompletionModalDismissed, account]);
+
+  const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
 
   function handleClueClick(clue: PuzzleClue) {
     // Land on the first empty cell of the word, not its first cell
@@ -301,10 +291,9 @@ export function MultiplayerPlayScreen() {
   const gameComplete = multiplayerIsComplete;
   // Async: your race ends when YOU finish — show your result immediately and
   // let the standings update live as others come in.
-  const showCompletionModal =
-    (isAsync
-      ? multiplayerActive && myFinishSeconds !== undefined
-      : multiplayerIsComplete) && !completionModalDismissed;
+  const finished = isAsync ? multiplayerActive && myFinishSeconds !== undefined : multiplayerIsComplete;
+  const showCompletionModal = finished && !completionModalDismissed;
+  const finishSeconds = isAsync ? myFinishSeconds ?? null : raceSeconds;
   const canChooseNewPuzzle = isHost;
 
   // Async sidebar: live standings instead of the cells-claimed scoreboard
@@ -343,7 +332,15 @@ export function MultiplayerPlayScreen() {
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                {multiplayerActive && shareCode && (
+                {finished && (
+                  <FinishedBar
+                    seconds={finishSeconds}
+                    onShare={reopenCompletion}
+                    onLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+                  />
+                )}
+                {/* The room code is for joining mid-game; once finished the finished state takes its place. */}
+                {multiplayerActive && shareCode && !finished && (
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-subtle hidden sm:inline">{t('playing.room')}</span>
@@ -471,7 +468,7 @@ export function MultiplayerPlayScreen() {
         totalClues={puzzle.clues.length}
         players={playerResults}
         currentUserId={user?.id}
-        raceSeconds={isAsync ? myFinishSeconds ?? null : raceSeconds}
+        raceSeconds={finishSeconds}
         raceStandings={raceStandings}
         coop={isCoop}
         challengePuzzle={puzzle}
@@ -482,12 +479,11 @@ export function MultiplayerPlayScreen() {
         challengerName={game.displayName}
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
+        onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
-        onRematch={canChooseNewPuzzle ? handleRematch : undefined}
-        onNewPuzzle={canChooseNewPuzzle ? handleNewPuzzle : undefined}
+        onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
-        onSignIn={account.available && account.ready && !account.user ? () => account.openAccount({ returnTo: "/", placement: "completion" }) : undefined}
+        onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
       />
     </>
   );

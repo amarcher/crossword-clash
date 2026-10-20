@@ -65,7 +65,7 @@ export function DailyPuzzleScreen() {
         title={t("dailyLink.missingTitle", { daily: dailyLabel, date: dateLabel })}
         body={t("dailyLink.missingBody")}
       >
-        <Link to="/" className={primaryButtonClass}>
+        <Link to="/menu" className={primaryButtonClass}>
           {t("errors.backToMenu")}
         </Link>
       </NoticeScreen>

@@ -33,6 +33,19 @@ export interface RankedDailyEntry extends DailyResultEntry {
   rank: number;
 }
 
+/**
+ * A daily finish the viewer just made, held in GameContext while (and after)
+ * it is posted, so the board can wait for the round trip instead of racing
+ * it, and can show the viewer's own row before the server answers.
+ */
+export interface PendingDailyResult {
+  day: string;
+  slot: DailySlot;
+  entry: DailyResultEntry;
+  /** Resolves once the submission has finished (it never rejects). */
+  settled: Promise<void>;
+}
+
 // --- Pure ---
 
 /** The leaderboard day key for a given moment — local calendar day, matching
@@ -88,6 +101,38 @@ export function rankEntries(entries: readonly DailyResultEntry[]): RankedDailyEn
     lastRank = rank;
     return { ...e, rank };
   });
+}
+
+/**
+ * The board with the viewer's own finish folded in: a fetched row for the
+ * same user keeps its name but never a slower time than the finish just
+ * made; a missing row (replication lag, a failed post) is added. Re-ranked.
+ */
+export function mergeOwnResult(
+  entries: readonly RankedDailyEntry[],
+  own: DailyResultEntry | null | undefined,
+): RankedDailyEntry[] {
+  if (!own) return [...entries];
+  const plain: DailyResultEntry[] = entries.map(({ rank: _rank, ...e }) => e);
+  const mine = plain.find((e) => e.userId === own.userId);
+  if (mine) {
+    if (own.seconds < mine.seconds) {
+      mine.seconds = own.seconds;
+      mine.mode = own.mode;
+    }
+  } else {
+    plain.push({ ...own });
+  }
+  return rankEntries(plain);
+}
+
+/** Whether a pending finish belongs to the board being shown. */
+export function pendingResultFor(
+  pending: PendingDailyResult | null | undefined,
+  day: string,
+  slot: DailySlot,
+): PendingDailyResult | null {
+  return pending && pending.day === day && pending.slot === slot ? pending : null;
 }
 
 /**

@@ -9,29 +9,6 @@ desktop widths (screenshots in the session scratchpad). The native app was
 not run; its differences are derived from the code's platform branches and
 the Capacitor plugin list, and are called out as such.
 
-## Status
-
-**§1 (items 1–4) shipped** (PR "Share: the result block, one share with the
-daily date link, native share sheet", 2026-10-20).
-
-- `src/lib/shareBlock.ts` — `buildShareBlock` (pure, tested): header, stats
-  line, emoji rows (pace thirds from the new `CellState.at`; 🟥 from
-  `MultiplayerContext.wrongCells`, a per-puzzle set — the audit's
-  "`wrongLetters` set" was in fact a counter), a 15-block pace bar above
-  9 wide (time windows: fast / even / slow / wrong), claimant colours in a
-  live race.
-- `/daily/:day/:slot` (`DailyPuzzleScreen`) loads the day from the feed
-  (`fetchDailyForDay`) and lands on `ChallengeScreen` with `?beat=&by=`;
-  `api/share.ts` answers the same path for crawlers with the result's OG tags
-  spliced into the real index.html, so the short link unfurls and plays.
-- `ShareResultButton` is the one Share (preview + sign-first prompt + button);
-  `ChallengeFriendButton` is gone; `SaveImageButton` keeps the canvas card
-  (hidden in the apps). `shareText` picks `@capacitor/share` in the app,
-  `navigator.share({ text })` on the web, else clipboard + "Result copied".
-- Not done here: the modal's overall order (§2, the sibling "Finish actions"
-  work) — Share is styled primary but New puzzle / Play again still sit above
-  it until that lands; the PNG in the apps (`@capacitor/filesystem`).
-
 ## Verdict
 
 The finish screen is built around "do it again" when the player's actual
@@ -47,6 +24,34 @@ the cold-start resolver, not the menu: after a finished daily it re-opens
 the finished puzzle (measured), and with a stale room session on the device
 it drops the player into that room's lobby, which is the "host the game
 screen" you hit on the phone.
+
+## Status
+
+- **§2 (items 5–8) and §3 (items 9–11)** shipped (this PR): the modal is
+  Share-first with an "Up next" list and a fresh-puzzle race; the multiplayer
+  "Next puzzle, same room" and the board's race go through the new picker
+  (`/pick-puzzle`), never the solved puzzle; the board awaits the pending
+  submission, shows the finisher's own row at once, refetches on
+  `visibilitychange`, and replaces "Play Today's Mini" with "Solved in … · #n
+  today" once the viewer has solved the slot; one `BoardSignForm` serves the
+  modal and the board. Screenshots in `docs/navigation-finish/`.
+- **§4** (back targets, session expiry, finished-state return) is in a
+  sibling branch (below).
+- **§1 (items 1–4)** shipped (PR "Share: the result block, one share with the
+  daily date link, native share sheet", 2026-10-20): `buildShareBlock`
+  (`src/lib/shareBlock.ts`, pure, tested) — header, stats line, emoji rows
+  (pace thirds from the new `CellState.at`; 🟥 from
+  `MultiplayerContext.wrongCells`, a per-puzzle set — the audit's
+  "`wrongLetters` set" was in fact a counter), a 15-block pace bar above 9
+  wide, claimant colours in a live race. `/daily/:day/:slot`
+  (`DailyPuzzleScreen`) loads the day from the feed and lands on
+  `ChallengeScreen` with `?beat=&by=`; `api/share.ts` answers the same path
+  for crawlers with the result's OG tags spliced into the real index.html.
+  `ShareResultButton` is the one Share (preview + sign-first prompt +
+  button); `ChallengeFriendButton` is gone; `SaveImageButton` keeps the
+  canvas card (hidden in the apps). `shareText` picks `@capacitor/share` in
+  the app, `navigator.share({ text })` on the web, else clipboard + "Result
+  copied". Still open: the PNG in the apps (`@capacitor/filesystem`).
 
 ## 1. Sharing — the viral loop
 
@@ -239,6 +244,38 @@ i.e. the *same puzzle* in the same room; New puzzle → `/host-game/import`.
     `urlPuzzle` before going home). `/solo/play` with no puzzle redirects
     to the importer rather than the menu; on the native app the importer
     is the wrong fallback, so make that redirect `/menu`.
+
+### Status (§4, 2026-10-20)
+
+Items 12–15 shipped together (branch `claude/blissful-lalande-17c062`):
+
+- **12** — `SiteBar`'s default `backTo` and its logo link are `/menu`; so are
+  the error/not-found screens, the importing screen's "Back to menu", and
+  every `navigate("/")` that had already cleared its own state (host name,
+  lobby close/leave, join back, puzzle-ready back, solo and multiplayer
+  reset, the room-closed handlers). The account sheet's `returnTo` from the
+  play screens is `/menu`. `/` is now only the cold-start resolver; the
+  deep-linked screens' `<Navigate to="/">` guards (no puzzle → resolve) are
+  unchanged. Router test: the bar's back lands on `/menu` with both a saved
+  solo session and a saved room session armed.
+- **13** — `MpSession.savedAt` (`SESSION_VERSION` 2; a v1 payload is parsed
+  but counts as expired). `loadMpSession()` returns null past 12 h, so the
+  cold-start resolver, `GameProvider` and the rejoin effect all ignore it.
+  Re-saving the *same* room keeps its stamp (a cold start cannot refresh the
+  session it is judging); `touchMpSession()` renews it every minute and on
+  hide/pagehide while the player is in the room. The rejoin effect refuses
+  a `waiting` room unless the session was touched within the hour. Clearing
+  on room close / game finish / host leaving the lobby already existed; a
+  finished game is no longer re-saved when the display name changes.
+- **14** — `completionModalDismissed` starts true when the restored solo
+  puzzle's timer record says it was finished, and is set before the modal
+  navigates to the leaderboard or the sign-in sheet. The game header shows
+  `FinishedBar` ("Solved in 1:42" chip + Share, which re-opens the modal,
+  + Leaderboard for a daily, which goes straight to the board) in place of
+  the running clock (solo) / the room code (multiplayer). Loading a new solo
+  puzzle resets the flag (previously a dismissed celebration also hid the
+  next puzzle's).
+- **15** — `/solo/play` with no puzzle redirects to `/menu`.
 
 ## 5. Native app specifics (from code)
 

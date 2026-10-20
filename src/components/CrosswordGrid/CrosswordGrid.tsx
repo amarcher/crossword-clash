@@ -1,7 +1,8 @@
-import { useRef, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
 import { getWordCells } from "../../lib/gridUtils";
+import { useHiddenGridInput, type HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
 import { Cell } from "./Cell";
 import { Capacitor } from "@capacitor/core";
 
@@ -56,9 +57,32 @@ export function CrosswordGrid({
   inputRef: externalInputRef,
 }: CrosswordGridProps) {
   const { t } = useTranslation();
-  const internalInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = externalInputRef ?? internalInputRef;
   const nativeKeyboard = Capacitor.isNativePlatform();
+
+  // Cell ids are scoped to this grid instance so the hidden input's
+  // aria-activedescendant can name the cursor cell; screen readers then read
+  // that cell's label ("Row 3, Column 5, 12, A") whenever the cursor moves.
+  const gridId = useId();
+  const cellId = useCallback((row: number, col: number) => `${gridId}-${row}-${col}`, [gridId]);
+
+  const inputHandlers = useMemo<HiddenGridInputHandlers | null>(
+    () =>
+      navigationActions ? {
+        onLetter: navigationActions.inputLetter,
+        onErase: navigationActions.deleteLetter,
+        onMove: navigationActions.moveSelection,
+        onToggleDirection: navigationActions.toggleDirection,
+        onNextWord: navigationActions.nextWord,
+        onPrevWord: navigationActions.prevWord,
+      } : null,
+    [navigationActions],
+  );
+  const { inputRef, inputProps, focus } = useHiddenGridInput(inputHandlers, {
+    ref: externalInputRef,
+    label: t("grid.crosswordInput"),
+    activeDescendant: interactive && selectedCell ? cellId(selectedCell.row, selectedCell.col) : undefined,
+    controls: gridId,
+  });
 
   const isTouchDevice = useMemo(
     () => "ontouchstart" in window || navigator.maxTouchPoints > 0,
@@ -173,72 +197,9 @@ export function CrosswordGrid({
   const handleCellClick = useCallback(
     (row: number, col: number) => {
       onCellClick(row, col);
-      inputRef.current?.focus();
+      focus();
     },
-    [onCellClick, inputRef],
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!navigationActions) return;
-      const key = e.key;
-
-      if (/^[a-zA-Z]$/.test(key)) {
-        e.preventDefault();
-        navigationActions.inputLetter(key);
-        return;
-      }
-
-      switch (key) {
-        case "Backspace":
-          e.preventDefault();
-          navigationActions.deleteLetter();
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          navigationActions.moveSelection(-1, 0);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          navigationActions.moveSelection(1, 0);
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          navigationActions.moveSelection(0, -1);
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          navigationActions.moveSelection(0, 1);
-          break;
-        case "Tab":
-          e.preventDefault();
-          if (e.shiftKey) {
-            navigationActions.prevWord();
-          } else {
-            navigationActions.nextWord();
-          }
-          break;
-        case " ":
-          e.preventDefault();
-          navigationActions.toggleDirection();
-          break;
-      }
-    },
-    [navigationActions],
-  );
-
-  // Fallback for mobile keyboards that don't fire reliable keydown for letters
-  const handleBeforeInput = useCallback(
-    (e: React.FormEvent<HTMLInputElement>) => {
-      if (!navigationActions) return;
-      const nativeEvent = e.nativeEvent as InputEvent;
-      const data = nativeEvent.data;
-      if (data && /^[a-zA-Z]$/.test(data)) {
-        e.preventDefault();
-        navigationActions.inputLetter(data);
-      }
-    },
-    [navigationActions],
+    [onCellClick, focus],
   );
 
   // Fill available viewport: subtract header + padding vertically, and sidebar + padding horizontally.
@@ -261,42 +222,10 @@ export function CrosswordGrid({
       : `calc(${gridSize} * ${puzzle.height} / ${puzzle.width})`;
 
   return (
-    <div className="relative shrink-0">
-      {interactive && navigationActions && !nativeKeyboard && (
-        <input
-          ref={inputRef}
-          className="absolute opacity-0"
-          style={{
-            top: "50%",
-            left: "50%",
-            width: "1px",
-            height: "1px",
-            fontSize: "16px",       // prevents iOS auto-zoom on focus
-            caretColor: "transparent",
-            border: "none",
-            padding: 0,
-            margin: 0,
-          }}
-          name="crossword-cell"
-          autoCapitalize="characters"
-          autoCorrect="off"
-          autoComplete="nofill"
-          spellCheck={false}
-          enterKeyHint="next"
-          inputMode="text"
-          aria-label={t('grid.crosswordInput')}
-          data-form-type="other"
-          data-lpignore="true"
-          data-1p-ignore
-          onKeyDown={handleKeyDown}
-          onBeforeInput={handleBeforeInput}
-          onChange={() => {
-            // Clear after any input so backspace always has something to delete
-            if (inputRef.current) inputRef.current.value = "";
-          }}
-        />
-      )}
+    <div className="grid-shell relative shrink-0">
+      {interactive && navigationActions && !nativeKeyboard && <input {...inputProps} />}
       <div
+        id={gridId}
         role="grid"
         aria-label={t('grid.crosswordInput')}
         className="grid rounded-lg overflow-hidden border-2 border-ink bg-ink"
@@ -326,6 +255,7 @@ export function CrosswordGrid({
               return (
                 <Cell
                   key={key}
+                  id={cellId(cell.row, cell.col)}
                   cell={cell}
                   cellState={state}
                   isSelected={
