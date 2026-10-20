@@ -169,7 +169,11 @@
     "newPuzzle": "Nuevo crucigrama",
     "loadDifferent": "Cargar otro crucigrama",
     "closeRoomConfirm": "¿Cerrar esta sala? Todos los jugadores serán desconectados.",
-    "reconnecting": "Reconectando a la partida..."
+    "reconnecting": "Reconectando a la partida...",
+    "solvedIn": "Resuelto en {{time}}",
+    "solved": "Resuelto",
+    "share": "Compartir",
+    "leaderboard": "Clasificación"
   },
   "cluePanel": {
     "across": "→",

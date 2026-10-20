@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router";
 import type { Puzzle } from "./types/puzzle";
 
@@ -20,10 +20,14 @@ vi.mock("./contexts/GameContext", () => ({
   useGame: vi.fn(),
 }));
 
-vi.mock("./lib/sessionPersistence", () => ({
-  loadMpSession: vi.fn(() => null),
-  loadHostSession: vi.fn(() => null),
-}));
+vi.mock("./lib/sessionPersistence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lib/sessionPersistence")>();
+  return {
+    ...actual,
+    loadMpSession: vi.fn(() => null),
+    loadHostSession: vi.fn(() => null),
+  };
+});
 
 vi.mock("./lib/puzzleUrl", () => ({
   hasImportHash: vi.fn(() => false),
@@ -58,6 +62,7 @@ vi.mock("./screens/host/HostRejoinScreen", () => ({ HostRejoinScreen: () => null
 // --- Imports (after mocks) ---
 
 import { IndexRedirect, HostIndexRedirect } from "./routes";
+import { PageShell } from "./components/PageShell";
 import { useGame } from "./contexts/GameContext";
 import { useHostContext } from "./layouts/HostLayout";
 import { loadMpSession, loadHostSession } from "./lib/sessionPersistence";
@@ -165,6 +170,35 @@ describe("IndexRedirect", () => {
     expect(screen.getByTestId("navigated-to").textContent).toBe("/rejoin");
   });
 
+  describe("with the real session store", () => {
+    const HOUR = 60 * 60 * 1000;
+
+    beforeEach(async () => {
+      const actual = await vi.importActual<typeof import("./lib/sessionPersistence")>("./lib/sessionPersistence");
+      mockLoadMpSession.mockImplementation(() => actual.loadMpSession());
+    });
+
+    it("rejoins a room session saved within the last 12 hours", async () => {
+      const actual = await vi.importActual<typeof import("./lib/sessionPersistence")>("./lib/sessionPersistence");
+      actual.saveMpSession({ gameId: "abc", shareCode: null, displayName: "Alice" }, Date.now() - 11 * HOUR);
+      renderInRouter(IndexRedirect);
+      expect(screen.getByTestId("navigated-to").textContent).toBe("/rejoin");
+    });
+
+    it("ignores a room session older than 12 hours and shows the menu", async () => {
+      const actual = await vi.importActual<typeof import("./lib/sessionPersistence")>("./lib/sessionPersistence");
+      actual.saveMpSession({ gameId: "abc", shareCode: null, displayName: "Alice" }, Date.now() - 13 * HOUR);
+      renderInRouter(IndexRedirect);
+      expect(screen.getByTestId("menu-screen")).toBeTruthy();
+    });
+
+    it("ignores a session written before savedAt existed", () => {
+      localStorage.setItem("crossword-clash-mp", JSON.stringify({ version: 1, gameId: "abc", shareCode: null, displayName: "Alice" }));
+      renderInRouter(IndexRedirect);
+      expect(screen.getByTestId("menu-screen")).toBeTruthy();
+    });
+  });
+
   it("redirects to /solo/play when saved solo session exists", () => {
     mockUseGame.mockReturnValue({ urlPuzzle: null });
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ puzzle: makeMockPuzzle() }));
@@ -191,6 +225,60 @@ describe("IndexRedirect", () => {
     mockLoadMpSession.mockReturnValue({ gameId: "abc", displayName: "Alice" });
     renderInRouter(IndexRedirect);
     expect(screen.getByTestId("navigated-to").textContent).toBe("/importing");
+  });
+});
+
+describe("in-app menu links", () => {
+  beforeEach(() => {
+    mockUseGame.mockReturnValue({ urlPuzzle: null });
+    mockHasImportHash.mockReturnValue(false);
+    localStorage.clear();
+  });
+
+  afterEach(cleanup);
+
+  it("the site bar's back control lands on /menu even with saved solo and multiplayer sessions", async () => {
+    // Both resume paths "/" prefers over the menu are armed: the cold-start
+    // resolver would send this visitor to /rejoin (then the room's lobby); the
+    // leaderboard's "Back to menu" must not go through it.
+    mockLoadMpSession.mockReturnValue({ gameId: "stale-room", shareCode: null, displayName: "Alice", savedAt: Date.now() });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ puzzle: makeMockPuzzle() }));
+
+    render(
+      <MemoryRouter initialEntries={["/daily/leaderboard"]}>
+        <Routes>
+          <Route
+            path="/daily/leaderboard"
+            element={
+              <PageShell width="md" bar={{ backLabel: "Back to menu" }}>
+                <div data-testid="leaderboard">board</div>
+              </PageShell>
+            }
+          />
+          <Route path="/" element={<IndexRedirect />} />
+          <Route path="/menu" element={<div data-testid="menu-route">/menu</div>} />
+          <Route path="/rejoin" element={<div data-testid="navigated-to">/rejoin</div>} />
+          <Route path="/solo/play" element={<div data-testid="navigated-to">/solo/play</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const back = screen.getByRole("link", { name: "Back to menu" });
+    expect(back.getAttribute("href")).toBe("/menu");
+    fireEvent.click(back);
+    expect(await screen.findByTestId("menu-route")).toBeTruthy();
+    expect(screen.queryByTestId("navigated-to")).toBeNull();
+  });
+
+  it("the site bar's logo is a menu link too", () => {
+    render(
+      <MemoryRouter>
+        <PageShell width="md">
+          <div />
+        </PageShell>
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "Crossword Clash" }).getAttribute("href")).toBe("/menu");
   });
 });
 

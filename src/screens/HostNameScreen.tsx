@@ -42,7 +42,7 @@ export function HostNameScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/");
+    navigate("/menu");
   }, [game, navigate]);
 
   const [busy, setBusy] = useState(false);
