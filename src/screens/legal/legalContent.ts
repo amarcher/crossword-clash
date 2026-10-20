@@ -10,7 +10,7 @@
  * business is registered.
  */
 
-export const LEGAL_LAST_UPDATED = "2026-10-17";
+export const LEGAL_LAST_UPDATED = "2026-10-20";
 export const LEGAL_CONTACT_EMAIL = "acesuplabs@gmail.com";
 
 export interface LegalSection {
@@ -159,9 +159,15 @@ const en: LegalContent = {
         ],
       },
       {
+        heading: "Accounts",
+        paragraphs: [
+          "An account is optional. If you create one, you sign in with Apple or Google and must be at least 13 years old, or older where local law requires. You are responsible for activity on your account. You can delete your account at any time from the account menu.",
+        ],
+      },
+      {
         heading: "Acceptable use",
         items: [
-          "Do not use display names or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
+          "Do not use display names, usernames or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
           "Do not attempt to disrupt, overload or reverse-engineer the service, bypass rate limits or spending limits, or access data that is not yours.",
           "Do not use automated tools to cheat in games or manipulate leaderboards.",
         ],
@@ -376,9 +382,15 @@ const es: LegalContent = {
         ],
       },
       {
+        heading: "Cuentas",
+        paragraphs: [
+          "La cuenta es opcional. Si creas una, inicias sesión con Apple o Google y debes tener al menos 13 años, o más si la ley local lo exige. Eres responsable de la actividad de tu cuenta. Puedes eliminar tu cuenta en cualquier momento desde el menú de la cuenta.",
+        ],
+      },
+      {
         heading: "Uso aceptable",
         items: [
-          "No uses nombres visibles ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
+          "No uses nombres visibles, nombres de usuario ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
           "No intentes interrumpir, sobrecargar ni aplicar ingeniería inversa al servicio, eludir límites de uso o de gasto, ni acceder a datos que no son tuyos.",
           "No uses herramientas automáticas para hacer trampa en las partidas ni manipular las clasificaciones.",
         ],
