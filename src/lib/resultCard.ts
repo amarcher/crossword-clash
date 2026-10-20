@@ -1,11 +1,11 @@
 /**
  * Shareable result card — the testable core.
  *
- * Everything that *decides* something (which share mechanism to use for a given
- * browser, the download filename, and the text laid out on the card) is a PURE
- * function here, unit-tested in resultCard.test.ts. The actual canvas drawing
- * and `navigator.share` plumbing is impure DOM and lives in the component, kept
- * deliberately thin on top of these helpers.
+ * Everything that *decides* something (the download filename, the viewer's
+ * standing, and the text laid out on the card) is a PURE function here,
+ * unit-tested in resultCard.test.ts. The canvas drawing lives in
+ * resultCardCanvas.ts; the card is the "Save image" secondary action, while
+ * what "Share" sends is the text block from shareBlock.ts.
  */
 
 import { formatDuration } from "./soloStats";
@@ -15,26 +15,13 @@ export const SHARE_URL = "https://crosswordclash.com";
 
 export type ShareMode = "solo" | "multiplayer";
 
-/** Matches the `method` dimension of the `result_shared` analytics event. */
-export type ShareMethod = "webshare" | "copy" | "download";
-
-export interface ShareCapabilities {
-  /** `navigator.canShare({ files })` succeeded for an image file. */
-  canShareFiles: boolean;
-  /** `navigator.clipboard.writeText` is available. */
-  canCopy: boolean;
-}
-
 /**
- * Pick the best available share mechanism. Native Web Share (with file support)
- * wins on mobile; otherwise we copy the link, falling back to a plain download
- * when even the clipboard is unavailable. Never throws.
+ * The `method` dimension of the `result_shared` analytics event. The text
+ * block goes out as "native" (the app's share sheet), "webshare" or "copy"
+ * (see shareSheet.ts); the canvas card as "image" (shared as a file) or
+ * "download".
  */
-export function selectShareMethod(caps: ShareCapabilities): ShareMethod {
-  if (caps.canShareFiles) return "webshare";
-  if (caps.canCopy) return "copy";
-  return "download";
-}
+export type ShareMethod = "native" | "webshare" | "copy" | "image" | "download";
 
 /**
  * A filesystem-safe PNG filename derived from the puzzle title, e.g.

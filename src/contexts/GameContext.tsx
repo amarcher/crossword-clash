@@ -72,6 +72,8 @@ interface GameContextValue {
    * string (`?cf=&ct=`). Read from context, never window.location, after init.
    */
   urlChallenge: ChallengePayload | null;
+  /** Set by the /daily/:day/:slot route when its link carries a ghost (`?beat=&by=`). */
+  setUrlChallenge: (c: ChallengePayload | null) => void;
   wrongAnswerTimeout: number;
   setWrongAnswerTimeout: (v: number) => void;
   /** Lobby-chosen play mode; rides the game_started settings broadcast. */
@@ -122,7 +124,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   );
   // The query string survives extractPuzzleFromUrl() (which clears only the
   // hash), so a challenge's name+time can still be read from it at init.
-  const [urlChallenge] = useState<ChallengePayload | null>(() =>
+  const [urlChallenge, setUrlChallenge] = useState<ChallengePayload | null>(() =>
     hasUrlPuzzleOnLoad ? decodeChallengeParams(window.location.search) : null,
   );
 
@@ -262,6 +264,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     soloTheme,
     setSoloTheme,
     urlChallenge,
+    setUrlChallenge,
     wrongAnswerTimeout,
     setWrongAnswerTimeout,
     raceMode,

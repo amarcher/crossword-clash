@@ -45,12 +45,12 @@ export type PuzzleAction =
   | { type: "SELECT_CELL"; row: number; col: number }
   | { type: "TOGGLE_DIRECTION" }
   | { type: "SET_DIRECTION"; direction: Direction }
-  | { type: "INPUT_LETTER"; letter: string; playerId?: string }
+  | { type: "INPUT_LETTER"; letter: string; playerId?: string; at?: number }
   | { type: "DELETE_LETTER" }
   | { type: "MOVE_SELECTION"; dr: number; dc: number }
   | { type: "NEXT_WORD" }
   | { type: "PREV_WORD" }
-  | { type: "REMOTE_CELL_CLAIM"; row: number; col: number; letter: string; playerId: string }
+  | { type: "REMOTE_CELL_CLAIM"; row: number; col: number; letter: string; playerId: string; at?: number }
   | { type: "HYDRATE_CELLS"; cells: Record<string, CellState>; score: number }
   | { type: "ROLLBACK_CELL"; row: number; col: number; playerId: string };
 
@@ -234,10 +234,11 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         return state;
       }
 
-      // Correct letter — place it and advance
+      // Correct letter — place it and advance. `at` records when, for the
+      // spoiler-free share block's pace colours (callers may pass a clock).
       const newCells = {
         ...state.playerCells,
-        [key]: { letter, correct: true, playerId: action.playerId },
+        [key]: { letter, correct: true, playerId: action.playerId, at: action.at ?? Date.now() },
       };
       const newScore = state.score + 1;
       const next = advanceCursor(state.puzzle, newCells, row, col, state.direction);
@@ -345,7 +346,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       if (state.playerCells[key]?.correct) return state;
       const newCells = {
         ...state.playerCells,
-        [key]: { letter: action.letter, correct: true, playerId: action.playerId },
+        [key]: { letter: action.letter, correct: true, playerId: action.playerId, at: action.at ?? Date.now() },
       };
       return {
         ...state,

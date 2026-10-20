@@ -10,16 +10,22 @@ import {
   CONFETTI_DURATION_MS,
 } from "../../lib/celebration";
 import { playWinSound } from "../../lib/winSound";
-import { computeViewerStanding } from "../../lib/resultCard";
+import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import { SaveImageButton } from "./SaveImageButton";
 import type { DailySlot } from "../../lib/dailyFeed";
-import { ChallengeFriendButton } from "./ChallengeFriendButton";
 import { LeaderboardSignForm } from "./LeaderboardSignForm";
+import { buildShareBlock, type ShareBlock } from "../../lib/shareBlock";
+import { buildDailyLink } from "../../lib/dailyChallenge";
+import { buildChallengeUrl } from "../../lib/challenge";
+import { compressPuzzleToHash } from "../../lib/puzzleUrl";
+import { todayKey } from "../../lib/dailyLeaderboard";
+import { Capacitor } from "@capacitor/core";
 import { PlayLiveButton } from "./PlayLiveButton";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
-import type { Puzzle } from "../../types/puzzle";
+import type { CellState, Puzzle } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
 import type { RaceStandingRow } from "../../lib/raceResults";
 
@@ -88,10 +94,19 @@ interface CompletionModalProps {
    */
   currentUserId?: string;
   /**
-   * The full puzzle, used to build a "Challenge a friend" link (solo path). The
-   * button is shown only when a puzzle and a finish time are both present.
+   * The finished puzzle. Drives the share block (its rows are the grid's) and
+   * the challenge link; without it the modal offers no Share at all.
    */
   challengePuzzle?: Puzzle;
+  /** The solver's cells, for the block's pace colours (and claimants in a live race). */
+  playerCells?: Record<string, CellState>;
+  /** "row,col" keys that took a wrong letter at least once — red in the block. */
+  wrongCells?: readonly string[];
+  /**
+   * Live race (shared grid): hex colour per player id. When present the block
+   * colours cells by claimant instead of pace. Omit for solo and async races.
+   */
+  playerColors?: Record<string, string>;
   /** The finisher's display name, embedded as the challenger in the link. */
   challengerName?: string;
   /**
@@ -141,6 +156,9 @@ export function CompletionModal({
   players,
   currentUserId,
   challengePuzzle,
+  playerCells,
+  wrongCells,
+  playerColors,
   challengerName,
   challengeOutcome,
   onPlayLive,
@@ -151,7 +169,7 @@ export function CompletionModal({
   onSignIn,
   darkMode,
 }: CompletionModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   const handleEscape = useCallback(() => {
@@ -182,8 +200,6 @@ export function CompletionModal({
     const id = window.setTimeout(() => setCelebrating(false), CONFETTI_DURATION_MS);
     return () => window.clearTimeout(id);
   }, [celebrating]);
-
-  if (!open) return null;
 
   const isAsync = !!raceStandings && raceStandings.length > 0;
   const isMultiplayer = (players && players.length > 0) || isAsync;
@@ -219,6 +235,67 @@ export function CompletionModal({
     : isMultiplayer && !coop
       ? computeViewerStanding(ranked, currentUserId)
       : null;
+
+  // The time that headlines the share (solo finish, or the race time).
+  const shareSeconds = finishSeconds ?? raceSeconds ?? undefined;
+  const shareWinnerName = isAsync ? asyncWinner?.displayName : winner?.displayName;
+  const shareIsTie = isAsync ? asyncTie : isTie;
+
+  // The standing line of the share block (a string, so the block builder's
+  // dependencies stay stable across renders).
+  const shareStanding = !isMultiplayer
+    ? undefined
+    : coop
+      ? t("completion.coopSolved")
+      : viewerStanding
+        ? t(
+            viewerStanding.won
+              ? "completion.cardStandingWin"
+              : viewerStanding.tiedForFirst
+                ? "completion.cardStandingTie"
+                : "completion.cardStandingRank",
+            { rank: viewerStanding.rank, total: viewerStanding.total },
+          )
+        : shareIsTie
+          ? t("completion.tie")
+          : t("completion.wins", { name: shareWinnerName ?? "" });
+  const shareDaily = dailySlot
+    ? t(dailySlot === "large" ? "menu.dailyLargeEyebrow" : dailySlot === "midi" ? "menu.dailyMidiEyebrow" : "menu.dailyMiniEyebrow")
+    : undefined;
+  const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
+
+  // The spoiler-free result block for a given challenger name: the link
+  // carries the name (and the ghost time), so it is rebuilt when one is signed.
+  const blockFor = useCallback(
+    (name: string): ShareBlock => {
+      const puzzle = challengePuzzle as Puzzle;
+      const link = dailySlot
+        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name })
+        : shareSeconds !== undefined
+          ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
+          : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
+      return buildShareBlock({
+        puzzle,
+        cells: playerCells ?? {},
+        wrongCells,
+        seconds: shareSeconds,
+        day: dailySlot ? todayKey() : undefined,
+        locale: i18n.language,
+        playerColors,
+        link,
+        labels: {
+          brand: t("completion.shareBrand"),
+          daily: shareDaily,
+          streak: shareStreak,
+          standing: shareStanding,
+          cta: shareSeconds !== undefined ? t("completion.beatMyTime") : t("completion.playIt"),
+        },
+      });
+    },
+    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language],
+  );
+
+  if (!open) return null;
 
   const bg = darkMode ? "bg-stage-raised ring-1 ring-stage-line" : "bg-surface";
   const text = darkMode ? "text-white" : "text-ink";
@@ -513,26 +590,34 @@ export function CompletionModal({
               {t('completion.newPuzzle')}
             </button>
           )}
-          <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+          {/* One Share: the spoiler-free block (previewed above its button),
+              whose link is the challenge. Needs the puzzle for the rows. */}
+          {challengePuzzle && (
             <ShareResultButton
               mode={isMultiplayer ? "multiplayer" : "solo"}
-              puzzleTitle={puzzleTitle}
-              finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
-              bestSeconds={bestSeconds}
-              isNewBest={isNewBest}
-              winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
-              isTie={isAsync ? asyncTie : isTie}
-              coop={coop}
-              viewerStanding={viewerStanding ?? undefined}
-              dailySlot={dailySlot}
+              blockFor={blockFor}
+              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+              hasTime={shareSeconds !== undefined}
+              puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
+              daily={!!dailySlot}
+              onNameSigned={dailySign?.onSign}
               darkMode={darkMode}
             />
-            {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
-              <ChallengeFriendButton
-                puzzle={challengePuzzle}
-                challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
-                finishSeconds={finishSeconds}
-                onNameSigned={dailySign?.onSign}
+          )}
+          <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+            {/* The canvas card stays as a secondary "Save image" (the app's
+                WebView cannot save a blob; the plugin for that comes later). */}
+            {challengePuzzle && !Capacitor.isNativePlatform() && (
+              <SaveImageButton
+                mode={isMultiplayer ? "multiplayer" : "solo"}
+                puzzleTitle={puzzleTitle}
+                finishSeconds={shareSeconds}
+                bestSeconds={bestSeconds}
+                isNewBest={isNewBest}
+                winnerName={shareWinnerName}
+                isTie={shareIsTie}
+                coop={coop}
+                viewerStanding={viewerStanding ?? undefined}
                 darkMode={darkMode}
               />
             )}

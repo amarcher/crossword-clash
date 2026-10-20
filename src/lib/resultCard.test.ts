@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  selectShareMethod,
   buildResultFilename,
   composeCardText,
   computeViewerStanding,
@@ -18,29 +17,6 @@ const LABELS: ResultCardLabels = {
   tie: "It's a tie!",
   standing: "Finished #3 of 5",
 };
-
-describe("selectShareMethod", () => {
-  it("prefers native web share when files can be shared", () => {
-    expect(
-      selectShareMethod({ canShareFiles: true, canCopy: true }),
-    ).toBe("webshare");
-    expect(
-      selectShareMethod({ canShareFiles: true, canCopy: false }),
-    ).toBe("webshare");
-  });
-
-  it("falls back to copy when web share is unavailable but clipboard works", () => {
-    expect(
-      selectShareMethod({ canShareFiles: false, canCopy: true }),
-    ).toBe("copy");
-  });
-
-  it("falls back to download when nothing else is available", () => {
-    expect(
-      selectShareMethod({ canShareFiles: false, canCopy: false }),
-    ).toBe("download");
-  });
-});
 
 describe("buildResultFilename", () => {
   it("slugifies the puzzle title", () => {

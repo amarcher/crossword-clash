@@ -45,6 +45,13 @@ export interface CellState {
   correct: boolean;
   /** Player who claimed this cell */
   playerId?: string;
+  /**
+   * When the cell was filled, in wall-clock ms (`Date.now()`), stamped by
+   * INPUT_LETTER and REMOTE_CELL_CLAIM. Hydrated cells keep whatever was
+   * saved, so cells from before this field exist have none. The share block
+   * reads the relative order and spread, never the absolute time.
+   */
+  at?: number;
 }
 
 export interface CellCoord {

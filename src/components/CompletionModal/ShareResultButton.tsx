@@ -1,276 +1,193 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Share2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { buttonClass } from "../ui";
 import { track } from "../../lib/analytics";
-import { formatDuration } from "../../lib/soloStats";
-import {
-  SHARE_URL,
-  buildResultFilename,
-  composeCardText,
-  selectShareMethod,
-  type ResultCardInput,
-  type ResultCardText,
-  type ShareMethod,
-} from "../../lib/resultCard";
-import { buildResultShareUrl } from "../../lib/shareLinks";
-import type { DailySlot } from "../../lib/dailyFeed";
+import { isRealPlayerName, savePlayerName } from "../../lib/playerName";
+import { shareText, type ShareDeps } from "../../lib/shareSheet";
+import type { ShareBlock } from "../../lib/shareBlock";
+import type { ShareMode } from "../../lib/resultCard";
 
-interface ShareResultButtonProps extends ResultCardInput {
-  /** Set when the puzzle was today's daily: the caption names the slot ("Daily Large"). */
-  dailySlot?: DailySlot;
+interface ShareResultButtonProps {
+  mode: ShareMode;
+  /**
+   * The result block for a given challenger name. The link inside carries the
+   * name, so the block is rebuilt when the finisher signs one.
+   */
+  blockFor: (name: string) => ShareBlock;
+  /** The finisher's name as known; the anonymous default counts as none. */
+  challengerName: string;
+  /** Whether a ghost time rides in the link — only then is a name worth asking for. */
+  hasTime: boolean;
+  /** Puzzle size for the challenge analytics dimension. */
+  puzzleSize?: string;
+  /** True when the puzzle was today's daily: the button says "Share your time". */
+  daily?: boolean;
+  /**
+   * Fired when the finisher types a name to sign the share — lets the screen
+   * reuse it (e.g. claim the daily-leaderboard entry with it too).
+   */
+  onNameSigned?: (name: string) => void;
   darkMode?: boolean;
 }
 
-const CARD_W = 1200;
-const CARD_H = 630;
+/** A link as shown in the preview: no scheme, and a `#puzzle=` payload cut short (it is the whole puzzle). */
+export function displayLink(url: string): string {
+  const bare = url.replace(/^https?:\/\//, "");
+  const payload = bare.indexOf("#puzzle=");
+  return payload === -1 ? bare : `${bare.slice(0, payload + "#puzzle=".length + 6)}…`;
+}
 
-/** Draw the result card onto a canvas. Impure DOM glue over the pure layout. */
-function drawCard(card: ResultCardText): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = CARD_W;
-  canvas.height = CARD_H;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-
-  // Background — deep indigo gradient.
-  const grad = ctx.createLinearGradient(0, 0, CARD_W, CARD_H);
-  grad.addColorStop(0, "#1e1b4b");
-  grad.addColorStop(1, "#312e81");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
-
-  ctx.textAlign = "center";
-  const cx = CARD_W / 2;
-
-  // Outcome glyph + heading (trophy only for an actual win — see resultGlyph).
-  ctx.font = "96px serif";
-  ctx.fillText(card.glyph, cx, 190);
-
-  ctx.fillStyle = "#a5b4fc";
-  ctx.font = "600 44px system-ui, sans-serif";
-  ctx.fillText(card.heading, cx, 270);
-
-  // Puzzle title (truncated to fit).
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "700 56px system-ui, sans-serif";
-  ctx.fillText(fit(ctx, card.title, CARD_W - 160), cx, 360);
-
-  // Headline metric (finish time / outcome).
-  if (card.metric) {
-    ctx.fillStyle = "#fde68a";
-    ctx.font = "800 100px system-ui, sans-serif";
-    ctx.fillText(fit(ctx, card.metric, CARD_W - 120), cx, 470);
+/** The share deps for this runtime: the Capacitor plugin in the app, the browser APIs on the web. */
+async function runtimeDeps(): Promise<ShareDeps> {
+  const nav = typeof navigator !== "undefined" ? navigator : undefined;
+  const nativePlatform = Capacitor.isNativePlatform();
+  const deps: ShareDeps = {
+    nativePlatform,
+    canWebShare: typeof nav?.share === "function",
+    canCopy: typeof nav?.clipboard?.writeText === "function",
+    webShare: nav?.share ? (data) => nav.share(data) : undefined,
+    copy: nav?.clipboard?.writeText ? (text) => nav.clipboard.writeText(text) : undefined,
+  };
+  if (nativePlatform) {
+    const { Share } = await import("@capacitor/share");
+    deps.nativeShare = (data) => Share.share(data);
   }
-
-  // Optional detail.
-  if (card.detail) {
-    ctx.fillStyle = "#c7d2fe";
-    ctx.font = "500 40px system-ui, sans-serif";
-    ctx.fillText(card.detail, cx, 535);
-  }
-
-  // Brand tag.
-  ctx.fillStyle = "#818cf8";
-  ctx.font = "600 36px system-ui, sans-serif";
-  ctx.fillText(card.tag, cx, 595);
-
-  return canvas;
+  return deps;
 }
 
-/** Truncate text with an ellipsis so it fits within maxWidth. */
-function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text;
-  let s = text;
-  while (s.length > 1 && ctx.measureText(s + "…").width > maxWidth) {
-    s = s.slice(0, -1);
-  }
-  return s + "…";
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    try {
-      canvas.toBlob((blob) => resolve(blob), "image/png");
-    } catch {
-      resolve(null);
-    }
-  });
-}
-
-function triggerDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  // Defer the revoke: revoking synchronously after click() aborts the download
-  // in Safari/Firefox (the browser hasn't finished reading the blob yet).
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
-export function ShareResultButton(props: ShareResultButtonProps) {
-  const { darkMode, dailySlot, ...input } = props;
+/**
+ * The one Share: a preview of the spoiler-free result block, then the button
+ * that sends it (share sheet, or clipboard with a toast saying so). The block's
+ * last line is the challenge link, so sharing IS challenging. A finisher with
+ * no real name is asked to sign first; a blank signature shares as "A friend".
+ */
+export function ShareResultButton({
+  mode,
+  blockFor,
+  challengerName,
+  hasTime,
+  puzzleSize,
+  daily,
+  onNameSigned,
+  darkMode,
+}: ShareResultButtonProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
+
+  const presetName = challengerName.trim();
+  const hasRealName = isRealPlayerName(presetName);
+  const [name, setName] = useState(hasRealName ? presetName : "");
+  const unsigned = t("challenge.unsignedName");
+
+  const effectiveName = (hasRealName ? presetName : name.trim()) || unsigned;
+  const block = useMemo(() => blockFor(effectiveName), [blockFor, effectiveName]);
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const buildCaption = useCallback((): string => {
-    const title = (input.puzzleTitle ?? "").trim() || "Crossword";
-    // The shared link points at the /share edge function, so the pasted URL
-    // unfurls into a per-result OG card (time/standing) instead of the
-    // generic site preview. Crawlers see the card; humans get redirected in.
-    const url = buildResultShareUrl(SHARE_URL, {
-      title: input.puzzleTitle,
-      seconds: input.finishSeconds,
-      rank: input.viewerStanding?.rank,
-      total: input.viewerStanding?.total,
-    });
-    if (input.mode === "multiplayer") {
-      if (input.coop) {
-        return input.finishSeconds !== undefined
-          ? t("completion.shareCaptionCoop", {
-              title,
-              time: formatDuration(input.finishSeconds),
-              url,
-            })
-          : t("completion.shareCaptionCoopNoTime", { title, url });
-      }
-      const standing = input.viewerStanding;
-      if (standing) {
-        const vars = { title, rank: standing.rank, total: standing.total, url };
-        if (standing.won) return t("completion.shareCaptionStandingWin", vars);
-        if (standing.tiedForFirst) return t("completion.shareCaptionStandingTie", vars);
-        return t("completion.shareCaptionStandingRank", vars);
-      }
-      return input.isTie
-        ? t("completion.shareCaptionTie", { title, url })
-        : t("completion.shareCaptionWin", {
-            name: input.winnerName ?? "",
-            title,
-            url,
-          });
-    }
-    if (dailySlot) {
-      const daily = t(dailySlot === "large" ? "menu.dailyLargeEyebrow" : dailySlot === "midi" ? "menu.dailyMidiEyebrow" : "menu.dailyMiniEyebrow");
-      return input.finishSeconds !== undefined
-        ? t("completion.shareCaptionDaily", { daily, title, time: formatDuration(input.finishSeconds), url })
-        : t("completion.shareCaptionDailyNoTime", { daily, title, url });
-    }
-    return input.finishSeconds !== undefined
-      ? t("completion.shareCaptionSolo", {
-          title,
-          time: formatDuration(input.finishSeconds),
-          url,
-        })
-      : t("completion.shareCaptionSoloNoTime", { title, url });
-  }, [input, dailySlot, t]);
-
-  const handleShare = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    const report = (method: ShareMethod) =>
-      track("result_shared", { mode: input.mode, method });
-    try {
-      const card = composeCardText(input, {
-        tag: t("completion.shareTag"),
-        heading: t("completion.cardHeading"),
-        newBest: t("soloStats.newBest"),
-        best:
-          input.bestSeconds !== undefined
-            ? t("soloStats.bestTime", { time: formatDuration(input.bestSeconds) })
-            : "",
-        winner: t("completion.wins", { name: input.winnerName ?? "" }),
-        tie: t("completion.tie"),
-        coop: t("completion.coopSolved"),
-        standing: input.viewerStanding
-          ? t(
-              input.viewerStanding.won
-                ? "completion.cardStandingWin"
-                : input.viewerStanding.tiedForFirst
-                  ? "completion.cardStandingTie"
-                  : "completion.cardStandingRank",
-              {
-                rank: input.viewerStanding.rank,
-                total: input.viewerStanding.total,
-              },
-            )
-          : undefined,
-      });
-      const caption = buildCaption();
-      const filename = buildResultFilename(input.puzzleTitle);
-      const blob = await canvasToBlob(drawCard(card));
-
-      const file =
-        blob &&
-        typeof File !== "undefined" &&
-        new File([blob], filename, { type: "image/png" });
-
-      const nav = typeof navigator !== "undefined" ? navigator : undefined;
-      const canShareFiles = Boolean(
-        file &&
-          nav?.canShare?.({ files: [file] }) &&
-          typeof nav?.share === "function",
-      );
-      const canCopy = typeof nav?.clipboard?.writeText === "function";
-      const method = selectShareMethod({ canShareFiles, canCopy });
-
-      if (method === "webshare" && file) {
-        try {
-          // Share the result IMAGE as the primary item (+ the brag caption).
-          // Passing `url` makes the OS headline the generic site link and its
-          // (often failing) link preview instead of the actual result card.
-          await nav!.share({ files: [file], text: caption });
-          report("webshare");
-        } catch (err) {
-          // User dismissed the share sheet — not an error, nothing shared.
-          if ((err as DOMException)?.name === "AbortError") return;
-          // Real failure → fall back to a download so the user still gets the card.
-          if (blob) {
-            triggerDownload(blob, filename);
-            flash(t("completion.imageSaved"));
-            report("download");
-          }
+  const doShare = useCallback(
+    async (rawName: string) => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        const typedName = rawName.trim();
+        // A freshly signed name is worth keeping: persist it for future
+        // sessions and let the screen apply it elsewhere (daily leaderboard).
+        if (!hasRealName && typedName) {
+          savePlayerName(typedName);
+          onNameSigned?.(typedName);
         }
-        return;
-      }
-
-      // Desktop fallback: copy the link AND offer the PNG download.
-      if (blob) triggerDownload(blob, filename);
-      if (method === "copy") {
-        try {
-          await nav!.clipboard.writeText(caption);
-          flash(t("completion.linkCopied"));
-          report("copy");
+        const finalName = (hasRealName ? presetName : typedName) || unsigned;
+        const toSend = blockFor(finalName);
+        const result = await shareText(
+          { text: toSend.text, body: toSend.body, url: toSend.link, title: t("completion.shareTitle") },
+          await runtimeDeps(),
+        );
+        if (result.outcome === "dismissed") return;
+        if (result.outcome === "failed") {
+          flash(t("completion.shareFailed"));
           return;
-        } catch {
-          // Clipboard blocked — the download already happened.
         }
+        setSigning(false);
+        track("result_shared", { mode, method: result.method });
+        if (hasTime) track("challenge_created", { size: puzzleSize, method: result.method });
+        if (result.outcome === "copied") flash(t("completion.resultCopied"));
+      } catch {
+        // Sharing must never break the completion screen.
+      } finally {
+        setBusy(false);
       }
-      if (blob) flash(t("completion.imageSaved"));
-      report("download");
-    } catch {
-      // Sharing must never break the completion screen.
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, input, t, buildCaption, flash]);
+    },
+    [busy, hasRealName, presetName, unsigned, blockFor, onNameSigned, t, flash, mode, hasTime, puzzleSize],
+  );
+
+  const handlePrimary = useCallback(() => {
+    if (hasRealName || !hasTime || signing) doShare(name);
+    else setSigning(true);
+  }, [hasRealName, hasTime, signing, doShare, name]);
+
+  const label = toast ?? (busy ? t("completion.sharing") : daily ? t("completion.shareDaily") : t("completion.share"));
 
   return (
-    <button
-      onClick={handleShare}
-      disabled={busy}
-      className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}
+    <div className="col-span-2 flex flex-col gap-2" data-testid="share-result">
+      <ShareBlockPreview block={block} darkMode={darkMode} />
+      {signing && (
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") doShare(name);
+          }}
+          placeholder={t("completion.signPlaceholder")}
+          aria-label={t("completion.signPlaceholder")}
+          autoFocus
+          maxLength={24}
+          className={`h-11 w-full rounded-xl border px-4 text-center text-base font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${
+            darkMode
+              ? "bg-white/5 border-stage-line text-white placeholder:text-white/40"
+              : "bg-surface border-line-strong text-ink placeholder:text-subtle"
+          }`}
+        />
+      )}
+      <button onClick={handlePrimary} disabled={busy} className={buttonClass("primary", "lg", "w-full")}>
+        {!toast && !busy && <Share2 className="size-4" aria-hidden="true" />}
+        {label}
+      </button>
+    </div>
+  );
+}
+
+/** The block as it will paste: header, stats, the emoji rows, then the link. */
+export function ShareBlockPreview({ block, darkMode }: { block: ShareBlock; darkMode?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-testid="share-block-preview"
+      aria-label={t("completion.sharePreviewLabel")}
+      className={`rounded-2xl px-4 py-3 text-left ${darkMode ? "bg-white/5 ring-1 ring-stage-line" : "bg-surface-sunken"}`}
     >
-      {!toast && !busy && <Share2 className="size-4" aria-hidden="true" />}
-      {toast ?? (busy ? t("completion.sharing") : t("completion.share"))}
-    </button>
+      <p className={`text-sm font-semibold ${darkMode ? "text-white" : "text-ink"}`}>{block.header}</p>
+      {block.stats && <p className={`text-sm ${darkMode ? "text-white/70" : "text-ink-soft"}`}>{block.stats}</p>}
+      {/* Rows of up to 9 squares at 17px; a 15-block pace bar steps down so it
+          fits a 375px phone inside the modal's padding. */}
+      <div
+        className={`mt-2 select-all leading-[1.15] tracking-[0.04em] ${[...(block.grid[0] ?? "")].length > 9 ? "text-[12px]" : "text-[17px]"}`}
+        aria-hidden="true"
+      >
+        {block.grid.map((row, i) => (
+          <div key={i}>{row}</div>
+        ))}
+      </div>
+      <p className={`mt-2 break-all text-xs ${darkMode ? "text-white/50" : "text-subtle"}`}>
+        {block.cta} {displayLink(block.link)}
+      </p>
+    </div>
   );
 }

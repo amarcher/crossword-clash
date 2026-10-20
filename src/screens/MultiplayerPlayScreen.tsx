@@ -75,6 +75,7 @@ export function MultiplayerPlayScreen() {
     playerResults,
     rejectedCell,
     wrongLetters,
+    wrongCells,
     isHost,
     shareCode,
     gameStatus,
@@ -473,6 +474,13 @@ export function MultiplayerPlayScreen() {
         raceSeconds={isAsync ? myFinishSeconds ?? null : raceSeconds}
         raceStandings={raceStandings}
         coop={isCoop}
+        challengePuzzle={puzzle}
+        playerCells={playerCells}
+        wrongCells={wrongCells}
+        // A shared grid is coloured by claimant; an async copy is all one player's.
+        playerColors={isAsync ? undefined : playerColorMap}
+        challengerName={game.displayName}
+        puzzleSize={`${puzzle.width}x${puzzle.height}`}
         nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
         dailySlot={dailySlot ?? undefined}
