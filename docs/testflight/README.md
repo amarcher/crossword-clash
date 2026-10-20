@@ -21,9 +21,9 @@ pnpm mobile:sync
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath ios/DerivedData \
-  -archivePath artifacts/mobile/CrosswordClash-1.0.0-1.xcarchive archive
+  -archivePath artifacts/mobile/CrosswordClash-1.0.2-9.xcarchive archive
 xcodebuild -exportArchive \
-  -archivePath artifacts/mobile/CrosswordClash-1.0.0-1.xcarchive \
+  -archivePath artifacts/mobile/CrosswordClash-1.0.2-9.xcarchive \
   -exportPath artifacts/mobile/testflight-export \
   -exportOptionsPlist ios/ExportOptions-TestFlight.plist \
   -allowProvisioningUpdates
@@ -114,3 +114,39 @@ See `../NATIVE-NYT-IMPORT.md` for importer behavior and current limitations.
   another build from this version to external review until that review ends.
 - Website changes are committed locally; production publishing awaits owner
   approval. Commit: `74f9623` (application code).
+
+### Build 9 (1.0.2): share, Up next, Daily Midi and Large, grid refresh
+
+Everything merged to `main` between build 8 (commit `04a5018`, October 14) and
+October 20 that reaches the apps. Accounts, prerendering and the studio are
+website-only (`accountsAvailable()` is false in mobile mode) and are not in
+this build.
+
+- The finish leads with one Share button. It sends a spoiler-free text block
+  (emoji rows, time, streak, standing) through the OS share sheet via
+  `@capacitor/share`, which `cap sync` has already registered in both native
+  projects (`ios/App/CapApp-SPM/Package.swift`,
+  `android/capacitor.settings.gradle`). A daily's link is
+  `https://crosswordclash.com/daily/<day>/<slot>?beat=…`; every other puzzle
+  keeps the `#puzzle=` payload. "Save image" and the challenge-link row stay
+  hidden in the apps.
+- "Up next" after a finish (unsolved dailies, then an unplayed classic, then
+  the library) and a fresh-puzzle picker for "Race a friend live" and the
+  host's "Next puzzle, same room".
+- Daily Midi and Daily Large tiles beside the mini, each with its own
+  leaderboard. All three slots come from the website feed the app already
+  reads, so the new puzzle rotation reached build 8 without a release; only
+  the tiles and leaderboards need this build.
+- Grid refresh: gold fills, ink frame, block cursor, cursor announcements,
+  arrow keys skip black squares, three animation fixes, one hidden input.
+- Navigation: in-app "Back to menu" always lands on the menu, room sessions
+  expire after 12 h (a waiting lobby after 1 h), route cross-fades, stable
+  first paint, the wordmark animation once per session.
+
+Verified in this container on October 20: `pnpm mobile:sync` (mobile-mode
+web build plus `cap sync` for iOS and Android) succeeded on the merged code
+and left the tracked native project files unchanged. The iOS archive, export
+and upload need a Mac; see **Rebuild** above. Tester instructions:
+`WHAT-TO-TEST-9.txt`. Android is at versionCode 4 for a matching internal
+testing build (`./gradlew bundleRelease` with `android/keystore.properties`
+in place).
