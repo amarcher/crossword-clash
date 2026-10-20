@@ -263,6 +263,16 @@ select,
   touch-action: manipulation;
 }
 
+/* Grid focus — the grid's keyboard target is a hidden input, so the frame
+   itself shows that keys will land in the grid rather than in a clue list or
+   a button. Pointer devices only: on a phone every tap focuses that input, so
+   the ring would never mean anything there. Instant, like the selection. */
+@media (hover: hover) {
+  .grid-shell:focus-within > [role="grid"] {
+    box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-brand-500);
+  }
+}
+
 /* Wrong letter — a red background flash plus a red outline, with a short
    shake. The rejected cell is always the cursor cell, so the flash has to win
    over its selection fill: animated properties sit above inline and class
