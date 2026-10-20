@@ -215,7 +215,7 @@ const en: LegalContent = {
   },
   support: {
     intro:
-      "Help with Crossword Clash on the web and in the iOS and Android apps. The game is free and needs no account.",
+      "Help with Crossword Clash on the web and in the iOS and Android apps. The game is free, and an account is optional.",
     sections: [
       {
         heading: "Contact us",
@@ -242,7 +242,7 @@ const en: LegalContent = {
       {
         heading: "Delete your data",
         paragraphs: [
-          "To have the game, puzzle and leaderboard records tied to your anonymous ID deleted, email " + C + " with your display name and, if you have it, a room code. Deleting the app removes everything stored on your device.",
+          "If you have an account, you can delete it from the account menu. To have the game, puzzle and leaderboard records tied to your anonymous ID deleted, email " + C + " with your display name and, if you have it, a room code. Deleting the app removes everything stored on your device.",
         ],
       },
     ],
@@ -432,7 +432,7 @@ const es: LegalContent = {
   },
   support: {
     intro:
-      "Ayuda con Crossword Clash en la web y en las apps de iOS y Android. El juego es gratuito y no requiere cuenta.",
+      "Ayuda con Crossword Clash en la web y en las apps de iOS y Android. El juego es gratuito y la cuenta es opcional.",
     sections: [
       {
         heading: "Contáctanos",
@@ -459,7 +459,7 @@ const es: LegalContent = {
       {
         heading: "Eliminar tus datos",
         paragraphs: [
-          "Para que eliminemos los registros de partidas, crucigramas y clasificación vinculados a tu identificador anónimo, escribe a " + C + " con tu nombre visible y, si lo tienes, un código de sala. Eliminar la app borra todo lo guardado en tu dispositivo.",
+          "Si tienes una cuenta, puedes eliminarla desde el menú de la cuenta. Para que eliminemos los registros de partidas, crucigramas y clasificación vinculados a tu identificador anónimo, escribe a " + C + " con tu nombre visible y, si lo tienes, un código de sala. Eliminar la app borra todo lo guardado en tu dispositivo.",
         ],
       },
     ],
