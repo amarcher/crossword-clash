@@ -84,7 +84,7 @@ export async function fetchEnabledProviders(): Promise<Record<AuthProvider, bool
 
 /**
  * Starts the provider's sign-in; the page navigates away on success and comes
- * back to `returnTo` (default: the current page). Pass `returnTo: "/"` from a
+ * back to `returnTo` (default: the current page). Pass `returnTo: "/menu"` from a
  * screen that cannot finish a sign-in itself (for example a play screen), so
  * the menu, which calls resumeSignIn, picks it up.
  */

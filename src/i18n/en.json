@@ -169,7 +169,11 @@
     "newPuzzle": "New Puzzle",
     "loadDifferent": "Load Different Puzzle",
     "closeRoomConfirm": "Close this room? All players will be disconnected.",
-    "reconnecting": "Reconnecting to game..."
+    "reconnecting": "Reconnecting to game...",
+    "solvedIn": "Solved in {{time}}",
+    "solved": "Solved",
+    "share": "Share",
+    "leaderboard": "Leaderboard"
   },
   "cluePanel": {
     "across": "Across",

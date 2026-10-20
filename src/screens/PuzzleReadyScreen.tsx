@@ -50,7 +50,7 @@ export function PuzzleReadyScreen() {
   const handleBack = useCallback(() => {
     // Drop the imported puzzle so the index route doesn't bounce straight back here.
     game.setUrlPuzzle(null);
-    navigate("/");
+    navigate("/menu");
   }, [game, navigate]);
 
   if (!game.urlPuzzle) {

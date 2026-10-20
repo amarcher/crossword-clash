@@ -51,7 +51,7 @@ export function ImportingScreen() {
   }
 
   return (
-    <FlowPage title={t('importing.failed')} subtitle={t('importing.failedReason')} onBack={() => navigate("/")} backLabel={t('importing.backToMenu')}>
+    <FlowPage title={t('importing.failed')} subtitle={t('importing.failedReason')} onBack={() => navigate("/menu")} backLabel={t('importing.backToMenu')}>
       <div className="grid gap-4">
         <Card className="grid gap-3 p-5">
           <Button size="lg" block onClick={attemptImport}>
@@ -81,7 +81,7 @@ export function ImportingScreen() {
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-gold-500" aria-hidden="true" />
           {t('importing.retryHint')}
         </p>
-        <Button variant="ghost" block onClick={() => navigate("/")}>
+        <Button variant="ghost" block onClick={() => navigate("/menu")}>
           {t('importing.backToMenu')}
         </Button>
       </div>

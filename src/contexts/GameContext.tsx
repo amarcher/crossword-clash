@@ -12,6 +12,7 @@ import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import { loadPlayerName } from "../lib/playerName";
+import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -139,7 +140,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     () => mpSession?.displayName ?? loadPlayerName() ?? tStatic('common.defaultPlayerName'),
   );
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
-  const [completionModalDismissed, setCompletionModalDismissed] = useState(false);
+  // A finished solo puzzle restored at launch has had its celebration already:
+  // the play screen opens on the solved grid with the modal closed (its header
+  // can re-open it). A fresh finish starts with the modal shown.
+  const [completionModalDismissed, setCompletionModalDismissed] = useState(() => {
+    const saved = initialSavedSession?.puzzle;
+    if (!saved) return false;
+    const timer = loadSoloTimer();
+    return !!timer?.completed && timer.key === puzzleIdentity(saved);
+  });
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
   const [raceMode, setRaceMode] = useState<RaceMode>("versus");
@@ -222,6 +231,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // A new solo puzzle must never write into a previous game's server row.
       setGameId(null);
       setIsMultiplayer(false);
+      // The previous puzzle's dismissed celebration must not hide this one's.
+      setCompletionModalDismissed(false);
       fileBufferRef.current = fileBuffer ?? null;
       // Imported / sample puzzles carry no theme — clear any prior daily theme
       // so a stale "Today's theme" banner never bleeds onto a new puzzle.

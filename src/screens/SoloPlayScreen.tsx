@@ -11,6 +11,7 @@ import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
 import { Scoreboard } from "../components/Scoreboard/Scoreboard";
 import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
+import { FinishedBar } from "../components/FinishedBar";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -240,7 +241,7 @@ export function SoloPlayScreen() {
     clearMpSession();
     clearSoloTimer();
     clearChallenge();
-    navigate("/");
+    navigate("/menu");
   }, [reset, game, navigate]);
 
   const handleNewPuzzle = useCallback(() => {
@@ -253,6 +254,22 @@ export function SoloPlayScreen() {
     setCompletionModalDismissed(true);
     handleReset();
   }, [setCompletionModalDismissed, handleReset]);
+
+  // Leaving the finished grid for the board (or the sign-in sheet) dismisses
+  // the celebration: coming back shows the solved grid with the slim finished
+  // header, whose Share button re-opens the modal on demand.
+  const handleViewLeaderboard = useCallback(() => {
+    if (!dailySlot) return;
+    setCompletionModalDismissed(true);
+    navigate(leaderboardPath(dailySlot));
+  }, [dailySlot, setCompletionModalDismissed, navigate]);
+
+  const handleSignIn = useCallback(() => {
+    setCompletionModalDismissed(true);
+    account.openAccount({ returnTo: "/menu", placement: "completion" });
+  }, [setCompletionModalDismissed, account]);
+
+  const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
 
   // Live bridge: take the finisher into the EXISTING host-as-player flow to host
   // a FRESH puzzle head-to-head (name → import → lobby with share code / QR).
@@ -282,9 +299,10 @@ export function SoloPlayScreen() {
     gridInputRef.current?.focus();
   }
 
-  // Guard: redirect to import if no puzzle loaded
+  // Guard: nothing to play — back to the menu (the importer is the wrong
+  // fallback in the native apps, and the menu offers every way to start).
   if (!puzzle) {
-    return <Navigate to="/solo/import" replace />;
+    return <Navigate to="/menu" replace />;
   }
 
   const showCompletionModal = isComplete && !completionModalDismissed;
@@ -310,14 +328,22 @@ export function SoloPlayScreen() {
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                <div className="flex flex-col items-end leading-tight">
-                  <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
-                  {challenge && (
-                    <span className="text-xs font-semibold text-gold-700 tabular-nums">
-                      <Flag className="inline size-3 mr-1 -mt-px" aria-hidden="true" />{t('challenge.beatTarget', { time: formatDuration(challenge.seconds) })}
-                    </span>
-                  )}
-                </div>
+                {isComplete ? (
+                  <FinishedBar
+                    seconds={soloResult?.finishSeconds ?? getElapsedSeconds()}
+                    onShare={reopenCompletion}
+                    onLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+                  />
+                ) : (
+                  <div className="flex flex-col items-end leading-tight">
+                    <SoloTimer getElapsedSeconds={getElapsedSeconds} running={timerRunning} />
+                    {challenge && (
+                      <span className="text-xs font-semibold text-gold-700 tabular-nums">
+                        <Flag className="inline size-3 mr-1 -mt-px" aria-hidden="true" />{t('challenge.beatTarget', { time: formatDuration(challenge.seconds) })}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <button
                   onClick={handleReset}
                   className={buttonClass("secondary", "sm")}
@@ -407,7 +433,7 @@ export function SoloPlayScreen() {
         previousBest={shownResult?.previousBest}
         streakCount={shownResult?.streak}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={dailySlot ? () => navigate(leaderboardPath(dailySlot)) : undefined}
+        onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
         dailySign={dailySign}
         challengePuzzle={puzzle}
@@ -417,7 +443,7 @@ export function SoloPlayScreen() {
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onNewPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
-        onSignIn={account.available && account.ready && !account.user ? () => account.openAccount({ returnTo: "/", placement: "completion" }) : undefined}
+        onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
       />
     </>
   );
