@@ -10,19 +10,27 @@ import {
   CONFETTI_DURATION_MS,
 } from "../../lib/celebration";
 import { playWinSound } from "../../lib/winSound";
-import { computeViewerStanding } from "../../lib/resultCard";
+import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import { SaveImageButton } from "./SaveImageButton";
 import type { DailySlot } from "../../lib/dailyFeed";
-import { ChallengeFriendButton } from "./ChallengeFriendButton";
 import { BoardSignForm } from "../BoardSignForm";
+import { buildShareBlock, type ShareBlock } from "../../lib/shareBlock";
+import { buildDailyLink } from "../../lib/dailyChallenge";
+import { buildChallengeUrl } from "../../lib/challenge";
+import { compressPuzzleToHash } from "../../lib/puzzleUrl";
+import { todayKey } from "../../lib/dailyLeaderboard";
+import { Capacitor } from "@capacitor/core";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
-import type { Puzzle } from "../../types/puzzle";
+import type { CellState, Puzzle } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
 import type { RaceStandingRow } from "../../lib/raceResults";
+
+const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
 export interface PlayerResult {
   userId: string;
@@ -89,10 +97,19 @@ interface CompletionModalProps {
    */
   currentUserId?: string;
   /**
-   * The full puzzle, used to build a "Challenge a friend" link (solo path). The
-   * button is shown only when a puzzle and a finish time are both present.
+   * The finished puzzle. Drives the share block (its rows are the grid's) and
+   * the challenge link; without it the modal offers no Share at all.
    */
   challengePuzzle?: Puzzle;
+  /** The solver's cells, for the block's pace colours (and claimants in a live race). */
+  playerCells?: Record<string, CellState>;
+  /** "row,col" keys that took a wrong letter at least once — red in the block. */
+  wrongCells?: readonly string[];
+  /**
+   * Live race (shared grid): hex colour per player id. When present the block
+   * colours cells by claimant instead of pace. Omit for solo and async races.
+   */
+  playerColors?: Record<string, string>;
   /** The finisher's display name, embedded as the challenger in the link. */
   challengerName?: string;
   /**
@@ -150,6 +167,9 @@ export function CompletionModal({
   players,
   currentUserId,
   challengePuzzle,
+  playerCells,
+  wrongCells,
+  playerColors,
   challengerName,
   challengeOutcome,
   nextUp,
@@ -161,7 +181,7 @@ export function CompletionModal({
   onSignIn,
   darkMode,
 }: CompletionModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   const handleEscape = useCallback(() => {
@@ -193,7 +213,6 @@ export function CompletionModal({
     return () => window.clearTimeout(id);
   }, [celebrating]);
 
-  if (!open) return null;
 
   const isAsync = !!raceStandings && raceStandings.length > 0;
   const isMultiplayer = (players && players.length > 0) || isAsync;
@@ -229,6 +248,65 @@ export function CompletionModal({
     : isMultiplayer && !coop
       ? computeViewerStanding(ranked, currentUserId)
       : null;
+
+  // The time that headlines the share (solo finish, or the race time).
+  const shareSeconds = finishSeconds ?? raceSeconds ?? undefined;
+  const shareWinnerName = isAsync ? asyncWinner?.displayName : winner?.displayName;
+  const shareIsTie = isAsync ? asyncTie : isTie;
+
+  // The standing line of the share block (a string, so the block builder's
+  // dependencies stay stable across renders).
+  const shareStanding = !isMultiplayer
+    ? undefined
+    : coop
+      ? t("completion.coopSolved")
+      : viewerStanding
+        ? t(
+            viewerStanding.won
+              ? "completion.cardStandingWin"
+              : viewerStanding.tiedForFirst
+                ? "completion.cardStandingTie"
+                : "completion.cardStandingRank",
+            { rank: viewerStanding.rank, total: viewerStanding.total },
+          )
+        : shareIsTie
+          ? t("completion.tie")
+          : t("completion.wins", { name: shareWinnerName ?? "" });
+  const shareDaily = dailySlot ? t(SLOT_EYEBROW[dailySlot]) : undefined;
+  const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
+
+  // The spoiler-free result block for a given challenger name: the link
+  // carries the name (and the ghost time), so it is rebuilt when one is signed.
+  const blockFor = useCallback(
+    (name: string): ShareBlock => {
+      const puzzle = challengePuzzle as Puzzle;
+      const link = dailySlot
+        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name })
+        : shareSeconds !== undefined
+          ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
+          : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
+      return buildShareBlock({
+        puzzle,
+        cells: playerCells ?? {},
+        wrongCells,
+        seconds: shareSeconds,
+        day: dailySlot ? todayKey() : undefined,
+        locale: i18n.language,
+        playerColors,
+        link,
+        labels: {
+          brand: t("completion.shareBrand"),
+          daily: shareDaily,
+          streak: shareStreak,
+          standing: shareStanding,
+          cta: shareSeconds !== undefined ? t("completion.beatMyTime") : t("completion.playIt"),
+        },
+      });
+    },
+    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language],
+  );
+
+  if (!open) return null;
 
   const hasNextUp = !!nextUp && nextUp.length > 0 && !!onNextUp;
 
@@ -510,28 +588,27 @@ export function CompletionModal({
           </div>
         )}
 
-        {/* Actions (navigation audit §2): Share is the one primary; then the
-            board and the challenge link; then "Up next" and the fresh-puzzle
-            race; "Back to menu" is the quiet exit. The importer is never
-            offered here — the game header keeps "Load different puzzle". */}
+        {/* Actions (navigation audit §1 + §2): Share is the one primary, its
+            block previewed above it and its link the challenge; then the board
+            and "Save image"; then "Up next" and the fresh-puzzle race; "Back
+            to menu" is the quiet exit. The importer is never offered here —
+            the game header keeps "Load different puzzle". */}
         <div className="flex flex-col gap-2.5">
-          <ShareResultButton
-            mode={isMultiplayer ? "multiplayer" : "solo"}
-            puzzleTitle={puzzleTitle}
-            finishSeconds={finishSeconds ?? raceSeconds ?? undefined}
-            bestSeconds={bestSeconds}
-            isNewBest={isNewBest}
-            winnerName={isAsync ? asyncWinner?.displayName : winner?.displayName}
-            isTie={isAsync ? asyncTie : isTie}
-            coop={coop}
-            viewerStanding={viewerStanding ?? undefined}
-            dailySlot={dailySlot}
-            darkMode={darkMode}
-            variant="primary"
-            size="lg"
-            label={dailySlot && !isMultiplayer ? t("completion.shareTime") : undefined}
-          />
-          {(onViewLeaderboard || (!isMultiplayer && challengePuzzle && finishSeconds !== undefined)) && (
+          {/* One Share: the spoiler-free block (previewed above its button),
+              whose link is the challenge. Needs the puzzle for the rows. */}
+          {challengePuzzle && (
+            <ShareResultButton
+              mode={isMultiplayer ? "multiplayer" : "solo"}
+              blockFor={blockFor}
+              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+              hasTime={shareSeconds !== undefined}
+              puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
+              daily={!!dailySlot && !isMultiplayer}
+              onNameSigned={dailySign?.onSign}
+              darkMode={darkMode}
+            />
+          )}
+          {(onViewLeaderboard || (challengePuzzle && !Capacitor.isNativePlatform())) && (
             <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
               {onViewLeaderboard && (
                 <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
@@ -539,12 +616,19 @@ export function CompletionModal({
                   {t('completion.viewLeaderboard')}
                 </button>
               )}
-              {!isMultiplayer && challengePuzzle && finishSeconds !== undefined && (
-                <ChallengeFriendButton
-                  puzzle={challengePuzzle}
-                  challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
-                  finishSeconds={finishSeconds}
-                  onNameSigned={dailySign?.onSign}
+              {/* The canvas card stays as a secondary "Save image" (the app's
+                  WebView cannot save a blob; the plugin for that comes later). */}
+              {challengePuzzle && !Capacitor.isNativePlatform() && (
+                <SaveImageButton
+                  mode={isMultiplayer ? "multiplayer" : "solo"}
+                  puzzleTitle={puzzleTitle}
+                  finishSeconds={shareSeconds}
+                  bestSeconds={bestSeconds}
+                  isNewBest={isNewBest}
+                  winnerName={shareWinnerName}
+                  isTie={shareIsTie}
+                  coop={coop}
+                  viewerStanding={viewerStanding ?? undefined}
                   darkMode={darkMode}
                 />
               )}
@@ -667,8 +751,6 @@ function ModalRow({
     </button>
   );
 }
-
-const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
 function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: () => void; darkMode?: boolean }) {
   const { t } = useTranslation();

@@ -116,11 +116,13 @@ describe("puzzleReducer", () => {
       const state = puzzleReducer(loadedState(), {
         type: "INPUT_LETTER",
         letter: "c",
+        at: 1234,
       });
       expect(state.playerCells["0,0"]).toEqual({
         letter: "C",
         correct: true,
         playerId: undefined,
+        at: 1234,
       });
       expect(state.score).toBe(1);
       expect(state.selectedCell).toEqual({ row: 0, col: 1 });
@@ -242,11 +244,13 @@ describe("puzzleReducer", () => {
         col: 0,
         letter: "B",
         playerId: "remote-player",
+        at: 5000,
       });
       expect(state.playerCells["2,0"]).toEqual({
         letter: "B",
         correct: true,
         playerId: "remote-player",
+        at: 5000,
       });
       expect(state.score).toBe(1);
     });

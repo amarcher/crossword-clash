@@ -67,7 +67,7 @@ export function SoloPlayScreen() {
     soloTheme,
   } = game;
 
-  const { soloInputLetter, rejectedCell, wrongLetters, completedClues } = mp;
+  const { soloInputLetter, rejectedCell, wrongLetters, wrongCells, completedClues } = mp;
 
   const gridInputRef = useRef<HTMLInputElement>(null);
 
@@ -456,6 +456,8 @@ export function SoloPlayScreen() {
         dailySlot={dailySlot ?? undefined}
         dailySign={dailySign}
         challengePuzzle={puzzle}
+        playerCells={playerCells}
+        wrongCells={wrongCells}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
         nextUp={nextUp}

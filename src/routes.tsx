@@ -144,6 +144,9 @@ export const routes: RouteObject[] = [
           { path: "solo/play", lazy: () => m.soloPlay().then((s) => ({ Component: s.SoloPlayScreen })) },
           { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
           { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
+          // A day's daily by date + slot (the short challenge link); the static
+          // "leaderboard" segment above outranks the :day param.
+          { path: "daily/:day/:slot", lazy: () => m.dailyPuzzle().then((s) => ({ Component: s.DailyPuzzleScreen })) },
           { path: "classics", lazy: () => m.classics().then((s) => ({ Component: s.ClassicLibraryScreen })) },
           { path: "pick-puzzle", lazy: () => m.puzzlePicker().then((s) => ({ Component: s.PuzzlePickerScreen })) },
           { path: "host-game/name", lazy: () => m.hostName().then((s) => ({ Component: s.HostNameScreen })) },

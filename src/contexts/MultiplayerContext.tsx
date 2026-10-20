@@ -53,6 +53,11 @@ interface MultiplayerContextValue {
   rejectedCell: string | null;
   /** Wrong letters typed this session; counts every one, however fast. */
   wrongLetters: number;
+  /**
+   * "row,col" keys of the current puzzle's cells that took a wrong letter at
+   * least once — the share block paints them red. Reset per puzzle.
+   */
+  wrongCells: string[];
   setRejectedCell: (v: string | null) => void;
   triggerReject: (row: number, col: number) => void;
 
@@ -90,10 +95,18 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
 
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
   const [wrongLetters, setWrongLetters] = useState(0);
+  const [wrongCells, setWrongCells] = useState<string[]>([]);
   const rejectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // A new puzzle starts with a clean sheet of wrong cells.
+  useEffect(() => {
+    setWrongCells([]);
+  }, [puzzle]);
 
   const triggerReject = useCallback((row: number, col: number) => {
     setWrongLetters((n) => n + 1);
+    const key = `${row},${col}`;
+    setWrongCells((cells) => (cells.includes(key) ? cells : [...cells, key]));
     if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
     setRejectedCell(null);
     requestAnimationFrame(() => {
@@ -318,6 +331,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     playerResults,
     rejectedCell,
     wrongLetters,
+    wrongCells,
     setRejectedCell,
     triggerReject,
     soloInputLetter,

@@ -7,6 +7,7 @@ import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import type { ClassicEntry } from "../../lib/classicLibrary";
 import type { Puzzle } from "../../types/puzzle";
+import { buildPuzzle } from "../../lib/samplePuzzles";
 
 vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
 
@@ -102,18 +103,29 @@ describe("CompletionModal", () => {
     expect(queryByText("Play again")).toBeNull();
   });
 
-  it("makes Share the primary action, labelled 'Share your time' after a daily", () => {
-    const { getByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
-    const share = getByRole("button", { name: "Share result" });
+  it("makes Share the primary action, labelled 'Share your time' after a daily, with the block previewed above it", () => {
+    // A real grid: the non-daily share link carries the whole puzzle.
+    const puzzle = buildPuzzle({ title: "Deep Blue", grid: ["#whom", "trace", "holes", "atlas", "neon#"], clueTexts: {} });
+    const { getByRole, getByTestId, queryByTestId, rerender } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} challengerName="Andy" />,
+    );
+    const share = getByRole("button", { name: "Share" });
     expect(share.className).toContain("bg-brand-600");
+    expect(getByTestId("share-block-preview").textContent).toContain("Crossword Clash · Deep Blue");
+    expect(getByTestId("share-block-preview").textContent).toContain("⏱ 1:30");
 
-    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySlot="mini" />);
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySlot="mini" challengePuzzle={puzzle} challengerName="Andy" />);
     expect(getByRole("button", { name: "Share your time" }).className).toContain("bg-brand-600");
+    expect(getByTestId("share-block-preview").textContent).toContain("Crossword Clash · Daily Mini ·");
+
+    // No puzzle, nothing to share: the section is absent rather than broken.
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+    expect(queryByTestId("share-block-preview")).toBeNull();
   });
 
-  it("shows the leaderboard and challenge actions as the secondary row", () => {
+  it("shows the leaderboard and Save image as the secondary row; the share link itself is the challenge", () => {
     const onViewLeaderboard = vi.fn();
-    const { getByRole } = render(
+    const { getByRole, getByTestId, queryByRole } = render(
       <CompletionModal
         {...SOLO_PROPS}
         finishSeconds={90}
@@ -125,7 +137,9 @@ describe("CompletionModal", () => {
     );
     fireEvent.click(getByRole("button", { name: "Daily leaderboard" }));
     expect(onViewLeaderboard).toHaveBeenCalledOnce();
-    expect(getByRole("button", { name: /Challenge a friend/ })).toBeTruthy();
+    expect(getByRole("button", { name: "Save image" })).toBeTruthy();
+    expect(queryByRole("button", { name: /Challenge a friend/ })).toBeNull();
+    expect(getByTestId("share-block-preview").textContent).toMatch(/Beat my time → crosswordclash\.com\/daily\/\d{4}-\d{2}-\d{2}\/mini\?beat=90&by=Andy/);
   });
 
   it("calls onBackToMenu when button clicked", () => {

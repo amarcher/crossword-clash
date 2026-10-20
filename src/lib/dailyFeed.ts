@@ -195,6 +195,37 @@ export function resolveDailyPuzzle(
   return promise;
 }
 
+/**
+ * One day's puzzle in a slot by date — for the `/daily/:day/:slot` challenge
+ * link, which may name a past day. Reads the feed directly (no cache: the
+ * cache is today's answer); the mini falls back to the bundled rotation for
+ * that day when the feed has nothing, the midi and large resolve null. A
+ * host that answers a missing file with index.html (200 + HTML) is "nothing".
+ * Never rejects.
+ */
+export async function fetchDailyForDay(
+  day: string,
+  slot: DailySlot,
+  fetchImpl: FetchLike | undefined = typeof fetch === "function" ? (fetch as unknown as FetchLike) : undefined,
+): Promise<DailyMini | null> {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  const date = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  const bundled = () => (date && slot === "mini" ? getDailyMini(date) : null);
+  if (!date || !fetchImpl) return bundled();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS * 2);
+  try {
+    const res = await fetchImpl(dailyFeedUrl(day, slot), { signal: controller.signal });
+    if (!res.ok) return bundled();
+    const data = await res.json().catch(() => null);
+    return parseDailyFeedEntry(data) ?? bundled();
+  } catch {
+    return bundled();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // --- Public: the mini, which always has an answer ---
 
 /** Today's mini if it can be named without waiting; null while the feed is being asked. */

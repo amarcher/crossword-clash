@@ -15,6 +15,7 @@ export const screenModules = {
   soloPlay: () => import("./screens/SoloPlayScreen"),
   join: () => import("./screens/JoinScreen"),
   dailyLeaderboard: () => import("./screens/DailyLeaderboardScreen"),
+  dailyPuzzle: () => import("./screens/DailyPuzzleScreen"),
   // The manifest loads with the chunk (and so on intent) so the library paints
   // its cards on its first frame — no loading line that 46 cards then push aside.
   classics: () =>
@@ -62,6 +63,7 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/solo/play": screenModules.soloPlay,
   "/join": screenModules.join,
   "/daily/leaderboard": screenModules.dailyLeaderboard,
+  "/daily": screenModules.dailyPuzzle,
   "/classics": screenModules.classics,
   "/pick-puzzle": screenModules.puzzlePicker,
   "/host-game/name": screenModules.hostName,

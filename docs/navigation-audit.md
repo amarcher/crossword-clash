@@ -36,8 +36,22 @@ screen" you hit on the phone.
   today" once the viewer has solved the slot; one `BoardSignForm` serves the
   modal and the board. Screenshots in `docs/navigation-finish/`.
 - **§4** (back targets, session expiry, finished-state return) is in a
-  sibling branch. **§1** (the result block, merged share/challenge, native
-  share sheet) is next; `ShareResultButton` was only re-labelled and moved.
+  sibling branch (below).
+- **§1 (items 1–4)** shipped (PR "Share: the result block, one share with the
+  daily date link, native share sheet", 2026-10-20): `buildShareBlock`
+  (`src/lib/shareBlock.ts`, pure, tested) — header, stats line, emoji rows
+  (pace thirds from the new `CellState.at`; 🟥 from
+  `MultiplayerContext.wrongCells`, a per-puzzle set — the audit's
+  "`wrongLetters` set" was in fact a counter), a 15-block pace bar above 9
+  wide, claimant colours in a live race. `/daily/:day/:slot`
+  (`DailyPuzzleScreen`) loads the day from the feed and lands on
+  `ChallengeScreen` with `?beat=&by=`; `api/share.ts` answers the same path
+  for crawlers with the result's OG tags spliced into the real index.html.
+  `ShareResultButton` is the one Share (preview + sign-first prompt +
+  button); `ChallengeFriendButton` is gone; `SaveImageButton` keeps the
+  canvas card (hidden in the apps). `shareText` picks `@capacitor/share` in
+  the app, `navigator.share({ text })` on the web, else clipboard + "Result
+  copied". Still open: the PNG in the apps (`@capacitor/filesystem`).
 
 ## 1. Sharing — the viral loop
 
