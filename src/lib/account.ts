@@ -159,6 +159,17 @@ export async function signOut(): Promise<void> {
   await client().auth.signOut();
 }
 
+/**
+ * Permanently deletes the signed-in account and its data (the delete-account
+ * edge function), then signs out here; play continues anonymously.
+ */
+export async function deleteAccount(): Promise<void> {
+  const { error } = await client().functions.invoke("delete-account", { body: {} });
+  if (error) throw error;
+  // The server session is already gone; just drop the local one.
+  await client().auth.signOut({ scope: "local" });
+}
+
 // ---- Profiles ----
 
 export interface Profile {

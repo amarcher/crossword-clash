@@ -509,7 +509,12 @@
     "syncedNone": "No solves synced yet. Finish a puzzle and it's kept here.",
     "syncedSolves_one": "{{count}} solve synced to your account",
     "syncedSolves_other": "{{count}} solves synced to your account",
-    "syncOffline": "Your solves on this device are kept. They'll sync when you're back online."
+    "syncOffline": "Your solves on this device are kept. They'll sync when you're back online.",
+    "deleteAccount": "Delete account",
+    "deleteTitle": "Delete your account?",
+    "deleteBody": "This permanently deletes your account and its data. This can't be undone.",
+    "deleteConfirm": "Delete account",
+    "cancel": "Cancel"
   },
   "meta": {
     "home": {
