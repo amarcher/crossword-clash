@@ -8,6 +8,10 @@
  *
  * Governing law: the Commonwealth of Massachusetts, where the operating
  * business is registered.
+ *
+ * The DMCA sections only give the safe harbor once the copyright agent is
+ * registered at dmca.copyright.gov; the agent's name, postal address and phone
+ * then have to be added here too (17 U.S.C. 512(c)(2)).
  */
 
 export const LEGAL_LAST_UPDATED = "2026-10-17";
@@ -161,7 +165,7 @@ const en: LegalContent = {
       {
         heading: "Acceptable use",
         items: [
-          "Do not use display names or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
+          "Do not use display names, puzzle titles, clues or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
           "Do not attempt to disrupt, overload or reverse-engineer the service, bypass rate limits or spending limits, or access data that is not yours.",
           "Do not use automated tools to cheat in games or manipulate leaderboards.",
         ],
@@ -171,6 +175,51 @@ const en: LegalContent = {
         paragraphs: [
           "You are responsible for the puzzles you import or share and for having the right to use them. Do not upload or redistribute puzzles you are not permitted to share. When you host a game or send a challenge, you allow us to store and transmit that puzzle to the people you invite. We may remove content or names at our discretion.",
           "The classic library consists of public-domain puzzles from the 1924 Cross Word Puzzle Book. Daily minis and other bundled puzzles are provided for personal, non-commercial play.",
+        ],
+      },
+      {
+        heading: "Publishing puzzles",
+        paragraphs: [
+          "You keep ownership of the puzzles you make. When you publish one, you give us a worldwide, non-exclusive, royalty-free licence to host, display, reproduce and distribute it in Crossword Clash, to adapt its format for our apps and screens, to feature it (for example as a daily puzzle or on a leaderboard) and to show it in promotion of the service, credited to the name you publish under. Other players may solve it, race on it and share links to it within the service. We do not pay for published puzzles.",
+          "Only publish puzzles you made yourself, or have the right to publish, and that follow the community rules below. You can unpublish a puzzle at any time; it then disappears from public lists, but games already in progress, past daily puzzles and copies that players saved may keep it.",
+        ],
+      },
+      {
+        heading: "Community rules",
+        paragraphs: [
+          "We have no tolerance for objectionable content or abusive users. A puzzle, including its title, clues, answers and notes, must not:",
+        ],
+        items: [
+          "copy a grid or clues from another publisher or constructor without their permission;",
+          "be hateful, harassing, sexually explicit, or demeaning about a group or a real person;",
+          "share someone's personal information, or be used to send messages to or about someone;",
+          "be spam, gibberish or deliberately broken.",
+        ],
+      },
+      {
+        heading: "Reports, removal and blocking",
+        paragraphs: [
+          "Every published puzzle can be reported, for example as copied, offensive or nonsense. We review reports promptly and aim to act within 24 hours. We may remove any puzzle or name, and suspend or close accounts, that break these terms, with or without notice. You can hide an author's puzzles so you no longer see them. If you think we got a decision wrong, email " + C + ".",
+        ],
+      },
+      {
+        heading: "Copyright complaints (DMCA)",
+        paragraphs: [
+          "If you believe a puzzle on Crossword Clash infringes your copyright, send a notice to our designated copyright agent at " + C + " (subject: Copyright notice). Under the U.S. Digital Millennium Copyright Act, the notice must include:",
+        ],
+        items: [
+          "your physical or electronic signature;",
+          "the work you believe is infringed;",
+          "the puzzle you want removed and where it is (a link is best);",
+          "your name, address, telephone number and email;",
+          "a statement that you believe in good faith the use is not authorised by you, your agent or the law;",
+          "a statement that the notice is accurate and, under penalty of perjury, that you are the owner or authorised to act for the owner.",
+        ],
+      },
+      {
+        heading: "Counter-notices and repeat infringers",
+        paragraphs: [
+          "If we remove a puzzle after a notice, we tell its author. An author who believes it was removed by mistake may send a counter-notice to the same address with their name, contact details and signature, the puzzle that was removed, a statement under penalty of perjury that it was removed by mistake or misidentification, and consent to the jurisdiction of the U.S. federal courts. We then restore it 10 to 14 business days later unless the complainant tells us they have filed a lawsuit. We close the accounts of repeat infringers. Knowingly false notices or counter-notices can make the sender liable for damages.",
         ],
       },
       {
@@ -378,7 +427,7 @@ const es: LegalContent = {
       {
         heading: "Uso aceptable",
         items: [
-          "No uses nombres visibles ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
+          "No uses nombres visibles, títulos de crucigramas, pistas ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
           "No intentes interrumpir, sobrecargar ni aplicar ingeniería inversa al servicio, eludir límites de uso o de gasto, ni acceder a datos que no son tuyos.",
           "No uses herramientas automáticas para hacer trampa en las partidas ni manipular las clasificaciones.",
         ],
@@ -388,6 +437,51 @@ const es: LegalContent = {
         paragraphs: [
           "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
           "La biblioteca clásica reúne crucigramas de dominio público del Cross Word Puzzle Book de 1924. Los minis diarios y otros crucigramas incluidos se ofrecen para juego personal y no comercial.",
+        ],
+      },
+      {
+        heading: "Publicar crucigramas",
+        paragraphs: [
+          "Los crucigramas que creas siguen siendo tuyos. Al publicar uno, nos concedes una licencia mundial, no exclusiva y gratuita para alojarlo, mostrarlo, reproducirlo y distribuirlo en Crossword Clash, adaptar su formato a nuestras apps y pantallas, destacarlo (por ejemplo como crucigrama diario o en una clasificación) y mostrarlo para promocionar el servicio, con el nombre con el que lo publicas. Otros jugadores pueden resolverlo, competir con él y compartir enlaces dentro del servicio. No pagamos por los crucigramas publicados.",
+          "Publica solo crucigramas que hayas creado tú o que tengas derecho a publicar, y que cumplan las normas de la comunidad. Puedes retirar un crucigrama cuando quieras; desaparece de las listas públicas, pero las partidas en curso, los crucigramas diarios pasados y las copias que hayan guardado los jugadores pueden conservarlo.",
+        ],
+      },
+      {
+        heading: "Normas de la comunidad",
+        paragraphs: [
+          "No toleramos contenido inaceptable ni usuarios abusivos. Un crucigrama, incluidos su título, pistas, respuestas y notas, no debe:",
+        ],
+        items: [
+          "copiar una cuadrícula o pistas de otro editor o autor sin su permiso;",
+          "ser de odio, acosador, sexualmente explícito ni denigrar a un grupo o a una persona real;",
+          "compartir datos personales de alguien ni usarse para enviar mensajes a alguien o sobre alguien;",
+          "ser spam, un sinsentido o estar roto a propósito.",
+        ],
+      },
+      {
+        heading: "Denuncias, retirada y bloqueo",
+        paragraphs: [
+          "Cualquier crucigrama publicado se puede denunciar, por ejemplo por copiado, ofensivo o sin sentido. Revisamos las denuncias con rapidez e intentamos actuar en menos de 24 horas. Podemos retirar cualquier crucigrama o nombre, y suspender o cerrar cuentas, que incumplan estos términos, con o sin aviso. Puedes ocultar los crucigramas de un autor para no verlos más. Si crees que nos equivocamos, escribe a " + C + ".",
+        ],
+      },
+      {
+        heading: "Reclamaciones de derechos de autor (DMCA)",
+        paragraphs: [
+          "Si crees que un crucigrama de Crossword Clash infringe tus derechos de autor, envía una notificación a nuestro agente designado de derechos de autor en " + C + " (asunto: Copyright notice). Según la ley estadounidense Digital Millennium Copyright Act, la notificación debe incluir:",
+        ],
+        items: [
+          "tu firma física o electrónica;",
+          "la obra que crees infringida;",
+          "el crucigrama que quieres retirar y dónde está (mejor con un enlace);",
+          "tu nombre, dirección, teléfono y correo;",
+          "una declaración de que crees de buena fe que el uso no está autorizado por ti, tu representante ni la ley;",
+          "una declaración de que la notificación es exacta y, bajo pena de perjurio, de que eres el titular o estás autorizado a actuar en su nombre.",
+        ],
+      },
+      {
+        heading: "Contranotificaciones e infractores reiterados",
+        paragraphs: [
+          "Si retiramos un crucigrama tras una notificación, se lo comunicamos a su autor. Si el autor cree que se retiró por error, puede enviar una contranotificación a la misma dirección con su nombre, datos de contacto y firma, el crucigrama retirado, una declaración bajo pena de perjurio de que se retiró por error o mala identificación, y su aceptación de la jurisdicción de los tribunales federales de EE. UU. Lo restauramos entre 10 y 14 días hábiles después, salvo que el reclamante nos indique que ha presentado una demanda. Cerramos las cuentas de quienes infringen derechos de forma reiterada. Quien envíe a sabiendas una notificación o contranotificación falsa puede ser responsable de los daños.",
         ],
       },
       {
