@@ -16,6 +16,16 @@
 Increment `CURRENT_PROJECT_VERSION` in the Xcode project before each upload.
 Use a new archive path so prior artifacts remain available.
 
+On a Mac with Xcode signed in to the team, `pnpm testflight`
+(`scripts/testflight.sh`) does all of it: `pnpm mobile:sync`, the Release
+archive named after the project's version and build, and the export with
+`ios/ExportOptions-TestFlight-Upload.plist`, which uploads straight to
+App Store Connect. `--export` signs a local IPA instead
+(`ios/ExportOptions-TestFlight.plist`); `--no-sync` skips the web build.
+Assigning the processed build to a tester group and pasting the
+`WHAT-TO-TEST-<build>.txt` notes stays a manual step in App Store Connect.
+The steps by hand:
+
 ```sh
 pnpm mobile:sync
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
