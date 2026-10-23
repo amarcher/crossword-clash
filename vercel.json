@@ -1,4 +1,9 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "proxy": {
+    "entrypoint": "proxy.ts",
+    "matcher": ["/daily-puzzles/:path*"]
+  },
   "rewrites": [
     { "source": "/share", "destination": "/api/share" },
     { "source": "/daily/:day(\\d{4}-\\d{2}-\\d{2})/:slot(mini|midi|large)", "destination": "/api/share?t=daily&day=:day&slot=:slot" },

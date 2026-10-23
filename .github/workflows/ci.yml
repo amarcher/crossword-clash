@@ -36,7 +36,7 @@ jobs:
       # No Supabase env vars on purpose: the app must build and run without them.
       - run: pnpm build
 
-      - run: pnpm exec vitest run --dir src
+      - run: pnpm exec vitest run src api proxy.test.ts
 
   e2e:
     name: E2E (solo, no Supabase)
