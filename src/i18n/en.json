@@ -361,6 +361,7 @@
     "inlineCta": "Try the NYT Crossword"
   },
   "archive": {
+    "progressHint": "{{filled}} of {{total}} filled · {{time}}",
     "lockedTitle": "Sign in to play puzzles older than {{count}} days",
     "lockedBody": "Free, with Apple or Google. Your streaks and times come with you.",
     "lockedLabel": "locked, sign in to play",

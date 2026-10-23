@@ -25,6 +25,7 @@ import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { loadClassicPuzzle } from "../lib/classicLibrary";
 import { fetchDailyForDay } from "../lib/dailyFeed";
+import { clearProgress } from "../lib/soloProgress";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
@@ -257,9 +258,11 @@ export function SoloPlayScreen() {
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
     clearSoloTimer();
+    // A reset puzzle is no longer "in progress" in the archive.
+    if (puzzleKey) clearProgress(puzzleKey);
     clearChallenge();
     navigate("/menu");
-  }, [reset, game, navigate]);
+  }, [reset, game, navigate, puzzleKey]);
 
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);

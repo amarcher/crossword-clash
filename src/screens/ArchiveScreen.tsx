@@ -14,18 +14,19 @@ import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from ".
 import { knownClassicManifest, loadClassicManifest, type ClassicEntry } from "../lib/classicLibrary";
 import { prefetchOnIntent } from "../routeModules";
 import { dayKey, formatDuration, loadSoloTimer } from "../lib/soloStats";
+import { loadProgressStore } from "../lib/soloProgress";
 import {
   ANONYMOUS_ARCHIVE_DAYS,
   archiveCounts,
   defaultSelection,
   deriveArchiveItems,
   groupByDay,
+  inProgressFrom,
   isLockedDay,
   longDay,
   monthCells,
   monthLabel,
   monthOf,
-  resumableIdentity,
   resumableItem,
   shiftMonth,
   shortDay,
@@ -134,9 +135,10 @@ export function ArchiveScreen() {
   }, [entries, classics, today]);
 
   const bestTimes = useBestTimes();
-  // The resumable solo game is read once: this screen is never prerendered, and
-  // playing from here navigates away before it could change.
-  const [inProgress] = useState(() => resumableIdentity(loadSavedSession(), loadSoloTimer()));
+  // Every puzzle in progress (the per-puzzle store, plus the one saved solo
+  // session from before it existed), read once: this screen is never
+  // prerendered, and playing from here navigates away before it could change.
+  const [inProgress] = useState(() => inProgressFrom(loadProgressStore(), loadSavedSession(), loadSoloTimer()));
   const items = useMemo(() => deriveArchiveItems(entries ?? [], bestTimes, inProgress), [entries, bestTimes, inProgress]);
   const byDay = useMemo(() => groupByDay(items), [items]);
   const counts = useMemo(() => archiveCounts(items), [items]);
@@ -263,11 +265,22 @@ export function ArchiveScreen() {
               <section className="mt-4 flex items-center gap-3 rounded-2xl bg-gold-50 p-3 ring-1 ring-gold-100" aria-label={t("archive.resumeEyebrow")}>
                 <ShapeThumb blocks={resume.blocks} className="w-12 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gold-700">{t("archive.resumeEyebrow")}</p>
+                  {/* The region is named "Pick up where you left off"; the visible eyebrow is the short status so it never truncates beside the button. */}
+                  <p className="truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-gold-700">{t("archive.inProgress")}</p>
                   <p className="truncate font-semibold leading-snug text-ink">{resume.title}</p>
                   <p className="truncate text-xs text-muted">
                     {t(SLOT_EYEBROW[resume.slot])} · {shortDay(resume.day, locale)}
                   </p>
+                  {resume.progress && resume.progress.total > 0 && (
+                    // Its own line: "12 of 76 filled · 3:10" never fits beside the slot and date on a phone.
+                    <p className="truncate text-xs text-muted tabular-nums">
+                      {t("archive.progressHint", {
+                        filled: resume.progress.filled,
+                        total: resume.progress.total,
+                        time: formatDuration(resume.progress.elapsedMs / 1000),
+                      })}
+                    </p>
+                  )}
                 </div>
                 <Button size="sm" onClick={() => void play(resume)} disabled={busy !== null} {...prefetchOnIntent("/solo/play")}>
                   <Play className="size-4" aria-hidden="true" />

@@ -3,6 +3,7 @@ import {
   ANONYMOUS_ARCHIVE_DAYS,
   archiveCounts,
   defaultSelection,
+  inProgressFrom,
   isLockedDay,
   deriveArchiveItems,
   groupByDay,
@@ -44,6 +45,8 @@ const puzzle: Pick<Puzzle, "title" | "width" | "height" | "cells"> = {
 };
 const id = puzzleIdentity(puzzle);
 const typed = { "0,0": { letter: "A", correct: true } };
+/** An in-progress attempt, as `inProgressFrom` would report it. */
+const P = { filled: 3, total: 25, elapsedMs: 61_000, updatedAt: 5 };
 
 describe("resumableIdentity", () => {
   it("is the saved puzzle's identity once something has been typed", () => {
@@ -66,21 +69,44 @@ describe("resumableIdentity", () => {
 describe("deriveArchiveItems", () => {
   const entries = [entry({ identity: "a" }), entry({ identity: "b", slot: "midi" }), entry({ identity: "c", slot: "large" })];
 
-  it("marks solved with the best time, in progress for the resumable game, unsolved otherwise", () => {
-    const out = deriveArchiveItems(entries, { a: 102 }, "b");
-    expect(out.map((i) => [i.status, i.seconds])).toEqual([
-      ["solved", 102],
-      ["inprogress", null],
-      ["unsolved", null],
+  it("marks solved with the best time, in progress for every started puzzle, unsolved otherwise", () => {
+    const out = deriveArchiveItems(entries, { a: 102 }, { b: P, c: { ...P, updatedAt: 9 } });
+    expect(out.map((i) => [i.status, i.seconds, i.progress])).toEqual([
+      ["solved", 102, null],
+      ["inprogress", null, P],
+      ["inprogress", null, { ...P, updatedAt: 9 }],
     ]);
+    expect(deriveArchiveItems(entries, {}, {})[2]).toMatchObject({ status: "unsolved", progress: null });
   });
 
   it("solved wins over in progress (a replay of a solved puzzle)", () => {
-    expect(deriveArchiveItems(entries, { b: 60 }, "b")[1]).toMatchObject({ status: "solved", seconds: 60 });
+    expect(deriveArchiveItems(entries, { b: 60 }, { b: P })[1]).toMatchObject({ status: "solved", seconds: 60, progress: null });
   });
 
   it("keeps every index field", () => {
-    expect(deriveArchiveItems([entry({ theme: "Tacos" })], {}, null)[0]).toMatchObject({ day: "2026-10-20", title: "Taco Tuesday", theme: "Tacos" });
+    expect(deriveArchiveItems([entry({ theme: "Tacos" })], {}, {})[0]).toMatchObject({ day: "2026-10-20", title: "Taco Tuesday", theme: "Tacos" });
+  });
+});
+
+describe("inProgressFrom", () => {
+  const record = { key: "s1", cells: typed, elapsedMs: 4000, updatedAt: 7, filled: 1, total: 25 };
+
+  it("reports every record in the store", () => {
+    expect(inProgressFrom({ s1: record }, null, null)).toEqual({ s1: { filled: 1, total: 25, elapsedMs: 4000, updatedAt: 7 } });
+  });
+
+  it("adds the legacy saved session when resumable and unknown to the store, with its clock", () => {
+    const out = inProgressFrom({}, { puzzle, playerCells: typed }, { key: id, elapsedMs: 9000, completed: false });
+    expect(out).toEqual({ [id]: { filled: 1, total: 2, elapsedMs: 9000, updatedAt: 0 } });
+    // Another puzzle's clock does not count for it.
+    expect(inProgressFrom({}, { puzzle, playerCells: typed }, { key: "other", elapsedMs: 9000, completed: false })[id].elapsedMs).toBe(0);
+  });
+
+  it("prefers the store's record over the legacy session, and skips a finished or untouched session", () => {
+    const mine = { ...record, key: id };
+    expect(inProgressFrom({ [id]: mine }, { puzzle, playerCells: typed }, null)[id].updatedAt).toBe(7);
+    expect(inProgressFrom({}, { puzzle, playerCells: {} }, null)).toEqual({});
+    expect(inProgressFrom({}, { puzzle, playerCells: typed }, { key: id, elapsedMs: 1, completed: true })).toEqual({});
   });
 });
 
@@ -93,7 +119,7 @@ describe("archiveCounts / resumableItem / groupByDay", () => {
       entry({ day: "2026-10-20", identity: "d", slot: "midi" }),
     ],
     { a: 90 },
-    "b",
+    { b: P },
   );
 
   it("counts solved and everything left, in-progress included", () => {
@@ -101,9 +127,15 @@ describe("archiveCounts / resumableItem / groupByDay", () => {
     expect(archiveCounts([])).toEqual({ total: 0, solved: 0, left: 0 });
   });
 
-  it("finds the newest in-progress item or null", () => {
+  it("finds the most recently touched in-progress item (then the newest day), or null", () => {
     expect(resumableItem(items)?.identity).toBe("b");
-    expect(resumableItem(deriveArchiveItems([entry()], {}, null))).toBeNull();
+    const several = deriveArchiveItems(
+      [entry({ day: "2026-10-18", identity: "x" }), entry({ day: "2026-10-20", identity: "y" }), entry({ day: "2026-10-19", identity: "z" })],
+      {},
+      { x: { ...P, updatedAt: 50 }, y: { ...P, updatedAt: 10 }, z: { ...P, updatedAt: 50 } },
+    );
+    expect(resumableItem(several)?.identity).toBe("z");
+    expect(resumableItem(deriveArchiveItems([entry()], {}, {}))).toBeNull();
   });
 
   it("groups by day with each day in slot order", () => {

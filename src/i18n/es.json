@@ -361,6 +361,7 @@
     "inlineCta": "Prueba el NYT Crossword"
   },
   "archive": {
+    "progressHint": "{{filled}} de {{total}} rellenadas · {{time}}",
     "lockedTitle": "Inicia sesión para jugar crucigramas de hace más de {{count}} días",
     "lockedBody": "Gratis, con Apple o Google. Tus rachas y tiempos te acompañan.",
     "lockedLabel": "bloqueado, inicia sesión para jugar",

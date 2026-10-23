@@ -12,6 +12,7 @@
 import type { DailyIndexEntry } from "./dailyIndex";
 import type { DailySlot } from "./dailyFeed";
 import { daysBetween, puzzleIdentity, type SoloTimerRecord } from "./soloStats";
+import { filledCells, whiteCellCount, type SoloProgressStore } from "./soloProgress";
 import type { CellState, Puzzle } from "../types/puzzle";
 
 // --- Gating ---
@@ -33,10 +34,21 @@ export function isLockedDay(day: string, today: string, unlocked: boolean): bool
 
 export type ArchiveStatus = "solved" | "inprogress" | "unsolved";
 
+/** What is known about an unfinished solo attempt (from the per-puzzle progress store). */
+export interface ArchiveProgress {
+  filled: number;
+  total: number;
+  elapsedMs: number;
+  /** Last touch, ms epoch; 0 when unknown (the legacy single saved session). */
+  updatedAt: number;
+}
+
 export interface ArchiveItem extends DailyIndexEntry {
   status: ArchiveStatus;
   /** Best time in whole seconds when solved, else null. */
   seconds: number | null;
+  /** The attempt so far when in progress, else null. */
+  progress: ArchiveProgress | null;
 }
 
 export const SLOT_ORDER: readonly DailySlot[] = ["mini", "midi", "large"];
@@ -62,17 +74,46 @@ export function resumableIdentity(
   return id;
 }
 
+/**
+ * Every puzzle in progress, by identity: the per-puzzle progress store, plus
+ * the one saved solo session when it is resumable and the store does not know
+ * it yet (a game started before the store existed). The session's clock
+ * comes from the timer record when it is for the same puzzle.
+ */
+export function inProgressFrom(
+  store: SoloProgressStore,
+  saved:
+    | { puzzle: Pick<Puzzle, "title" | "width" | "height" | "cells">; playerCells?: Record<string, CellState> | null }
+    | null
+    | undefined,
+  timer: SoloTimerRecord | null | undefined,
+): Record<string, ArchiveProgress> {
+  const out: Record<string, ArchiveProgress> = {};
+  for (const r of Object.values(store)) out[r.key] = { filled: r.filled, total: r.total, elapsedMs: r.elapsedMs, updatedAt: r.updatedAt };
+  const legacy = resumableIdentity(saved, timer);
+  if (legacy && !out[legacy] && saved) {
+    out[legacy] = {
+      filled: Object.keys(filledCells(saved.playerCells ?? {})).length,
+      total: whiteCellCount(saved.puzzle),
+      elapsedMs: timer?.key === legacy ? timer.elapsedMs : 0,
+      updatedAt: 0,
+    };
+  }
+  return out;
+}
+
 /** Solved wins over in-progress (a replay of a solved puzzle is still solved). */
 export function deriveArchiveItems(
   entries: readonly DailyIndexEntry[],
   bestTimes: Readonly<Record<string, number>>,
-  inProgressIdentity: string | null,
+  inProgress: Readonly<Record<string, ArchiveProgress>>,
 ): ArchiveItem[] {
   return entries.map((e) => {
     const best = bestTimes[e.identity];
-    if (typeof best === "number") return { ...e, status: "solved", seconds: best };
-    if (e.identity === inProgressIdentity) return { ...e, status: "inprogress", seconds: null };
-    return { ...e, status: "unsolved", seconds: null };
+    if (typeof best === "number") return { ...e, status: "solved", seconds: best, progress: null };
+    const progress = inProgress[e.identity];
+    if (progress) return { ...e, status: "inprogress", seconds: null, progress };
+    return { ...e, status: "unsolved", seconds: null, progress: null };
   });
 }
 
@@ -96,10 +137,19 @@ export function groupByDay(items: readonly ArchiveItem[]): Map<string, ArchiveIt
   return out;
 }
 
-/** The newest in-progress item, or null. */
+/** The in-progress item touched most recently (then the newest day), or null. */
 export function resumableItem(items: readonly ArchiveItem[]): ArchiveItem | null {
   let best: ArchiveItem | null = null;
-  for (const it of items) if (it.status === "inprogress" && (!best || it.day > best.day)) best = it;
+  for (const it of items) {
+    if (it.status !== "inprogress") continue;
+    if (!best) {
+      best = it;
+      continue;
+    }
+    const a = it.progress?.updatedAt ?? 0;
+    const b = best.progress?.updatedAt ?? 0;
+    if (a > b || (a === b && it.day > best.day)) best = it;
+  }
   return best;
 }
 

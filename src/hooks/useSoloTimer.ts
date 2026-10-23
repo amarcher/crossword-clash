@@ -8,6 +8,7 @@ import {
   describeRecordedCompletion,
   type SoloCompletionResult,
 } from "../lib/soloStats";
+import { clearProgress, getProgress, recordProgressElapsed } from "../lib/soloProgress";
 
 /** How often the running elapsed time is checkpointed to localStorage. */
 const PERSIST_INTERVAL_MS = 5_000;
@@ -62,7 +63,11 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
     (completed: boolean) => {
       if (!key) return;
       const live = anchorRef.current != null ? Date.now() - anchorRef.current : 0;
-      saveSoloTimer({ key, elapsedMs: baseMsRef.current + live, completed });
+      const elapsedMs = baseMsRef.current + live;
+      saveSoloTimer({ key, elapsedMs, completed });
+      // The per-puzzle record keeps the clock too, so another started puzzle
+      // resumes with its own time (a no-op until a letter has been typed).
+      if (!completed) recordProgressElapsed(key, elapsedMs);
     },
     [key],
   );
@@ -80,7 +85,9 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
     }
     const saved = loadSoloTimer();
     const resume = saved && saved.key === key;
-    baseMsRef.current = resume ? saved.elapsedMs : 0;
+    // The timer record is the last puzzle played; any other started puzzle
+    // resumes its clock from its per-puzzle progress record.
+    baseMsRef.current = resume ? saved.elapsedMs : (getProgress(key)?.elapsedMs ?? 0);
     recordedRef.current = resume ? saved.completed : false;
     setResult(null);
 
@@ -116,6 +123,7 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
     }
     recordedRef.current = true;
     saveSoloTimer({ key, elapsedMs: baseMsRef.current, completed: true });
+    clearProgress(key);
     setFresh(true);
     setResult(recordSoloCompletion(key, finishSeconds));
   }, [key, isComplete]);

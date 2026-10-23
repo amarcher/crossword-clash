@@ -14,6 +14,7 @@ import { loadMpSession } from "../lib/sessionPersistence";
 import { loadPlayerName } from "../lib/playerName";
 import type { PendingDailyResult } from "../lib/dailyLeaderboard";
 import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
+import { clearProgress, filledCells, getProgress, recordProgressCells, whiteCellCount } from "../lib/soloProgress";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -226,7 +227,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Check if we have a hash (meaning we're in a URL-based flow, not playing yet)
     const data = { puzzle, playerCells, gameId };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [puzzle, playerCells, gameId, isMultiplayer]);
+    // Per-puzzle progress (soloProgress.ts), so any started puzzle resumes and
+    // the archive marks it: the letters while playing, gone once finished. No
+    // debounce — the save above already rewrites the whole puzzle per keystroke.
+    const key = puzzleIdentity(puzzle);
+    if (isComplete) clearProgress(key);
+    else recordProgressCells(key, playerCells, whiteCellCount(puzzle));
+  }, [puzzle, playerCells, gameId, isMultiplayer, isComplete]);
 
   // Persist game state to Supabase when cells change (solo mode only)
   useEffect(() => {
@@ -238,7 +245,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Solo puzzle loaded
   const handleSoloPuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
+      // Resume an unfinished attempt at this puzzle (soloProgress.ts): read it
+      // before loading, hydrate right after, in the same tick, so the save
+      // effect never sees the empty grid in between.
+      const progress = getProgress(puzzleIdentity(p));
       loadPuzzle(p);
+      if (progress) {
+        const cells = filledCells(progress.cells);
+        if (Object.keys(cells).length > 0) {
+          dispatch({ type: "HYDRATE_CELLS", cells, score: Object.values(cells).filter((c) => c.correct).length });
+        }
+      }
       // A new solo puzzle must never write into a previous game's server row.
       setGameId(null);
       setIsMultiplayer(false);
@@ -270,7 +287,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const result = await createGame(puzzleId, user.id);
       if (result) setGameId(result.gameId);
     },
-    [loadPuzzle, user],
+    [loadPuzzle, dispatch, user],
   );
 
   const value: GameContextValue = {
