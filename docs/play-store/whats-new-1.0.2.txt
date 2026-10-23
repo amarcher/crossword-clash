@@ -1,0 +1,7 @@
+<en-US>
+Share your solve: the finish now leads with one Share button that sends a spoiler-free emoji grid of your solve, your time and a Beat-my-time link. Up next suggests today's unsolved dailies and a classic you haven't played.
+
+Two more dailies: the Daily Midi and Daily Large sit beside the Mini, each with its own leaderboard.
+
+A refreshed grid with gold fills and a clearer cursor, and navigation fixes so a finished puzzle or a stale lobby never comes back.
+</en-US>
