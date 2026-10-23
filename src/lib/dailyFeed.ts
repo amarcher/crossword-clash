@@ -73,6 +73,16 @@ export function dailyFeedUrl(day: string, slot: DailySlot = "mini", origin: stri
   return `${origin}${dailyFeedPath(slot, day)}`;
 }
 
+/**
+ * The theme shown beside a daily (menu chip, leaderboard line, picker rows).
+ * A label that merely repeats the title says nothing, so it is dropped.
+ */
+export function displayTheme(daily: Pick<DailyMini, "theme" | "puzzle"> | null | undefined): string {
+  if (!daily?.theme) return "";
+  const theme = daily.theme.trim();
+  return theme.toLowerCase() === (daily.puzzle.title ?? "").trim().toLowerCase() ? "" : theme;
+}
+
 /** Validate one feed file's JSON. Null when it is not a playable puzzle. */
 export function parseDailyFeedEntry(data: unknown): DailyMini | null {
   if (!data || typeof data !== "object") return null;
