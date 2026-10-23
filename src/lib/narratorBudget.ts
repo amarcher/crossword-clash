@@ -53,20 +53,27 @@ export type NarratorPricing = Record<string, RatePricing>;
  * Default pricing. Deliberately conservative (rounded UP) so the owner's spend
  * ceiling errs on the side of cutting the narrator off early rather than late.
  *
- * - Anthropic Claude Sonnet 4: $3 / 1M input tokens, $15 / 1M output tokens.
+ * - Anthropic Claude Sonnet 5.5 (the narrator): $2 / 1M input tokens,
+ *   $10 / 1M output tokens; the retired Sonnet 4 stays priced for old rows.
  * - ElevenLabs Flash v2.5 TTS: per character of synthesized speech.
  * - ElevenLabs Convai / OpenAI Realtime: billed per minute upstream; we only
  *   log session issuance, so each issued session is charged an assumed-max.
  */
 export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
+  // The narrator (narrator-claude): Claude Sonnet 5.5 at its list price,
+  // $2 / 1M input tokens and $10 / 1M output tokens (Anthropic pricing,
+  // 2026-10-23). The cap is meant to stop real spend at the ceiling, so the
+  // model that produces most of the ledger is priced exactly.
+  "claude-sonnet-5-5": { inputTokenUsd: 2 / 1_000_000, outputTokenUsd: 10 / 1_000_000 },
+  // The narrator's previous model (deprecated, $3 / $15). Kept so ledger rows
+  // from before the switch still price this month; drop once the month is out.
   "claude-sonnet-4-20250514": {
     inputTokenUsd: 3 / 1_000_000,
     outputTokenUsd: 15 / 1_000_000,
   },
-  // Studio clue drafting (studio-claude). Deliberately high ceilings rather than
-  // list prices, so the cap errs toward stopping early.
+  // Studio clue drafting (studio-claude). A deliberately high ceiling rather
+  // than the list price ($4 / $20), so the cap errs toward stopping early.
   "claude-opus-5-5": { inputTokenUsd: 15 / 1_000_000, outputTokenUsd: 75 / 1_000_000 },
-  "claude-sonnet-5-5": { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
   // ElevenLabs Conversational AI — assume a generous ~8-minute session.
   convai: { sessionUsd: 1.0 },
   // OpenAI Realtime audio is the priciest path — assume a costly session.
@@ -80,10 +87,11 @@ export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
  * rate key (model id, or `service:endpoint`) isn't in {@link DEFAULT_NARRATOR_PRICING}.
  *
  * This is the safety net for model-id drift: provider model ids rotate (e.g. a
- * newer Claude than `claude-sonnet-4-20250514`), and without a fallback such a
- * row would price at $0 and silently let month-to-date spend sail past the cap.
- * Each service falls back to its primary billing unit, priced at the same
- * conservative rates as the exact entries above.
+ * newer Claude than `claude-sonnet-5-5`), and without a fallback such a row
+ * would price at $0 and silently let month-to-date spend sail past the cap.
+ * Each service falls back to its primary billing unit at a conservative rate:
+ * an unknown Anthropic model is charged $3 / $15, above the narrator's list
+ * price, so drift can only stop the narrator early, never late.
  */
 export const SERVICE_FALLBACK_PRICING: NarratorPricing = {
   // Any Anthropic row: price by token even if the model id is unrecognized.

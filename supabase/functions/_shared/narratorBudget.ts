@@ -27,12 +27,14 @@ export interface RatePricing {
 export type NarratorPricing = Record<string, RatePricing>;
 
 export const DEFAULT_NARRATOR_PRICING: NarratorPricing = {
+  // The narrator's model at list price; see src/lib/narratorBudget.ts.
+  "claude-sonnet-5-5": { inputTokenUsd: 2 / 1_000_000, outputTokenUsd: 10 / 1_000_000 },
+  // The narrator's previous (deprecated) model, kept for this month's old rows.
   "claude-sonnet-4-20250514": {
     inputTokenUsd: 3 / 1_000_000,
     outputTokenUsd: 15 / 1_000_000,
   },
   "claude-opus-5-5": { inputTokenUsd: 15 / 1_000_000, outputTokenUsd: 75 / 1_000_000 },
-  "claude-sonnet-5-5": { inputTokenUsd: 3 / 1_000_000, outputTokenUsd: 15 / 1_000_000 },
   convai: { sessionUsd: 1.0 },
   "gpt-realtime": { sessionUsd: 1.5 },
   "elevenlabs:tts": { characterUsd: 0.00015 },
