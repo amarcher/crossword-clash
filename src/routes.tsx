@@ -157,6 +157,8 @@ export const routes: RouteObject[] = [
           { path: "challenge", lazy: () => m.challenge().then((s) => ({ Component: s.ChallengeScreen })) },
           { path: "importing", lazy: () => m.importing().then((s) => ({ Component: s.ImportingScreen })) },
           { path: "rejoin", lazy: () => m.rejoin().then((s) => ({ Component: s.RejoinScreen })) },
+          // Past dailies with the viewer's own times (docs/puzzle-archive-spec.md).
+          { path: "archive", lazy: () => m.archive().then((s) => ({ Component: s.ArchiveScreen })) },
     ],
   },
   {

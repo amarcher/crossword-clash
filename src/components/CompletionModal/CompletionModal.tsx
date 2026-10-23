@@ -647,7 +647,15 @@ export function CompletionModal({
                 {hasNextUp &&
                   nextUp.map((item) => (
                     <NextUpRow
-                      key={item.kind === "daily" ? `daily-${item.slot}` : item.kind === "classic" ? `classic-${item.entry.file}` : "library"}
+                      key={
+                        item.kind === "daily"
+                          ? `daily-${item.slot}`
+                          : item.kind === "archive"
+                            ? `archive-${item.entry.day}-${item.entry.slot}`
+                            : item.kind === "classic"
+                              ? `classic-${item.entry.file}`
+                              : "library"
+                      }
                       item={item}
                       onSelect={() => onNextUp(item)}
                       darkMode={darkMode}
@@ -764,6 +772,20 @@ function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: (
         tone="gold"
         title={t(SLOT_EYEBROW[item.slot])}
         subtitle={displayTheme(item.daily) ? `${size} · ${displayTheme(item.daily)}` : size}
+        onClick={onSelect}
+        darkMode={darkMode}
+      />
+    );
+  }
+  if (item.kind === "archive") {
+    const { entry } = item;
+    const size = `${entry.width}×${entry.height}`;
+    return (
+      <ModalRow
+        icon={CalendarDays}
+        tone="gold"
+        title={t("completion.nextYesterday", { daily: t(SLOT_EYEBROW[entry.slot]) })}
+        subtitle={entry.theme ? `${size} · ${entry.theme}` : `${size} · ${entry.title}`}
         onClick={onSelect}
         darkMode={darkMode}
       />

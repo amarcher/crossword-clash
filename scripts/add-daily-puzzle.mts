@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "@xwordly/xword-parser";
 import { normalizePuzzle, puzzleToTransferFormat } from "../src/lib/puzzleNormalizer";
 import { dailyFeedPath, isDailySlot, parseDailyFeedEntry, type DailyFeedEntry, type DailySlot } from "../src/lib/dailyFeed";
+import { buildDailyIndex } from "./build-daily-index.mts";
 
 const USAGE = 'Usage: pnpm daily:add [--slot mini|midi|large] YYYY-MM-DD path/to/puzzle.(puz|ipuz|jpz|xd) ["Theme"]';
 
@@ -58,3 +59,6 @@ const out = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../publi
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, JSON.stringify(entry) + "\n");
 console.log(`${date} (${slot}): "${puzzle.title}" by ${puzzle.author || "unknown"} (${puzzle.width}×${puzzle.height}) → ${path.relative(process.cwd(), out)}`);
+// The archive lists this day from the generated index, so rebuild it in the same step.
+const index = buildDailyIndex();
+console.log(`Archive index: ${index.entries} entries (${index.first} → ${index.last})`);
