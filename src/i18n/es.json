@@ -29,6 +29,8 @@
     "nudgeDismiss": "Entendido",
     "classicLibrary": "Biblioteca clásica",
     "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)",
+    "pastPuzzles": "Crucigramas anteriores",
+    "pastPuzzlesSubtitle": "Ponte al día con los diarios que te perdiste",
     "dailyPlay": "Jugar",
     "dailyMeta": "{{width}}×{{height}} · {{count}} pistas",
     "soloHeading": "Resuelve por tu cuenta",
@@ -201,6 +203,7 @@
     "tie": "¡Empate!"
   },
   "completion": {
+    "nextYesterday": "{{daily}} de ayer",
     "puzzleComplete": "¡Crucigrama completo!",
     "tie": "¡Empate!",
     "wins": "¡{{name}} gana!",
@@ -356,6 +359,37 @@
     "cardCta": "Prueba NYT Crossword →",
     "inlineText": "¿Quieres más crucigramas?",
     "inlineCta": "Prueba el NYT Crossword"
+  },
+  "archive": {
+    "lockedTitle": "Inicia sesión para jugar crucigramas de hace más de {{count}} días",
+    "lockedBody": "Gratis, con Apple o Google. Tus rachas y tiempos te acompañan.",
+    "lockedLabel": "bloqueado, inicia sesión para jugar",
+      "title": "Crucigramas anteriores",
+      "subtitle": "{{solved}} de {{total}} resueltos · {{left}} pendientes",
+      "subtitleAllSolved": "{{solved}} de {{total}} resueltos: estás al día",
+      "loading": "Cargando el archivo…",
+      "unavailable": "El archivo no se pudo cargar ahora mismo.",
+      "empty": "Aún no hay crucigramas anteriores: los diarios de hoy son los primeros.",
+      "resumeEyebrow": "Continúa donde lo dejaste",
+      "resume": "Continuar",
+      "play": "Jugar",
+      "playAgain": "Jugar de nuevo",
+      "race": "Competir",
+      "raceLabel": "Competir con un amigo en {{title}}",
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "monthProgress": "{{solved}} de {{total}} resueltos",
+      "legend": "Leyenda",
+      "solved": "Resuelto",
+      "inProgress": "En curso",
+      "unsolved": "Sin resolver",
+      "solvedIn": "resuelto en {{time}}",
+      "dayNotYet": "aún no publicado",
+      "dayNoPuzzles": "sin crucigramas",
+      "nothingThatDay": "Ese día no se publicó nada.",
+      "today": "Hoy",
+      "loadError": "No se pudo cargar ese crucigrama. Inténtalo de nuevo.",
+      "classicsSubtitle": "{{solved}} de {{total}} resueltos"
   },
   "classics": {
     "title": "Biblioteca clásica",
@@ -520,6 +554,10 @@
     "home": {
       "title": "Crossword Clash — Crucigramas multijugador en tiempo real",
       "description": "Compite con amigos en el crucigrama del NYT de hoy en tiempo real — importación en un clic para suscriptores — o juega 46 clásicos gratis, un mini diario y cualquier archivo .puz. También en solitario."
+    },
+    "archive": {
+      "title": "Crucigramas diarios anteriores — Crossword Clash",
+      "description": "Explora todos los diarios anteriores con tus tiempos y ponte al día con los que te perdiste."
     },
     "classics": {
       "title": "Crucigramas clásicos gratis de 1924 — Crossword Clash",

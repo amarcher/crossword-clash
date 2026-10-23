@@ -3,7 +3,38 @@ import { useDailyPuzzle } from "./useDailyMini";
 import { useBestTimes } from "./useSolveHistory";
 import { DAILY_SLOTS } from "../lib/dailyFeed";
 import { knownClassicManifest, loadClassicManifest, type ClassicEntry } from "../lib/classicLibrary";
-import { nextUpSuggestions, unsolvedDailies, type NextUpItem, type TodaysDailies } from "../lib/nextUp";
+import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
+import { nextUpSuggestions, unsolvedDailies, NEXT_UP_MAX, type NextUpItem, type TodaysDailies } from "../lib/nextUp";
+import { dayKey } from "../lib/soloStats";
+
+/** "YYYY-MM-DD" of the local day before `today`. */
+function dayBefore(today: string): string {
+  const [y, m, d] = today.split("-").map(Number);
+  return dayKey(new Date(y, m - 1, d - 1));
+}
+
+/**
+ * Yesterday's dailies from the archive index, loaded only when asked
+ * (`wanted`): the modal needs them only once today's own dailies no longer
+ * fill the list. Null until known; [] when yesterday had nothing or the
+ * index could not be read.
+ */
+export function useYesterdayDailies(wanted: boolean): DailyIndexEntry[] | null {
+  const today = dayKey(new Date());
+  const yesterday = dayBefore(today);
+  const [entries, setEntries] = useState<DailyIndexEntry[] | null>(() => knownPublishedIndex(today)?.filter((e) => e.day === yesterday) ?? null);
+  useEffect(() => {
+    if (!wanted || entries !== null) return;
+    let alive = true;
+    void loadPublishedIndex(today).then((list) => {
+      if (alive) setEntries((list ?? []).filter((e) => e.day === yesterday));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [wanted, entries, today, yesterday]);
+  return entries;
+}
 
 /** Today's three dailies, each undefined until its feed has answered. */
 export function useTodaysDailies(): TodaysDailies {
@@ -46,11 +77,15 @@ export function useNextUp(finishedKey: string | null, enabled = true): NextUpIte
     () => (enabled ? unsolvedDailies(dailies, bestTimes, finishedKey) : []),
     [enabled, dailies, bestTimes, finishedKey],
   );
-  const classics = useClassicManifest(enabled && settled && openDailies.length === 0);
+  // Yesterday's dailies fill the rows today's can't; the classics only once both are exhausted.
+  const yesterday = useYesterdayDailies(enabled && settled && openDailies.length < NEXT_UP_MAX);
+  const classics = useClassicManifest(enabled && settled && openDailies.length === 0 && yesterday !== null && yesterday.length === 0);
 
   return useMemo(() => {
     if (!enabled) return [];
     if (openDailies.length === 0 && !settled) return [];
-    return nextUpSuggestions({ dailies, bestTimes, finishedKey, classics });
-  }, [enabled, openDailies.length, settled, dailies, bestTimes, finishedKey, classics]);
+    // Hold the list while yesterday is still being read, so a classic never shows before a daily it should have offered.
+    if (openDailies.length < NEXT_UP_MAX && yesterday === null) return openDailies.map(({ slot, daily }) => ({ kind: "daily" as const, slot, daily }));
+    return nextUpSuggestions({ dailies, bestTimes, finishedKey, yesterday, classics });
+  }, [enabled, openDailies, settled, dailies, bestTimes, finishedKey, yesterday, classics]);
 }

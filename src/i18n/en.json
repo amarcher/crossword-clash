@@ -29,6 +29,8 @@
     "nudgeDismiss": "Got it",
     "classicLibrary": "Classic library",
     "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
+    "pastPuzzles": "Past puzzles",
+    "pastPuzzlesSubtitle": "Catch up on the dailies you missed",
     "dailyPlay": "Play",
     "dailyMeta": "{{width}}×{{height}} · {{count}} clues",
     "soloHeading": "Solve on your own",
@@ -201,6 +203,7 @@
     "tie": "It's a tie!"
   },
   "completion": {
+    "nextYesterday": "Yesterday's {{daily}}",
     "puzzleComplete": "Puzzle complete",
     "tie": "It's a tie!",
     "wins": "{{name}} wins!",
@@ -356,6 +359,37 @@
     "cardCta": "Try NYT Crossword →",
     "inlineText": "Want more puzzles?",
     "inlineCta": "Try the NYT Crossword"
+  },
+  "archive": {
+    "lockedTitle": "Sign in to play puzzles older than {{count}} days",
+    "lockedBody": "Free, with Apple or Google. Your streaks and times come with you.",
+    "lockedLabel": "locked, sign in to play",
+      "title": "Past puzzles",
+      "subtitle": "{{solved}} of {{total}} solved · {{left}} to catch up on",
+      "subtitleAllSolved": "{{solved}} of {{total}} solved — you're all caught up",
+      "loading": "Loading the archive…",
+      "unavailable": "The archive couldn't be loaded right now.",
+      "empty": "No past puzzles yet — today's dailies are the first.",
+      "resumeEyebrow": "Pick up where you left off",
+      "resume": "Resume",
+      "play": "Play",
+      "playAgain": "Play again",
+      "race": "Race",
+      "raceLabel": "Race a friend on {{title}}",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "monthProgress": "{{solved}} of {{total}} solved",
+      "legend": "Legend",
+      "solved": "Solved",
+      "inProgress": "In progress",
+      "unsolved": "Unsolved",
+      "solvedIn": "solved in {{time}}",
+      "dayNotYet": "not yet published",
+      "dayNoPuzzles": "no puzzles",
+      "nothingThatDay": "Nothing was published on this day.",
+      "today": "Today",
+      "loadError": "Couldn't load that puzzle. Please try again.",
+      "classicsSubtitle": "{{solved}} of {{total}} solved"
   },
   "classics": {
     "title": "Classic library",
@@ -520,6 +554,10 @@
     "home": {
       "title": "Crossword Clash — Real-Time Multiplayer Crossword Puzzles",
       "description": "Race friends on today's NYT crossword in real time — one-click import for NYT subscribers — or play 46 free classic puzzles, a daily mini, and any .puz file. Solo play too."
+    },
+    "archive": {
+      "title": "Past Daily Crosswords — Crossword Clash",
+      "description": "Browse every past Daily Mini, Midi and Large with your own times, and catch up on the ones you missed."
     },
     "classics": {
       "title": "Free Classic Crossword Puzzles from 1924 — Crossword Clash",

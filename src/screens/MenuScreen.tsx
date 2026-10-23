@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { BookOpen, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
+import { BookOpen, CalendarDays, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
@@ -300,6 +300,13 @@ export function MenuScreen() {
                   onClick={() => track("mode_selected", { mode: "nyt" })}
                 />
               )}
+              <ListRow
+                icon={CalendarDays}
+                to="/archive"
+                title={t("menu.pastPuzzles")}
+                subtitle={t("menu.pastPuzzlesSubtitle")}
+                onClick={() => track("mode_selected", { mode: "archive" })}
+              />
               <ListRow
                 icon={BookOpen}
                 tone="gold"

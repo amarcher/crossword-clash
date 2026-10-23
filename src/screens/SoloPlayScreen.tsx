@@ -24,6 +24,7 @@ import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { loadClassicPuzzle } from "../lib/classicLibrary";
+import { fetchDailyForDay } from "../lib/dailyFeed";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, submitDailyResult, todayKey, updateDailyDisplayName } from "../lib/dailyLeaderboard";
@@ -291,6 +292,15 @@ export function SoloPlayScreen() {
       if (item.kind === "library") {
         setCompletionModalDismissed(true);
         navigate("/classics");
+        return;
+      }
+      if (item.kind === "archive") {
+        // Yesterday's daily, fetched by day + slot like the archive screen does.
+        track("mode_selected", { mode: "archive", slot: item.entry.slot, from: "completion" });
+        const daily = await fetchDailyForDay(item.entry.day, item.entry.slot);
+        if (!daily) return;
+        await game.handleSoloPuzzleLoaded(daily.puzzle);
+        game.setSoloTheme(daily.theme || null);
         return;
       }
       track("mode_selected", item.kind === "daily" ? { mode: "daily", slot: item.slot, from: "completion" } : { mode: "classic", from: "completion" });
