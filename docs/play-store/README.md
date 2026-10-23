@@ -114,12 +114,17 @@ Done by Claude, nothing submitted or rolled out:
    update, now "Changes in review". Google's quick checks run first (up to
    14 minutes), then the review itself, typically within 7 days.
 
+5. **Promoted to production** (later the same evening, on Andrew's go-ahead):
+   4 (1.0.2), 100% of users, all targeted countries, the internal release
+   notes carried over. Saving it joined the review already in flight, so
+   Google asked to restart that review; confirmed. Production, the listing
+   changes and Data safety are now one review. Managed publishing is off, so
+   it goes live on approval.
+
 ### Still to do
 
-5. **Production.** Once internal testing looks right: Internal testing →
-   *Promote release → Production* → confirm countries and notes → *Start
-   rollout to Production*. Managed publishing is off, so it goes live on
-   approval.
+- Nothing in the console. Watch Publishing overview (or the email) for the
+  review result; a rejection comes with the policy reason.
 
 ### Follow-ups outside the Play Console
 
@@ -166,7 +171,8 @@ Done by Claude, nothing submitted or rolled out:
 - **October 21, 2026:** bundle 4 (1.0.2) drafted on internal testing; listing
   and Data safety changes staged.
 - **October 22, 2026:** tester list created, 4 (1.0.2) rolled out to internal
-  testing, listing + Data safety changes submitted for review.
+  testing, listing + Data safety changes submitted for review, then 4 (1.0.2)
+  promoted to production in the same review.
 
 ## Known gaps
 
