@@ -10,7 +10,7 @@
  * business is registered.
  */
 
-export const LEGAL_LAST_UPDATED = "2026-10-20";
+export const LEGAL_LAST_UPDATED = "2026-10-23";
 export const LEGAL_CONTACT_EMAIL = "acesuplabs@gmail.com";
 
 export interface LegalSection {
@@ -125,7 +125,7 @@ const en: LegalContent = {
       {
         heading: "Retention and your choices",
         paragraphs: [
-          "Game, puzzle and leaderboard records are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
+          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
         ],
       },
       {
@@ -348,7 +348,7 @@ const es: LegalContent = {
       {
         heading: "Conservación y tus opciones",
         paragraphs: [
-          "Los registros de partidas, crucigramas y clasificación se conservan hasta que los eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
+          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
         ],
       },
       {
