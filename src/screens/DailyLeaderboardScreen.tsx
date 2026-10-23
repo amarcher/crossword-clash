@@ -8,7 +8,7 @@ import { Button, Card } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
-import { isDailySlot, type DailySlot } from "../lib/dailyFeed";
+import { isDailySlot, type DailySlot, displayTheme } from "../lib/dailyFeed";
 import {
   fetchDailyLeaderboard,
   mergeOwnResult,
@@ -168,8 +168,8 @@ export function DailyLeaderboardScreen() {
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
             {t(slot === "large" ? "leaderboard.titleLarge" : slot === "midi" ? "leaderboard.titleMidi" : "leaderboard.title")}
           </h1>
-          {daily?.theme && (
-            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: daily.theme })}</p>
+          {displayTheme(daily) && (
+            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: displayTheme(daily) })}</p>
           )}
           {streak > 0 && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">

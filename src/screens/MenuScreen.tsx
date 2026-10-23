@@ -13,7 +13,7 @@ import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
-import type { DailySlot } from "../lib/dailyFeed";
+import { displayTheme, type DailySlot } from "../lib/dailyFeed";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
 import { useStreaks } from "../hooks/useSolveHistory";
@@ -60,12 +60,12 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
               than wrapping, so the loaded tile is exactly the placeholder's height. */}
           <div className="flex min-h-5 items-center gap-2">
             <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
-            {daily?.theme && (
+            {displayTheme(daily) && (
               <span
                 className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100"
-                title={daily.theme}
+                title={displayTheme(daily)}
               >
-                {daily.theme}
+                {displayTheme(daily)}
               </span>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
@@ -762,7 +763,7 @@ function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: (
         icon={CalendarDays}
         tone="gold"
         title={t(SLOT_EYEBROW[item.slot])}
-        subtitle={item.daily.theme ? `${size} · ${item.daily.theme}` : size}
+        subtitle={displayTheme(item.daily) ? `${size} · ${displayTheme(item.daily)}` : size}
         onClick={onSelect}
         darkMode={darkMode}
       />

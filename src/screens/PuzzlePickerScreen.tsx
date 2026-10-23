@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { displayTheme } from "../lib/dailyFeed";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, Loader2 } from "lucide-react";
@@ -154,7 +155,7 @@ export function PuzzlePickerScreen() {
                       <p className="mt-0.5 truncate font-display text-lg font-bold leading-snug text-ink">{daily.puzzle.title}</p>
                       <p className="truncate text-sm text-muted tabular-nums">
                         {daily.puzzle.width}×{daily.puzzle.height}
-                        {daily.theme ? ` · ${daily.theme}` : ""}
+                        {displayTheme(daily) ? ` · ${displayTheme(daily)}` : ""}
                       </p>
                     </div>
                     <Button

@@ -13,8 +13,10 @@ import {
   resetDailyFeedMemory,
   resolveDailyMini,
   resolveDailyPuzzle,
-  type DailyFeedEntry, DAILY_SLOTS } from "./dailyFeed";
-import { getDailyMini } from "./dailyMinis";
+  type DailyFeedEntry, DAILY_SLOTS,
+  displayTheme,
+} from "./dailyFeed";
+import { getDailyMini, type DailyMini } from "./dailyMinis";
 import { isTodaysDaily, leaderboardPath, todaysDailySlot } from "./dailyLeaderboard";
 import { puzzleToTransferFormat } from "./puzzleNormalizer";
 
@@ -236,5 +238,16 @@ describe("published feed files", () => {
       const data: unknown = JSON.parse(new TextDecoder().decode(readFileSync(dir + file)));
       expect(parseDailyFeedEntry(data), file).not.toBeNull();
     }
+  });
+});
+
+describe("displayTheme", () => {
+  const daily = (theme: string | undefined, title: string) => ({ theme: theme ?? "", puzzle: { title } as DailyMini["puzzle"] });
+  it("shows a theme that adds something and hides one that repeats the title", () => {
+    expect(displayTheme(daily("Coffee", "Coffee Break"))).toBe("Coffee");
+    expect(displayTheme(daily("Coffee Break", "Coffee Break"))).toBe("");
+    expect(displayTheme(daily(" coffee break ", "Coffee Break"))).toBe("");
+    expect(displayTheme(daily(undefined, "Coffee Break"))).toBe("");
+    expect(displayTheme(null)).toBe("");
   });
 });
