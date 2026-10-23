@@ -329,3 +329,105 @@ Still open for Andrew (nothing blocks on them): gating anonymous visitors
 (§2.9 #3), per-puzzle progress beyond the one resumable game (#5), moving
 future days behind the schedule table (#6), and offering yesterday's
 unsolved daily in "Up next" (#2).
+
+## 5. Follow-ups Andrew decided (2026-10-23, afternoon)
+
+Decisions on §2.9: **(1)** anonymous visitors play the last 7 days
+(today included) and see older days on the calendar locked, with a
+benefit-led sign-in prompt; accounts see everything. **(2)** yes to
+per-puzzle progress for every solo puzzle a player has started. **(4)** yes
+to yesterday's unsolved daily in "Up next". **(3)** future-day files: still
+undecided, left alone.
+
+(1) and (4) landed in PR #126 (below). (2) is its own PR after #126 merges,
+because it changes persistence; its design follows.
+
+### 5.1 Gate (shipped in #126)
+
+`isLockedDay(day, today, unlocked)` in `archive.ts`: locked once the day is
+`ANONYMOUS_ARCHIVE_DAYS` (7) or more behind today, never when `unlocked`.
+The screen unlocks for a signed-in account, and also wherever no account
+can be offered (`accountsAvailable()` false: the native apps, builds
+without Supabase), since a lock with no key would be a dead end there. A
+locked day keeps its place and its status dots on the calendar but shows a
+lock glyph, and its panel shows the puzzles with a sign-in card instead of
+Play / Race; the card opens the shared `AccountSheet`
+(`openAccount({ placement: "archive" })`), the menu row's entry point.
+
+### 5.2 Yesterday in "Up next" (shipped in #126)
+
+`nextUpSuggestions` takes `yesterday` (yesterday's index entries) and
+offers them after today's unsolved dailies, before a classic, as
+`{ kind: "archive", entry }` rows ("Yesterday's Daily Mini · 5×5 · Tacos").
+`useNextUp` reads them from the index only when today's dailies leave a
+row free, and holds the list until they are known so a classic never shows
+ahead of a daily. `SoloPlayScreen` loads the pick with `fetchDailyForDay`.
+
+### 5.3 Per-puzzle progress (design for the follow-up PR)
+
+**Goal.** Every solo puzzle a player has started shows "in progress" on the
+calendar and can be resumed where it was, not only the one game the home
+route resumes.
+
+**What exists.** Solo progress is one localStorage record,
+`crossword-clash-solo` (`{ puzzle, playerCells, gameId }`), plus the clock
+`crossword-clash-solo-timer` (`{ key, elapsedMs, completed }`), both
+overwritten by `handleSoloPuzzleLoaded`. `GameContext` also upserts the
+cells into `games.cells` per solo game when Supabase is configured, keyed
+by game id, never read back.
+
+**Store (local, both anonymous and accounts).** A new module
+`src/lib/soloProgress.ts`, pure helpers + a thin localStorage wrapper like
+`soloStats.ts`:
+
+```ts
+interface SoloProgressRecord {
+  key: string;            // puzzleIdentity()
+  cells: Record<string, CellState>;  // the non-empty player cells only
+  elapsedMs: number;
+  updatedAt: number;      // ms epoch
+  filled: number;         // correct cells, for a "12 / 25" hint
+  total: number;          // white cells
+}
+// localStorage "crossword-clash:solo-progress" → Record<key, SoloProgressRecord>
+```
+
+- Written from the same effect that saves `crossword-clash-solo`
+  (`GameContext`), debounced to once per second, only while the game is not
+  complete; deleted on completion (`recordSoloCompletion` path) and on
+  "Reset puzzle".
+- **Bounded:** at most 30 records; evict the oldest `updatedAt` first; skip
+  records with no filled cell; cap stored cells at the grid size (a 15×15
+  is ≤ 225 small objects, ~8 KB). Worst case ~250 KB, well under the
+  localStorage budget the daily-feed cache already shares.
+- Resume: `handleSoloPuzzleLoaded(puzzle)` looks the identity up and, when
+  a record exists, hydrates `HYDRATE_CELLS` with its cells and seeds the
+  timer with `elapsedMs` (the timer already does this for the one saved
+  key; the lookup generalizes it). The existing single-session record stays
+  as the "what does `/` resume" pointer, unchanged.
+- Archive: `deriveArchiveItems` takes the set of in-progress identities
+  instead of one; `resumableItem` picks the newest `updatedAt`; the resume
+  row shows "12 / 25 filled · 3:10".
+
+**Synced for accounts: not in this PR, and here is why.** The `solves`
+machinery stores one row per finished (puzzle, day) and derives everything
+from facts about finishes; partial grids are neither finishes nor small
+(a 15×15 is ~8 KB of cells against a 7-field row), and `record_solves`'
+conflict rule (keep the best time, let a finish replace an import) has no
+meaning for progress. Carrying progress cleanly would be a separate
+`solo_progress` table (user_id, puzzle_key, cells jsonb, elapsed_ms,
+updated_at; owner-only RLS; delete on finish) with last-write-wins across
+devices and a delete in the `delete-account` function. That is a reasonable
+phase 2, but it is new schema, a new RLS surface and a new sync conflict
+story, so the follow-up ships **local-only** and says so in the privacy
+copy only if the local record outlives the puzzle (it does not: it is
+deleted on completion).
+
+**Tests to add.** `soloProgress.test.ts` (record shape, eviction order,
+cap, delete on finish, cells cap), `GameContext` save effect (debounce,
+no write when complete), `usePuzzle` hydrate from a record, archive
+derivation with several in-progress identities, `ArchiveScreen` resume
+row showing the newest one.
+
+**Mobile/native.** The store is per device; the apps get it for free. A
+cleared browser loses it, same as every other anonymous record today.

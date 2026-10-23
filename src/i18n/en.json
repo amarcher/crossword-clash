@@ -203,6 +203,7 @@
     "tie": "It's a tie!"
   },
   "completion": {
+    "nextYesterday": "Yesterday's {{daily}}",
     "puzzleComplete": "Puzzle complete",
     "tie": "It's a tie!",
     "wins": "{{name}} wins!",
@@ -360,6 +361,9 @@
     "inlineCta": "Try the NYT Crossword"
   },
   "archive": {
+    "lockedTitle": "Sign in to play puzzles older than {{count}} days",
+    "lockedBody": "Free, with Apple or Google. Your streaks and times come with you.",
+    "lockedLabel": "locked, sign in to play",
       "title": "Past puzzles",
       "subtitle": "{{solved}} of {{total}} solved · {{left}} to catch up on",
       "subtitleAllSolved": "{{solved}} of {{total}} solved — you're all caught up",

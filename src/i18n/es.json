@@ -203,6 +203,7 @@
     "tie": "¡Empate!"
   },
   "completion": {
+    "nextYesterday": "{{daily}} de ayer",
     "puzzleComplete": "¡Crucigrama completo!",
     "tie": "¡Empate!",
     "wins": "¡{{name}} gana!",
@@ -360,6 +361,9 @@
     "inlineCta": "Prueba el NYT Crossword"
   },
   "archive": {
+    "lockedTitle": "Inicia sesión para jugar crucigramas de hace más de {{count}} días",
+    "lockedBody": "Gratis, con Apple o Google. Tus rachas y tiempos te acompañan.",
+    "lockedLabel": "bloqueado, inicia sesión para jugar",
       "title": "Crucigramas anteriores",
       "subtitle": "{{solved}} de {{total}} resueltos · {{left}} pendientes",
       "subtitleAllSolved": "{{solved}} de {{total}} resueltos: estás al día",

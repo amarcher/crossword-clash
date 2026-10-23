@@ -11,8 +11,25 @@
  */
 import type { DailyIndexEntry } from "./dailyIndex";
 import type { DailySlot } from "./dailyFeed";
-import { puzzleIdentity, type SoloTimerRecord } from "./soloStats";
+import { daysBetween, puzzleIdentity, type SoloTimerRecord } from "./soloStats";
 import type { CellState, Puzzle } from "../types/puzzle";
+
+// --- Gating ---
+
+/** Anonymous visitors may play this many days (today included); older days need an account. */
+export const ANONYMOUS_ARCHIVE_DAYS = 7;
+
+/**
+ * Whether a day's puzzles are locked for this viewer: never when `unlocked`
+ * (a signed-in account, or a build with no sign-in to offer), else once the
+ * day is ANONYMOUS_ARCHIVE_DAYS or more behind today. Locked days stay on the
+ * calendar with their status; only Play and Race are withheld.
+ */
+export function isLockedDay(day: string, today: string, unlocked: boolean): boolean {
+  if (unlocked) return false;
+  const ago = daysBetween(day, today);
+  return Number.isFinite(ago) && ago >= ANONYMOUS_ARCHIVE_DAYS;
+}
 
 export type ArchiveStatus = "solved" | "inprogress" | "unsolved";
 

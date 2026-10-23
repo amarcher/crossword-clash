@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  ANONYMOUS_ARCHIVE_DAYS,
   archiveCounts,
   defaultSelection,
+  isLockedDay,
   deriveArchiveItems,
   groupByDay,
   monthCells,
@@ -135,6 +137,21 @@ describe("calendar math", () => {
     expect(en).toHaveLength(7);
     expect(en[0]).toBe("S");
     expect(en[1]).toBe("M");
+  });
+});
+
+describe("isLockedDay", () => {
+  it("locks days ANONYMOUS_ARCHIVE_DAYS or more behind today unless unlocked", () => {
+    expect(ANONYMOUS_ARCHIVE_DAYS).toBe(7);
+    expect(isLockedDay("2026-10-20", "2026-10-20", false)).toBe(false);
+    expect(isLockedDay("2026-10-14", "2026-10-20", false)).toBe(false); // 6 days ago: still open
+    expect(isLockedDay("2026-10-13", "2026-10-20", false)).toBe(true); // 7 days ago: locked
+    expect(isLockedDay("2026-09-01", "2026-10-20", false)).toBe(true);
+    expect(isLockedDay("2026-09-01", "2026-10-20", true)).toBe(false);
+  });
+
+  it("never locks an unparseable day", () => {
+    expect(isLockedDay("nope", "2026-10-20", false)).toBe(false);
   });
 });
 

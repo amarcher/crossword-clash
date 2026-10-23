@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, BookOpen, Clock, Play, Swords } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, BookOpen, Clock, Lock, Play, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow, ListGroup, ListRow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
@@ -14,10 +15,12 @@ import { knownClassicManifest, loadClassicManifest, type ClassicEntry } from "..
 import { prefetchOnIntent } from "../routeModules";
 import { dayKey, formatDuration, loadSoloTimer } from "../lib/soloStats";
 import {
+  ANONYMOUS_ARCHIVE_DAYS,
   archiveCounts,
   defaultSelection,
   deriveArchiveItems,
   groupByDay,
+  isLockedDay,
   longDay,
   monthCells,
   monthLabel,
@@ -109,6 +112,11 @@ export function ArchiveScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const today = dayKey(new Date());
+  // Anonymous visitors play the last ANONYMOUS_ARCHIVE_DAYS days; older days are
+  // locked behind a sign-in. Where no account can be offered (the apps, offline
+  // builds) nothing is locked — a lock with no key would be a dead end.
+  const account = useMaybeAccount();
+  const unlocked = !account?.available || (account.ready && !!account.user);
 
   // The route's lazy() warmed the index, so this is normally known on the first render.
   const [entries, setEntries] = useState<DailyIndexEntry[] | null | undefined>(() => knownPublishedIndex(today) ?? undefined);
@@ -302,13 +310,14 @@ export function ArchiveScreen() {
                         const empty = list.length === 0;
                         const isSelected = day === selectedDay;
                         const isToday = day === today;
+                        const locked = !empty && isLockedDay(day, today, unlocked);
                         const label = `${longDay(day, locale)}: ${
                           empty
                             ? future
                               ? t("archive.dayNotYet")
                               : t("archive.dayNoPuzzles")
                             : list.map((it) => `${t(SLOT_EYEBROW[it.slot])} ${statusText(it)}`).join(", ")
-                        }`;
+                        }${locked ? ` (${t("archive.lockedLabel")})` : ""}`;
                         return (
                           <div key={day} role="gridcell" className="flex justify-center">
                             <button
@@ -329,10 +338,14 @@ export function ArchiveScreen() {
                               } ${isToday && !isSelected ? "ring-1 ring-inset ring-brand-500" : ""}`}
                             >
                               <span>{toDate(day).getDate()}</span>
-                              <span className="flex h-1.5 gap-1" aria-hidden="true">
-                                {list.map((it) => (
-                                  <span key={it.slot} className={`size-1.5 rounded-full ${isSelected ? DOT_ON_SELECTED[it.status] : DOT[it.status]}`} />
-                                ))}
+                              <span className="flex h-1.5 items-center gap-1" aria-hidden="true">
+                                {locked ? (
+                                  <Lock className={`size-3 ${isSelected ? "text-white/80" : "text-subtle"}`} strokeWidth={2.5} />
+                                ) : (
+                                  list.map((it) => (
+                                    <span key={it.slot} className={`size-1.5 rounded-full ${isSelected ? DOT_ON_SELECTED[it.status] : DOT[it.status]}`} />
+                                  ))
+                                )}
                               </span>
                             </button>
                           </div>
@@ -370,8 +383,24 @@ export function ArchiveScreen() {
                   <p className="mt-2 text-sm text-muted">{t("archive.nothingThatDay")}</p>
                 ) : (
                   <ul className="mt-2 space-y-2.5">
+                    {selectedDay && account && isLockedDay(selectedDay, today, unlocked) && (
+                      // Benefit-led, like the menu's account row: the puzzles stay listed, only Play / Race wait for a sign-in.
+                      <li className="flex items-center gap-3 rounded-2xl bg-surface-sunken p-3 ring-1 ring-line">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-ink-soft ring-1 ring-line">
+                          <Lock className="size-5" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold leading-snug text-ink">{t("archive.lockedTitle", { count: ANONYMOUS_ARCHIVE_DAYS })}</p>
+                          <p className="mt-0.5 text-sm leading-snug text-muted">{t("archive.lockedBody")}</p>
+                        </div>
+                        <Button size="sm" onClick={() => account.openAccount({ placement: "archive" })}>
+                          {t("account.signIn")}
+                        </Button>
+                      </li>
+                    )}
                     {dayItems.map((it) => {
                       const primary = it.status === "unsolved" || it.status === "inprogress";
+                      const locked = isLockedDay(it.day, today, unlocked);
                       return (
                         <li key={it.slot} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-card">
                           <ShapeThumb blocks={it.blocks} className="w-14 shrink-0" />
@@ -386,6 +415,9 @@ export function ArchiveScreen() {
                               {it.theme ? ` · ${it.theme}` : ""}
                             </p>
                           </div>
+                          {locked ? (
+                            <Lock className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+                          ) : (
                           <div className="flex shrink-0 flex-col gap-1.5">
                             <Button
                               size="sm"
@@ -416,6 +448,7 @@ export function ArchiveScreen() {
                               </Button>
                             )}
                           </div>
+                          )}
                         </li>
                       );
                     })}
