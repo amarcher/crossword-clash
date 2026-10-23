@@ -78,7 +78,7 @@ Three backends implement the `NarratorBackend` interface (`src/lib/narrator/type
 
 1. **ElevenLabs Agent** (`elevenlabs-agent`): ElevenLabs Conversational AI agent. Voice/personality configured in ElevenLabs dashboard. Edge function `agent-auth` returns signed WebSocket URL. Requires `ELEVENLABS_AGENT_ID` and `ELEVENLABS_API_KEY` env vars.
 2. **OpenAI Realtime** (`openai-agent`): OpenAI Realtime API with GPT-4o. Built-in voice synthesis via WebSocket, PCM16 audio playback via `AudioContext`. Edge function `openai-agent-auth` creates ephemeral token. Requires `OPENAI_API_KEY` env var.
-3. **Claude + TTS** (`claude`): Claude generates commentary text, then speaks via ElevenLabs TTS. Maintains conversation history client-side. Edge function `narrator-claude` proxies to Claude API. Requires `ANTHROPIC_API_KEY` env var.
+3. **Claude + TTS** (`claude`): Claude generates commentary text, then speaks via ElevenLabs TTS. Maintains conversation history client-side. Edge function `narrator-claude` proxies to Claude API with `claude-sonnet-5-5` (`NARRATOR_MODEL`; thinking at its lowest setting, `between_tools`, so the 256-token budget is all reply, and the text block is read by type), priced at list in `DEFAULT_NARRATOR_PRICING`. Requires `ANTHROPIC_API_KEY` env var.
 
 ### Settings
 
@@ -97,7 +97,7 @@ No devtools localStorage gate — a regular visitor on `/host` can turn the narr
 - **Server guard**: `supabase/functions/_shared/budgetGuard.ts` queries rolling month-to-date spend from the Neon `api_usage` table (via the existing `DASHBOARD_DATABASE_URL`) and, once estimated combined Anthropic+ElevenLabs+OpenAI spend reaches `NARRATOR_MONTHLY_USD_CAP` (default 20), refuses every narrator/TTS auth endpoint with HTTP 402 `{error:'narrator_unavailable', reason:'budget'}`. Fails open only when spend genuinely can't be measured.
 - **Graceful client**: backends throw the `narrator_unavailable:budget` sentinel; `useNarrator` surfaces `budgetExhausted` (no cascade/retry loop) and `HostSpectateScreen` shows a friendly "taking a break" banner (`tts.narratorBudgetPaused`). Narrator stays off.
 - **Demo allowance**: first-time TV hosts get a few sampled events (`src/lib/narratorDemo.ts`, metered in localStorage) on the cheapest Claude path even while over budget; the server independently caps demo grants per IP via the `narrator_usage` table.
-- **Rate limiting**: per-IP via `_shared/rateLimit.ts` on all narrator auth endpoints.
+- **Rate limiting**: per-IP via `_shared/rateLimit.ts` on all narrator auth endpoints. `narrator-claude` and `tts` share the same 60/h ceiling: the Claude narrator speaks every line through `tts`, so a lower voice limit would mute it mid-game.
 
 ### Session Lifecycle
 

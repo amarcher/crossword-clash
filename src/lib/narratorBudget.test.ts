@@ -41,6 +41,20 @@ describe("narratorBudget", () => {
       expect(estimateRowCostUsd(row)).toBeCloseTo(18, 6);
     });
 
+    it("prices the narrator's Sonnet 5.5 rows at list ($2 in / $10 out per MTok)", () => {
+      const row: UsageRow = {
+        service: "anthropic",
+        model: "claude-sonnet-5-5",
+        tokensIn: 1_000_000,
+        tokensOut: 1_000_000,
+      };
+      expect(estimateRowCostUsd(row)).toBeCloseTo(12, 6);
+      // The retired Sonnet 4 keeps its own (higher) rate for old ledger rows,
+      // and the anthropic service fallback stays above the narrator's price.
+      expect(estimateRowCostUsd({ ...row, model: "claude-sonnet-4-20250514" })).toBeCloseTo(18, 6);
+      expect(estimateRowCostUsd({ ...row, model: "claude-sonnet-5-future" })).toBeGreaterThan(estimateRowCostUsd(row));
+    });
+
     it("prices TTS rows by character", () => {
       const row: UsageRow = { service: "elevenlabs", endpoint: "tts", characters: 10_000 };
       expect(estimateRowCostUsd(row)).toBeCloseTo(1.5, 6);

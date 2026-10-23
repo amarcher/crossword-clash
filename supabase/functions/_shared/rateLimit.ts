@@ -13,7 +13,10 @@ const LIMITS: Record<string, RateLimitConfig> = {
   "agent-auth": { windowMs: 3_600_000, maxRequests: 10 },
   "openai-agent-auth": { windowMs: 3_600_000, maxRequests: 10 },
   "narrator-claude": { windowMs: 3_600_000, maxRequests: 60 },
-  tts: { windowMs: 3_600_000, maxRequests: 30 },
+  // The Claude narrator speaks every line through tts, so the two limits must
+  // match or a lively game loses its voice before it loses its commentary
+  // (docs/scalability-audit.md §1).
+  tts: { windowMs: 3_600_000, maxRequests: 60 },
   // Construction studio (token-gated, one constructor): clue drafts and alternatives.
   "studio-claude": { windowMs: 3_600_000, maxRequests: 120 },
 };
