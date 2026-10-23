@@ -431,3 +431,25 @@ row showing the newest one.
 
 **Mobile/native.** The store is per device; the apps get it for free. A
 cleared browser loses it, same as every other anonymous record today.
+
+## 6. Per-puzzle progress (shipped, 2026-10-23)
+
+Built as §5.3 described, in its own PR after #126 merged, with three
+deliberate departures:
+
+- **No debounce.** `GameContext`'s solo save effect already rewrites the
+  whole puzzle to `crossword-clash-solo` on every keystroke; the progress
+  write beside it is smaller, so a debounce would add state for nothing.
+- **A record only once a letter is typed, and never wiped by an empty grid.**
+  Loading a puzzle resets the cells for one tick before hydration; if that
+  tick deleted the record, every resume would erase what it was resuming.
+  Deletion happens only on finish (`useSoloTimer` + the save effect once
+  `isComplete`) and on Reset.
+- **The legacy pointer stays.** `crossword-clash-solo` is still what `/`
+  resumes; `inProgressFrom` merges it with the store so a game started
+  before this shipped still shows as in progress.
+
+Synced progress for accounts remains a later phase (§5.3's reasoning
+stands): the record is per device and dies with the browser's storage,
+like every other anonymous record. The resume row now reads
+"Daily Large · Oct 22 · 12 of 76 filled · 3:10".

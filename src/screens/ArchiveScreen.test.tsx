@@ -168,6 +168,29 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByText("0 of 4 solved · 4 to catch up on")).toBeTruthy();
   });
 
+  it("marks every puzzle in the progress store in progress and resumes the most recently touched one", async () => {
+    const mini = entries[0];
+    const large = entries[2];
+    localStorage.setItem(
+      "crossword-clash:solo-progress",
+      JSON.stringify({
+        [mini.identity]: { key: mini.identity, cells: { "0,0": { letter: "C", correct: true } }, elapsedMs: 4000, updatedAt: 10, filled: 1, total: 8 },
+        [large.identity]: { key: large.identity, cells: { "0,0": { letter: "C", correct: true }, "0,2": { letter: "T", correct: true } }, elapsedMs: 61_000, updatedAt: 20, filled: 2, total: 8 },
+      }),
+    );
+    renderScreen();
+    await waitFor(() => expect(screen.getAllByText("Split Decision")).toHaveLength(1));
+    const card = screen.getByRole("region", { name: "Pick up where you left off" });
+    expect(within(card).getByText("Split Decision")).toBeTruthy();
+    expect(within(card).getByText(/2 of 8 filled · 1:01/)).toBeTruthy();
+    // Today's mini is in progress too: its row says Resume, and the count treats both as unsolved.
+    expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
+    expect(screen.getByText("0 of 4 solved · 4 to catch up on")).toBeTruthy();
+    const todayCell = screen.getByRole("button", { name: new RegExp(`^${longDay(today, "en")}:`) });
+    expect(todayCell.getAttribute("aria-label")).toContain("Daily Mini in progress");
+    localStorage.clear();
+  });
+
   it("locks days older than a week for an anonymous visitor who could sign in, and opens the account sheet", async () => {
     accountState = { available: true, ready: true, user: null, openAccount };
     renderScreen();
