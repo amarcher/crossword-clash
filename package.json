@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "e2e": "playwright test",
+    "build:daily-index": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-daily-index.mts",
     "build:classics": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-classic-manifest.mts",
     "daily:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-daily-puzzle.mts",
     "seedgrid": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/make.mts",

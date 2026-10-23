@@ -157,6 +157,10 @@ export const routes: RouteObject[] = [
           { path: "challenge", lazy: () => m.challenge().then((s) => ({ Component: s.ChallengeScreen })) },
           { path: "importing", lazy: () => m.importing().then((s) => ({ Component: s.ImportingScreen })) },
           { path: "rejoin", lazy: () => m.rejoin().then((s) => ({ Component: s.RejoinScreen })) },
+          // PROTOTYPE (throwaway, dev builds only): the past-puzzles archive variants. docs/puzzle-archive-spec.md §3.
+          ...(import.meta.env.DEV
+            ? [{ path: "prototype/archive", lazy: () => import("./prototypes/archive/ArchivePrototypeScreen").then((s) => ({ Component: s.ArchivePrototypeScreen })) }]
+            : []),
     ],
   },
   {
