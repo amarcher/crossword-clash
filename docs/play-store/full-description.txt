@@ -10,10 +10,11 @@ PLAY TOGETHER
 • Optional wrong-answer penalty to keep the guessers honest
 
 SOLVE ON YOUR OWN
-• A fresh mini crossword every day, with streaks and a daily leaderboard
+• Three new crosswords every day: a Mini, a Midi and a Large, each with its own leaderboard and streak
 • 46 classic puzzles from the very first crossword book, published in 1924
 • Open your own .puz, .ipuz, .jpz and .xd puzzle files
 • Your progress is saved automatically
+• Share a spoiler-free picture of your solve with a link that challenges friends to beat your time
 
 MADE FOR TOUCH
 • A crossword keyboard built for fast entry, with the active clue always in view
