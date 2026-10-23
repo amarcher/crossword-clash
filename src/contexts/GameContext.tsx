@@ -1,11 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePuzzle } from "../hooks/usePuzzle";
-import { useAuth } from "./AuthContext";
-import {
-  uploadPuzzle,
-  createGame,
-  updateGame,
-} from "../lib/puzzleService";
 import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
@@ -113,12 +107,10 @@ interface GameContextValue {
 const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
   const puzzleHook = usePuzzle();
   const {
     puzzle,
     playerCells,
-    score,
     isComplete,
     dispatch,
     loadPuzzle,
@@ -220,11 +212,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [loadPuzzle, dispatch, initialJoinCode]);
 
-  // Save solo session to localStorage when state changes
+  // Save solo session to localStorage when state changes. This is the whole
+  // of solo persistence: a solo game has no server rows (no puzzles, games or
+  // players insert, nothing mirrored per keystroke); `play_sessions` is its
+  // only server-side trace (usePlayInsights). The `gameId` kept here is null
+  // for solo games since then and only meaningful for a room.
   useEffect(() => {
     if (isMultiplayer || !puzzle) return;
-    // Only persist when the user is actively playing solo
-    // Check if we have a hash (meaning we're in a URL-based flow, not playing yet)
     const data = { puzzle, playerCells, gameId };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     // Per-puzzle progress (soloProgress.ts), so any started puzzle resumes and
@@ -234,13 +228,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (isComplete) clearProgress(key);
     else recordProgressCells(key, playerCells, whiteCellCount(puzzle));
   }, [puzzle, playerCells, gameId, isMultiplayer, isComplete]);
-
-  // Persist game state to Supabase when cells change (solo mode only)
-  useEffect(() => {
-    if (!puzzle || !gameId || !user || isMultiplayer || puzzle.source?.provider === "nyt") return;
-    const status = isComplete ? "completed" : "active";
-    updateGame(gameId, playerCells, status, score, user.id);
-  }, [gameId, user, playerCells, score, isComplete, isMultiplayer, puzzle]);
 
   // Solo puzzle loaded
   const handleSoloPuzzleLoaded = useCallback(
@@ -256,7 +243,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: "HYDRATE_CELLS", cells, score: Object.values(cells).filter((c) => c.correct).length });
         }
       }
-      // A new solo puzzle must never write into a previous game's server row.
+      // A solo puzzle has no server game; a room's id must not survive into it.
       setGameId(null);
       setIsMultiplayer(false);
       // A fresh puzzle gets its own finish: the previous modal's dismissal
@@ -278,16 +265,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           size: `${p.width}x${p.height}`,
         });
       }
-
-      // Subscriber-directed native imports remain local during solo play.
-      // Hosting is a separate explicit action with a sharing notice.
-      if (!user || p.source?.provider === "nyt") return;
-      const puzzleId = await uploadPuzzle(p, fileBuffer);
-      if (!puzzleId) return;
-      const result = await createGame(puzzleId, user.id);
-      if (result) setGameId(result.gameId);
     },
-    [loadPuzzle, dispatch, user],
+    [loadPuzzle, dispatch],
   );
 
   const value: GameContextValue = {
