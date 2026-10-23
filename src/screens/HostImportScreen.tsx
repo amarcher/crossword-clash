@@ -26,7 +26,7 @@ export function HostImportScreen() {
       game.fileBufferRef.current = fileBuffer ?? null;
 
       if (!user) return;
-      const puzzleId = await uploadPuzzle(p, fileBuffer);
+      const puzzleId = await uploadPuzzle(p);
       if (!puzzleId) return;
 
       // If we have an existing share code, reuse it for the next game

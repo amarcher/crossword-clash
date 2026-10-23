@@ -450,7 +450,7 @@ export function HostLayout() {
       fileBufferRef.current = fileBuffer ?? null;
 
       if (!user) return;
-      const puzzleId = await uploadPuzzle(p, fileBuffer);
+      const puzzleId = await uploadPuzzle(p);
       if (!puzzleId) return;
 
       if (multiplayer.shareCode) {

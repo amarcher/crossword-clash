@@ -5,43 +5,35 @@ import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player } from "../types/game";
 import { reportError } from "./errorReporting";
 import { displayableName } from "./nameFilter";
+import { puzzleContentHash } from "./puzzleHash";
 
-/**
- * Compute SHA-256 hash of an ArrayBuffer for puzzle deduplication.
- */
-async function sha256(buffer: ArrayBuffer): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+/** PostgREST's code for a unique-constraint violation (Postgres 23505). */
+const UNIQUE_VIOLATION = "23505";
+
+async function findPuzzleByHash(hash: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.from("puzzles").select("id").eq("file_hash", hash).maybeSingle();
+  return data?.id ?? null;
 }
 
 /**
- * Upload a puzzle to the database, deduplicating by file hash.
- * Returns the puzzle ID.
+ * Store a puzzle on the server once and return its row id.
+ *
+ * Every load path goes through here (hosting a room from a file, a daily, a
+ * classic, the picker or a deep link), so the row is deduplicated by the
+ * puzzle's content hash (puzzleHash.ts), kept in the `file_hash` column: the
+ * same puzzle is one row however many rooms play it and whichever way it
+ * arrived. Two clients racing to insert the same puzzle hit the column's
+ * unique constraint; the loser re-reads the winner's row. Solo play never
+ * calls this — a solo game lives in localStorage and `play_sessions` only.
  */
-export async function uploadPuzzle(
-  puzzle: Puzzle,
-  fileBuffer?: ArrayBuffer,
-): Promise<string | null> {
+export async function uploadPuzzle(puzzle: Puzzle): Promise<string | null> {
   if (!supabase) return null;
 
-  const fileHash = fileBuffer ? await sha256(fileBuffer) : null;
+  const contentHash = await puzzleContentHash(puzzle);
 
-  // Reuse existing puzzle row when the same file is re-uploaded.
-  // Re-normalize-on-upload was removed alongside the puzzles RLS lockdown
-  // (migration 20260426000002); apply normalizer fixes via a service-role
-  // backfill if needed.
-  if (fileHash) {
-    const { data: existing } = await supabase
-      .from("puzzles")
-      .select("id")
-      .eq("file_hash", fileHash)
-      .single();
-
-    if (existing) {
-      return existing.id;
-    }
-  }
+  const existing = await findPuzzleByHash(contentHash);
+  if (existing) return existing;
 
   const { data, error } = await supabase
     .from("puzzles")
@@ -52,10 +44,15 @@ export async function uploadPuzzle(
       height: puzzle.height,
       grid: puzzle.cells,
       clues: puzzle.clues,
-      file_hash: fileHash,
+      file_hash: contentHash,
     })
     .select("id")
     .single();
+
+  if (error?.code === UNIQUE_VIOLATION) {
+    const raced = await findPuzzleByHash(contentHash);
+    if (raced) return raced;
+  }
 
   if (error) {
     console.error("Failed to upload puzzle:", error);
@@ -115,35 +112,6 @@ export async function createGame(
   }
 
   return { gameId: game.id, shortCode: game.short_code };
-}
-
-/**
- * Update game cells and status.
- */
-export async function updateGame(
-  gameId: string,
-  cells: Record<string, CellState>,
-  status: string,
-  score: number,
-  userId: string,
-): Promise<void> {
-  if (!supabase) return;
-
-  await Promise.all([
-    supabase
-      .from("games")
-      .update({
-        cells,
-        status,
-        completed_at: status === "completed" ? new Date().toISOString() : null,
-      })
-      .eq("id", gameId),
-    supabase
-      .from("players")
-      .update({ score })
-      .eq("game_id", gameId)
-      .eq("user_id", userId),
-  ]);
 }
 
 /**
