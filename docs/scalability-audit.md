@@ -4,7 +4,7 @@
 
 Crossword Clash today: version 1.0.2 on Google Play, in App Store review, the web app on Vercel, Supabase for data, auth, Realtime and edge functions, a Neon database for the `api_usage` ledger. Usage is small (low double-digit daily visitors; the production `games` table holds 733 rows since 2026-02-23, `players` 993, `puzzles` 662, `daily_results` 27, counted with the anon key over PostgREST on 2026-10-23). The question this audit answers: where does the architecture strain first as users grow, what does it cost at 1k, 10k and 100k monthly active users (MAU), and what covers that cost.
 
-**Headline.** Nothing in the architecture is wrong for its size, and no limit bites below roughly 1,000 MAU. The first thing that forces money is not a capacity limit but Vercel's terms: the Hobby plan is for non-commercial use, so the day ads or purchases earn anything the site owes $20/month. The first *capacity* limit is Supabase database disk, and it is self-inflicted: a solo game stores its own copy of the puzzle (~15 KB) plus a `games` row rewritten on every keystroke, so disk grows ~230 KB per MAU per month and never shrinks. Fix that (dedupe puzzles, stop mirroring solo play to the server, delete stale rooms) and the next real wall is Supabase Realtime's messages-per-second ceiling, which arrives at a few dozen simultaneously hot race rooms. Ads on the web at ~1k MAU cover the fixed bill; a small premium tier that bundles ad-free and the AI narrator is what turns the narrator from a capped cost centre into revenue.
+**Headline.** Nothing in the architecture is wrong for its size, and no platform limit bites below roughly 1,000 MAU. Vercel is already on Pro ($20/month, confirmed 2026-10-23), whose quotas carry the site to about a million MAU, so Vercel is not where growth costs money. The first capacity limit is Supabase database disk, and it is self-inflicted: a solo game stores its own copy of the puzzle (~15 KB) plus a `games` row rewritten on every keystroke, so disk grows ~230 KB per MAU per month and never shrinks. Fix that (dedupe puzzles, stop mirroring solo play to the server, delete stale rooms) and the next real wall is Supabase Realtime's messages-per-second ceiling, which arrives at a few dozen simultaneously hot race rooms. The one limit users can hit today is the narrator's $20 monthly cap, about 15–25 narrated games. Ads on the web at ~1–3k MAU cover the fixed bill; a small premium tier that bundles ad-free and the AI narrator is what turns the narrator from a capped cost centre into revenue.
 
 ---
 
@@ -121,9 +121,11 @@ Per MAU per month (8 visits): ~0.8 MB transfer, ~90 edge requests, ~8 invocation
 
 ### Vercel plan limits (read 2026-10-23)
 
-| | Hobby | Pro |
+The team is on **Pro** today (confirmed 2026-10-23). Hobby is shown for reference only.
+
+| | Hobby | Pro (current) |
 |---|---|---|
-| Price | $0, **"for personal, non-commercial use"** | $20/month per seat, $20 usage credit included |
+| Price | $0, for personal, non-commercial use | $20/month per seat, $20 usage credit included |
 | Fast Data Transfer | 100 GB/month | 1 TB/month, then from $0.15/GB |
 | CDN requests | 1 M/month | 10 M/month, then $2 per 1 M |
 | Function invocations | 1 M/month | from $0.60 per 1 M |
@@ -131,16 +133,17 @@ Per MAU per month (8 visits): ~0.8 MB transfer, ~90 edge requests, ~8 invocation
 | Web Analytics events | 50 k | $3 per 100 k (not enabled on this project today) |
 | Function default duration | 300 s | 300 s |
 
-| MAU | Transfer | Edge requests | Invocations | Plan outcome |
+| MAU | Transfer (1 TB incl.) | CDN requests (10 M incl.) | Invocations ($0.60/M) | Pro outcome |
 |---|---|---|---|---|
-| 1k | ~0.8 GB | ~90 k | ~8 k | Within Hobby quotas, but Hobby is non-commercial |
-| 10k | ~8 GB | ~0.9 M | ~80 k | Edge requests brush the Hobby 1 M line |
-| 100k | ~80 GB | ~9 M | ~0.8 M | Pro: within 1 TB and 10 M; ~$0–5 overage |
+| 1k | ~0.8 GB | ~90 k | ~8 k | $0 beyond the plan fee |
+| 10k | ~8 GB | ~0.9 M | ~80 k | $0 beyond the plan fee |
+| 100k | ~80 GB | ~9 M | ~0.8 M | ~$0–5; the included $20 usage credit absorbs it |
+| ~1 M | ~800 GB | ~90 M | ~8 M | first real overage: ~$160/mo in CDN requests, transfer near the 1 TB line |
 
-**The binding constraint is the terms, not the quotas.** AdSense is already wired (`src/components/AdSlot/AdSlot.tsx`, env `VITE_ADSENSE_PUB_ID`); the moment it earns, or an in-app purchase is sold through the web, the project should be on Pro at $20/month. Capacity-wise Hobby would carry ~10k MAU, and Pro ~1 M MAU before any meaningful overage. Other notes:
+**Vercel is not a scaling constraint for this app.** Pro's quotas carry about a million MAU before the first meaningful overage, and the $20 usage credit covers everything below that. The $20 plan fee is a fixed cost that web ads (already wired in `src/components/AdSlot/AdSlot.tsx` behind `VITE_ADSENSE_PUB_ID`) start paying back at a few hundred MAU. Other notes:
 
 - `api/share.ts` and `api/og.ts` declare `runtime: "edge"`. Vercel has deprecated the Edge runtime in favour of Node.js on Fluid Compute; they keep working, but the `@vercel/og` 1.0.1 pin documented in CLAUDE.md is exactly the kind of edge-bundler fragility that goes away on Node. Migrate when convenient, not for scale.
-- `/api/geo` is called on every page load until consent is stored, with `cache: "no-store"`. It is the only per-visit function invocation; caching the answer in `sessionStorage` would make the function count negligible, and matters only on Hobby.
+- `/api/geo` is called on every page load until consent is stored, with `cache: "no-store"`. It is the only per-visit function invocation; at $0.60 per million it is a rounding error on Pro, but caching the answer in `sessionStorage` is a one-line win.
 - The 357 KB main bundle is the real per-visit cost. Splitting the studio (already a chunk), the engine wasm and the share canvas further would cut first-visit transfer, which is a performance win more than a cost one.
 - Static daily files under `public/daily-puzzles/` are free to serve and already excluded from the SPA rewrite; keep publishing days as files when possible so `api/daily.ts` stays cold.
 
@@ -150,12 +153,12 @@ Per MAU per month (8 visits): ~0.8 MB transfer, ~90 edge requests, ~8 invocation
 
 ### Fixed costs today
 
-Plan status for Supabase and Vercel is not exposed to the tools used here; both are stated as "likely" and the model shows both cases.
+Vercel's plan was confirmed on 2026-10-23. Supabase's plan is not exposed to the tools used here; it is stated as "likely" and the model shows both cases.
 
 | Item | Price (read 2026-10-23) | Today | Notes |
 |---|---|---|---|
-| Vercel | Hobby $0 / Pro $20/mo | Hobby (likely) | Non-commercial terms on Hobby |
-| Supabase | Free $0 / Pro $25/mo (+$10 compute credit, Micro included) | Free or Pro (unknown) | Free pauses after a week idle; daily traffic prevents that |
+| Vercel | Pro $20/mo per seat | **Pro (confirmed)** | Includes a $20 usage credit; quotas carry ~1 M MAU |
+| Supabase | Free $0 / Pro $25/mo (+$10 compute credit, Micro included) | Free or Pro (unknown, likely Free) | Free pauses after a week idle; daily traffic prevents that |
 | Neon (`app-dashboard` project, shared `api_usage` ledger) | Free $0 (1 GB storage, 100 CU-h, 6 h history) | Free | Launch plan is usage-based ($0.106/CU-h, $0.35/GB-mo) if ever needed |
 | Apple Developer Program | $99/year | paid | $8.25/mo amortised |
 | Google Play registration | $25 one-time | paid | sunk |
@@ -165,7 +168,7 @@ Plan status for Supabase and Vercel is not exposed to the tools used here; both 
 | Anthropic, OpenAI | pay-as-you-go | | Sonnet 4 $3/$15 per MTok (deprecated); Sonnet 5.5 $2/$10; OpenAI gpt-realtime audio $32/$64 per MTok ≈ $0.06–0.11/min |
 | Narrator spend | capped by `NARRATOR_MONTHLY_USD_CAP` | ≤ $20/mo | `src/lib/narratorBudget.ts`, default 20 |
 
-**Floor today: ~$9–10/month** (Apple + domain) if both platforms are on free plans and the narrator is unused. **Floor once monetised: ~$55/month** (Vercel Pro 20 + Supabase Pro 25 + Apple 8.25 + domain 1), plus up to $20 of narrator, so **~$75/month**.
+**Floor today: ~$29–30/month** (Vercel Pro 20 + Apple 8.25 + domain ~1) with Supabase on Free and the narrator unused; **~$54–55/month** if Supabase is already on Pro. **Floor at growth: ~$55/month** (Vercel Pro 20 + Supabase Pro 25 + Apple 8.25 + domain 1), plus up to $20 of narrator, so **~$75/month**.
 
 ### Variable cost per MAU (estimates)
 
@@ -182,28 +185,30 @@ Assumptions: 8 visits per MAU per month, 1.5 puzzles per visit, 20% of MAU play 
 | Realtime msgs/s at peak | 100 / 500 / 2,500 | ~10 | ~100 | **~600–1,200 → needs spend cap off** |
 | Compute | Micro incl. | Micro | Micro | Small–Medium likely (+$5–50/mo) |
 | Edge Function invocations | 500 k / 2 M incl. | ~few k | ~20 k | ~200 k |
-| Vercel transfer / requests / invocations | see §3 | $0 | $0 | $0–5 |
+| Vercel transfer / requests / invocations (Pro) | 1 TB, 10 M, $0.60/M; $20 credit | $0 | $0 | $0–5, inside the credit |
 | Narrator | capped | ≤ $20 | ≤ $20 | ≤ $20 (and unavailable most of the month) |
 
 | Monthly total (estimate) | 1k MAU | 10k MAU | 100k MAU |
 |---|---|---|---|
-| Fixed, monetised | $55 | $55 | $55 |
+| Fixed (Vercel Pro 20 + Supabase Pro 25 + Apple 8.25 + domain 1) | $55 | $55 | $55 |
 | Variable | $0 | ~$1 | ~$15–75 |
 | Narrator at cap | $20 | $20 | $20 |
 | **Total** | **~$75** | **~$76** | **~$90–150** |
 | Per MAU | 7.5¢ | 0.8¢ | 0.1–0.15¢ |
 
+At 1k MAU with Supabase still on Free (possible only once the §2 cleanup ships) the total is ~$50.
+
 ### Where each service forces an upgrade
 
 | Service | Trigger | Scale (estimate) | Cost step |
 |---|---|---|---|
-| Vercel Hobby → Pro | commercial use (ads/IAP) | day one of revenue | +$20/mo |
 | Supabase Free → Pro | 500 MB disk (no cleanup) | ~1k MAU after 2 months, or ~25 k games total | +$25/mo |
 | Supabase Free → Pro | 5 GB egress | ~12k MAU | same |
 | Supabase Free → Pro | 200 connections / 100 msgs/s | ~8 hot rooms at once | same |
 | Supabase Pro spend cap off | 500 msgs/s or 500 connections | ~40 hot rooms / 125 rooms at once | $0 fixed, pay overage |
 | Supabase compute Micro → Small/Medium | PostgREST pool saturation, vacuum lag | ~50k–100k MAU | +$5–50/mo |
 | Supabase MAU overage | 100k MAU | 100k visitors/month | $3.25 per extra 1k |
+| Vercel Pro overage | 10 M CDN requests / 1 TB transfer | ~1 M MAU | $2 per 1 M requests, $0.15/GB |
 | Neon Free → Launch | 1 GB storage or 100 CU-h | narrator ledger alone never gets there | usage-based |
 | ElevenLabs plan | TTS credits | each narrated game ~6 k credits | Creator $11/mo covers ~20 games |
 
@@ -225,7 +230,7 @@ Monetised fixed cost is ~$75/month with the narrator at cap, ~$55 without. Every
 | 10k | 240 k | $240–960 |
 | 100k | 2.4 M | $2,400–9,600 |
 
-Ads alone reach break-even somewhere between 1k and 3k web MAU, and they cover the first forced upgrade (Vercel Pro, $20) at roughly 300–800 MAU. They do nothing for app users and they are the reason Hobby is off the table. Architecture impact: none beyond what exists. AdMob in the apps would add a Capacitor plugin, Google's UMP consent flow, App Privacy / Data safety updates and store review risk for a few dollars per thousand impressions; defer until the apps have thousands of installs.
+Ads alone reach break-even somewhere between 1k and 3k web MAU, and they pay back the Vercel Pro fee already being paid ($20) at roughly 300–800 MAU. They do nothing for app users. Architecture impact: none beyond what exists. AdMob in the apps would add a Capacitor plugin, Google's UMP consent flow, App Privacy / Data safety updates and store review risk for a few dollars per thousand impressions; defer until the apps have thousands of installs.
 
 ### Option B: Premium tier (ad-free + narrator + unlimited rooms)
 
@@ -253,8 +258,8 @@ A $4.99 "Supporter" unlock (ad-free forever, narrator minutes bundle) or puzzle 
 
 ### What covers the first plan upgrade
 
-- **Vercel Pro ($20)** is forced by commerce itself; web ads at ~300–800 MAU pay for it, so it is self-funding from the first month of AdSense.
-- **Supabase Pro ($25)** is forced by disk at ~1k MAU unless the cleanup in §2 ships. The cleanup is a migration and costs nothing; ship it first and Supabase Free then lasts to ~10k MAU (egress). When Pro does become necessary, ads at ~1k MAU or ~10 premium subscribers cover it.
+- **Vercel Pro ($20)** is already paid. Web ads at ~300–800 MAU cover it, so enabling AdSense is the first step toward break-even, not a trigger for a new cost.
+- **Supabase Pro ($25)** is the first upgrade growth forces, by disk at ~1k MAU unless the cleanup in §2 ships. The cleanup is a migration and costs nothing; ship it first and Supabase Free then lasts to ~10k MAU (egress). When Pro does become necessary, ads at ~1k MAU or ~10 premium subscribers cover it.
 - **The narrator** is never covered by ads at small scale ($20 cap ≈ 20 games); it is covered only by premium or one-time bundles, so gate it behind those before promoting it.
 
 ---
@@ -263,13 +268,13 @@ A $4.99 "Supporter" unlock (ad-free forever, narrator minutes bundle) or puzzle 
 
 | # | Limit | Bites at (estimate) | Why | Fix |
 |---|---|---|---|---|
-| 1 | **Vercel Hobby non-commercial terms** | first dollar of ad or IAP revenue | Pricing FAQ: Hobby is "for personal, non-commercial use" | Move to Pro ($20/mo) when enabling `VITE_ADSENSE_PUB_ID`; Pro quotas then carry ~1 M MAU |
-| 2 | **Supabase database disk** 500 MB Free / 8 GB Pro | ~1k MAU for two months on Free; ~3.5 months at 10k MAU on Pro | Every solo load inserts a ~15 KB `puzzles` copy (`uploadPuzzle` dedupes only file uploads) and a `games` row rewritten per keystroke; 51% of games stay `active` forever | Content-hash dedupe in `uploadPuzzle`; stop solo `updateGame` mirroring; `pg_cron` retention for stale rooms, orphan puzzles, old anonymous users, old `play_sessions` detail |
-| 3 | **Realtime messages per second** 100 / 500 / 2,500 | ~8 hot 4-player 15×15 rooms on Free, ~40 on Pro with spend cap | ~12 msgs/s per hot room (`cell_claimed` + `wrong_letter` × recipients) | Turn the Pro spend cap off before promotion; broadcast `wrong_letter` only when a TV/narrator is in the room; drop `games`/`players` from the Realtime publication |
-| 4 | **Realtime peak connections** 200 / 500 | ~50 / 125 simultaneous 4-player rooms | One socket per player and spectator | Spend cap off; $10 per extra 1,000 is the cheapest overage in the stack |
-| 5 | **Insights aggregates scan `play_sessions`** | ~1 M rows (1–2k DAU for a year) | `insights_puzzles` filters on `started_at` with no matching index; `percentile_cont` over the window | Index `play_sessions (started_at)`; nightly rollup table past ~5 M rows; 180-day retention on `clues` |
+| 1 | **Supabase database disk** 500 MB Free / 8 GB Pro | ~1k MAU for two months on Free (~25 k games total); ~3.5 months at 10k MAU on Pro | Every solo load inserts a ~15 KB `puzzles` copy (`uploadPuzzle` dedupes only file uploads) and a `games` row rewritten per keystroke; 51% of games stay `active` forever | Content-hash dedupe in `uploadPuzzle`; stop solo `updateGame` mirroring; `pg_cron` retention for stale rooms, orphan puzzles, old anonymous users, old `play_sessions` detail |
+| 2 | **Realtime messages per second** 100 / 500 / 2,500 | ~8 hot 4-player 15×15 rooms on Free, ~40 on Pro with spend cap | ~12 msgs/s per hot room (`cell_claimed` + `wrong_letter` × recipients) | Turn the Pro spend cap off before promotion; broadcast `wrong_letter` only when a TV/narrator is in the room; drop `games`/`players` from the Realtime publication |
+| 3 | **Realtime peak connections** 200 / 500 | ~50 / 125 simultaneous 4-player rooms | One socket per player and spectator | Spend cap off; $10 per extra 1,000 is the cheapest overage in the stack |
+| 4 | **Insights aggregates scan `play_sessions`** | ~1 M rows (1–2k DAU for a year) | `insights_puzzles` filters on `started_at` with no matching index; `percentile_cont` over the window | Index `play_sessions (started_at)`; nightly rollup table past ~5 M rows; 180-day retention on `clues` |
+| 5 | **Narrator monthly cap** `NARRATOR_MONTHLY_USD_CAP` = $20 | ~15–25 narrated games a month, for everyone, today | ~$0.80–1.50 per narrated game on any backend; the guard then returns 402 and the TV shows the "taking a break" banner | Gate the narrator behind the premium tier with a per-user minute allowance (§5) and raise the cap with subscriber count; never promote it as free |
 
-Close behind: anonymous-user MAU and `auth.users` growth (free to 100k visitors/month, $3.25 per extra 1k; cleanup SQL from Supabase), `ensureSolveHistory` downloading a whole account history per app open, the `$20` narrator cap (15–25 games/month), `narrator_usage` with no retention, and the deprecated `claude-sonnet-4-20250514` model id in `narrator-claude`.
+Close behind: anonymous-user MAU and `auth.users` growth (free to 100k visitors/month on Pro, $3.25 per extra 1k; cleanup SQL from Supabase), `ensureSolveHistory` downloading a whole account history per app open, `narrator_usage` with no retention, the deprecated `claude-sonnet-4-20250514` model id in `narrator-claude`, and Vercel Pro's 10 M CDN-request quota at ~1 M MAU.
 
 ---
 
@@ -281,7 +286,7 @@ Close behind: anonymous-user MAU and `auth.users` growth (free to 100k visitors/
 2. Content-hash dedupe in `uploadPuzzle` for every path, and remove the solo `updateGame` effect (or write once on completion). This is the change that keeps Supabase Free viable to ~10k MAU and cuts REST writes by two orders of magnitude.
 3. Swap `narrator-claude` to `claude-sonnet-5-5` and align the `tts` rate limit with `narrator-claude` (60/h) so the narrator does not go mute mid-game.
 4. Decide the premium shape (B or C) and add the `entitlements` table and `verify-purchase` function now, while the narrator is still small, so gating is in place before anyone relies on it as free.
-5. The moment AdSense is enabled, move Vercel to Pro.
+5. Enable AdSense (`VITE_ADSENSE_PUB_ID` and the slot ids): Vercel Pro is already paid for, so every ad dollar goes against the floor from the first month.
 
 **At the first sign of a spike (same day):** turn the Supabase Pro spend cap off (connections 500 → 10,000, msgs/s 500 → 2,500), and stop broadcasting `wrong_letter` without a TV in the room.
 
