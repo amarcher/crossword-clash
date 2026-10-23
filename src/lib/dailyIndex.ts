@@ -10,7 +10,7 @@
  * The files include days that have not arrived yet (the feed's static files
  * do too), so readers filter to `day <= today` themselves — see
  * `publishedEntries`. Status (solved, in progress) is never stored here;
- * the client derives it from `identity` and its own history.
+ * the client derives it from `identity` and its own history (archive.ts).
  *
  * Pure helpers first, fetchers at the bottom. Spec: docs/puzzle-archive-spec.md.
  */
@@ -82,6 +82,7 @@ export function isDailyIndexEntry(value: unknown): value is DailyIndexEntry {
   const e = value as Record<string, unknown>;
   return (
     typeof e.day === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(e.day) &&
     (DAILY_SLOTS as readonly unknown[]).includes(e.slot) &&
     typeof e.title === "string" &&
     typeof e.theme === "string" &&
@@ -94,6 +95,7 @@ export function isDailyIndexEntry(value: unknown): value is DailyIndexEntry {
   );
 }
 
+/** Keep only well-formed entries, sorted. Tolerates junk in the file. */
 export function parseIndexMonth(data: unknown): DailyIndexEntry[] {
   return Array.isArray(data) ? sortEntries(data.filter(isDailyIndexEntry)) : [];
 }
@@ -118,8 +120,9 @@ export function indexMonthPath(month: string): string {
   return `${DAILY_FEED_PATH}/index/${month}.json`;
 }
 
-// --- Fetch (never rejects; [] / null on failure) ---
+// --- Fetch (never rejects) ---
 
+/** Where the index lives: the page's own origin on the web, the public site in the apps. */
 const FEED_ORIGIN = import.meta.env?.MODE === "mobile" ? "https://crosswordclash.com" : "";
 
 export async function fetchIndexSummary(): Promise<DailyIndexSummary | null> {
@@ -142,11 +145,42 @@ export async function fetchIndexMonth(month: string): Promise<DailyIndexEntry[]>
   }
 }
 
-/** Every entry up to and including `today`, newest month first in the fetch order. */
-export async function fetchPublishedIndex(today: string): Promise<DailyIndexEntry[]> {
+/**
+ * Every entry up to and including `today`, ascending — only the months that
+ * have started are fetched. Null when the summary could not be read.
+ */
+export async function fetchPublishedIndex(today: string): Promise<DailyIndexEntry[] | null> {
   const summary = await fetchIndexSummary();
-  if (!summary) return [];
+  if (!summary) return null;
   const months = summary.months.filter((m) => m <= monthOf(today));
   const pages = await Promise.all(months.map(fetchIndexMonth));
   return publishedEntries(sortEntries(pages.flat()), today);
+}
+
+// The index without a network round trip on the screen's first frame: the
+// /archive route's lazy() warms it alongside the chunk (routeModules.ts),
+// the way /classics warms its manifest. A failed load is not cached.
+let cached: { today: string; entries: DailyIndexEntry[] } | null = null;
+
+/** The published index if it has already been fetched for `today`, else null. */
+export function knownPublishedIndex(today: string): DailyIndexEntry[] | null {
+  return cached?.today === today ? cached.entries : null;
+}
+
+/** Fetch (once per day) and remember the published index. Never rejects; null on failure. */
+export async function loadPublishedIndex(today: string): Promise<DailyIndexEntry[] | null> {
+  const known = knownPublishedIndex(today);
+  if (known) return known;
+  const entries = await fetchPublishedIndex(today);
+  if (entries) cached = { today, entries };
+  return entries;
+}
+
+export function prefetchDailyIndex(today: string): Promise<void> {
+  return loadPublishedIndex(today).then(() => undefined);
+}
+
+/** Test hook. */
+export function resetDailyIndexMemory(): void {
+  cached = null;
 }

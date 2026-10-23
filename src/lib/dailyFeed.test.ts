@@ -232,8 +232,9 @@ describe("published feed files", () => {
   });
 
   it("are all named for a date and parse as playable puzzles", () => {
-    const folders = new Set<string>(DAILY_SLOTS);
-    for (const file of [...files.filter((f) => !folders.has(f)), ...slotFiles]) {
+    // The slot folders, plus the archive index (index.json + index/, checked by dailyIndex.test.ts).
+    const skip = new Set<string>([...DAILY_SLOTS, "index", "index.json"]);
+    for (const file of [...files.filter((f) => !skip.has(f)), ...slotFiles]) {
       expect(file).toMatch(/^(?:[a-z]+\/)?\d{4}-\d{2}-\d{2}\.json$/);
       const data: unknown = JSON.parse(new TextDecoder().decode(readFileSync(dir + file)));
       expect(parseDailyFeedEntry(data), file).not.toBeNull();

@@ -297,3 +297,35 @@ best), and a `ListRow` to the classic library. Dates are secondary text.
   `blocks`, October's 48 entries weigh 14.3 KB raw (~300 B/entry; a 15×15's
   shape alone is 240 B), November's 89 entries 26.4 KB raw / 4.7 KB gzipped;
   without `blocks` ~170 B/entry.
+
+## 4. What shipped (2026-10-23)
+
+Andrew picked **A, the calendar**, with two pieces from C: the resume row
+for the in-progress game and the "solved · to catch up on" count, both above
+the grid and sized so the whole month stays above the fold on a phone. The
+prototype switcher and variants B and C were removed; the full set is
+preserved on this branch at commit 85acd1b (the prototype skill's "primary
+source"), with the three phone screenshots kept in `docs/puzzle-archive/`
+as the decision record. `archive-phone.png` and `archive-desktop.png` are the
+shipped screen.
+
+Defaults taken from §2.9, none of which changed the build: everyone sees
+everything (no gating); a past daily solved today is an ordinary solve
+(streak counts, no leaderboard, no "late" label); "in progress" is the one
+resumable solo game; future days stay as static files and are filtered on
+the client; thumbnails are in the index; the classics stay on `/classics`
+with a row linking there; Spanish strings are translated. Entry point: a
+"Past puzzles" row in the menu's solo list, above the classic library.
+
+Built: `src/lib/dailyIndex.ts` (+ cache and `prefetchDailyIndex`, warmed by
+the route's `lazy` like the classics' manifest), `scripts/build-daily-index.mts`
+(`pnpm build:daily-index`, run by `pnpm build`, `pnpm dev` and `pnpm daily:add`),
+`src/lib/archive.ts` (status derivation + calendar math), `src/screens/ArchiveScreen.tsx`
+(route `/archive`, two columns from `lg`), tests `dailyIndex.test.ts`,
+`archive.test.ts`, `ArchiveScreen.test.tsx`, strings under `archive.*`,
+`menu.pastPuzzles*`, `meta.archive`.
+
+Still open for Andrew (nothing blocks on them): gating anonymous visitors
+(§2.9 #3), per-puzzle progress beyond the one resumable game (#5), moving
+future days behind the schedule table (#6), and offering yesterday's
+unsolved daily in "Up next" (#2).
