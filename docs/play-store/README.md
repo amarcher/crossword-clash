@@ -101,28 +101,25 @@ Done by Claude, nothing submitted or rolled out:
   and the other App content declarations were re-checked: "all caught up",
   nothing changed.
 
-### What Andrew does in the Play Console
+### Done October 22, 2026 (driven through the console by Claude, each button on Andrew's say-so)
 
-In this order. Every step below is a submit or rollout button, which is why
-it is left to him.
+1. **Internal testers.** Email list `Internal` (2 addresses) created, attached to
+   the internal testing track and saved. The track is Active.
+2. **4 (1.0.2) rolled out to internal testing**, "Available to internal
+   testers" from Oct 22 10:48 PM. The only release warning was the usual
+   missing deobfuscation file.
+3. **Listing draft saved** (full description, 7-inch and 10-inch tablet
+   screenshots) into Publishing overview.
+4. **Submitted for review**: those three listing changes plus the Data safety
+   update, now "Changes in review". Google's quick checks run first (up to
+   14 minutes), then the review itself, typically within 7 days.
 
-1. **Internal testers.** Testing → Internal testing → *Testers* tab → *Create
-   email list*, add the tester addresses, save. The track has never had a
-   list, so release 3 (1.0.1) reached nobody either.
-2. **Roll out 4 (1.0.2) to internal testing.** Releases tab → *Edit release*
-   on the draft → *Next* → *Start rollout to Internal testing*. Install it on a
-   Play device from the opt-in link on the Testers tab and run through
-   `../testflight/WHAT-TO-TEST-9.txt` (the Android build has the same web
-   code).
-3. **Publish the listing draft.** Store presence → Store listings → Default
-   store listing → *Edit listing* → check the description and the tablet
-   screenshots → *Next* → *Save*. That stages it in Publishing overview.
-4. **Submit the staged changes.** Publishing → Publishing overview → *Submit
-   changes for review* (Data safety, and the listing once step 3 is done).
+### Still to do
+
 5. **Production.** Once internal testing looks right: Internal testing →
    *Promote release → Production* → confirm countries and notes → *Start
-   rollout to Production*. Or do steps 4 and 5 together from Publishing
-   overview.
+   rollout to Production*. Managed publishing is off, so it goes live on
+   approval.
 
 ### Follow-ups outside the Play Console
 
@@ -167,7 +164,9 @@ it is left to him.
   uploaded to internal testing and rolled out there on October 16, with no
   tester list.
 - **October 21, 2026:** bundle 4 (1.0.2) drafted on internal testing; listing
-  and Data safety changes staged (above).
+  and Data safety changes staged.
+- **October 22, 2026:** tester list created, 4 (1.0.2) rolled out to internal
+  testing, listing + Data safety changes submitted for review.
 
 ## Known gaps
 
