@@ -18,10 +18,8 @@
 
 import { next } from "@vercel/functions";
 
-export const config = {
-  runtime: "nodejs",
-  matcher: ["/daily-puzzles/:path*"],
-};
+// The matcher lives in vercel.json (`proxy.matcher`); Vercel refuses it in both places.
+export const config = { runtime: "nodejs" };
 
 const FEED_PATH = /^\/daily-puzzles\/(?:(?:midi|large)\/)?(\d{4}-\d{2}-\d{2})\.json$/;
 
