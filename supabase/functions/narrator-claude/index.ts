@@ -1,6 +1,8 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 import { checkNarratorBudget } from "../_shared/budgetGuard.ts";
+import { callerWithPlus, chargeClaudeCall, demoOnly, plusGatesOn } from "../_shared/plusAccess.ts";
+import { serviceClient } from "../_shared/user.ts";
 import { logUsage } from "../_shared/usageLog.ts";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -18,6 +20,16 @@ Deno.serve(async (req) => {
 
   const rateLimitResponse = await checkRateLimit(req, "narrator-claude");
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Plus (docs/monetization-spec.md §2.3): a subscriber pays one narrator
+  // minute per CLAUDE_CALLS_PER_MINUTE calls; anyone else gets the bounded
+  // demo only. Before PLUS_GATES is on this block is a no-op.
+  if (plusGatesOn()) {
+    const admin = serviceClient();
+    const { user, plus } = await callerWithPlus(req, admin);
+    const refusal = user && plus ? await chargeClaudeCall(admin, user.id) : await demoOnly(req, "narrator-claude");
+    if (refusal) return refusal;
+  }
 
   const budgetResponse = await checkNarratorBudget(req, "narrator-claude");
   if (budgetResponse) return budgetResponse;

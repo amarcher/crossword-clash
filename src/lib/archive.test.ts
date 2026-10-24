@@ -5,6 +5,9 @@ import {
   defaultSelection,
   inProgressFrom,
   isLockedDay,
+  archiveWindowFor,
+  FREE_ACCOUNT_ARCHIVE_DAYS,
+  type ArchiveViewer,
   deriveArchiveItems,
   groupByDay,
   monthCells,
@@ -173,17 +176,47 @@ describe("calendar math", () => {
 });
 
 describe("isLockedDay", () => {
-  it("locks days ANONYMOUS_ARCHIVE_DAYS or more behind today unless unlocked", () => {
+  it("locks days `window` or more behind today; an unlimited (null) window locks nothing", () => {
     expect(ANONYMOUS_ARCHIVE_DAYS).toBe(7);
-    expect(isLockedDay("2026-10-20", "2026-10-20", false)).toBe(false);
-    expect(isLockedDay("2026-10-14", "2026-10-20", false)).toBe(false); // 6 days ago: still open
-    expect(isLockedDay("2026-10-13", "2026-10-20", false)).toBe(true); // 7 days ago: locked
-    expect(isLockedDay("2026-09-01", "2026-10-20", false)).toBe(true);
-    expect(isLockedDay("2026-09-01", "2026-10-20", true)).toBe(false);
+    expect(FREE_ACCOUNT_ARCHIVE_DAYS).toBe(30);
+    expect(isLockedDay("2026-10-20", "2026-10-20", 7)).toBe(false);
+    expect(isLockedDay("2026-10-14", "2026-10-20", 7)).toBe(false); // 6 days ago: still open
+    expect(isLockedDay("2026-10-13", "2026-10-20", 7)).toBe(true); // 7 days ago: locked
+    expect(isLockedDay("2026-09-01", "2026-10-20", 7)).toBe(true);
+    expect(isLockedDay("2026-09-21", "2026-10-20", 30)).toBe(false); // 29 days ago: open for a free account
+    expect(isLockedDay("2026-09-20", "2026-10-20", 30)).toBe(true); // 30 days ago: locked
+    expect(isLockedDay("2026-09-01", "2026-10-20", null)).toBe(false);
   });
 
   it("never locks an unparseable day", () => {
-    expect(isLockedDay("nope", "2026-10-20", false)).toBe(false);
+    expect(isLockedDay("nope", "2026-10-20", 7)).toBe(false);
+  });
+});
+
+describe("archiveWindowFor", () => {
+  const viewer = (over: Partial<ArchiveViewer>): ArchiveViewer => ({ plusOn: true, available: true, ready: true, signedIn: false, plus: false, ...over });
+
+  it("locks nothing where no account can be offered (the apps, offline builds)", () => {
+    expect(archiveWindowFor(viewer({ available: false }))).toBeNull();
+    expect(archiveWindowFor(viewer({ available: false, plusOn: false }))).toBeNull();
+  });
+
+  it("gives anonymous visitors 7 days, before and after the session is known", () => {
+    expect(archiveWindowFor(viewer({}))).toBe(ANONYMOUS_ARCHIVE_DAYS);
+    expect(archiveWindowFor(viewer({ ready: false, signedIn: true }))).toBe(ANONYMOUS_ARCHIVE_DAYS);
+    expect(archiveWindowFor(viewer({ plusOn: false }))).toBe(ANONYMOUS_ARCHIVE_DAYS);
+  });
+
+  it("gives a free account 30 days once Plus is live, everything before (the pre-Plus rule)", () => {
+    expect(archiveWindowFor(viewer({ signedIn: true }))).toBe(FREE_ACCOUNT_ARCHIVE_DAYS);
+    expect(archiveWindowFor(viewer({ signedIn: true, plusOn: false }))).toBeNull();
+  });
+
+  it("gives Plus everything, whether the session is an account or anonymous (an app purchase)", () => {
+    expect(archiveWindowFor(viewer({ signedIn: true, plus: true }))).toBeNull();
+    expect(archiveWindowFor(viewer({ signedIn: false, plus: true }))).toBeNull();
+    // Plus only counts once the launch switch is on.
+    expect(archiveWindowFor(viewer({ plusOn: false, plus: true }))).toBe(ANONYMOUS_ARCHIVE_DAYS);
   });
 });
 

@@ -4,7 +4,11 @@ import { act, renderHook } from "@testing-library/react";
 import type { Session } from "@supabase/supabase-js";
 
 type AuthListener = (event: string, session: Session | null) => void;
-let authListener: AuthListener | null = null;
+// useAccount and usePlusStatus each subscribe; the fake fans an event out to every live listener.
+const authListeners = new Set<AuthListener>();
+const authListener: AuthListener = (event, session) => {
+  for (const l of authListeners) l(event, session);
+};
 let rows: unknown[] = [];
 /** When set, the next entitlements fetch waits on it (to observe the cached answer). */
 let hold: Promise<void> | null = null;
@@ -14,8 +18,8 @@ vi.mock("../lib/supabaseClient", () => ({
   supabase: {
     auth: {
       onAuthStateChange: (cb: AuthListener) => {
-        authListener = cb;
-        return { data: { subscription: { unsubscribe: () => (authListener = null) } } };
+        authListeners.add(cb);
+        return { data: { subscription: { unsubscribe: () => authListeners.delete(cb) } } };
       },
     },
     from: (table: string) => {
@@ -52,6 +56,8 @@ const plusRow = {
 const session = (id: string, anonymous: boolean) => ({ user: { id, is_anonymous: anonymous, user_metadata: {}, app_metadata: {} } }) as unknown as Session;
 
 beforeEach(() => {
+  // Hooks from earlier tests stay mounted; only this test's subscriptions should hear events.
+  authListeners.clear();
   localStorage.clear();
   rows = [];
   hold = null;
@@ -71,7 +77,7 @@ describe("useAccount: entitlements", () => {
     const { result } = renderHook(() => useAccount());
     expect(result.current.plusReady).toBe(false);
     await act(async () => {
-      authListener?.("INITIAL_SESSION", session(UID, true));
+      authListener("INITIAL_SESSION", session(UID, true));
     });
     await act(async () => {
       await Promise.resolve();
@@ -90,7 +96,7 @@ describe("useAccount: entitlements", () => {
     rows = [plusRow];
     const { result } = renderHook(() => useAccount());
     await act(async () => {
-      authListener?.("INITIAL_SESSION", session(UID, false));
+      authListener("INITIAL_SESSION", session(UID, false));
     });
     // The fetch is still held: this answer is the cache's.
     expect(result.current.plus).toBe(true);
@@ -101,7 +107,7 @@ describe("useAccount: entitlements", () => {
     });
     expect(result.current.plus).toBe(true);
     await act(async () => {
-      authListener?.("SIGNED_OUT", null);
+      authListener("SIGNED_OUT", null);
     });
     expect(result.current.plus).toBe(false);
     expect(result.current.plusReady).toBe(true);
@@ -113,7 +119,7 @@ describe("useAccount: entitlements", () => {
     rows = [plusRow];
     const { result } = renderHook(() => useAccount());
     await act(async () => {
-      authListener?.("INITIAL_SESSION", session(UID, false));
+      authListener("INITIAL_SESSION", session(UID, false));
     });
     expect(result.current.plus).toBe(false);
     expect(result.current.plusReady).toBe(true);
@@ -125,7 +131,7 @@ describe("useAccount: entitlements", () => {
   it("refetches when the tab becomes visible again", async () => {
     const { result } = renderHook(() => useAccount());
     await act(async () => {
-      authListener?.("INITIAL_SESSION", session(UID, true));
+      authListener("INITIAL_SESSION", session(UID, true));
     });
     expect(fetches.filter((t) => t === "entitlements")).toHaveLength(1);
     rows = [plusRow];

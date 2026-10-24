@@ -130,9 +130,49 @@ env). Leave it unset until the Stripe account (PR 3) is live.
 
 ## 2. Gates (PR 2)
 
-_To be written with PR 2: the studio's per-user allowance, the narrator
-minute allowance and the archive window need no new accounts, only the
-redeploy of the functions that PR names._
+No new accounts. One more migration, one more secret, and a redeploy of the
+functions the gates changed.
+
+### 2.1 Database
+
+```bash
+npx supabase db push --linked </dev/null
+```
+
+applies `20261024100000_solo_progress.sql` (the Plus progress-sync table and
+its nightly `solo_progress_sweep()` at 04:27 UTC).
+
+### 2.2 The server-side launch switch
+
+The client's `VITE_PLUS=1` has a server twin: the `PLUS_GATES` secret. While
+it is unset the narrator and studio functions behave exactly as before Plus
+(shared cap, demo only when over budget, studio for admins and the token).
+Set both on launch day:
+
+```bash
+npx supabase secrets set PLUS_GATES=1 --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+```
+
+With it on: a subscriber gets 60 narrator minutes a month (10 per
+ElevenLabs/OpenAI session grant, 1 per 6 Claude-narrator calls) and 40 studio
+Claude drafts a month (Sonnet only); everyone else gets the narrator demo
+only (2 demo calls per endpoint per IP per 30 days, as before) and no studio
+drafting. The global narrator cap becomes `NARRATOR_MONTHLY_USD_CAP` + $2 ×
+active subscribers.
+
+### 2.3 Redeploy
+
+```bash
+npx supabase functions deploy narrator-claude tts agent-auth openai-agent-auth studio-claude studio-schedule studio-insights --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+```
+
+(`studio-schedule` and `studio-insights` only pick up the refactored
+`studioAllowed`; deploying them keeps the shared module in step.)
+
+### 2.4 Granting yourself the studio without the token
+
+Your own account is in `studio_admins` already, which the gate honours. A
+friend who should have the studio without paying gets a `grant` row (§1.1).
 
 ## 3. Purchase UI, Stripe, RevenueCat, native sign-in (PR 3)
 

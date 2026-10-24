@@ -1,0 +1,49 @@
+import { useTranslation } from "react-i18next";
+import { Archive, Check, Mic, PencilRuler, RefreshCw } from "lucide-react";
+import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
+
+/**
+ * What Plus is, in one card: the four benefits and the two prices (annual
+ * first, the one to push). Shared by the account sheet's Plus view and every
+ * gate's upsell (archive, studio, narrator). The purchase controls themselves
+ * come from the caller: the web and the apps buy differently.
+ */
+export function PlusPitch({ children }: { children?: React.ReactNode }) {
+  const { t, i18n } = useTranslation();
+  const benefits = [
+    { icon: Archive, text: t("plus.benefitArchive") },
+    { icon: PencilRuler, text: t("plus.benefitStudio") },
+    { icon: Mic, text: t("plus.benefitNarrator") },
+    { icon: RefreshCw, text: t("plus.benefitProgress") },
+  ];
+  return (
+    <div className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-2.5">
+        {benefits.map(({ icon: Icon, text }) => (
+          <li key={text} className="flex items-start gap-3 text-sm leading-snug text-ink">
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
+              <Icon className="size-4" aria-hidden="true" />
+            </span>
+            <span className="pt-1">{text}</span>
+          </li>
+        ))}
+      </ul>
+      <dl className="grid grid-cols-2 gap-2.5">
+        <div className="rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100">
+          <dt className="flex items-center gap-1.5 text-xs font-semibold text-brand-700">
+            <Check className="size-3.5" aria-hidden="true" />
+            {t("plus.annualSave", { percent: annualSavingPercent() })}
+          </dt>
+          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{formatUsd(PLUS_ANNUAL_USD, i18n.language)}</dd>
+          <dd className="mt-1 text-xs text-muted">{t("plus.perYear")}</dd>
+        </div>
+        <div className="rounded-xl bg-surface-sunken p-3 ring-1 ring-line">
+          <dt className="text-xs font-semibold text-ink-soft">{t("plus.monthly")}</dt>
+          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{formatUsd(PLUS_MONTHLY_USD, i18n.language)}</dd>
+          <dd className="mt-1 text-xs text-muted">{t("plus.perMonth")}</dd>
+        </div>
+      </dl>
+      {children}
+    </div>
+  );
+}

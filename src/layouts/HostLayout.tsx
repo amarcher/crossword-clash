@@ -5,7 +5,7 @@ import { useSupabase } from "../hooks/useSupabase";
 import { usePuzzle } from "../hooks/usePuzzle";
 import { useMultiplayer } from "../hooks/useMultiplayer";
 import { useSpeechSettings } from "../hooks/useSpeechSettings";
-import { useNarrator } from "../hooks/useNarrator";
+import { useNarrator, type NarratorPausedReason } from "../hooks/useNarrator";
 import { useClueAnnouncer } from "../hooks/useClueAnnouncer";
 import {
   uploadPuzzle,
@@ -100,6 +100,7 @@ export interface HostContextValue {
     currentEngine: NarratorEngine;
     requestedEngine: NarratorEngine;
     budgetExhausted: boolean;
+    pausedReason: NarratorPausedReason | null;
   };
 
   // Derived
@@ -608,6 +609,7 @@ export function HostLayout() {
       currentEngine: narrator.currentEngine,
       requestedEngine: narrator.requestedEngine,
       budgetExhausted: narrator.budgetExhausted,
+      pausedReason: narrator.pausedReason,
     },
     playerColorMap,
     completedClues,

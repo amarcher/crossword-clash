@@ -15,6 +15,7 @@ import { knownClassicManifest, loadClassicManifest, type ClassicEntry } from "..
 import { prefetchOnIntent } from "../routeModules";
 import { dayKey, formatDuration, loadSoloTimer } from "../lib/soloStats";
 import { loadProgressStore } from "../lib/soloProgress";
+import { plusEnabled } from "../lib/plus";
 import {
   ANONYMOUS_ARCHIVE_DAYS,
   archiveCounts,
@@ -23,6 +24,8 @@ import {
   groupByDay,
   inProgressFrom,
   isLockedDay,
+  archiveWindowFor,
+  FREE_ACCOUNT_ARCHIVE_DAYS,
   longDay,
   monthCells,
   monthLabel,
@@ -113,11 +116,20 @@ export function ArchiveScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const today = dayKey(new Date());
-  // Anonymous visitors play the last ANONYMOUS_ARCHIVE_DAYS days; older days are
-  // locked behind a sign-in. Where no account can be offered (the apps, offline
+  // Anonymous visitors play the last ANONYMOUS_ARCHIVE_DAYS days, free accounts
+  // FREE_ACCOUNT_ARCHIVE_DAYS once Plus is live, Plus everything (archive.ts,
+  // archiveWindowFor). Where no account can be offered (the apps, offline
   // builds) nothing is locked — a lock with no key would be a dead end.
   const account = useMaybeAccount();
-  const unlocked = !account?.available || (account.ready && !!account.user);
+  const window = archiveWindowFor({
+    plusOn: plusEnabled(),
+    available: !!account?.available,
+    ready: !!account?.ready,
+    signedIn: !!account?.user,
+    plus: !!account?.plus,
+  });
+  // What the locked card asks for: a sign-in (anonymous) or Plus (a free account).
+  const lockAsksForPlus = !!account?.user;
 
   // The route's lazy() warmed the index, so this is normally known on the first render.
   const [entries, setEntries] = useState<DailyIndexEntry[] | null | undefined>(() => knownPublishedIndex(today) ?? undefined);
@@ -323,14 +335,14 @@ export function ArchiveScreen() {
                         const empty = list.length === 0;
                         const isSelected = day === selectedDay;
                         const isToday = day === today;
-                        const locked = !empty && isLockedDay(day, today, unlocked);
+                        const locked = !empty && isLockedDay(day, today, window);
                         const label = `${longDay(day, locale)}: ${
                           empty
                             ? future
                               ? t("archive.dayNotYet")
                               : t("archive.dayNoPuzzles")
                             : list.map((it) => `${t(SLOT_EYEBROW[it.slot])} ${statusText(it)}`).join(", ")
-                        }${locked ? ` (${t("archive.lockedLabel")})` : ""}`;
+                        }${locked ? ` (${t(lockAsksForPlus ? "archive.lockedPlusLabel" : "archive.lockedLabel")})` : ""}`;
                         return (
                           <div key={day} role="gridcell" className="flex justify-center">
                             <button
@@ -396,24 +408,35 @@ export function ArchiveScreen() {
                   <p className="mt-2 text-sm text-muted">{t("archive.nothingThatDay")}</p>
                 ) : (
                   <ul className="mt-2 space-y-2.5">
-                    {selectedDay && account && isLockedDay(selectedDay, today, unlocked) && (
-                      // Benefit-led, like the menu's account row: the puzzles stay listed, only Play / Race wait for a sign-in.
+                    {selectedDay && account && isLockedDay(selectedDay, today, window) && (
+                      // Benefit-led, like the menu's account row: the puzzles stay listed, only
+                      // Play / Race wait for a sign-in (anonymous) or for Plus (a free account).
                       <li className="flex items-center gap-3 rounded-2xl bg-surface-sunken p-3 ring-1 ring-line">
                         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-ink-soft ring-1 ring-line">
                           <Lock className="size-5" aria-hidden="true" />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold leading-snug text-ink">{t("archive.lockedTitle", { count: ANONYMOUS_ARCHIVE_DAYS })}</p>
-                          <p className="mt-0.5 text-sm leading-snug text-muted">{t("archive.lockedBody")}</p>
+                          <p className="font-semibold leading-snug text-ink">
+                            {lockAsksForPlus
+                              ? t("archive.lockedPlusTitle", { count: FREE_ACCOUNT_ARCHIVE_DAYS })
+                              : t("archive.lockedTitle", { count: ANONYMOUS_ARCHIVE_DAYS })}
+                          </p>
+                          <p className="mt-0.5 text-sm leading-snug text-muted">{t(lockAsksForPlus ? "archive.lockedPlusBody" : "archive.lockedBody")}</p>
                         </div>
-                        <Button size="sm" onClick={() => account.openAccount({ placement: "archive" })}>
-                          {t("account.signIn")}
-                        </Button>
+                        {lockAsksForPlus ? (
+                          <Button size="sm" onClick={() => account.openPaywall({ placement: "archive", feature: "archive" })}>
+                            {t("plus.about")}
+                          </Button>
+                        ) : (
+                          <Button size="sm" onClick={() => account.openAccount({ placement: "archive" })}>
+                            {t("account.signIn")}
+                          </Button>
+                        )}
                       </li>
                     )}
                     {dayItems.map((it) => {
                       const primary = it.status === "unsolved" || it.status === "inprogress";
-                      const locked = isLockedDay(it.day, today, unlocked);
+                      const locked = isLockedDay(it.day, today, window);
                       return (
                         <li key={it.slot} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-card">
                           <ShapeThumb blocks={it.blocks} className="w-14 shrink-0" />

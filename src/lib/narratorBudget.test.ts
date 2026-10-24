@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
+  NARRATOR_UNAVAILABLE_BUDGET,
+  capWithSubscribers,
+  narratorUnavailableSentinel,
+  NARRATOR_UNAVAILABLE,
+  NARRATOR_UNAVAILABLE_ALLOWANCE,
+  NARRATOR_UNAVAILABLE_PLUS,
+  PER_SUBSCRIBER_CAP_USD,
   estimateRowCostUsd,
   estimateMonthlySpendUsd,
   evaluateBudget,
@@ -194,5 +201,28 @@ describe("narratorBudget", () => {
 
   it("exposes the machine-readable unavailable signal", () => {
     expect(NARRATOR_UNAVAILABLE_BODY).toEqual({ error: "narrator_unavailable", reason: "budget" });
+  });
+});
+
+describe("Plus additions", () => {
+  it("raises the shared cap by PER_SUBSCRIBER_CAP_USD per active subscriber", () => {
+    expect(PER_SUBSCRIBER_CAP_USD).toBe(2);
+    expect(capWithSubscribers(20, 0)).toBe(20);
+    expect(capWithSubscribers(20, 7)).toBe(34);
+    expect(capWithSubscribers(20, 2.9)).toBe(24);
+    expect(capWithSubscribers(20, -3)).toBe(20);
+    expect(capWithSubscribers(20, Number.NaN)).toBe(20);
+    expect(capWithSubscribers(10, 5, 1)).toBe(15);
+  });
+
+  it("maps a 402 body to its sentinel, reading unknown bodies as the pre-Plus budget refusal", () => {
+    expect(narratorUnavailableSentinel({ error: "narrator_unavailable", reason: "budget" })).toBe(NARRATOR_UNAVAILABLE_BUDGET);
+    expect(narratorUnavailableSentinel({ error: "narrator_unavailable", reason: "plus" })).toBe(NARRATOR_UNAVAILABLE_PLUS);
+    expect(narratorUnavailableSentinel({ error: "allowance_exhausted", feature: "narrator_minutes", used: 60, limit: 60, resetsAt: "2026-11-01T00:00:00.000Z" })).toBe(
+      NARRATOR_UNAVAILABLE_ALLOWANCE,
+    );
+    expect(narratorUnavailableSentinel(null)).toBe(NARRATOR_UNAVAILABLE_BUDGET);
+    expect(narratorUnavailableSentinel("nope")).toBe(NARRATOR_UNAVAILABLE_BUDGET);
+    for (const s of [NARRATOR_UNAVAILABLE_BUDGET, NARRATOR_UNAVAILABLE_PLUS, NARRATOR_UNAVAILABLE_ALLOWANCE]) expect(s.startsWith(NARRATOR_UNAVAILABLE)).toBe(true);
   });
 });

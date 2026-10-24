@@ -106,6 +106,19 @@ export const SERVICE_FALLBACK_PRICING: NarratorPricing = {
 export const DEFAULT_MONTHLY_CAP_USD = 20;
 
 /**
+ * Each active Plus subscriber raises the shared cap by this much (spec §2.3:
+ * "20 + 2 × active subscribers"), so the backstop grows with the people it
+ * protects instead of needing an env change per subscriber.
+ */
+export const PER_SUBSCRIBER_CAP_USD = 2;
+
+/** The month's cap given the base cap and the number of active subscribers. */
+export function capWithSubscribers(baseCapUsd: number, activeSubscribers: number, perSubscriberUsd: number = PER_SUBSCRIBER_CAP_USD): number {
+  const subs = Number.isFinite(activeSubscribers) && activeSubscribers > 0 ? Math.floor(activeSubscribers) : 0;
+  return baseCapUsd + subs * perSubscriberUsd;
+}
+
+/**
  * Resolve a billing rate key for a usage row. Model id wins (covers Claude,
  * Convai, and Realtime); otherwise fall back to `service:endpoint` (covers TTS
  * rows, which carry no model), then bare service.
@@ -260,14 +273,44 @@ export function canGrantDemo({
 
 /** Machine-readable signal returned to clients when the narrator is over budget. */
 export const NARRATOR_UNAVAILABLE_BUDGET = "narrator_unavailable:budget";
+/** The caller is not a Plus subscriber and the demo is spent (PLUS_GATES on): the upsell state. */
+export const NARRATOR_UNAVAILABLE_PLUS = "narrator_unavailable:plus";
+/** A subscriber's monthly narrator minutes are used up. */
+export const NARRATOR_UNAVAILABLE_ALLOWANCE = "narrator_unavailable:allowance";
+/** The prefix every narrator 402 sentinel shares. */
+export const NARRATOR_UNAVAILABLE = "narrator_unavailable";
 
-/** Shape of the JSON body edge functions return when refusing on budget. */
+/** Shape of the JSON body edge functions return when refusing on budget or for lack of Plus. */
 export interface NarratorUnavailableBody {
   error: "narrator_unavailable";
-  reason: "budget";
+  reason: "budget" | "plus";
 }
 
 export const NARRATOR_UNAVAILABLE_BODY: NarratorUnavailableBody = {
   error: "narrator_unavailable",
   reason: "budget",
 };
+
+/** The body of a subscriber's 402 when a metered allowance is used up. */
+export interface AllowanceExhaustedBody {
+  error: "allowance_exhausted";
+  feature: string;
+  used: number;
+  limit: number;
+  /** ISO instant the allowance resets (the 1st of next month, UTC). */
+  resetsAt: string;
+}
+
+/**
+ * The sentinel for a narrator 402 body: budget (shared cap), plus (not a
+ * subscriber), allowance (subscriber out of minutes). Unknown bodies read as
+ * budget, the pre-Plus meaning, so an old client and a new server agree.
+ */
+export function narratorUnavailableSentinel(body: unknown): string {
+  if (body && typeof body === "object") {
+    const b = body as { error?: string; reason?: string };
+    if (b.error === "allowance_exhausted") return NARRATOR_UNAVAILABLE_ALLOWANCE;
+    if (b.error === "narrator_unavailable" && b.reason === "plus") return NARRATOR_UNAVAILABLE_PLUS;
+  }
+  return NARRATOR_UNAVAILABLE_BUDGET;
+}

@@ -3,7 +3,9 @@
  * player has started and not finished, so any of them can be resumed where
  * it was and the archive can mark them "in progress" — not only the one
  * game the home route resumes (`crossword-clash-solo`, which stays as that
- * pointer).
+ * pointer). Plus accounts mirror these records to the `solo_progress` table
+ * through soloProgressSync.ts, which listens to the change notifications
+ * below; this store stays the source of truth on the device.
  *
  * One localStorage key holds a map of records keyed by `puzzleIdentity()`.
  * It is BOUNDED: at most MAX_PROGRESS_RECORDS, the oldest (`updatedAt`)
@@ -137,6 +139,41 @@ export function sanitizeStore(raw: unknown): SoloProgressStore {
   return evictOldest(out);
 }
 
+/**
+ * Newer wins, per puzzle: a remote record replaces the local one only when its
+ * `updatedAt` is later; an unknown puzzle is added; the cap still applies.
+ */
+export function mergeProgress(store: SoloProgressStore, remote: readonly SoloProgressRecord[]): { next: SoloProgressStore; changed: string[] } {
+  const changed: string[] = [];
+  let next = store;
+  for (const r of remote) {
+    if (!isRecord(r) || Object.keys(r.cells).length === 0) continue;
+    const local = store[r.key];
+    if (local && local.updatedAt >= r.updatedAt) continue;
+    if (next === store) next = { ...store };
+    next[r.key] = r;
+    changed.push(r.key);
+  }
+  return { next: changed.length ? evictOldest(next) : store, changed };
+}
+
+// --- Change notifications (the Plus sync in soloProgressSync.ts listens) ---
+
+export type ProgressListener = (key: string, record: SoloProgressRecord | null) => void;
+const progressListeners = new Set<ProgressListener>();
+
+/** Called after every write below with the record as it now is, or null when it was deleted. */
+export function subscribeProgressChanges(listener: ProgressListener): () => void {
+  progressListeners.add(listener);
+  return () => {
+    progressListeners.delete(listener);
+  };
+}
+
+function emitProgress(key: string, record: SoloProgressRecord | null): void {
+  for (const l of progressListeners) l(key, record);
+}
+
 // --- Impure: localStorage (degrades gracefully) ---
 
 export function loadProgressStore(): SoloProgressStore {
@@ -164,17 +201,38 @@ export function getProgress(key: string): SoloProgressRecord | null {
 export function recordProgressCells(key: string, cells: Readonly<Record<string, CellState>>, total: number, now: number = Date.now()): void {
   const store = loadProgressStore();
   const next = withCells(store, key, cells, total, now);
-  if (next !== store) saveProgressStore(next);
+  if (next !== store) {
+    saveProgressStore(next);
+    emitProgress(key, next[key] ?? null);
+  }
 }
 
 export function recordProgressElapsed(key: string, elapsedMs: number, now: number = Date.now()): void {
   const store = loadProgressStore();
   const next = withElapsed(store, key, elapsedMs, now);
-  if (next !== store) saveProgressStore(next);
+  if (next !== store) {
+    saveProgressStore(next);
+    emitProgress(key, next[key] ?? null);
+  }
 }
 
 export function clearProgress(key: string): void {
   const store = loadProgressStore();
   const next = withoutProgress(store, key);
-  if (next !== store) saveProgressStore(next);
+  if (next !== store) {
+    saveProgressStore(next);
+    emitProgress(key, null);
+  }
+}
+
+/**
+ * Merge records that arrived from elsewhere (the Plus sync) into the local
+ * store without notifying listeners (they came from the server; echoing them
+ * back would loop). Returns the keys whose local record changed.
+ */
+export function mergeRemoteProgress(remote: readonly SoloProgressRecord[]): string[] {
+  const store = loadProgressStore();
+  const { next, changed } = mergeProgress(store, remote);
+  if (changed.length > 0) saveProgressStore(next);
+  return changed;
 }

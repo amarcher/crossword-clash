@@ -1,4 +1,5 @@
-import { useMemo, useState, type Dispatch } from "react";
+import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react";
+import { useTranslation } from "react-i18next";
 import { Download, KeyRound, Sparkles, WandSparkles } from "lucide-react";
 import { Button, Card, Eyebrow, Select } from "../ui";
 import { CLUE_MAX } from "../../lib/seedgrid/audit";
@@ -7,13 +8,17 @@ import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
 import { slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
 import { draftClues, edgeCaller, entryAnswers, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
 import { setStudioToken, useStudioToken } from "../../hooks/useStudioToken";
+import type { StudioAccess } from "../../lib/studioGate";
+import { allowanceLeft, fetchStudioAllowance, type StudioAllowance } from "../../lib/studioUsage";
 
 interface CluePanelProps {
   state: StudioState;
   dispatch: Dispatch<StudioAction>;
   onExport: () => void;
-  /** A signed-in studio admin needs no token. */
-  admin: boolean;
+  /** Who is drafting: an admin (no token needed, any model) or a Plus subscriber (metered Sonnet). */
+  access: StudioAccess;
+  /** The signed-in user, for the subscriber's allowance read. */
+  userId: string | null;
 }
 
 const INPUT =
@@ -29,11 +34,20 @@ const ICON_BUTTON =
  * studio-claude function as a signed-in admin or with the studio token (kept
  * in this browser only).
  */
-export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) {
+export function CluePanel({ state, dispatch, onExport, access, userId }: CluePanelProps) {
+  const { t } = useTranslation();
   const { grid } = state;
   const slots = slotsOf(grid);
   const complete = grid.cells.every((c) => c !== "");
   const token = useStudioToken();
+  const admin = access.admin || !!token;
+  // A Plus subscriber (and not an admin) drafts on a monthly allowance; show what is left.
+  const metered = access.plus && !admin && !!userId;
+  const [allowance, setAllowance] = useState<StudioAllowance | null>(null);
+  const refreshAllowance = useCallback(() => {
+    if (metered && userId) void fetchStudioAllowance(userId).then(setAllowance);
+  }, [metered, userId]);
+  useEffect(refreshAllowance, [refreshAllowance]);
   const [tokenDraft, setTokenDraft] = useState("");
   const [needToken, setNeedToken] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -59,7 +73,7 @@ export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) 
   const redraftable = slots.filter((s) => !edited.has(slotKey(s)));
 
   const run = async (label: string, work: (call: ReturnType<typeof edgeCaller>) => Promise<void>) => {
-    if (!token && !admin) {
+    if (!admin && !access.plus) {
       setNeedToken(true);
       return;
     }
@@ -72,6 +86,7 @@ export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) 
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(null);
+      refreshAllowance();
     }
   };
 
@@ -135,6 +150,9 @@ export function CluePanel({ state, dispatch, onExport, admin }: CluePanelProps) 
       />
 
       {!complete && <p className="mt-2 text-sm text-muted">Fill the grid to draft clues.</p>}
+      {metered && allowance && (
+        <p className="mt-2 text-sm text-muted tabular-nums">{t("studio.draftsLeft", { left: allowanceLeft(allowance), limit: allowance.limit })}</p>
+      )}
       {busy && <p role="status" className="mt-2 text-sm text-ink-soft">{busy}</p>}
       {error && <p role="alert" className="mt-2 rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{error}</p>}
       {needToken && (

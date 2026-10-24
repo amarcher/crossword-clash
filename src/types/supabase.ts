@@ -266,7 +266,7 @@ export interface Database {
       feature_usage: {
         Row: {
           user_id: string;
-          feature: "narrator_minutes" | "studio_claude";
+          feature: "narrator_minutes" | "studio_claude" | "narrator_claude_calls";
           /** First day of the UTC month, "YYYY-MM-01". */
           month: string;
           used: number;
@@ -276,6 +276,20 @@ export interface Database {
         /** Service role only (consume_allowance). */
         Insert: Record<string, never>;
         Update: Record<string, never>;
+        Relationships: [];
+      };
+      solo_progress: {
+        Row: {
+          user_id: string;
+          puzzle_key: string;
+          cells: unknown;
+          elapsed_ms: number;
+          filled: number;
+          total: number;
+          updated_at: string;
+        };
+        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string };
+        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
         Relationships: [];
       };
     };

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LogOut, UserRound, X } from "lucide-react";
+import { LogOut, Sparkles, UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { accountName, AUTH_PROVIDERS, deleteAccount, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
 import { track } from "../../lib/analytics";
 import { useSolveHistory } from "../../hooks/useSolveHistory";
 import { Button } from "../ui";
 import { UsernamePicker } from "./UsernamePicker";
+import { PlusPitch } from "../Plus/PlusPitch";
 import type { AccountContextValue } from "../../contexts/AccountContext";
 
-export type AccountSheetView = "account" | "username" | "delete";
+export type AccountSheetView = "account" | "username" | "delete" | "plus";
 
 interface AccountSheetProps {
   account: AccountContextValue;
@@ -85,7 +86,15 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   const username = profile?.username ?? null;
   const name = user ? username ?? accountName(user) : "";
   const title =
-    view === "username" ? t("account.chooseUsername") : view === "delete" ? t("account.deleteTitle") : user ? name : t("account.sheetTitle");
+    view === "plus"
+      ? t("plus.title")
+      : view === "username"
+        ? t("account.chooseUsername")
+        : view === "delete"
+          ? t("account.deleteTitle")
+          : user
+            ? name
+            : t("account.sheetTitle");
 
   return (
     <div
@@ -107,13 +116,15 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
       >
         <div className="flex items-start gap-3.5">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-            <UserRound className="size-5" aria-hidden="true" />
+            {view === "plus" ? <Sparkles className="size-5" aria-hidden="true" /> : <UserRound className="size-5" aria-hidden="true" />}
           </span>
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className={`font-display text-lg font-bold leading-snug tracking-tight ${user && view === "account" ? "truncate" : ""}`}>
               {title}
             </h2>
-            {view === "username" ? (
+            {view === "plus" ? (
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{account.plus ? t("plus.youHavePlus") : t("plus.subtitle")}</p>
+            ) : view === "username" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.usernameBody")}</p>
             ) : view === "delete" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
@@ -134,7 +145,31 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
         </div>
 
         <div className="mt-5">
-          {view === "username" && user ? (
+          {view === "plus" ? (
+            <PlusPitch>
+              {user ? (
+                // The purchase controls land with the paywall (Stripe on the web, RevenueCat in the apps).
+                <p className="text-center text-sm text-muted">{account.plus ? t("plus.manageSoon") : t("plus.comingSoon")}</p>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
+                  {AUTH_PROVIDERS.map((provider) => (
+                    <Button
+                      key={provider}
+                      variant="secondary"
+                      size="lg"
+                      block
+                      disabled={busy || !enabled?.[provider]}
+                      aria-busy={busy || undefined}
+                      onClick={() => signIn(provider)}
+                    >
+                      {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </PlusPitch>
+          ) : view === "username" && user ? (
             <UsernamePicker
               userId={user.id}
               current={username}

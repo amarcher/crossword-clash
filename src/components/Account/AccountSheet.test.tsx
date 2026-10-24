@@ -24,7 +24,9 @@ const account: AccountContextValue = {
   plusReady: true,
   entitlements: [],
   refreshEntitlements: vi.fn(async () => {}),
+  plusRow: null,
   openAccount: vi.fn(),
+  openPaywall: vi.fn(),
 };
 
 const renderSheet = () => render(<AccountSheet account={account} initialView="account" initialError={null} placement="test" onClose={vi.fn()} />);

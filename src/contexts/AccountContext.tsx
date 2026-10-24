@@ -3,6 +3,9 @@ import { useAccount, type Account } from "../hooks/useAccount";
 import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
 import { clearSolveHistory, ensureSolveHistory } from "../lib/solveHistory";
+import { pullProgress, startProgressSync, stopProgressSync } from "../lib/soloProgressSync";
+import { plusEnabled, type PlusFeature } from "../lib/plus";
+import { track } from "../lib/analytics";
 
 export interface OpenAccountOptions {
   /**
@@ -15,11 +18,26 @@ export interface OpenAccountOptions {
   placement?: string;
 }
 
+export interface OpenPaywallOptions {
+  /** Where the paywall was opened from, for the funnel (`paywall_viewed`). */
+  placement: string;
+  /** The gate that asked, if any. */
+  feature?: PlusFeature;
+  /** Where a sign-in started from the paywall should come back to. */
+  returnTo?: string;
+}
+
 export interface AccountContextValue extends Account {
   /** False in builds that cannot offer an account (no Supabase, or the native apps). */
   available: boolean;
   /** Opens the account sheet: sign-in when anonymous, manage when signed in. */
   openAccount: (opts?: OpenAccountOptions) => void;
+  /**
+   * Opens the Plus pitch (docs/monetization-spec.md §3.3): sign-in first for an
+   * anonymous visitor (Plus needs an account on the web), then the plans. A
+   * no-op while the Plus launch switch is off.
+   */
+  openPaywall: (opts: OpenPaywallOptions) => void;
 }
 
 const AccountContext = createContext<AccountContextValue | null>(null);
@@ -27,6 +45,7 @@ const AccountContext = createContext<AccountContextValue | null>(null);
 interface SheetState extends OpenAccountOptions {
   view: AccountSheetView;
   error?: string | null;
+  feature?: PlusFeature;
 }
 
 /**
@@ -55,12 +74,30 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
   // An account's solve history: loaded once it appears (and this device's
   // pre-account history uploaded once), forgotten when it goes.
-  const { user, profile, profileReady } = account;
+  const { user, profile, profileReady, plus } = account;
   const userId = user?.id;
   useEffect(() => {
     if (userId) void ensureSolveHistory(userId);
     else clearSolveHistory();
   }, [userId]);
+
+  // Plus: mirror per-puzzle progress to the account (soloProgressSync.ts) while
+  // a real account holds Plus; pull the other devices' records on appearance
+  // and whenever the tab comes back.
+  const syncId = userId && plus ? userId : null;
+  useEffect(() => {
+    if (!syncId) {
+      stopProgressSync();
+      return;
+    }
+    startProgressSync(syncId);
+    void pullProgress(syncId);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void pullProgress(syncId);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [syncId]);
 
   // First sign-in: once the profile lookup settles with no username, ask for one.
   useEffect(() => {
@@ -70,9 +107,14 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, [justReturned, user, profile, profileReady]);
 
   const openAccount = useCallback((opts: OpenAccountOptions = {}) => setSheet({ view: "account", ...opts }), []);
+  const openPaywall = useCallback((opts: OpenPaywallOptions) => {
+    if (!plusEnabled()) return;
+    track("paywall_viewed", { placement: opts.placement, feature: opts.feature });
+    setSheet({ view: "plus", placement: opts.placement, feature: opts.feature, returnTo: opts.returnTo });
+  }, []);
   const close = useCallback(() => setSheet(null), []);
 
-  const value = useMemo<AccountContextValue>(() => ({ ...account, available, openAccount }), [account, available, openAccount]);
+  const value = useMemo<AccountContextValue>(() => ({ ...account, available, openAccount, openPaywall }), [account, available, openAccount, openPaywall]);
 
   return (
     <AccountContext.Provider value={value}>

@@ -29,8 +29,12 @@ vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
 
 // null = no AccountProvider (nothing locked); set per test to gate.
 const openAccount = vi.fn();
-let accountState: { available: boolean; ready: boolean; user: { id: string } | null; openAccount: typeof openAccount } | null = null;
+const openPaywall = vi.fn();
+let accountState: { available: boolean; ready: boolean; user: { id: string } | null; plus?: boolean; openAccount: typeof openAccount; openPaywall: typeof openPaywall } | null = null;
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => accountState }));
+// The Plus launch switch, off by default (today's behaviour).
+const plusFlag = { on: false };
+vi.mock("../lib/plus", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/plus")>()), plusEnabled: () => plusFlag.on }));
 
 function transfer(title: string, theme: string): { theme: string; puzzle: TransferPuzzle } {
   return {
@@ -56,12 +60,14 @@ const shift = (n: number) => {
 const yesterday = shift(-1);
 const tomorrow = shift(1);
 const lastWeek = shift(-8);
+const longAgo = shift(-40);
 
 const FEEDS = {
   [`/daily-puzzles/${today}.json`]: transfer("Movie Night", "Movies"),
   [`/daily-puzzles/midi/${today}.json`]: transfer("Bard on Screen", "Shakespeare"),
   [`/daily-puzzles/large/${yesterday}.json`]: transfer("Split Decision", "Ocean"),
   [`/daily-puzzles/${lastWeek}.json`]: transfer("Old News", "Papers"),
+  [`/daily-puzzles/${longAgo}.json`]: transfer("Ancient History", "Ruins"),
   [`/daily-puzzles/${tomorrow}.json`]: transfer("Not Yet", "Future"),
 };
 const dailies = Object.fromEntries(Object.entries(FEEDS).map(([k, v]) => [k, parseDailyFeedEntry(v)!]));
@@ -70,12 +76,20 @@ const entries: DailyIndexEntry[] = [
   indexEntryFor(today, "midi", dailies[`/daily-puzzles/midi/${today}.json`]),
   indexEntryFor(yesterday, "large", dailies[`/daily-puzzles/large/${yesterday}.json`]),
   indexEntryFor(lastWeek, "mini", dailies[`/daily-puzzles/${lastWeek}.json`]),
+  indexEntryFor(longAgo, "mini", dailies[`/daily-puzzles/${longAgo}.json`]),
   indexEntryFor(tomorrow, "mini", dailies[`/daily-puzzles/${tomorrow}.json`]),
 ];
-const months = [...new Set([monthOf(lastWeek), monthOf(yesterday), monthOf(today), monthOf(tomorrow)])].sort();
+const months = [...new Set([monthOf(longAgo), monthOf(lastWeek), monthOf(yesterday), monthOf(today), monthOf(tomorrow)])].sort();
 
 let indexDown = false;
 const fetched: string[] = [];
+
+/** Pages the calendar back from today's month to the month of `day`. */
+function toMonthOf(day: string) {
+  const [ty, tm] = monthOf(today).split("-").map(Number);
+  const [dy, dm] = monthOf(day).split("-").map(Number);
+  for (let i = 0; i < (ty - dy) * 12 + (tm - dm); i++) fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+}
 
 function renderScreen() {
   return render(
@@ -92,7 +106,9 @@ describe("ArchiveScreen (/archive)", () => {
     bestTimes = {};
     savedSession = null;
     accountState = null;
+    plusFlag.on = false;
     openAccount.mockClear();
+    openPaywall.mockClear();
     resetDailyIndexMemory();
     vi.stubGlobal("fetch", async (url: string) => {
       fetched.push(url);
@@ -122,7 +138,7 @@ describe("ArchiveScreen (/archive)", () => {
     // Only the months that have started were fetched; tomorrow's entry is filtered out.
     expect(fetched.filter((u) => u.includes("/index/")).every((u) => u <= `/daily-puzzles/index/${monthOf(today)}.json`)).toBe(true);
     expect(screen.queryByText("Not Yet")).toBeNull();
-    expect(screen.getByText("1 of 4 solved · 3 to catch up on")).toBeTruthy();
+    expect(screen.getByText("1 of 5 solved · 4 to catch up on")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: new RegExp(longDay(today, "en")) })).toBeTruthy();
     expect(screen.getByText(formatDuration(102))).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play again" })).toBeTruthy();
@@ -165,7 +181,7 @@ describe("ArchiveScreen (/archive)", () => {
     const card = screen.getByRole("region", { name: "Pick up where you left off" });
     expect(within(card).getByText("Bard on Screen")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
-    expect(screen.getByText("0 of 4 solved · 4 to catch up on")).toBeTruthy();
+    expect(screen.getByText("0 of 5 solved · 5 to catch up on")).toBeTruthy();
   });
 
   it("marks every puzzle in the progress store in progress and resumes the most recently touched one", async () => {
@@ -185,14 +201,14 @@ describe("ArchiveScreen (/archive)", () => {
     expect(within(card).getByText(/2 of 8 filled · 1:01/)).toBeTruthy();
     // Today's mini is in progress too: its row says Resume, and the count treats both as unsolved.
     expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
-    expect(screen.getByText("0 of 4 solved · 4 to catch up on")).toBeTruthy();
+    expect(screen.getByText("0 of 5 solved · 5 to catch up on")).toBeTruthy();
     const todayCell = screen.getByRole("button", { name: new RegExp(`^${longDay(today, "en")}:`) });
     expect(todayCell.getAttribute("aria-label")).toContain("Daily Mini in progress");
     localStorage.clear();
   });
 
   it("locks days older than a week for an anonymous visitor who could sign in, and opens the account sheet", async () => {
-    accountState = { available: true, ready: true, user: null, openAccount };
+    accountState = { available: true, ready: true, user: null, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
     // Today is open: Play is offered (for both of today's unsolved dailies).
@@ -209,7 +225,7 @@ describe("ArchiveScreen (/archive)", () => {
   });
 
   it("does not lock anything for a signed-in account, or where no account can be offered", async () => {
-    accountState = { available: true, ready: true, user: { id: "me" }, openAccount };
+    accountState = { available: true, ready: true, user: { id: "me" }, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
@@ -218,12 +234,52 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.queryByText(/Sign in to play/)).toBeNull();
     cleanup();
 
-    accountState = { available: false, ready: true, user: null, openAccount };
+    accountState = { available: false, ready: true, user: null, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.queryByText(/Sign in to play/)).toBeNull();
+  });
+
+  it("with Plus live: a free account plays 30 days and sees the Plus card beyond, Plus plays everything, anonymous keeps the 7-day sign-in rule", async () => {
+    plusFlag.on = true;
+    // A free account: 8 days ago is open, 40 days ago asks for Plus.
+    accountState = { available: true, ready: true, user: { id: "me" }, plus: false, openAccount, openPaywall };
+    renderScreen();
+    await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    expect(screen.getByText("Old News")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+    // 40 days ago is on an earlier month's page.
+    toMonthOf(longAgo);
+    const oldCell = screen.getByRole("button", { name: new RegExp(`^${longDay(longAgo, "en")}:`) });
+    expect(oldCell.getAttribute("aria-label")).toContain("locked, Plus plays every day");
+    fireEvent.click(oldCell);
+    expect(screen.getByText("Ancient History")).toBeTruthy();
+    expect(screen.getByText("Go Plus to play puzzles older than 30 days")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "About Plus" }));
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "archive", feature: "archive" });
+    expect(openAccount).not.toHaveBeenCalled();
+    cleanup();
+
+    // Plus: nothing locked.
+    accountState = { available: true, ready: true, user: { id: "me" }, plus: true, openAccount, openPaywall };
+    renderScreen();
+    await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    toMonthOf(longAgo);
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(longAgo, "en")}:`) }));
+    expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+    expect(screen.queryByText(/Go Plus/)).toBeNull();
+    cleanup();
+
+    // Anonymous: the 7-day sign-in rule, unchanged.
+    accountState = { available: true, ready: true, user: null, plus: false, openAccount, openPaywall };
+    renderScreen();
+    await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    expect(screen.getByText("Sign in to play puzzles older than 7 days")).toBeTruthy();
   });
 
   it("says so when the index cannot be read", async () => {

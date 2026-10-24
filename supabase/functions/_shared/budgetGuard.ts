@@ -3,11 +3,13 @@ import { corsHeaders } from "./cors.ts";
 import { countDemoGrants, recordDemoGrant } from "./rateLimit.ts";
 import {
   canGrantDemo,
+  capWithSubscribers,
   evaluateBudget,
   NARRATOR_UNAVAILABLE_BODY,
   resolveMonthlyCapUsd,
   type UsageRow,
 } from "./narratorBudget.ts";
+import { activePlusCount, plusGatesOn } from "./plusAccess.ts";
 
 /**
  * Hard, env-configurable monthly spend ceiling for the AI narrator.
@@ -41,7 +43,10 @@ export async function checkNarratorBudget(
   const dbUrl = Deno.env.get("DASHBOARD_DATABASE_URL");
   if (!dbUrl) return null; // can't measure spend → don't hard-block
 
-  const capUsd = resolveMonthlyCapUsd(Deno.env.get("NARRATOR_MONTHLY_USD_CAP"));
+  // The backstop grows with the subscribers it protects (spec §2.3): the base
+  // cap plus PER_SUBSCRIBER_CAP_USD per active Plus row, once Plus is live.
+  const baseCapUsd = resolveMonthlyCapUsd(Deno.env.get("NARRATOR_MONTHLY_USD_CAP"));
+  const capUsd = plusGatesOn() ? capWithSubscribers(baseCapUsd, await activePlusCount()) : baseCapUsd;
 
   let rows: UsageRow[];
   try {

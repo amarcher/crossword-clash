@@ -87,7 +87,9 @@ ALTER TABLE purchase_events ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS feature_usage (
   user_id    UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  feature    TEXT NOT NULL CHECK (feature IN ('narrator_minutes', 'studio_claude')),
+  -- narrator_claude_calls counts the Claude narrator's calls so that every
+  -- CLAUDE_CALLS_PER_MINUTE-th one can take a narrator minute (plusAccess.ts).
+  feature    TEXT NOT NULL CHECK (feature IN ('narrator_minutes', 'studio_claude', 'narrator_claude_calls')),
   -- The first day of the UTC month the row counts.
   month      DATE NOT NULL,
   used       INTEGER NOT NULL DEFAULT 0 CHECK (used >= 0),

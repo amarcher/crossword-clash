@@ -1,0 +1,65 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:@neondatabase/serverless@*": "1.2.0"
+  },
+  "npm": {
+    "@neondatabase/serverless@1.2.0": {
+      "integrity": "sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ=="
+    }
+  },
+  "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.118.0"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.118.0": "56fce2ec273698af8a739c03a005c4b2160e163e5d2c0ede05de7e9bd47e28b8"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@capacitor/android@^8.5.1",
+        "npm:@capacitor/cli@^8.5.1",
+        "npm:@capacitor/core@^8.5.1",
+        "npm:@capacitor/ios@^8.5.1",
+        "npm:@capacitor/share@^8.0.3",
+        "npm:@elevenlabs/client@^1.10.0",
+        "npm:@eslint/js@^10.0.1",
+        "npm:@fontsource-variable/bricolage-grotesque@^5.3.0",
+        "npm:@fontsource-variable/figtree@^5.3.0",
+        "npm:@playwright/test@^1.63.0",
+        "npm:@sentry/react@^11.1.0",
+        "npm:@supabase/supabase-js@^2.118.0",
+        "npm:@tailwindcss/vite@^4.2.1",
+        "npm:@testing-library/react@^16.3.2",
+        "npm:@types/react-dom@^19.2.3",
+        "npm:@types/react@^19.2.14",
+        "npm:@vercel/analytics@^1.6.1",
+        "npm:@vercel/functions@^3.10.3",
+        "npm:@vercel/og@1.0.1",
+        "npm:@vercel/speed-insights@^1.3.1",
+        "npm:@vitejs/plugin-react@^5.1.4",
+        "npm:@xwordly/xword-parser@~1.0.5",
+        "npm:esbuild@0.28",
+        "npm:eslint-plugin-react-hooks@^7.1.1",
+        "npm:eslint@^10.11.0",
+        "npm:globals@^17.12.0",
+        "npm:i18next@^25.8.13",
+        "npm:jsdom@^28.1.0",
+        "npm:lottie-react@^2.4.1",
+        "npm:lucide-react@^1.49.0",
+        "npm:lz-string@^1.5.0",
+        "npm:react-dom@^19.2.4",
+        "npm:react-i18next@^16.5.4",
+        "npm:react-qr-code@^2.0.18",
+        "npm:react-router@^7.18.4",
+        "npm:react@^19.2.4",
+        "npm:tailwindcss@^4.2.1",
+        "npm:typescript-eslint@^8.71.0",
+        "npm:typescript@^5.9.3",
+        "npm:vite@^7.3.1",
+        "npm:vitest@^4.0.18",
+        "npm:yaml@^2.9.1"
+      ]
+    }
+  }
+}

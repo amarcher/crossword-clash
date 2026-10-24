@@ -1,17 +1,20 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  loadProgressStore,
+  recordProgressCells,
+  clearProgress,
+  recordProgressElapsed,
+  subscribeProgressChanges,
+  mergeRemoteProgress,
+  mergeProgress,
   MAX_PROGRESS_RECORDS,
   PROGRESS_KEY,
-  clearProgress,
   evictOldest,
   filledCells,
   getProgress,
   inProgressKeys,
-  loadProgressStore,
   newestProgress,
-  recordProgressCells,
-  recordProgressElapsed,
   sanitizeStore,
   whiteCellCount,
   withCells,
@@ -125,5 +128,53 @@ describe("localStorage wrapper", () => {
     expect(loadProgressStore()).toEqual({});
     recordProgressCells("p", cells, 9);
     expect(getProgress("p")?.filled).toBe(2);
+  });
+});
+
+describe("mergeProgress (the Plus sync's merge rule)", () => {
+  it("adds unknown puzzles, lets a newer remote record win, keeps a newer local one, and ignores empty or malformed records", () => {
+    const local = { a: rec("a", 100), b: rec("b", 500) };
+    const remote = [rec("a", 200, { elapsedMs: 9 }), rec("b", 400), rec("c", 50), rec("d", 10, { cells: {} }), { nope: true } as unknown as SoloProgressRecord];
+    const { next, changed } = mergeProgress(local, remote);
+    expect(changed).toEqual(["a", "c"]);
+    expect(next.a.elapsedMs).toBe(9);
+    expect(next.b).toBe(local.b);
+    expect(next.c.key).toBe("c");
+    expect(next.d).toBeUndefined();
+    // Nothing to merge: the same store object comes back.
+    expect(mergeProgress(local, [rec("b", 400)]).next).toBe(local);
+  });
+
+  it("mergeRemoteProgress writes the merged store without notifying listeners", () => {
+    localStorage.clear();
+    recordProgressCells("a", cells, 3, 100);
+    const seen: string[] = [];
+    const stop = subscribeProgressChanges((key) => seen.push(key));
+    expect(mergeRemoteProgress([rec("a", 200), rec("z", 1)])).toEqual(["a", "z"]);
+    expect(loadProgressStore().a.updatedAt).toBe(200);
+    expect(loadProgressStore().z).toBeTruthy();
+    expect(seen).toEqual([]);
+    stop();
+  });
+});
+
+describe("change notifications", () => {
+  it("tells listeners about every write with the record as it now is, null for a deletion, and nothing for a no-op", () => {
+    localStorage.clear();
+    const seen: [string, SoloProgressRecord | null][] = [];
+    const stop = subscribeProgressChanges((key, record) => seen.push([key, record]));
+    recordProgressCells("p", cells, 3, 100);
+    recordProgressElapsed("p", 4000, 110);
+    recordProgressElapsed("p", 4000, 120); // same clock: no write, no notification
+    recordProgressCells("q", { "0,0": { letter: "", correct: false } }, 3, 130); // nothing typed: no record
+    clearProgress("p");
+    clearProgress("p"); // already gone
+    stop();
+    recordProgressCells("p", cells, 3, 200); // unsubscribed
+    expect(seen.map(([k, r]) => [k, r?.elapsedMs ?? null])).toEqual([
+      ["p", 0],
+      ["p", 4000],
+      ["p", null],
+    ]);
   });
 });

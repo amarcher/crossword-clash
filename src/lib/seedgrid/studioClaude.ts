@@ -10,11 +10,25 @@ import { studioHeaders } from "../studioAuth";
 export const STUDIO_TOKEN_KEY = "crossword-clash:studio-token";
 
 export class StudioClaudeError extends Error {
-  readonly kind: "config" | "token" | "budget" | "rate" | "failed";
-  constructor(kind: StudioClaudeError["kind"], message: string) {
+  readonly kind: "config" | "token" | "budget" | "allowance" | "rate" | "failed";
+  /** For `allowance`: when the monthly drafting allowance resets (ISO). */
+  readonly resetsAt?: string;
+  constructor(kind: StudioClaudeError["kind"], message: string, resetsAt?: string) {
     super(message);
     this.kind = kind;
+    this.resetsAt = resetsAt;
   }
+}
+
+/** The error a 402 from studio-claude means: a subscriber's spent allowance, or the shared budget. */
+export function studioRefusal(body: unknown): StudioClaudeError {
+  const b = (body ?? {}) as { error?: string; resetsAt?: string };
+  if (b.error === "allowance_exhausted") {
+    const when = b.resetsAt ? new Date(b.resetsAt) : null;
+    const day = when && !Number.isNaN(when.getTime()) ? when.toLocaleDateString(undefined, { month: "long", day: "numeric" }) : "the 1st";
+    return new StudioClaudeError("allowance", `Your monthly drafting allowance is used up. It resets on ${day}.`, b.resetsAt);
+  }
+  return new StudioClaudeError("budget", "This month's AI budget is used up.");
 }
 
 export type ClaudeCaller = <T>(req: ClaudeJsonRequest) => Promise<T>;
@@ -31,7 +45,7 @@ export function edgeCaller(token: string): ClaudeCaller {
       body: JSON.stringify(req),
     });
     if (res.status === 401) throw new StudioClaudeError("token", "Sign in as a studio admin, or enter the studio token.");
-    if (res.status === 402) throw new StudioClaudeError("budget", "This month's AI budget is used up.");
+    if (res.status === 402) throw studioRefusal(await res.json().catch(() => null));
     if (res.status === 429) throw new StudioClaudeError("rate", "Too many Claude requests this hour. Try again later.");
     const body = (await res.json().catch(() => ({}))) as { result?: T; error?: string };
     if (!res.ok || body.result === undefined) throw new StudioClaudeError("failed", `Claude request failed (${body.error ?? res.status}).`);
