@@ -110,7 +110,12 @@ export function StudioAccount({ account }: { account: Account }) {
               <p className="text-sm text-ink-soft">Sign in to use the studio as yourself.</p>
               <div className="mt-2 flex flex-col gap-2">
                 {PROVIDERS.map((p) => (
-                  <Button key={p.id} variant="secondary" className="w-full" disabled={busy || !enabled?.[p.id]} onClick={() => void act(() => signInToStudio(p.id))}>
+                  <Button key={p.id} variant="secondary" className="w-full" disabled={busy || !enabled?.[p.id]} onClick={() =>
+                      void act(async () => {
+                        // Native: the OS sheet answers in place; the auth listener updates the account.
+                        if ((await signInToStudio(p.id)) !== "redirecting") setBusy(false);
+                      })
+                    }>
                     {p.label}
                   </Button>
                 ))}

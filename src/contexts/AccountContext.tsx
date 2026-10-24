@@ -4,6 +4,8 @@ import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
 import { clearSolveHistory, ensureSolveHistory } from "../lib/solveHistory";
 import { pullProgress, startProgressSync, stopProgressSync } from "../lib/soloProgressSync";
+import { checkoutReturn, reconcileEntitlements, withoutCheckoutParam } from "../lib/plusPurchase";
+import { nativePurchaseAvailable, syncNativePurchaseUser } from "../lib/nativePurchase";
 import { plusEnabled, type PlusFeature } from "../lib/plus";
 import { track } from "../lib/analytics";
 
@@ -72,6 +74,28 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     };
   }, [available]);
 
+  // Back from Stripe Checkout (web): the webhook may still be in flight, so ask
+  // verify-purchase to reconcile, refresh, and show the Plus view; either way
+  // drop the `checkout` parameter so a reload does not repeat this.
+  const { refreshEntitlements, sessionUserId } = account;
+  useEffect(() => {
+    if (!available || typeof window === "undefined") return;
+    const outcome = checkoutReturn(window.location.search);
+    if (!outcome) return;
+    window.history.replaceState(window.history.state, "", withoutCheckoutParam(window.location.href));
+    if (outcome !== "success") return;
+    track("purchase_completed", { channel: "stripe" });
+    void reconcileEntitlements("stripe")
+      .catch(() => [])
+      .then(() => refreshEntitlements())
+      .finally(() => setSheet({ view: "plus", placement: "checkout-return" }));
+  }, [available, refreshEntitlements]);
+
+  // Apps: RevenueCat is keyed by the session user (anonymous included) and follows a sign-in.
+  useEffect(() => {
+    if (sessionUserId && nativePurchaseAvailable()) void syncNativePurchaseUser(sessionUserId).catch((err) => console.warn("RevenueCat:", err));
+  }, [sessionUserId]);
+
   // An account's solve history: loaded once it appears (and this device's
   // pre-account history uploaded once), forgotten when it goes.
   const { user, profile, profileReady, plus } = account;
@@ -127,6 +151,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
           returnTo={sheet.returnTo}
           placement={sheet.placement ?? "menu"}
           onClose={close}
+          onSignedIn={() => setJustReturned(true)}
         />
       )}
     </AccountContext.Provider>

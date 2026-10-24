@@ -54,7 +54,13 @@ export type AnalyticsEvent =
   /** A signed-in solver deleted their account. */
   | "account_deleted"
   /** The Plus pitch was shown. Params `placement`, `feature` (archive | studio | narrator | …). */
-  | "paywall_viewed";
+  | "paywall_viewed"
+  /** A visitor tapped a plan. Params `channel` (stripe | revenuecat), `plan` (monthly | annual), `placement`. */
+  | "checkout_started"
+  /** A purchase went through (the Checkout return, or the store sheet). Params `channel`, `plan`. */
+  | "purchase_completed"
+  /** "Restore purchases" in the app found an entitlement. */
+  | "purchase_restored";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

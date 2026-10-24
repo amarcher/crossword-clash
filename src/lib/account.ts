@@ -10,6 +10,7 @@
  */
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
+import { nativeIdToken, nativeProviders, nativeSignInAvailable } from "./nativeSignIn";
 
 export type AuthProvider = "apple" | "google";
 
@@ -36,12 +37,19 @@ function client() {
 
 /**
  * Whether this build can offer an account at all: Supabase is configured and
- * this is the website. The native apps stay anonymous for now: their webview
- * can't host the provider's sign-in page (Google refuses embedded webviews,
- * and Apple expects its native sheet there).
+ * either this is the website, or the native app has native sign-in set up
+ * (nativeSignIn.ts: the OS sheets, since the webview can't host the
+ * providers' pages — Google refuses embedded webviews, and Apple expects its
+ * native sheet there). An app build without the client ids stays anonymous.
  */
 export function accountsAvailable(): boolean {
-  return !!supabase && import.meta.env.MODE !== "mobile";
+  if (!supabase) return false;
+  return import.meta.env.MODE !== "mobile" || nativeSignInAvailable();
+}
+
+/** The providers this build can offer: both on the web, what nativeSignIn.ts can show in the app. */
+export function availableProviders(): AuthProvider[] {
+  return import.meta.env.MODE === "mobile" ? nativeProviders() : AUTH_PROVIDERS;
 }
 
 function remember(key: string, value: string | null) {
@@ -82,13 +90,24 @@ export async function fetchEnabledProviders(): Promise<Record<AuthProvider, bool
   }
 }
 
+export type SignInOutcome =
+  /** The browser is leaving for the provider; the return trip finishes the sign-in (resumeSignIn). */
+  | "redirecting"
+  /** Native: the OS sheet finished and the session is already updated. */
+  | "signed-in"
+  /** Native: the user dismissed the OS sheet. */
+  | "cancelled";
+
 /**
- * Starts the provider's sign-in; the page navigates away on success and comes
- * back to `returnTo` (default: the current page). Pass `returnTo: "/menu"` from a
- * screen that cannot finish a sign-in itself (for example a play screen), so
- * the menu, which calls resumeSignIn, picks it up.
+ * Starts the provider's sign-in. On the web the page navigates away on success
+ * and comes back to `returnTo` (default: the current page); pass `returnTo:
+ * "/menu"` from a screen that cannot finish a sign-in itself (for example a
+ * play screen), so the menu, which calls resumeSignIn, picks it up. In the
+ * native app the OS sheet answers in place (signInNatively) and the session
+ * changes before this resolves.
  */
-export async function signInWith(provider: AuthProvider, opts: { returnTo?: string } = {}): Promise<void> {
+export async function signInWith(provider: AuthProvider, opts: { returnTo?: string } = {}): Promise<SignInOutcome> {
+  if (import.meta.env.MODE === "mobile") return signInNatively(provider);
   const auth = client().auth;
   const path = opts.returnTo ?? window.location.pathname;
   const options = { redirectTo: window.location.origin + path };
@@ -97,12 +116,42 @@ export async function signInWith(provider: AuthProvider, opts: { returnTo?: stri
   if (data.session?.user.is_anonymous) {
     remember(PENDING_KEY, provider);
     const { error } = await auth.linkIdentity({ provider, options });
-    if (!error) return;
+    if (!error) return "redirecting";
     // Manual linking off, or some other refusal: a plain sign-in still works.
     remember(PENDING_KEY, null);
   }
   const { error } = await auth.signInWithOAuth({ provider, options });
   if (error) throw error;
+  return "redirecting";
+}
+
+/**
+ * The native path (docs/monetization-spec.md §3.5): the OS sheet's id token
+ * is LINKED to the current anonymous user (`linkIdentity` with the token, so
+ * the uid — and any Plus bought on it — stays); if that identity already has
+ * an account (made on the web, say), the app signs in to it instead
+ * (`signInWithIdToken`), and the uid changes. Needs "manual linking" on in
+ * Supabase and the bundle id among the Apple client ids.
+ */
+export async function signInNatively(provider: AuthProvider): Promise<SignInOutcome> {
+  const auth = client().auth;
+  let token: string;
+  let nonce: string;
+  try {
+    ({ token, nonce } = await nativeIdToken(provider));
+  } catch (err) {
+    if (err instanceof Error && err.message === "cancelled") return "cancelled";
+    throw err;
+  }
+  const { data } = await auth.getSession();
+  if (data.session?.user.is_anonymous) {
+    const { error } = await auth.linkIdentity({ provider, token, nonce });
+    if (!error) return "signed-in";
+    if (error.code !== "identity_already_exists") throw error;
+  }
+  const { error } = await auth.signInWithIdToken({ provider, token, nonce });
+  if (error) throw error;
+  return "signed-in";
 }
 
 /** The OAuth error the provider round trip came back with, if any. */

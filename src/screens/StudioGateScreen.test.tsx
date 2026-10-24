@@ -17,7 +17,7 @@ vi.mock("../lib/analytics", () => ({ track: (...args: unknown[]) => track(...arg
 import { StudioGateScreen } from "./StudioGateScreen";
 
 function account(over: Partial<StudioAccount>): StudioAccount {
-  return { user: null, admin: false, ready: true, plus: false, plusReady: true, refreshEntitlements: vi.fn(async () => {}), ...over };
+  return { user: null, admin: false, ready: true, plus: false, plusReady: true, plusRow: null, refreshEntitlements: vi.fn(async () => {}), ...over };
 }
 const user = { id: "u1", is_anonymous: false } as StudioAccount["user"];
 const renderGate = () =>
@@ -66,7 +66,7 @@ describe("StudioGateScreen", () => {
     renderGate();
     expect(screen.getByText("Build your own crossword")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Continue with/ })).toBeNull();
-    expect(screen.getByText("Purchasing isn't available yet. Check back soon.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Get Plus yearly/ })).toBeTruthy();
     expect(track).toHaveBeenCalledWith("paywall_viewed", { placement: "studio", feature: "studio", state: "plus" });
   });
 

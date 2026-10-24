@@ -4,6 +4,7 @@ import { PencilRuler } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button } from "../components/ui";
 import { PlusPitch } from "../components/Plus/PlusPitch";
+import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { useStudioAccount } from "../hooks/useStudioAccount";
 import { track } from "../lib/analytics";
 import { AUTH_PROVIDERS, fetchEnabledProviders, type AuthProvider } from "../lib/account";
@@ -63,7 +64,17 @@ export function StudioGateScreen() {
             </div>
           </div>
           <div className="mt-5">
-            <PlusPitch>{verdict === "sign-in" ? <SignInButtons /> : <p className="text-center text-sm text-muted">{t("plus.comingSoon")}</p>}</PlusPitch>
+            <PlusPitch>
+              {verdict === "sign-in" ? (
+                <SignInButtons />
+              ) : (
+                <PlusPurchaseControls
+                  account={{ signedIn: !!account.user, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}
+                  placement="studio"
+                  returnTo="/studio"
+                />
+              )}
+            </PlusPitch>
           </div>
         </section>
       )}
