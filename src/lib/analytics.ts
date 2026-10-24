@@ -52,7 +52,9 @@ export type AnalyticsEvent =
   /** A signed-in solver saved a username (first pick or a change). Param `first`. */
   | "username_saved"
   /** A signed-in solver deleted their account. */
-  | "account_deleted";
+  | "account_deleted"
+  /** The Plus pitch was shown. Params `placement`, `feature` (archive | studio | narrator | …). */
+  | "paywall_viewed";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

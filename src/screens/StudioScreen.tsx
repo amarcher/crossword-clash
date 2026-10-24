@@ -12,6 +12,7 @@ import { Insights } from "../components/Studio/Insights";
 import { StudioAccount } from "../components/Studio/StudioAccount";
 import { EngineError } from "../components/Studio/EngineError";
 import { useStudioAccount } from "../hooks/useStudioAccount";
+import { useStudioToken } from "../hooks/useStudioToken";
 import { EngineClient, STUDIO_WORD_LIST_URL } from "../lib/seedgrid/engineClient";
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
@@ -71,6 +72,10 @@ export function StudioScreen() {
   const [state, dispatch] = useReducer(studioReducer, undefined, loadDraft);
   const client = useMemo(() => new EngineClient(), []);
   const account = useStudioAccount();
+  const studioToken = useStudioToken();
+  // The daily queue and insights are the constructor's: a Plus-only visitor never sees them.
+  const adminPanels = account.admin || !!studioToken || !account.plus;
+  const access = { admin: account.admin, plus: account.plus };
   const [engine, setEngine] = useState<EngineStatus>({ kind: "loading" });
   const [busy, setBusy] = useState<"fill" | "layout" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -387,7 +392,7 @@ export function StudioScreen() {
             onDuplicate={(entry) => openPuzzle(duplicateState(entry.id === state.id ? state : entry.state, newPuzzleId()))}
             onDelete={deletePuzzle}
           />
-          <DailyQueue state={state} admin={account.admin} />
+          {adminPanels && <DailyQueue state={state} admin={account.admin} />}
           <Card className="p-4">
             <Eyebrow as="h2">Theme entries</Eyebrow>
             <textarea
@@ -517,12 +522,12 @@ export function StudioScreen() {
 
         {/* Clues + export */}
         <section aria-label="Clues" className="order-4 lg:col-span-3">
-          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} admin={account.admin} />
+          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} access={access} userId={account.user?.id ?? null} />
         </section>
 
         {/* How the published puzzles are doing */}
         <section aria-label="Puzzle insights" className="order-5 lg:col-span-3">
-          <Insights admin={account.admin} />
+          {adminPanels && <Insights admin={account.admin} />}
         </section>
       </main>
     </PageShell>

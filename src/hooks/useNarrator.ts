@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createNarratorBackend } from "../lib/narrator/factory";
 import { buildGameStartedEvent, buildGameCompletedEvent } from "../lib/narrator/events";
 import { ClaudeNarratorBackend } from "../lib/narrator/claudeNarrator";
-import { NARRATOR_UNAVAILABLE_BUDGET } from "../lib/narratorBudget";
+import { NARRATOR_UNAVAILABLE, NARRATOR_UNAVAILABLE_ALLOWANCE, NARRATOR_UNAVAILABLE_BUDGET, NARRATOR_UNAVAILABLE_PLUS } from "../lib/narratorBudget";
 import { sendNarratorSession } from "../lib/playInsightsClient";
 import { puzzleIdentity } from "../lib/soloStats";
 import { hasNarratorDemoRemaining } from "../lib/narratorDemo";
@@ -45,8 +45,24 @@ interface UseNarratorResult {
   /**
    * True when the owner's monthly budget cap is reached and any demo allowance
    * is spent: the narrator is intentionally paused (not a connection error).
+   * Equivalent to `pausedReason === "budget"`.
    */
   budgetExhausted: boolean;
+  /**
+   * Why the narrator is intentionally paused, or null: the shared budget cap
+   * ("budget"), the host is not a Plus subscriber and the free sample is spent
+   * ("plus"), or a subscriber's monthly narrator minutes are used up
+   * ("allowance"). None of these is a connection error, and none cascades.
+   */
+  pausedReason: NarratorPausedReason | null;
+}
+
+export type NarratorPausedReason = "budget" | "plus" | "allowance";
+
+function pausedReasonOf(sentinel: string): NarratorPausedReason {
+  if (sentinel.startsWith(NARRATOR_UNAVAILABLE_PLUS)) return "plus";
+  if (sentinel.startsWith(NARRATOR_UNAVAILABLE_ALLOWANCE)) return "allowance";
+  return "budget";
 }
 
 // Cheapest path first: on a connection failure we cascade toward the least
@@ -85,7 +101,7 @@ export function useNarrator({
   // any explicit settings change.
   const [currentEngine, setCurrentEngine] = useState<NarratorEngine>(narratorEngine);
   const triedEnginesRef = useRef<Set<NarratorEngine>>(new Set());
-  const [budgetExhausted, setBudgetExhausted] = useState(false);
+  const [pausedReason, setPausedReason] = useState<NarratorPausedReason | null>(null);
   // Ensures the one-time "sample via Claude" demo switch happens at most once
   // per user selection, so budget exhaustion can never loop through backends.
   const budgetDemoTriedRef = useRef(false);
@@ -94,7 +110,7 @@ export function useNarrator({
     setCurrentEngine(narratorEngine);
     triedEnginesRef.current = new Set();
     setConnectionError(null);
-    setBudgetExhausted(false);
+    setPausedReason(null);
     budgetDemoTriedRef.current = false;
   }, [narratorEngine]);
 
@@ -103,13 +119,16 @@ export function useNarrator({
   useEffect(() => {
     if (!connectionError || !currentEngine) return;
 
-    // Monthly budget cap reached. Do NOT cascade — every backend would hit the
-    // same ceiling. Instead, offer a one-time cheap sample via Claude (which
-    // owns the demo allowance) if the user hasn't sampled yet and isn't already
-    // on it; otherwise settle into the paused state.
-    if (connectionError.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+    // Budget cap reached, Plus required, or a subscriber's minutes spent. Do
+    // NOT cascade — every backend would hit the same ceiling. For the first
+    // two, offer a one-time cheap sample via Claude (which owns the demo
+    // allowance) if the user hasn't sampled yet and isn't already on it;
+    // otherwise settle into the paused state with the reason.
+    if (connectionError.startsWith(NARRATOR_UNAVAILABLE)) {
+      const reason = pausedReasonOf(connectionError);
       setConnectionError(null);
       if (
+        reason !== "allowance" &&
         !budgetDemoTriedRef.current &&
         currentEngine !== "claude" &&
         hasNarratorDemoRemaining()
@@ -118,7 +137,7 @@ export function useNarrator({
         setCurrentEngine("claude");
         return;
       }
-      setBudgetExhausted(true);
+      setPausedReason(reason);
       setCurrentEngine(null);
       return;
     }
@@ -292,6 +311,7 @@ export function useNarrator({
     connectionError,
     currentEngine,
     requestedEngine: narratorEngine,
-    budgetExhausted,
+    budgetExhausted: pausedReason === "budget",
+    pausedReason,
   };
 }

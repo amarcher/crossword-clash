@@ -34,10 +34,12 @@ const staticFolderPages: Plugin = {
   },
 };
 
-// /studio is dev-only unless VITE_STUDIO=1. Vite still emits its worker and wasm
-// (worker assets are written before tree-shaking), and copies the gitignored
-// public/seedgrid/ word list if one exists locally; drop both from other builds
-// so they never reach Vercel or the native app bundles.
+// /studio renders in dev, with VITE_STUDIO=1, and on the Plus web build
+// (VITE_PLUS=1, behind StudioGateScreen; src/lib/studioGate.ts). Everywhere
+// else Vite still emits its worker and wasm (worker assets are written before
+// tree-shaking), and copies the gitignored public/seedgrid/ word list if one
+// exists locally; drop both from those builds so they never reach the native
+// app bundles.
 const STUDIO_ASSET = /^assets\/(engine\.worker|seedgrid_engine_bg)-/;
 const dropStudioAssets: Plugin = {
   name: "drop-studio-assets",
@@ -61,13 +63,14 @@ const dropPrivateWordList: Plugin = {
   },
 };
 
-function studioPlugins(env: Record<string, string>): Plugin[] {
-  if (env.VITE_STUDIO !== "1") return [dropStudioAssets];
+function studioPlugins(env: Record<string, string>, mode: string): Plugin[] {
+  const needed = env.VITE_STUDIO === "1" || (env.VITE_PLUS === "1" && mode !== "mobile");
+  if (!needed) return [dropStudioAssets];
   return env.VITE_SEEDGRID_WORD_LIST === "/seedgrid/words.dict" ? [] : [dropPrivateWordList];
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), staticFolderPages, prerender({ plugins: [react(), tailwindcss()] }), ...studioPlugins(loadEnv(mode, process.cwd(), "VITE_")), ...(mode === "mobile" ? [{
+  plugins: [react(), tailwindcss(), staticFolderPages, prerender({ plugins: [react(), tailwindcss()] }), ...studioPlugins(loadEnv(mode, process.cwd(), "VITE_"), mode), ...(mode === "mobile" ? [{
     name: "mobile-html",
     transformIndexHtml: {
       order: "pre" as const,

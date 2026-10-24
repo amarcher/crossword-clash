@@ -1,6 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 import { checkNarratorBudget } from "../_shared/budgetGuard.ts";
+import { AGENT_GRANT_MINUTES, narratorGate } from "../_shared/plusAccess.ts";
 import { logUsage } from "../_shared/usageLog.ts";
 
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
@@ -13,6 +14,12 @@ Deno.serve(async (req) => {
 
   const rateLimitResponse = await checkRateLimit(req, "agent-auth");
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Plus (docs/monetization-spec.md §2.3): AGENT_GRANT_MINUTES narrator minutes per
+  // grant for a subscriber, the bounded demo for anyone else, nothing changed
+  // until PLUS_GATES is on.
+  const gateResponse = await narratorGate(req, "agent-auth", AGENT_GRANT_MINUTES);
+  if (gateResponse) return gateResponse;
 
   const budgetResponse = await checkNarratorBudget(req, "agent-auth");
   if (budgetResponse) return budgetResponse;

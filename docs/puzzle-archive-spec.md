@@ -342,7 +342,19 @@ undecided, left alone.
 (1) and (4) landed in PR #126 (below). (2) is its own PR after #126 merges,
 because it changes persistence; its design follows.
 
-### 5.1 Gate (shipped in #126)
+### 5.1 Gate (shipped in #126; revised 2026-10-24)
+
+**Revision, 2026-10-24 (monetisation spec decision 5, accepted
+2026-10-23):** decision (1) above said accounts see everything. With
+Crossword Clash Plus the window becomes anonymous 7 days (unchanged), **free
+accounts 30 days** (`FREE_ACCOUNT_ARCHIVE_DAYS`), Plus everything. The rule
+is `archiveWindowFor(viewer)` in `archive.ts` and only takes effect once the
+Plus launch switch (`VITE_PLUS=1`) is on; before that, accounts still see
+everything. A locked day's panel asks an anonymous visitor to sign in (as
+below) and a free account to go Plus (`openPaywall({ placement: "archive",
+feature: "archive" })`). Nothing is locked where no account can be offered
+(the apps until they have native sign-in, builds without Supabase).
+
 
 `isLockedDay(day, today, unlocked)` in `archive.ts`: locked once the day is
 `ANONYMOUS_ARCHIVE_DAYS` (7) or more behind today, never when `unlocked`.

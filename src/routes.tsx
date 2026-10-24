@@ -4,6 +4,7 @@ import { SiteFrame } from "./layouts/SiteFrame";
 import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
 import { screenModules as m } from "./routeModules";
+import { studioRouteEnabled } from "./lib/studioGate";
 import { RouteErrorScreen } from "./screens/RouteErrorScreen";
 import { NotFoundScreen } from "./screens/NotFoundScreen";
 
@@ -128,9 +129,11 @@ export const routes: RouteObject[] = [
       { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => m.privacy().then((s) => ({ Component: s.PrivacyScreen })) },
       { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => m.terms().then((s) => ({ Component: s.TermsScreen })) },
       { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => m.support().then((s) => ({ Component: s.SupportScreen })) },
-      // Construction studio: dev builds only until its word list and Claude features are hosted.
-      ...(import.meta.env.DEV || import.meta.env.VITE_STUDIO === "1"
-        ? [{ path: "/studio", errorElement: <RouteErrorScreen />, lazy: () => m.studio().then((s) => ({ Component: s.StudioScreen })) }]
+      // Construction studio: a Plus feature on the web (gated by StudioGateScreen,
+      // which loads the editor only once the gate passes); dev and VITE_STUDIO
+      // builds skip the gate; the apps have no route (src/lib/studioGate.ts).
+      ...(studioRouteEnabled()
+        ? [{ path: "/studio", errorElement: <RouteErrorScreen />, lazy: () => m.studioGate().then((s) => ({ Component: s.StudioGateScreen })) }]
         : []),
       {
         path: "/",

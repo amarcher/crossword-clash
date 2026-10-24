@@ -5,6 +5,8 @@ import type { SpeechSettings } from "../../hooks/useSpeechSettings";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { track } from "../../lib/analytics";
 import type { NarratorEngine } from "../../lib/ttsSettings";
+import { usePlusStatus } from "../../hooks/usePlus";
+import { plusEnabled } from "../../lib/plus";
 import { Select } from "../ui";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
@@ -77,6 +79,8 @@ export function TTSSettingsModal({
 }: TTSSettingsModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const plusStatus = usePlusStatus();
+  const plusNote = plusEnabled() ? (plusStatus.plus ? t("tts.narratorPlusIncluded") : t("tts.narratorPlusNote")) : null;
 
   const handleEscape = useCallback(() => {
     closeSettings();
@@ -133,6 +137,10 @@ export function TTSSettingsModal({
             />
           </label>
         )}
+
+        {/* Plus (docs/monetization-spec.md §2.3): the AI host is a Plus feature
+            once the launch switch is on; everyone still gets the free sample. */}
+        {elevenLabsAvailable && plusNote && <p className="mb-3 text-xs text-gold-400">{plusNote}</p>}
 
         {/* Narrator description */}
         {hasNarrator && elevenLabsAvailable && (

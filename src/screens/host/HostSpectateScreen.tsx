@@ -48,7 +48,7 @@ export function HostSpectateScreen() {
   // Budget cap reached (and any demo spent): the narrator is intentionally
   // paused. Distinguish this from an all-backends-failed exhaustion so we can
   // show a friendly "taking a break" message rather than an error.
-  const budgetPaused = narrator.budgetExhausted;
+  const budgetPaused = narrator.pausedReason !== null;
   const fellBack =
     !budgetPaused &&
     narrator.requestedEngine !== null &&
@@ -72,7 +72,11 @@ export function HostSpectateScreen() {
 
   const showFallbackBanner = (fellBack || exhausted || budgetPaused) && !bannerHidden;
   const fallbackMessage = budgetPaused
-    ? t("tts.narratorBudgetPaused")
+    ? narrator.pausedReason === "plus"
+      ? t("tts.narratorPlusRequired")
+      : narrator.pausedReason === "allowance"
+        ? t("tts.narratorAllowanceSpent")
+        : t("tts.narratorBudgetPaused")
     : exhausted
       ? t("tts.fallbackExhausted")
       : t("tts.fallbackSwitched", {

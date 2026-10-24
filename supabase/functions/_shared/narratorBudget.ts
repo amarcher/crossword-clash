@@ -51,6 +51,19 @@ export const SERVICE_FALLBACK_PRICING: NarratorPricing = {
 };
 
 export const DEFAULT_MONTHLY_CAP_USD = 20;
+
+/**
+ * Each active Plus subscriber raises the shared cap by this much (spec §2.3:
+ * "20 + 2 × active subscribers"), so the backstop grows with the people it
+ * protects instead of needing an env change per subscriber.
+ */
+export const PER_SUBSCRIBER_CAP_USD = 2;
+
+/** The month's cap given the base cap and the number of active subscribers. */
+export function capWithSubscribers(baseCapUsd: number, activeSubscribers: number, perSubscriberUsd: number = PER_SUBSCRIBER_CAP_USD): number {
+  const subs = Number.isFinite(activeSubscribers) && activeSubscribers > 0 ? Math.floor(activeSubscribers) : 0;
+  return baseCapUsd + subs * perSubscriberUsd;
+}
 export const DEFAULT_DEMO_GRANT_LIMIT = 2;
 export const DEMO_ELIGIBLE_ENDPOINTS = ["narrator-claude", "tts"];
 

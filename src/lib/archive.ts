@@ -19,17 +19,53 @@ import type { CellState, Puzzle } from "../types/puzzle";
 
 /** Anonymous visitors may play this many days (today included); older days need an account. */
 export const ANONYMOUS_ARCHIVE_DAYS = 7;
+/**
+ * A free account may play this many days (today included) once Plus is live
+ * (docs/monetization-spec.md decision 5, revising docs/puzzle-archive-spec.md
+ * §5.1 where accounts saw everything); older days need Plus.
+ */
+export const FREE_ACCOUNT_ARCHIVE_DAYS = 30;
+
+/** How far back a viewer may play: a number of days (today included), or null for everything. */
+export type ArchiveWindow = number | null;
+
+/** Who the viewer is, as far as the archive gate cares. */
+export interface ArchiveViewer {
+  /** The Plus launch switch (plusEnabled()). Off → the pre-Plus rule: accounts see everything. */
+  plusOn: boolean;
+  /** Whether this build can offer an account at all (accountsAvailable()). */
+  available: boolean;
+  /** Whether the stored session has been read. */
+  ready: boolean;
+  /** Signed in to a real account. */
+  signedIn: boolean;
+  /** Holds Plus (any session user, anonymous included). */
+  plus: boolean;
+}
 
 /**
- * Whether a day's puzzles are locked for this viewer: never when `unlocked`
- * (a signed-in account, or a build with no sign-in to offer), else once the
- * day is ANONYMOUS_ARCHIVE_DAYS or more behind today. Locked days stay on the
- * calendar with their status; only Play and Race are withheld.
+ * The viewer's window. Where no account can be offered (the apps until native
+ * sign-in, builds without Supabase) nothing is locked: a lock with no key
+ * would be a dead end. Before the session is known the viewer is treated as
+ * anonymous, so a signed-in account sees its days appear rather than vanish.
  */
-export function isLockedDay(day: string, today: string, unlocked: boolean): boolean {
-  if (unlocked) return false;
+export function archiveWindowFor(viewer: ArchiveViewer): ArchiveWindow {
+  if (!viewer.available) return null;
+  if (viewer.plusOn && viewer.plus) return null;
+  if (viewer.ready && viewer.signedIn) return viewer.plusOn ? FREE_ACCOUNT_ARCHIVE_DAYS : null;
+  return ANONYMOUS_ARCHIVE_DAYS;
+}
+
+/**
+ * Whether a day's puzzles are locked for this viewer: never with an unlimited
+ * window, else once the day is `window` days or more behind today. Locked
+ * days stay on the calendar with their status; only Play and Race are
+ * withheld.
+ */
+export function isLockedDay(day: string, today: string, window: ArchiveWindow): boolean {
+  if (window === null) return false;
   const ago = daysBetween(day, today);
-  return Number.isFinite(ago) && ago >= ANONYMOUS_ARCHIVE_DAYS;
+  return Number.isFinite(ago) && ago >= window;
 }
 
 export type ArchiveStatus = "solved" | "inprogress" | "unsolved";

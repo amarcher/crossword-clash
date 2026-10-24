@@ -1,6 +1,7 @@
 import { formatEvent } from "./events";
 import { BASE_SYSTEM_PROMPT } from "./prompts";
-import { NARRATOR_UNAVAILABLE_BUDGET } from "../narratorBudget";
+import { NARRATOR_UNAVAILABLE } from "../narratorBudget";
+import { narratorHeaders, narratorRefusal } from "./narratorAuth";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
 const SYSTEM_PROMPT = BASE_SYSTEM_PROMPT;
@@ -14,11 +15,7 @@ async function fetchEphemeralToken(): Promise<string> {
 
   const res = await fetch(`${supabaseUrl}/functions/v1/openai-agent-auth`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${supabaseAnonKey}`,
-      apikey: supabaseAnonKey,
-    },
+    headers: await narratorHeaders(),
   });
 
   if (res.status === 429) {
@@ -26,10 +23,9 @@ async function fetchEphemeralToken(): Promise<string> {
     throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
   }
 
-  // Owner monthly budget cap reached — surface the machine-readable signal.
-  if (res.status === 402) {
-    throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
-  }
+  // 402: budget cap, Plus required or allowance spent — the machine-readable signal.
+  const refusal = await narratorRefusal(res);
+  if (refusal) throw refusal;
 
   if (!res.ok) {
     throw new Error(`OpenAI agent auth failed: ${res.status}`);
@@ -162,8 +158,8 @@ export class OpenAIRealtimeBackend implements NarratorBackend {
     } catch (err) {
       console.error("[OpenAIRealtime] Connection error:", err);
       const msg = err instanceof Error ? err.message : "Connection failed";
-      if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
-        this._connectionError = NARRATOR_UNAVAILABLE_BUDGET;
+      if (msg.startsWith(NARRATOR_UNAVAILABLE)) {
+        this._connectionError = msg;
       } else if (msg.startsWith("rate_limited:")) {
         this._connectionError = "Narrator limit reached. Falling back to browser voice.";
       } else {

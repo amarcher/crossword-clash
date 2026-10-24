@@ -1,7 +1,8 @@
 import { formatEvent } from "./events";
 import { CLAUDE_SYSTEM_PROMPT } from "./prompts";
-import { NARRATOR_UNAVAILABLE_BUDGET } from "../narratorBudget";
+import { NARRATOR_UNAVAILABLE, NARRATOR_UNAVAILABLE_BUDGET, NARRATOR_UNAVAILABLE_PLUS } from "../narratorBudget";
 import { consumeNarratorDemo } from "../narratorDemo";
+import { narratorHeaders, narratorRefusal } from "./narratorAuth";
 import type { NarratorBackend, AgentGameEvent } from "./types";
 
 const SYSTEM_PROMPT = CLAUDE_SYSTEM_PROMPT;
@@ -16,19 +17,14 @@ async function fetchCommentary(
   demo = false,
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
     throw new Error("Claude narrator not configured");
   }
 
   const url = `${supabaseUrl}/functions/v1/narrator-claude${demo ? "?demo=1" : ""}`;
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${supabaseAnonKey}`,
-      apikey: supabaseAnonKey,
-    },
+    headers: await narratorHeaders(),
     body: JSON.stringify({ messages, systemPrompt: SYSTEM_PROMPT }),
   });
 
@@ -37,11 +33,11 @@ async function fetchCommentary(
     throw new Error(`rate_limited:${data.retryAfterMs ?? 3600000}`);
   }
 
-  // Owner monthly budget cap reached — surface a clean, machine-readable signal
-  // so the hook can degrade gracefully instead of erroring/retrying in a loop.
-  if (res.status === 402) {
-    throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
-  }
+  // 402: the owner's budget cap, "Plus required" or a subscriber's spent
+  // allowance — a clean, machine-readable signal so the hook can degrade
+  // gracefully instead of erroring/retrying in a loop.
+  const refusal = await narratorRefusal(res);
+  if (refusal) throw refusal;
 
   if (!res.ok) {
     throw new Error(`Claude narrator failed: ${res.status}`);
@@ -67,7 +63,8 @@ async function requestCommentary(
     return { text: await fetchCommentary(messages, false), demo: false };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET) && consumeNarratorDemo()) {
+    // Over budget, or not a subscriber: the same bounded sample either way.
+    if ((msg === NARRATOR_UNAVAILABLE_BUDGET || msg === NARRATOR_UNAVAILABLE_PLUS) && consumeNarratorDemo()) {
       return { text: await fetchCommentary(messages, true), demo: true };
     }
     throw err;
@@ -80,27 +77,25 @@ function fetchTTSAudio(
   demo = false,
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
     return Promise.reject(new Error("TTS not configured"));
   }
 
   // During an over-budget demo, ask the tts function to spend one bounded,
   // fail-closed demo grant so the sample plays in the real premium voice.
-  return fetch(`${supabaseUrl}/functions/v1/tts${demo ? "?demo=1" : ""}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${supabaseAnonKey}`,
-      apikey: supabaseAnonKey,
-    },
-    body: JSON.stringify({ text, voice_id: voiceId }),
-  }).then(async (res) => {
-    // Owner monthly budget cap reached (demo grants spent too) — surface the
-    // machine-readable sentinel so the narrator degrades gracefully.
-    if (res.status === 402) {
-      throw new Error(NARRATOR_UNAVAILABLE_BUDGET);
-    }
+  return narratorHeaders()
+    .then((headers) =>
+      fetch(`${supabaseUrl}/functions/v1/tts${demo ? "?demo=1" : ""}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text, voice_id: voiceId }),
+      }),
+    )
+    .then(async (res) => {
+    // Budget cap, Plus required or allowance spent (demo grants spent too):
+    // surface the machine-readable sentinel so the narrator degrades gracefully.
+    const refusal = await narratorRefusal(res);
+    if (refusal) throw refusal;
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
       throw new Error(`TTS request failed: ${res.status} ${errBody}`);
@@ -305,8 +300,8 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       }
       // Monthly budget cap reached (and any demo allowance spent). Surface the
       // machine-readable sentinel so the hook shows the "taking a break" state.
-      if (msg.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
-        this._connectionError = NARRATOR_UNAVAILABLE_BUDGET;
+      if (msg.startsWith(NARRATOR_UNAVAILABLE)) {
+        this._connectionError = msg;
         this._isConnected = false;
         this.onStateChange?.();
         return;
@@ -379,7 +374,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       // A budget/demo-exhaustion signal must propagate so processQueue can
       // settle the narrator into the "taking a break" state; any other TTS
       // failure is non-fatal and shouldn't kill the narrator.
-      if (err instanceof Error && err.message.startsWith(NARRATOR_UNAVAILABLE_BUDGET)) {
+      if (err instanceof Error && err.message.startsWith(NARRATOR_UNAVAILABLE)) {
         throw err;
       }
       console.error("[ClaudeNarrator] TTS failed:", err);

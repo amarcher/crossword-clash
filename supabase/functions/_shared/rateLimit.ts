@@ -37,16 +37,25 @@ function getClientIp(req: Request): string {
 export async function checkRateLimit(
   req: Request,
   endpoint: string,
+  opts: {
+    /** Count under this key instead of the client IP (e.g. `user:<uid>` for a per-subscriber limit). */
+    key?: string;
+    /** Override the endpoint's configured ceiling. */
+    maxRequests?: number;
+  } = {},
 ): Promise<Response | null> {
-  const config = LIMITS[endpoint];
-  if (!config) return null;
+  const base = LIMITS[endpoint];
+  if (!base) return null;
+  const config = { ...base, maxRequests: opts.maxRequests ?? base.maxRequests };
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return null; // Skip if not configured
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const clientIp = getClientIp(req);
+  // The narrator_usage table is keyed by client_ip; a per-user limit stores
+  // its key in the same column under a `user:` prefix.
+  const clientIp = opts.key ?? getClientIp(req);
   const windowStart = new Date(Date.now() - config.windowMs).toISOString();
 
   // Count requests in the current window

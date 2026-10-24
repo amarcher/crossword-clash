@@ -22,7 +22,9 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
     plusReady: true,
     entitlements: [],
     refreshEntitlements: vi.fn(async () => {}),
+    plusRow: null,
     openAccount: vi.fn(),
+    openPaywall: vi.fn(),
     ...overrides,
   };
 }

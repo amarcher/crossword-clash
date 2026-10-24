@@ -37,7 +37,7 @@ describe("entitlements migration: tables", () => {
     expect(ent).toContain("CHECK (status IN ('active', 'grace', 'expired', 'revoked'))");
     expect(ent).toContain("PRIMARY KEY (user_id, product)");
     expect(ent).toContain("REFERENCES auth.users (id) ON DELETE CASCADE");
-    expect(section("CREATE TABLE IF NOT EXISTS feature_usage", "ALTER TABLE feature_usage")).toContain("CHECK (feature IN ('narrator_minutes', 'studio_claude'))");
+    expect(section("CREATE TABLE IF NOT EXISTS feature_usage", "ALTER TABLE feature_usage")).toContain("CHECK (feature IN ('narrator_minutes', 'studio_claude', 'narrator_claude_calls'))");
   });
 
   it("keys a store purchase to one user at a time, and keeps billing records when the user goes", () => {
