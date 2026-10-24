@@ -237,6 +237,47 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+      entitlements: {
+        Row: {
+          user_id: string;
+          product: "plus" | "supporter";
+          source: "revenuecat" | "stripe" | "apple" | "google" | "grant";
+          status: "active" | "grace" | "expired" | "revoked";
+          /** Null = never expires. */
+          expires_at: string | null;
+          will_renew: boolean;
+          external_id: string | null;
+          external_customer: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        /** Service role only (no client write policies). */
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      purchase_events: {
+        Row: { source: string; event_id: string; user_id: string | null; kind: string; payload: unknown; received_at: string };
+        /** Service role only. */
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      feature_usage: {
+        Row: {
+          user_id: string;
+          feature: "narrator_minutes" | "studio_claude";
+          /** First day of the UTC month, "YYYY-MM-01". */
+          month: string;
+          used: number;
+          bonus: number;
+          updated_at: string;
+        };
+        /** Service role only (consume_allowance). */
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -254,6 +295,16 @@ export interface Database {
       insights_clues: {
         Args: { p_puzzle_key: string; p_from: string; p_to: string };
         Returns: unknown[];
+      };
+      /** Whether a user holds an in-force entitlement for a product (SECURITY DEFINER, STABLE). */
+      has_entitlement: {
+        Args: { p_user: string; p_product: string };
+        Returns: boolean;
+      };
+      /** Service role only: atomically takes p_amount of this month's allowance for (user, feature). */
+      consume_allowance: {
+        Args: { p_user: string; p_feature: string; p_amount: number; p_limit: number };
+        Returns: { allowed: boolean; used: number; bonus: number; month: string }[];
       };
       claim_cell: {
         Args: {

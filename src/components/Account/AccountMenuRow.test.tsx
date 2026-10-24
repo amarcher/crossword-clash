@@ -18,6 +18,10 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
     profileReady: true,
     available: true,
     setProfile: vi.fn(),
+    plus: false,
+    plusReady: true,
+    entitlements: [],
+    refreshEntitlements: vi.fn(async () => {}),
     openAccount: vi.fn(),
     ...overrides,
   };
