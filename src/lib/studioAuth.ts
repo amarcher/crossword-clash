@@ -4,7 +4,7 @@
  * The studio's return trip comes back to /studio itself.
  */
 import { supabase } from "./supabaseClient";
-import { resumeSignIn, signInWith, signOut, type AuthProvider } from "./account";
+import { resumeSignIn, signInWith, signOut, type AuthProvider, type SignInOutcome } from "./account";
 
 export { accountName, fetchEnabledProviders, isAccount, readAuthError } from "./account";
 export type StudioProvider = AuthProvider;
@@ -14,8 +14,8 @@ function client() {
   return supabase;
 }
 
-/** Starts the provider's sign-in; the page navigates away on success. */
-export function signInToStudio(provider: StudioProvider): Promise<void> {
+/** Starts the provider's sign-in; on the web the page navigates away on success. */
+export function signInToStudio(provider: StudioProvider): Promise<SignInOutcome> {
   return signInWith(provider);
 }
 

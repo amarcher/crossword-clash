@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
 import { fetchIsStudioAdmin, isAccount } from "../lib/studioAuth";
 import { usePlusStatus } from "./usePlus";
+import type { EntitlementRow } from "../lib/entitlements";
 
 export interface StudioAccount {
   /** The signed-in (non-anonymous) user, or null. */
@@ -15,6 +16,8 @@ export interface StudioAccount {
   plus: boolean;
   /** False until the entitlement cache or the first fetch has answered. */
   plusReady: boolean;
+  /** The in-force Plus row, or null. */
+  plusRow: EntitlementRow | null;
   /** Refetch entitlements (after a 402 from drafting). */
   refreshEntitlements: () => Promise<void>;
 }
@@ -46,5 +49,5 @@ export function useStudioAccount(): StudioAccount {
     };
   }, [userId]);
 
-  return { user, admin, ready, plus: plusStatus.plus, plusReady: plusStatus.plusReady, refreshEntitlements: plusStatus.refreshEntitlements };
+  return { user, admin, ready, plus: plusStatus.plus, plusReady: plusStatus.plusReady, plusRow: plusStatus.current, refreshEntitlements: plusStatus.refreshEntitlements };
 }

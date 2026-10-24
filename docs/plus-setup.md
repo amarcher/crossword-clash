@@ -176,8 +176,145 @@ friend who should have the studio without paying gets a `grant` row (§1.1).
 
 ## 3. Purchase UI, Stripe, RevenueCat, native sign-in (PR 3)
 
-_To be written with PR 3: Stripe products and prices, Checkout and Customer
-Portal settings, Stripe Tax; App Store Connect subscription group and
-products, Paid Apps Agreement, Small Business Program; Google Play merchant
-profile and subscriptions; RevenueCat project, apps and offering; Apple and
-Google client ids for native sign-in in Supabase._
+Everything here is an account, a product or a key only you can create. The
+code reads each one from env or a secret and never hardcodes any of them.
+Order matters a little: Stripe alone makes the **website** sell Plus; the
+store work (3.3–3.6) makes the **apps** sell it and needs an app release.
+
+### 3.1 Stripe (web)
+
+1. **Account.** stripe.com → create the account (or use an existing one).
+   Business and tax questions (merchant of record, which jurisdictions need a
+   registration) are yours; Stripe Tax is optional (3.1 step 5).
+2. **Product and prices.** Products → Add product → name "Crossword Clash
+   Plus", description from `plus.subtitle` in `src/i18n/en.json`. Add two
+   recurring prices: **$3.99 / month** and **$24.99 / year**. Copy the two
+   price ids (`price_…`).
+3. **Customer Portal.** Settings → Billing → Customer portal: turn it on,
+   allow cancelling (at period end), switching between the two prices,
+   updating payment methods, and invoice history. Set the business name and
+   the links to `https://crosswordclash.com/terms` and `/privacy`.
+4. **Secrets.** Test mode first (`sk_test_…`, `price_…` from test mode), live
+   on launch day:
+
+   ```bash
+   npx supabase secrets set STRIPE_SECRET_KEY=<sk_…> STRIPE_PRICE_MONTHLY=<price_…> STRIPE_PRICE_ANNUAL=<price_…> SITE_URL=https://crosswordclash.com --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+   ```
+
+   `STRIPE_WEBHOOK_SECRET` is from §1.3. The webhook endpoint there must
+   exist in the same mode (test or live) as the key.
+5. **Stripe Tax (optional, decision 9).** Settings → Tax → turn on and add
+   your registrations, then `STRIPE_AUTOMATIC_TAX=1` in the secrets; the
+   Checkout session then collects the address and adds tax.
+6. **Deploy the two new functions:**
+
+   ```bash
+   npx supabase functions deploy create-checkout billing-portal --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+   ```
+
+7. **Test with a test card** (4242 4242 4242 4242, any future date): on a
+   Vercel preview with `VITE_PLUS=1`, sign in, Account → Crossword Clash Plus
+   → Get Plus yearly → pay → you land on `/menu?checkout=success`, the sheet
+   reopens as a subscriber, `entitlements` has a `stripe` row. "Manage
+   subscription" opens the portal; cancelling there arrives as
+   `customer.subscription.updated` (`will_renew` false) and, at period end,
+   `…deleted` (`expired`).
+
+### 3.2 Vercel env
+
+Project → Settings → Environment Variables → Production: `VITE_PLUS=1`. Set it
+only once 3.1 is done in live mode; everything stays hidden before that.
+
+### 3.3 App Store Connect (iOS)
+
+1. **Paid Apps Agreement** (Account Holder): Business → Agreements → sign,
+   then banking and tax forms. Sandbox purchases do not work until it is
+   active.
+2. **Small Business Program** (15%): developer.apple.com/app-store/small-business-program
+   → enrol as Account Holder (eligible under $1M prior-year proceeds).
+3. **Subscription group** "Crossword Clash Plus" with two auto-renewable
+   subscriptions: product ids `plus_monthly` ($3.99, 1 month) and
+   `plus_annual` ($24.99, 1 year); localized display names and descriptions
+   (English + Spanish); a review screenshot each (the paywall sheet). Apple
+   price equalisation is fine.
+4. **App Store Server Notifications**: not needed (RevenueCat polls and
+   receives them through its own App Store connection, 3.5).
+5. **The first subscription must be submitted with a new app version**
+   (1.1.0). Review notes: say that Plus is a subscription, where the paywall
+   is (Account → Crossword Clash Plus), that "Restore purchases" is on the
+   paywall, and that the Terms/Privacy links are on it. Add Terms of Use
+   (EULA) and Privacy Policy URLs to the App Store metadata.
+6. **Sign in with Apple capability**: in Xcode, target App → Signing &
+   Capabilities → + Capability → Sign in with Apple. Commit the resulting
+   `App.entitlements` and the project change. Then in Supabase →
+   Authentication → Providers → Apple, add the bundle id
+   `com.crosswordclash.app` to the client ids list (comma-separated next to
+   the web Services ID); Supabase accepts any listed id as the token
+   audience.
+
+### 3.4 Google Play (Android)
+
+1. **Merchant profile**: Play Console → Setup → Payments profile (one-time).
+2. **Subscriptions**: Monetize → Subscriptions → create `plus_monthly` and
+   `plus_annual` with base plans auto-renewing monthly / yearly at $3.99 /
+   $24.99; add English + Spanish listings; activate.
+3. **License testers**: Setup → License testing → your Google account(s);
+   test renewals are compressed (a month renews every 5 minutes).
+4. **Google Sign-In client ids** (for native sign-in): Google Cloud Console →
+   the project behind your existing Supabase Google provider → Credentials.
+   You need (a) the **Web** client id that Supabase already uses — that is
+   `VITE_GOOGLE_WEB_CLIENT_ID`; (b) an **Android** client id for package
+   `com.crosswordclash.app` with your upload key's and Play's app-signing
+   SHA-1 fingerprints (Play Console → App integrity); (c) an **iOS** client
+   id for the bundle id, which is `VITE_GOOGLE_IOS_CLIENT_ID`. In Supabase →
+   Providers → Google, list the Android and iOS client ids beside the web
+   one ("Authorized Client IDs").
+5. **iOS Info.plist URL scheme for Google**: add a `CFBundleURLTypes` entry
+   whose scheme is the iOS client id reversed
+   (`com.googleusercontent.apps.<id>`); the Capgo plugin's README shows the
+   exact plist snippet. Nothing is needed in the Android manifest.
+
+### 3.5 RevenueCat
+
+1. **Project** "Crossword Clash" with two apps: App Store (bundle id, the
+   App Store Connect API key or shared secret as RevenueCat asks) and Play
+   Store (package name + the Play service-account JSON RevenueCat asks for).
+2. **Products**: import `plus_monthly` and `plus_annual` from both stores.
+3. **Entitlement** with identifier exactly **`plus`**, attached to all four
+   products.
+4. **Offering** "default" (current) with packages **`$rc_annual`** →
+   `plus_annual` and **`$rc_monthly`** → `plus_monthly` (the app looks the
+   packages up by these identifiers).
+5. **Webhook** as in §1.4. **Secret API key** → `REVENUECAT_SECRET_KEY`.
+6. **Public SDK keys** (one per app, `appl_…` and `goog_…`) go into the
+   mobile build's env: `VITE_REVENUECAT_IOS_KEY`, `VITE_REVENUECAT_ANDROID_KEY`
+   (in `.env.local` on the machine that runs `pnpm mobile:sync`; they are
+   public by design).
+7. **Sandbox**: RevenueCat shows sandbox purchases in its dashboard; the
+   webhook ignores them in production (§1.2). To see rows appear during
+   testing, point the webhook at a staging project with
+   `REVENUECAT_ALLOW_SANDBOX=1`, or trust the dashboard + the in-app
+   "Restore purchases" path (which reads RevenueCat directly).
+
+### 3.6 The app release (1.1.0)
+
+With 3.3–3.5 done and the four `VITE_…` values in the mobile env:
+
+```bash
+pnpm mobile:sync
+```
+
+bumps nothing by itself; raise `MARKETING_VERSION` / `versionName` to 1.1.0
+and the build numbers, add the Sign in with Apple capability (3.3.6) and the
+Google URL scheme (3.4.5) in Xcode, build, and submit to both stores with the
+subscriptions attached (Apple requires the first subscription to ride the
+version's submission). `VITE_PLUS=1` in the mobile env turns the paywall on
+in the apps.
+
+### 3.7 Checklist before flipping the switches
+
+- [ ] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
+- [ ] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
+- [ ] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY`, `PLUS_GATES=1`
+- [ ] Vercel `VITE_PLUS=1` (production)
+- [ ] One real test purchase on the web with a real card, refunded in Stripe afterwards

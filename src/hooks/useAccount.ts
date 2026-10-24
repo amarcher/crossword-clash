@@ -29,6 +29,8 @@ export interface Account {
   entitlements: EntitlementRow[];
   /** The in-force Plus row (source, expiry), or null. */
   plusRow: EntitlementRow | null;
+  /** The session user's id, anonymous included (what RevenueCat and the entitlement store are keyed by). */
+  sessionUserId: string | null;
   /** Refetch entitlements (after a purchase, a restore, a 402 from a metered feature). */
   refreshEntitlements: () => Promise<void>;
 }
@@ -85,6 +87,7 @@ export function useAccount(): Account {
     plusReady: plusStatus.plusReady,
     entitlements: plusStatus.entitlements,
     plusRow: plusStatus.current,
+    sessionUserId: plusStatus.sessionUserId,
     refreshEntitlements: plusStatus.refreshEntitlements,
   };
 }

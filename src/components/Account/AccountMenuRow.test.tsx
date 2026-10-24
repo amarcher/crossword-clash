@@ -23,6 +23,7 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
     entitlements: [],
     refreshEntitlements: vi.fn(async () => {}),
     plusRow: null,
+    sessionUserId: null,
     openAccount: vi.fn(),
     openPaywall: vi.fn(),
     ...overrides,

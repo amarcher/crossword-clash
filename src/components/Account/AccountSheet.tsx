@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { LogOut, Sparkles, UserRound, X } from "lucide-react";
+import { ChevronRight, LogOut, Sparkles, UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
-import { accountName, AUTH_PROVIDERS, deleteAccount, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
+import { accountName, availableProviders, deleteAccount, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
+import { plusEnabled } from "../../lib/plus";
+import { nativePurchaseAvailable } from "../../lib/nativePurchase";
+import { PlusPurchaseControls } from "../Plus/PlusPurchaseControls";
 import { track } from "../../lib/analytics";
 import { useSolveHistory } from "../../hooks/useSolveHistory";
 import { Button } from "../ui";
@@ -19,6 +22,8 @@ interface AccountSheetProps {
   returnTo?: string;
   placement: string;
   onClose: () => void;
+  /** Native: the OS sheet finished and the session changed in place (no return trip), so the provider can run its first-sign-in steps. */
+  onSignedIn?: () => void;
 }
 
 /**
@@ -28,7 +33,7 @@ interface AccountSheetProps {
  * the picker, shown once after the first sign-in and again on "Change".
  * "Delete account" asks once before it deletes.
  */
-export function AccountSheet({ account, initialView, initialError, returnTo, placement, onClose }: AccountSheetProps) {
+export function AccountSheet({ account, initialView, initialError, returnTo, placement, onClose, onSignedIn }: AccountSheetProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<AccountSheetView>(initialView);
   const [error, setError] = useState<string | null>(initialError);
@@ -64,11 +69,16 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
     }
   };
 
+  const providers = availableProviders();
+  const [wantsSignIn, setWantsSignIn] = useState(false);
+
   const signIn = (provider: AuthProvider) =>
     void act(async () => {
       track("account_sign_in_started", { provider, placement });
-      await signInWith(provider, { returnTo });
-      // The page navigates away; leave the button busy meanwhile.
+      const outcome = await signInWith(provider, { returnTo });
+      // On the web the page navigates away; leave the button busy meanwhile.
+      if (outcome === "signed-in") onSignedIn?.();
+      if (outcome !== "redirecting") setBusy(false);
     });
 
   const handleSignOut = () =>
@@ -82,6 +92,17 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
       await deleteAccount();
       track("account_deleted");
     });
+
+  const providerButtons = (
+    <>
+      {providers.map((provider) => (
+        <Button key={provider} variant="secondary" size="lg" block disabled={busy || !enabled?.[provider]} aria-busy={busy || undefined} onClick={() => signIn(provider)}>
+          {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
+        </Button>
+      ))}
+      {enabled && !providers.some((p) => enabled[p]) && <p className="text-center text-xs text-muted">{t("account.noProviders")}</p>}
+    </>
+  );
 
   const username = profile?.username ?? null;
   const name = user ? username ?? accountName(user) : "";
@@ -147,25 +168,39 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
         <div className="mt-5">
           {view === "plus" ? (
             <PlusPitch>
-              {user ? (
-                // The purchase controls land with the paywall (Stripe on the web, RevenueCat in the apps).
-                <p className="text-center text-sm text-muted">{account.plus ? t("plus.manageSoon") : t("plus.comingSoon")}</p>
+              {user || nativePurchaseAvailable() ? (
+                // Web: an account is required (Stripe needs an email, the sweep would orphan an anonymous payer).
+                // Apps: the store sells to the device's anonymous id too (Apple 5.1.1(v)); sign-in is offered after.
+                <PlusPurchaseControls
+                  account={{ signedIn: !!user, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}
+                  placement={placement}
+                  returnTo={returnTo}
+                  signInPrompt={
+                    <div className="flex flex-col gap-2.5">
+                      <p className="text-center text-sm leading-relaxed text-ink-soft">{t("plus.keepOnEveryDevice")}</p>
+                      {providerButtons}
+                    </div>
+                  }
+                />
               ) : (
                 <div className="flex flex-col gap-2.5">
                   <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
-                  {AUTH_PROVIDERS.map((provider) => (
-                    <Button
-                      key={provider}
-                      variant="secondary"
-                      size="lg"
-                      block
-                      disabled={busy || !enabled?.[provider]}
-                      aria-busy={busy || undefined}
-                      onClick={() => signIn(provider)}
+                  {providerButtons}
+                </div>
+              )}
+              {!user && nativePurchaseAvailable() && !account.plus && (
+                <div className="flex flex-col gap-2.5">
+                  {wantsSignIn ? (
+                    providerButtons
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setWantsSignIn(true)}
+                      className="mx-auto min-h-11 rounded-lg px-3 text-sm text-ink-soft underline-offset-2 hover:underline active:underline focus-visible:outline-2 focus-visible:outline-brand-500"
                     >
-                      {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
-                    </Button>
-                  ))}
+                      {t("plus.alreadyPlusSignIn")}
+                    </button>
+                  )}
                 </div>
               )}
             </PlusPitch>
@@ -193,6 +228,20 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             </div>
           ) : user ? (
             <div className="flex flex-col gap-2.5">
+              {plusEnabled() && (
+                <button
+                  type="button"
+                  onClick={() => setView("plus")}
+                  className="flex min-h-14 w-full items-center gap-3 rounded-xl bg-brand-50 px-3.5 text-left ring-1 ring-brand-100 hover:bg-brand-100 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
+                >
+                  <Sparkles className="size-5 shrink-0 text-brand-600" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-ink">{t("plus.title")}</span>
+                    <span className="block truncate text-xs text-muted">{account.plus ? t("plus.rowActive") : t("plus.rowPitch")}</span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+                </button>
+              )}
               <Button variant="secondary" size="lg" block onClick={() => setView("username")}>
                 {username ? t("account.changeUsername") : t("account.chooseUsername")}
               </Button>
@@ -217,22 +266,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {AUTH_PROVIDERS.map((provider) => (
-                <Button
-                  key={provider}
-                  variant="secondary"
-                  size="lg"
-                  block
-                  disabled={busy || !enabled?.[provider]}
-                  aria-busy={busy || undefined}
-                  onClick={() => signIn(provider)}
-                >
-                  {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
-                </Button>
-              ))}
-              {enabled && !enabled.apple && !enabled.google && <p className="text-center text-xs text-muted">{t("account.noProviders")}</p>}
-            </div>
+            <div className="flex flex-col gap-2.5">{providerButtons}</div>
           )}
           {error && (
             <p role="alert" className="mt-3 rounded-xl bg-gold-50 px-3 py-2 text-xs leading-relaxed text-ink-soft">
