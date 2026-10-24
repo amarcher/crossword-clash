@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { MP_SESSION_MAX_AGE_MS, MP_SESSION_RECENT_MS } from "./sessionPersistence";
 import { INSIGHT_RANGES } from "./insights";
@@ -11,9 +11,23 @@ import { INSIGHT_RANGES } from "./insights";
  * read the file and hold it to those promises.
  */
 const here = (rel: string) => decodeURIComponent(new URL(rel, import.meta.url).pathname);
-const MIGRATION = here("../../supabase/migrations/20261023000000_retention.sql");
+const MIGRATIONS = here("../../supabase/migrations/");
+const MIGRATION = `${MIGRATIONS}20261023000000_retention.sql`;
 const sql = readFileSync(MIGRATION, "utf8");
-const body = sql.slice(sql.indexOf("CREATE OR REPLACE FUNCTION public.retention_sweep()"), sql.indexOf("REVOKE ALL ON FUNCTION public.retention_sweep()"));
+
+const SWEEP = "CREATE OR REPLACE FUNCTION public.retention_sweep()";
+/**
+ * Later migrations redefine the sweep (CREATE OR REPLACE), so the promises
+ * below are held against the NEWEST definition in the migrations folder: that
+ * is the function production runs.
+ */
+const latestSweepFile = readdirSync(MIGRATIONS)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .reverse()
+  .find((f) => readFileSync(MIGRATIONS + f, "utf8").includes(SWEEP))!;
+const latest = readFileSync(MIGRATIONS + latestSweepFile, "utf8");
+const body = latest.slice(latest.indexOf(SWEEP), latest.indexOf("REVOKE ALL ON FUNCTION public.retention_sweep()", latest.indexOf(SWEEP)));
 
 const UNIT_MS: Record<string, number> = { hour: 3_600_000, day: 86_400_000, year: 365 * 86_400_000 };
 
@@ -91,7 +105,8 @@ describe("retention migration: what the sweep touches", () => {
     const anon = body.slice(body.indexOf("DELETE FROM auth.users"), body.indexOf("idle_anonymous_users_deleted"));
     expect(anon).toContain("u.is_anonymous");
     expect(anon).toMatch(/auth\.refresh_tokens rt\s+WHERE rt\.user_id = u\.id::text AND rt\.created_at > now\(\) - idle_anonymous_user_ttl/);
-    for (const owned of ["players pl WHERE pl.user_id = u.id", "play_sessions ps WHERE ps.user_id = u.id", "daily_results dr WHERE dr.user_id = u.id", "narrator_sessions ns WHERE ns.user_id = u.id", "games g WHERE g.host_user_id = u.id"]) {
+    // entitlements: an app purchase can attach to an anonymous user (spec §3.5); it must never be swept as idle.
+    for (const owned of ["players pl WHERE pl.user_id = u.id", "play_sessions ps WHERE ps.user_id = u.id", "daily_results dr WHERE dr.user_id = u.id", "narrator_sessions ns WHERE ns.user_id = u.id", "games g WHERE g.host_user_id = u.id", "entitlements e WHERE e.user_id = u.id"]) {
       expect(anon).toContain(`NOT EXISTS (SELECT 1 FROM ${owned})`);
     }
   });
@@ -121,10 +136,12 @@ describe("retention migration: what the sweep touches", () => {
 });
 
 describe("retention migration: the rest of the file", () => {
-  it("keeps the sweep off PostgREST and runs it as its owner", () => {
+  it("keeps the sweep off PostgREST and runs it as its owner, in every definition", () => {
     expect(body).toContain("SECURITY DEFINER");
     expect(body).toContain("SET search_path = public, pg_temp");
     expect(sql).toContain("REVOKE ALL ON FUNCTION public.retention_sweep() FROM PUBLIC, anon, authenticated;");
+    expect(latest).toContain("REVOKE ALL ON FUNCTION public.retention_sweep() FROM PUBLIC, anon, authenticated;");
+    expect(latestSweepFile).toBe("20261024000000_entitlements.sql");
   });
 
   it("schedules the sweep nightly under a fixed job name, replacing any previous definition", () => {

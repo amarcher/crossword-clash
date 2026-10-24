@@ -20,6 +20,10 @@ const account: AccountContextValue = {
   profileReady: true,
   available: true,
   setProfile: vi.fn(),
+  plus: false,
+  plusReady: true,
+  entitlements: [],
+  refreshEntitlements: vi.fn(async () => {}),
   openAccount: vi.fn(),
 };
 
