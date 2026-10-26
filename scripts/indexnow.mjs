@@ -1,7 +1,7 @@
 // Tells Bing, Yandex, Seznam, Naver and the other IndexNow engines which URLs changed so they
 // recrawl within days instead of weeks. Google does not participate; use Search Console for it.
 // Bing is this site's main search engine (GA4, Apr–Oct 2026: bing 118 sessions vs google 32).
-// Run after a production deploy: `pnpm indexnow` (every sitemap URL) or `pnpm indexnow -- /classics /`.
+// Run after a production deploy: `pnpm indexnow` (every sitemap URL) or `pnpm indexnow /classics /`.
 // The key lives in public/<32 hex>.txt and must be live at the origin before submitting.
 import { readdirSync, readFileSync } from "node:fs";
 
@@ -16,7 +16,8 @@ if (!live.ok || (await live.text()).trim() !== key) {
   throw new Error(`${ORIGIN}/${keyFile} does not serve the key yet. Deploy first.`);
 }
 
-const paths = process.argv.slice(2);
+// pnpm forwards a literal `--`, which would otherwise become https://<host>/--
+const paths = process.argv.slice(2).filter((p) => p !== "--");
 const urlList = paths.length
   ? paths.map((p) => new URL(p, ORIGIN).href)
   : [...(await (await fetch(`${ORIGIN}/sitemap.xml`)).text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
