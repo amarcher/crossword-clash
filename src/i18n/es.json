@@ -31,6 +31,15 @@
     "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)",
     "pastPuzzles": "Crucigramas anteriores",
     "pastPuzzlesSubtitle": "Ponte al día con los diarios que te perdiste",
+    "how": {
+      "heading": "Cómo funcionan los diarios",
+      "puzzlesTitle": "Tres crucigramas nuevos cada día",
+      "puzzlesBody": "Cada día trae un mini rápido, un midi de 9×9 y un grande de 15×15: crucigramas originales, gratis y sin necesidad de cuenta. Los nuevos llegan a medianoche.",
+      "modesTitle": "En solitario o en carrera",
+      "modesBody": "Juega contra el reloj por tu cuenta, o crea una sala, comparte el código y rellenad la misma cuadrícula a la vez. Las letras correctas se fijan al reclamarlas, así que gana quien resuelve más rápido.",
+      "progressTitle": "Tiempos, rachas y días pendientes",
+      "progressBody": "Cada partida terminada entra en la tabla del día de ese crucigrama, y resolver en días seguidos crea una racha. Los crucigramas pasados mantienen abiertos los días recientes; inicia sesión para ir más atrás."
+    },
     "dailyPlay": "Jugar",
     "dailyMeta": "{{width}}×{{height}} · {{count}} pistas",
     "soloHeading": "Resuelve por tu cuenta",

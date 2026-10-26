@@ -31,6 +31,15 @@
     "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
     "pastPuzzles": "Past puzzles",
     "pastPuzzlesSubtitle": "Catch up on the dailies you missed",
+    "how": {
+      "heading": "How the dailies work",
+      "puzzlesTitle": "Three new puzzles every day",
+      "puzzlesBody": "Each day brings a quick mini, a 9×9 midi and a full 15×15 large — original crosswords, free, with no account needed. New puzzles arrive at midnight.",
+      "modesTitle": "Solve solo or race live",
+      "modesBody": "Play against the clock on your own, or start a room, share the code and fill the same grid together. Correct letters lock in as they're claimed, so the fastest solver wins.",
+      "progressTitle": "Times, streaks and catching up",
+      "progressBody": "Every finish goes on that puzzle's board for the day, and solving on consecutive days builds a streak. Past puzzles keeps recent days open; sign in to reach further back."
+    },
     "dailyPlay": "Play",
     "dailyMeta": "{{width}}×{{height}} · {{count}} clues",
     "soloHeading": "Solve on your own",
