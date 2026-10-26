@@ -188,9 +188,9 @@ export default async function handler(req: Request): Promise<Response> {
       og.set("detail", "Can you beat this time?");
     }
   } else {
-    pageTitle = "Crossword Clash — Real-Time Multiplayer Crossword Puzzles";
+    pageTitle = "Free Daily Mini, Midi & Large Crosswords — Crossword Clash";
     description =
-      "Compete head-to-head in real-time multiplayer crossword puzzles. Import any puzzle, host a room, and race friends to fill the grid.";
+      "Three free crosswords a day — a mini, a midi and a full-size large. Solve solo, or race friends live on the same grid.";
     dest = "/";
     og.set("heading", "Crossword Clash");
     og.set("detail", "Race friends to fill the grid");

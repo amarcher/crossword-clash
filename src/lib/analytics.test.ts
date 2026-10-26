@@ -22,9 +22,9 @@ describe("analytics", () => {
     });
 
     it("emits an event with cleaned params", () => {
-      track("puzzle_imported", { source: "url", title: "Mon Puzzle", size: undefined });
+      track("puzzle_imported", { import_source: "url", title: "Mon Puzzle", size: undefined });
       expect(gtag).toHaveBeenCalledWith("event", "puzzle_imported", {
-        source: "url",
+        import_source: "url",
         title: "Mon Puzzle",
       });
     });

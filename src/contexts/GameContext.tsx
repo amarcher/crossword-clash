@@ -260,7 +260,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // PuzzleReadyScreen, so this avoids double-counting.
       if (fileBuffer) {
         track("puzzle_imported", {
-          source: "file",
+          import_source: "file",
           title: p.title,
           size: `${p.width}x${p.height}`,
         });
