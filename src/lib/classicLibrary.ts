@@ -136,7 +136,7 @@ export async function loadClassicPuzzle(entry: Pick<ClassicEntry, "file" | "titl
   const parsed = parse(buffer, { filename: entry.file });
   const puzzle = normalizePuzzle(parsed, "puzzle.puz");
   track("puzzle_imported", {
-    source: "classic",
+    import_source: "classic",
     title: puzzle.title || entry.title,
     size: `${puzzle.width}x${puzzle.height}`,
   });

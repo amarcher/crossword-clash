@@ -359,6 +359,23 @@ export function MenuScreen() {
         </div>
       </div>
 
+      {/* Static explainer: the one block of real text on the home page, so
+          crawlers (search and AI) and reviewers get the product in words. No
+          browser reads here, so it prerenders and hydrates as-is. */}
+      <section className="mx-auto mt-10 grid w-full max-w-md gap-3 lg:max-w-5xl" aria-labelledby="how-dailies-heading">
+        <Eyebrow as="h2" id="how-dailies-heading" className="px-1">{t("menu.how.heading")}</Eyebrow>
+        <Card className="p-5 sm:p-6">
+          <dl className="grid gap-5 sm:grid-cols-3 sm:gap-6">
+            {(["puzzles", "modes", "progress"] as const).map((item) => (
+              <div key={item}>
+                <dt className="font-display text-base font-bold leading-snug text-ink">{t(`menu.how.${item}Title`)}</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed text-muted">{t(`menu.how.${item}Body`)}</dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      </section>
+
       <div className="mx-auto mt-10 flex w-full max-w-md flex-col items-center gap-3 lg:max-w-5xl">
         <AdSlot placement="menu-bottom" />
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">

@@ -31,7 +31,8 @@
     "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
     "mobile:ios": "cap open ios",
     "testflight": "scripts/testflight.sh",
-    "mobile:android": "cap open android"
+    "mobile:android": "cap open android",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

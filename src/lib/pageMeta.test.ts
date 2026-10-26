@@ -41,8 +41,8 @@ describe("pageMetaFor", () => {
     // title/description must be what the client would set on "/" anyway, or
     // a fresh visitor sees the tags change under them.
     const home = pageMetaFor("/", t);
-    expect(home.title).toBe("Crossword Clash — Real-Time Multiplayer Crossword Puzzles");
-    expect(home.description).toMatch(/^Race friends on today's NYT crossword/);
+    expect(home.title).toBe("Free Daily Mini, Midi & Large Crosswords — Crossword Clash");
+    expect(home.description).toMatch(/^Three free crosswords a day/);
   });
 });
 

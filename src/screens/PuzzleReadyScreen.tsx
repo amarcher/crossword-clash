@@ -20,7 +20,7 @@ export function PuzzleReadyScreen() {
     if (importReportedRef.current || !game.urlPuzzle) return;
     importReportedRef.current = true;
     track("puzzle_imported", {
-      source: game.urlPuzzle.origin === "nyt-bookmarklet" ? "bookmarklet" : "url",
+      import_source: game.urlPuzzle.origin === "nyt-bookmarklet" ? "bookmarklet" : "url",
       title: game.urlPuzzle.title,
       size: `${game.urlPuzzle.width}x${game.urlPuzzle.height}`,
     });
