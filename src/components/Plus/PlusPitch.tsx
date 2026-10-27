@@ -6,9 +6,12 @@ import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } fro
  * What Plus is, in one card: the four benefits and the two prices (annual
  * first, the one to push). Shared by the account sheet's Plus view and every
  * gate's upsell (archive, studio, narrator). The purchase controls themselves
- * come from the caller: the web and the apps buy differently.
+ * come from the caller: the web and the apps buy differently. A subscriber
+ * gets the benefits without the plan tiles (`prices={false}`): the
+ * entitlement row records no plan, so a highlighted tile would be a guess,
+ * and switching plans is the billing portal's job.
  */
-export function PlusPitch({ children }: { children?: React.ReactNode }) {
+export function PlusPitch({ children, prices = true }: { children?: React.ReactNode; prices?: boolean }) {
   const { t, i18n } = useTranslation();
   const benefits = [
     { icon: Archive, text: t("plus.benefitArchive") },
@@ -28,6 +31,7 @@ export function PlusPitch({ children }: { children?: React.ReactNode }) {
           </li>
         ))}
       </ul>
+      {prices && (
       <dl className="grid grid-cols-2 gap-2.5">
         <div className="rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100">
           <dt className="flex items-center gap-1.5 text-xs font-semibold text-brand-700">
@@ -43,6 +47,7 @@ export function PlusPitch({ children }: { children?: React.ReactNode }) {
           <dd className="mt-1 text-xs text-muted">{t("plus.perMonth")}</dd>
         </div>
       </dl>
+      )}
       {children}
     </div>
   );

@@ -162,7 +162,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
 
         <div className="mt-5">
           {view === "plus" ? (
-            <PlusPitch>
+            <PlusPitch prices={!account.plus}>
               {user || nativePurchaseAvailable() ? (
                 // Web: an account is required (Stripe needs an email, the sweep would orphan an anonymous payer).
                 // Apps: the store sells to the device's anonymous id too (Apple 5.1.1(v)); sign-in is offered after.
