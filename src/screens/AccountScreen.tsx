@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, LogOut, Newspaper, Pencil, Play, Sparkles } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
@@ -17,6 +17,8 @@ import { knownClassicManifest, loadClassicManifest, loadClassicPuzzle, type Clas
 import { fetchDailyForDay, type DailySlot } from "../lib/dailyFeed";
 import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
 import { plusEnabled } from "../lib/plus";
+import { communityEnabled } from "../lib/community";
+import { fetchMyPuzzles, puzzlePath, type CommunityPuzzle } from "../lib/communityPuzzles";
 import { loadProgressStore } from "../lib/soloProgress";
 import { dayKey, formatDuration, loadSoloTimer } from "../lib/soloStats";
 import type { SolveRow } from "../lib/solveHistory";
@@ -34,7 +36,7 @@ function providerName(user: { app_metadata?: { provider?: string } }): string | 
 
 function SourceChip({ row }: { row: Pick<SolveRow, "source"> }) {
   const { t } = useTranslation();
-  const label = row.source === "daily" ? t("account.sourceDaily") : row.source === "nyt" ? t("account.sourceNyt") : t("account.sourceOther");
+  const label = row.source === "daily" ? t("account.sourceDaily") : row.source === "nyt" ? t("account.sourceNyt") : row.source === "community" ? t("account.sourceCommunity") : t("account.sourceOther");
   const Icon = row.source === "daily" ? CalendarDays : row.source === "nyt" ? Newspaper : BookOpen;
   return (
     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-semibold text-ink-soft">
@@ -90,6 +92,21 @@ export function AccountScreen() {
   const [inProgress] = useState(() => inProgressFrom(loadProgressStore(), loadSavedSession(), loadSoloTimer()));
   const pending = useMemo(() => inProgressRows(inProgress, bestTimes, dailies, classics), [inProgress, bestTimes, dailies, classics]);
   const recent = useMemo(() => recentSolves(history.rows), [history.rows]);
+
+  // The account's community puzzles (docs/community-puzzles-spec.md §1.4), only with the switch on.
+  const [mine, setMine] = useState<CommunityPuzzle[] | null | "failed">(null);
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (!userId || !communityEnabled()) return;
+    let alive = true;
+    fetchMyPuzzles(userId).then(
+      (rows) => alive && setMine(rows),
+      () => alive && setMine("failed"),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +296,60 @@ export function AccountScreen() {
               </p>
             )}
           </section>
+
+          {/* Your puzzles (community) */}
+          {communityEnabled() && (
+            <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-puzzles">
+              <Eyebrow as="h2" id="account-puzzles" className="px-1">
+                {t("account.yourPuzzlesHeading")}
+              </Eyebrow>
+              {mine === null ? (
+                <Card className="p-5 text-sm text-muted" aria-busy="true">
+                  {t("account.yourPuzzlesLoading")}
+                </Card>
+              ) : mine === "failed" ? (
+                <Card className="p-5 text-sm leading-relaxed text-muted">{t("account.yourPuzzlesOffline")}</Card>
+              ) : mine.length === 0 ? (
+                <Card className="p-5 text-sm leading-relaxed text-muted">{t("account.yourPuzzlesEmpty")}</Card>
+              ) : (
+                <Card className="divide-y divide-line">
+                  {mine.map((row) => (
+                    <div key={row.id} className="flex items-center gap-3.5 px-4 py-3">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                        <Globe className="size-5" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold leading-snug text-ink">
+                          {row.status === "published" ? (
+                            <TransitionLink to={puzzlePath(row.short_id)} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
+                              {row.title}
+                            </TransitionLink>
+                          ) : (
+                            row.title
+                          )}
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm leading-snug text-muted">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${row.status === "published" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-ink-soft"}`}>
+                            {t(`account.puzzleStatus.${row.status}`)}
+                          </span>
+                          <span className="tabular-nums">{t("account.puzzleStats", { plays: row.plays, solves: row.solves })}</span>
+                          {row.status === "removed" && row.removed_reason && <span>{t(`community.removedReason.${row.removed_reason}`)}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+              )}
+              <TransitionLink
+                to="/studio"
+                className="inline-flex min-h-11 items-center gap-1.5 self-start px-1 text-sm font-semibold text-brand-700 hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
+              >
+                <Globe className="size-4" aria-hidden="true" />
+                {t("account.openStudio")}
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </TransitionLink>
+            </section>
+          )}
 
           {/* Recent solves */}
           <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-recent">

@@ -6,9 +6,11 @@ import { stripeHeaders } from "../_shared/purchaseEvents.ts";
 /**
  * Deletes the signed-in account (Authorization: Bearer <access token>).
  * Tables that reference auth.users (profiles, solves, studio_admins,
- * entitlements, feature_usage) cascade with the user; the older ones only
- * store the id, so their rows go first; purchase_events keeps its rows with
- * user_id set null (the billing record outlives the account).
+ * entitlements, feature_usage, and through profiles the community tables
+ * publishers and published_puzzles) cascade with the user; the older ones
+ * only store the id, so their rows go first; purchase_events and
+ * puzzle_reports keep their rows with user_id / reporter_id set null (the
+ * billing record and the report outlive the account).
  *
  * Billing is cancelled BEFORE the user is deleted, or the person would keep
  * being charged for an account that no longer exists: a Stripe subscription

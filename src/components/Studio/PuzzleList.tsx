@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Globe, Plus, Trash2 } from "lucide-react";
 import { Button, Card, Eyebrow } from "../ui";
 import type { LibraryEntry } from "../../lib/seedgrid/studioLibrary";
 
@@ -11,6 +11,8 @@ interface PuzzleListProps {
   onNew: () => void;
   onDuplicate: (entry: LibraryEntry) => void;
   onDelete: (entry: LibraryEntry) => void;
+  /** Ids of the entries published to the community library (a chip on the row). */
+  published?: ReadonlySet<string>;
 }
 
 const ICON_BUTTON =
@@ -26,7 +28,7 @@ function ago(at: number): string {
 }
 
 /** Every puzzle worked on in this browser; the open one is tinted. Saving is automatic. */
-export function PuzzleList({ entries, currentId, newSize, onOpen, onNew, onDuplicate, onDelete }: PuzzleListProps) {
+export function PuzzleList({ entries, currentId, newSize, onOpen, onNew, onDuplicate, onDelete, published }: PuzzleListProps) {
   const [confirming, setConfirming] = useState<string | null>(null);
   return (
     <Card className="p-4">
@@ -69,7 +71,14 @@ export function PuzzleList({ entries, currentId, newSize, onOpen, onNew, onDupli
                       className="flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-lg px-2 text-left hover:bg-surface-sunken active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500"
                       onClick={() => !current && onOpen(entry)}
                     >
-                      <span className={`truncate text-sm ${current ? "font-semibold text-brand-700" : "text-ink"}`}>{entry.title || "Untitled"}</span>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className={`truncate text-sm ${current ? "font-semibold text-brand-700" : "text-ink"}`}>{entry.title || "Untitled"}</span>
+                        {published?.has(entry.id) && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-brand-100">
+                            <Globe className="size-3" aria-hidden="true" /> Published
+                          </span>
+                        )}
+                      </span>
                       <span className="text-xs text-subtle">
                         {entry.width}×{entry.height} · {Math.round(entry.filled * 100)}% filled · {ago(entry.updatedAt)}
                       </span>

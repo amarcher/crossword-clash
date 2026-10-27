@@ -297,7 +297,7 @@ export function normalizeTransferPuzzle(transfer: TransferPuzzle): Puzzle {
     ...buildTransferClues(clues.down, answers.down, "down"),
   ];
 
-  if (transfer.origin === "nyt-bookmarklet") puzzle.origin = transfer.origin;
+  if (transfer.origin === "nyt-bookmarklet" || transfer.origin === "community") puzzle.origin = transfer.origin;
 
   return puzzle;
 }

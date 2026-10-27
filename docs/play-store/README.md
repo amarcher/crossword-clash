@@ -144,7 +144,11 @@ Done by Claude, nothing submitted or rolled out:
 - **Content rating questionnaire:** category Game; no violence, sexuality,
   language, controlled substances or gambling. Users can interact (multiplayer
   rooms, display names) but there is no free-text chat and no sharing of
-  location or personal info.
+  location or personal info. Once community puzzles are on
+  (`VITE_COMMUNITY=1`) the app shows player-published puzzles: answer the
+  user-generated-content questions as moderated content with in-app
+  reporting and blocking (Report on every puzzle page, Hide this author), per
+  Play's UGC policy; publishing is web-only.
 - **Target audience:** 13 and over only. Do not opt in to Designed for
   Families.
 - **Data safety:** data is collected and is encrypted in transit; users can

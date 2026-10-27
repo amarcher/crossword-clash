@@ -61,7 +61,15 @@ export type AnalyticsEvent =
   /** A purchase went through (the Checkout return, or the store sheet). Params `channel`, `plan`. */
   | "purchase_completed"
   /** "Restore purchases" in the app found an entitlement. */
-  | "purchase_restored";
+  | "purchase_restored"
+  /** A studio author published (or updated) a community puzzle. Params `size`, `difficulty`, `lang`, `update`. */
+  | "puzzle_published"
+  /** An author took a community puzzle down. */
+  | "puzzle_unpublished"
+  /** A player reported a community puzzle. Param `reason`. */
+  | "puzzle_reported"
+  /** A player hid an author's puzzles on this device. */
+  | "author_hidden";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

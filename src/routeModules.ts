@@ -51,6 +51,8 @@ export const screenModules = {
       ),
       import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
     ]).then(([screen]) => screen),
+  communityBrowse: () => import("./screens/CommunityBrowseScreen"),
+  communityPuzzle: () => import("./screens/CommunityPuzzleScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -90,6 +92,8 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/classics": screenModules.classics,
   "/archive": screenModules.archive,
   "/account": screenModules.account,
+  // One prefix for both community chunks: a link to a page or the list warms the pair (both are small).
+  "/puzzles": () => Promise.all([screenModules.communityBrowse(), screenModules.communityPuzzle()]),
   "/pick-puzzle": screenModules.puzzlePicker,
   "/host-game/name": screenModules.hostName,
   "/host-game/import": screenModules.hostImport,
