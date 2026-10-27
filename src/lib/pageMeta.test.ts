@@ -30,6 +30,7 @@ describe("pageMetaFor", () => {
     expect(pageMetaFor("/privacy", t).title).toBe("Privacy Policy | Crossword Clash");
     expect(pageMetaFor("/terms", t).title).toBe("Terms of Use | Crossword Clash");
     expect(pageMetaFor("/support", t).title).toBe("Support | Crossword Clash");
+    expect(pageMetaFor("/copyright", t).title).toBe("Copyright Policy | Crossword Clash");
   });
 
   it("falls back to the home meta for routes that are not listed", () => {

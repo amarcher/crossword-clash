@@ -7,9 +7,10 @@ import i18n from "../../i18n/i18n";
 import { NotFoundScreen } from "../NotFoundScreen";
 import { RouteErrorScreen } from "../RouteErrorScreen";
 import { CHUNK_RELOAD_KEY } from "../../lib/chunkReload";
-import { LEGAL_CONTENT, LEGAL_LAST_UPDATED } from "./legalContent";
+import { DMCA_AGENT, LEGAL_CONTENT, LEGAL_LAST_UPDATED } from "./legalContent";
 import { PrivacyScreen } from "./PrivacyScreen";
 import { TermsScreen } from "./TermsScreen";
+import { CopyrightScreen } from "./CopyrightScreen";
 
 afterEach(async () => {
   cleanup();
@@ -18,7 +19,7 @@ afterEach(async () => {
 
 describe("legal content", () => {
   it("en and es have the same structure", () => {
-    for (const kind of ["privacy", "terms", "support"] as const) {
+    for (const kind of ["privacy", "terms", "support", "copyright"] as const) {
       const en = LEGAL_CONTENT.en[kind].sections;
       const es = LEGAL_CONTENT.es[kind].sections;
       expect(es.length).toBe(en.length);
@@ -34,6 +35,19 @@ describe("legal content", () => {
     const emails = new Set(all.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g));
     expect([...emails]).toEqual(["acesuplabs@gmail.com"]);
     expect(all).not.toMatch(/\[[A-Z][A-Z /]+\]/);
+  });
+
+  it("names the designated copyright agent on the copyright page, in both languages", async () => {
+    for (const lang of ["en", "es"] as const) {
+      const agent = LEGAL_CONTENT[lang].copyright.sections.find((s) => s.items?.some((i) => i.includes(DMCA_AGENT.email)));
+      expect(agent?.items?.join("\n"), lang).toContain(DMCA_AGENT.name);
+      expect(agent?.items?.join("\n"), lang).toContain(DMCA_AGENT.address);
+      expect(agent?.items?.join("\n"), lang).toContain(DMCA_AGENT.phone);
+    }
+    render(<CopyrightScreen />, { wrapper: Router });
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Copyright Policy");
+    expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
+    cleanup();
   });
 
   it("renders privacy and terms with the last-updated date, in both languages", async () => {

@@ -6,7 +6,7 @@ import { Card } from "../../components/ui";
 import { LEGAL_CONTENT, LEGAL_LAST_UPDATED, type LegalDoc } from "./legalContent";
 
 interface LegalPageProps {
-  kind: "privacy" | "terms" | "support";
+  kind: "privacy" | "terms" | "support" | "copyright";
 }
 
 export function LegalPage({ kind }: LegalPageProps) {
@@ -46,7 +46,7 @@ export function LegalPage({ kind }: LegalPageProps) {
             </section>
           ))}
           <nav aria-label={t("legal.footerLabel")} className="flex gap-4 border-t border-line pt-4 text-sm">
-            {(["privacy", "terms", "support"] as const)
+            {(["privacy", "terms", "support", "copyright"] as const)
               .filter((other) => other !== kind)
               .map((other) => (
                 <Link

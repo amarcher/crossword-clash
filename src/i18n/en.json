@@ -93,7 +93,8 @@
     "classicTitle": "Classic puzzles",
     "classicSubtitle": "From the first crossword book ever published (1924). Public domain — tap one to play.",
     "classicError": "Couldn't load that puzzle. Please try another.",
-    "classicSeeAll": "See all {{count}} in the classic library →"
+    "classicSeeAll": "See all {{count}} in the classic library →",
+    "rightsNote": "Only import puzzles you have the right to use. See our <anchor>copyright policy</anchor>."
   },
   "importing": {
     "receiving": "Receiving puzzle...",
@@ -507,7 +508,9 @@
     "privacyTitle": "Privacy Policy",
     "termsTitle": "Terms of Use",
     "support": "Support",
-    "supportTitle": "Support"
+    "supportTitle": "Support",
+    "copyright": "Copyright",
+    "copyrightTitle": "Copyright Policy"
   },
   "consent": {
     "regionLabel": "Cookie consent",
@@ -621,6 +624,9 @@
     "account": {
       "title": "Your account — Crossword Clash",
       "description": "Your username, streaks, recent solves and the puzzles you have in progress."
+    },
+    "copyright": {
+      "description": "Report a puzzle on Crossword Clash that uses your work without permission: where puzzles are stored, our designated DMCA agent, and what a notice must contain."
     }
   },
   "dailyLink": {
