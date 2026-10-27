@@ -360,10 +360,17 @@ in the apps.
 
 ### 3.7 Checklist before flipping the switches
 
-- [ ] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
-- [ ] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
-- [ ] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY`, `PLUS_GATES=1`
-- [ ] Vercel `VITE_PLUS=1` (production), then a production redeploy: an env change needs a new build
+**Status 2026-10-27: both switches are on.** `PLUS_GATES=1` is set, `VITE_PLUS=1`
+is on Vercel Production (and Preview), and production was redeployed. The
+same day community puzzles went live (`VITE_COMMUNITY=1` on both
+environments). What is still open is marked below.
+
+- [x] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
+- [x] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
+- [x] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `PLUS_GATES=1`. Still unset: `REVENUECAT_SECRET_KEY` (apps only, with §3.5)
+- [x] Vercel `VITE_PLUS=1` (production), then a production redeploy: an env change needs a new build
 - [ ] Stripe live account: a support email under Public details (receipts and the portal show it); Stripe Tax registration added and `STRIPE_AUTOMATIC_TAX=1` set, or tax deliberately left off (§3.1 step 5)
-- [ ] DMCA: the designated agent registered at dmca.copyright.gov (service provider Fable Designer LLC; alternate names Crossword Clash, crosswordclash.com; $6, renews every 3 years) and the same name, postal address and phone filled into `DMCA_AGENT` in `src/screens/legal/legalContent.ts`, so `/copyright` names the agent. Plus opens the studio to subscribers and rooms already host players' puzzles, so the safe harbour has to be in place first.
+- [x] DMCA: registration DMCA-1084362, active 2026-10-27, renew by 2029-10-27 (service provider Fable Designer LLC; alternate names Crossword Clash, crosswordclash.com, Fable Designer, Fable Reader, fabledesigner.com); the same name, postal address and phone are in `DMCA_AGENT` in `src/screens/legal/legalContent.ts`, so `/copyright` names the agent. Plus opens the studio to subscribers and rooms already host players' puzzles, so the safe harbour had to be in place first.
+- [x] Community puzzles: migration `20261028000000_community_puzzles.sql` applied; `studio-moderate`, `report-alert --no-verify-jwt` and `delete-account` deployed; `REPORT_ALERT_SECRET`, `REPORT_ALERT_TO`, `REPORT_ALERT_FROM` set; the `puzzle_reports` INSERT hook is a pg_net trigger (`public.report_alert_webhook()`, created by hand with the secret in its header; re-create it if the secret rotates); `VITE_COMMUNITY=1` on Production and Preview
+- [ ] `RESEND_API_KEY`: a send-only Resend key restricted to the verified `fabledesigner.com` domain. Until it is set, reports still insert and hold puzzles, but no alert email goes out
 - [ ] One real test purchase on the web with a real card, refunded in Stripe afterwards
