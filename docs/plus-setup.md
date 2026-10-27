@@ -190,10 +190,27 @@ store work (3.3–3.6) makes the **apps** sell it and needs an app release.
    Plus", description from `plus.subtitle` in `src/i18n/en.json`. Add two
    recurring prices: **$3.99 / month** and **$24.99 / year**. Copy the two
    price ids (`price_…`).
-3. **Customer Portal.** Settings → Billing → Customer portal: turn it on,
-   allow cancelling (at period end), switching between the two prices,
-   updating payment methods, and invoice history. Set the business name and
-   the links to `https://crosswordclash.com/terms` and `/privacy`.
+3. **Customer Portal.** The portal configuration is account-wide, and the
+   account is shared with Fable Reader: the default configuration carries
+   fabledesigner.com's legal links and one "switch plans" list for every
+   product. Plus therefore gets its own configuration, which the
+   `billing-portal` function names in each session (`STRIPE_PORTAL_CONFIG`).
+   After step 4 has put the key and price ids in `.env.local`:
+
+   ```bash
+   pnpm stripe:portal-config
+   ```
+
+   creates (or, on a rerun, updates) a configuration named "Crossword Clash
+   Plus" with crosswordclash.com's terms and privacy links, a return link to
+   `/menu`, invoice history, card updates, cancel at period end with a
+   reason, and plan switching limited to the two Plus prices (the definition
+   is `src/lib/stripePortalConfig.ts`). It prints the `secrets set
+   STRIPE_PORTAL_CONFIG=bpc_…` command to run next. Run it once per mode:
+   the test key makes a test configuration, the live key a live one. The
+   account's default portal and Checkout's business name ("Fable Designer")
+   are unchanged; the business name cannot differ per product without
+   Stripe Connect.
 4. **Secrets.** Test mode first (`sk_test_…`, `price_…` from test mode), live
    on launch day:
 
@@ -315,6 +332,6 @@ in the apps.
 
 - [ ] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
 - [ ] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
-- [ ] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY`, `PLUS_GATES=1`
+- [ ] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY`, `PLUS_GATES=1`
 - [ ] Vercel `VITE_PLUS=1` (production)
 - [ ] One real test purchase on the web with a real card, refunded in Stripe afterwards

@@ -32,7 +32,8 @@
     "mobile:ios": "cap open ios",
     "testflight": "scripts/testflight.sh",
     "mobile:android": "cap open android",
-    "indexnow": "node scripts/indexnow.mjs"
+    "indexnow": "node scripts/indexnow.mjs",
+    "stripe:portal-config": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/stripe-portal-config.mts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
