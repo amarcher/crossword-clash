@@ -20,8 +20,11 @@ const TONES = {
   neutral: "bg-surface-sunken text-ink-soft",
 };
 
+// The first and last rows carry the group's radius: the group clips its
+// corners, and an inset outline on a square row would show square corners
+// there (an outline follows the element's own border-radius, not the parent's).
 const ROW =
-  "group flex w-full items-center gap-3.5 px-4 py-3 min-h-16 text-left transition-colors hover:bg-surface-sunken/70 active:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 aria-disabled:pointer-events-none aria-disabled:opacity-45";
+  "group flex w-full items-center gap-3.5 px-4 py-3 min-h-16 text-left transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-surface-sunken/70 active:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 aria-disabled:pointer-events-none aria-disabled:opacity-45";
 
 /** One tappable row inside a ListGroup: icon tile, title + subtitle, chevron. */
 export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabled, tone = "brand" }: ListRowProps) {
