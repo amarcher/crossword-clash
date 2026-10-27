@@ -33,6 +33,10 @@ function canonicalFor(pathname: string): string {
 /** Meta for a pathname. Unknown routes get the home page's meta. */
 export function pageMetaFor(pathname: string, t: Translate): PageMeta {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  // The community list, an author's list and a puzzle's page share the list's meta (the page sets its own title once loaded).
+  if (path === "/puzzles" || path.startsWith("/puzzles/")) {
+    return { title: t("meta.community.title"), description: t("meta.community.description"), canonical: canonicalFor("/puzzles") };
+  }
   switch (path) {
     case "/classics":
       return { title: t("meta.classics.title"), description: t("meta.classics.description"), canonical: canonicalFor(path) };

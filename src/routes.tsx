@@ -5,6 +5,7 @@ import { RootLayout } from "./layouts/RootLayout";
 import { HostLayout } from "./layouts/HostLayout";
 import { screenModules as m } from "./routeModules";
 import { studioRouteEnabled } from "./lib/studioGate";
+import { communityEnabled } from "./lib/community";
 import { RouteErrorScreen } from "./screens/RouteErrorScreen";
 import { NotFoundScreen } from "./screens/NotFoundScreen";
 
@@ -164,6 +165,14 @@ export const routes: RouteObject[] = [
           { path: "archive", lazy: () => m.archive().then((s) => ({ Component: s.ArchiveScreen })) },
           // The signed-in solver's page: identity, Plus, streaks, recent solves, puzzles in progress.
           { path: "account", lazy: () => m.account().then((s) => ({ Component: s.AccountScreen })) },
+          // Community puzzles (docs/community-puzzles-spec.md), behind the launch switch: browse, an author's list, one puzzle's page.
+          ...(communityEnabled()
+            ? [
+                { path: "puzzles", lazy: () => m.communityBrowse().then((s) => ({ Component: s.CommunityBrowseScreen })) },
+                { path: "puzzles/by/:username", lazy: () => m.communityBrowse().then((s) => ({ Component: s.CommunityBrowseScreen })) },
+                { path: "puzzles/:shortId", lazy: () => m.communityPuzzle().then((s) => ({ Component: s.CommunityPuzzleScreen })) },
+              ]
+            : []),
     ],
   },
   {

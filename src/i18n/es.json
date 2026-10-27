@@ -54,7 +54,9 @@
     "iosAppSubtitle": "Gratis en el App Store, con un teclado hecho para crucigramas",
     "androidApp": "Descarga la app para Android",
     "androidAppSubtitle": "Gratis en Google Play, con un teclado hecho para crucigramas",
-    "dailyMidiEyebrow": "Midi del día"
+    "dailyMidiEyebrow": "Midi del día",
+    "communityPuzzles": "Crucigramas de la comunidad",
+    "communityPuzzlesSubtitle": "Crucigramas creados por otros jugadores"
   },
   "hostName": {
     "heading": "Crear una partida",
@@ -594,7 +596,20 @@
     "sourceClassic": "Clásico",
     "untimed": "Resuelto",
     "yourAccountLink": "Abrir tu cuenta",
-    "signedInBody": "Tu página de cuenta tiene tu historial, tu nombre de usuario y tu suscripción."
+    "signedInBody": "Tu página de cuenta tiene tu historial, tu nombre de usuario y tu suscripción.",
+    "sourceCommunity": "Comunidad",
+    "yourPuzzlesHeading": "Tus crucigramas",
+    "yourPuzzlesEmpty": "Aún no has publicado nada. Crea un crucigrama en el estudio y publícalo para otros jugadores.",
+    "yourPuzzlesLoading": "Cargando tus crucigramas…",
+    "yourPuzzlesOffline": "No se pudieron cargar tus crucigramas en este momento.",
+    "puzzleStats": "{{plays}} partidas · {{solves}} resueltos",
+    "puzzleStatus": {
+      "published": "Publicado",
+      "held": "En revisión",
+      "unpublished": "Retirado",
+      "removed": "Eliminado"
+    },
+    "openStudio": "Abrir el estudio"
   },
   "meta": {
     "home": {
@@ -621,6 +636,10 @@
     "account": {
       "title": "Tu cuenta — Crossword Clash",
       "description": "Tu nombre de usuario, rachas, partidas recientes y los crucigramas que tienes en curso."
+    },
+    "community": {
+      "title": "Crucigramas de la comunidad — Crossword Clash",
+      "description": "Crucigramas creados por jugadores en el estudio de Crossword Clash. Busca por tamaño y dificultad, resuelve solo o compite con amigos en directo, y publica los tuyos."
     }
   },
   "dailyLink": {
@@ -679,5 +698,107 @@
     "gateTitle": "Construye tu propio crucigrama",
     "gateBody": "El estudio coloca tus entradas temáticas, rellena la cuadrícula con un motor de construcción real, muestra dónde aprieta y redacta pistas con Claude. Forma parte de Crossword Clash Plus.",
     "draftsLeft": "Te quedan {{left}} de {{limit}} borradores de Claude este mes"
+  },
+  "community": {
+    "title": "Crucigramas de la comunidad",
+    "subtitle": "Crucigramas creados por jugadores en el estudio. Resuélvelos, compite con ellos y denuncia lo que no encaje.",
+    "makeYourOwn": "Crea el tuyo",
+    "searchLabel": "Buscar crucigramas",
+    "searchPlaceholder": "Busca por título, nota o @autor",
+    "sizeAll": "Todos los tamaños",
+    "size": {
+      "mini": "Mini",
+      "midi": "Midi",
+      "full": "Completo",
+      "giant": "Gigante"
+    },
+    "difficultyAll": "Cualquier dificultad",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    },
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "all": "Todos los idiomas"
+    },
+    "sortLabel": "Ordenar",
+    "sort": {
+      "newest": "Más recientes",
+      "popular": "Populares",
+      "solved": "Más resueltos"
+    },
+    "hideSolved": "Ocultar resueltos",
+    "loading": "Cargando crucigramas…",
+    "unavailable": "No se pudieron cargar los crucigramas en este momento.",
+    "empty": "Aún no hay nada publicado. Crea un crucigrama en el estudio y sé el primero.",
+    "emptyFilter": "No hay coincidencias. Prueba otro filtro o búsqueda.",
+    "hiddenNote_one": "{{count}} crucigrama de un autor que ocultaste no se muestra.",
+    "hiddenNote_other": "{{count}} crucigramas de autores que ocultaste no se muestran.",
+    "loadMore": "Cargar más",
+    "loadingMore": "Cargando…",
+    "cardEyebrow": "{{size}} · {{clues}} pistas · {{difficulty}}",
+    "by": "por @{{author}}",
+    "stats": "{{plays}} partidas · {{solves}} resueltos",
+    "playSolo": "Jugar solo",
+    "playAgain": "Jugar de nuevo",
+    "resume": "Continuar",
+    "raceFriends": "Competir con amigos",
+    "loadingPuzzle": "Cargando…",
+    "inProgress": "En curso",
+    "loadError": "No se pudo cargar ese crucigrama. Inténtalo de nuevo.",
+    "authorTitle": "@{{author}}",
+    "authorSubtitle_one": "{{count}} crucigrama",
+    "authorSubtitle_other": "{{count}} crucigramas",
+    "authorEmpty": "Este autor aún no tiene crucigramas.",
+    "authorHidden": "Ocultaste los crucigramas de este autor en este dispositivo.",
+    "showAgain": "Mostrar de nuevo",
+    "notFound": "Ese crucigrama no está aquí. Puede que su autor lo haya retirado.",
+    "unpublished": "Su autor retiró este crucigrama.",
+    "held": "Este crucigrama está en revisión.",
+    "heldOwn": "Tu crucigrama está en revisión tras recibir denuncias. Verás el resultado en la página de tu cuenta.",
+    "removedOwn": "Este crucigrama fue eliminado: {{reason}}.",
+    "published": "Publicado el {{date}}",
+    "statusSolved": "Lo resolviste en {{time}}",
+    "statusProgress": "En curso · {{filled}} de {{total}} rellenadas",
+    "more": "Más",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "report": "Denunciar este crucigrama",
+    "hideAuthor": "Ocultar los crucigramas de @{{author}}",
+    "unhideAuthor": "Mostrar los crucigramas de @{{author}}",
+    "hiddenAuthorNote": "Ocultaste los crucigramas de este autor.",
+    "updateInStudio": "Actualizar en el estudio",
+    "removedReason": {
+      "copied": "copiado de otro editor",
+      "offensive": "ofensivo",
+      "nonsense": "sin sentido o roto",
+      "other": "no cumplía las normas de la comunidad",
+      "copyright": "una notificación de derechos de autor",
+      "author_blocked": "la publicación está desactivada para la cuenta"
+    },
+    "reportTitle": "Denunciar este crucigrama",
+    "reportBody": "¿Qué problema tiene? Las denuncias son anónimas y se revisan en menos de un día.",
+    "reasons": {
+      "copied": "Copiado de otro editor",
+      "offensive": "Ofensivo o de odio",
+      "nonsense": "Sin sentido o roto",
+      "other": "Otra cosa"
+    },
+    "copyrightHint": "Si es obra tuya, nuestra página de derechos de autor explica cómo enviar una notificación formal.",
+    "copyrightLink": "Página de derechos de autor",
+    "detailsLabel": "¿Algo más? (opcional)",
+    "send": "Enviar denuncia",
+    "sending": "Enviando…",
+    "thanks": "Gracias. Revisamos las denuncias en menos de un día.",
+    "thanksHeld": "Gracias. Este crucigrama queda oculto mientras lo revisamos.",
+    "reportAlready": "Ya has denunciado este crucigrama.",
+    "reportOwn": "Es tu propio crucigrama.",
+    "reportRateLimited": "Has enviado muchas denuncias hoy. Inténtalo mañana.",
+    "reportFailed": "La denuncia no se envió. Inténtalo de nuevo.",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "done": "Listo"
   }
 }

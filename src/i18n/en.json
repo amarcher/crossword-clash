@@ -54,7 +54,9 @@
     "iosAppSubtitle": "Free on the App Store, with a keyboard made for crosswords",
     "androidApp": "Get the Android app",
     "androidAppSubtitle": "Free on Google Play, with a keyboard made for crosswords",
-    "dailyMidiEyebrow": "Daily Midi"
+    "dailyMidiEyebrow": "Daily Midi",
+    "communityPuzzles": "Community puzzles",
+    "communityPuzzlesSubtitle": "Crosswords made by other players"
   },
   "hostName": {
     "heading": "Host a game",
@@ -594,7 +596,20 @@
     "sourceClassic": "Classic",
     "untimed": "Solved",
     "yourAccountLink": "Open your account",
-    "signedInBody": "Your account page has your history, your username and your subscription."
+    "signedInBody": "Your account page has your history, your username and your subscription.",
+    "sourceCommunity": "Community",
+    "yourPuzzlesHeading": "Your puzzles",
+    "yourPuzzlesEmpty": "Nothing published yet. Build a crossword in the studio and publish it for other players.",
+    "yourPuzzlesLoading": "Loading your puzzles…",
+    "yourPuzzlesOffline": "Your puzzles couldn't be loaded right now.",
+    "puzzleStats": "{{plays}} plays · {{solves}} solved",
+    "puzzleStatus": {
+      "published": "Published",
+      "held": "Under review",
+      "unpublished": "Unpublished",
+      "removed": "Removed"
+    },
+    "openStudio": "Open the studio"
   },
   "meta": {
     "home": {
@@ -621,6 +636,10 @@
     "account": {
       "title": "Your account — Crossword Clash",
       "description": "Your username, streaks, recent solves and the puzzles you have in progress."
+    },
+    "community": {
+      "title": "Community Crossword Puzzles — Crossword Clash",
+      "description": "Crosswords made by players in the Crossword Clash studio. Search by size and difficulty, play solo or race friends live, and publish your own."
     }
   },
   "dailyLink": {
@@ -679,5 +698,107 @@
     "gateTitle": "Build your own crossword",
     "gateBody": "The studio lays out your theme entries, fills the grid with a real construction engine, shows where it's tight, and drafts clues with Claude. It's part of Crossword Clash Plus.",
     "draftsLeft": "{{left}} of {{limit}} Claude drafts left this month"
+  },
+  "community": {
+    "title": "Community puzzles",
+    "subtitle": "Crosswords made by players in the studio. Play them, race them, and report anything that doesn't belong.",
+    "makeYourOwn": "Make your own",
+    "searchLabel": "Search puzzles",
+    "searchPlaceholder": "Search titles, notes or @author",
+    "sizeAll": "All sizes",
+    "size": {
+      "mini": "Mini",
+      "midi": "Midi",
+      "full": "Full",
+      "giant": "Giant"
+    },
+    "difficultyAll": "Any difficulty",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "all": "All languages"
+    },
+    "sortLabel": "Sort",
+    "sort": {
+      "newest": "Newest",
+      "popular": "Popular",
+      "solved": "Most solved"
+    },
+    "hideSolved": "Hide solved",
+    "loading": "Loading puzzles…",
+    "unavailable": "Puzzles couldn't be loaded right now.",
+    "empty": "Nothing published yet. Build a crossword in the studio and be the first.",
+    "emptyFilter": "Nothing matches. Try another filter or search.",
+    "hiddenNote_one": "{{count}} puzzle by an author you hid isn't shown.",
+    "hiddenNote_other": "{{count}} puzzles by authors you hid aren't shown.",
+    "loadMore": "Load more",
+    "loadingMore": "Loading…",
+    "cardEyebrow": "{{size}} · {{clues}} clues · {{difficulty}}",
+    "by": "by @{{author}}",
+    "stats": "{{plays}} plays · {{solves}} solved",
+    "playSolo": "Play solo",
+    "playAgain": "Play again",
+    "resume": "Resume",
+    "raceFriends": "Race friends",
+    "loadingPuzzle": "Loading…",
+    "inProgress": "In progress",
+    "loadError": "Couldn't load that puzzle. Please try again.",
+    "authorTitle": "@{{author}}",
+    "authorSubtitle_one": "{{count}} puzzle",
+    "authorSubtitle_other": "{{count}} puzzles",
+    "authorEmpty": "No puzzles by this author yet.",
+    "authorHidden": "You hid this author's puzzles on this device.",
+    "showAgain": "Show again",
+    "notFound": "That puzzle isn't here. It may have been unpublished.",
+    "unpublished": "This puzzle was unpublished by its author.",
+    "held": "This puzzle is being reviewed.",
+    "heldOwn": "Your puzzle is being reviewed after reports. You'll see the outcome on your account page.",
+    "removedOwn": "This puzzle was removed: {{reason}}.",
+    "published": "Published {{date}}",
+    "statusSolved": "You solved it in {{time}}",
+    "statusProgress": "In progress · {{filled}} of {{total}} filled",
+    "more": "More",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "report": "Report this puzzle",
+    "hideAuthor": "Hide puzzles by @{{author}}",
+    "unhideAuthor": "Show puzzles by @{{author}}",
+    "hiddenAuthorNote": "You hid this author's puzzles.",
+    "updateInStudio": "Update in the studio",
+    "removedReason": {
+      "copied": "copied from another publisher",
+      "offensive": "offensive",
+      "nonsense": "nonsense or broken",
+      "other": "it didn't follow the community rules",
+      "copyright": "a copyright notice",
+      "author_blocked": "publishing is switched off for the account"
+    },
+    "reportTitle": "Report this puzzle",
+    "reportBody": "What's wrong with it? Reports are anonymous and reviewed within a day.",
+    "reasons": {
+      "copied": "Copied from another publisher",
+      "offensive": "Offensive or hateful",
+      "nonsense": "Nonsense or broken",
+      "other": "Something else"
+    },
+    "copyrightHint": "If it's your own work, our copyright page explains how to send a formal notice.",
+    "copyrightLink": "Copyright page",
+    "detailsLabel": "Anything else? (optional)",
+    "send": "Send report",
+    "sending": "Sending…",
+    "thanks": "Thanks. We review reports within a day.",
+    "thanksHeld": "Thanks. This puzzle is hidden while we review it.",
+    "reportAlready": "You've already reported this puzzle.",
+    "reportOwn": "That's your own puzzle.",
+    "reportRateLimited": "You've sent a lot of reports today. Try again tomorrow.",
+    "reportFailed": "The report didn't go through. Please try again.",
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "Done"
   }
 }

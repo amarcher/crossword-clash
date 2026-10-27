@@ -11,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
+import { communityEnabled } from "../lib/community";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
@@ -321,6 +322,15 @@ export function MenuScreen() {
                 subtitle={t("menu.classicLibrarySubtitle")}
                 onClick={() => track("mode_selected", { mode: "classics" })}
               />
+              {communityEnabled() && (
+                <ListRow
+                  icon={Users}
+                  to="/puzzles"
+                  title={t("menu.communityPuzzles")}
+                  subtitle={t("menu.communityPuzzlesSubtitle")}
+                  onClick={() => track("mode_selected", { mode: "community" })}
+                />
+              )}
               {nativeNyt && (
                 <ListRow
                   icon={Newspaper}
