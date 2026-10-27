@@ -127,7 +127,7 @@ export function SoloPlayScreen() {
     wrongLetters,
     isComplete,
     mode: "solo",
-    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
+    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
     signedIn: !!user && !user.is_anonymous,
   });
   // The finish is also parked in context as a pending result, so the board
@@ -170,7 +170,7 @@ export function SoloPlayScreen() {
     void recordSolve(accountId, {
       puzzleKey: puzzleIdentity(puzzle),
       title: puzzle.title,
-      source: isDaily ? "daily" : fromNyt ? "nyt" : "other",
+      source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
       mode: "solo",
       seconds: soloResult.finishSeconds,
     }).then((outcome) => outcome && setServerOutcome(outcome));

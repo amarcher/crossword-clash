@@ -157,7 +157,7 @@ export function MultiplayerPlayScreen() {
     wrongLetters,
     isComplete,
     mode: raceMode,
-    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : "other",
+    source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
     localPlayerId: user?.id,
     active: gameStatus !== "waiting",
     signedIn: !!user && !user.is_anonymous,
@@ -214,7 +214,7 @@ export function MultiplayerPlayScreen() {
     void recordSolve(accountId, {
       puzzleKey: puzzleIdentity(puzzle),
       title: puzzle.title,
-      source: dailySlot ? "daily" : fromNyt ? "nyt" : "other",
+      source: dailySlot ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
       mode: raceMode,
       seconds: isAsync ? (myFinishSeconds ?? null) : null,
     }).then((outcome) => {

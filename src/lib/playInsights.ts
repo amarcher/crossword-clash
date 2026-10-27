@@ -13,7 +13,7 @@ import type { CellState, Direction, Puzzle, PuzzleClue } from "../types/puzzle";
 /** Input more than this far apart counts as idle, not solving. */
 export const IDLE_GAP_SECONDS = 30;
 
-export type PlaySource = "daily" | "nyt" | "other";
+export type PlaySource = "daily" | "nyt" | "community" | "other";
 export type PlayMode = "solo" | "versus" | "coop" | "async";
 
 export interface ClueRecord {

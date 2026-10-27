@@ -177,7 +177,7 @@ export interface Database {
           /** soloStats.puzzleIdentity() of the puzzle. */
           puzzle_key: string;
           title: string;
-          source: "daily" | "nyt" | "other";
+          source: "daily" | "nyt" | "community" | "other";
           /** 'solo', a race mode, or 'import' for rows uploaded from pre-account localStorage. */
           mode: "solo" | "versus" | "coop" | "async" | "import";
           /** Personal finish time in whole seconds; null for a shared-grid race finish. */
@@ -190,7 +190,7 @@ export interface Database {
           user_id: string;
           puzzle_key: string;
           title?: string;
-          source: "daily" | "nyt" | "other";
+          source: "daily" | "nyt" | "community" | "other";
           mode: "solo" | "versus" | "coop" | "async" | "import";
           seconds?: number | null;
           completed_day: string;
@@ -198,7 +198,7 @@ export interface Database {
         };
         Update: {
           title?: string;
-          source?: "daily" | "nyt" | "other";
+          source?: "daily" | "nyt" | "community" | "other";
           mode?: "solo" | "versus" | "coop" | "async" | "import";
           seconds?: number | null;
           completed_at?: string;
@@ -292,9 +292,133 @@ export interface Database {
         Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
         Relationships: [];
       };
+      /** Community puzzles (docs/community-puzzles-spec.md): one row per author, read-own. Written by accept_publishing_terms() and the admin. */
+      publishers: {
+        Row: {
+          user_id: string;
+          terms_accepted_at: string;
+          terms_version: string;
+          strikes: number;
+          banned_at: string | null;
+          ban_reason: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** A published community puzzle. Public while 'published'; the author sees their own in every status. No client writes (publish_puzzle / unpublish_puzzle). */
+      published_puzzles: {
+        Row: {
+          id: string;
+          short_id: string;
+          author_id: string;
+          studio_id: string;
+          version: number;
+          status: "published" | "held" | "unpublished" | "removed";
+          title: string;
+          notes: string;
+          difficulty: "easy" | "medium" | "hard";
+          lang: "en" | "es";
+          width: number;
+          height: number;
+          clue_count: number;
+          /** TransferPuzzle (puzzleNormalizer.ts); `{}` once a removed puzzle's snapshot is blanked. */
+          puzzle: unknown;
+          puzzle_key: string;
+          content_hash: string;
+          plays: number;
+          solves: number;
+          last_played_at: string | null;
+          published_at: string;
+          created_at: string;
+          updated_at: string;
+          unpublished_at: string | null;
+          removed_reason: "copied" | "offensive" | "nonsense" | "other" | "copyright" | "author_blocked" | null;
+          moderated_by: string | null;
+          moderated_at: string | null;
+          moderation_note: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** Reports on published puzzles. RLS on with no policy: report_puzzle() inserts, the service role reads. */
+      puzzle_reports: {
+        Row: {
+          id: string;
+          puzzle_id: string;
+          reporter_id: string | null;
+          reason: "copied" | "offensive" | "nonsense" | "other";
+          details: string;
+          status: "open" | "dismissed" | "upheld";
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      /** published_puzzles joined with the author's username (security_invoker: the table's RLS applies). */
+      community_puzzles: {
+        Row: {
+          id: string;
+          short_id: string;
+          author_id: string;
+          author: string;
+          studio_id: string;
+          version: number;
+          status: "published" | "held" | "unpublished" | "removed";
+          title: string;
+          notes: string;
+          difficulty: "easy" | "medium" | "hard";
+          lang: "en" | "es";
+          width: number;
+          height: number;
+          clue_count: number;
+          puzzle: unknown;
+          puzzle_key: string;
+          plays: number;
+          solves: number;
+          published_at: string;
+          updated_at: string;
+          removed_reason: "copied" | "offensive" | "nonsense" | "other" | "copyright" | "author_blocked" | null;
+          search: unknown;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
+      /** Records the caller's agreement to the publishing terms (a real account with a username). */
+      accept_publishing_terms: {
+        Args: { p_version: string };
+        Returns: undefined;
+      };
+      /** Publishes (or updates) the caller's studio puzzle; refusals are exceptions whose message is a `community:<code>`. */
+      publish_puzzle: {
+        Args: {
+          p_studio_id: string;
+          p_title: string;
+          p_notes: string;
+          p_difficulty: string;
+          p_lang: string;
+          p_puzzle: unknown;
+          p_puzzle_key: string;
+          p_content_hash: string;
+        };
+        Returns: { id: string; short_id: string; version: number }[];
+      };
+      unpublish_puzzle: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      /** A report from any signed-in user (anonymous included); returns whether the puzzle is now held. */
+      report_puzzle: {
+        Args: { p_puzzle_id: string; p_reason: string; p_details: string };
+        Returns: boolean;
+      };
       /** Upserts finishes for the calling account (user_id comes from the JWT); returns the resulting rows. */
       record_solves: {
         Args: { p_solves: unknown };

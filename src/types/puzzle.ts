@@ -22,11 +22,12 @@ export interface PuzzleClue {
 }
 
 /**
- * Where a puzzle came from, when it matters after import. Only the NYT
- * bookmarklet is tagged today: it drives the "same time tomorrow" hook and
- * the NYT streak. Absent for file uploads, classics, dailies and samples.
+ * Where a puzzle came from, when it matters after import. The NYT bookmarklet
+ * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
+ * (docs/community-puzzles-spec.md) records its solves under its own source.
+ * Absent for file uploads, classics, dailies and samples.
  */
-export type PuzzleOrigin = "nyt-bookmarklet";
+export type PuzzleOrigin = "nyt-bookmarklet" | "community";
 
 export interface Puzzle {
   /** Provenance for subscriber-directed imports; contains no account or session data. */

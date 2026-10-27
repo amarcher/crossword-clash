@@ -35,7 +35,7 @@ import type { Database } from "../types/supabase";
 
 // --- Types ---
 
-export type SolveSource = "daily" | "nyt" | "other";
+export type SolveSource = "daily" | "nyt" | "community" | "other";
 export type SolveMode = "solo" | "versus" | "coop" | "async" | "import";
 
 /** One stored finish: the `solves` row without its owner. */
