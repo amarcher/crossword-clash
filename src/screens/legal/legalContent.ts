@@ -47,8 +47,8 @@ const C = LEGAL_CONTACT_EMAIL;
 export const DMCA_AGENT = {
   name: "Fable Designer LLC, which operates Crossword Clash",
   attention: "Copyright Agent",
-  address: "[POSTAL ADDRESS]",
-  phone: "[PHONE]",
+  address: "82 Wendell Ave. Ste 100, Pittsfield, MA 01201, USA",
+  phone: "+1 (617) 420-2364",
   email: LEGAL_CONTACT_EMAIL,
 } as const;
 
