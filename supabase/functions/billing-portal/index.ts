@@ -10,9 +10,15 @@ import { entitlementsFor } from "../_shared/entitlementStore.ts";
  *
  * 404 when the account has never subscribed through Stripe (an app purchase
  * is managed in the store's own settings). Secrets: STRIPE_SECRET_KEY,
- * SITE_URL.
+ * SITE_URL, and STRIPE_PORTAL_CONFIG (optional): the id of the Plus portal
+ * configuration made by `pnpm stripe:portal-config`. The Stripe account is
+ * shared with other products, so the account's default portal carries their
+ * legal links and plan-switch list; this configuration carries ours and lets
+ * a subscriber switch only between the two Plus prices. Unset, the session
+ * uses the account default.
  */
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
+const STRIPE_PORTAL_CONFIG = Deno.env.get("STRIPE_PORTAL_CONFIG") ?? "";
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://crosswordclash.com").replace(/\/+$/, "");
 
 const json = (body: unknown, status = 200) =>
@@ -42,6 +48,7 @@ Deno.serve(async (req) => {
     const customer = (await entitlementsFor(admin, user.id, "stripe")).find((r) => r.external_customer)?.external_customer;
     if (!customer) return json({ error: "no_stripe_customer" }, 404);
     const params = new URLSearchParams({ customer, return_url: `${SITE_URL}${safeReturnPath(body.returnTo)}` });
+    if (STRIPE_PORTAL_CONFIG) params.set("configuration", STRIPE_PORTAL_CONFIG);
     const res = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
       method: "POST",
       headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
