@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { Suspense } from "react";
 import i18n from "../../i18n/i18n";
@@ -108,7 +108,8 @@ describe("RouteErrorScreen", () => {
     });
     render(<RouterProvider router={boom("Failed to fetch dynamically imported module: /a.js")} />);
     expect(await screen.findByText("A new version is available")).toBeTruthy();
-    expect(reload).toHaveBeenCalledTimes(1);
+    // The reload runs in a passive effect, which a slow runner can flush a tick after the text appears.
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
     expect(sessionStorage.getItem(CHUNK_RELOAD_KEY)).toBeTruthy();
   });
 });
