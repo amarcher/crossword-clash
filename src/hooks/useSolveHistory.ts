@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useHydrated } from "../lib/hydration";
-import { getSolveHistoryState, subscribeSolveHistory, type SolveHistoryState, type SolveSummary } from "../lib/solveHistory";
+import { getSolveHistoryState, subscribeSolveHistory, type SolveHistoryState, type SolveRow, type SolveSummary } from "../lib/solveHistory";
 import { dayKey, effectiveStreak, getDisplayNytStreak, getDisplayStreak, loadSoloStats } from "../lib/soloStats";
 
 export interface SolveHistory {
@@ -9,6 +9,8 @@ export interface SolveHistory {
   signedIn: boolean;
   /** The account's derived history, or null while anonymous, loading, or after a failed load. */
   summary: SolveSummary | null;
+  /** The account's solve rows as loaded (streak markers included), or null until they are. */
+  rows: SolveRow[] | null;
   loading: boolean;
   failed: boolean;
 }
@@ -26,6 +28,7 @@ export function useSolveHistory(): SolveHistory {
   return {
     signedIn: !!userId,
     summary: own?.status === "ready" ? own.summary : null,
+    rows: own?.status === "ready" ? own.rows : null,
     loading: !!userId && (!own || own.status === "loading"),
     failed: own?.status === "error",
   };

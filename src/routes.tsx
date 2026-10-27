@@ -162,6 +162,8 @@ export const routes: RouteObject[] = [
           { path: "rejoin", lazy: () => m.rejoin().then((s) => ({ Component: s.RejoinScreen })) },
           // Past dailies with the viewer's own times (docs/puzzle-archive-spec.md).
           { path: "archive", lazy: () => m.archive().then((s) => ({ Component: s.ArchiveScreen })) },
+          // The signed-in solver's page: identity, Plus, streaks, recent solves, puzzles in progress.
+          { path: "account", lazy: () => m.account().then((s) => ({ Component: s.AccountScreen })) },
     ],
   },
   {

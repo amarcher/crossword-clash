@@ -565,7 +565,36 @@
     "deleteTitle": "Delete your account?",
     "deleteBody": "This permanently deletes your account and its data. This can't be undone.",
     "deleteConfirm": "Delete account",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "signInControl": "Sign in",
+    "avatarLabel": "Account menu for {{name}}",
+    "menuAccount": "Your account",
+    "menuPastPuzzles": "Past puzzles",
+    "menuPlusAbout": "About Plus",
+    "menuPlusManage": "Manage subscription",
+    "signedInPill": "Signed in",
+    "pageTitle": "Your account",
+    "signedInWith": "Signed in with {{provider}}",
+    "pageOverview": "Overview",
+    "statDailyStreak": "Daily streak",
+    "statNytStreak": "NYT streak",
+    "statSolves": "Solves synced",
+    "statDays_one": "{{count}} day",
+    "statDays_other": "{{count}} days",
+    "inProgressHeading": "In progress",
+    "inProgressEmpty": "Nothing half-finished. Start a daily and it's kept here until you finish it.",
+    "recentHeading": "Recent solves",
+    "recentEmpty": "No solves yet. Finish a puzzle and it shows up here.",
+    "recentLoading": "Loading your solves…",
+    "recentOffline": "Your solves couldn't be loaded right now. The ones on this device are kept.",
+    "allPastPuzzles": "All past puzzles",
+    "sourceDaily": "Daily",
+    "sourceNyt": "NYT",
+    "sourceOther": "Puzzle",
+    "sourceClassic": "Classic",
+    "untimed": "Solved",
+    "yourAccountLink": "Open your account",
+    "signedInBody": "Your account page has your history, your username and your subscription."
   },
   "meta": {
     "home": {
@@ -588,6 +617,10 @@
     },
     "support": {
       "description": "Get help with Crossword Clash: importing puzzles, hosting and joining multiplayer rooms, the daily puzzles, accounts, and how to reach us."
+    },
+    "account": {
+      "title": "Your account — Crossword Clash",
+      "description": "Your username, streaks, recent solves and the puzzles you have in progress."
     }
   },
   "dailyLink": {

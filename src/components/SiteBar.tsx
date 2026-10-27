@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { TransitionLink } from "./ui/TransitionLink";
 import { ArrowLeft } from "lucide-react";
+import { AccountControl } from "./Account/AccountControl";
 
 export interface SiteBarProps {
   /** Label for the back control; omit to hide it. */
@@ -23,7 +24,9 @@ const LOGO = "inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visibl
  * PageShell puts it in, so its edges are the page's edges. Named for view
  * transitions: the bar (`site-bar`) holds still between inner pages and the
  * logo image (`brand`) is what the menu's wordmark morphs into. Its links
- * warm the next chunk on intent.
+ * warm the next chunk on intent. The account control (avatar or "Sign in")
+ * ends the bar on every page that has one; it renders nothing outside
+ * AccountProvider (the legal pages, /host), so `plain` pages stay plain.
  */
 // "/" is the cold-start resolver (it resumes a saved game or room); in-app
 // links that mean "the menu" go to /menu so they never land in a puzzle.
@@ -57,6 +60,7 @@ export function SiteBar({ backLabel, backTo = "/menu", onBack, plain, right }: S
       <div data-site-bar-right className="flex items-center gap-2">
         {right}
         {back}
+        {!plain && <AccountControl />}
       </div>
     </header>
   );

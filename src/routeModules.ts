@@ -40,6 +40,16 @@ export const screenModules = {
         index.prefetchDailyIndex(stats.dayKey(new Date())),
       ),
     ]).then(([screen]) => screen),
+  // The account page lists the puzzles in progress by name, so the daily
+  // index and the classic manifest load with its chunk, as /archive's do.
+  account: () =>
+    Promise.all([
+      import("./screens/AccountScreen"),
+      Promise.all([import("./lib/dailyIndex"), import("./lib/soloStats")]).then(([index, stats]) =>
+        index.prefetchDailyIndex(stats.dayKey(new Date())),
+      ),
+      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
+    ]).then(([screen]) => screen),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -77,6 +87,7 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/daily": screenModules.dailyPuzzle,
   "/classics": screenModules.classics,
   "/archive": screenModules.archive,
+  "/account": screenModules.account,
   "/pick-puzzle": screenModules.puzzlePicker,
   "/host-game/name": screenModules.hostName,
   "/host-game/import": screenModules.hostImport,

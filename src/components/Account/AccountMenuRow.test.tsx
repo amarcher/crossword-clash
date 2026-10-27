@@ -54,16 +54,11 @@ describe("AccountMenuRow", () => {
     expect(openAccount).toHaveBeenCalledWith({ placement: "menu" });
   });
 
-  it("shows the username once signed in", () => {
+  it("goes away once signed in: the header avatar covers the account", () => {
     context.value = account({ user, profile: { user_id: "u1", username: "ada_l", display_name: null } });
-    render(<AccountMenuRow />);
-    expect(screen.getByRole("button", { name: /ada_l/ }).textContent).toContain("Signed in");
-    expect(screen.queryByText(/Save your solve history/)).toBeNull();
-  });
-
-  it("falls back to the provider name and nudges for a username", () => {
+    expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
+    cleanup();
     context.value = account({ user });
-    render(<AccountMenuRow />);
-    expect(screen.getByRole("button", { name: /Ada Lovelace/ }).textContent).toContain("No username yet");
+    expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
   });
 });

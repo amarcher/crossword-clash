@@ -38,6 +38,8 @@ export function pageMetaFor(pathname: string, t: Translate): PageMeta {
       return { title: t("meta.classics.title"), description: t("meta.classics.description"), canonical: canonicalFor(path) };
     case "/archive":
       return { title: t("meta.archive.title"), description: t("meta.archive.description"), canonical: canonicalFor(path) };
+    case "/account":
+      return { title: t("meta.account.title"), description: t("meta.account.description"), canonical: canonicalFor(path) };
     case "/privacy":
     case "/terms":
     case "/support": {
