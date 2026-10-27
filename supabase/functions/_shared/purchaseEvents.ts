@@ -9,6 +9,23 @@
  */
 
 // --- MIRROR START ---
+
+/**
+ * The Stripe API version every call and the webhook endpoint are pinned to:
+ * the payload shape this module reads (`current_period_end` on the items,
+ * for one). A new account defaults to the newest version, so no call may
+ * rely on the account default.
+ */
+export const STRIPE_API_VERSION = "2026-06-24.dahlia";
+
+/** Headers for a raw Stripe API call; `form` adds the body encoding for a POST. */
+export function stripeHeaders(secretKey: string, form = false): Record<string, string> {
+  return {
+    Authorization: `Bearer ${secretKey}`,
+    "Stripe-Version": STRIPE_API_VERSION,
+    ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+  };
+}
 export type EntitlementProduct = "plus" | "supporter";
 export type EntitlementSource = "revenuecat" | "stripe" | "apple" | "google" | "grant";
 export type EntitlementStatus = "active" | "grace" | "expired" | "revoked";
