@@ -14,6 +14,7 @@ import { MultiplayerScoreboard } from "../components/Scoreboard/MultiplayerScore
 import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
 import { FinishedBar } from "../components/FinishedBar";
+import { AccountControl } from "../components/Account/AccountControl";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -374,6 +375,7 @@ export function MultiplayerPlayScreen() {
                     <span className="hidden md:inline">{t('playing.leaveGame')}</span>
                   </button>
                 )}
+                <AccountControl placement="play" className="-mr-1.5" />
               </div>
             </div>
           </>

@@ -220,7 +220,9 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByText("Sign in to play puzzles older than 7 days")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Race a friend/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    // The locked card's own Sign in (the site bar has one too now).
+    const locked = screen.getByText("Sign in to play puzzles older than 7 days").closest("section")!;
+    fireEvent.click(within(locked).getByRole("button", { name: "Sign in" }));
     expect(openAccount).toHaveBeenCalledWith({ placement: "archive" });
   });
 

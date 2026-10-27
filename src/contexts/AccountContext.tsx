@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { useAccount, type Account } from "../hooks/useAccount";
 import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
@@ -18,6 +19,12 @@ export interface OpenAccountOptions {
   returnTo?: string;
   /** Where the sheet was opened from, for the funnel. */
   placement?: string;
+  /**
+   * A specific sheet view (the username picker, the delete confirm). Without
+   * one, an anonymous visitor gets the sign-in view and a signed-in solver
+   * is taken to the account page (/account) instead of a sheet.
+   */
+  view?: Extract<AccountSheetView, "username" | "delete">;
 }
 
 export interface OpenPaywallOptions {
@@ -32,7 +39,7 @@ export interface OpenPaywallOptions {
 export interface AccountContextValue extends Account {
   /** False in builds that cannot offer an account (no Supabase, or the native apps). */
   available: boolean;
-  /** Opens the account sheet: sign-in when anonymous, manage when signed in. */
+  /** Opens the account sheet: sign-in when anonymous, the account page (or the named view) when signed in. */
   openAccount: (opts?: OpenAccountOptions) => void;
   /**
    * Opens the Plus pitch (docs/monetization-spec.md §3.3): sign-in first for an
@@ -44,7 +51,7 @@ export interface AccountContextValue extends Account {
 
 const AccountContext = createContext<AccountContextValue | null>(null);
 
-interface SheetState extends OpenAccountOptions {
+interface SheetState extends Omit<OpenAccountOptions, "view"> {
   view: AccountSheetView;
   error?: string | null;
   feature?: PlusFeature;
@@ -57,6 +64,7 @@ interface SheetState extends OpenAccountOptions {
  */
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const account = useAccount();
+  const navigate = useTransitionNavigate();
   const available = useMemo(() => accountsAvailable(), []);
   const [sheet, setSheet] = useState<SheetState | null>(null);
   const [justReturned, setJustReturned] = useState(false);
@@ -132,7 +140,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     if (!profile) setSheet({ view: "username", placement: "first-sign-in" });
   }, [justReturned, user, profile, profileReady]);
 
-  const openAccount = useCallback((opts: OpenAccountOptions = {}) => setSheet({ view: "account", ...opts }), []);
+  const signedIn = !!user;
+  const openAccount = useCallback(
+    ({ view, ...opts }: OpenAccountOptions = {}) => {
+      if (view) setSheet({ view, ...opts });
+      else if (signedIn) navigate("/account");
+      else setSheet({ view: "account", ...opts });
+    },
+    [signedIn, navigate],
+  );
   const openPaywall = useCallback((opts: OpenPaywallOptions) => {
     if (!plusEnabled()) return;
     track("paywall_viewed", { placement: opts.placement, feature: opts.feature });

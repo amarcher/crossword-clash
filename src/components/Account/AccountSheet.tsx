@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, LogOut, Sparkles, UserRound, X } from "lucide-react";
+import { Sparkles, UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
-import { accountName, availableProviders, deleteAccount, fetchEnabledProviders, signInWith, signOut, type AuthProvider } from "../../lib/account";
-import { plusEnabled } from "../../lib/plus";
+import { accountName, availableProviders, deleteAccount, fetchEnabledProviders, signInWith, type AuthProvider } from "../../lib/account";
 import { nativePurchaseAvailable } from "../../lib/nativePurchase";
 import { PlusPurchaseControls } from "../Plus/PlusPurchaseControls";
 import { track } from "../../lib/analytics";
-import { useSolveHistory } from "../../hooks/useSolveHistory";
+import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { Button } from "../ui";
 import { UsernamePicker } from "./UsernamePicker";
 import { PlusPitch } from "../Plus/PlusPitch";
@@ -27,22 +26,24 @@ interface AccountSheetProps {
 }
 
 /**
- * The one account dialog. Anonymous: a benefit-led pitch and the provider
- * buttons (disabled when Supabase has a provider off). Signed in: who you are,
- * your username (or a nudge to pick one) and sign out. The username view is
- * the picker, shown once after the first sign-in and again on "Change".
- * "Delete account" asks once before it deletes.
+ * The one account dialog, for what a page can't do: the benefit-led sign-in
+ * (provider buttons, disabled when Supabase has a provider off), the username
+ * picker (once after the first sign-in, and from "Change username"), the
+ * delete confirm, and the Plus pitch with its purchase controls. Everything a
+ * signed-in solver would look at lives on /account (AccountScreen), so the
+ * signed-in "account" view is only a pointer there.
  */
 export function AccountSheet({ account, initialView, initialError, returnTo, placement, onClose, onSignedIn }: AccountSheetProps) {
   const { t } = useTranslation();
-  const [view, setView] = useState<AccountSheetView>(initialView);
+  // No view leads to another any more: each is opened for what it does.
+  const view = initialView;
   const [error, setError] = useState<string | null>(initialError);
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState<Record<AuthProvider, boolean> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const { user, profile } = account;
-  const history = useSolveHistory();
+  const navigate = useTransitionNavigate();
 
   const handleEscape = useCallback(() => onClose(), [onClose]);
   useFocusTrap(panelRef, handleEscape);
@@ -79,12 +80,6 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
       // On the web the page navigates away; leave the button busy meanwhile.
       if (outcome === "signed-in") onSignedIn?.();
       if (outcome !== "redirecting") setBusy(false);
-    });
-
-  const handleSignOut = () =>
-    void act(async () => {
-      await signOut();
-      setBusy(false);
     });
 
   const handleDelete = () =>
@@ -133,7 +128,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="lf-pop-in relative max-h-full w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-6 text-ink shadow-overlay"
+        className="lf-pop-in scroll-quiet relative max-h-full w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-6 text-ink shadow-overlay"
       >
         <div className="flex items-start gap-3.5">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -150,7 +145,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             ) : view === "delete" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
             ) : user ? (
-              <p className="mt-1 truncate text-sm text-muted">{username ? accountName(user) : t("account.noUsernameYet")}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.signedInBody")}</p>
             ) : (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.sheetBody")}</p>
             )}
@@ -167,7 +162,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
 
         <div className="mt-5">
           {view === "plus" ? (
-            <PlusPitch>
+            <PlusPitch prices={!account.plus}>
               {user || nativePurchaseAvailable() ? (
                 // Web: an account is required (Stripe needs an email, the sweep would orphan an anonymous payer).
                 // Apps: the store sells to the device's anonymous id too (Apple 5.1.1(v)); sign-in is offered after.
@@ -214,7 +209,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
                 account.setProfile(saved);
                 onClose();
               }}
-              onCancel={username ? () => setView("account") : onClose}
+              onCancel={onClose}
               cancelLabel={username ? t("account.close") : t("account.later")}
             />
           ) : view === "delete" && user ? (
@@ -222,49 +217,22 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
               <Button variant="danger" size="lg" block disabled={busy} aria-busy={busy || undefined} onClick={handleDelete}>
                 {t("account.deleteConfirm")}
               </Button>
-              <Button variant="ghost" size="md" block disabled={busy} onClick={() => setView("account")}>
+              <Button variant="ghost" size="md" block disabled={busy} onClick={onClose}>
                 {t("account.cancel")}
               </Button>
             </div>
           ) : user ? (
-            <div className="flex flex-col gap-2.5">
-              {plusEnabled() && (
-                <button
-                  type="button"
-                  onClick={() => setView("plus")}
-                  className="flex min-h-14 w-full items-center gap-3 rounded-xl bg-brand-50 px-3.5 text-left ring-1 ring-brand-100 hover:bg-brand-100 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
-                >
-                  <Sparkles className="size-5 shrink-0 text-brand-600" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-ink">{t("plus.title")}</span>
-                    <span className="block truncate text-xs text-muted">{account.plus ? t("plus.rowActive") : t("plus.rowPitch")}</span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-subtle" aria-hidden="true" />
-                </button>
-              )}
-              <Button variant="secondary" size="lg" block onClick={() => setView("username")}>
-                {username ? t("account.changeUsername") : t("account.chooseUsername")}
-              </Button>
-              <Button variant="ghost" size="md" block disabled={busy} onClick={handleSignOut}>
-                <LogOut className="size-4" aria-hidden="true" /> {t("account.signOut")}
-              </Button>
-              <p className="text-center text-xs leading-relaxed text-subtle">
-                {history.summary
-                  ? history.summary.solveCount === 0
-                    ? t("account.syncedNone")
-                    : t("account.syncedSolves", { count: history.summary.solveCount })
-                  : history.failed
-                    ? t("account.syncOffline")
-                    : t("account.syncing")}
-              </p>
-              <button
-                type="button"
-                onClick={() => setView("delete")}
-                className="mx-auto mt-1 min-h-11 rounded-lg px-3 text-xs text-subtle underline-offset-2 hover:text-muted hover:underline active:text-muted focus-visible:outline-2 focus-visible:outline-brand-500"
-              >
-                {t("account.deleteAccount")}
-              </button>
-            </div>
+            <Button
+              variant="secondary"
+              size="lg"
+              block
+              onClick={() => {
+                onClose();
+                navigate("/account");
+              }}
+            >
+              {t("account.yourAccountLink")}
+            </Button>
           ) : (
             <div className="flex flex-col gap-2.5">{providerButtons}</div>
           )}

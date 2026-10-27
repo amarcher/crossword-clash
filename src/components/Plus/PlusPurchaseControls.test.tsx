@@ -79,6 +79,8 @@ describe("PlusPurchaseControls on the web", () => {
   it("tells a subscriber when it renews and opens the Customer Portal for a Stripe subscription", async () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: true, plusRow: row(), refreshEntitlements: refresh }} placement="test" returnTo="/menu" />);
     expect(screen.getByText(/Renews on November 24, 2026/)).toBeTruthy();
+    // No plan picker for a subscriber: the row records no plan, and the portal switches plans.
+    expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Manage subscription" }));
     await waitFor(() => expect(purchase.openBillingPortal).toHaveBeenCalledWith("/menu"));
   });
@@ -146,6 +148,7 @@ describe("PlusPurchaseControls in the apps", () => {
     );
     expect(screen.getByRole("button", { name: "Manage in the store" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Restore purchases" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
     expect(screen.getByText("Sign in to keep it")).toBeTruthy();
   });
 });

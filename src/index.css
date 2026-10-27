@@ -487,6 +487,27 @@ select,
 .tv-clue { font-size: max(14px, calc(var(--u) * 1.0)); line-height: 1.3; }
 .tv-clue-list { scrollbar-width: none; }
 .tv-clue-list::-webkit-scrollbar { display: none; }
+
+/* A quiet scrollbar for the dialogs that scroll (the completion modal, the
+   account sheet): a thin rounded thumb in the surface's own text colour, no
+   track. WebKit/Blink get the pseudo-elements (Blink only honours them while
+   scrollbar-width stays auto, hence the @supports split); Firefox gets the
+   standard thin scrollbar in the same colour. The gutter is not reserved on
+   purpose: on the overlay scrollbars phones and Macs default to it would be
+   an empty band, and the cards' padding absorbs a classic one. */
+.scroll-quiet { scrollbar-gutter: auto; }
+@supports not selector(::-webkit-scrollbar) {
+  .scroll-quiet { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, currentColor 28%, transparent) transparent; }
+}
+.scroll-quiet::-webkit-scrollbar { width: 12px; height: 12px; }
+.scroll-quiet::-webkit-scrollbar-track { background: transparent; }
+.scroll-quiet::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+.scroll-quiet::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, currentColor 45%, transparent); }
 .tv-pop { animation: tv-pop 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both; }
 @keyframes tv-pop { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
 .tv-pulse { animation: tv-pulse 1.6s ease-in-out infinite; }

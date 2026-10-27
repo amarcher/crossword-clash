@@ -12,6 +12,7 @@ import { Scoreboard } from "../components/Scoreboard/Scoreboard";
 import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
 import { FinishedBar } from "../components/FinishedBar";
+import { AccountControl } from "../components/Account/AccountControl";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -383,6 +384,7 @@ export function SoloPlayScreen() {
                   <span className="md:hidden">{t('playing.newPuzzle')}</span>
                   <span className="hidden md:inline">{t('playing.loadDifferent')}</span>
                 </button>
+                <AccountControl placement="play" className="-mr-1.5" />
               </div>
             </div>
           </>

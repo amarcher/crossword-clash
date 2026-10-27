@@ -23,6 +23,7 @@ describe("pageMetaFor", () => {
     expect(pageMetaFor("/", t).canonical).toBe(`${SITE_ORIGIN}/`);
     expect(pageMetaFor("/classics", t).canonical).toBe(`${SITE_ORIGIN}/classics`);
     expect(pageMetaFor("/classics/", t).canonical).toBe(`${SITE_ORIGIN}/classics`);
+    expect(pageMetaFor("/account", t)).toEqual({ title: "Your account — Crossword Clash", description: expect.stringContaining("streaks"), canonical: `${SITE_ORIGIN}/account` });
   });
 
   it("uses the legal pages' own titles in the existing '| Crossword Clash' format", () => {

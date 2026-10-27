@@ -565,7 +565,36 @@
     "deleteTitle": "¿Eliminar tu cuenta?",
     "deleteBody": "Se eliminarán tu cuenta y sus datos de forma permanente. Esta acción no se puede deshacer.",
     "deleteConfirm": "Eliminar cuenta",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "signInControl": "Iniciar sesión",
+    "avatarLabel": "Menú de la cuenta de {{name}}",
+    "menuAccount": "Tu cuenta",
+    "menuPastPuzzles": "Crucigramas anteriores",
+    "menuPlusAbout": "Sobre Plus",
+    "menuPlusManage": "Gestionar suscripción",
+    "signedInPill": "Sesión iniciada",
+    "pageTitle": "Tu cuenta",
+    "signedInWith": "Sesión iniciada con {{provider}}",
+    "pageOverview": "Resumen",
+    "statDailyStreak": "Racha diaria",
+    "statNytStreak": "Racha NYT",
+    "statSolves": "Partidas sincronizadas",
+    "statDays_one": "{{count}} día",
+    "statDays_other": "{{count}} días",
+    "inProgressHeading": "En curso",
+    "inProgressEmpty": "Nada a medias. Empieza un diario y quedará aquí hasta que lo termines.",
+    "recentHeading": "Partidas recientes",
+    "recentEmpty": "Aún no hay partidas. Termina un crucigrama y aparecerá aquí.",
+    "recentLoading": "Cargando tus partidas…",
+    "recentOffline": "No se pudieron cargar tus partidas ahora mismo. Las de este dispositivo se conservan.",
+    "allPastPuzzles": "Todos los crucigramas anteriores",
+    "sourceDaily": "Diario",
+    "sourceNyt": "NYT",
+    "sourceOther": "Crucigrama",
+    "sourceClassic": "Clásico",
+    "untimed": "Resuelto",
+    "yourAccountLink": "Abrir tu cuenta",
+    "signedInBody": "Tu página de cuenta tiene tu historial, tu nombre de usuario y tu suscripción."
   },
   "meta": {
     "home": {
@@ -588,6 +617,10 @@
     },
     "support": {
       "description": "Ayuda con Crossword Clash: importar crucigramas, crear y unirse a salas multijugador, los crucigramas diarios, las cuentas y cómo contactarnos."
+    },
+    "account": {
+      "title": "Tu cuenta — Crossword Clash",
+      "description": "Tu nombre de usuario, rachas, partidas recientes y los crucigramas que tienes en curso."
     }
   },
   "dailyLink": {
