@@ -14,7 +14,7 @@ import { allowanceLeft, fetchStudioAllowance, type StudioAllowance } from "../..
 interface CluePanelProps {
   state: StudioState;
   dispatch: Dispatch<StudioAction>;
-  onExport: () => void;
+  onExport: (format: "ipuz" | "puz") => void;
   /** Who is drafting: an admin (no token needed, any model) or a Plus subscriber (metered Sonnet). */
   access: StudioAccess;
   /** The signed-in user, for the subscriber's allowance read. */
@@ -135,8 +135,11 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
             <Sparkles className="size-4" aria-hidden="true" />
             {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft Claude's clues"}
           </Button>
-          <Button variant="secondary" size="sm" onClick={onExport} disabled={!complete}>
+          <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
             <Download className="size-4" aria-hidden="true" /> Export .ipuz
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => onExport("puz")} disabled={!complete} title="Across Lite format, for other crossword apps and editors">
+            <Download className="size-4" aria-hidden="true" /> Export .puz
           </Button>
         </div>
       </div>

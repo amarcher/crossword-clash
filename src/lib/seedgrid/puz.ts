@@ -39,7 +39,7 @@ export function latin1(text: string): Uint8Array {
   return out;
 }
 
-const concat = (parts: Uint8Array[]): Uint8Array => {
+const concat = (parts: Uint8Array[]): Uint8Array<ArrayBuffer> => {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) {
@@ -61,7 +61,7 @@ export function puzClueOrder(grid: Grid, clues: Record<string, ClueSet>): string
  * The file. Unclued slots get their answer as the clue, as `toIpuz` does, so
  * the file always opens.
  */
-export function toPuz(grid: Grid, clues: Record<string, ClueSet>, meta: Pick<IpuzMeta, "title" | "author" | "copyright" | "notes">): Uint8Array {
+export function toPuz(grid: Grid, clues: Record<string, ClueSet>, meta: Pick<IpuzMeta, "title" | "author" | "copyright" | "notes">): Uint8Array<ArrayBuffer> {
   const { width, height } = grid;
   if (width > 255 || height > 255) throw new Error("A .puz grid is at most 255 squares a side.");
   const solution = latin1(grid.cells.map((c) => (c === "#" ? "." : c || "-")).join(""));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Flame, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
+import { Flame, Globe, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
@@ -17,6 +17,10 @@ import { EngineClient, STUDIO_WORD_LIST_URL } from "../lib/seedgrid/engineClient
 import { cloneGrid, gridStats, slotsOf, slotText, type Grid, type Symmetry } from "../lib/seedgrid/grid";
 import { normalizeEntry } from "../lib/seedgrid/dictionary";
 import { toIpuz, toTransferPuzzle, type ClueSet } from "../lib/seedgrid/ipuz";
+import { toPuz } from "../lib/seedgrid/puz";
+import { communityEnabled } from "../lib/community";
+import { fetchMyPuzzles, type CommunityPuzzle } from "../lib/communityPuzzles";
+import { PublishDialog } from "../components/Studio/PublishDialog";
 import { duplicateState, isBlank, loadLibrary, removeEntry, saveLibrary, toEntry, upsertEntry, type LibraryEntry } from "../lib/seedgrid/studioLibrary";
 import { normalizeTransferPuzzle } from "../lib/puzzleNormalizer";
 import { compressPuzzleToHash } from "../lib/puzzleUrl";
@@ -78,6 +82,21 @@ export function StudioScreen() {
   const access = { admin: account.admin, plus: account.plus };
   const [engine, setEngine] = useState<EngineStatus>({ kind: "loading" });
   const [busy, setBusy] = useState<"fill" | "layout" | null>(null);
+  // The account's published puzzles by studio id (PublishDialog, the chips in My puzzles).
+  const [published, setPublished] = useState<Record<string, CommunityPuzzle>>({});
+  const [publishOpen, setPublishOpen] = useState(false);
+  const userId = account.user?.id ?? null;
+  const refreshPublished = useCallback(() => {
+    if (!userId || !communityEnabled()) return;
+    fetchMyPuzzles(userId).then(
+      (rows) => setPublished(Object.fromEntries(rows.map((r) => [r.studio_id, r]))),
+      () => undefined,
+    );
+  }, [userId]);
+  useEffect(() => {
+    if (!userId) setPublished({});
+    else refreshPublished();
+  }, [userId, refreshPublished]);
   const [message, setMessage] = useState<string | null>(null);
   const [heatCounts, setHeatCounts] = useState<Record<string, number> | null>(null);
   const [candidates, setCandidates] = useState<{ key: string; words: { word: string; score: number }[] } | null>(null);
@@ -280,18 +299,24 @@ export function StudioScreen() {
   const slots = slotsOf(state.grid);
   const complete = state.grid.cells.every((c) => c !== "");
 
-  const exportIpuz = () => {
+  const exportFile = (format: "ipuz" | "puz") => {
     const clues: Record<string, ClueSet> = {};
     for (const s of slots) {
       const standard = state.clues[slotKey(s)]?.trim();
       const speed = state.speedClues[slotKey(s)]?.trim();
       if (standard) clues[s.id] = { standard, ...(speed ? { speed } : {}) };
     }
-    const ipuz = toIpuz(state.grid, clues, { title: state.title || "Untitled", author: "Crossword Clash" });
-    const url = URL.createObjectURL(new Blob([JSON.stringify(ipuz, null, 2)], { type: "application/json" }));
+    // The published credit when there is one, else the house name.
+    const author = published[state.id]?.author ?? "Crossword Clash";
+    const meta = { title: state.title || "Untitled", author };
+    const blob =
+      format === "ipuz"
+        ? new Blob([JSON.stringify(toIpuz(state.grid, clues, meta), null, 2)], { type: "application/json" })
+        : new Blob([toPuz(state.grid, clues, { ...meta, notes: state.theme })], { type: "application/x-crossword" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${normalizeEntry(state.title || "puzzle").toLowerCase() || "puzzle"}.ipuz`;
+    a.download = `${normalizeEntry(state.title || "puzzle").toLowerCase() || "puzzle"}.${format}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -365,6 +390,11 @@ export function StudioScreen() {
               <Button variant="ghost" onClick={playTest} disabled={!complete} title="Open this puzzle in the solver, in a new tab">
                 <Play className="size-4" aria-hidden="true" /> Play test
               </Button>
+              {communityEnabled() && (
+                <Button variant="ghost" onClick={() => setPublishOpen(true)} disabled={!complete} title="Publish this puzzle for other players to find and play">
+                  <Globe className="size-4" aria-hidden="true" /> {published[state.id]?.status === "published" ? "Published" : "Publish"}
+                </Button>
+              )}
               <Button variant="ghost" aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""}>
                 <Flame className="size-4" aria-hidden="true" /> Heatmap
               </Button>
@@ -391,6 +421,7 @@ export function StudioScreen() {
             onNew={newPuzzle}
             onDuplicate={(entry) => openPuzzle(duplicateState(entry.id === state.id ? state : entry.state, newPuzzleId()))}
             onDelete={deletePuzzle}
+            published={new Set(Object.values(published).filter((r) => r.status === "published").map((r) => r.studio_id))}
           />
           {adminPanels && <DailyQueue state={state} admin={account.admin} />}
           <Card className="p-4">
@@ -522,7 +553,7 @@ export function StudioScreen() {
 
         {/* Clues + export */}
         <section aria-label="Clues" className="order-4 lg:col-span-3">
-          <CluePanel state={state} dispatch={dispatch} onExport={exportIpuz} access={access} userId={account.user?.id ?? null} />
+          <CluePanel state={state} dispatch={dispatch} onExport={exportFile} access={access} userId={account.user?.id ?? null} />
         </section>
 
         {/* How the published puzzles are doing */}
@@ -530,6 +561,9 @@ export function StudioScreen() {
           {adminPanels && <Insights admin={account.admin} />}
         </section>
       </main>
+      {publishOpen && (
+        <PublishDialog state={state} dispatch={dispatch} user={account.user} existing={published[state.id] ?? null} onClose={() => setPublishOpen(false)} onChanged={refreshPublished} />
+      )}
     </PageShell>
   );
 }
