@@ -7,6 +7,8 @@ import {
   revenueCatSubscriberRow,
   sameToken,
   stripeAction,
+  stripeReconcilePlan,
+  stripeStatusToEntitlement,
   stripeSubscriptionRow,
   verifyStripeSignature,
   type RevenueCatEvent,
@@ -106,6 +108,14 @@ async function stripeGet<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Like stripeGet, but a 404 (the object no longer exists) is null rather than an error. */
+async function stripeGetOrNull<T>(path: string): Promise<T | null> {
+  const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Stripe ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return (await res.json()) as T;
+}
+
 async function handleStripe(req: Request): Promise<Response> {
   if (!STRIPE_WEBHOOK_SECRET || !STRIPE_SECRET_KEY) return json({ error: "not_configured" }, 503);
   const raw = await req.text();
@@ -167,10 +177,25 @@ async function handleReconcile(req: Request): Promise<Response> {
     if (!STRIPE_SECRET_KEY) return json({ error: "not_configured" }, 503);
     // Stripe needs an account (an email for receipts); an anonymous user has nothing to reconcile.
     if (!user.is_anonymous) {
-      const sub = pickStripeSubscription(await searchStripeSubscriptions(user.id));
+      // A subscription we already know is re-read by id (strongly consistent);
+      // Search is eventually consistent and can miss one made seconds ago, so an
+      // empty search never expires anything (see stripeReconcilePlan).
+      const plan = stripeReconcilePlan(await entitlementsFor(admin, user.id, "stripe"));
+      let sub: StripeSubscriptionLike | null = null;
+      let gone = false;
+      if (plan.kind === "fetch") {
+        sub = await stripeGetOrNull<StripeSubscriptionLike>(`/subscriptions/${encodeURIComponent(plan.subscriptionId)}`);
+        gone = sub === null;
+        // A lapsed subscription may have been replaced by a newer one that Search has indexed by now.
+        if (!sub || stripeStatusToEntitlement(sub.status) === "expired") {
+          sub = pickStripeSubscription([...(sub ? [sub] : []), ...(await searchStripeSubscriptions(user.id))]);
+        }
+      } else {
+        sub = pickStripeSubscription(await searchStripeSubscriptions(user.id));
+      }
       const row = sub ? stripeSubscriptionRow(sub, user.id) : null;
       if (row) await upsertEntitlement(admin, row);
-      else if (!sub) await expireStale(admin, user.id, "stripe");
+      else if (gone) await expireStale(admin, user.id, "stripe"); // Stripe no longer has the subscription we recorded
     }
   } else {
     return json({ error: "invalid_source" }, 400);

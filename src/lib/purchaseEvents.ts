@@ -436,4 +436,39 @@ export async function verifyStripeSignature(
 export async function signStripePayload(body: string, secret: string, timestamp: number): Promise<string> {
   return `t=${timestamp},v1=${await hmacSha256Hex(secret, `${timestamp}.${body}`)}`;
 }
+
+// --- Reconcile and return URLs (verify-purchase, create-checkout, billing-portal) ---
+
+/**
+ * How `/reconcile` should ask Stripe about a user. Stripe Search is eventually
+ * consistent — a subscription created seconds ago is not indexed yet — so a
+ * row that already names a subscription is re-read by id (strongly
+ * consistent) and only a user with no Stripe row at all is searched. An empty
+ * search therefore never expires anything: it may simply be early. (The first
+ * test purchase was expired exactly this way: the success page reconciled
+ * before Search knew the subscription the webhook had just written.)
+ */
+export function stripeReconcilePlan(
+  rows: readonly Pick<EntitlementUpsert, "source" | "status" | "external_id">[],
+): { kind: "fetch"; subscriptionId: string } | { kind: "search" } {
+  const stripeRows = rows.filter((r) => r.source === "stripe" && r.external_id);
+  const live = stripeRows.find((r) => r.status === "active" || r.status === "grace") ?? stripeRows[0];
+  return live?.external_id ? { kind: "fetch", subscriptionId: live.external_id } : { kind: "search" };
+}
+
+/** This project's Vercel preview deployments (`crossword-clash-<hash>-amarchers-projects.vercel.app` and the git-branch aliases). */
+export const PREVIEW_ORIGIN = /^https:\/\/crossword-clash-[a-z0-9-]+-amarchers-projects\.vercel\.app$/;
+
+/**
+ * Where Checkout and the Customer Portal send the visitor back: the site by
+ * default, or the requesting origin when it is the site itself or one of this
+ * project's preview deployments, so a test purchase made on a preview (where
+ * the Plus switch is on) returns to that preview instead of production. Any
+ * other origin is ignored, so this can never redirect to a third party.
+ */
+export function checkoutOrigin(requestOrigin: string | null | undefined, siteUrl: string, previewOrigin: RegExp = PREVIEW_ORIGIN): string {
+  const site = siteUrl.replace(/\/+$/, "");
+  const origin = (requestOrigin ?? "").replace(/\/+$/, "");
+  return origin === site || previewOrigin.test(origin) ? origin : site;
+}
 // --- MIRROR END ---

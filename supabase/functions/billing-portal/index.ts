@@ -1,6 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { serviceClient, userFromRequest } from "../_shared/user.ts";
 import { entitlementsFor } from "../_shared/entitlementStore.ts";
+import { checkoutOrigin } from "../_shared/purchaseEvents.ts";
 
 /**
  * Opens Stripe's Customer Portal for the account's web subscription (cancel,
@@ -47,7 +48,8 @@ Deno.serve(async (req) => {
   try {
     const customer = (await entitlementsFor(admin, user.id, "stripe")).find((r) => r.external_customer)?.external_customer;
     if (!customer) return json({ error: "no_stripe_customer" }, 404);
-    const params = new URLSearchParams({ customer, return_url: `${SITE_URL}${safeReturnPath(body.returnTo)}` });
+    const origin = checkoutOrigin(req.headers.get("origin"), SITE_URL);
+    const params = new URLSearchParams({ customer, return_url: `${origin}${safeReturnPath(body.returnTo)}` });
     if (STRIPE_PORTAL_CONFIG) params.set("configuration", STRIPE_PORTAL_CONFIG);
     const res = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
       method: "POST",
