@@ -363,5 +363,7 @@ in the apps.
 - [ ] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
 - [ ] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
 - [ ] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY`, `PLUS_GATES=1`
-- [ ] Vercel `VITE_PLUS=1` (production)
+- [ ] Vercel `VITE_PLUS=1` (production), then a production redeploy: an env change needs a new build
+- [ ] Stripe live account: a support email under Public details (receipts and the portal show it); Stripe Tax registration added and `STRIPE_AUTOMATIC_TAX=1` set, or tax deliberately left off (§3.1 step 5)
+- [ ] DMCA: the designated agent registered at dmca.copyright.gov (service provider Fable Designer LLC; alternate names Crossword Clash, crosswordclash.com; $6, renews every 3 years) and the same name, postal address and phone filled into `DMCA_AGENT` in `src/screens/legal/legalContent.ts`, so `/copyright` names the agent. Plus opens the studio to subscribers and rooms already host players' puzzles, so the safe harbour has to be in place first.
 - [ ] One real test purchase on the web with a real card, refunded in Stripe afterwards
