@@ -7,6 +7,7 @@ import {
   revenueCatSubscriberRow,
   sameToken,
   stripeAction,
+  stripeHeaders,
   stripeReconcilePlan,
   stripeStatusToEntitlement,
   stripeSubscriptionRow,
@@ -103,14 +104,14 @@ async function fetchRevenueCatSubscriber(appUserId: string): Promise<RevenueCatS
 // ---------------------------------------------------------------------------
 
 async function stripeGet<T>(path: string): Promise<T> {
-  const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } });
+  const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: stripeHeaders(STRIPE_SECRET_KEY) });
   if (!res.ok) throw new Error(`Stripe ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return (await res.json()) as T;
 }
 
 /** Like stripeGet, but a 404 (the object no longer exists) is null rather than an error. */
 async function stripeGetOrNull<T>(path: string): Promise<T | null> {
-  const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } });
+  const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: stripeHeaders(STRIPE_SECRET_KEY) });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Stripe ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return (await res.json()) as T;

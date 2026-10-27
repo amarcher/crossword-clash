@@ -2,9 +2,9 @@
  * Creates (or updates) the Customer Portal configuration for Crossword Clash
  * Plus in the Stripe account and prints the command that tells the
  * `billing-portal` function to use it. Why a separate configuration: the
- * Stripe account is shared with other products, and the account's default
- * portal carries their legal links and one plan-switch list for everything.
- * See docs/plus-setup.md §3.1 and src/lib/stripePortalConfig.ts.
+ * account's default portal has no legal links and one plan-switch list for
+ * every product the account holds. Run `pnpm stripe:setup` first; see
+ * docs/plus-setup.md §3.1 and src/lib/stripePortalConfig.ts.
  *
  *   pnpm stripe:portal-config [--dry-run] [--site https://crosswordclash.com]
  *

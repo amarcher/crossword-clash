@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  STRIPE_API_VERSION,
   checkoutOrigin,
   isSupabaseUid,
   parseStripeSignature,
@@ -11,6 +12,7 @@ import {
   sameToken,
   signStripePayload,
   stripeAction,
+  stripeHeaders,
   stripePeriodEnd,
   stripeReconcilePlan,
   stripeStatusToEntitlement,
@@ -41,6 +43,14 @@ function rcEvent(over: Partial<RevenueCatEvent>): RevenueCatEvent {
     ...over,
   };
 }
+
+describe("stripeHeaders", () => {
+  it("pins every raw call to the version the module reads, with the form encoding only for a POST", () => {
+    expect(stripeHeaders("sk_test_x")).toEqual({ Authorization: "Bearer sk_test_x", "Stripe-Version": STRIPE_API_VERSION });
+    expect(stripeHeaders("sk_test_x", true)["Content-Type"]).toBe("application/x-www-form-urlencoded");
+    expect(STRIPE_API_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}\.[a-z]+$/);
+  });
+});
 
 describe("the Deno mirror", () => {
   it("is byte-for-byte the src module's MIRROR block", () => {

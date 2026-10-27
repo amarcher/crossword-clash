@@ -33,6 +33,7 @@
     "testflight": "scripts/testflight.sh",
     "mobile:android": "cap open android",
     "indexnow": "node scripts/indexnow.mjs",
+    "stripe:setup": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/stripe-setup.mts",
     "stripe:portal-config": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/stripe-portal-config.mts"
   },
   "dependencies": {
