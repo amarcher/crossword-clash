@@ -72,7 +72,7 @@ describe("CommunityPuzzleScreen (/puzzles/:shortId)", () => {
     expect(screen.getByText("A tiny one.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Play solo" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
-    expect(game.handleSoloPuzzleLoaded.mock.calls[0][0]).toMatchObject({ origin: "community", author: "ada" });
+    expect((game.handleSoloPuzzleLoaded.mock.calls as unknown[][])[0][0]).toMatchObject({ origin: "community", author: "ada" });
   });
 
   it("shows the viewer's best time and offers Play again", async () => {

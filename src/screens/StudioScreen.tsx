@@ -9,6 +9,7 @@ import { CluePanel } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
 import { Insights } from "../components/Studio/Insights";
+import { Reports } from "../components/Studio/Reports";
 import { StudioAccount } from "../components/Studio/StudioAccount";
 import { EngineError } from "../components/Studio/EngineError";
 import { useStudioAccount } from "../hooks/useStudioAccount";
@@ -424,6 +425,7 @@ export function StudioScreen() {
             published={new Set(Object.values(published).filter((r) => r.status === "published").map((r) => r.studio_id))}
           />
           {adminPanels && <DailyQueue state={state} admin={account.admin} />}
+          {adminPanels && communityEnabled() && <Reports admin={account.admin} />}
           <Card className="p-4">
             <Eyebrow as="h2">Theme entries</Eyebrow>
             <textarea

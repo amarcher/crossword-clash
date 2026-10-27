@@ -94,7 +94,7 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Play solo" })[0]);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
     expect(community.fetchCommunityPuzzle).toHaveBeenCalledWith("short1xx");
-    const puzzle = game.handleSoloPuzzleLoaded.mock.calls[0][0] as { origin?: string; author: string; title: string };
+    const puzzle = (game.handleSoloPuzzleLoaded.mock.calls as unknown[][])[0][0] as { origin?: string; author: string; title: string };
     expect(puzzle.origin).toBe("community");
     expect(puzzle.author).toBe("ada");
     expect(game.setSoloTheme).toHaveBeenCalledWith(null);
