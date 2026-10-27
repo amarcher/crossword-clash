@@ -36,12 +36,13 @@ Each has a recommendation; the reasoning is in the section named.
 | 6 | Report | A **Report** action on the page for anyone, anonymous included (Apple 1.2 wants a report from any user), reasons **Copied · Offensive · Nonsense · Something else** with an optional note; one open report per person per puzzle, 10 a day per person; **3 distinct reporters in 7 days hold the puzzle** (off the lists, "under review") until the admin rules | §3.1, §3.2 |
 | 7 | The admin queue | A **Reports panel in `/studio`** (admin only, next to the daily queue) through a new `studio-moderate` edge function: the held and reported puzzles with their reasons and the author's prior removals; actions **Dismiss**, **Remove** (reason shown to the author, a strike), **Remove and stop this author publishing**, **Restore** (after a counter-notice) | §3.3 |
 | 8 | How the admin hears about a report | **An email per report** to the legal contact address, sent by a Supabase database webhook → a small `report-alert` edge function → Resend (the project has no email sender today; `RESEND_API_KEY` secret). Alternative: no email, the panel is checked daily, and the terms keep "aim to" | §3.3 |
-| 9 | Hide this author | A **`hidden_authors` table for every player**, anonymous included (one store, no sync story: the anonymous uid is a real user); the browse query and the page honour it; "Hidden authors" on the account page to undo | §3.4 |
+| 9 | Hide this author | **Ruled 2026-10-27: the lightest thing that satisfies the store rule.** A list of hidden author ids in localStorage (`crossword-clash:hidden-authors`), applied to the browse results and the page on this device; no table, no sync, undo from the author's page. Recommended before the ruling: a `hidden_authors` table for every player | §3.4 |
 | 10 | Deleting the author's account | **Everything goes**: `published_puzzles` cascades with `auth.users`, so deleting the account unpublishes and deletes every puzzle; reports keep their row with the reporter set null; a daily made from the puzzle survives (`daily_schedule` stores its own copy, as the terms allow) | §4.3 |
 | 11 | The writes | **SQL RPCs under RLS** (`publish_puzzle`, `unpublish_puzzle`, `report_puzzle`, `accept_publishing_terms`), the `record_solves` pattern: the user comes from the JWT, limits are counted in the function, structural checks in SQL; the full puzzle validation and the word filter run in the client (pure, tested). Admin actions only through the edge function with the service role | §4.2 |
 | 12 | Terms | **Reuse PR #90's "Publishing puzzles", "Community rules" and "Reports, removal and blocking" sections** (en + es, already written) and its acceptable-use line about titles and clues; **drop its two DMCA sections**, superseded by #143's `/copyright` page and the terms' existing "Copyright complaints and repeat infringers" paragraph. Agreement is a checkbox in the publish dialog, recorded once per account with the terms' version | §4.4 |
 | 13 | Launch switch | **`VITE_COMMUNITY=1`** (`communityEnabled()`, like `plusEnabled()`): routes, the menu row and the studio's Publish button appear only with it; the migration and functions are inert without callers, so the PR merges dark and Andrew flips it once the terms are live and the agent is registered | §4.6 |
-| 14 | Later phases | **Kudos and notifications next** (a "Nice puzzle" on the completion modal, counts on the author's page, an unread badge on `/account`), then promote-to-daily from the admin view, a public "most solved this week" strip, publishing uploaded files, per-puzzle leaderboards once timing is server-stamped (leagues spec) | §5 |
+| 14 | `.puz` export | **Added 2026-10-27 at Andrew's request.** The studio's export menu offers `.puz` beside `.ipuz` (a small writer, `src/lib/seedgrid/puz.ts`, the Across Lite v1.3 layout with its checksums; speed clues cannot ride along). Nothing changes on the puzzle page: a published puzzle is played in the service, not downloaded, which is what the publishing licence covers | §1.5 |
+| 15 | Later phases | **Kudos and notifications next** (a "Nice puzzle" on the completion modal, counts on the author's page, an unread badge on `/account`), then promote-to-daily from the admin view, a public "most solved this week" strip, publishing uploaded files, per-puzzle leaderboards once timing is server-stamped (leagues spec) | §5 |
 
 Open questions that are not decisions are in §6.
 
@@ -191,6 +192,19 @@ puzzle a player loads carries the live name too.
   1 (no email channel exists; §5 adds one).
 - The public author page `/puzzles/by/:username` (§2.3).
 
+### 1.5 Exporting a `.puz`
+
+Added at Andrew's request (decision 14). The studio's Export becomes a
+two-item menu, **`.ipuz`** (as today) and **`.puz`**: the Across Lite 1.3
+binary layout (header, the two checksums over solution and grid, the CIB
+and masked checksums, ISO-8859-1 strings: title, author, copyright, clues in
+number order across-then-down per number, notes). `src/lib/seedgrid/puz.ts`
+is a pure writer tested by round-tripping through `@xwordly/xword-parser`,
+the parser the importer already uses, so what the studio writes is what
+the importer reads back. Speed clues have no home in `.puz` and are left
+out; circles and rebus squares do not occur in studio grids. The author
+field is the username when signed in, else "Crossword Clash" as today.
+
 ---
 
 ## 2. Finding and playing
@@ -231,8 +245,7 @@ row like every other screen).
   by authors you hid aren't shown").
 - **Data**: one PostgREST query against a view `community_puzzles` (§4.1)
   that exposes only published rows joined with the author's username;
-  hidden authors are excluded with `author_id=not.in.(…)` from the viewer's
-  own `hidden_authors` rows (fetched once per session, small). No index
+  the device's hidden list (§3.4), applied to each page of results. No index
   file: unlike dailies and classics the list changes with every publish.
 
 ### 2.2 The puzzle page: `/puzzles/:id`
@@ -412,19 +425,25 @@ which is honest but makes the 24 hours a hope.
 
 ### 3.4 Hide this author
 
-**Recommendation (decision 9): a `hidden_authors` table for every player.**
-`(user_id, author_id)` under RLS `auth.uid() = user_id`, anonymous users
-included; the client keeps the list in memory per session and in the
-browse query. "Hide puzzles by @name" sits in the page's and the author
-page's overflow; the account page gets a **Hidden authors** list with
-Unhide, and anonymous players unhide from the author page itself (its
-header shows "You hid this author · Show again"). An anonymous player's
-hides die with the anonymous user (30-day idle sweep), the same fate as
-their best times.
+**Ruled 2026-10-27 (decision 9): a local list, no server table.** Andrew
+judged the table too much machinery for a niche use; the store rule (§3.5)
+still needs *a* way to block, so the feature stays in its lightest form.
 
-This is the "block abusive users" mechanism the stores require (§3.5). It
-hides puzzles, not people: a hidden author can still join the viewer's rooms
-by code, which is a different feature and out of scope.
+- `hiddenAuthors` in `src/lib/communityPuzzles.ts`: a localStorage list of
+  author ids (`crossword-clash:hidden-authors`), read once per screen and
+  applied to the browse results on the client (a hidden author's cards are
+  dropped from the page of 24 and the result count says "N hidden"), and to
+  the puzzle page (which shows "You hid this author" with **Show again**
+  instead of the puzzle).
+- "Hide puzzles by @name" sits in the page's and the author page's overflow
+  menu; the author page's header is where it is undone.
+- It is per device and dies with the browser's storage, like an anonymous
+  player's best times. If it ever matters, the recommended table
+  (`hidden_authors (user_id, author_id)` under `auth.uid() = user_id`) is a
+  one-migration upgrade with the same client API.
+
+It hides puzzles, not people: a hidden author can still join the viewer's
+rooms by code, which is a different feature and out of scope.
 
 ### 3.5 Store rules
 
@@ -526,13 +545,7 @@ CREATE TABLE puzzle_reports (
 CREATE UNIQUE INDEX puzzle_reports_one_open ON puzzle_reports (puzzle_id, reporter_id) WHERE status = 'open';
 -- RLS: no client policies at all (insert through report_puzzle; reads by the admin function with the service role).
 
-CREATE TABLE hidden_authors (
-  user_id    UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  author_id  UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, author_id)
-);
--- RLS: select / insert / delete where auth.uid() = user_id (anonymous allowed).
+-- (No hidden_authors table: decision 9 was ruled a local list, §3.4.)
 
 ALTER TABLE solves DROP CONSTRAINT solves_source_check,
   ADD CONSTRAINT solves_source_check CHECK (source IN ('daily', 'nyt', 'community', 'other'));
@@ -593,8 +606,8 @@ catch. Computing either in SQL would need the canonical JSON rules of
 
 ### 4.3 Retention and deletion
 
-- **Account deletion (decision 10)**: `published_puzzles`, `publishers` and
-  `hidden_authors` (both columns) cascade with `auth.users`;
+- **Account deletion (decision 10)**: `published_puzzles` and `publishers`
+  cascade with `auth.users`;
   `puzzle_reports.reporter_id` is set null so the audit row stays. Nothing
   is added to `delete-account`'s `OWNED_TABLES`; its doc comment lists the
   new cascades and the migration test checks every new user-id column has
@@ -757,9 +770,9 @@ on nothing (it references #143's page by path only).
 |---|---|---|
 | Migration + RPCs + view + trigger + sweep step | `supabase/migrations/20261028000000_community_puzzles.sql` | `communityMigration.test.ts` reads the SQL: RLS on every table, no client write policies on `published_puzzles` / `puzzle_reports`, cascades, the partial unique hash index, the status vocabulary, the sweep's new constants; `retentionMigration.test.ts` updated to the newest definition |
 | Pure helpers + client | `src/lib/community.ts` (switch), `src/lib/communityPuzzles.ts` (`publishProblems`, `toPublishSnapshot`, `sizeBucketOf`, `browseQuery` (filters → PostgREST params), the RPC wrappers, `hiddenAuthors` store) | `communityPuzzles.test.ts`: every refusal of `publishProblems`, the "ours" check against index + manifest, `browseQuery` for each filter/sort, RPC error mapping against a mocked client |
-| Studio: Publish dialog, My puzzles chip | `src/components/Studio/PublishDialog.tsx`, `StudioScreen.tsx`, `PuzzleList` | `PublishDialog.test.tsx`: terms checkbox once, username step, problems listed, success → link |
+| Studio: Publish dialog, My puzzles chip, `.puz` export | `src/components/Studio/PublishDialog.tsx`, `StudioScreen.tsx`, `PuzzleList`, `src/lib/seedgrid/puz.ts` | `PublishDialog.test.tsx`: terms checkbox once, username step, problems listed, success → link |
 | Browse + page + author page | `src/screens/CommunityBrowseScreen.tsx`, `CommunityPuzzleScreen.tsx`, `src/components/CommunityList.tsx` (the classics' card anatomy; `ClassicList` stays as is), routes + `routeModules` chunks, menu row, `pageMetaFor` | `CommunityBrowseScreen.test.tsx` (filters → query, hidden authors excluded, load more, empty states), `CommunityPuzzleScreen.test.tsx` (play → solo path, race → host path, states, author's own view) |
-| Report + hide | `ReportDialog.tsx`, overflow menu, account page "Hidden authors" | `ReportDialog.test.tsx`, hide/unhide in the screen tests |
+| Report + hide | `ReportDialog.tsx`, overflow menu, the local hidden list | `ReportDialog.test.tsx`, hide/unhide in the screen tests |
 | Admin queue | `src/components/Studio/Reports.tsx`, `supabase/functions/studio-moderate/index.ts` (+ `report-alert` if decision 8) | `Reports.test.tsx` against a mocked function; `deno check` |
 | Legal + i18n | `legalContent.ts` (en + es, terms from #90, privacy paragraph, copyright sentence), `en.json` / `es.json` `community.*` | existing `legal.test.tsx`, `i18n.test.ts` |
 | Docs | CLAUDE.md bullet, `docs/app-store/README.md` + `docs/play-store/README.md` UGC lines, screenshots in `docs/community-puzzles/` at phone and desktop widths | — |
@@ -778,4 +791,5 @@ queue and function 1; legal, i18n and docs ½; screenshots and a phone pass
 | 2026-10-15 | Andrew's direction: community repository, reports not an up-front check, kudos and notifications, admin popular view + public leaderboard, daily stays curated, no Claude taste pass | The frame of this spec |
 | 2026-10-20 | PR #90 reduced to the publishing/community/DMCA terms, held until publishing ships | §4.4 reuses its three sections |
 | 2026-10-27 | DMCA split out as PR #143 (`/copyright`, designated agent) ahead of the Plus flip | §3.6: this spec points at it; #90's DMCA sections are dropped |
-| 2026-10-27 | Spec written; decisions 1–14 put to Andrew | Awaiting rulings |
+| 2026-10-27 | Spec written; decisions 1–14 put to Andrew | Rulings below |
+| 2026-10-27 | Andrew: "Hide this author" is too much machinery for a niche use; add a `.puz` export; otherwise accept all | Decision 9 trimmed to a local list (§3.4), decision 14 added (§1.5); phase B started the same day |
