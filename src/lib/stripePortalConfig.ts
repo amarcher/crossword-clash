@@ -2,10 +2,9 @@
  * The Customer Portal configuration for Crossword Clash Plus, as the Stripe
  * API wants it (`POST /v1/billing_portal/configurations`, form-encoded).
  *
- * The Stripe account is shared with other Fable Designer products, and a
- * portal configuration is account-wide: the default one carries the other
- * products' legal links and its "switch plans" list is one list for every
- * product. Plus gets its own configuration (spec: docs/plus-setup.md §3.1),
+ * A portal configuration is account-wide: the account's default one has no
+ * legal links and its "switch plans" list is whatever products the account
+ * holds. Plus gets its own configuration (spec: docs/plus-setup.md §3.1),
  * which the `billing-portal` function names in each session through the
  * `STRIPE_PORTAL_CONFIG` secret. Pure so `pnpm stripe:portal-config` and its
  * test share one definition.

@@ -69,7 +69,11 @@ npx supabase secrets set REVENUECAT_WEBHOOK_SECRET=<random string you choose> RE
 
 ### 1.3 Stripe webhook endpoint
 
-Stripe Dashboard → Developers → Webhooks → **Add endpoint**:
+`pnpm stripe:setup` (§3.1 step 2) creates the endpoint together with the
+product and prices, and prints its signing secret once, as the
+`STRIPE_WEBHOOK_SECRET` line for `.env.local` and the `secrets set` command.
+What it makes, for the record (or to add by hand under Developers →
+Webhooks → **Add endpoint**):
 
 - Endpoint URL: `https://rdqdhawlxuclfxpsvdgs.supabase.co/functions/v1/verify-purchase/stripe`
 - Events to send: `checkout.session.completed`,
@@ -77,8 +81,10 @@ Stripe Dashboard → Developers → Webhooks → **Add endpoint**:
   `customer.subscription.deleted`. (Invoice events are not needed: Stripe
   moves the subscription to `past_due` and back itself and sends
   `customer.subscription.updated` each time.)
-- After saving, reveal the **Signing secret** and set it as
-  `STRIPE_WEBHOOK_SECRET`.
+- API version pinned to `2026-06-24.dahlia`, the payload shape
+  `purchaseEvents.ts` was written against.
+- A rerun updates the events and description but cannot show the secret
+  again; to rotate it, delete the endpoint in the dashboard and rerun.
 
 Refunds: cancel the subscription in the dashboard as well as refunding the
 charge; the cancellation is what reaches the app (`…deleted` → `expired`).
@@ -183,19 +189,41 @@ store work (3.3–3.6) makes the **apps** sell it and needs an app release.
 
 ### 3.1 Stripe (web)
 
-1. **Account.** stripe.com → create the account (or use an existing one).
-   Business and tax questions (merchant of record, which jurisdictions need a
-   registration) are yours; Stripe Tax is optional (3.1 step 5).
-2. **Product and prices.** Products → Add product → name "Crossword Clash
-   Plus", description from `plus.subtitle` in `src/i18n/en.json`. Add two
-   recurring prices: **$3.99 / month** and **$24.99 / year**. Copy the two
-   price ids (`price_…`).
-3. **Customer Portal.** The portal configuration is account-wide, and the
-   account is shared with Fable Reader: the default configuration carries
-   fabledesigner.com's legal links and one "switch plans" list for every
-   product. Plus therefore gets its own configuration, which the
-   `billing-portal` function names in each session (`STRIPE_PORTAL_CONFIG`).
-   After step 4 has put the key and price ids in `.env.local`:
+1. **Account.** Crossword Clash has **its own Stripe account** under the
+   same login (dashboard → account menu → New account), decided
+   2026-10-27: a buyer's card statement, the Checkout page and Stripe's
+   receipts all carry the account's name, and the Fable Designer account
+   that first hosted the test objects would have put "FABLE DESIGNER" on
+   every Plus charge. On the new account set Settings → Business → Public
+   details: public business name "Crossword Clash", statement descriptor
+   `CROSSWORD CLASH`, support email and the site URL; Branding → the icon
+   and the brand colour (`#3B4FD9`); then Activate it (business, bank and
+   tax details, yours) before live mode. Business and tax questions
+   (merchant of record, which jurisdictions need a registration) are yours;
+   Stripe Tax is optional (3.1 step 5). `pnpm stripe:setup` refuses a key
+   whose account name and descriptor do not mention Crossword Clash, so the
+   public details come first.
+2. **Product, prices and webhook.** Put the account's secret key in
+   `.env.local` as `STRIPE_SECRET_KEY` (test key first; the live key on
+   launch day) and run
+
+   ```bash
+   pnpm stripe:setup
+   ```
+
+   It creates (or, on a rerun, re-checks) the product "Crossword Clash
+   Plus" with the paywall's subtitle as its description and
+   `CROSSWORD CLASH PLUS` as its statement descriptor, the two recurring
+   prices — **$3.99 / month** and **$24.99 / year**, found again by lookup
+   key — and the webhook endpoint of §1.3, and prints the `.env.local`
+   lines and the `secrets set` command that follow (`src/lib/stripeSetup.ts`
+   holds the definitions; a price whose amount or interval was changed by
+   hand stops the run instead of being duplicated). Run it once per mode.
+3. **Customer Portal.** The account's default portal configuration has no
+   legal links and its "switch plans" list is whatever products the account
+   grows; Plus keeps its own configuration, which the `billing-portal`
+   function names in each session (`STRIPE_PORTAL_CONFIG`). After step 2
+   has put the price ids in `.env.local`:
 
    ```bash
    pnpm stripe:portal-config
@@ -207,19 +235,18 @@ store work (3.3–3.6) makes the **apps** sell it and needs an app release.
    reason, and plan switching limited to the two Plus prices (the definition
    is `src/lib/stripePortalConfig.ts`). It prints the `secrets set
    STRIPE_PORTAL_CONFIG=bpc_…` command to run next. Run it once per mode:
-   the test key makes a test configuration, the live key a live one. The
-   account's default portal and Checkout's business name ("Fable Designer")
-   are unchanged; the business name cannot differ per product without
-   Stripe Connect.
-4. **Secrets.** Test mode first (`sk_test_…`, `price_…` from test mode), live
-   on launch day:
+   the test key makes a test configuration, the live key a live one.
+4. **Secrets.** The command `pnpm stripe:setup` printed, plus the site URL
+   once:
 
    ```bash
-   npx supabase secrets set STRIPE_SECRET_KEY=<sk_…> STRIPE_PRICE_MONTHLY=<price_…> STRIPE_PRICE_ANNUAL=<price_…> SITE_URL=https://crosswordclash.com --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+   npx supabase secrets set STRIPE_SECRET_KEY=<sk_…> STRIPE_PRICE_MONTHLY=<price_…> STRIPE_PRICE_ANNUAL=<price_…> STRIPE_WEBHOOK_SECRET=<whsec_…> SITE_URL=https://crosswordclash.com --project-ref rdqdhawlxuclfxpsvdgs </dev/null
    ```
 
-   `STRIPE_WEBHOOK_SECRET` is from §1.3. The webhook endpoint there must
-   exist in the same mode (test or live) as the key.
+   Key, prices, webhook secret and portal configuration must all be from
+   the same mode (test or live). Switching modes on launch day means
+   rerunning steps 2–4 with the live key and setting all five secrets
+   together.
 5. **Stripe Tax (optional, decision 9).** Settings → Tax → turn on and add
    your registrations, then `STRIPE_AUTOMATIC_TAX=1` in the secrets; the
    Checkout session then collects the address and adds tax.
