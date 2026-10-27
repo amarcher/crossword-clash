@@ -68,5 +68,14 @@ M5) of live games on the production backend, with the alpha channel removed.
   bundled puzzles that work offline and saved progress.
 - **User-generated content (guideline 1.2).** Display names are filtered
   (`src/lib/nameFilter.ts`), and the Support page gives a reporting contact.
+  Once community puzzles are switched on (`VITE_COMMUNITY=1`,
+  `docs/community-puzzles-spec.md` §3.5) the app also browses and plays
+  player-published puzzles: the publish checks filter titles, notes and
+  clues through the same word list; every puzzle page has **Report** (four
+  reasons, reviewed within a day, three reporters hold a puzzle
+  automatically) and **Hide puzzles by this author** (the block the
+  guideline asks for); publishing itself is web-only. Tick "Infrequent/Mild
+  User Generated Content" in the age-rating questionnaire at the next
+  submission.
 - The privacy policy and terms are still marked as unreviewed drafts in
   `src/screens/legal/legalContent.ts`.

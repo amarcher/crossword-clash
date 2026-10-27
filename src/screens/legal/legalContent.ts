@@ -10,7 +10,7 @@
  * business is registered.
  */
 
-export const LEGAL_LAST_UPDATED = "2026-10-24";
+export const LEGAL_LAST_UPDATED = "2026-10-28";
 export const LEGAL_CONTACT_EMAIL = "acesuplabs@gmail.com";
 
 export interface LegalSection {
@@ -59,6 +59,7 @@ const en: LegalContent = {
           "Daily leaderboard entries: the date, your display name, your finish time and whether it was solo or a race.",
           "Play statistics, on the website and in the apps: for each puzzle you play, a summary of how the solve went, linked to your anonymous ID. It includes the puzzle's title and size (not its grid or clues), whether you finished, how many squares you filled, your active and total time, wrong letters, and for each clue how long it took and how many of its letters came from crossing answers, plus the kind of device and browser you used (for example “iOS Safari”) and whether you were signed in to an account. When a TV host turns on the AI narrator, we also record whether it started and which engine answered. We use all of this to measure how hard puzzles and clues are, to see where the game is played, and to make better puzzles. On the website, visitors from the European Economic Area, the United Kingdom and Switzerland are only included if they accept analytics.",
           "Puzzles you import or open on the web version (for example from a file or link), including their title, author, grid and clues. Stored puzzle and game records can be read by other users of the service who know or can obtain the relevant identifier, so do not import puzzles you are not willing to share with the people you play with. Puzzles imported through the native NYT import are not uploaded when you play solo (see below).",
+          "Published puzzles, reports and hidden authors: if you publish a puzzle from the studio, we store the puzzle (grid, clues, title and your note), your account ID, the language and difficulty you chose, when you published it, and how many times it was played and solved. The puzzle and these counts are public and shown under your username. We keep it until you unpublish it (then for 30 more days, in case you change your mind) or we remove it (then for 30 days, in case of a counter-notice), or until you delete your account. If you report a puzzle, we store the puzzle, your reason and note, and your ID (anonymous or account) so we can stop abuse of reporting; the author never sees who reported them, and the report is kept for a year after it is resolved. If you hide an author, that choice stays in your browser or app only. When we remove a puzzle or stop an account from publishing, we record the reason and who decided.",
         ],
       },
       {
@@ -126,7 +127,7 @@ const en: LegalContent = {
       {
         heading: "Retention and your choices",
         paragraphs: [
-          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
+          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Published puzzles stay until unpublished (then 30 days), removed (then 30 days) or the account is deleted; resolved reports are kept for a year. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
         ],
       },
       {
@@ -174,7 +175,7 @@ const en: LegalContent = {
       {
         heading: "Acceptable use",
         items: [
-          "Do not use display names, usernames or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
+          "Do not use display names, usernames, puzzle titles, clues or any other text that is unlawful, hateful, harassing, sexual, or that impersonates someone else.",
           "Do not attempt to disrupt, overload or reverse-engineer the service, bypass rate limits or spending limits, or access data that is not yours.",
           "Do not use automated tools to cheat in games or manipulate leaderboards.",
         ],
@@ -184,6 +185,31 @@ const en: LegalContent = {
         paragraphs: [
           "You are responsible for the puzzles you import or share and for having the right to use them. Do not upload or redistribute puzzles you are not permitted to share. When you host a game or send a challenge, you allow us to store and transmit that puzzle to the people you invite. We may remove content or names at our discretion.",
           "The classic library consists of public-domain puzzles from the 1924 Cross Word Puzzle Book. Daily minis and other bundled puzzles are provided for personal, non-commercial play.",
+        ],
+      },
+      {
+        heading: "Publishing puzzles",
+        paragraphs: [
+          "You keep ownership of the puzzles you make. When you publish one, you give us a worldwide, non-exclusive, royalty-free licence to host, display, reproduce and distribute it in Crossword Clash, to adapt its format for our apps and screens, to feature it (for example as a daily puzzle or on a leaderboard) and to show it in promotion of the service, credited to the name you publish under. Other players may solve it, race on it and share links to it within the service. We do not pay for published puzzles.",
+          "Only publish puzzles you made yourself, or have the right to publish, and that follow the community rules below. You can unpublish a puzzle at any time; it then disappears from public lists, but games already in progress, past daily puzzles and copies that players saved may keep it.",
+        ],
+      },
+      {
+        heading: "Community rules",
+        paragraphs: [
+          "We have no tolerance for objectionable content or abusive users. A puzzle, including its title, clues, answers and notes, must not:",
+        ],
+        items: [
+          "copy a grid or clues from another publisher or constructor without their permission;",
+          "be hateful, harassing, sexually explicit, or demeaning about a group or a real person;",
+          "share someone's personal information, or be used to send messages to or about someone;",
+          "be spam, gibberish or deliberately broken.",
+        ],
+      },
+      {
+        heading: "Reports, removal and blocking",
+        paragraphs: [
+          "Every published puzzle can be reported, for example as copied, offensive or nonsense. We review reports promptly and aim to act within 24 hours. We may remove any puzzle or name, and suspend or close accounts, that break these terms, with or without notice. You can hide an author's puzzles so you no longer see them. If you think we got a decision wrong, email " + C + ".",
         ],
       },
       {
@@ -289,6 +315,7 @@ const es: LegalContent = {
           "Entradas de la clasificación diaria: la fecha, tu nombre visible, tu tiempo y si fue en solitario o en carrera.",
           "Estadísticas de juego, en la web y en las apps: por cada crucigrama que juegas, un resumen de cómo fue, vinculado a tu ID anónimo. Incluye el título y el tamaño del crucigrama (no su cuadrícula ni sus pistas), si lo terminaste, cuántas casillas llenaste, tu tiempo activo y total, las letras incorrectas y, para cada pista, cuánto tardaste y cuántas de sus letras vinieron de respuestas cruzadas, además del tipo de dispositivo y navegador que usaste (por ejemplo «iOS Safari») y si habías iniciado sesión con una cuenta. Cuando quien organiza en una TV activa el narrador con IA, también registramos si arrancó y qué motor respondió. Usamos todo esto para medir la dificultad de los crucigramas y las pistas, saber dónde se juega y crear otros mejores. En la web, solo se incluye a visitantes del Espacio Económico Europeo, el Reino Unido y Suiza si aceptan la analítica.",
           "Los crucigramas que importas o abres en la versión web (por ejemplo desde un archivo o enlace), con título, autor, cuadrícula y pistas. Los registros de crucigramas y partidas pueden ser leídos por otros usuarios del servicio que conozcan u obtengan el identificador correspondiente; no importes crucigramas que no quieras compartir con las personas con las que juegas. Los crucigramas importados con la importación nativa de NYT no se suben cuando juegas en solitario (ver más abajo).",
+          "Crucigramas publicados, denuncias y autores ocultos: si publicas un crucigrama desde el estudio, guardamos el crucigrama (cuadrícula, pistas, título y tu nota), el identificador de tu cuenta, el idioma y la dificultad que elegiste, cuándo lo publicaste y cuántas veces se ha jugado y resuelto. El crucigrama y esas cifras son públicos y se muestran con tu nombre de usuario. Lo conservamos hasta que lo retires (y 30 días más, por si cambias de idea) o lo eliminemos (y 30 días más, por si hay una contranotificación), o hasta que borres tu cuenta. Si denuncias un crucigrama, guardamos el crucigrama, tu motivo y tu nota, y tu identificador (anónimo o de cuenta) para evitar abusos de las denuncias; el autor nunca ve quién lo denunció, y la denuncia se conserva un año después de resolverse. Si ocultas a un autor, esa elección se queda solo en tu navegador o app. Cuando eliminamos un crucigrama o impedimos que una cuenta publique, registramos el motivo y quién lo decidió.",
         ],
       },
       {
@@ -356,7 +383,7 @@ const es: LegalContent = {
       {
         heading: "Conservación y tus opciones",
         paragraphs: [
-          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
+          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Los crucigramas publicados se conservan hasta que se retiran (y 30 días más), se eliminan (y 30 días más) o se borra la cuenta; las denuncias resueltas se conservan un año. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
         ],
       },
       {
@@ -404,7 +431,7 @@ const es: LegalContent = {
       {
         heading: "Uso aceptable",
         items: [
-          "No uses nombres visibles, nombres de usuario ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
+          "No uses nombres visibles, nombres de usuario, títulos de crucigramas, pistas ni otro texto que sea ilegal, de odio, acosador, sexual o que suplante a otra persona.",
           "No intentes interrumpir, sobrecargar ni aplicar ingeniería inversa al servicio, eludir límites de uso o de gasto, ni acceder a datos que no son tuyos.",
           "No uses herramientas automáticas para hacer trampa en las partidas ni manipular las clasificaciones.",
         ],
@@ -412,8 +439,33 @@ const es: LegalContent = {
       {
         heading: "Crucigramas y tu contenido",
         paragraphs: [
-          "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
+          "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Los crucigramas que creas en el estudio son tuyos y se quedan en tu navegador hasta que los organizas, compartes o publicas; entonces se aplican las mismas normas. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
           "La biblioteca clásica reúne crucigramas de dominio público del Cross Word Puzzle Book de 1924. Los minis diarios y otros crucigramas incluidos se ofrecen para juego personal y no comercial.",
+        ],
+      },
+      {
+        heading: "Publicar crucigramas",
+        paragraphs: [
+          "Los crucigramas que creas siguen siendo tuyos. Al publicar uno, nos concedes una licencia mundial, no exclusiva y gratuita para alojarlo, mostrarlo, reproducirlo y distribuirlo en Crossword Clash, adaptar su formato a nuestras apps y pantallas, destacarlo (por ejemplo como crucigrama diario o en una clasificación) y mostrarlo para promocionar el servicio, con el nombre con el que lo publicas. Otros jugadores pueden resolverlo, competir con él y compartir enlaces dentro del servicio. No pagamos por los crucigramas publicados.",
+          "Publica solo crucigramas que hayas creado tú o que tengas derecho a publicar, y que cumplan las normas de la comunidad. Puedes retirar un crucigrama cuando quieras; desaparece de las listas públicas, pero las partidas en curso, los crucigramas diarios pasados y las copias que hayan guardado los jugadores pueden conservarlo.",
+        ],
+      },
+      {
+        heading: "Normas de la comunidad",
+        paragraphs: [
+          "No toleramos contenido inaceptable ni usuarios abusivos. Un crucigrama, incluidos su título, pistas, respuestas y notas, no debe:",
+        ],
+        items: [
+          "copiar una cuadrícula o pistas de otro editor o autor sin su permiso;",
+          "ser de odio, acosador, sexualmente explícito ni denigrar a un grupo o a una persona real;",
+          "compartir datos personales de alguien ni usarse para enviar mensajes a alguien o sobre alguien;",
+          "ser spam, un sinsentido o estar roto a propósito.",
+        ],
+      },
+      {
+        heading: "Denuncias, retirada y bloqueo",
+        paragraphs: [
+          "Cualquier crucigrama publicado se puede denunciar, por ejemplo por copiado, ofensivo o sin sentido. Revisamos las denuncias con rapidez e intentamos actuar en menos de 24 horas. Podemos retirar cualquier crucigrama o nombre, y suspender o cerrar cuentas, que incumplan estos términos, con o sin aviso. Puedes ocultar los crucigramas de un autor para no verlos más. Si crees que nos equivocamos, escribe a " + C + ".",
         ],
       },
       {
