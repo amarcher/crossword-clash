@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "../i18n/en.json";
+import { STRIPE_API_VERSION } from "./purchaseEvents";
 import {
   PLUS_PRICES,
   PLUS_PRODUCT,
@@ -54,7 +55,7 @@ describe("stripeSetup", () => {
     const events = params.filter(([k]) => k === "enabled_events[]").map(([, v]) => v);
     expect(events).toEqual([...PLUS_WEBHOOK_EVENTS]);
     expect(events).not.toContain("invoice.paid");
-    expect(Object.fromEntries(params)).toMatchObject({ url, api_version: "2026-06-24.dahlia" });
+    expect(Object.fromEntries(params)).toMatchObject({ url, api_version: STRIPE_API_VERSION });
     expect(Object.fromEntries(params).description).toContain("live mode");
   });
 

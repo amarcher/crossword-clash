@@ -1,6 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { serviceClient, userFromRequest } from "../_shared/user.ts";
 import { entitlementsFor } from "../_shared/entitlementStore.ts";
+import { stripeHeaders } from "../_shared/purchaseEvents.ts";
 
 /**
  * Deletes the signed-in account (Authorization: Bearer <access token>).
@@ -30,7 +31,7 @@ async function cancelStripe(subscriptionId: string): Promise<void> {
   if (!STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is not set");
   const res = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+    headers: stripeHeaders(STRIPE_SECRET_KEY),
   });
   // 404: already gone (cancelled earlier through the portal); nothing to do.
   if (!res.ok && res.status !== 404) throw new Error(`Stripe ${res.status}: ${(await res.text()).slice(0, 300)}`);

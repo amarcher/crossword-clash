@@ -1,7 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { serviceClient, userFromRequest } from "../_shared/user.ts";
 import { entitlementsFor } from "../_shared/entitlementStore.ts";
-import { checkoutOrigin } from "../_shared/purchaseEvents.ts";
+import { checkoutOrigin, stripeHeaders } from "../_shared/purchaseEvents.ts";
 
 /**
  * Starts a Stripe Checkout session for Crossword Clash Plus on the web
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
     const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+      headers: stripeHeaders(STRIPE_SECRET_KEY, true),
       body: params,
     });
     if (!res.ok) return json({ error: "stripe_error", status: res.status, details: (await res.text()).slice(0, 300) }, 502);

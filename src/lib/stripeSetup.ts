@@ -12,6 +12,8 @@
  * `lookup_key`, the endpoint by its URL.
  */
 
+import { STRIPE_API_VERSION } from "./purchaseEvents";
+
 export const PLUS_MARKER = { key: "app", value: "crossword-clash-plus" } as const;
 
 export const PLUS_PRODUCT = {
@@ -46,8 +48,8 @@ export const PLUS_WEBHOOK_EVENTS = [
   "customer.subscription.deleted",
 ] as const;
 
-/** The payload shape `purchaseEvents.ts` was written against. */
-export const PLUS_WEBHOOK_API_VERSION = "2026-06-24.dahlia";
+/** The version every API call is pinned to as well (`stripeHeaders`); the endpoint sends the same shape. */
+export const PLUS_WEBHOOK_API_VERSION = STRIPE_API_VERSION;
 
 export function productParams(): [string, string][] {
   return [
