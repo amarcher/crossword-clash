@@ -230,8 +230,11 @@ store work (3.3–3.6) makes the **apps** sell it and needs an app release.
    ```
 
 7. **Test with a test card** (4242 4242 4242 4242, any future date): on a
-   Vercel preview with `VITE_PLUS=1`, sign in, Account → Crossword Clash Plus
-   → Get Plus yearly → pay → you land on `/menu?checkout=success`, the sheet
+   Vercel preview with `VITE_PLUS=1` (set the variable for the Preview
+   environment only; untick "Save my information with Link" at checkout), sign
+   in, Account → Crossword Clash Plus → Get Plus yearly → pay → you land back
+   on the preview's `/menu?checkout=success` (Checkout returns to the origin
+   the purchase started on when it is a preview deployment), the sheet
    reopens as a subscriber, `entitlements` has a `stripe` row. "Manage
    subscription" opens the portal; cancelling there arrives as
    `customer.subscription.updated` (`will_renew` false) and, at period end,

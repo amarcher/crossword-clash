@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  checkoutOrigin,
   isSupabaseUid,
   parseStripeSignature,
   pickStripeSubscription,
@@ -11,10 +12,11 @@ import {
   signStripePayload,
   stripeAction,
   stripePeriodEnd,
+  stripeReconcilePlan,
   stripeStatusToEntitlement,
   stripeSubscriptionRow,
-  verifyStripeSignature,
   type RevenueCatEvent,
+  verifyStripeSignature,
 } from "./purchaseEvents";
 
 const UID = "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c";
@@ -294,5 +296,46 @@ describe("Stripe signatures", () => {
     expect(await verifyStripeSignature(body, header, secret, t - 301)).toBe(false);
     expect(await verifyStripeSignature(body, null, secret, t)).toBe(false);
     expect(await verifyStripeSignature(body, header, "", t)).toBe(false);
+  });
+});
+
+describe("stripeReconcilePlan", () => {
+  const row = (status: "active" | "grace" | "expired" | "revoked", external_id: string | null, source: "stripe" | "revenuecat" = "stripe") => ({
+    source,
+    status,
+    external_id,
+  });
+
+  it("re-reads a known subscription by id, preferring a live row over a lapsed one", () => {
+    expect(stripeReconcilePlan([row("expired", "sub_old"), row("active", "sub_live")])).toEqual({ kind: "fetch", subscriptionId: "sub_live" });
+    expect(stripeReconcilePlan([row("grace", "sub_grace")])).toEqual({ kind: "fetch", subscriptionId: "sub_grace" });
+    expect(stripeReconcilePlan([row("expired", "sub_old")])).toEqual({ kind: "fetch", subscriptionId: "sub_old" });
+  });
+
+  it("searches only when no Stripe row names a subscription", () => {
+    expect(stripeReconcilePlan([])).toEqual({ kind: "search" });
+    expect(stripeReconcilePlan([row("active", null)])).toEqual({ kind: "search" });
+    expect(stripeReconcilePlan([row("active", "rc_user", "revenuecat")])).toEqual({ kind: "search" });
+  });
+});
+
+describe("checkoutOrigin", () => {
+  const site = "https://crosswordclash.com";
+
+  it("returns the site for no origin, a third-party origin, or a look-alike", () => {
+    expect(checkoutOrigin(null, site)).toBe(site);
+    expect(checkoutOrigin("https://evil.example", site)).toBe(site);
+    expect(checkoutOrigin("https://crossword-clash-abc-amarchers-projects.vercel.app.evil.example", site)).toBe(site);
+    expect(checkoutOrigin("http://crossword-clash-abc-amarchers-projects.vercel.app", site)).toBe(site);
+  });
+
+  it("keeps the site itself and this project's preview deployments, without a trailing slash", () => {
+    expect(checkoutOrigin("https://crosswordclash.com/", site + "/")).toBe(site);
+    expect(checkoutOrigin("https://crossword-clash-8ol25cf9v-amarchers-projects.vercel.app", site)).toBe(
+      "https://crossword-clash-8ol25cf9v-amarchers-projects.vercel.app",
+    );
+    expect(checkoutOrigin("https://crossword-clash-git-claude-portal-config-amarchers-projects.vercel.app/", site)).toBe(
+      "https://crossword-clash-git-claude-portal-config-amarchers-projects.vercel.app",
+    );
   });
 });

@@ -79,7 +79,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   // drop the `checkout` parameter so a reload does not repeat this.
   const { refreshEntitlements, sessionUserId } = account;
   useEffect(() => {
-    if (!available || typeof window === "undefined") return;
+    // With Plus off this build never started a checkout; a stray parameter
+    // (a preview's purchase that landed on production) must not reconcile here.
+    if (!available || !plusEnabled() || typeof window === "undefined") return;
     const outcome = checkoutReturn(window.location.search);
     if (!outcome) return;
     window.history.replaceState(window.history.state, "", withoutCheckoutParam(window.location.href));

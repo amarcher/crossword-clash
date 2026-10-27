@@ -1,6 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { serviceClient, userFromRequest } from "../_shared/user.ts";
 import { entitlementsFor } from "../_shared/entitlementStore.ts";
+import { checkoutOrigin } from "../_shared/purchaseEvents.ts";
 
 /**
  * Starts a Stripe Checkout session for Crossword Clash Plus on the web
@@ -64,8 +65,10 @@ Deno.serve(async (req) => {
     params.set("client_reference_id", user.id);
     params.set("metadata[uid]", user.id);
     params.set("subscription_data[metadata][uid]", user.id);
-    params.set("success_url", `${SITE_URL}${returnTo}?checkout=success`);
-    params.set("cancel_url", `${SITE_URL}${returnTo}?checkout=cancelled`);
+    // Back to the site, or to the preview deployment the purchase started on.
+    const origin = checkoutOrigin(req.headers.get("origin"), SITE_URL);
+    params.set("success_url", `${origin}${returnTo}?checkout=success`);
+    params.set("cancel_url", `${origin}${returnTo}?checkout=cancelled`);
     params.set("allow_promotion_codes", "true");
     if (AUTOMATIC_TAX) {
       params.set("automatic_tax[enabled]", "true");
