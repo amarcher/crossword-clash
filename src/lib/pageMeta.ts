@@ -19,7 +19,7 @@ export interface PageMeta {
 }
 
 /** The content routes the build prerenders. Order is the order of output. */
-export const PRERENDERED_ROUTES = ["/", "/menu", "/classics", "/privacy", "/terms", "/support"] as const;
+export const PRERENDERED_ROUTES = ["/", "/menu", "/classics", "/privacy", "/terms", "/support", "/copyright"] as const;
 export type PrerenderedRoute = (typeof PRERENDERED_ROUTES)[number];
 
 type Translate = (key: string) => string;
@@ -46,7 +46,8 @@ export function pageMetaFor(pathname: string, t: Translate): PageMeta {
       return { title: t("meta.account.title"), description: t("meta.account.description"), canonical: canonicalFor(path) };
     case "/privacy":
     case "/terms":
-    case "/support": {
+    case "/support":
+    case "/copyright": {
       const kind = path.slice(1);
       return {
         title: `${t(`legal.${kind}Title`)} | Crossword Clash`,

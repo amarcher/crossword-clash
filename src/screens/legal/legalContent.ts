@@ -8,6 +8,11 @@
  *
  * Governing law: the Commonwealth of Massachusetts, where the operating
  * business is registered.
+ *
+ * The copyright page gives the DMCA safe harbor (17 U.S.C. 512) only once the
+ * designated agent is registered at dmca.copyright.gov AND the same name,
+ * postal address, phone and email appear on the page (512(c)(2)). They live
+ * in DMCA_AGENT below; the legal tests refuse to ship a [PLACEHOLDER].
  */
 
 export const LEGAL_LAST_UPDATED = "2026-10-28";
@@ -28,9 +33,24 @@ export interface LegalContent {
   privacy: LegalDoc;
   terms: LegalDoc;
   support: LegalDoc;
+  copyright: LegalDoc;
 }
 
 const C = LEGAL_CONTACT_EMAIL;
+
+/**
+ * The designated copyright agent (DMCA). Register the same details at
+ * dmca.copyright.gov (service provider: the LLC; alternate names: Crossword
+ * Clash, crosswordclash.com), then fill the address and phone in here. The
+ * Copyright Office wants a street address, not a PO box.
+ */
+export const DMCA_AGENT = {
+  name: "Fable Designer LLC, which operates Crossword Clash",
+  attention: "Copyright Agent",
+  address: "82 Wendell Ave. Ste 100, Pittsfield, MA 01201, USA",
+  phone: "+1 (617) 420-2364",
+  email: LEGAL_CONTACT_EMAIL,
+} as const;
 
 const en: LegalContent = {
   privacy: {
@@ -150,6 +170,59 @@ const en: LegalContent = {
       },
     ],
   },
+  copyright: {
+    intro:
+      "Crossword Clash lets players bring their own puzzles: import a file, host it in a room for friends, or build one in the construction studio. We respect the rights of puzzle makers and publishers, and we handle copyright complaints under the U.S. Digital Millennium Copyright Act (DMCA). This page says where puzzles live, how to send us a notice, and what happens next.",
+    sections: [
+      {
+        heading: "Where puzzles live",
+        paragraphs: [
+          "A puzzle you import for solo play stays on your device; our servers never receive it. A puzzle you build in the studio stays in your browser until you host it or share a link to it, and a challenge link carries the puzzle inside the link itself. When you host a room or send a challenge, a copy is stored on our servers so the people you invite can play it, and it is deleted on our retention schedule: a day after it is no longer part of any game, and at most 90 days after the game ends. A puzzle an author publishes to the community library is stored on our servers and shown under their username until they unpublish it or we remove it; a removed puzzle is kept for 30 days in case of a counter-notice, then deleted. The daily puzzles and the classic library are published by us.",
+        ],
+      },
+      {
+        heading: "Designated copyright agent",
+        paragraphs: ["Notices of claimed infringement for Crossword Clash go to our designated agent:"],
+        items: [
+          "Name: " + DMCA_AGENT.name,
+          "Attention: " + DMCA_AGENT.attention,
+          "Postal address: " + DMCA_AGENT.address,
+          "Telephone: " + DMCA_AGENT.phone,
+          "Email: " + DMCA_AGENT.email + " (subject line: Copyright notice)",
+        ],
+      },
+      {
+        heading: "Sending a notice",
+        paragraphs: ["Email is fastest. Under the DMCA, a notice must include:"],
+        items: [
+          "your physical or electronic signature;",
+          "the work you believe is infringed;",
+          "the puzzle you want removed and where it is (a room code or a link is best);",
+          "your name, address, telephone number and email;",
+          "a statement that you believe in good faith the use is not authorised by you, your agent or the law;",
+          "a statement that the notice is accurate and, under penalty of perjury, that you are the owner or authorised to act for the owner.",
+        ],
+      },
+      {
+        heading: "What we do with a notice",
+        paragraphs: [
+          "We remove the puzzle or disable access to it promptly, tell the person who hosted or shared it where we can reach them, and keep a record of the notice. If the puzzle only exists in a room, closing the room removes it.",
+        ],
+      },
+      {
+        heading: "Counter-notices",
+        paragraphs: [
+          "If your puzzle was removed after a notice and you believe that was a mistake, send a counter-notice to the same agent with your name, contact details and signature, the puzzle that was removed, a statement under penalty of perjury that it was removed by mistake or misidentification, and your consent to the jurisdiction of the U.S. federal courts. We forward it to the complainant and restore the puzzle 10 to 14 business days later unless they tell us they have filed a lawsuit.",
+        ],
+      },
+      {
+        heading: "Repeat infringers",
+        paragraphs: [
+          "We close the accounts of people who repeatedly infringe copyright and block them from hosting rooms. Knowingly false notices or counter-notices can make the sender liable for damages, including our costs.",
+        ],
+      },
+    ],
+  },
   terms: {
     intro:
       "By using Crossword Clash (the website and the iOS and Android apps) you agree to these terms. If you do not agree, please do not use it.",
@@ -183,7 +256,7 @@ const en: LegalContent = {
       {
         heading: "Puzzles and your content",
         paragraphs: [
-          "You are responsible for the puzzles you import or share and for having the right to use them. Do not upload or redistribute puzzles you are not permitted to share. When you host a game or send a challenge, you allow us to store and transmit that puzzle to the people you invite. We may remove content or names at our discretion.",
+          "You are responsible for the puzzles you import or share and for having the right to use them. Do not upload or redistribute puzzles you are not permitted to share. Puzzles you build in the studio are yours and stay in your browser until you host, share or publish them; the same rules apply when you do. When you host a game or send a challenge, you allow us to store and transmit that puzzle to the people you invite. We may remove content or names at our discretion.",
           "The classic library consists of public-domain puzzles from the 1924 Cross Word Puzzle Book. Daily minis and other bundled puzzles are provided for personal, non-commercial play.",
         ],
       },
@@ -210,6 +283,12 @@ const en: LegalContent = {
         heading: "Reports, removal and blocking",
         paragraphs: [
           "Every published puzzle can be reported, for example as copied, offensive or nonsense. We review reports promptly and aim to act within 24 hours. We may remove any puzzle or name, and suspend or close accounts, that break these terms, with or without notice. You can hide an author's puzzles so you no longer see them. If you think we got a decision wrong, email " + C + ".",
+        ],
+      },
+      {
+        heading: "Copyright complaints and repeat infringers",
+        paragraphs: [
+          "If you believe a puzzle on Crossword Clash infringes your copyright, follow our copyright policy at crosswordclash.com/copyright: it names our designated agent and explains what a notice and a counter-notice must contain. We remove infringing puzzles and close the accounts of repeat infringers.",
         ],
       },
       {
@@ -276,6 +355,12 @@ const en: LegalContent = {
         heading: "Report a name or a player",
         paragraphs: [
           "Display names are filtered, but if you see an offensive name or abusive behaviour, email " + C + " with the room code or the leaderboard date and the name. We review reports and remove names or block access where our terms are broken.",
+        ],
+      },
+      {
+        heading: "A puzzle that uses your work",
+        paragraphs: [
+          "If a puzzle hosted or shared on Crossword Clash uses your work without permission, our copyright policy at crosswordclash.com/copyright says how to send a notice and who our designated agent is.",
         ],
       },
       {
@@ -406,6 +491,59 @@ const es: LegalContent = {
       },
     ],
   },
+  copyright: {
+    intro:
+      "Crossword Clash permite traer tus propios crucigramas: importar un archivo, organizar una sala con él para tus amigos o crear uno en el estudio de construcción. Respetamos los derechos de quienes crean y publican crucigramas y tramitamos las reclamaciones de derechos de autor según la ley estadounidense Digital Millennium Copyright Act (DMCA). Esta página explica dónde se guardan los crucigramas, cómo enviarnos una notificación y qué ocurre después.",
+    sections: [
+      {
+        heading: "Dónde se guardan los crucigramas",
+        paragraphs: [
+          "Un crucigrama que importas para jugar en solitario se queda en tu dispositivo; nuestros servidores nunca lo reciben. Un crucigrama que creas en el estudio se queda en tu navegador hasta que organizas una sala o compartes un enlace, y un enlace de desafío lleva el crucigrama dentro del propio enlace. Cuando organizas una sala o envías un desafío, se guarda una copia en nuestros servidores para que las personas que invitas puedan jugarlo, y se elimina según nuestro calendario de retención: un día después de dejar de formar parte de una partida y, como máximo, 90 días después de terminar la partida. Un crucigrama que un autor publica en la biblioteca de la comunidad se guarda en nuestros servidores y se muestra con su nombre de usuario hasta que lo retira o lo eliminamos; un crucigrama eliminado se conserva 30 días por si hay una contranotificación y después se borra. Los crucigramas diarios y la biblioteca clásica los publicamos nosotros.",
+        ],
+      },
+      {
+        heading: "Agente designado de derechos de autor",
+        paragraphs: ["Las notificaciones de presunta infracción relativas a Crossword Clash se dirigen a nuestro agente designado:"],
+        items: [
+          "Nombre: " + DMCA_AGENT.name,
+          "A la atención de: " + DMCA_AGENT.attention,
+          "Dirección postal: " + DMCA_AGENT.address,
+          "Teléfono: " + DMCA_AGENT.phone,
+          "Correo: " + DMCA_AGENT.email + " (asunto: Copyright notice)",
+        ],
+      },
+      {
+        heading: "Enviar una notificación",
+        paragraphs: ["El correo es lo más rápido. Según la DMCA, la notificación debe incluir:"],
+        items: [
+          "tu firma física o electrónica;",
+          "la obra que crees infringida;",
+          "el crucigrama que quieres retirar y dónde está (mejor con el código de la sala o un enlace);",
+          "tu nombre, dirección, teléfono y correo;",
+          "una declaración de que crees de buena fe que el uso no está autorizado por ti, tu representante ni la ley;",
+          "una declaración de que la notificación es exacta y, bajo pena de perjurio, de que eres el titular o estás autorizado a actuar en su nombre.",
+        ],
+      },
+      {
+        heading: "Qué hacemos con una notificación",
+        paragraphs: [
+          "Retiramos el crucigrama o bloqueamos el acceso a él con rapidez, se lo comunicamos a quien lo organizó o compartió cuando podemos localizarlo y conservamos un registro de la notificación. Si el crucigrama solo existe en una sala, cerrar la sala lo elimina.",
+        ],
+      },
+      {
+        heading: "Contranotificaciones",
+        paragraphs: [
+          "Si retiramos tu crucigrama tras una notificación y crees que fue un error, envía una contranotificación al mismo agente con tu nombre, datos de contacto y firma, el crucigrama retirado, una declaración bajo pena de perjurio de que se retiró por error o mala identificación, y tu aceptación de la jurisdicción de los tribunales federales de EE. UU. La reenviamos al reclamante y restauramos el crucigrama entre 10 y 14 días hábiles después, salvo que nos indique que ha presentado una demanda.",
+        ],
+      },
+      {
+        heading: "Infractores reiterados",
+        paragraphs: [
+          "Cerramos las cuentas de quienes infringen derechos de autor de forma reiterada y les impedimos organizar salas. Quien envíe a sabiendas una notificación o contranotificación falsa puede ser responsable de los daños, incluidos nuestros costes.",
+        ],
+      },
+    ],
+  },
   terms: {
     intro:
       "Al usar Crossword Clash (el sitio web y las apps de iOS y Android) aceptas estos términos. Si no estás de acuerdo, por favor no lo uses.",
@@ -439,7 +577,7 @@ const es: LegalContent = {
       {
         heading: "Crucigramas y tu contenido",
         paragraphs: [
-          "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Los crucigramas que creas en el estudio son tuyos y se quedan en tu navegador hasta que los organizas, compartes o publicas; entonces se aplican las mismas normas. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
+          "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Los crucigramas que creas en el estudio son tuyos y se quedan en tu navegador hasta que organizas una sala, los compartes o los publicas; cuando lo haces, se aplican las mismas reglas. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
           "La biblioteca clásica reúne crucigramas de dominio público del Cross Word Puzzle Book de 1924. Los minis diarios y otros crucigramas incluidos se ofrecen para juego personal y no comercial.",
         ],
       },
@@ -466,6 +604,12 @@ const es: LegalContent = {
         heading: "Denuncias, retirada y bloqueo",
         paragraphs: [
           "Cualquier crucigrama publicado se puede denunciar, por ejemplo por copiado, ofensivo o sin sentido. Revisamos las denuncias con rapidez e intentamos actuar en menos de 24 horas. Podemos retirar cualquier crucigrama o nombre, y suspender o cerrar cuentas, que incumplan estos términos, con o sin aviso. Puedes ocultar los crucigramas de un autor para no verlos más. Si crees que nos equivocamos, escribe a " + C + ".",
+        ],
+      },
+      {
+        heading: "Reclamaciones de derechos de autor e infractores reiterados",
+        paragraphs: [
+          "Si crees que un crucigrama de Crossword Clash infringe tus derechos de autor, sigue nuestra política de derechos de autor en crosswordclash.com/copyright: nombra a nuestro agente designado y explica qué debe incluir una notificación y una contranotificación. Retiramos los crucigramas infractores y cerramos las cuentas de quienes infringen de forma reiterada.",
         ],
       },
       {
@@ -532,6 +676,12 @@ const es: LegalContent = {
         heading: "Denunciar un nombre o a un jugador",
         paragraphs: [
           "Los nombres visibles se filtran, pero si ves un nombre ofensivo o un comportamiento abusivo, escribe a " + C + " con el código de sala o la fecha de la clasificación y el nombre. Revisamos las denuncias y eliminamos nombres o bloqueamos el acceso cuando se incumplen nuestros términos.",
+        ],
+      },
+      {
+        heading: "Un crucigrama que usa tu obra",
+        paragraphs: [
+          "Si un crucigrama organizado o compartido en Crossword Clash usa tu obra sin permiso, nuestra política de derechos de autor en crosswordclash.com/copyright explica cómo enviar una notificación y quién es nuestro agente designado.",
         ],
       },
       {

@@ -130,6 +130,7 @@ export const routes: RouteObject[] = [
       { path: "/privacy", errorElement: <RouteErrorScreen />, lazy: () => m.privacy().then((s) => ({ Component: s.PrivacyScreen })) },
       { path: "/terms", errorElement: <RouteErrorScreen />, lazy: () => m.terms().then((s) => ({ Component: s.TermsScreen })) },
       { path: "/support", errorElement: <RouteErrorScreen />, lazy: () => m.support().then((s) => ({ Component: s.SupportScreen })) },
+      { path: "/copyright", errorElement: <RouteErrorScreen />, lazy: () => m.copyright().then((s) => ({ Component: s.CopyrightScreen })) },
       // Construction studio: a Plus feature on the web (gated by StudioGateScreen,
       // which loads the editor only once the gate passes); dev and VITE_STUDIO
       // builds skip the gate; the apps have no route (src/lib/studioGate.ts).

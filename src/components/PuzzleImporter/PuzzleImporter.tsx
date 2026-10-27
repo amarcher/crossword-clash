@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { Link } from "react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { ArrowRight, BookOpen, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
 import { PageShell } from "../PageShell";
@@ -185,6 +185,19 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
             {t("importer.hubTitle")}
           </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{t(nativeApp ? "importer.hubSubtitleNative" : "importer.hubSubtitle")}</p>
+          <p className="mx-auto mt-2 max-w-md text-xs text-subtle sm:text-sm">
+            <Trans
+              i18nKey="importer.rightsNote"
+              components={{
+                anchor: (
+                  <Link
+                    to="/copyright"
+                    className="underline decoration-line underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-500"
+                  />
+                ),
+              }}
+            />
+          </p>
         </div>
 
         {/* Dropzone: a real <label> around a visually-hidden file input, so it is

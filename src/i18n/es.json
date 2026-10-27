@@ -95,7 +95,8 @@
     "classicTitle": "Crucigramas clásicos",
     "classicSubtitle": "Del primer libro de crucigramas jamás publicado (1924). Dominio público — toca uno para jugar.",
     "classicError": "No se pudo cargar ese crucigrama. Prueba con otro.",
-    "classicSeeAll": "Ver los {{count}} en la biblioteca clásica →"
+    "classicSeeAll": "Ver los {{count}} en la biblioteca clásica →",
+    "rightsNote": "Importa solo crucigramas que tengas derecho a usar. Consulta nuestra <anchor>política de derechos de autor</anchor>."
   },
   "importing": {
     "receiving": "Recibiendo crucigrama...",
@@ -509,7 +510,9 @@
     "privacyTitle": "Política de privacidad",
     "termsTitle": "Términos de uso",
     "support": "Ayuda",
-    "supportTitle": "Ayuda"
+    "supportTitle": "Ayuda",
+    "copyright": "Derechos de autor",
+    "copyrightTitle": "Política de derechos de autor"
   },
   "consent": {
     "regionLabel": "Consentimiento de cookies",
@@ -640,6 +643,9 @@
     "community": {
       "title": "Crucigramas de la comunidad — Crossword Clash",
       "description": "Crucigramas creados por jugadores en el estudio de Crossword Clash. Busca por tamaño y dificultad, resuelve solo o compite con amigos en directo, y publica los tuyos."
+    },
+    "copyright": {
+      "description": "Cómo denunciar un crucigrama de Crossword Clash que use tu obra sin permiso: dónde se guardan los crucigramas, nuestro agente DMCA y qué debe incluir una notificación."
     }
   },
   "dailyLink": {

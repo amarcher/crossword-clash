@@ -9,6 +9,7 @@ export const screenModules = {
   privacy: () => import("./screens/legal/PrivacyScreen"),
   terms: () => import("./screens/legal/TermsScreen"),
   support: () => import("./screens/legal/SupportScreen"),
+  copyright: () => import("./screens/legal/CopyrightScreen"),
   studio: () => import("./screens/StudioScreen"),
   // The small gate in front of the studio; it lazy-loads `studio` itself once the visitor may enter.
   studioGate: () => import("./screens/StudioGateScreen"),
@@ -80,6 +81,7 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/privacy": screenModules.privacy,
   "/terms": screenModules.terms,
   "/support": screenModules.support,
+  "/copyright": screenModules.copyright,
   "/studio": screenModules.studioGate,
   "/nyt-import": screenModules.nytImport,
   "/solo/import": screenModules.soloImport,
