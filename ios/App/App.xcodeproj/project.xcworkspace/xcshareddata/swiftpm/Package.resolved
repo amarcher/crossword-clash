@@ -1,5 +1,5 @@
 {
-  "originHash" : "afe31dde073c4d6953fea866cd51154af5646c7e85c35cab6e45b4e573953566",
+  "originHash" : "c08891b1da0c30316c841a69f1698a3e3329df09a3df6b6e6be094e058240270",
   "pins" : [
     {
       "identity" : "app-check",
@@ -26,15 +26,6 @@
       "state" : {
         "revision" : "0b6882e9a3288342aacf36348e5a94e4f1dd7b13",
         "version" : "8.5.2"
-      }
-    },
-    {
-      "identity" : "facebook-ios-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/facebook/facebook-ios-sdk.git",
-      "state" : {
-        "revision" : "80d0ee82f6370d1bace1431a80cb80575f98ee90",
-        "version" : "18.1.1"
       }
     },
     {
@@ -80,6 +71,15 @@
       "state" : {
         "revision" : "040d087ac2267d2ddd4cca36c757d1c6a05fdbfe",
         "version" : "101.0.0"
+      }
+    },
+    {
+      "identity" : "ion-ios-filesystem",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ionic-team/ion-ios-filesystem.git",
+      "state" : {
+        "revision" : "549c18ad9d9bb70d05df37cc3f6f7aa7f5d0ee52",
+        "version" : "2.0.1"
       }
     },
     {

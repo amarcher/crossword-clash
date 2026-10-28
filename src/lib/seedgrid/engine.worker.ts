@@ -5,13 +5,13 @@
  */
 import init, { Engine } from "./wasm/seedgrid_engine";
 import wasmUrl from "./wasm/seedgrid_engine_bg.wasm?url";
-import { checkWordListResponse, IngridEngine, MIN_WORD_LIST_WORDS, type EngineRules } from "./ingrid";
+import { IngridEngine, MIN_WORD_LIST_WORDS, type EngineRules } from "./ingrid";
 import { findSkeleton } from "./skeletonFinder";
 import type { Grid, Symmetry } from "./grid";
 import { mulberry32 } from "./random";
 
 export type WorkerRequest =
-  | { type: "init"; listUrl: string; maxShared: number }
+  | { type: "init"; list: string; maxShared: number }
   | { type: "fill"; grid: Grid; rules: EngineRules; timeoutMs: number; seed?: number }
   | { type: "options"; grid: Grid; rules: EngineRules; listSlot?: string; listLimit?: number }
   | { type: "classify"; grid: Grid; rules: EngineRules; slotId: string; words: string[]; timeoutMs: number }
@@ -22,10 +22,8 @@ let engine: IngridEngine | null = null;
 async function handle(req: WorkerRequest): Promise<unknown> {
   if (req.type === "init") {
     await init({ module_or_path: wasmUrl });
-    const res = await fetch(req.listUrl);
-    const text = await res.text();
-    checkWordListResponse(res.status, res.headers.get("content-type"), text);
-    engine = new IngridEngine(new Engine(text, req.maxShared, 21));
+    // The list text arrives from the client (wordListStore.ts: downloaded once per device, then cached).
+    engine = new IngridEngine(new Engine(req.list, req.maxShared, 21));
     if (engine.wordCount < MIN_WORD_LIST_WORDS) throw new Error(`word list has only ${engine.wordCount} words`);
     return { words: engine.wordCount };
   }

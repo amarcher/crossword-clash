@@ -396,6 +396,16 @@ slice of Claude:
   `words.dict` stays out of production), `.ipuz` export, Play test links, My
   puzzles (localStorage today; a synced `studio_puzzles` table is a later
   phase, §4).
+- **In the apps too (Andrew's decision of 2026-10-28).** The route exists in
+  every Plus build, `--mode mobile` included, behind the same gate (the
+  sign-in pitch shows the OS sheets). Below `lg` the editor is one screen with
+  a bottom tab bar (Grid · Words · Clues · More), on the website and in the
+  apps alike; the word list is downloaded on demand the first time a
+  subscriber opens the editor on a device, with a visible step and a progress
+  bar, and kept in the device's cache afterwards (precedent: a game
+  downloading its extra content after install). Play test opens the solver in
+  the app and Export goes through the OS share sheet. Only the admin panels
+  stay web-only. CLAUDE.md's studio bullet has the mechanics.
 - Clue drafting through `studio-claude` on a per-user allowance: **40 calls a
   month**, Sonnet 5.5 only. A draft of a 15×15 is one `cluesRequest` plus one
   fix pass plus occasional alternatives, about five calls, so 40 calls is
@@ -841,8 +851,9 @@ RevenueCat and AdMob dashboards (§4.3).
   sign-in before purchase. It is not: 5.1.1(v) only forbids requiring a login
   where an app has no significant account-based features, and the free game
   stays fully playable without one. Plus *is* account-based — progress sync
-  and solve history only exist for an account, and the studio is web-only, so
-  an anonymous app buyer could reach neither and had no way back to Manage or
+  and solve history only exist for an account, and the studio was web-only at
+  the time (it reached the apps on 2026-10-28, §2.2, still behind an account),
+  so an anonymous app buyer could reach neither and had no way back to Manage or
   Restore once the sheet closed. So the apps now behave like the web: the
   paywall shows an anonymous visitor the Apple / Google buttons with "Plus
   belongs to your account, so it follows you to the web and every device", the
@@ -919,7 +930,8 @@ against a bug in any of the above.
 
 The audit named AdMob rewarded and the entitlements table as the first cover
 for a plan upgrade. Entitlements first: it ships with a web deploy and no
-store review, the studio (the headline Plus feature) is web-only in practice,
+store review, the studio (the headline Plus feature) was web-only in practice
+until 2026-10-28 (§2.2),
 and the apps have too few users this month for ads to matter (§1.10). AdMob
 second, once Plus exists to convert to.
 
