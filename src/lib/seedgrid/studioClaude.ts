@@ -3,7 +3,7 @@
  * come from cluePrompt.ts (shared with the CLI), and drafts get the same
  * checks and one fix pass as `pnpm seedgrid`.
  */
-import { alternativesRequest, clueOk, clueProblems, cluesRequest, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
+import { alternativesRequest, clueProblems, cluesRequest, vetAlternatives, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
 import { slotsOf, slotText, type Grid } from "./grid";
 import { studioHeaders } from "../studioAuth";
 
@@ -46,9 +46,9 @@ export function edgeCaller(token: string): ClaudeCaller {
     });
     if (res.status === 401) throw new StudioClaudeError("token", "Sign in as a studio admin, or enter the studio token.");
     if (res.status === 402) throw studioRefusal(await res.json().catch(() => null));
-    if (res.status === 429) throw new StudioClaudeError("rate", "Too many Claude requests this hour. Try again later.");
+    if (res.status === 429) throw new StudioClaudeError("rate", "Too many AI requests this hour. Try again later.");
     const body = (await res.json().catch(() => ({}))) as { result?: T; error?: string };
-    if (!res.ok || body.result === undefined) throw new StudioClaudeError("failed", `Claude request failed (${body.error ?? res.status}).`);
+    if (!res.ok || body.result === undefined) throw new StudioClaudeError("failed", `The AI request failed (${body.error ?? res.status}).`);
     return body.result;
   };
 }
@@ -87,7 +87,11 @@ export async function draftClues(
   return out;
 }
 
-/** A few alternative standard clues for one entry, keeping only ones that pass the checks. */
+/**
+ * A redraft of one entry: `ALTERNATIVES_COUNT` alternative standard clues in
+ * one call (one allowance unit however many come back), vetted by
+ * `vetAlternatives` so every one offered passes the checks.
+ */
 export async function suggestClues(
   call: ClaudeCaller,
   grid: Grid,
@@ -97,6 +101,6 @@ export async function suggestClues(
 ): Promise<string[]> {
   const answer = entryAnswers(grid)[slotId];
   if (!answer) return [];
-  const { clues } = await call<{ clues: string[] }>(alternativesRequest(grid, context, slotId, opts));
-  return [...new Set(clues.map((c) => c.trim()))].filter((c) => c && c !== opts.current && clueOk(answer, c));
+  const { clues } = await call<{ clues: unknown }>(alternativesRequest(grid, context, slotId, opts));
+  return vetAlternatives(answer, Array.isArray(clues) ? clues : [], opts.current);
 }

@@ -36,8 +36,12 @@ const RULES = `- Each clue at most ${CLUE_MAX} characters. Shorter is better: pl
 - Never use the answer or any of its words in its clue. Mark fill-in-the-blank with ___ . Signal abbreviations and foreign words the standard way.
 - Write original clues; do not reuse famous published ones.`;
 
+/** The theme is an optional input: without one stated in the context, say so, so none is invented. */
+export const NO_THEME = "No theme is stated: clue every entry on its own merits and do not invent one.";
+
 function header(grid: Grid, context: string): string {
-  return `${context.trim() ? `${context.trim()}\n` : ""}Grid:\n${gridToRows(grid).join("\n")}`;
+  const stated = /^Theme:/m.test(context);
+  return `${context.trim() ? `${context.trim()}\n` : ""}${stated ? "" : `${NO_THEME}\n`}Grid:\n${gridToRows(grid).join("\n")}`;
 }
 
 /** Two clues (standard + speed) for each listed slot; `fix` names earlier problems to correct. */
@@ -54,7 +58,7 @@ export function cluesRequest(
     prompt: `${header(grid, context)}
 
 Write two clues for every entry below.
-- standard: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}. Theme entries may nod to the theme.
+- standard: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}. Theme entries may nod to the theme when one is stated above.
 - speed: plain and instantly gettable; used as a hint in a race.
 ${RULES}
 ${fix}
@@ -77,6 +81,9 @@ ${slots.map((s) => `${s.id} ${slotText(grid, s)}`).join("\n")}`,
   };
 }
 
+/** How many alternatives one redraft asks for: enough to choose from, cheap enough for one allowance unit. */
+export const ALTERNATIVES_COUNT = 3;
+
 /** Several different standard clues for one entry, so the constructor can pick. */
 export function alternativesRequest(grid: Grid, context: string, slotId: string, opts: { count?: number; difficulty?: Difficulty; current?: string } = {}): ClaudeJsonRequest {
   const slot = slotsOf(grid).find((s) => s.id === slotId);
@@ -85,7 +92,7 @@ export function alternativesRequest(grid: Grid, context: string, slotId: string,
     system: CONSTRUCTOR,
     prompt: `${header(grid, context)}
 
-Write ${opts.count ?? 4} different clues for ${slotId} ${answer}, each taking a distinct angle (definition, wordplay, pop culture, fill-in-the-blank...).
+Write ${opts.count ?? ALTERNATIVES_COUNT} different clues for ${slotId} ${answer}, each taking a distinct angle (definition, wordplay, pop culture, fill-in-the-blank...).
 Style: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}.
 ${opts.current ? `The current clue is "${opts.current}"; do not repeat it.\n` : ""}${RULES}`,
     schema: {
@@ -113,6 +120,24 @@ export function clueProblems(answers: Record<string, string>, clues: Record<stri
 /** True when a single clue passes the blocking checks. */
 export function clueOk(answer: string, clue: string): boolean {
   return !auditClues([{ slotId: "", answer, clue }]).some((i) => i.severity === "block");
+}
+
+/**
+ * The alternatives worth offering: trimmed, each once, never the clue already
+ * in the row, and only ones that pass the blocking checks (at most `CLUE_MAX`
+ * characters, never giving the answer away). Order is the writer's.
+ */
+export function vetAlternatives(answer: string, clues: readonly unknown[], current?: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of clues) {
+    const clue = typeof raw === "string" ? raw.trim() : "";
+    const key = clue.toLowerCase();
+    if (!clue || seen.has(key) || key === current?.trim().toLowerCase() || !clueOk(answer, clue)) continue;
+    seen.add(key);
+    out.push(clue);
+  }
+  return out;
 }
 
 /** The content standard every clue pass states to the writer and the reviewer. */

@@ -630,7 +630,7 @@
     "subtitle": "Todos los diarios pasados, el estudio de construcción, el presentador con IA y tu progreso en todos tus dispositivos.",
     "youHavePlus": "Tienes Plus.",
     "benefitArchive": "Juega todos los diarios desde que empezó el archivo",
-    "benefitStudio": "Construye tus propios crucigramas en el estudio de la web, con 40 borradores de pistas de Claude al mes",
+    "benefitStudio": "Construye tus propios crucigramas en el estudio de la web, con 40 borradores de pistas con IA al mes",
     "benefitNarrator": "60 minutos al mes del presentador con IA en la vista de TV",
     "benefitProgress": "Los crucigramas a medias te acompañan en todos tus dispositivos",
     "annualSave": "Ahorra un {{percent}}%",
@@ -668,8 +668,8 @@
   "studio": {
     "loading": "Cargando el estudio…",
     "gateTitle": "Construye tu propio crucigrama",
-    "gateBody": "El estudio coloca tus entradas temáticas, rellena la cuadrícula con un motor de construcción real, muestra dónde aprieta y redacta pistas con Claude. Forma parte de Crossword Clash Plus.",
-    "draftsLeft": "Te quedan {{left}} de {{limit}} borradores de Claude este mes"
+    "gateBody": "El estudio coloca tus entradas temáticas, rellena la cuadrícula con un motor de construcción real, muestra dónde aprieta y redacta pistas con IA. Forma parte de Crossword Clash Plus.",
+    "draftsLeft": "Te quedan {{left}} de {{limit}} borradores con IA este mes"
   },
   "community": {
     "title": "Crucigramas de la comunidad",

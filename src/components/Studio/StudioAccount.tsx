@@ -99,7 +99,7 @@ export function StudioAccount({ account }: { account: Account }) {
               <p className="truncate text-sm font-semibold text-ink">{name}</p>
               {user.email && user.email !== name && <p className="truncate text-xs text-muted">{user.email}</p>}
               <p className="mt-2 text-xs text-ink-soft">
-                {account.admin ? "Studio admin: Claude drafting and the daily queue need no token." : "Not a studio admin yet, so Claude drafting and the daily queue still need the studio token."}
+                {account.admin ? "Studio admin: AI drafting and the daily queue need no token." : "Not a studio admin yet, so AI drafting and the daily queue still need the studio token."}
               </p>
               <Button variant="ghost" size="sm" className="mt-2 w-full" disabled={busy} onClick={signOut}>
                 <LogOut className="size-4" aria-hidden="true" /> Sign out

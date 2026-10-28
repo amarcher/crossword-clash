@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows } from "./grid";
 import { draftClues, entryAnswers, suggestClues, type ClaudeCaller } from "./studioClaude";
-import { alternativesRequest, cluesRequest, type ClaudeJsonRequest } from "./cluePrompt";
+import { ALTERNATIVES_COUNT, alternativesRequest, cluesRequest, NO_THEME, vetAlternatives, type ClaudeJsonRequest } from "./cluePrompt";
 
 const grid = gridFromRows(["BAT", "ORE", "WED"]);
 
@@ -27,9 +27,39 @@ describe("clue prompts", () => {
   });
 
   it("asks for alternatives that differ from the current clue", () => {
-    const req = alternativesRequest(grid, "", "1A", { current: "Cave flier", count: 3 });
-    expect(req.prompt).toContain("3 different clues for 1A BAT");
+    const req = alternativesRequest(grid, "", "1A", { current: "Cave flier", count: 5 });
+    expect(req.prompt).toContain("5 different clues for 1A BAT");
     expect(req.prompt).toContain('"Cave flier"');
+  });
+
+  it("asks for a small fixed number of alternatives by default, in one call", () => {
+    expect(ALTERNATIVES_COUNT).toBe(3);
+    const req = alternativesRequest(grid, "", "1A");
+    expect(req.prompt).toContain(`${ALTERNATIVES_COUNT} different clues for 1A BAT`);
+    expect(req.schema).toMatchObject({ properties: { clues: { type: "array", items: { type: "string" } } }, required: ["clues"] });
+  });
+
+  it("tells the writer there is no theme unless the note states one", () => {
+    expect(cluesRequest(grid, "").prompt).toContain(NO_THEME);
+    expect(cluesRequest(grid, "Title: Bats\nTheme entries: BAT").prompt).toContain(NO_THEME);
+    expect(alternativesRequest(grid, "", "1A").prompt).toContain(NO_THEME);
+    const themed = cluesRequest(grid, "Theme: cave dwellers");
+    expect(themed.prompt).not.toContain(NO_THEME);
+    expect(themed.prompt).toContain("when one is stated above");
+  });
+});
+
+describe("vetAlternatives", () => {
+  it("keeps clues that pass the checks, trimmed, in the writer's order", () => {
+    expect(vetAlternatives("BAT", ["  Cave flier ", "Club for Ruth"])).toEqual(["Cave flier", "Club for Ruth"]);
+  });
+
+  it("drops the current clue, repeats, blanks and junk", () => {
+    expect(vetAlternatives("BAT", ["Cave flier", "cave flier", "", "   ", 42, null, "Club for Ruth", "Club for Ruth"], "Cave flier")).toEqual(["Club for Ruth"]);
+  });
+
+  it("drops a clue that gives the answer away or runs past the limit", () => {
+    expect(vetAlternatives("BAT", ["Bat signal?", "One at bat", "x".repeat(60), "Dugout tool"])).toEqual(["Dugout tool"]);
   });
 });
 
@@ -71,5 +101,13 @@ describe("drafting clues", () => {
     const call = fake({ clues: ["Cave flier", "Club for Ruth", "Bat signal?", "Dugout tool", "Club for Ruth"] });
     // "Bat signal?" gives the answer away.
     expect(await suggestClues(call, grid, "", "1A", { current: "Cave flier" })).toEqual(["Club for Ruth", "Dugout tool"]);
+    expect(call.prompts).toHaveLength(1);
+  });
+
+  it("answers nothing for a malformed reply or an incomplete entry, without a second call", async () => {
+    const call = fake({ clues: "not a list" });
+    expect(await suggestClues(call, grid, "", "1A")).toEqual([]);
+    expect(await suggestClues(call, gridFromRows(["BA.", "ORE", "WED"]), "", "1A")).toEqual([]);
+    expect(call.prompts).toHaveLength(1);
   });
 });

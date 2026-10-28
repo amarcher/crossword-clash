@@ -118,6 +118,22 @@ describe("studio state", () => {
     expect(s.editedClues).toEqual([]);
   });
 
+  it("clearing a clue hands the slot back to drafting even when a draft left a speed clue behind", () => {
+    // The clue panel has no speed-clue field any more, so the standard clue alone decides ownership.
+    let s = run(initialStudioState(5), { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Greeting", speed: "Hi there" } } });
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "Hello there" });
+    expect(s.editedClues).toEqual(["0:across:5"]);
+    expect(s.speedClues["0:across:5"]).toBe("Hi there");
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "" });
+    expect(s.editedClues).toEqual([]);
+    expect(s.speedClues["0:across:5"]).toBeUndefined();
+    s = run(s, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Hi", speed: "Hey" } } });
+    expect(s.clues["0:across:5"]).toBe("Hi");
+    // Picking an offered alternative is a SET_CLUE too: it is the constructor's from then on.
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "Howdy" }, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Hi", speed: "Hey" } } });
+    expect(s.clues["0:across:5"]).toBe("Howdy");
+  });
+
   it("versions keep clues, and a new puzzle starts clean with its own id", () => {
     let s = run(initialStudioState(5, "p-1"), { type: "PLACE_WORD", word: "HELLO" }, { type: "SET_CLUE", key: "0:across:5", clue: "Greeting" });
     s = run(s, { type: "SAVE_VERSION", name: "v1", at: 1 }, { type: "SET_CLUE", key: "0:across:5", clue: "Hi" });
