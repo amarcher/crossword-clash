@@ -7,6 +7,8 @@ import type { AccountContextValue } from "../../contexts/AccountContext";
 
 const context: { value: AccountContextValue } = { value: null as unknown as AccountContextValue };
 vi.mock("../../contexts/AccountContext", () => ({ useAccountContext: () => context.value }));
+const plus = { enabled: false };
+vi.mock("../../lib/plus", () => ({ plusEnabled: () => plus.enabled }));
 
 const user = { id: "u1", is_anonymous: false, user_metadata: { full_name: "Ada Lovelace" }, app_metadata: {}, aud: "authenticated", created_at: "" } as unknown as User;
 
@@ -32,6 +34,7 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
 
 beforeEach(() => {
   context.value = account({});
+  plus.enabled = false;
 });
 afterEach(cleanup);
 
@@ -60,5 +63,31 @@ describe("AccountMenuRow", () => {
     cleanup();
     context.value = account({ user });
     expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
+  });
+
+  it("with Plus live, offers the subscription to anonymous visitors and opens the paywall", () => {
+    plus.enabled = true;
+    const openPaywall = vi.fn();
+    context.value = account({ openPaywall });
+    render(<AccountMenuRow />);
+    const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
+    expect(row.textContent).toContain("Every past daily");
+    fireEvent.click(row);
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
+  });
+
+  it("shows no Plus row while the switch is off, before entitlements are known, or to a Plus holder", () => {
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
+    cleanup();
+    plus.enabled = true;
+    context.value = account({ plusReady: false });
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
+    cleanup();
+    context.value = account({ plus: true });
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Save your solve history/ })).toBeTruthy();
   });
 });
