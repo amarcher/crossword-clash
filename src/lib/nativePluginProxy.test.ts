@@ -1,0 +1,94 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * A Capacitor plugin object is a Proxy that answers EVERY property with a
+ * native-method wrapper, `then` included. A promise resolved with such an
+ * object is treated as a thenable: JavaScript calls its `then`, the native
+ * "then" never answers, and the promise never settles. The 1.1.0 build 10
+ * paywall froze on exactly this. These tests load the two plugin modules
+ * through stubs with that property and prove every path still settles.
+ */
+function pluginLike(impl: Record<string, (...args: unknown[]) => unknown>, calls: string[]) {
+  return new Proxy({}, {
+    get(_, prop) {
+      if (prop === "$$typeof") return undefined;
+      if (prop === "toJSON") return () => ({});
+      return (...args: unknown[]) => {
+        calls.push(String(prop));
+        const fn = impl[String(prop)];
+        return fn ? fn(...args) : new Promise(() => {}); // an unknown method, `then` included, never answers
+      };
+    },
+  });
+}
+
+const calls: string[] = [];
+const purchasesImpl: Record<string, (...args: unknown[]) => unknown> = {};
+const socialImpl: Record<string, (...args: unknown[]) => unknown> = {};
+
+vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => "ios", isNativePlatform: () => true } }));
+vi.mock("@revenuecat/purchases-capacitor", () => ({ Purchases: pluginLike(purchasesImpl, calls) }));
+vi.mock("@capgo/capacitor-social-login", () => ({ SocialLogin: pluginLike(socialImpl, calls) }));
+
+const settles = <T,>(p: Promise<T>) =>
+  Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error("never settled")), 1000))]);
+
+beforeEach(() => {
+  vi.stubEnv("MODE", "mobile");
+  vi.stubEnv("VITE_REVENUECAT_IOS_KEY", "appl_test");
+  calls.length = 0;
+  Object.keys(purchasesImpl).forEach((k) => delete purchasesImpl[k]);
+  Object.keys(socialImpl).forEach((k) => delete socialImpl[k]);
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("RevenueCat plugin loading", () => {
+  it("configures the SDK for the session user and buys a plan without ever awaiting the plugin proxy", async () => {
+    const mod = await import("./nativePurchase");
+    mod.resetNativePurchasesForTests();
+    purchasesImpl.configure = () => "-1"; // a fire-and-forget native method returns a callback id, not a promise
+    purchasesImpl.getOfferings = async () => ({ current: { availablePackages: [{ identifier: "$rc_annual", product: { priceString: "$24.99" } }] } });
+    purchasesImpl.purchasePackage = async () => ({ customerInfo: {} });
+
+    await settles(mod.syncNativePurchaseUser("user-1"));
+    expect(calls).toContain("configure");
+    expect(calls).not.toContain("then");
+
+    await expect(settles(mod.purchaseNativePlan("annual"))).resolves.toBe("purchased");
+    await expect(settles(mod.fetchNativePrices())).resolves.toEqual([{ plan: "annual", priceString: "$24.99" }]);
+    expect(calls).not.toContain("then");
+  });
+
+  it("reports a plan the store does not offer and a cancelled purchase", async () => {
+    const mod = await import("./nativePurchase");
+    mod.resetNativePurchasesForTests();
+    purchasesImpl.getOfferings = async () => ({ current: { availablePackages: [{ identifier: "$rc_monthly", product: { priceString: "$3.99" } }] } });
+    purchasesImpl.purchasePackage = async () => { throw { userCancelled: true }; };
+    await expect(settles(mod.purchaseNativePlan("annual"))).rejects.toThrow(/isn't available/);
+    await expect(settles(mod.purchaseNativePlan("monthly"))).resolves.toBe("cancelled");
+  });
+});
+
+describe("native sign-in plugin loading", () => {
+  it("initializes once and returns the provider's id token without awaiting the plugin proxy", async () => {
+    const mod = await import("./nativeSignIn");
+    mod.resetNativeSignInForTests();
+    socialImpl.initialize = async () => undefined;
+    let requested: { options?: { nonce?: string } } | undefined;
+    socialImpl.login = async (args: unknown) => {
+      requested = args as { options?: { nonce?: string } };
+      return { result: { idToken: "tok-1" } };
+    };
+    const first = await settles(mod.nativeIdToken("apple"));
+    expect(first.token).toBe("tok-1");
+    expect(first.nonce).toMatch(/^[0-9a-f]{32}$/);
+    // The OS request carries the SHA-256 of the nonce Supabase will be given (it hashes the raw one to compare).
+    expect(requested?.options?.nonce).toBe(await mod.hashNonce(first.nonce));
+    expect(requested?.options?.nonce).not.toBe(first.nonce);
+    await settles(mod.nativeIdToken("google"));
+    expect(calls.filter((c) => c === "initialize")).toHaveLength(1);
+    expect(calls).not.toContain("then");
+  });
+});

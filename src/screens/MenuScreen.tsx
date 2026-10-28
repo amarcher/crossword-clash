@@ -204,16 +204,22 @@ export function MenuScreen() {
   );
 
   return (
-    <div className={`min-h-dvh crossword-bg pb-8 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-4 ${PAGE_GUTTER}`}>
-      {/* The header row: the account avatar (or "Sign in") at the right, the
-          one place the menu has for it. The row is always 44px tall so the
-          wordmark sits at the same height before and after the control appears. */}
+    <div className={`min-h-dvh crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
+      {/* The top bar: the account avatar (or "Sign in") at the right, the one
+          place the menu has for it. The row is always 44px tall so the wordmark
+          sits at the same height before and after the control appears. The
+          page pads no safe area of its own: on the web the browser keeps the
+          content clear of the notch (no viewport-fit), and in the apps
+          `.native-app #root` already pads every inset, so an inset here would
+          push the bar a whole status bar further down. Fixed overlays
+          (dialogs, toasts) do read the inset themselves, since they sit
+          outside #root's padding. */}
       <div className="mx-auto flex min-h-11 w-full max-w-md items-center justify-end lg:max-w-5xl">
         <AccountControl placement="menu" />
       </div>
       {/* The wordmark constructs via a one-shot Lottie on the first menu visit of
           the session; later visits show its final frame (see Title). */}
-      <Title animate className="mb-8 mt-2 sm:mb-10 sm:mt-3" />
+      <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Front door: today's dailies. Never gated on auth loading; the mini

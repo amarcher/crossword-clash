@@ -92,6 +92,7 @@ describe("UsernamePicker", () => {
     render(<UsernamePicker {...PROPS} current="ada_l" />);
     expect(input().value).toBe("ada_l");
     expect(screen.queryByText("Checking…")).toBeNull();
+    expect(screen.getByText("That's your current name")).toBeTruthy();
     expect(save().disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Later" }));
     expect(PROPS.onCancel).toHaveBeenCalled();
