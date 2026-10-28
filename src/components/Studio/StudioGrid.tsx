@@ -1,4 +1,4 @@
-import { memo, useId, useMemo } from "react";
+import { memo, useEffect, useId, useMemo, useState } from "react";
 import { slotsOf, type Grid } from "../../lib/seedgrid/grid";
 import { heatLevel } from "../../lib/seedgrid/studioState";
 import { useHiddenGridInput, type HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
@@ -11,9 +11,16 @@ interface StudioGridProps {
   /** Per cell, the fewest options through it; undefined hides the heatmap. */
   heat?: (number | undefined)[];
   onSelect: (cell: number) => void;
+  /** Right-click menu: make this square black, or white again (its symmetric partner follows). */
+  onToggleBlock: (cell: number) => void;
+  /** Right-click menu: switch between writing across and down. */
+  onToggleDirection: () => void;
   /** Keyboard handlers for the hidden input (letters, erase, arrows, space, "."). */
   input: HiddenGridInputHandlers;
 }
+
+const MENU_ITEM =
+  "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink hover:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none";
 
 /**
  * Heat sits on a cool, neutral ramp so gold is reserved for the selection: a
@@ -28,10 +35,34 @@ const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle",
 
 /**
  * Editable construction grid. Keys go through one visually hidden input so
- * phones get a keyboard and desktops get arrows, Backspace and "." for blocks.
+ * phones get a keyboard and desktops get arrows, Backspace and "." for blocks;
+ * a right-click on any square opens a small menu with the same two moves
+ * (black square on / off, across / down), because "." was the only way to
+ * place a block and nobody found it.
  */
-export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, input }: StudioGridProps) {
+export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, onToggleBlock, onToggleDirection, input }: StudioGridProps) {
   const gridId = useId();
+  const [menu, setMenu] = useState<{ cell: number; x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
+  const openMenu = (cell: number) => (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    onSelect(cell);
+    const shell = e.currentTarget.closest(".grid-shell") as HTMLElement | null;
+    const box = shell?.getBoundingClientRect();
+    setMenu({ cell, x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) });
+  };
   const cellId = (i: number) => `${gridId}-${i}`;
   const { inputProps, focus } = useHiddenGridInput(input, {
     label: "Grid entry",
@@ -75,20 +106,20 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
                   onSelect(i);
                   focus();
                 }}
+                onContextMenu={openMenu(i)}
               >
                 {isCursor && (
+                  // "You are here" only: a direction glyph on a block meant
+                  // nothing to anyone (there is no word to write through it).
                   <span
                     aria-hidden="true"
                     data-testid="block-cursor"
-                    className="absolute inset-0 m-auto flex items-center justify-center rounded-full bg-gold-400 text-ink leading-none"
+                    className="absolute inset-0 m-auto rounded-full bg-gold-400"
                     style={{
                       width: `clamp(12px, ${48 / w}cqi, 28px)`,
                       height: `clamp(12px, ${48 / w}cqi, 28px)`,
-                      fontSize: `clamp(8px, ${30 / w}cqi, 18px)`,
                     }}
-                  >
-                    {direction === "across" ? "▸" : "▾"}
-                  </span>
+                  />
                 )}
               </div>
             );
@@ -117,6 +148,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
                 onSelect(i);
                 focus();
               }}
+              onContextMenu={openMenu(i)}
             >
               {numbers.has(i) && (
                 <span
@@ -141,6 +173,40 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           );
         })}
       </div>
+      {menu && (
+        <div
+          role="menu"
+          aria-label="Square"
+          className="absolute z-20 min-w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-overlay"
+          style={{ left: Math.max(0, menu.x - 8), top: menu.y + 4 }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className={MENU_ITEM}
+            onClick={() => {
+              onToggleBlock(menu.cell);
+              setMenu(null);
+              focus();
+            }}
+          >
+            {grid.cells[menu.cell] === "#" ? "Make this square white" : "Make this square black"}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={MENU_ITEM}
+            onClick={() => {
+              onToggleDirection();
+              setMenu(null);
+              focus();
+            }}
+          >
+            {direction === "across" ? "Write down ▾" : "Write across ▸"}
+          </button>
+        </div>
+      )}
     </div>
   );
 });

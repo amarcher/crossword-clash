@@ -15,14 +15,17 @@ function input(): HiddenGridInputHandlers {
 const grid = gridFromRows(["CAT..", "A..U.", ".#..N", "..R..", "....S"]);
 
 function renderGrid(cursor: number, direction: "across" | "down" = "across", handlers = input()) {
+  const onToggleBlock = vi.fn();
+  const onToggleDirection = vi.fn();
+  const onSelect = vi.fn();
   const utils = render(
-    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={vi.fn()} input={handlers} />,
+    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={onSelect} onToggleBlock={onToggleBlock} onToggleDirection={onToggleDirection} input={handlers} />,
   );
-  return { ...utils, handlers, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
+  return { ...utils, handlers, onToggleBlock, onToggleDirection, onSelect, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
 }
 
 describe("StudioGrid block cursor", () => {
-  it("draws a gold disc with the across glyph when the cursor sits on a block", () => {
+  it("draws a plain gold disc when the cursor sits on a block: no direction glyph, there is no word through a block", () => {
     renderGrid(11, "across");
     const block = screen.getByRole("gridcell", { name: "Row 3, Column 2, block" });
     expect(block.className).toContain("outline-gold-400");
@@ -30,18 +33,43 @@ describe("StudioGrid block cursor", () => {
     expect(block.contains(cue)).toBe(true);
     expect(cue.className).toContain("bg-gold-400");
     expect(cue.className).toContain("rounded-full");
-    expect(cue.textContent).toBe("▸");
-  });
-
-  it("flips the glyph for down", () => {
-    renderGrid(11, "down");
-    expect(screen.getByTestId("block-cursor").textContent).toBe("▾");
+    expect(cue.textContent).toBe("");
   });
 
   it("shows no cue on a block the cursor is not on", () => {
     renderGrid(0);
     expect(screen.queryByTestId("block-cursor")).toBeNull();
     expect(screen.getByRole("gridcell", { name: "Row 3, Column 2, block" }).className).not.toContain("outline-gold-400");
+  });
+});
+
+describe("StudioGrid right-click menu", () => {
+  it("offers to make a white square black, selecting it first", () => {
+    const { onToggleBlock, onSelect } = renderGrid(0);
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 4/ }));
+    expect(onSelect).toHaveBeenCalledWith(3);
+    const menu = screen.getByRole("menu", { name: "Square" });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Make this square black" }));
+    expect(onToggleBlock).toHaveBeenCalledWith(3);
+    expect(menu.isConnected).toBe(false);
+  });
+
+  it("offers to make a block white again, and to switch direction", () => {
+    const { onToggleBlock, onToggleDirection } = renderGrid(0, "across");
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: "Row 3, Column 2, block" }));
+    expect(screen.getByRole("menuitem", { name: "Make this square white" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Write down ▾" }));
+    expect(onToggleDirection).toHaveBeenCalled();
+    expect(onToggleBlock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("closes on Escape", () => {
+    renderGrid(0);
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 4/ }));
+    expect(screen.getByRole("menu")).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 });
 
