@@ -55,7 +55,7 @@ export function NytImportScreen() {
           <p className="mt-2 text-sm leading-relaxed text-muted">{t("nytImport.description")}</p>
           {native ? <>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <label className="text-sm font-medium text-ink-soft">{t("nytImport.puzzle")}
+              <label className="min-w-0 text-sm font-medium text-ink-soft">{t("nytImport.puzzle")}
                 <Select
                   value={kind}
                   options={[{ value: "daily", label: t("nytImport.daily") }, { value: "mini", label: t("nytImport.mini") }]}
@@ -65,7 +65,7 @@ export function NytImportScreen() {
                   className="mt-1.5 min-h-12"
                 />
               </label>
-              <label className="text-sm font-medium text-ink-soft">{t("nytImport.date")}
+              <label className="min-w-0 text-sm font-medium text-ink-soft">{t("nytImport.date")}
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} className={FIELD} />
               </label>
             </div>

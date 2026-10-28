@@ -133,7 +133,12 @@ export function useMultiplayer({
   onCellClaimedRef.current = onCellClaimed;
   const onWrongLetterRef = useRef(onWrongLetter);
   onWrongLetterRef.current = onWrongLetter;
-  const announcedRef = useRef(false);
+  // What this client last tracked into presence (null for a spectator, or
+  // after an intentional leave). Re-sent whenever the channel (re)subscribes
+  // or the page comes back, because realtime-js does not replay it: a phone
+  // that locks drops the socket, the server forgets the presence, and the
+  // rejoin alone would leave this player missing from everyone's roster.
+  const trackedRef = useRef<TrackedPresence | null>(null);
   // Flips true the first time presence sync delivers a non-empty roster.
   // Once warmed, we trust empty syncs (legitimately "all players left")
   // — before that, an empty sync just means our own track() hasn't landed.
@@ -191,7 +196,7 @@ export function useMultiplayer({
     if (!supabase || !gameId) return;
 
     setHydrated(false);
-    announcedRef.current = false;
+    trackedRef.current = null;
     presenceWarmedRef.current = false;
 
     // Fetch short_code
@@ -300,17 +305,17 @@ export function useMultiplayer({
         setHydrated(true);
 
         // Track our presence so other clients see us live. Spectators
-        // (no DB player row) skip tracking and remain invisible.
-        if (state && !announcedRef.current) {
+        // (no DB player row) skip tracking and remain invisible. SUBSCRIBED
+        // fires again after every reconnect, and the server has forgotten us
+        // by then, so this re-tracks each time rather than once.
+        let payload = trackedRef.current;
+        if (!payload && state) {
           const self = state.players.find((p) => p.userId === userId);
-          if (self) {
-            await channel.track({
-              user_id: userId,
-              display_name: self.displayName,
-              color: self.color,
-            } satisfies TrackedPresence);
-            announcedRef.current = true;
-          }
+          if (self) payload = { user_id: userId, display_name: self.displayName, color: self.color } satisfies TrackedPresence;
+        }
+        if (payload) {
+          trackedRef.current = payload;
+          await channel.track(payload);
         }
       }
     });
@@ -321,12 +326,14 @@ export function useMultiplayer({
     };
   }, [gameId, userId, dispatch, hydrate]);
 
-  // Re-hydrate on visibility change (tab wake)
+  // Tab wake: re-hydrate from the DB and make sure we are still in presence
+  // (a socket that died while the page was hidden took our entry with it).
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        hydrate();
-      }
+      if (document.visibilityState !== "visible") return;
+      void hydrate();
+      const tracked = trackedRef.current;
+      if (tracked) void channelRef.current?.track(tracked);
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -548,26 +555,22 @@ export function useMultiplayer({
   // on other clients within ~1s. Channel teardown happens in the
   // subscribe effect's cleanup.
   const leaveGame = useCallback(async () => {
+    trackedRef.current = null;
     await channelRef.current?.untrack();
   }, []);
 
   // Defense-in-depth on tab close: force untrack early so other clients
   // GC us faster than Supabase's own dead-socket detection. Fire-and-forget
-  // because the page is dying.
+  // because the page is dying. Only on pagehide: a hidden page is not a
+  // closed one (a locked phone, a notification, another tab), and untracking
+  // there made the host vanish from the lobby every time their phone locked.
   useEffect(() => {
     if (!gameId) return;
     function fireUntrack() {
       channelRef.current?.untrack();
     }
-    function handleVisibility() {
-      if (document.visibilityState === "hidden") fireUntrack();
-    }
     window.addEventListener("pagehide", fireUntrack);
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () => {
-      window.removeEventListener("pagehide", fireUntrack);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
+    return () => window.removeEventListener("pagehide", fireUntrack);
   }, [gameId]);
 
   const raceSeconds =

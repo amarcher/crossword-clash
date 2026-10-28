@@ -35,12 +35,20 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
   const [displayName, setDisplayName] = useState(() => initialName ?? loadPlayerName() ?? "");
   const [codeFocused, setCodeFocused] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
   // The profile loads a beat after the screen: adopt the username when it
   // arrives, unless the player has already typed a name.
   const nameTouched = useRef(false);
   useEffect(() => {
     if (initialName && !nameTouched.current) setDisplayName(initialName);
   }, [initialName]);
+  // The page is the form: the code field is focused on arrival (a QR / link
+  // that already filled the code hands the focus to the name instead).
+  useEffect(() => {
+    (code.length === CODE_LENGTH ? nameRef : codeRef).current?.focus();
+    // Mount only: later code changes are handled by handleCodeChange.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +91,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
               })}
             </div>
             <input
+              ref={codeRef}
               id="join-game-code"
               type="text"
               name="xw-code"
