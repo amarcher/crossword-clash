@@ -76,10 +76,17 @@ describe("native sign-in plugin loading", () => {
     const mod = await import("./nativeSignIn");
     mod.resetNativeSignInForTests();
     socialImpl.initialize = async () => undefined;
-    socialImpl.login = async () => ({ result: { idToken: "tok-1" } });
+    let requested: { options?: { nonce?: string } } | undefined;
+    socialImpl.login = async (args: unknown) => {
+      requested = args as { options?: { nonce?: string } };
+      return { result: { idToken: "tok-1" } };
+    };
     const first = await settles(mod.nativeIdToken("apple"));
     expect(first.token).toBe("tok-1");
     expect(first.nonce).toMatch(/^[0-9a-f]{32}$/);
+    // The OS request carries the SHA-256 of the nonce Supabase will be given (it hashes the raw one to compare).
+    expect(requested?.options?.nonce).toBe(await mod.hashNonce(first.nonce));
+    expect(requested?.options?.nonce).not.toBe(first.nonce);
     await settles(mod.nativeIdToken("google"));
     expect(calls.filter((c) => c === "initialize")).toHaveLength(1);
     expect(calls).not.toContain("then");

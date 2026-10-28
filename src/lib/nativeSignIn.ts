@@ -76,20 +76,33 @@ async function socialLogin(): Promise<{ sl: SocialLogin }> {
   return { sl: (await plugin).SocialLogin };
 }
 
-/** A random nonce; Apple and Google hash it into the id token and Supabase verifies the raw value. */
+/** A random nonce. The provider is asked to sign its SHA-256 (`hashNonce`) into the id token; Supabase gets the raw value. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * SHA-256 of the nonce as lowercase hex: what the OS sign-in request carries.
+ * Supabase's id-token grant hashes the raw `nonce` it is given the same way and
+ * compares that to the token's `nonce` claim, and the Capgo plugin hands the
+ * request nonce to Apple and Google unchanged, so the hash has to be made here
+ * (1.1.0 build 12 sent the raw value both ways: "Nonces mismatch").
+ */
+export async function hashNonce(nonce: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nonce));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /** Shows the OS sign-in sheet and returns the provider's id token. Throws "cancelled" when the user backs out. */
 export async function nativeIdToken(provider: AuthProvider): Promise<NativeIdToken> {
   const nonce = randomNonce();
+  const hashed = await hashNonce(nonce);
   const { sl } = await socialLogin();
   let result: { result?: unknown };
   try {
-    result = await sl.login({ provider, options: { scopes: provider === "apple" ? ["email", "name"] : ["email", "profile"], nonce } });
+    result = await sl.login({ provider, options: { scopes: provider === "apple" ? ["email", "name"] : ["email", "profile"], nonce: hashed } });
   } catch (err) {
     if (err && typeof err === "object" && ((err as { code?: string }).code === "USER_CANCELLED" || /cancel/i.test(String((err as { message?: string }).message)))) {
       const cancelled = new Error("cancelled") as Error & { cause?: unknown };
