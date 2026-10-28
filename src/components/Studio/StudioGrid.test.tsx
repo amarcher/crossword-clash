@@ -71,3 +71,19 @@ describe("StudioGrid announcement and hover", () => {
     expect(handlers.onErase).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("StudioGrid stuck cells", () => {
+  it("paints the blamed cells red with the heatmap hidden and says so in the label", () => {
+    render(<StudioGrid grid={grid} cursor={4} direction="across" activeCells={[]} stuck={[20, 21]} onSelect={vi.fn()} input={input()} />);
+    const blamed = screen.getByRole("gridcell", { name: /^Row 5, Column 1, .*stuck$/ });
+    expect(blamed.className).toContain("bg-red-200");
+    expect(screen.getByRole("gridcell", { name: "Row 5, Column 5, S" }).className).not.toContain("bg-red-200");
+  });
+
+  it("keeps the cursor gold on a blamed cell and carries the blame as a red dot", () => {
+    render(<StudioGrid grid={grid} cursor={20} direction="across" activeCells={[20, 21]} stuck={[20, 21]} onSelect={vi.fn()} input={input()} />);
+    const cursor = screen.getByRole("gridcell", { name: /^Row 5, Column 1, .*stuck$/ });
+    expect(cursor.className).toContain("bg-gold-400");
+    expect(cursor.querySelector(".bg-red-500")).not.toBeNull();
+  });
+});
