@@ -397,8 +397,13 @@ builds and both submissions.
 **RevenueCat state 2026-10-28:** project `04ca2f75` ("Crossword Clash: Play
 Together", its own account under Andrew's per-product address). App Store
 app `appd70cad4d62` (bundle `com.crosswordclash.app`) configured with the
-App Store Connect **In-App Purchase key** `6TF53X63A3` (issuer
-`69a6de96-…-5b8c7c11a4d1`; the one-time `.p8` download is backed up in
+App Store Connect **In-App Purchase key** `6TF53X63A3` (issuer `69a6de96-d39f-47e3-e053-5b8c7c11a4d1`, the one ASC prints on
+the In-App Purchase keys tab — the first sandbox purchase on 2026-10-28 was
+never recorded because RevenueCat held a mistyped issuer id and could not
+validate the StoreKit 2 transaction, while the SDK still returned success
+and the app called reconcile against an empty subscriber; "Credentials need
+attention" on the app page is the tell, and "Restore purchases" re-presents
+the receipt once it is fixed; the one-time `.p8` download is backed up in
 `~/.appstoreconnect/private_keys/`); public SDK key in `.env.local` as
 `VITE_REVENUECAT_IOS_KEY`. Products `plus_monthly` / `plus_annual` (created
 by hand — import finds nothing while the App Store products are still
