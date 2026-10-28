@@ -1,0 +1,5 @@
+This update (1.1.0, build 18) is build 17 plus two changes.
+
+1. The Classic library is gone: no row on the menu, nothing in the race picker or in "Up next" after a finish, and the old /classics address on the website goes to the menu.
+2. An "update available" banner on the menu, for when a newer version is live in the App Store. You will not see it on TestFlight (TestFlight builds are newer than the store build); it is here so the next store release can show it. If you ever see it on this build, that is a bug: tell us.
+3. Everything from build 17 still applies: no username prompt on re-sign-in, Create Room lands on Invite players, a locked phone stays in the lobby, the NYT date is centred, the Plus sheet says "You have Plus."
