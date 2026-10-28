@@ -550,6 +550,7 @@
     "usernameLabel": "Username",
     "checking": "Checking…",
     "available": "Available",
+    "currentName": "That's your current name",
     "taken": "Already taken",
     "tooShort": "At least 3 characters",
     "tooLong": "At most 20 characters",

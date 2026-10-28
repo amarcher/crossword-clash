@@ -550,6 +550,7 @@
     "usernameLabel": "Nombre de usuario",
     "checking": "Comprobando…",
     "available": "Disponible",
+    "currentName": "Ese ya es tu nombre",
     "taken": "Ya está en uso",
     "tooShort": "Al menos 3 caracteres",
     "tooLong": "Como máximo 20 caracteres",
