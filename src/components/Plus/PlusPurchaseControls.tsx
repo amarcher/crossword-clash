@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui";
 import { track } from "../../lib/analytics";
@@ -21,7 +22,7 @@ interface PlusPurchaseControlsProps {
   placement: string;
   /** Where the web Checkout should come back to (default: this page). */
   returnTo?: string;
-  /** Native only: shown after an anonymous purchase so Plus can follow the buyer to other devices. */
+  /** Native only: shown under a subscriber who is still anonymous (a purchase from before sign-in-first) so Plus can follow them to other devices. */
   signInPrompt?: React.ReactNode;
 }
 
@@ -126,19 +127,17 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
     const manageable = row?.source === "stripe" || !!storeManagementUrl(row, purchasePlatform());
     return (
       <div className="flex flex-col gap-2.5">
+        {/* A purchase or restore has just succeeded: say so first, where the eye lands, not under the sign-in prompt. */}
+        {notice && <Notice notice={notice} prominent />}
         <p className="text-center text-sm text-ink-soft">{status}</p>
         {manageable && (
           <Button variant="secondary" size="lg" block disabled={busy !== null} aria-busy={busy === "manage" || undefined} onClick={manage}>
             {row?.source === "stripe" ? t("plus.manage") : t("plus.manageInStore")}
           </Button>
         )}
-        {native && (
-          <Button variant="ghost" size="md" block disabled={busy !== null} aria-busy={busy === "restore" || undefined} onClick={restore}>
-            {t("plus.restore")}
-          </Button>
-        )}
+        {/* No "Restore purchases" here: Apple's 3.1.1 wants restore reachable, and the
+            non-subscriber view below has it; a subscriber has nothing to restore. */}
         {native && !account.signedIn && signInPrompt}
-        {notice && <Notice notice={notice} />}
       </div>
     );
   }
@@ -162,9 +161,18 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   );
 }
 
-function Notice({ notice }: { notice: { kind: "ok" | "error"; text: string } }) {
+function Notice({ notice, prominent = false }: { notice: { kind: "ok" | "error"; text: string }; prominent?: boolean }) {
+  const ok = notice.kind !== "error";
+  if (prominent && ok) {
+    return (
+      <p role="status" className="flex items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700">
+        <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+        {notice.text}
+      </p>
+    );
+  }
   return (
-    <p role={notice.kind === "error" ? "alert" : "status"} className={`rounded-xl px-3 py-2 text-xs leading-relaxed ${notice.kind === "error" ? "bg-gold-50 text-ink-soft" : "bg-brand-50 text-brand-700"}`}>
+    <p role={ok ? "status" : "alert"} className={`rounded-xl px-3 py-2 text-sm leading-relaxed ${ok ? "bg-brand-50 text-brand-700" : "bg-gold-50 text-ink-soft"}`}>
       {notice.text}
     </p>
   );

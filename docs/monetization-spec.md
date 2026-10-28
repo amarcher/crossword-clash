@@ -835,17 +835,27 @@ RevenueCat and AdMob dashboards (§4.3).
   retention sweep deletes idle anonymous users after 30 days, which would
   orphan a paid row. `linkIdentity` keeps the uid, so an existing anonymous
   history stays with the new account, as today.
-- **Apps: purchase without an account is allowed, sign-in is encouraged.**
-  Apple's 5.1.1(v) ("let people use it without a login … may not require users
-  to enter personal information to function") and the restore requirement in
-  3.1.1 point the same way: the purchase attaches to the device's current
-  Supabase uid (RevenueCat `app_user_id` = uid, set at app start, never
-  `logOut()`), the entitlement row is written for that uid, and the
-  "Restore purchases" button calls RevenueCat's restore which re-presents the
-  store receipt. After a purchase the paywall's success state shows the
-  benefit-led card "Keep Plus on every device: sign in", not a wall. The
-  retention sweep's new `entitlements` exclusion keeps that anonymous user
-  alive.
+- **Apps: Plus requires an account too (revised 2026-10-28; Andrew's call
+  after the first sandbox purchase).** The original decision let the store
+  sell to the device's anonymous uid, reading Apple's 5.1.1(v) as a bar on
+  sign-in before purchase. It is not: 5.1.1(v) only forbids requiring a login
+  where an app has no significant account-based features, and the free game
+  stays fully playable without one. Plus *is* account-based — progress sync
+  and solve history only exist for an account, and the studio is web-only, so
+  an anonymous app buyer could reach neither and had no way back to Manage or
+  Restore once the sheet closed. So the apps now behave like the web: the
+  paywall shows an anonymous visitor the Apple / Google buttons with "Plus
+  belongs to your account, so it follows you to the web and every device", the
+  plans appear in place after the native sign-in (the username step waits for
+  the account page), and the purchase attaches to the signed-in uid
+  (RevenueCat `app_user_id` = uid, set at app start, never `logOut()`; the
+  entitlement row is written for that uid). "Restore purchases" (3.1.1) is on
+  the same signed-in paywall and re-presents the store receipt. A subscriber
+  whose purchase predates this rule (the 2026-10-28 sandbox row) still sees
+  Manage / Restore while anonymous, with the sign-in prompt beneath, and
+  signing in keeps the uid. The retention sweep's `entitlements` exclusion
+  stays as a safety net. The menu's "Crossword Clash Plus" row is permanent:
+  the pitch for a non-subscriber, "tap to manage" for a subscriber.
 - **Native sign-in is a prerequisite** for the apps' account card, the archive
   lock in the apps and cross-device Plus, because `accountsAvailable()` is
   false there: the webview cannot host the providers' pages. Supabase

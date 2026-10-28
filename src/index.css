@@ -592,3 +592,25 @@ select,
 @media (prefers-reduced-motion: reduce) {
   .nav-progress-sweep { width: 100%; animation: none; }
 }
+
+/* A date input on iOS WebKit is an inline pill that ignores min-height and
+   width and whose value box floats in the middle, so the NYT import's date
+   field came out tiny and spilled past its grid column (TestFlight feedback,
+   1.1.0). Drop the native appearance so the field's own classes apply, and
+   give the value box the line height of the other fields. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  /* flex, not block: WebKit lays the value box out as a block at the top of
+     the field, so with min-height the date sat on the top edge while the
+     Select beside it was centred (build 15 feedback). */
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  margin: 0;
+  min-height: 1.5rem;
+  line-height: 1.5rem;
+  text-align: start;
+}

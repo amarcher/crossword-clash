@@ -43,7 +43,7 @@ if [[ $sync == 1 ]]; then pnpm mobile:sync; fi
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath ios/DerivedData \
-  -archivePath "$archive" archive
+  -archivePath "$archive" -allowProvisioningUpdates archive
 
 xcodebuild -exportArchive \
   -archivePath "$archive" \

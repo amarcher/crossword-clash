@@ -1,0 +1,9 @@
+This update (1.1.0) adds Crossword Clash Plus, sign-in with Apple or Google, the account page, past puzzles and community puzzles to the app.
+
+1. On the menu, tap Sign in at the top right. Continue with Apple or Google: you should land back on the menu with your avatar in the top bar, and be asked to pick a username. Your streaks and best times should still be there afterwards. Sign out from the avatar menu and sign in again; everything should come back.
+2. While signed out, scroll the menu to "Crossword Clash Plus" and tap it. The sheet shows two plans, "Get Plus yearly" and "Monthly", Restore purchases and the Terms and Privacy links. If you have a sandbox tester account on this device, buy the yearly plan: the sheet should turn into "You're Plus" and the avatar menu should say you are a subscriber. In the sandbox a year renews every few minutes; tell us if Plus ever drops.
+3. Restore purchases on a second device signed in with the same account should bring Plus back.
+4. Past puzzles (menu, under the daily tiles): the calendar should show every day since 2026-10-16. Signed out, days older than a week are locked; a free account unlocks 30 days; Plus unlocks all. Play one from a past day; it should not post to today's leaderboard.
+5. Community puzzles (menu): browse, open one, Play and Race. Report one from its menu and confirm the report form sends.
+6. The top of the menu: the Sign in control should sit directly under the status bar, not a status bar further down. On every page the content should clear the notch and the home indicator.
+7. Everything else as before: dailies, racing, sharing a finish, importing a puzzle.
