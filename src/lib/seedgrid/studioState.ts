@@ -34,12 +34,16 @@ export interface StudioState {
   dir: "across" | "down";
   /** Slot key → clue (the standard tier players see). */
   clues: Record<string, string>;
-  /** Slot key → plain "speed" clue, used as a hint in races. */
+  /**
+   * Slot key → plain "speed" clue. Dormant: no player-facing screen shows it
+   * and the clue panel has no field for it, but drafts still fill it and the
+   * .ipuz extension key round-trips it, so stored puzzles and the CLI keep theirs.
+   */
   speedClues: Record<string, string>;
   /** Slot keys whose clues the constructor wrote or picked; drafting never overwrites them. */
   editedClues: string[];
   title: string;
-  /** What the puzzle is about, passed to Claude with clue requests. */
+  /** What the puzzle is about, if anything: an optional note passed to the AI with clue requests. */
   theme: string;
   difficulty: Difficulty;
   versions: StudioVersion[];
@@ -113,7 +117,7 @@ export function rulesFor(state: Pick<StudioState, "grid" | "minScore" | "approve
   return { minScore: state.minScore, approved, rejected: state.rejected };
 }
 
-/** Typing a clue marks it edited; clearing both tiers hands the slot back to drafting. */
+/** Typing or picking a clue marks it edited; clearing it hands the slot back to drafting. */
 function markEdited(state: StudioState, key: string, text: string | undefined): string[] {
   const rest = (state.editedClues ?? []).filter((k) => k !== key);
   return text?.trim() ? [...rest, key] : rest;
@@ -238,8 +242,14 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       );
       return { ...state, approved, rejected: [...state.rejected, action.word] };
     }
-    case "SET_CLUE":
-      return { ...state, clues: { ...state.clues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.speedClues[action.key]) };
+    case "SET_CLUE": {
+      // The standard clue alone decides ownership: the speed tier has no form
+      // field any more, so clearing the clue drops it too and hands the slot
+      // back to drafting.
+      const speedClues = { ...state.speedClues };
+      if (!action.clue.trim()) delete speedClues[action.key];
+      return { ...state, clues: { ...state.clues, [action.key]: action.clue }, speedClues, editedClues: markEdited(state, action.key, action.clue) };
+    }
     case "SET_SPEED_CLUE":
       return { ...state, speedClues: { ...state.speedClues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.clues[action.key]) };
     case "APPLY_CLUES": {

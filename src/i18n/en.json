@@ -630,7 +630,7 @@
     "subtitle": "Every past daily, the construction studio, the AI host and your progress on every device.",
     "youHavePlus": "You have Plus.",
     "benefitArchive": "Play every daily since the archive began",
-    "benefitStudio": "Build your own crosswords in the studio on the web, with 40 Claude clue drafts a month",
+    "benefitStudio": "Build your own crosswords in the studio on the web, with 40 AI clue drafts a month",
     "benefitNarrator": "60 minutes of the AI game-show host a month on the TV view",
     "benefitProgress": "Half-finished puzzles follow you to every device",
     "annualSave": "Save {{percent}}%",
@@ -668,8 +668,8 @@
   "studio": {
     "loading": "Loading the studio…",
     "gateTitle": "Build your own crossword",
-    "gateBody": "The studio lays out your theme entries, fills the grid with a real construction engine, shows where it's tight, and drafts clues with Claude. It's part of Crossword Clash Plus.",
-    "draftsLeft": "{{left}} of {{limit}} Claude drafts left this month"
+    "gateBody": "The studio lays out your theme entries, fills the grid with a real construction engine, shows where it's tight, and drafts clues with AI. It's part of Crossword Clash Plus.",
+    "draftsLeft": "{{left}} of {{limit}} AI drafts left this month"
   },
   "community": {
     "title": "Community puzzles",
