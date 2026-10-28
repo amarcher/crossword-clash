@@ -70,14 +70,18 @@ Deno.serve(async (req) => {
     params.set("success_url", `${origin}${returnTo}?checkout=success`);
     params.set("cancel_url", `${origin}${returnTo}?checkout=cancelled`);
     params.set("allow_promotion_codes", "true");
-    if (AUTOMATIC_TAX) {
-      params.set("automatic_tax[enabled]", "true");
-      params.set("customer_update[address]", "auto");
-    }
+    if (AUTOMATIC_TAX) params.set("automatic_tax[enabled]", "true");
     // Reuse the customer from an earlier Stripe subscription, else let Checkout create one for the account's email.
     const previous = (await entitlementsFor(admin, user.id, "stripe")).find((r) => r.external_customer);
-    if (previous?.external_customer) params.set("customer", previous.external_customer);
-    else if (user.email) params.set("customer_email", user.email);
+    if (previous?.external_customer) {
+      params.set("customer", previous.external_customer);
+      // Stripe Tax needs the customer's address; let Checkout save what the buyer enters onto the
+      // existing customer. Stripe refuses `customer_update` without a `customer`, so a first-time
+      // buyer (no customer yet) must not send it: Checkout collects the address on its own then.
+      if (AUTOMATIC_TAX) params.set("customer_update[address]", "auto");
+    } else if (user.email) {
+      params.set("customer_email", user.email);
+    }
 
     const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
