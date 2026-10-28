@@ -45,7 +45,11 @@ export function useAccount(): Account {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfileState] = useState<Profile | null>(null);
   const [ready, setReady] = useState(!supabase);
-  const [profileReady, setProfileReady] = useState(!supabase);
+  // Which user the profile state answers for: `profileReady` is derived from it
+  // in the same render as `user`, so the first render after a sign-in never
+  // reports the previous (anonymous) user's "ready, no profile" and opens the
+  // first-sign-in username prompt for an account that already has one.
+  const [profileFor, setProfileFor] = useState<string | null | undefined>(undefined);
   const plusStatus = usePlusStatus();
 
   useEffect(() => {
@@ -61,19 +65,20 @@ export function useAccount(): Account {
   useEffect(() => {
     setProfileState(null);
     if (!userId) {
-      setProfileReady(true);
+      setProfileFor(null);
       return;
     }
-    setProfileReady(false);
+    setProfileFor(undefined);
     let live = true;
     fetchProfile(userId)
       .then((p) => live && setProfileState(p))
       .catch(() => live && setProfileState(null))
-      .finally(() => live && setProfileReady(true));
+      .finally(() => live && setProfileFor(userId));
     return () => {
       live = false;
     };
   }, [userId]);
+  const profileReady = !supabase || profileFor === (userId ?? null);
 
   const setProfile = useCallback((p: Profile | null) => setProfileState(p), []);
 
