@@ -14,6 +14,10 @@
 ## Rebuild
 
 Increment `CURRENT_PROJECT_VERSION` in the Xcode project before each upload.
+The menu's "update available" banner (`src/lib/appUpdate.ts`) compares the
+installed `MARKETING_VERSION` with the App Store's, so a TestFlight build
+that is newer than the store build always reports no update; the iOS banner
+can only be seen on a store install older than the live version.
 Use a new archive path so prior artifacts remain available.
 
 On a Mac with Xcode signed in to the team, `pnpm testflight`

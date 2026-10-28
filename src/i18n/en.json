@@ -699,6 +699,14 @@
     "privacy": "Privacy Policy",
     "keepOnEveryDevice": "Keep Plus on every device: sign in, and it follows you."
   },
+  "update": {
+    "label": "App update",
+    "available": "Crossword Clash {{version}} is available",
+    "availableNoVersion": "A new version of Crossword Clash is available",
+    "benefit": "New puzzles, fixes and features. It only takes a moment.",
+    "update": "Update",
+    "later": "Later"
+  },
   "studio": {
     "loading": "Loading the studio…",
     "gateTitle": "Build your own crossword",

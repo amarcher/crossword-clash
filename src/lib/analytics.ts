@@ -69,7 +69,13 @@ export type AnalyticsEvent =
   /** A player reported a community puzzle. Param `reason`. */
   | "puzzle_reported"
   /** A player hid an author's puzzles on this device. */
-  | "author_hidden";
+  | "author_hidden"
+  /** The apps' "update available" banner was shown. Param `version` (the store's version name, or Play's version code). */
+  | "app_update_shown"
+  /** The player tapped Update on that banner. Param `version`. */
+  | "app_update_tapped"
+  /** The player tapped Later on that banner. Param `version`. */
+  | "app_update_dismissed";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 
