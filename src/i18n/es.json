@@ -27,8 +27,6 @@
     "dailyLeaderboard": "Clasificación",
     "nudge": "Compite con amigos para llenar un crucigrama — o resuelve el Mini de hoy solo.",
     "nudgeDismiss": "Entendido",
-    "classicLibrary": "Biblioteca clásica",
-    "classicLibrarySubtitle": "Crucigramas del primer libro de crucigramas jamás publicado (1924)",
     "pastPuzzles": "Crucigramas anteriores",
     "pastPuzzlesSubtitle": "Ponte al día con los diarios que te perdiste",
     "how": {
@@ -92,10 +90,6 @@
     "browseNative": "Toca para elegir un archivo (.puz, .ipuz, .jpz, .xd)",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd de AVCX, Lollapuzzoola, BEQ, donde sea.",
     "tileSampleTitle": "Probar una muestra",
-    "classicTitle": "Crucigramas clásicos",
-    "classicSubtitle": "Del primer libro de crucigramas jamás publicado (1924). Dominio público — toca uno para jugar.",
-    "classicError": "No se pudo cargar ese crucigrama. Prueba con otro.",
-    "classicSeeAll": "Ver los {{count}} en la biblioteca clásica →",
     "rightsNote": "Importa solo crucigramas que tengas derecho a usar. Consulta nuestra <anchor>política de derechos de autor</anchor>."
   },
   "importing": {
@@ -257,10 +251,6 @@
     "shareFailed": "No se pudo compartir, inténtalo de nuevo",
     "saveImage": "Guardar imagen",
     "upNext": "A continuación",
-    "nextClassic": "Siguiente clásico: n.º {{number}}",
-    "nextClassicSubtitle": "{{title}} · {{size}}",
-    "browseLibrary": "Explorar la biblioteca",
-    "browseLibraryHint": "Clásicos gratis del primer libro de crucigramas",
     "raceFresh": "Carrera en vivo con un amigo",
     "raceFreshHint": "Organiza un crucigrama nuevo: invita por enlace o QR",
     "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
@@ -406,37 +396,10 @@
     "nothingThatDay": "Ese día no se publicó nada.",
     "today": "Hoy",
     "loadError": "No se pudo cargar ese crucigrama. Inténtalo de nuevo.",
-    "classicsSubtitle": "{{solved}} de {{total}} resueltos",
+    "loadingPuzzle": "Cargando…",
     "lockedPlusTitle": "Pásate a Plus para jugar crucigramas de hace más de {{count}} días",
     "lockedPlusBody": "Todos los diarios desde que empezó el archivo, en todos los dispositivos donde inicies sesión.",
     "lockedPlusLabel": "bloqueado, con Plus se juega cualquier día"
-  },
-  "classics": {
-    "title": "Biblioteca clásica",
-    "subtitle": "{{count}} crucigramas de The Cross Word Puzzle Book (1924), el primer libro de crucigramas jamás publicado. Gratis, de dominio público y todavía un buen reto.",
-    "subtitleNoCount": "Crucigramas de The Cross Word Puzzle Book (1924), el primer libro de crucigramas jamás publicado.",
-    "progress": "{{solved}} de {{total}} resueltos",
-    "filterAll": "Todos los tamaños",
-    "size": {
-      "small": "Pequeño",
-      "medium": "Mediano",
-      "large": "Grande",
-      "giant": "Gigante"
-    },
-    "surpriseMe": "Sorpréndeme",
-    "hideSolved": "Ocultar resueltos",
-    "loading": "Cargando la biblioteca…",
-    "unavailable": "No se pudo cargar la biblioteca en este momento.",
-    "emptyFilter": "No queda nada aquí — prueba otro tamaño o muestra los resueltos.",
-    "loadError": "No se pudo cargar ese crucigrama. Prueba con otro.",
-    "loadingPuzzle": "Cargando…",
-    "cardEyebrow": "N.º {{number}} · {{size}} · {{clues}} pistas",
-    "by": "por {{author}}",
-    "playSolo": "Jugar solo",
-    "playAgain": "Jugar de nuevo",
-    "raceFriends": "Competir con amigos",
-    "credit": "Crucigramas de The Cross Word Puzzle Book, editado por Prosper Buranelli, F. Gregory Hartswick y Margaret Petherbridge (Plaza Publishing, 1924). Dominio público. Texto vía Project Gutenberg; archivos .puz vía crosserville.com.",
-    "backToMenu": "← Volver al menú"
   },
   "keyboard": {
     "label": "Teclado de crucigrama",
@@ -597,7 +560,6 @@
     "sourceDaily": "Diario",
     "sourceNyt": "NYT",
     "sourceOther": "Crucigrama",
-    "sourceClassic": "Clásico",
     "untimed": "Resuelto",
     "yourAccountLink": "Abrir tu cuenta",
     "signedInBody": "Tu página de cuenta tiene tu historial, tu nombre de usuario y tu suscripción.",
@@ -623,10 +585,6 @@
     "archive": {
       "title": "Crucigramas diarios anteriores — Crossword Clash",
       "description": "Explora todos los diarios anteriores con tus tiempos y ponte al día con los que te perdiste."
-    },
-    "classics": {
-      "title": "Crucigramas clásicos gratis de 1924 — Crossword Clash",
-      "description": "Juega crucigramas de dominio público de The Cross Word Puzzle Book (1924), el primer libro de crucigramas. Resuélvelos solo o compite con amigos en tiempo real."
     },
     "privacy": {
       "description": "Cómo trata Crossword Clash tus datos: juego anónimo por defecto, cuentas opcionales, cookies de analítica y anuncios con consentimiento, y qué guardan las apps."
@@ -659,8 +617,8 @@
     "subtitleRace": "Todos compiten en el mismo crucigrama nuevo. Recibirás un código de sala para compartir.",
     "subtitleNext": "La sala conserva su código: los jugadores te siguen al nuevo crucigrama.",
     "todaysDailies": "Los diarios de hoy",
-    "allDailiesSolved": "Ya resolviste todos los diarios de hoy; elige un clásico abajo.",
-    "classics": "Biblioteca clásica",
+    "allDailiesSolved": "Ya resolviste todos los diarios de hoy; mañana habrá tres más.",
+    "loading": "Cargando los diarios de hoy…",
     "pick": "Elegir",
     "setting": "Preparando…",
     "error": "No se pudo preparar ese crucigrama. Prueba con otro.",

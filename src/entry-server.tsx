@@ -10,14 +10,8 @@ import { renderToString } from "react-dom/server";
 import { createStaticHandler, createStaticRouter, StaticRouterProvider } from "react-router";
 import { AppShell } from "./AppShell";
 import { routes } from "./routes";
-import { preloadClassicManifest, type ClassicEntry } from "./lib/classicLibrary";
 import { pageMetaFor, type PageMeta } from "./lib/pageMeta";
 import i18n from "./i18n/i18n";
-
-export interface RenderOptions {
-  /** The classics manifest, so /classics renders its cards instead of "Loading…". */
-  classics?: ClassicEntry[];
-}
 
 export interface Rendered {
   /** Inner HTML for `#root`. */
@@ -27,8 +21,7 @@ export interface Rendered {
 
 const handler = createStaticHandler(routes);
 
-export async function render(pathname: string, options: RenderOptions = {}): Promise<Rendered> {
-  preloadClassicManifest(options.classics ?? null);
+export async function render(pathname: string): Promise<Rendered> {
   const request = new Request(`https://crosswordclash.com${pathname}`);
   // Resolves the matched routes' `lazy` modules and runs any loaders.
   const context = await handler.query(request);

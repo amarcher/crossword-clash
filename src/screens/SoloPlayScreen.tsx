@@ -24,7 +24,6 @@ import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
-import { loadClassicPuzzle } from "../lib/classicLibrary";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { clearProgress } from "../lib/soloProgress";
 import { pickerPath } from "./PuzzlePickerScreen";
@@ -286,18 +285,13 @@ export function SoloPlayScreen() {
 
   const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
 
-  // "Up next" (audit §2, item 8): today's other dailies, else a classic, else
-  // the library. A daily or classic loads straight into this screen, the same
-  // path the menu's "Play" takes.
+  // "Up next" (audit §2, item 8): today's other dailies, then yesterday's.
+  // A daily loads straight into this screen, the same path the menu's
+  // "Play" takes.
   const nextUp = useNextUp(soloResult ? puzzleKey : null, isComplete);
   const handleNextUp = useCallback(
     async (item: NextUpItem) => {
       clearChallenge();
-      if (item.kind === "library") {
-        setCompletionModalDismissed(true);
-        navigate("/classics");
-        return;
-      }
       if (item.kind === "archive") {
         // Yesterday's daily, fetched by day + slot like the archive screen does.
         track("mode_selected", { mode: "archive", slot: item.entry.slot, from: "completion" });
@@ -307,12 +301,11 @@ export function SoloPlayScreen() {
         game.setSoloTheme(daily.theme || null);
         return;
       }
-      track("mode_selected", item.kind === "daily" ? { mode: "daily", slot: item.slot, from: "completion" } : { mode: "classic", from: "completion" });
-      const next = item.kind === "daily" ? item.daily.puzzle : await loadClassicPuzzle(item.entry);
-      await game.handleSoloPuzzleLoaded(next);
-      game.setSoloTheme(item.kind === "daily" ? item.daily.theme : null);
+      track("mode_selected", { mode: "daily", slot: item.slot, from: "completion" });
+      await game.handleSoloPuzzleLoaded(item.daily.puzzle);
+      game.setSoloTheme(item.daily.theme);
     },
-    [game, navigate, setCompletionModalDismissed],
+    [game],
   );
 
   // "Race a friend live": a FRESH puzzle through the picker, never the one

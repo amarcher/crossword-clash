@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -119,8 +119,8 @@ interface CompletionModalProps {
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
   /**
-   * "Up next" rows (at most two): today's unsolved dailies, else one unplayed
-   * classic, else the library — from `nextUpSuggestions`. Solo/daily only.
+   * "Up next" rows (at most two): today's unsolved dailies, then yesterday's
+   * — from `nextUpSuggestions`. Solo/daily only.
    */
   nextUp?: NextUpItem[];
   onNextUp?: (item: NextUpItem) => void;
@@ -647,15 +647,7 @@ export function CompletionModal({
                 {hasNextUp &&
                   nextUp.map((item) => (
                     <NextUpRow
-                      key={
-                        item.kind === "daily"
-                          ? `daily-${item.slot}`
-                          : item.kind === "archive"
-                            ? `archive-${item.entry.day}-${item.entry.slot}`
-                            : item.kind === "classic"
-                              ? `classic-${item.entry.file}`
-                              : "library"
-                      }
+                      key={item.kind === "daily" ? `daily-${item.slot}` : `archive-${item.entry.day}-${item.entry.slot}`}
                       item={item}
                       onSelect={() => onNextUp(item)}
                       darkMode={darkMode}
@@ -777,34 +769,16 @@ function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: (
       />
     );
   }
-  if (item.kind === "archive") {
-    const { entry } = item;
-    const size = `${entry.width}×${entry.height}`;
-    return (
-      <ModalRow
-        icon={CalendarDays}
-        tone="gold"
-        title={t("completion.nextYesterday", { daily: t(SLOT_EYEBROW[entry.slot]) })}
-        subtitle={entry.theme ? `${size} · ${entry.theme}` : `${size} · ${entry.title}`}
-        onClick={onSelect}
-        darkMode={darkMode}
-      />
-    );
-  }
-  if (item.kind === "classic") {
-    const { entry } = item;
-    return (
-      <ModalRow
-        icon={BookOpen}
-        tone="gold"
-        title={t("completion.nextClassic", { number: entry.number })}
-        subtitle={t("completion.nextClassicSubtitle", { title: entry.title, size: `${entry.width}×${entry.height}` })}
-        onClick={onSelect}
-        darkMode={darkMode}
-      />
-    );
-  }
+  const { entry } = item;
+  const size = `${entry.width}×${entry.height}`;
   return (
-    <ModalRow icon={BookOpen} tone="gold" title={t("completion.browseLibrary")} subtitle={t("completion.browseLibraryHint")} onClick={onSelect} darkMode={darkMode} />
+    <ModalRow
+      icon={CalendarDays}
+      tone="gold"
+      title={t("completion.nextYesterday", { daily: t(SLOT_EYEBROW[entry.slot]) })}
+      subtitle={entry.theme ? `${size} · ${entry.theme}` : `${size} · ${entry.title}`}
+      onClick={onSelect}
+      darkMode={darkMode}
+    />
   );
 }

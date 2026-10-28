@@ -363,7 +363,7 @@ cycle to settle.
 
 | Feature | Free (anonymous) | Free (account) | Plus |
 |---|---|---|---|
-| Daily mini, midi, large; classics; imports; multiplayer rooms | yes | yes | yes |
+| Daily mini, midi, large; imports; multiplayer rooms | yes | yes | yes |
 | Puzzle archive | last 7 days | last 30 days (decision 5) | every day since 2026-10-16 |
 | Reveal a letter (solo, apps and web) | 1 per puzzle, +3 per rewarded ad in the apps | same | unlimited |
 | Solve history and streaks on every device | local only | `solves` sync (exists) | same |
