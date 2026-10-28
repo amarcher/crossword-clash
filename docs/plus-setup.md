@@ -376,7 +376,11 @@ in every territory: the API does **not** equalize from one territory, so the
 matching point for each of the other 174 comes from
 `GET /v1/subscriptionPricePoints/{usa}/equalizations` (the territory is the
 `t` field of the base64 id) and gets its own `subscriptionPrices` POST. Both
-reached `READY_TO_SUBMIT` on 2026-10-28. Google Cloud project `crossword-clash`
+reached `READY_TO_SUBMIT` on 2026-10-28. TestFlight: build 10 (Development
+group) froze on the paywall — every Capacitor plugin object is a Proxy that
+answers `then`, and `nativePurchase.ts` resolved a promise with it (see
+CLAUDE.md); build 11 carries the fix, verified in the simulator up to the
+sandbox Apple Account prompt, plus `facebook: false` for the sign-in plugin. Google Cloud project `crossword-clash`
 (number 947795730277) has the web client Supabase uses
 (`…-0skrplb0r6c6apr9lteai0a2uqo70uth`, = `VITE_GOOGLE_WEB_CLIENT_ID`), an iOS
 client (`…-bhbf4mkmo94i09jjsqj34hblt0prqtk3`, = `VITE_GOOGLE_IOS_CLIENT_ID`,

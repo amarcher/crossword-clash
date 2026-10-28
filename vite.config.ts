@@ -83,7 +83,11 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: "node",
     setupFiles: ["./src/i18n/i18n.ts"],
-    // Playwright specs live in e2e/ and run via `pnpm e2e`, not vitest.
-    exclude: [...configDefaults.exclude, "e2e/**"],
+    // Playwright specs live in e2e/ and run via `pnpm e2e`, not vitest. The
+    // Xcode package checkouts under ios/DerivedData carry vendors' own test
+    // files (RevenueCat's "typescript/src/__tests__"), and the agent worktrees
+    // under .claude hold stale copies of ours; vitest's path filters are
+    // substring matches, so "src" would sweep both in.
+    exclude: [...configDefaults.exclude, "e2e/**", "ios/DerivedData/**", ".claude/**"],
   },
 }));

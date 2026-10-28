@@ -46,10 +46,19 @@ export function nativeSignInAvailable(): boolean {
   return nativeProviders().length > 0;
 }
 
-type SocialLogin = typeof import("@capgo/capacitor-social-login").SocialLogin;
-let plugin: Promise<SocialLogin> | null = null;
+type SocialLoginModule = typeof import("@capgo/capacitor-social-login");
+type SocialLogin = SocialLoginModule["SocialLogin"];
+let plugin: Promise<SocialLoginModule> | null = null;
 
-async function socialLogin(): Promise<SocialLogin> {
+/**
+ * The initialized plugin module. No promise here may resolve with the
+ * `SocialLogin` object itself: a Capacitor plugin is a Proxy that answers
+ * every property, `then` included, with a native-method wrapper, so a promise
+ * resolved with it is taken for a thenable and never settles (see
+ * nativePurchase.ts, where the 1.1.0 build 10 paywall froze on this). The
+ * module namespace object has no `then`, so it is what the promise carries.
+ */
+async function socialLogin(): Promise<{ sl: SocialLogin }> {
   // The static switch lets Rollup drop the import (and the plugin's chunk) from web builds.
   if (import.meta.env.MODE !== "mobile") throw new Error("Native sign-in is only available in the apps.");
   if (!plugin) {
@@ -61,10 +70,10 @@ async function socialLogin(): Promise<SocialLogin> {
           ? { google: { webClientId: env.VITE_GOOGLE_WEB_CLIENT_ID, iOSClientId: env.VITE_GOOGLE_IOS_CLIENT_ID, iOSServerClientId: env.VITE_GOOGLE_WEB_CLIENT_ID, mode: "online" as const } }
           : {}),
       });
-      return m.SocialLogin;
+      return m;
     });
   }
-  return plugin;
+  return { sl: (await plugin).SocialLogin };
 }
 
 /** A random nonce; Apple and Google hash it into the id token and Supabase verifies the raw value. */
@@ -77,7 +86,7 @@ export function randomNonce(): string {
 /** Shows the OS sign-in sheet and returns the provider's id token. Throws "cancelled" when the user backs out. */
 export async function nativeIdToken(provider: AuthProvider): Promise<NativeIdToken> {
   const nonce = randomNonce();
-  const sl = await socialLogin();
+  const { sl } = await socialLogin();
   let result: { result?: unknown };
   try {
     result = await sl.login({ provider, options: { scopes: provider === "apple" ? ["email", "name"] : ["email", "profile"], nonce } });
