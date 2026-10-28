@@ -601,7 +601,11 @@ select,
 input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
-  display: block;
+  /* flex, not block: WebKit lays the value box out as a block at the top of
+     the field, so with min-height the date sat on the top edge while the
+     Select beside it was centred (build 15 feedback). */
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 input[type="date"]::-webkit-date-and-time-value {
