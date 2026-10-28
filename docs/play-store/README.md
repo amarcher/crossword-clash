@@ -71,6 +71,13 @@ icon by `node scripts/build-app-art.mjs`.
 3. Listing, Data safety and other App content changes are staged in
    *Publishing overview* and go out with *Submit changes for review*. They can
    ride along with the production rollout or be sent on their own.
+4. **The in-app "update available" banner needs nothing here.** The apps ask
+   the store themselves (`src/lib/appUpdate.ts`, no server side). Play's
+   in-app update API only recognises a build that was installed from Play
+   under the same package name (`com.crosswordclash.app`) and the same
+   signing as the live release, so keep the upload key and never sideload a
+   build to test the banner; a device on an internal-testing track sees the
+   track's newer build as the update.
 
 ## Status on October 21, 2026 (1.0.2, versionCode 4)
 

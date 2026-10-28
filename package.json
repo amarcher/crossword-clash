@@ -40,6 +40,7 @@
     "@capacitor/core": "^8.5.1",
     "@capacitor/ios": "^8.5.1",
     "@capacitor/share": "^8.0.3",
+    "@capawesome/capacitor-app-update": "8.1.1",
     "@capgo/capacitor-social-login": "^8.7.5",
     "@elevenlabs/client": "^1.10.0",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

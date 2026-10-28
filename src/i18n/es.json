@@ -657,6 +657,14 @@
     "privacy": "Política de privacidad",
     "keepOnEveryDevice": "Conserva Plus en todos tus dispositivos: inicia sesión y te acompaña."
   },
+  "update": {
+    "label": "Actualización de la app",
+    "available": "Crossword Clash {{version}} ya está disponible",
+    "availableNoVersion": "Hay una nueva versión de Crossword Clash",
+    "benefit": "Nuevos crucigramas, correcciones y mejoras. Solo tarda un momento.",
+    "update": "Actualizar",
+    "later": "Más tarde"
+  },
   "studio": {
     "loading": "Cargando el estudio…",
     "gateTitle": "Construye tu propio crucigrama",
