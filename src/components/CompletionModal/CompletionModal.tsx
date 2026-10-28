@@ -77,12 +77,19 @@ interface CompletionModalProps {
   /** Which daily this was ("mini" | "midi" | "large"), so the share text can say so. */
   dailySlot?: DailySlot;
   /**
-   * "Sign the board": present only when a daily time was just submitted under
-   * the anonymous default name. `onSign` claims the entry (also fired when the
-   * finisher signs a challenge link, so one name covers both); `signedAs`
-   * flips the form into a confirmation once a name lands.
+   * "Sign the board": present only when a daily finish was made under the
+   * anonymous default name. `onSign` posts (or renames) the entry under the
+   * name (also fired when the finisher signs a challenge link, so one name
+   * covers both); `signedAs` flips the form into a confirmation once a name
+   * lands; `unposted` says the time is not on the board until it is signed.
    */
-  dailySign?: { signedAs?: string | null; onSign: (name: string) => void };
+  dailySign?: { signedAs?: string | null; onSign: (name: string) => void; unposted?: boolean };
+  /**
+   * A daily finish that was not sent to the board because this page is a
+   * preview deployment or local dev (production and the apps post): a quiet
+   * note in place of the sign form.
+   */
+  boardNotPosted?: boolean;
   /**
    * Async ("time trial") mode: per-player standings ranked by finish time.
    * When present the player table shows times instead of cells/clues, and
@@ -163,6 +170,7 @@ export function CompletionModal({
   onViewLeaderboard,
   dailySlot,
   dailySign,
+  boardNotPosted,
   raceStandings,
   coop,
   players,
@@ -533,10 +541,16 @@ export function CompletionModal({
               <BoardSignForm
                 currentName={t("common.defaultPlayerName")}
                 signedAs={dailySign.signedAs}
+                unposted={dailySign.unposted}
                 onSign={dailySign.onSign}
                 darkMode={darkMode}
                 className="mb-5"
               />
+            )}
+            {boardNotPosted && (
+              <p data-testid="board-not-posted" className={`mb-5 text-center text-xs ${darkMode ? "text-white/50" : "text-muted"}`}>
+                {t("leaderboard.notPosted")}
+              </p>
             )}
 
             {challengeOutcome && (

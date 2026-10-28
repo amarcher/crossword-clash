@@ -10,11 +10,13 @@
  * offline solo path is untouched.
  */
 
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
 import { DAILY_SLOTS, currentDailyPuzzle, type DailySlot } from "./dailyFeed";
 import type { Puzzle } from "../types/puzzle";
 import { displayableName } from "./nameFilter";
+import { isRealPlayerName } from "./playerName";
 
 // --- Types ---
 
@@ -37,11 +39,20 @@ export interface RankedDailyEntry extends DailyResultEntry {
  * A daily finish the viewer just made, held in GameContext while (and after)
  * it is posted, so the board can wait for the round trip instead of racing
  * it, and can show the viewer's own row before the server answers.
+ *
+ * A finish made under the anonymous default name is parked here *unposted*
+ * (`posted: false`): the row exists on this device only until the finisher
+ * signs it (`signDailyResult`), so the public board never fills with
+ * "Player" rows.
  */
 export interface PendingDailyResult {
   day: string;
   slot: DailySlot;
   entry: DailyResultEntry;
+  /** The room the finish came from (a race); null for a solo finish. */
+  gameId: string | null;
+  /** Whether the finish was sent to the board (or is on its way). */
+  posted: boolean;
   /** Resolves once the submission has finished (it never rejects). */
   settled: Promise<void>;
 }
@@ -126,6 +137,26 @@ export function mergeOwnResult(
   return rankEntries(plain);
 }
 
+/**
+ * The origins whose finishes go on the public board. Vercel preview
+ * deployments and local dev share the production Supabase project, so a
+ * test solve on either would otherwise land on the live leaderboard (one
+ * did, on 2026-10-27). The native apps serve from a local WebView origin
+ * and always post.
+ */
+export const BOARD_ORIGINS: readonly string[] = ["https://crosswordclash.com", "https://www.crosswordclash.com"];
+
+/** Whether a page served from `origin` (or a native app) posts to the board. */
+export function boardPostsFrom(origin: string, native: boolean): boolean {
+  return native || BOARD_ORIGINS.includes(origin);
+}
+
+/** Whether this page posts to the board — production and the apps only. */
+export function boardPostsHere(): boolean {
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  return boardPostsFrom(origin, Capacitor.isNativePlatform());
+}
+
 /** Whether a pending finish belongs to the board being shown. */
 export function pendingResultFor(
   pending: PendingDailyResult | null | undefined,
@@ -159,10 +190,11 @@ export interface SubmitDailyResultInput {
 /**
  * Record a daily finish, keeping only the player's best time for the day.
  * Best-effort: failures are logged and swallowed — a leaderboard hiccup must
- * never break the completion flow.
+ * never break the completion flow. A no-op off the production origin
+ * (`boardPostsHere`), so previews and dev never write to the live board.
  */
 export async function submitDailyResult(input: SubmitDailyResultInput): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || !boardPostsHere()) return;
   const seconds = Math.max(0, Math.floor(input.seconds));
   const slot = input.slot ?? "mini";
   try {
@@ -208,7 +240,7 @@ export async function updateDailyDisplayName(
   displayName: string,
   slot: DailySlot = "mini",
 ): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || !boardPostsHere()) return;
   if (!displayName.trim()) return;
   const name = displayableName(displayName).slice(0, 40);
   try {
@@ -222,6 +254,42 @@ export async function updateDailyDisplayName(
   } catch (err) {
     console.error("Failed to update daily display name:", err);
   }
+}
+
+/**
+ * Park a finish for the board and post it when it carries a real name. The
+ * anonymous default ("Player" in any language) is never posted: the finish
+ * stays on this device, the completion modal and the board offer the sign
+ * form, and `signDailyResult` posts it the moment a name lands. A signed-in
+ * account's username is already a real name, so it posts at once.
+ */
+export function postDailyResult(
+  day: string,
+  slot: DailySlot,
+  entry: DailyResultEntry,
+  gameId: string | null = null,
+): PendingDailyResult {
+  if (!isRealPlayerName(entry.displayName)) {
+    return { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
+  }
+  return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, ...entry }) };
+}
+
+/**
+ * Sign a parked finish: an unposted one is posted now under the name (the
+ * board awaits the new `settled`); a posted one is renamed in place through
+ * `updateDailyDisplayName`. Returns the replacement for GameContext.
+ */
+export function signDailyResult(pending: PendingDailyResult, name: string): PendingDailyResult {
+  const displayName = name.trim();
+  if (!displayName) return pending;
+  const entry = { ...pending.entry, displayName };
+  if (pending.posted) {
+    void updateDailyDisplayName(pending.day, pending.entry.userId, displayName, pending.slot);
+    return { ...pending, entry };
+  }
+  const settled = submitDailyResult({ day: pending.day, slot: pending.slot, gameId: pending.gameId, ...entry });
+  return { ...pending, entry, posted: true, settled };
 }
 
 /**

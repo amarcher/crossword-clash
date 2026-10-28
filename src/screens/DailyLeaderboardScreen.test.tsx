@@ -17,11 +17,18 @@ vi.mock("react-router", async () => {
 // A configured client, so the board takes the online path (the I/O itself is mocked below).
 vi.mock("../lib/supabaseClient", () => ({ supabase: {} }));
 
-const fetchBoard = vi.fn<() => Promise<RankedDailyEntry[]>>();
+const fetchBoard = vi.fn<(day: string, slot: string) => Promise<RankedDailyEntry[]>>();
 const updateName = vi.fn(async () => {});
+// Production by default; a test flips it to a preview.
+let postsHere = true;
 vi.mock("../lib/dailyLeaderboard", async () => {
   const actual = await vi.importActual<typeof import("../lib/dailyLeaderboard")>("../lib/dailyLeaderboard");
-  return { ...actual, fetchDailyLeaderboard: () => fetchBoard(), updateDailyDisplayName: (...a: unknown[]) => updateName(...(a as [])) };
+  return {
+    ...actual,
+    fetchDailyLeaderboard: (day: string, slot: string) => fetchBoard(day, slot),
+    updateDailyDisplayName: (...a: unknown[]) => updateName(...(a as [])),
+    boardPostsHere: () => postsHere,
+  };
 });
 
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
@@ -37,7 +44,19 @@ const game = {
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 
 const daily = getDailyMini(new Date(2026, 9, 20));
-vi.mock("../hooks/useDailyMini", () => ({ useDailyPuzzle: () => daily }));
+// Every slot has a puzzle today unless a test says otherwise (null = nothing published).
+let dailies: Record<string, typeof daily | null> = {};
+vi.mock("../hooks/useDailyMini", () => ({ useDailyPuzzle: (slot: string) => dailies[slot] }));
+
+/** Tailwind's lg breakpoint, as the screen asks matchMedia for it. */
+const LG = "(min-width: 64rem)";
+function wideViewport() {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({ matches: query === LG, addEventListener: () => {}, removeEventListener: () => {} }),
+  });
+}
 
 let bestTimes: Record<string, number> = {};
 vi.mock("../hooks/useSolveHistory", () => ({
@@ -55,9 +74,17 @@ function deferred() {
   return { promise, resolve };
 }
 
-function pending(seconds: number, displayName = "Andy"): PendingDailyResult & { resolve: () => void } {
+function pending(seconds: number, displayName = "Andy", posted = true): PendingDailyResult & { resolve: () => void } {
   const d = deferred();
-  return { day: todayKey(), slot: "mini", entry: { userId: "me", displayName, mode: "solo", seconds }, settled: d.promise, resolve: d.resolve };
+  return {
+    day: todayKey(),
+    slot: "mini",
+    entry: { userId: "me", displayName, mode: "solo", seconds },
+    gameId: null,
+    posted,
+    settled: d.promise,
+    resolve: d.resolve,
+  };
 }
 
 function renderBoard() {
@@ -70,6 +97,9 @@ function renderBoard() {
 
 beforeEach(() => {
   bestTimes = {};
+  postsHere = true;
+  dailies = { mini: daily, midi: getDailyMini(new Date(2026, 9, 21)), large: getDailyMini(new Date(2026, 9, 22)) };
+  delete (window as { matchMedia?: unknown }).matchMedia;
   game.pendingDailyResult = null;
   fetchBoard.mockReset();
   fetchBoard.mockResolvedValue(rankEntries([{ userId: "a", displayName: "Ada", mode: "solo", seconds: 60 }]));
@@ -156,19 +186,101 @@ describe("DailyLeaderboardScreen", () => {
     expect(navigate).toHaveBeenCalledWith("/host-game/name");
   });
 
-  it("signs the board through the shared form and shows the name at once", async () => {
-    const p = pending(80, "Player");
+  it("keeps an unsigned finish on this device and posts it under the name signed through the shared form", async () => {
+    const p = pending(80, "Player", false);
     p.resolve();
     game.pendingDailyResult = p;
+    renderBoard();
+    await screen.findByText("Ada");
+    // The viewer sees where the time would place, and is asked to post it.
+    expect(screen.getAllByRole("row").map((r) => r.textContent)).toContainEqual(expect.stringContaining("2PlayerYou"));
+    expect(screen.getByText("Add your name to post your time to today's board")).toBeTruthy();
+    expect(screen.queryByText(/on today's board as/)).toBeNull();
+    fireEvent.change(screen.getByPlaceholderText("Your name"), { target: { value: "Andy" } });
+    fireEvent.click(screen.getByRole("button", { name: "Post" }));
+    expect(game.setPendingDailyResult).toHaveBeenCalledWith(
+      expect.objectContaining({ posted: true, entry: expect.objectContaining({ userId: "me", displayName: "Andy", seconds: 80 }) }),
+    );
+    expect(updateName).not.toHaveBeenCalled();
+    expect(game.setDisplayName).toHaveBeenCalledWith("Andy");
+    expect(screen.getByText("On the board as Andy ✓")).toBeTruthy();
+    expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+  });
+
+  it("renames a row an older client posted under the default name", async () => {
+    fetchBoard.mockResolvedValue(
+      rankEntries([
+        { userId: "a", displayName: "Ada", mode: "solo", seconds: 60 },
+        { userId: "me", displayName: "Player", mode: "solo", seconds: 75 },
+      ]),
+    );
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.getByText(/on today's board as “Player”/)).toBeTruthy();
     fireEvent.change(screen.getByPlaceholderText("Your name"), { target: { value: "Andy" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(updateName).toHaveBeenCalledWith(todayKey(), "me", "Andy", "mini");
-    expect(game.setDisplayName).toHaveBeenCalledWith("Andy");
+    expect(game.setPendingDailyResult).not.toHaveBeenCalled();
     expect(screen.getByText("On the board as Andy ✓")).toBeTruthy();
     expect(screen.getByText("Andy")).toBeTruthy();
+  });
+
+  it("on a preview the finish shows with a quiet note, and there is nothing to sign", async () => {
+    postsHere = false;
+    const p = pending(80, "Player", false);
+    p.resolve();
+    game.pendingDailyResult = p;
+    renderBoard();
+    await screen.findByText("Ada");
+    expect(screen.getAllByRole("row").map((r) => r.textContent)).toContainEqual(expect.stringContaining("2PlayerYou"));
+    expect(screen.getByTestId("board-not-posted").textContent).toBe("Preview: not posted to the board");
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+    expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:20 · #2 today");
+  });
+
+  it("on a phone shows the route's one board", async () => {
+    renderBoard();
+    await screen.findByText("Ada");
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Daily Leaderboard");
+    expect(screen.queryByText("Daily Midi")).toBeNull();
+    expect(fetchBoard).toHaveBeenCalledTimes(1);
+    expect(fetchBoard).toHaveBeenCalledWith(todayKey(), "mini");
+  });
+
+  it("on a wide screen shows today's boards side by side, each fetched for its slot, the finish only in its own", async () => {
+    wideViewport();
+    const p = pending(90);
+    p.resolve();
+    game.pendingDailyResult = p;
+    fetchBoard.mockImplementation(async (_day, slot) =>
+      rankEntries([{ userId: `${slot}-1`, displayName: `${slot} leader`, mode: "solo", seconds: 60 }]),
+    );
+    renderBoard();
+    await screen.findByText("large leader");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Today's Leaderboards");
+    expect(screen.getByTestId("boards").className).toContain("lg:grid-cols-3");
+    expect(["mini", "midi", "large"].map((s) => screen.getByTestId(`board-${s}`))).toHaveLength(3);
+    expect(screen.getByText("Daily Mini")).toBeTruthy();
+    expect(screen.getByText("Daily Midi")).toBeTruthy();
+    expect(screen.getByText("Daily Large")).toBeTruthy();
+    for (const slot of ["mini", "midi", "large"]) expect(fetchBoard).toHaveBeenCalledWith(todayKey(), slot);
+    // The mini finish sits in the mini board only.
+    expect(screen.getAllByText("Andy")).toHaveLength(1);
+    expect(screen.getByTestId("board-mini").textContent).toContain("Andy");
+    expect(screen.getByTestId("board-midi").textContent).not.toContain("Andy");
+    expect(screen.getByTestId("board-mini").textContent).toContain("Solved in 1:30");
+    expect(screen.getByTestId("board-large").textContent).toContain("Play Today's Large");
+  });
+
+  it("on a wide screen a slot with nothing published shows nothing", async () => {
+    wideViewport();
+    dailies = { ...dailies, large: null };
+    renderBoard();
+    await screen.findByText("Daily Midi");
+    expect(screen.getByTestId("boards").className).toContain("lg:grid-cols-2");
+    expect(screen.queryByTestId("board-large")).toBeNull();
+    expect(screen.queryByText("Daily Large")).toBeNull();
+    expect(fetchBoard).not.toHaveBeenCalledWith(todayKey(), "large");
   });
 });
