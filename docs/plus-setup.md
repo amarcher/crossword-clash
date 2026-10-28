@@ -293,7 +293,14 @@ only once 3.1 is done in live mode; everything stays hidden before that.
    (EULA) and Privacy Policy URLs to the App Store metadata.
 6. **Sign in with Apple capability**: in Xcode, target App → Signing &
    Capabilities → + Capability → Sign in with Apple. Commit the resulting
-   `App.entitlements` and the project change. Then in Supabase →
+   `App.entitlements` and the project change. The **App ID itself** must have
+   the capability too, or the archive fails with "provisioning profile
+   doesn't include the Sign In with Apple capability": Certificates,
+   Identifiers & Profiles → Identifiers → the bundle id → Sign In with Apple,
+   or by API `POST /v1/bundleIdCapabilities` with `capabilityType:
+   APPLE_ID_AUTH` on bundleId `75MZZ652JR` (done 2026-10-28; automatic
+   signing with `-allowProvisioningUpdates` then regenerates the profile).
+   Then in Supabase →
    Authentication → Providers → Apple, add the bundle id
    `com.crosswordclash.app` to the client ids list (comma-separated next to
    the web Services ID); Supabase accepts any listed id as the token
