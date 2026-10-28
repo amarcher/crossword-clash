@@ -113,13 +113,21 @@ export function useMultiplayer({
   onWrongLetter,
 }: UseMultiplayerOptions): UseMultiplayerReturn {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [gameStatus, setGameStatus] = useState<"waiting" | "active" | "completed">("waiting");
+  // Room status and "hydrated" are keyed by the room they describe: this hook
+  // lives in the app-wide provider, so after one game a new room would
+  // otherwise be read with the previous game's "active" / hydrated for the
+  // first render, and the lobby would jump straight to /play (1.1.0 report:
+  // "Create room" opened the puzzle instead of the invite page).
+  const [statusState, setStatusState] = useState<{ gameId: string | null; status: "waiting" | "active" | "completed" }>({ gameId: null, status: "waiting" });
+  const gameStatus = statusState.gameId === gameId ? statusState.status : "waiting";
+  const setGameStatus = useCallback((status: "waiting" | "active" | "completed") => setStatusState({ gameId, status }), [gameId]);
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
+  const hydrated = hydratedFor !== null && hydratedFor === gameId;
   // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
   // by the DB's started_at/completed_at on hydrate, so refreshes keep the time.
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
@@ -189,15 +197,23 @@ export function useMultiplayer({
     dispatch({ type: "HYDRATE_CELLS", cells: state.cells, score });
 
     return state;
-  }, [gameId, userId, dispatch]);
+  }, [gameId, userId, dispatch, setGameStatus]);
 
   // Subscribe to Broadcast channel
   useEffect(() => {
     if (!supabase || !gameId) return;
 
-    setHydrated(false);
+    setHydratedFor(null);
     trackedRef.current = null;
     presenceWarmedRef.current = false;
+    // The rest of the previous room's state goes too, so a new lobby never
+    // shows the last roster, clock or settings while this room loads.
+    setPlayers([]);
+    setShareCode(null);
+    setStartedAtMs(null);
+    setCompletedAtMs(null);
+    setRaceFinishTimes({});
+    setGameSettings(DEFAULT_GAME_SETTINGS);
 
     // Fetch short_code
     supabase
@@ -302,7 +318,7 @@ export function useMultiplayer({
       }
       if (status === "SUBSCRIBED") {
         const state = await hydrate();
-        setHydrated(true);
+        setHydratedFor(gameId);
 
         // Track our presence so other clients see us live. Spectators
         // (no DB player row) skip tracking and remain invisible. SUBSCRIBED
@@ -324,7 +340,7 @@ export function useMultiplayer({
       channel.unsubscribe();
       channelRef.current = null;
     };
-  }, [gameId, userId, dispatch, hydrate]);
+  }, [gameId, userId, dispatch, hydrate, setGameStatus]);
 
   // Tab wake: re-hydrate from the DB and make sure we are still in presence
   // (a socket that died while the page was hidden took our entry with it).
@@ -371,7 +387,7 @@ export function useMultiplayer({
           });
       }
     }
-  }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings]);
+  }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus]);
 
   // Async mode: the game is over when every player has a finish time.
   useEffect(() => {
@@ -397,7 +413,7 @@ export function useMultiplayer({
             .catch(() => {});
         });
     }
-  }, [gameStatus, gameSettings, players, raceFinishTimes, gameId]);
+  }, [gameStatus, gameSettings, players, raceFinishTimes, gameId, setGameStatus]);
 
   /**
    * Async mode: the local player just filled their own copy. Compute the
@@ -525,7 +541,7 @@ export function useMultiplayer({
         })
         .catch(() => {});
     }
-  }, [gameId]);
+  }, [gameId, setGameStatus]);
 
   const broadcastNewGame = useCallback((newGameId: string) => {
     void channelRef.current
