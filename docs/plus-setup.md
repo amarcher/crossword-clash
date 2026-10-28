@@ -394,11 +394,12 @@ by hand — import finds nothing while the App Store products are still
 "Missing Metadata"), entitlement `plus` attached to both, offering `default`
 with `$rc_monthly` / `$rc_annual`, webhook `whintgr09d39ef896` →
 `verify-purchase/revenuecat` for production + sandbox with a freshly
-generated `REVENUECAT_WEBHOOK_SECRET` (in `.env.local`; set it on Supabase
-with the secret key). Secret API key "supabase verify-purchase" (V1) exists;
-its value must be pasted into `.env.local` and `secrets set
-REVENUECAT_SECRET_KEY=…` by hand. The Play app waits for the Play payments
-profile (3.4.1).
+generated `REVENUECAT_WEBHOOK_SECRET`. Secret API key "supabase
+verify-purchase" (V1) → `REVENUECAT_SECRET_KEY`. Both secrets were set on
+Supabase on 2026-10-28 (the classifier refuses secret writes from Claude, so
+Andrew ran the `secrets set` from `.env.local`) and RevenueCat's "Send test
+event" answered 200. The Play app waits for the Play payments profile
+(3.4.1).
 
 ### 3.7 Checklist before flipping the switches
 
@@ -409,7 +410,7 @@ environments). What is still open is marked below.
 
 - [x] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
 - [x] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
-- [x] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `PLUS_GATES=1`. Still unset: `REVENUECAT_SECRET_KEY` (apps only, with §3.5)
+- [x] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY` (both RevenueCat values from 2026-10-28, §3.5), `PLUS_GATES=1`
 - [x] Vercel `VITE_PLUS=1` (production), then a production redeploy: an env change needs a new build
 - [x] Stripe live account: support email, support URL, privacy and terms URLs set under Public details (the API refuses `POST /v1/account` on the account's own key; use the dashboard). Stripe Tax: Massachusetts registration `taxreg_1UVKvBEDEl8cL8CiufTwj3Bs` (DOR account in tax-strategy) and `STRIPE_AUTOMATIC_TAX=1` set 2026-10-28; Plus stays in the streamed-game category (6.25% for Massachusetts buyers; the viewable-only periodical categories would be exempt — Andrew's call, flagged for the accountant)
 - [x] DMCA: registration DMCA-1084362, active 2026-10-27, renew by 2029-10-27 (service provider Fable Designer LLC; alternate names Crossword Clash, crosswordclash.com, Fable Designer, Fable Reader, fabledesigner.com); the same name, postal address and phone are in `DMCA_AGENT` in `src/screens/legal/legalContent.ts`, so `/copyright` names the agent. Plus opens the studio to subscribers and rooms already host players' puzzles, so the safe harbour had to be in place first.
