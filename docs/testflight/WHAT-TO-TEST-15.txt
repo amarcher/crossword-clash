@@ -1,0 +1,8 @@
+This update (1.1.0, build 15) answers the TestFlight feedback on builds 11 to 14. Build 14 was never released to testers; this one has everything.
+
+1. Race friends from a daily card after you have already played a game: enter a name, tap Create Room, and you should land on the Invite players page straight away, with the room code and QR, not on the puzzle (it used to flash the puzzle first, and on the website it stayed there).
+2. Host a game from the app and have someone join from the website. Lock your phone for a minute, or switch apps. The other player's lobby should keep showing you the whole time, and when you unlock you should still be in the room with everyone listed.
+3. Import from NYT: the Date field should be a full-height field like the Puzzle one beside it, with the date readable inside it and nothing spilling past the edge.
+4. On the website, the Join page puts the cursor in the game code box straight away.
+5. On the Plus sheet, a subscription with no renewal date says "Plus is active".
+6. Sign in with Apple or Google still works: the Plus sheet stays open and, if you bought Plus on an earlier build while signed out, Restore purchases brings it to your account.
