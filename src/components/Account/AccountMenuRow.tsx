@@ -5,36 +5,41 @@ import { plusEnabled } from "../../lib/plus";
 import { ListGroup, ListRow } from "../ui";
 
 /**
- * The menu's rows for anonymous visitors: the benefit-led sign-in pitch
- * ("Save your solve history", opening the sign-in sheet) and, with Plus
- * live, a "Crossword Clash Plus" row opening the paywall, which is how a
- * visitor who has not signed in reaches the subscription at all (the apps
- * sell to anonymous users; the web paywall asks them to sign in first). A
- * signed-in solver has the header avatar (AccountControl, with "About Plus")
- * instead, so both rows go away. Renders nothing where accounts aren't on
- * offer, so offline builds show no new row at all.
+ * The menu's account rows. Anonymous visitors get the benefit-led sign-in
+ * pitch ("Save your solve history", opening the sign-in sheet); a signed-in
+ * solver has the header avatar (AccountControl) for that instead. With Plus
+ * live, everyone gets a "Crossword Clash Plus" row: the pitch for a
+ * non-subscriber (the paywall asks an anonymous visitor to sign in first) and
+ * "tap to manage" for a subscriber, so Manage subscription and Restore
+ * purchases are always one tap from the menu, not only behind the avatar's
+ * menu. Renders nothing where accounts aren't on offer, so offline builds
+ * show no new row at all.
  */
 export function AccountMenuRow() {
   const { t } = useTranslation();
   const account = useAccountContext();
-  if (!account.available || !account.ready || account.user) return null;
-  const showPlus = plusEnabled() && account.plusReady && !account.plus;
+  if (!account.available || !account.ready) return null;
+  const showSignIn = !account.user;
+  const showPlus = plusEnabled() && account.plusReady;
+  if (!showSignIn && !showPlus) return null;
 
   return (
     <ListGroup>
-      <ListRow
-        icon={UserRound}
-        tone="neutral"
-        title={t("account.menuRow")}
-        subtitle={t("account.menuRowSubtitle")}
-        onClick={() => account.openAccount({ placement: "menu" })}
-      />
+      {showSignIn && (
+        <ListRow
+          icon={UserRound}
+          tone="neutral"
+          title={t("account.menuRow")}
+          subtitle={t("account.menuRowSubtitle")}
+          onClick={() => account.openAccount({ placement: "menu" })}
+        />
+      )}
       {showPlus && (
         <ListRow
           icon={Sparkles}
-          tone="gold"
+          tone={account.plus ? "brand" : "gold"}
           title={t("plus.title")}
-          subtitle={t("plus.rowPitch")}
+          subtitle={t(account.plus ? "plus.rowActive" : "plus.rowPitch")}
           onClick={() => account.openPaywall({ placement: "menu" })}
         />
       )}

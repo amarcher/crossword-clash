@@ -102,7 +102,7 @@ describe("PlusPurchaseControls in the apps", () => {
 
   it("shows the store's prices, buys through RevenueCat, reconciles, refreshes and tracks", async () => {
     native.prices = [{ plan: "annual", priceString: "24,99 €" }];
-    render(<PlusPurchaseControls account={{ signedIn: false, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Get Plus yearly · 24,99 €" })).toBeTruthy());
     // The monthly price falls back to the list price until the store answers.
     expect(screen.getByRole("button", { name: "Monthly · $3.99" })).toBeTruthy();
@@ -116,7 +116,7 @@ describe("PlusPurchaseControls in the apps", () => {
 
   it("treats a dismissed store sheet as nothing happened", async () => {
     native.outcome = "cancelled";
-    render(<PlusPurchaseControls account={{ signedIn: false, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
     fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
     await waitFor(() => expect(track).toHaveBeenCalledWith("checkout_started", expect.objectContaining({ plan: "monthly" })));
     await new Promise((r) => setTimeout(r, 0));
@@ -126,14 +126,14 @@ describe("PlusPurchaseControls in the apps", () => {
 
   it("restores purchases and says whether anything came back", async () => {
     purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
-    render(<PlusPurchaseControls account={{ signedIn: false, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
     fireEvent.click(screen.getByRole("button", { name: "Restore purchases" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Your Plus is back on this device."));
     expect(native.restore).toHaveBeenCalled();
     expect(track).toHaveBeenCalledWith("purchase_restored");
     cleanup();
     purchase.reconcileEntitlements.mockResolvedValueOnce([] as never);
-    render(<PlusPurchaseControls account={{ signedIn: false, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
     fireEvent.click(screen.getByRole("button", { name: "Restore purchases" }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/No Plus purchase/));
   });

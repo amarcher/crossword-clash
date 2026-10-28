@@ -57,12 +57,15 @@ describe("AccountMenuRow", () => {
     expect(openAccount).toHaveBeenCalledWith({ placement: "menu" });
   });
 
-  it("goes away once signed in: the header avatar covers the account", () => {
+  it("drops the sign-in row once signed in (the header avatar covers the account), and the group with it while Plus is off", () => {
     context.value = account({ user, profile: { user_id: "u1", username: "ada_l", display_name: null } });
     expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
     cleanup();
+    plus.enabled = true;
     context.value = account({ user });
-    expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Save your solve history/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Crossword Clash Plus/ })).toBeTruthy();
   });
 
   it("with Plus live, offers the subscription to anonymous visitors and opens the paywall", () => {
@@ -76,7 +79,7 @@ describe("AccountMenuRow", () => {
     expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });
 
-  it("shows no Plus row while the switch is off, before entitlements are known, or to a Plus holder", () => {
+  it("shows no Plus row while the switch is off or before entitlements are known", () => {
     render(<AccountMenuRow />);
     expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
     cleanup();
@@ -84,10 +87,17 @@ describe("AccountMenuRow", () => {
     context.value = account({ plusReady: false });
     render(<AccountMenuRow />);
     expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
-    cleanup();
-    context.value = account({ plus: true });
+  });
+
+  it("keeps the Plus row for a subscriber as the way back to Manage and Restore", () => {
+    plus.enabled = true;
+    const openPaywall = vi.fn();
+    context.value = account({ user, plus: true, openPaywall });
     render(<AccountMenuRow />);
-    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /Save your solve history/ })).toBeTruthy();
+    const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
+    expect(row.textContent).toContain("tap to manage");
+    expect(row.textContent).not.toContain("Every past daily");
+    fireEvent.click(row);
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });
 });

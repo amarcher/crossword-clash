@@ -403,7 +403,7 @@ never recorded because RevenueCat held a mistyped issuer id and could not
 validate the StoreKit 2 transaction, while the SDK still returned success
 and the app called reconcile against an empty subscriber; "Credentials need
 attention" on the app page is the tell, and "Restore purchases" re-presents
-the receipt once it is fixed; the one-time `.p8` download is backed up in
+the receipt once it is fixed — and that purchase was the last anonymous one: since the same afternoon the apps ask for an account before buying or restoring, spec §3.5; the one-time `.p8` download is backed up in
 `~/.appstoreconnect/private_keys/`); public SDK key in `.env.local` as
 `VITE_REVENUECAT_IOS_KEY`. Products `plus_monthly` / `plus_annual` (created
 by hand — import finds nothing while the App Store products are still

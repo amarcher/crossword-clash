@@ -22,7 +22,7 @@ interface PlusPurchaseControlsProps {
   placement: string;
   /** Where the web Checkout should come back to (default: this page). */
   returnTo?: string;
-  /** Native only: shown after an anonymous purchase so Plus can follow the buyer to other devices. */
+  /** Native only: shown under a subscriber who is still anonymous (a purchase from before sign-in-first) so Plus can follow them to other devices. */
   signInPrompt?: React.ReactNode;
 }
 

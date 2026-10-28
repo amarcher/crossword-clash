@@ -13,6 +13,13 @@ vi.mock("../../lib/account", async (importOriginal) => ({
 }));
 const navigate = vi.fn();
 vi.mock("../../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
+const native = { available: false };
+vi.mock("../../lib/nativePurchase", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/nativePurchase")>()),
+  nativePurchaseAvailable: () => native.available,
+  purchasePlatform: () => (native.available ? "ios" : "web"),
+  fetchNativePrices: async () => [],
+}));
 
 const user = { id: "u1", is_anonymous: false, user_metadata: { full_name: "Ada Lovelace" }, app_metadata: {}, aud: "authenticated", created_at: "" } as unknown as User;
 const account: AccountContextValue = {
@@ -45,6 +52,7 @@ afterEach(() => {
   deleteAccount.mockReset();
   onClose.mockClear();
   navigate.mockClear();
+  native.available = false;
 });
 
 describe("AccountSheet delete", () => {
@@ -88,6 +96,34 @@ describe("AccountSheet Plus view", () => {
     expect(screen.queryByText(/Save \d+%/)).toBeNull();
     expect(screen.queryByText("per year")).toBeNull();
     expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
+  });
+
+  it("in the apps, asks an anonymous visitor to sign in before showing the plans", () => {
+    native.available = true;
+    renderSheet("plus", { user: null, profile: null });
+    expect(screen.getByText(/Plus belongs to your account/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continue with Apple" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Get Plus|Monthly|Restore purchases/ })).toBeNull();
+  });
+
+  it("in the apps, still lets a subscriber who bought before sign-in-first manage and restore, with the sign-in prompt beneath", () => {
+    native.available = true;
+    const plusRow = {
+      user_id: "anon",
+      product: "plus" as const,
+      source: "revenuecat" as const,
+      status: "active" as const,
+      expires_at: "2026-11-27T12:00:00Z",
+      will_renew: true,
+      external_id: "txn_1",
+      external_customer: null,
+      updated_at: "2026-10-28T00:00:00Z",
+    };
+    renderSheet("plus", { user: null, profile: null, plus: true, plusRow });
+    expect(screen.getByRole("button", { name: "Manage in the store" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Restore purchases" })).toBeTruthy();
+    expect(screen.getByText(/Keep Plus on every device/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continue with Apple" })).toBeTruthy();
   });
 });
 
