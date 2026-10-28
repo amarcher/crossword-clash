@@ -362,13 +362,14 @@ in the apps.
 group `22522501` "Crossword Clash Plus" with `plus_monthly` (`6827994521`,
 $3.99 / 1 month) and `plus_annual` (`6827994470`, $24.99 / 1 year), en-US +
 es-ES names and descriptions (Apple caps the description at 55 characters),
-USD price points set with availability in all 175 territories (availability
-must exist before the API accepts a price); each has a review screenshot of the paywall (uploaded from the simulator build
-through `subscriptionAppStoreReviewScreenshots`) and a price in every territory:
-the API does **not** equalize from one territory, so the matching point for each
-of the other 174 comes from `GET /v1/subscriptionPricePoints/{usa}/equalizations`
-(the territory is the `t` field of the base64 id) and gets its own
-`subscriptionPrices` POST. Google Cloud project `crossword-clash`
+availability in all 175 territories (it must exist before the API accepts a
+price), a review screenshot of the paywall each (taken from the simulator
+build, uploaded through `subscriptionAppStoreReviewScreenshots`) and a price
+in every territory: the API does **not** equalize from one territory, so the
+matching point for each of the other 174 comes from
+`GET /v1/subscriptionPricePoints/{usa}/equalizations` (the territory is the
+`t` field of the base64 id) and gets its own `subscriptionPrices` POST. Both
+reached `READY_TO_SUBMIT` on 2026-10-28. Google Cloud project `crossword-clash`
 (number 947795730277) has the web client Supabase uses
 (`…-0skrplb0r6c6apr9lteai0a2uqo70uth`, = `VITE_GOOGLE_WEB_CLIENT_ID`), an iOS
 client (`…-bhbf4mkmo94i09jjsqj34hblt0prqtk3`, = `VITE_GOOGLE_IOS_CLIENT_ID`,
@@ -378,7 +379,7 @@ reversed in `Info.plist`) and two Android clients for `com.crosswordclash.app`
 `com.crosswordclash.signin` + `com.crosswordclash.app`. The repo branch has the
 1.1.0 version bump, `App.entitlements` with Sign in with Apple and the Google
 URL scheme. Still open: Paid Apps Agreement + Small Business Program (3.3.1–2,
-Account Holder), the review screenshots (3.3.3), Play payments profile (3.4.1,
+Account Holder), Play payments profile (3.4.1,
 blocks Play subscriptions), RevenueCat (3.5), the keys in the mobile env, the
 builds and both submissions.
 
