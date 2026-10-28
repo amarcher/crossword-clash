@@ -19,6 +19,8 @@ export const AUTH_PROVIDERS: AuthProvider[] = ["apple", "google"];
 const PENDING_KEY = "crossword-clash:sign-in";
 /** Marks the page the sign-in started from, so the return trip can finish there. */
 const RETURN_KEY = "crossword-clash:sign-in-return";
+/** Providers that have signed in to an existing account on this device (localStorage, JSON array). */
+const KNOWN_KEY = "crossword-clash:known-providers";
 
 export function isAccount(user: User | null | undefined): user is User {
   return !!user && !user.is_anonymous;
@@ -69,6 +71,45 @@ function recall(key: string): string | null {
   }
 }
 
+/**
+ * Whether this provider has already signed in to an existing account on this
+ * device. A first sign-in links the provider to the anonymous user so its
+ * history stays; once an identity is known to belong to an account, linking
+ * can only come back "identity already exists" and cost a second OAuth round
+ * trip (two Google account choosers in a row, the "double chooser" bug), so a
+ * returning device signs straight in.
+ */
+export function isKnownProvider(provider: AuthProvider): boolean {
+  try {
+    const raw = localStorage.getItem(KNOWN_KEY);
+    const list: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) && list.includes(provider);
+  } catch {
+    return false;
+  }
+}
+
+export function rememberKnownProvider(provider: AuthProvider): void {
+  try {
+    const raw = localStorage.getItem(KNOWN_KEY);
+    const list: unknown = raw ? JSON.parse(raw) : [];
+    const next = Array.isArray(list) ? list.filter((p): p is AuthProvider => p === "apple" || p === "google") : [];
+    if (!next.includes(provider)) next.push(provider);
+    localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
+  } catch {
+    // Storage unavailable: the next sign-in simply tries the link first again.
+  }
+}
+
+/** Test hook. */
+export function forgetKnownProvidersForTests(): void {
+  try {
+    localStorage.removeItem(KNOWN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 function pendingProvider(): AuthProvider | null {
   const value = recall(PENDING_KEY);
   return value === "apple" || value === "google" ? value : null;
@@ -113,7 +154,7 @@ export async function signInWith(provider: AuthProvider, opts: { returnTo?: stri
   const options = { redirectTo: window.location.origin + path };
   remember(RETURN_KEY, path);
   const { data } = await auth.getSession();
-  if (data.session?.user.is_anonymous) {
+  if (data.session?.user.is_anonymous && !isKnownProvider(provider)) {
     remember(PENDING_KEY, provider);
     const { error } = await auth.linkIdentity({ provider, options });
     if (!error) return "redirecting";
@@ -144,10 +185,11 @@ export async function signInNatively(provider: AuthProvider): Promise<SignInOutc
     throw err;
   }
   const { data } = await auth.getSession();
-  if (data.session?.user.is_anonymous) {
+  if (data.session?.user.is_anonymous && !isKnownProvider(provider)) {
     const { error } = await auth.linkIdentity({ provider, token, nonce });
     if (!error) return "signed-in";
     if (error.code !== "identity_already_exists") throw error;
+    rememberKnownProvider(provider);
   }
   const { error } = await auth.signInWithIdToken({ provider, token, nonce });
   if (error) throw error;
@@ -180,6 +222,8 @@ async function finishSignIn(): Promise<SignInReturn> {
   if (!error) return { returned, error: null };
   window.history.replaceState(null, "", window.location.pathname);
   if (error.code === "identity_already_exists" && provider) {
+    // Next time on this device: straight to sign-in, one round trip.
+    rememberKnownProvider(provider);
     const { error: signInError } = await client().auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin + window.location.pathname } });
     return { returned, error: signInError ? signInError.message : null };
   }
@@ -205,6 +249,11 @@ export function resumeSignIn(): Promise<SignInReturn> {
  * auth hook signs in anonymously again, so play continues with a fresh id.
  */
 export async function signOut(): Promise<void> {
+  // The account being left has a provider: a later sign-in with it on this
+  // device goes straight to sign-in instead of a doomed link attempt.
+  const { data } = await client().auth.getSession();
+  const provider = data.session?.user.app_metadata?.provider;
+  if (!data.session?.user.is_anonymous && (provider === "apple" || provider === "google")) rememberKnownProvider(provider);
   await client().auth.signOut();
 }
 

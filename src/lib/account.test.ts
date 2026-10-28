@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // A tiny PostgREST-shaped fake: every builder method returns the same
@@ -24,16 +25,28 @@ vi.mock("./supabaseClient", () => ({
   supabase: {
     from: (table: string) => (calls.push({ method: "from", args: [table] }), chain()),
     functions: { invoke: (name: string, opts: unknown) => (calls.push({ method: "invoke", args: [name, opts] }), Promise.resolve({ data: null, error: invokeError })) },
-    auth: { signOut: (opts: unknown) => (calls.push({ method: "signOut", args: [opts] }), Promise.resolve({ error: null })) },
+    auth: {
+      signOut: (opts: unknown) => (calls.push({ method: "signOut", args: [opts] }), Promise.resolve({ error: null })),
+      getSession: () => (calls.push({ method: "getSession", args: [] }), Promise.resolve({ data: { session: sessionUser ? { user: sessionUser } : null } })),
+      linkIdentity: (args: unknown) => (calls.push({ method: "linkIdentity", args: [args] }), Promise.resolve({ error: linkError })),
+      signInWithOAuth: (args: unknown) => (calls.push({ method: "signInWithOAuth", args: [args] }), Promise.resolve({ error: null })),
+    },
   },
 }));
 
-import { deleteAccount, fetchProfile, isUsernameTaken, saveUsername } from "./account";
+import { deleteAccount, fetchProfile, forgetKnownProvidersForTests, isKnownProvider, isUsernameTaken, saveUsername, signInWith, signOut } from "./account";
+
+let sessionUser: { is_anonymous: boolean; app_metadata?: { provider?: string } } | null = null;
+let linkError: { code: string; message: string } | null = null;
 
 beforeEach(() => {
   calls.length = 0;
   nextResult = { data: null, error: null };
   invokeError = null;
+  sessionUser = null;
+  linkError = null;
+  forgetKnownProvidersForTests();
+  sessionStorage.clear();
 });
 
 const names = () => calls.map((c) => c.method);
@@ -106,5 +119,35 @@ describe("deleteAccount", () => {
     invokeError = new Error("unauthorized");
     await expect(deleteAccount()).rejects.toThrow("unauthorized");
     expect(names()).not.toContain("signOut");
+  });
+});
+
+describe("signInWith on the web", () => {
+  it("links the provider to the anonymous user the first time (its history stays)", async () => {
+    sessionUser = { is_anonymous: true };
+    expect(await signInWith("google")).toBe("redirecting");
+    expect(names()).toContain("linkIdentity");
+    expect(names()).not.toContain("signInWithOAuth");
+  });
+
+  it("goes straight to sign-in once the provider is known to belong to an account on this device: one round trip, one chooser", async () => {
+    sessionUser = { is_anonymous: false, app_metadata: { provider: "google" } };
+    await signOut();
+    expect(isKnownProvider("google")).toBe(true);
+    expect(isKnownProvider("apple")).toBe(false);
+    calls.length = 0;
+    sessionUser = { is_anonymous: true };
+    expect(await signInWith("google")).toBe("redirecting");
+    expect(names()).not.toContain("linkIdentity");
+    expect(names()).toContain("signInWithOAuth");
+  });
+
+  it("still links an unknown provider after a sign-out with another one", async () => {
+    sessionUser = { is_anonymous: false, app_metadata: { provider: "google" } };
+    await signOut();
+    calls.length = 0;
+    sessionUser = { is_anonymous: true };
+    await signInWith("apple");
+    expect(names()).toContain("linkIdentity");
   });
 });
