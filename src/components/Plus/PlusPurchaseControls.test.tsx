@@ -90,7 +90,7 @@ describe("PlusPurchaseControls on the web", () => {
     expect(screen.getByText(/Ends on November 24, 2026/)).toBeTruthy();
     cleanup();
     render(<PlusPurchaseControls account={{ signedIn: true, plus: true, plusRow: row({ source: "grant", expires_at: null }), refreshEntitlements: refresh }} placement="test" />);
-    expect(screen.getByText("Yours for good")).toBeTruthy();
+    expect(screen.getByText("Plus is active")).toBeTruthy();
     expect(screen.queryByRole("button")).toBeNull();
   });
 });
