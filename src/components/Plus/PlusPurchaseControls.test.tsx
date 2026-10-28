@@ -151,4 +151,22 @@ describe("PlusPurchaseControls in the apps", () => {
     expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
     expect(screen.getByText("Sign in to keep it")).toBeTruthy();
   });
+
+  it("puts a subscriber's restore confirmation first, above the renewal line, not under the sign-in prompt", async () => {
+    purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
+    render(
+      <PlusPurchaseControls
+        account={{ signedIn: false, plus: true, plusRow: row({ source: "revenuecat" }), refreshEntitlements: refresh }}
+        placement="sheet"
+        signInPrompt={<p>Sign in to keep it</p>}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Restore purchases" }));
+    const notice = await screen.findByRole("status");
+    expect(notice.textContent).toBe("Your Plus is back on this device.");
+    const renews = screen.getByText(/Renews on/);
+    // DOCUMENT_POSITION_FOLLOWING: the renewal line comes after the notice.
+    expect(notice.compareDocumentPosition(renews) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(notice.compareDocumentPosition(screen.getByText("Sign in to keep it")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
