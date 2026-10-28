@@ -287,7 +287,11 @@
     "playTodayMidi": "Jugar el Midi de hoy",
     "solvedIn": "Resuelto en {{time}}",
     "rankToday": "n.º {{rank}} hoy",
-    "posting": "Publicando tu tiempo…"
+    "posting": "Publicando tu tiempo…",
+    "titleAll": "Clasificaciones de hoy",
+    "signToPost": "Añade tu nombre para publicar tu tiempo en la clasificación de hoy",
+    "signPost": "Publicar",
+    "notPosted": "Vista previa: no se publica en la clasificación"
   },
   "soloStats": {
     "timerLabel": "Tiempo transcurrido",

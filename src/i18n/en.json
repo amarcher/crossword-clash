@@ -287,7 +287,11 @@
     "playTodayMidi": "Play Today's Midi",
     "solvedIn": "Solved in {{time}}",
     "rankToday": "#{{rank}} today",
-    "posting": "Posting your time…"
+    "posting": "Posting your time…",
+    "titleAll": "Today's Leaderboards",
+    "signToPost": "Add your name to post your time to today's board",
+    "signPost": "Post",
+    "notPosted": "Preview: not posted to the board"
   },
   "soloStats": {
     "timerLabel": "Elapsed time",

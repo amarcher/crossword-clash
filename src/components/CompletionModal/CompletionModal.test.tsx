@@ -314,6 +314,26 @@ describe("CompletionModal", () => {
     expect(onSign).not.toHaveBeenCalled();
   });
 
+  it("asks for a name to post an unposted finish, with a Post button", () => {
+    const onSign = vi.fn();
+    const { getByPlaceholderText, getByText, queryByText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySign={{ onSign, unposted: true }} />,
+    );
+    expect(getByText("Add your name to post your time to today's board")).toBeTruthy();
+    expect(queryByText(/on today's board as/)).toBeNull();
+    fireEvent.change(getByPlaceholderText("Your name"), { target: { value: "Andy" } });
+    fireEvent.click(getByText("Post"));
+    expect(onSign).toHaveBeenCalledWith("Andy");
+  });
+
+  it("says quietly that a preview's finish was not posted, instead of offering a signature", () => {
+    const { getByTestId, queryByPlaceholderText } = render(
+      <CompletionModal {...SOLO_PROPS} finishSeconds={90} boardNotPosted />,
+    );
+    expect(getByTestId("board-not-posted").textContent).toBe("Preview: not posted to the board");
+    expect(queryByPlaceholderText("Your name")).toBeNull();
+  });
+
   it("shows a confirmation instead of the form once signed", () => {
     const { queryByPlaceholderText, getByText } = render(
       <CompletionModal
