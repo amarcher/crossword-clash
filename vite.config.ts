@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 import type { Connect, Plugin } from "vite";
 import { prerender } from "./scripts/prerender/plugin";
 import { PRERENDERED_ROUTES } from "./src/lib/pageMeta";
+import { studioAssetsNeeded } from "./src/lib/studioGate";
 
 // Vercel serves a folder's index.html for its bare path; Vite's dev and
 // preview servers fall back to the SPA instead. Rewrite the paths that have
@@ -34,12 +35,11 @@ const staticFolderPages: Plugin = {
   },
 };
 
-// /studio renders in dev, with VITE_STUDIO=1, and on the Plus web build
-// (VITE_PLUS=1, behind StudioGateScreen; src/lib/studioGate.ts). Everywhere
-// else Vite still emits its worker and wasm (worker assets are written before
-// tree-shaking), and copies the gitignored public/seedgrid/ word list if one
-// exists locally; drop both from those builds so they never reach the native
-// app bundles.
+// /studio renders in dev, with VITE_STUDIO=1, and on every Plus build — web
+// and the apps (VITE_PLUS=1, behind StudioGateScreen; src/lib/studioGate.ts).
+// Everywhere else Vite still emits its worker and wasm (worker assets are
+// written before tree-shaking), and copies the gitignored public/seedgrid/
+// word list if one exists locally; drop both from those builds.
 const STUDIO_ASSET = /^assets\/(engine\.worker|seedgrid_engine_bg)-/;
 const dropStudioAssets: Plugin = {
   name: "drop-studio-assets",
@@ -63,9 +63,21 @@ const dropPrivateWordList: Plugin = {
   },
 };
 
+// The apps never bundle a word list: the studio downloads it on demand the
+// first time a subscriber opens the editor and keeps it in the device's cache
+// (src/lib/seedgrid/wordListStore.ts), so a 7 MB list stays out of the store
+// download for everyone who never opens the studio.
+const dropBundledWordLists: Plugin = {
+  name: "drop-bundled-word-lists",
+  apply: "build",
+  writeBundle(options) {
+    if (options.dir) fs.rmSync(path.join(options.dir, "seedgrid"), { recursive: true, force: true });
+  },
+};
+
 function studioPlugins(env: Record<string, string>, mode: string): Plugin[] {
-  const needed = env.VITE_STUDIO === "1" || (env.VITE_PLUS === "1" && mode !== "mobile");
-  if (!needed) return [dropStudioAssets];
+  if (!studioAssetsNeeded({ VITE_STUDIO: env.VITE_STUDIO, VITE_PLUS: env.VITE_PLUS, MODE: mode })) return [dropStudioAssets];
+  if (mode === "mobile") return [dropBundledWordLists];
   return env.VITE_SEEDGRID_WORD_LIST === "/seedgrid/words.dict" ? [] : [dropPrivateWordList];
 }
 

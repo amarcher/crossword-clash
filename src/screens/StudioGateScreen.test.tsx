@@ -9,7 +9,7 @@ const state: { account: StudioAccount; bypass: boolean } = { account: null as un
 vi.mock("../hooks/useStudioAccount", () => ({ useStudioAccount: () => state.account }));
 vi.mock("../lib/studioGate", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/studioGate")>()), studioGateBypassed: () => state.bypass }));
 vi.mock("../routeModules", () => ({ screenModules: { studio: () => Promise.resolve({ StudioScreen: () => <h1>The editor</h1> }) } }));
-vi.mock("../lib/account", () => ({ AUTH_PROVIDERS: ["apple", "google"], fetchEnabledProviders: async () => ({ apple: true, google: true }) }));
+vi.mock("../lib/account", () => ({ AUTH_PROVIDERS: ["apple", "google"], availableProviders: () => ["apple", "google"], fetchEnabledProviders: async () => ({ apple: true, google: true }) }));
 vi.mock("../lib/studioAuth", () => ({ resumeStudioSignIn: async () => null, signInToStudio: vi.fn(async () => {}) }));
 const track = vi.fn();
 vi.mock("../lib/analytics", () => ({ track: (...args: unknown[]) => track(...args) }));

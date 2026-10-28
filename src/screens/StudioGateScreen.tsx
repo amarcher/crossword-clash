@@ -7,7 +7,7 @@ import { PlusPitch } from "../components/Plus/PlusPitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { useStudioAccount } from "../hooks/useStudioAccount";
 import { track } from "../lib/analytics";
-import { AUTH_PROVIDERS, fetchEnabledProviders, type AuthProvider } from "../lib/account";
+import { availableProviders, fetchEnabledProviders, type AuthProvider } from "../lib/account";
 import { resumeStudioSignIn, signInToStudio } from "../lib/studioAuth";
 import { studioGateBypassed, studioVerdict } from "../lib/studioGate";
 import { screenModules } from "../routeModules";
@@ -90,7 +90,7 @@ function GateShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Apple / Google, the same providers as the site; the return trip lands back on /studio. */
+/** Apple / Google — the site's providers, or the OS sheets the app can show (`availableProviders`); on the web the return trip lands back on /studio. */
 function SignInButtons() {
   const { t } = useTranslation();
   const [enabled, setEnabled] = useState<Record<AuthProvider, boolean> | null>(null);
@@ -107,7 +107,8 @@ function SignInButtons() {
     setError(null);
     try {
       track("account_sign_in_started", { provider, placement: "studio" });
-      await signInToStudio(provider);
+      // Native: the OS sheet answers in place and the account state re-renders the gate; the web navigates away.
+      if ((await signInToStudio(provider)) !== "redirecting") setBusy(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("account.genericError"));
       setBusy(false);
@@ -117,7 +118,7 @@ function SignInButtons() {
   return (
     <div className="flex flex-col gap-2.5">
       <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
-      {AUTH_PROVIDERS.map((provider) => (
+      {availableProviders().map((provider) => (
         <Button key={provider} variant="secondary" size="lg" block disabled={busy || !enabled?.[provider]} aria-busy={busy || undefined} onClick={() => void signIn(provider)}>
           {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
         </Button>

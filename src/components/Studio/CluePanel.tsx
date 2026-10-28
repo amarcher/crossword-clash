@@ -15,6 +15,8 @@ interface CluePanelProps {
   state: StudioState;
   dispatch: Dispatch<StudioAction>;
   onExport: (format: "ipuz" | "puz") => void;
+  /** Whether the Export buttons sit in this panel (the phone layout keeps them under More). */
+  showExport?: boolean;
   /** Who is drafting: an admin (no token needed, any model) or a Plus subscriber (metered). */
   access: StudioAccess;
   /** The signed-in user, for the subscriber's allowance read. */
@@ -46,7 +48,7 @@ const without = <T,>(rec: Record<string, T>, key: string): Record<string, T> => 
  * studio token (kept in this browser only). Speed clues are no longer edited
  * here: no player-facing screen shows them (see `StudioState.speedClues`).
  */
-export function CluePanel({ state, dispatch, onExport, access, userId }: CluePanelProps) {
+export function CluePanel({ state, dispatch, onExport, showExport = true, access, userId }: CluePanelProps) {
   const { t } = useTranslation();
   const { grid } = state;
   const slots = slotsOf(grid);
@@ -166,12 +168,16 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
             <Sparkles className="size-4" aria-hidden="true" />
             {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft AI clues"}
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
-            <Download className="size-4" aria-hidden="true" /> Export .ipuz
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => onExport("puz")} disabled={!complete} title="Across Lite format, for other crossword apps and editors">
-            <Download className="size-4" aria-hidden="true" /> Export .puz
-          </Button>
+          {showExport && (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
+                <Download className="size-4" aria-hidden="true" /> Export .ipuz
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => onExport("puz")} disabled={!complete} title="Across Lite format, for other crossword apps and editors">
+                <Download className="size-4" aria-hidden="true" /> Export .puz
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

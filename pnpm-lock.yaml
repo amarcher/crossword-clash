@@ -17,6 +17,9 @@ importers:
       '@capacitor/core':
         specifier: ^8.5.1
         version: 8.5.2
+      '@capacitor/filesystem':
+        specifier: 8.1.5
+        version: 8.1.5(@capacitor/core@8.5.2)
       '@capacitor/ios':
         specifier: ^8.5.1
         version: 8.5.2(@capacitor/core@8.5.2)
@@ -288,6 +291,11 @@ packages:
   '@capacitor/core@8.5.2':
     resolution: {integrity: sha512-agnQbGdhGw/KZFuLf7H9SY2o+oE7upkr/WPQsYaokXP6f9chaE8iVmbKkfN6SVl4w3pmz7oZ3Ur1hbkmy1hx+w==}
 
+  '@capacitor/filesystem@8.1.5':
+    resolution: {integrity: sha512-m1RkI8L83NJeppEKyRWioK3MDp2vjlA+QfUQcF8/xRlcXNC2HYxqoyYJ+K4M0EcVovy+g+4F24S05+bhK4Vgdg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/ios@8.5.2':
     resolution: {integrity: sha512-eOT2S67AfTFG7KN0T3oxwAajrJz4rSye+ODfvChiwrk0F/+kWufFM1qU6cDjGJUOfwdAoeuEpZyWHSwZlu4GFg==}
     peerDependencies:
@@ -297,6 +305,9 @@ packages:
     resolution: {integrity: sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
 
   '@capawesome/capacitor-app-update@8.1.1':
     resolution: {integrity: sha512-1TzM4hMN4wgCDu3O0UhaIIoVspUFNfNJ+q+K/EKSQRKkfCbG79S1Fn/sXwMdtMO1Me55LQxdjw1I9rctFtKBOQ==}
@@ -3077,6 +3088,11 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@capacitor/filesystem@8.1.5(@capacitor/core@8.5.2)':
+    dependencies:
+      '@capacitor/core': 8.5.2
+      '@capacitor/synapse': 1.0.4
+
   '@capacitor/ios@8.5.2(@capacitor/core@8.5.2)':
     dependencies:
       '@capacitor/core': 8.5.2
@@ -3084,6 +3100,8 @@ snapshots:
   '@capacitor/share@8.0.3(@capacitor/core@8.5.2)':
     dependencies:
       '@capacitor/core': 8.5.2
+
+  '@capacitor/synapse@1.0.4': {}
 
   '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.5.2)':
     dependencies:

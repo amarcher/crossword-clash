@@ -417,6 +417,25 @@ Andrew ran the `secrets set` from `.env.local`) and RevenueCat's "Send test
 event" answered 200. The Play app waits for the Play payments profile
 (3.4.1).
 
+**Build 19: the studio in the apps (2026-10-28).** The next app build after
+the studio-on-phones PR merges carries the construction studio as a Plus
+feature (`/studio` is registered in every `VITE_PLUS=1` build; the word list
+is downloaded on demand, so the store download does not grow). Before
+submitting: `VITE_PLUS=1` in the mobile env as before, `pnpm mobile:sync`,
+raise `CURRENT_PROJECT_VERSION` to 19 in `ios/App/App.xcodeproj` (and the
+Android `versionCode`), `pnpm testflight`. In the simulator the gate cannot be
+passed by buying Plus; build with `VITE_STUDIO=1` to skip it, or sign in with
+a `studio_admins` account. Apple's reviewer may ask how AI-generated clues
+are moderated (the "AI" wording is on the screen): the answer is that the
+AI drafts only what a subscriber asks for and the subscriber edits it in
+place; nothing reaches other players until the author publishes, every
+published puzzle carries Report (Copied / Offensive / Nonsense / Something
+else, `ReportDialog`), each report is emailed through `report-alert`, three
+reporters in a week hold the puzzle automatically, and the Reports panel in
+`/studio` (`studio-moderate`: dismiss, remove, ban, restore) is the moderation
+desk — docs/community-puzzles-spec.md has the rules and the terms' "Community
+rules" section the policy.
+
 ### 3.7 Checklist before flipping the switches
 
 **Status 2026-10-27: both switches are on.** `PLUS_GATES=1` is set, `VITE_PLUS=1`
@@ -434,3 +453,4 @@ environments). What is still open is marked below.
 - [x] `RESEND_API_KEY`: a send-only key from Crossword Clash's **own Resend account** (`andrew.m.archer+crosswordclash@gmail.com`, one account per product like Space Race and MTG), sender `alerts@crosswordclash.com`
 - [x] Resend domain `crosswordclash.com` verified 2026-10-27 (DKIM TXT `resend._domainkey` plus CNAMEs `rsend` and `send` → `*.forge.rmta.net`, added at Squarespace, which holds the zone since Google Domains closed); a test report fired the trigger → `report-alert` → Resend with `{"ok":true}`
 - [x] One real purchase 2026-10-28 (yearly, $24.99 + $1.56 tax, invoice PAOCMNW5-0001): both webhooks delivered, row active, portal opened with the Plus configuration; cancelled and refunded in full, `customer.subscription.deleted` expired the row; the owner's row was then turned into a permanent `grant`. It also found the tax-mode bug fixed in PR #146 (`customer_update` sent for a first-time buyer)
+- [ ] App build 19 (after the studio-on-phones PR merges): `pnpm mobile:sync` with `VITE_PLUS=1`, bump the build numbers to 19, TestFlight, then both store submissions; the review notes should say where AI-drafted clues are moderated (§3.6, "Build 19")

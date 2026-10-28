@@ -4,10 +4,12 @@
  *
  * - Dev builds and `VITE_STUDIO=1` builds skip the gate entirely (the
  *   constructor's own browser), as before Plus.
- * - A production web build with `VITE_PLUS=1` registers the route and gates it:
+ * - A production build with `VITE_PLUS=1` registers the route and gates it:
  *   the editor renders for a Plus subscriber or a studio admin; everyone else
- *   sees the Plus pitch (sign-in first when anonymous).
- * - The native apps never register the route: the studio is web-only.
+ *   sees the Plus pitch (sign-in first when anonymous). Since 2026-10-28 that
+ *   includes the native apps (`--mode mobile`): the studio is a Plus feature
+ *   on phones too, with the word list downloaded on demand
+ *   (`seedgrid/wordListStore.ts`); only the admin panels stay web-only.
  */
 export interface StudioEnv {
   DEV?: boolean;
@@ -21,7 +23,7 @@ const env = (): StudioEnv => import.meta.env as unknown as StudioEnv;
 /** Whether this build has a /studio route at all. */
 export function studioRouteEnabled(e: StudioEnv = env()): boolean {
   if (e.DEV || e.VITE_STUDIO === "1") return true;
-  return e.VITE_PLUS === "1" && e.MODE !== "mobile";
+  return e.VITE_PLUS === "1";
 }
 
 /** Whether this build lets anyone in without a Plus or admin check (dev, VITE_STUDIO=1). */
@@ -32,6 +34,15 @@ export function studioGateBypassed(e: StudioEnv = env()): boolean {
 /** Whether the studio's worker and wasm must stay in the bundle (any build whose route can render the editor). */
 export function studioAssetsNeeded(e: StudioEnv): boolean {
   return studioRouteEnabled(e);
+}
+
+/**
+ * Whether the admin-only panels (the daily queue, insights, reports) may
+ * render: never in the apps, whoever is signed in. They are the constructor's
+ * desk, and the apps are for building puzzles.
+ */
+export function studioAdminPanelsAllowed(e: StudioEnv = env()): boolean {
+  return e.MODE !== "mobile";
 }
 
 /** What the studio's panels may do for this visitor. */
