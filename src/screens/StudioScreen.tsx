@@ -232,7 +232,7 @@ export function StudioScreen() {
             ? `No fill in ${FILL_MS / 1000} s. Try fewer approvals, a lower score, or another black square.`
             : res.reason === "bad-request"
               ? "The engine can't read this grid (an entry may be longer than 21 squares)."
-              : "This grid can't be filled with these rules. Red squares show where it's stuck.",
+              : "This grid can't be filled with these rules. Turn on the heatmap: red squares have no word through them at all.",
         );
     } catch {
       setMessage("Fill stopped.");
@@ -370,6 +370,8 @@ export function StudioScreen() {
               activeCells={slot?.cells ?? []}
               heat={heat}
               onSelect={(cell) => dispatch({ type: "SELECT", cell })}
+              onToggleBlock={(cell) => dispatch({ type: "TOGGLE_BLOCK", cell })}
+              onToggleDirection={() => dispatch({ type: "TOGGLE_DIR" })}
               input={gridInput}
             />
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -406,8 +408,16 @@ export function StudioScreen() {
               {stats.shortRuns > 0 && <span className="text-red-600"> · {stats.shortRuns} two-letter runs</span>}
               {!stats.connected && <span className="text-red-600"> · grid is split</span>}
             </p>
+            {showHeat && (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-label="Heatmap legend">
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-red-200" aria-hidden="true" /> no word fits through this square</span>
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-brand-100" aria-hidden="true" /> only a few</span>
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-surface-sunken ring-1 ring-line" aria-hidden="true" /> some</span>
+                <span>· on the gold word the same shows as a corner dot</span>
+              </p>
+            )}
             <p className="mt-1 text-xs text-subtle">
-              Type to write (your letters are bold and kept); "." toggles a black square; space or a second tap switches direction.
+              Type to write (your letters are bold and kept). Right-click a square, or press ".", to make it black or white again; space, Enter or a second tap switches between across and down.
             </p>
           </div>
         </section>
