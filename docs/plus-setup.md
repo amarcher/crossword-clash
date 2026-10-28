@@ -378,6 +378,23 @@ Account Holder), the review screenshots (3.3.3), Play payments profile (3.4.1,
 blocks Play subscriptions), RevenueCat (3.5), the keys in the mobile env, the
 builds and both submissions.
 
+**RevenueCat state 2026-10-28:** project `04ca2f75` ("Crossword Clash: Play
+Together", its own account under Andrew's per-product address). App Store
+app `appd70cad4d62` (bundle `com.crosswordclash.app`) configured with the
+App Store Connect **In-App Purchase key** `6TF53X63A3` (issuer
+`69a6de96-…-5b8c7c11a4d1`; the one-time `.p8` download is backed up in
+`~/.appstoreconnect/private_keys/`); public SDK key in `.env.local` as
+`VITE_REVENUECAT_IOS_KEY`. Products `plus_monthly` / `plus_annual` (created
+by hand — import finds nothing while the App Store products are still
+"Missing Metadata"), entitlement `plus` attached to both, offering `default`
+with `$rc_monthly` / `$rc_annual`, webhook `whintgr09d39ef896` →
+`verify-purchase/revenuecat` for production + sandbox with a freshly
+generated `REVENUECAT_WEBHOOK_SECRET` (in `.env.local`; set it on Supabase
+with the secret key). Secret API key "supabase verify-purchase" (V1) exists;
+its value must be pasted into `.env.local` and `secrets set
+REVENUECAT_SECRET_KEY=…` by hand. The Play app waits for the Play payments
+profile (3.4.1).
+
 ### 3.7 Checklist before flipping the switches
 
 **Status 2026-10-27: both switches are on.** `PLUS_GATES=1` is set, `VITE_PLUS=1`
