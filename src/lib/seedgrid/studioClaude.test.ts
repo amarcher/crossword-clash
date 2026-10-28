@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows } from "./grid";
-import { draftClues, entryAnswers, suggestClues, type ClaudeCaller } from "./studioClaude";
-import { ALTERNATIVES_COUNT, alternativesRequest, cluesRequest, NO_THEME, vetAlternatives, type ClaudeJsonRequest } from "./cluePrompt";
+import { draftClues, entryAnswers, puzzleContext, suggestClues, suggestTitles, type ClaudeCaller } from "./studioClaude";
+import { ALTERNATIVES_COUNT, alternativesRequest, cluesRequest, NO_THEME, TITLE_MAX, TITLES_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest } from "./cluePrompt";
 
 const grid = gridFromRows(["BAT", "ORE", "WED"]);
 
@@ -46,6 +46,46 @@ describe("clue prompts", () => {
     const themed = cluesRequest(grid, "Theme: cave dwellers");
     expect(themed.prompt).not.toContain(NO_THEME);
     expect(themed.prompt).toContain("when one is stated above");
+  });
+});
+
+describe("titles", () => {
+  it("asks for a few titles from the entries, their clues and the current title", () => {
+    const req = titlesRequest(grid, "Theme: cave dwellers", { "1A": "Cave flier", "4A": "" }, { current: "Draft" });
+    expect(req.prompt).toContain(`Suggest ${TITLES_COUNT} different titles`);
+    expect(req.prompt).toContain(`at most ${TITLE_MAX} characters`);
+    expect(req.prompt).toContain("1A BAT: Cave flier");
+    expect(req.prompt).toContain("4A ORE: (no clue yet)");
+    expect(req.prompt).toContain('The current title is "Draft"');
+    expect(req.prompt).toContain("never be one of the puzzle's own entries");
+    expect(req.prompt).not.toContain(NO_THEME);
+    expect(req.schema).toMatchObject({ properties: { titles: { type: "array", items: { type: "string" } } }, required: ["titles"] });
+    expect(titlesRequest(grid, "", {}).prompt).not.toContain("current title");
+  });
+
+  it("vets titles: never an entry, never too long, never the current one, each once", () => {
+    const entries = ["BAT", "ORE", "WED", "BOW", "ARE", "TED"];
+    expect(vetTitles(entries, [" Night Shift ", "Bat", "b.a.t.", "night shift", "Ore Deal", "x".repeat(TITLE_MAX + 1), "", 7, "Draft", "Wed-ding"], "draft")).toEqual([
+      "Night Shift",
+      "Ore Deal",
+      "Wed-ding",
+    ]);
+    expect(vetTitles(entries, ["x".repeat(TITLE_MAX)])).toHaveLength(1);
+  });
+
+  it("suggestTitles makes one call and vets the answer", async () => {
+    const call = fake({ titles: ["Night Shift", "Bat", "After Dark"] });
+    expect(await suggestTitles(call, grid, "", { "1A": "Cave flier" }, { current: "After Dark" })).toEqual(["Night Shift"]);
+    expect(call.prompts).toHaveLength(1);
+    expect(await suggestTitles(fake({ titles: "nope" }), grid, "", {})).toEqual([]);
+  });
+
+  it("puzzleContext names the title, the theme and the locked long entries only when present", () => {
+    const long = gridFromRows(["HELLO", "A...A", "T...T", "S...S", "WORLD"]);
+    long.locked = long.cells.map((_, i) => i < 5);
+    expect(puzzleContext(long, " Hi ", "")).toBe("Title: Hi\nTheme entries: HELLO");
+    expect(puzzleContext(grid, "", " bats ")).toBe("Theme: bats");
+    expect(puzzleContext(grid, "", "  ")).toBe("");
   });
 });
 

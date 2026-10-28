@@ -6,7 +6,7 @@ import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText } from "../../lib/seedgrid/grid";
 import { ALTERNATIVES_COUNT, type Difficulty } from "../../lib/seedgrid/cluePrompt";
 import { slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
-import { draftClues, edgeCaller, entryAnswers, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
+import { draftClues, edgeCaller, entryAnswers, puzzleContext, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
 import { setStudioToken, useStudioToken } from "../../hooks/useStudioToken";
 import type { StudioAccess } from "../../lib/studioGate";
 import { allowanceLeft, fetchStudioAllowance, type StudioAllowance } from "../../lib/studioUsage";
@@ -73,18 +73,7 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
   const [rowNotes, setRowNotes] = useState<Record<string, string>>({});
   const inFlightCount = Object.keys(inFlight).length;
 
-  const context = useMemo(() => {
-    const themeEntries = slots
-      .filter((s) => s.cells.length >= 5 && s.cells.every((c) => grid.locked[c] && grid.cells[c] && grid.cells[c] !== "#"))
-      .map((s) => slotText(grid, s));
-    return [
-      state.title && `Title: ${state.title}`,
-      state.theme.trim() && `Theme: ${state.theme.trim()}`,
-      themeEntries.length ? `Theme entries: ${themeEntries.join(", ")}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  }, [grid, slots, state.title, state.theme]);
+  const context = useMemo(() => puzzleContext(grid, state.title, state.theme), [grid, state.title, state.theme]);
 
   const edited = new Set(state.editedClues ?? []);
   const missing = slots.filter((s) => !state.clues[slotKey(s)]?.trim());

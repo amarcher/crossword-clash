@@ -4,6 +4,7 @@
  * (scripts/seedgrid/claude.mts, or the studio-claude edge function).
  */
 import { auditClues, CLUE_MAX } from "./audit";
+import { titleAsEntry } from "./crosscheck";
 import { gridToRows, slotsOf, slotText, type Grid } from "./grid";
 
 export const CONSTRUCTOR = `You are a veteran American crossword constructor and editor in the style of William Eisenberg working in Ingrid.
@@ -102,6 +103,50 @@ ${opts.current ? `The current clue is "${opts.current}"; do not repeat it.\n` : 
     },
     maxTokens: 1500,
   };
+}
+
+/** A title's length limit, as the studio and the vetting apply it. */
+export const TITLE_MAX = 40;
+/** How many titles one suggestion call asks for. */
+export const TITLES_COUNT = 4;
+
+/** A few short titles for the whole puzzle, from its entries, clues and theme note. */
+export function titlesRequest(grid: Grid, context: string, clues: Record<string, string | undefined>, opts: { count?: number; current?: string } = {}): ClaudeJsonRequest {
+  const slots = slotsOf(grid).filter((s) => !slotText(grid, s).includes("."));
+  return {
+    system: CONSTRUCTOR,
+    prompt: `${header(grid, context)}
+
+Suggest ${opts.count ?? TITLES_COUNT} different titles for this puzzle, each at most ${TITLE_MAX} characters, in the register of a newspaper crossword title: playful, a wink at the theme when one is stated above, otherwise at the liveliest entries. A title must never be one of the puzzle's own entries or spell one out.
+${opts.current?.trim() ? `The current title is "${opts.current.trim()}"; do not repeat it.\n` : ""}
+Entries and their clues:
+${slots.map((s) => `${s.id} ${slotText(grid, s)}: ${clues[s.id]?.trim() || "(no clue yet)"}`).join("\n")}`,
+    schema: {
+      type: "object",
+      properties: { titles: { type: "array", items: { type: "string" } } },
+      required: ["titles"],
+    },
+    maxTokens: 600,
+  };
+}
+
+/**
+ * The titles worth offering: trimmed, each once, never the current title, at
+ * most `TITLE_MAX` characters, and never one of the puzzle's entries (the
+ * same-day rule `crosscheck.ts` enforces on the feed, via `titleAsEntry`).
+ */
+export function vetTitles(entries: readonly string[], titles: readonly unknown[], current?: string): string[] {
+  const taken = new Set(entries.map((e) => e.toUpperCase()));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of titles) {
+    const title = typeof raw === "string" ? raw.trim() : "";
+    const key = title.toLowerCase();
+    if (!title || title.length > TITLE_MAX || seen.has(key) || key === current?.trim().toLowerCase() || taken.has(titleAsEntry(title))) continue;
+    seen.add(key);
+    out.push(title);
+  }
+  return out;
 }
 
 /** Blocking problems (too long, gives away the answer, missing) per slot, for a fix pass. */

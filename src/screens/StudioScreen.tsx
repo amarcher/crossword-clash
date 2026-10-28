@@ -6,6 +6,7 @@ import { StudioGrid } from "../components/Studio/StudioGrid";
 import type { HiddenGridInputHandlers } from "../hooks/useHiddenGridInput";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
 import { CluePanel } from "../components/Studio/CluePanel";
+import { TitleField } from "../components/Studio/TitleField";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
 import { Insights } from "../components/Studio/Insights";
@@ -356,13 +357,7 @@ export function StudioScreen() {
         {/* Grid: first on phones */}
         <section aria-label="Grid" className="order-1 lg:order-2">
           <div className="mx-auto w-full max-w-[36rem]">
-            <input
-              className="mb-3 w-full rounded-xl border border-line-strong bg-surface px-3 py-2 font-display text-xl font-bold text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500"
-              placeholder="Untitled puzzle"
-              aria-label="Title"
-              value={state.title}
-              onChange={(e) => dispatch({ type: "SET_TITLE", title: e.target.value })}
-            />
+            <TitleField state={state} dispatch={dispatch} access={access} />
             <StudioGrid
               grid={state.grid}
               cursor={state.cursor}
