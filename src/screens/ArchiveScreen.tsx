@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, BookOpen, Clock, Lock, Play, Swords } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
-import { Button, Eyebrow, ListGroup, ListRow } from "../components/ui";
+import { Button, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -11,7 +11,6 @@ import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { track } from "../lib/analytics";
 import { fetchDailyForDay, type DailySlot } from "../lib/dailyFeed";
 import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
-import { knownClassicManifest, loadClassicManifest, type ClassicEntry } from "../lib/classicLibrary";
 import { prefetchOnIntent } from "../routeModules";
 import { dayKey, formatDuration, loadSoloTimer } from "../lib/soloStats";
 import { loadProgressStore } from "../lib/soloProgress";
@@ -133,18 +132,16 @@ export function ArchiveScreen() {
 
   // The route's lazy() warmed the index, so this is normally known on the first render.
   const [entries, setEntries] = useState<DailyIndexEntry[] | null | undefined>(() => knownPublishedIndex(today) ?? undefined);
-  const [classics, setClassics] = useState<ClassicEntry[] | null>(() => knownClassicManifest());
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     if (entries === undefined) void loadPublishedIndex(today).then((list) => alive && setEntries(list));
-    if (classics === null) void loadClassicManifest().then((list) => alive && setClassics(list));
     return () => {
       alive = false;
     };
-  }, [entries, classics, today]);
+  }, [entries, today]);
 
   const bestTimes = useBestTimes();
   // Every puzzle in progress (the per-puzzle store, plus the one saved solo
@@ -155,7 +152,6 @@ export function ArchiveScreen() {
   const byDay = useMemo(() => groupByDay(items), [items]);
   const counts = useMemo(() => archiveCounts(items), [items]);
   const resume = useMemo(() => resumableItem(items), [items]);
-  const classicsSolved = useMemo(() => (classics ?? []).filter((c) => c.identity in bestTimes).length, [classics, bestTimes]);
 
   // Calendar state: the month shown and the day whose puzzles are listed.
   const [selected, setSelected] = useState<{ day: string; month: string } | null>(null);
@@ -463,7 +459,7 @@ export function ArchiveScreen() {
                               {...prefetchOnIntent("/solo/play")}
                             >
                               {busy === it.identity
-                                ? t("classics.loadingPuzzle")
+                                ? t("archive.loadingPuzzle")
                                 : it.status === "solved"
                                   ? t("archive.playAgain")
                                   : it.status === "inprogress"
@@ -494,17 +490,6 @@ export function ArchiveScreen() {
             </div>
           </>
         )}
-
-        <ListGroup className="mt-8">
-          <ListRow
-            icon={BookOpen}
-            tone="gold"
-            to="/classics"
-            title={t("menu.classicLibrary")}
-            subtitle={classics && classics.length > 0 ? t("archive.classicsSubtitle", { solved: classicsSolved, total: classics.length }) : t("menu.classicLibrarySubtitle")}
-            onClick={() => track("mode_selected", { mode: "classics", from: "archive" })}
-          />
-        </ListGroup>
       </div>
     </PageShell>
   );

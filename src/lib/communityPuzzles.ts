@@ -183,7 +183,7 @@ export function toPublishSnapshot(state: Pick<StudioState, "grid" | "clues" | "t
 /**
  * Why this studio puzzle cannot be published yet (empty when it can), in the
  * order the dialog lists them. `ours` is the set of `puzzleIdentity()` keys of
- * the dailies and classics (a Crossword Clash puzzle is never republished).
+ * the dailies (a Crossword Clash puzzle is never republished).
  * The word filter is the display-name filter applied to each text.
  */
 export function publishProblems(state: Pick<StudioState, "grid" | "clues" | "title">, opts: { ours?: ReadonlySet<string>; notes?: string } = {}): string[] {
@@ -224,7 +224,7 @@ export function publishProblems(state: Pick<StudioState, "grid" | "clues" | "tit
 
   if (opts.ours && opts.ours.size > 0 && !grid.cells.some((c) => c === "") && title) {
     const key = puzzleIdentity(normalizeTransferPuzzle(toPublishSnapshot(state, "")));
-    if (opts.ours.has(key)) problems.push("This is a Crossword Clash puzzle (a daily or a classic); publish your own.");
+    if (opts.ours.has(key)) problems.push("This is a Crossword Clash daily; publish your own.");
   }
   return problems;
 }

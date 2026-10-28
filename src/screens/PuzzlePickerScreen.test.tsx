@@ -6,7 +6,6 @@ import "../i18n/i18n";
 import { PuzzlePickerScreen, pickerPath } from "./PuzzlePickerScreen";
 import { getDailyMini } from "../lib/dailyMinis";
 import { puzzleIdentity } from "../lib/soloStats";
-import type { ClassicEntry } from "../lib/classicLibrary";
 import type { Puzzle } from "../types/puzzle";
 
 const navigate = vi.fn();
@@ -17,13 +16,10 @@ vi.mock("react-router", async () => {
 
 const mini = getDailyMini(new Date(2026, 9, 20));
 const midi = { theme: "Jazz", puzzle: { ...getDailyMini(new Date(2026, 9, 21)).puzzle, title: "Blue Note", width: 9, height: 9 } };
-const classic: ClassicEntry = { file: "cwpb7.puz", number: 7, title: "Seven", author: "A", width: 13, height: 13, clues: 60, identity: "c7", blurb: "" };
-const classicPuzzle = { ...mini.puzzle, title: "Seven" } as Puzzle;
 
-const dailies = { mini, midi, large: null as null };
+let dailies: { mini: typeof mini | undefined; midi: typeof midi | undefined; large: null | undefined } = { mini, midi, large: null };
 vi.mock("../hooks/useNextUp", () => ({
   useTodaysDailies: () => dailies,
-  useClassicManifest: () => [classic],
 }));
 let bestTimes: Record<string, number> = {};
 vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
@@ -57,14 +53,9 @@ vi.mock("../lib/sessionPersistence", () => ({
   saveMpSession: (...a: unknown[]) => saveMpSession(...(a as [])),
   clearMpSession: () => clearMpSession(),
 }));
-const loadClassicPuzzle = vi.fn(async () => classicPuzzle);
-vi.mock("../lib/classicLibrary", async () => {
-  const actual = await vi.importActual<typeof import("../lib/classicLibrary")>("../lib/classicLibrary");
-  return { ...actual, loadClassicPuzzle: () => loadClassicPuzzle() };
-});
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 
-/** The midi's "Pick" (the mini is listed first; the classics have their own). */
+/** The midi's "Pick" (the mini is listed first). */
 function pickMidi() {
   const dailiesSection = screen.getByRole("region", { name: "Today's dailies" });
   const card = within(dailiesSection).getByText("Blue Note").closest("li")!;
@@ -81,6 +72,7 @@ function renderPicker(intent: "race" | "next") {
 
 beforeEach(() => {
   bestTimes = {};
+  dailies = { mini, midi, large: null };
   game.puzzle = null;
   game.isComplete = false;
   mp.shareCode = null;
@@ -91,7 +83,7 @@ afterEach(() => {
 });
 
 describe("PuzzlePickerScreen", () => {
-  it("lists only today's unsolved dailies, never the puzzle just finished, plus the classics", () => {
+  it("lists only today's unsolved dailies, never the puzzle just finished", () => {
     game.puzzle = mini.puzzle;
     game.isComplete = true;
     renderPicker("race");
@@ -99,13 +91,17 @@ describe("PuzzlePickerScreen", () => {
     expect(within(dailiesSection).getByText("Blue Note")).toBeTruthy();
     expect(within(dailiesSection).queryByText(mini.puzzle.title)).toBeNull();
     expect(within(dailiesSection).getByText("9×9 · Jazz")).toBeTruthy();
-    expect(screen.getByText("Seven")).toBeTruthy();
   });
 
-  it("says so when every daily is done", () => {
+  it("says so when every daily is done, and waits while the feed is still answering", () => {
     bestTimes = { [puzzleIdentity(mini.puzzle)]: 60, [puzzleIdentity(midi.puzzle)]: 90 };
     renderPicker("race");
     expect(screen.getByText(/solved all of today's dailies/)).toBeTruthy();
+    cleanup();
+    dailies = { mini: undefined, midi: undefined, large: undefined };
+    renderPicker("race");
+    expect(screen.getByText(/Loading today's dailies/)).toBeTruthy();
+    expect(screen.queryByText(/solved all of today's dailies/)).toBeNull();
   });
 
   it("race: tears down the finished state and hands the pick to the host flow as urlPuzzle", async () => {
@@ -137,14 +133,6 @@ describe("PuzzlePickerScreen", () => {
     pickMidi();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/host-game/name", { replace: true }));
     expect(createNextGame).not.toHaveBeenCalled();
-  });
-
-  it("a classic is loaded from the library before it is picked", async () => {
-    renderPicker("race");
-    const card = screen.getByText("Seven").closest("li")!;
-    fireEvent.click(within(card).getByRole("button", { name: "Pick" }));
-    await waitFor(() => expect(game.setUrlPuzzle).toHaveBeenCalledWith(classicPuzzle));
-    expect(loadClassicPuzzle).toHaveBeenCalled();
   });
 
   it("shows an error and re-enables the buttons when setting up fails", async () => {

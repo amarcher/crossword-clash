@@ -21,46 +21,46 @@ const TEMPLATE = `<!doctype html>
 </html>`;
 
 const meta: PageMeta = {
-  title: 'Classics <"1924"> & more',
+  title: 'Archive <"2026"> & more',
   description: "Forty-six puzzles",
-  canonical: "https://crosswordclash.com/classics",
+  canonical: "https://crosswordclash.com/archive",
 };
 
 describe("outputPathFor", () => {
   it("maps the home page to index.html and every other route to a folder index", () => {
     expect(outputPathFor("/")).toBe("index.html");
-    expect(outputPathFor("/classics")).toBe("classics/index.html");
+    expect(outputPathFor("/archive")).toBe("archive/index.html");
     expect(outputPathFor("/daily/leaderboard/")).toBe("daily/leaderboard/index.html");
   });
 });
 
 describe("buildPage", () => {
   it("splices the markup into #root, marks it prerendered and appends the guard script", () => {
-    const html = buildPage(TEMPLATE, { route: "/classics", html: "<ul><li>A</li></ul>", meta });
-    expect(html).toContain(`<div id="root" ${PRERENDERED_ATTR}="/classics"><ul><li>A</li></ul></div>`);
-    expect(html).toContain(`<script>${guardScript("/classics")}</script>`);
+    const html = buildPage(TEMPLATE, { route: "/archive", html: "<ul><li>A</li></ul>", meta });
+    expect(html).toContain(`<div id="root" ${PRERENDERED_ATTR}="/archive"><ul><li>A</li></ul></div>`);
+    expect(html).toContain(`<script>${guardScript("/archive")}</script>`);
     // The bundle still loads after the markup.
     expect(html.indexOf("</ul></div>")).toBeLessThan(html.indexOf('<script type="module"'));
   });
 
   it("rewrites the head from the page meta, escaped", () => {
-    const html = buildPage(TEMPLATE, { route: "/classics", html: "", meta });
-    expect(html).toContain("<title>Classics &lt;&quot;1924&quot;&gt; &amp; more</title>");
+    const html = buildPage(TEMPLATE, { route: "/archive", html: "", meta });
+    expect(html).toContain("<title>Archive &lt;&quot;2026&quot;&gt; &amp; more</title>");
     expect(html).toContain('<meta name="description" content="Forty-six puzzles" />');
-    expect(html).toContain('<meta property="og:title" content="Classics &lt;&quot;1924&quot;&gt; &amp; more" />');
-    expect(html).toContain('<link rel="canonical" href="https://crosswordclash.com/classics" />');
-    expect(html).toContain('<meta property="og:url" content="https://crosswordclash.com/classics" />');
+    expect(html).toContain('<meta property="og:title" content="Archive &lt;&quot;2026&quot;&gt; &amp; more" />');
+    expect(html).toContain('<link rel="canonical" href="https://crosswordclash.com/archive" />');
+    expect(html).toContain('<meta property="og:url" content="https://crosswordclash.com/archive" />');
     expect(html).not.toContain('content="home"');
   });
 
   it("embeds page data as JSON scripts that cannot close themselves", () => {
     const html = buildPage(TEMPLATE, {
-      route: "/classics",
+      route: "/archive",
       html: "",
       meta,
-      data: { "classic-manifest": [{ title: "</script><script>alert(1)</script>" }] },
+      data: { "daily-index": [{ title: "</script><script>alert(1)</script>" }] },
     });
-    expect(html).toContain('<script type="application/json" id="classic-manifest">');
+    expect(html).toContain('<script type="application/json" id="daily-index">');
     expect(html).not.toContain("</script><script>alert");
     expect(html).toContain("\\u003c/script>");
   });
@@ -88,7 +88,7 @@ describe("guardScript", () => {
 
   it("keeps the markup for an English visitor on the route it was rendered for", () => {
     expect(cleared("/", {})).toBe(false);
-    expect(cleared("/classics", { pathname: "/classics/" })).toBe(false);
+    expect(cleared("/archive", { pathname: "/archive/" })).toBe(false);
     expect(cleared("/privacy", { stored: { "crossword-clash:language": "en" }, language: "es-ES" })).toBe(false);
   });
 
@@ -98,10 +98,10 @@ describe("guardScript", () => {
   });
 
   it("clears it for Spanish visitors, stored or detected", () => {
-    expect(cleared("/classics", { stored: { "crossword-clash:language": "es" } })).toBe(true);
-    expect(cleared("/classics", { language: "es-MX" })).toBe(true);
+    expect(cleared("/archive", { stored: { "crossword-clash:language": "es" } })).toBe(true);
+    expect(cleared("/archive", { language: "es-MX" })).toBe(true);
     // An unsupported browser language falls back to English, like detectLanguage().
-    expect(cleared("/classics", { language: "fr-FR" })).toBe(false);
+    expect(cleared("/archive", { language: "fr-FR" })).toBe(false);
   });
 
   it("clears it on / for every state IndexRedirect sends elsewhere, and only there", () => {
@@ -129,15 +129,15 @@ describe("guardScript", () => {
   });
 
   it("is valid JavaScript", () => {
-    for (const route of ["/", "/classics"]) expect(() => new Function(guardScript(route))).not.toThrow();
+    for (const route of ["/", "/archive"]) expect(() => new Function(guardScript(route))).not.toThrow();
   });
 });
 
 describe("normalizePathname", () => {
   it("drops trailing slashes and keeps the root", () => {
     expect(normalizePathname("/")).toBe("/");
-    expect(normalizePathname("/classics/")).toBe("/classics");
-    expect(normalizePathname("/classics")).toBe("/classics");
+    expect(normalizePathname("/archive/")).toBe("/archive");
+    expect(normalizePathname("/archive")).toBe("/archive");
   });
 });
 

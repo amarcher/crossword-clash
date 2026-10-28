@@ -25,7 +25,7 @@ declare global {
 
 /** Funnel events. Keep names snake_case and stable — renaming orphans history. */
 export type AnalyticsEvent =
-  /** Param `import_source` (file | url | bookmarklet | classic) — never `source`: GA4 treats `source`/`medium`/`campaign` event params as traffic-source overrides, which relabelled Bing sessions as "classic". */
+  /** Param `import_source` (file | url | bookmarklet) — never `source`: GA4 treats `source`/`medium`/`campaign` event params as traffic-source overrides, which relabelled Bing sessions as "classic". */
   | "puzzle_imported"
   | "mode_selected"
   | "game_started"

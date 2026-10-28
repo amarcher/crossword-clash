@@ -19,8 +19,8 @@ async function findPuzzleByHash(hash: string): Promise<string | null> {
 /**
  * Store a puzzle on the server once and return its row id.
  *
- * Every load path goes through here (hosting a room from a file, a daily, a
- * classic, the picker or a deep link), so the row is deduplicated by the
+ * Every load path goes through here (hosting a room from a file, a daily,
+ * the picker or a deep link), so the row is deduplicated by the
  * puzzle's content hash (puzzleHash.ts), kept in the `file_hash` column: the
  * same puzzle is one row however many rooms play it and whichever way it
  * arrived. Two clients racing to insert the same puzzle hit the column's

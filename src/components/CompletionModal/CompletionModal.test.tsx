@@ -5,7 +5,6 @@ import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
-import type { ClassicEntry } from "../../lib/classicLibrary";
 import type { Puzzle } from "../../types/puzzle";
 import { buildPuzzle } from "../../lib/samplePuzzles";
 
@@ -26,7 +25,6 @@ const SOLO_PROPS = {
 function fakePuzzle(title: string, size: number): Puzzle {
   return { title, author: "", width: size, height: size, cells: [], clues: [] } as unknown as Puzzle;
 }
-const CLASSIC: ClassicEntry = { file: "cwpb7.puz", number: 7, title: "Seven", author: "A", width: 13, height: 13, clues: 60, identity: "c7", blurb: "" };
 const NEXT_DAILIES: NextUpItem[] = [
   { kind: "daily", slot: "midi", daily: { theme: "Jazz", puzzle: fakePuzzle("Blue Note", 9) } },
   { kind: "daily", slot: "large", daily: { theme: "Film", puzzle: fakePuzzle("Reel Deal", 15) } },
@@ -255,17 +253,13 @@ describe("CompletionModal", () => {
     expect(onNextUp).toHaveBeenCalledWith(NEXT_DAILIES[1]);
   });
 
-  it("offers a classic, or the library, when the dailies are done", () => {
+  it("offers yesterday's daily by slot with its size and theme when today's are done", () => {
     const onNextUp = vi.fn();
-    const { getByRole, rerender } = render(
-      <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "classic", entry: CLASSIC }]} onNextUp={onNextUp} />,
-    );
-    fireEvent.click(getByRole("button", { name: /Next classic: No\. 7/ }));
-    expect(onNextUp).toHaveBeenCalledWith({ kind: "classic", entry: CLASSIC });
-
-    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "library" }]} onNextUp={onNextUp} />);
-    fireEvent.click(getByRole("button", { name: /Browse the library/ }));
-    expect(onNextUp).toHaveBeenLastCalledWith({ kind: "library" });
+    const entry = { day: "2026-10-19", slot: "midi" as const, title: "Blue Note", theme: "Jazz", author: "", width: 9, height: 9, clues: 20, identity: "y-midi", blocks: "" };
+    const { getByRole, getByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "archive", entry }]} onNextUp={onNextUp} />);
+    expect(getByText("9×9 · Jazz")).toBeTruthy();
+    fireEvent.click(getByRole("button", { name: /Yesterday's Daily Midi/ }));
+    expect(onNextUp).toHaveBeenCalledWith({ kind: "archive", entry });
   });
 
   it("shows no 'Up next' heading when there is nothing to suggest yet", () => {

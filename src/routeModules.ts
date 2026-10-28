@@ -19,21 +19,9 @@ export const screenModules = {
   join: () => import("./screens/JoinScreen"),
   dailyLeaderboard: () => import("./screens/DailyLeaderboardScreen"),
   dailyPuzzle: () => import("./screens/DailyPuzzleScreen"),
-  // The manifest loads with the chunk (and so on intent) so the library paints
-  // its cards on its first frame — no loading line that 46 cards then push aside.
-  classics: () =>
-    Promise.all([
-      import("./screens/ClassicLibraryScreen"),
-      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
-    ]).then(([screen]) => screen),
-  // The picker lists classics too, so it warms the manifest the same way.
-  puzzlePicker: () =>
-    Promise.all([
-      import("./screens/PuzzlePickerScreen"),
-      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
-    ]).then(([screen]) => screen),
+  puzzlePicker: () => import("./screens/PuzzlePickerScreen"),
   // The archive's calendar needs the daily index on its first frame, so the
-  // published months load with the chunk (and on intent), like the manifest.
+  // published months load with the chunk (and on intent).
   archive: () =>
     Promise.all([
       import("./screens/ArchiveScreen"),
@@ -42,14 +30,13 @@ export const screenModules = {
       ),
     ]).then(([screen]) => screen),
   // The account page lists the puzzles in progress by name, so the daily
-  // index and the classic manifest load with its chunk, as /archive's do.
+  // index loads with its chunk, as /archive's does.
   account: () =>
     Promise.all([
       import("./screens/AccountScreen"),
       Promise.all([import("./lib/dailyIndex"), import("./lib/soloStats")]).then(([index, stats]) =>
         index.prefetchDailyIndex(stats.dayKey(new Date())),
       ),
-      import("./lib/classicLibrary").then((lib) => lib.prefetchClassicManifest()),
     ]).then(([screen]) => screen),
   communityBrowse: () => import("./screens/CommunityBrowseScreen"),
   communityPuzzle: () => import("./screens/CommunityPuzzleScreen"),
@@ -89,7 +76,6 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/join": screenModules.join,
   "/daily/leaderboard": screenModules.dailyLeaderboard,
   "/daily": screenModules.dailyPuzzle,
-  "/classics": screenModules.classics,
   "/archive": screenModules.archive,
   "/account": screenModules.account,
   // One prefix for both community chunks: a link to a page or the list warms the pair (both are small).

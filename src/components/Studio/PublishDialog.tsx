@@ -24,7 +24,6 @@ import {
   type CommunityPuzzle,
   type PublisherRow,
 } from "../../lib/communityPuzzles";
-import { knownClassicManifest, prefetchClassicManifest } from "../../lib/classicLibrary";
 import { knownPublishedIndex, prefetchDailyIndex } from "../../lib/dailyIndex";
 import { dayKey } from "../../lib/soloStats";
 import { LEGAL_CONTACT_EMAIL } from "../../screens/legal/legalContent";
@@ -109,17 +108,16 @@ export function PublishDialog({ state, dispatch, user, existing, onClose, onChan
     };
   }, [user]);
 
-  // The dailies' and classics' identities, so one of ours is never republished.
+  // The dailies' identities, so one of ours is never republished.
   useEffect(() => {
     let cancelled = false;
     const collect = () => {
       const keys = new Set<string>();
       for (const e of knownPublishedIndex(dayKey(new Date())) ?? []) keys.add(e.identity);
-      for (const e of knownClassicManifest() ?? []) keys.add(e.identity);
       if (!cancelled) setOurs(keys);
     };
     collect();
-    void Promise.all([prefetchDailyIndex(dayKey(new Date())), prefetchClassicManifest()]).then(collect, collect);
+    void prefetchDailyIndex(dayKey(new Date())).then(collect, collect);
     return () => {
       cancelled = true;
     };

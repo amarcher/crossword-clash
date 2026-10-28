@@ -25,7 +25,7 @@ export interface PuzzleClue {
  * Where a puzzle came from, when it matters after import. The NYT bookmarklet
  * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
  * (docs/community-puzzles-spec.md) records its solves under its own source.
- * Absent for file uploads, classics, dailies and samples.
+ * Absent for file uploads, dailies and samples.
  */
 export type PuzzleOrigin = "nyt-bookmarklet" | "community";
 

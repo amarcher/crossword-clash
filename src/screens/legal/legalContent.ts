@@ -177,7 +177,7 @@ const en: LegalContent = {
       {
         heading: "Where puzzles live",
         paragraphs: [
-          "A puzzle you import for solo play stays on your device; our servers never receive it. A puzzle you build in the studio stays in your browser until you host it or share a link to it, and a challenge link carries the puzzle inside the link itself. When you host a room or send a challenge, a copy is stored on our servers so the people you invite can play it, and it is deleted on our retention schedule: a day after it is no longer part of any game, and at most 90 days after the game ends. A puzzle an author publishes to the community library is stored on our servers and shown under their username until they unpublish it or we remove it; a removed puzzle is kept for 30 days in case of a counter-notice, then deleted. The daily puzzles and the classic library are published by us.",
+          "A puzzle you import for solo play stays on your device; our servers never receive it. A puzzle you build in the studio stays in your browser until you host it or share a link to it, and a challenge link carries the puzzle inside the link itself. When you host a room or send a challenge, a copy is stored on our servers so the people you invite can play it, and it is deleted on our retention schedule: a day after it is no longer part of any game, and at most 90 days after the game ends. A puzzle an author publishes to the community library is stored on our servers and shown under their username until they unpublish it or we remove it; a removed puzzle is kept for 30 days in case of a counter-notice, then deleted. The daily puzzles are published by us.",
         ],
       },
       {
@@ -257,7 +257,7 @@ const en: LegalContent = {
         heading: "Puzzles and your content",
         paragraphs: [
           "You are responsible for the puzzles you import or share and for having the right to use them. Do not upload or redistribute puzzles you are not permitted to share. Puzzles you build in the studio are yours and stay in your browser until you host, share or publish them; the same rules apply when you do. When you host a game or send a challenge, you allow us to store and transmit that puzzle to the people you invite. We may remove content or names at our discretion.",
-          "The classic library consists of public-domain puzzles from the 1924 Cross Word Puzzle Book. Daily minis and other bundled puzzles are provided for personal, non-commercial play.",
+          "Daily puzzles and other bundled puzzles are provided for personal, non-commercial play.",
         ],
       },
       {
@@ -498,7 +498,7 @@ const es: LegalContent = {
       {
         heading: "Dónde se guardan los crucigramas",
         paragraphs: [
-          "Un crucigrama que importas para jugar en solitario se queda en tu dispositivo; nuestros servidores nunca lo reciben. Un crucigrama que creas en el estudio se queda en tu navegador hasta que organizas una sala o compartes un enlace, y un enlace de desafío lleva el crucigrama dentro del propio enlace. Cuando organizas una sala o envías un desafío, se guarda una copia en nuestros servidores para que las personas que invitas puedan jugarlo, y se elimina según nuestro calendario de retención: un día después de dejar de formar parte de una partida y, como máximo, 90 días después de terminar la partida. Un crucigrama que un autor publica en la biblioteca de la comunidad se guarda en nuestros servidores y se muestra con su nombre de usuario hasta que lo retira o lo eliminamos; un crucigrama eliminado se conserva 30 días por si hay una contranotificación y después se borra. Los crucigramas diarios y la biblioteca clásica los publicamos nosotros.",
+          "Un crucigrama que importas para jugar en solitario se queda en tu dispositivo; nuestros servidores nunca lo reciben. Un crucigrama que creas en el estudio se queda en tu navegador hasta que organizas una sala o compartes un enlace, y un enlace de desafío lleva el crucigrama dentro del propio enlace. Cuando organizas una sala o envías un desafío, se guarda una copia en nuestros servidores para que las personas que invitas puedan jugarlo, y se elimina según nuestro calendario de retención: un día después de dejar de formar parte de una partida y, como máximo, 90 días después de terminar la partida. Un crucigrama que un autor publica en la biblioteca de la comunidad se guarda en nuestros servidores y se muestra con su nombre de usuario hasta que lo retira o lo eliminamos; un crucigrama eliminado se conserva 30 días por si hay una contranotificación y después se borra. Los crucigramas diarios los publicamos nosotros.",
         ],
       },
       {
@@ -578,7 +578,7 @@ const es: LegalContent = {
         heading: "Crucigramas y tu contenido",
         paragraphs: [
           "Eres responsable de los crucigramas que importas o compartes y de tener derecho a usarlos. No subas ni redistribuyas crucigramas que no tengas permiso para compartir. Los crucigramas que creas en el estudio son tuyos y se quedan en tu navegador hasta que organizas una sala, los compartes o los publicas; cuando lo haces, se aplican las mismas reglas. Cuando organizas una partida o envías un desafío, nos permites almacenar y transmitir ese crucigrama a las personas que invites. Podemos eliminar contenido o nombres a nuestra discreción.",
-          "La biblioteca clásica reúne crucigramas de dominio público del Cross Word Puzzle Book de 1924. Los minis diarios y otros crucigramas incluidos se ofrecen para juego personal y no comercial.",
+          "Los crucigramas diarios y otros crucigramas incluidos se ofrecen para juego personal y no comercial.",
         ],
       },
       {
