@@ -4,7 +4,8 @@ const config: CapacitorConfig = {
   appId: "com.crosswordclash.app",
   appName: "Crossword Clash",
   webDir: "dist",
-  loggingBehavior: "none",
+  // "debug": the web console reaches the native log in debug builds only; release builds stay silent.
+  loggingBehavior: "debug",
   backgroundColor: "#ffffff",
   ios: { contentInset: "never" },
   plugins: {
