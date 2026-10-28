@@ -10,6 +10,8 @@ interface StudioGridProps {
   activeCells: number[];
   /** Per cell, the fewest options through it; undefined hides the heatmap. */
   heat?: (number | undefined)[];
+  /** Cells a failed fill blamed (fillDiagnosis.ts); painted red whether or not the heatmap is on. */
+  stuck?: number[];
   onSelect: (cell: number) => void;
   /** Keyboard handlers for the hidden input (letters, erase, arrows, space, "."). */
   input: HiddenGridInputHandlers;
@@ -30,7 +32,7 @@ const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle",
  * Editable construction grid. Keys go through one visually hidden input so
  * phones get a keyboard and desktops get arrows, Backspace and "." for blocks.
  */
-export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, input }: StudioGridProps) {
+export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, stuck, onSelect, input }: StudioGridProps) {
   const gridId = useId();
   const cellId = (i: number) => `${gridId}-${i}`;
   const { inputProps, focus } = useHiddenGridInput(input, {
@@ -44,6 +46,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
     return out;
   }, [grid]);
   const active = useMemo(() => new Set(activeCells), [activeCells]);
+  const blamed = useMemo(() => new Set(stuck ?? []), [stuck]);
   const w = grid.width;
   const place = (i: number) => `Row ${Math.floor(i / w) + 1}, Column ${(i % w) + 1}`;
 
@@ -94,7 +97,8 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
             );
           }
           const isActive = active.has(i);
-          const level = heat ? heatLevel(heat[i]) : "open";
+          // A cell the last fill blamed reads as dead even with the heatmap hidden.
+          const level = blamed.has(i) ? "dead" : heat ? heatLevel(heat[i]) : "open";
           const dot = isCursor || isActive ? HEAT_DOT[level] : null;
           // A plain open cell takes a faint sunken tint under a mouse (`hover:` is
           // gated on `@media (hover: hover)` by Tailwind); nothing transitions.
@@ -105,6 +109,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           const parts = [place(i)];
           if (numbers.has(i)) parts.push(String(numbers.get(i)));
           if (cell) parts.push(cell.toUpperCase());
+          if (blamed.has(i)) parts.push("stuck");
           return (
             <div
               key={i}

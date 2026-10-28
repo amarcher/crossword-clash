@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, KeyRound, Sparkles, WandSparkles } from "lucide-react";
+import { Download, KeyRound, Sparkles, WandSparkles, Zap } from "lucide-react";
 import { Button, Card, Eyebrow, Select } from "../ui";
 import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText } from "../../lib/seedgrid/grid";
@@ -24,7 +24,18 @@ interface CluePanelProps {
 const INPUT =
   "min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500";
 const ICON_BUTTON =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
+
+/** Set once the race-hint column has been revealed on this browser, so its explanation shows only the first time. */
+const HINTS_EXPLAINED_KEY = "crossword-clash:studio-race-hints-explained";
+
+function hintsExplained(): boolean {
+  try {
+    return localStorage.getItem(HINTS_EXPLAINED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Clue editor with Claude drafting: "Draft" writes standard + speed clues for
@@ -33,6 +44,11 @@ const ICON_BUTTON =
  * hand is the constructor's and is never overwritten. Calls go through the
  * studio-claude function as a signed-in admin or with the studio token (kept
  * in this browser only).
+ *
+ * Each entry reads as one clue. The second tier, the plain "speed" clue shown
+ * as the hint in races, stays in the data (and in every draft and export) but
+ * its inputs sit behind the "Race hints" switch, so the panel isn't two boxes
+ * per entry.
  */
 export function CluePanel({ state, dispatch, onExport, access, userId }: CluePanelProps) {
   const { t } = useTranslation();
@@ -53,6 +69,20 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<{ key: string; clues: string[] } | null>(null);
+  const [showHints, setShowHints] = useState(false);
+  const [explainHints, setExplainHints] = useState(false);
+  const toggleHints = () => {
+    if (!showHints && !hintsExplained()) {
+      setExplainHints(true);
+      try {
+        localStorage.setItem(HINTS_EXPLAINED_KEY, "1");
+      } catch {
+        // Private mode: the line just shows again next time.
+      }
+    }
+    setShowHints((v) => !v);
+  };
+  const hintCount = slots.filter((s) => state.speedClues[slotKey(s)]?.trim()).length;
 
   const context = useMemo(() => {
     const themeEntries = slots
@@ -135,6 +165,16 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
             <Sparkles className="size-4" aria-hidden="true" />
             {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft Claude's clues"}
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={showHints}
+            className={showHints ? "bg-surface-sunken text-ink" : ""}
+            title="Show the plain clue used as the hint in races"
+            onClick={toggleHints}
+          >
+            <Zap className="size-4" aria-hidden="true" /> Race hints{slots.length > 0 && <span className="font-normal tabular-nums text-muted">{hintCount}/{slots.length}</span>}
+          </Button>
           <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
             <Download className="size-4" aria-hidden="true" /> Export .ipuz
           </Button>
@@ -153,6 +193,11 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
       />
 
       {!complete && <p className="mt-2 text-sm text-muted">Fill the grid to draft clues.</p>}
+      {showHints && explainHints && (
+        <p className="mt-2 text-sm text-muted">
+          A race hint is a plain, direct clue players can reveal while racing; Draft writes one for every entry alongside its clue.
+        </p>
+      )}
       {metered && allowance && (
         <p className="mt-2 text-sm text-muted tabular-nums">{t("studio.draftsLeft", { left: allowanceLeft(allowance), limit: allowance.limit })}</p>
       )}
@@ -191,42 +236,48 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
               const alts = alternatives?.key === k ? alternatives.clues : null;
               return (
                 <li key={k} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="flex w-24 shrink-0 flex-col font-mono text-xs text-muted">
-                      {s.number}. {answer}
+                  {/* Phones stack the entry over its input so the clue gets the full width; from sm up it is one line. */}
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                    <span className="flex shrink-0 items-center gap-2 font-mono text-xs text-muted sm:w-24 sm:flex-col sm:items-start sm:gap-0">
+                      <span>{s.number}. {answer}</span>
                       {edited.has(k) && <span className="font-sans text-[11px] font-semibold text-brand-700">yours</span>}
                     </span>
-                    <input
-                      className={`${INPUT} h-10 md:text-sm`}
-                      aria-label={`Clue for ${s.number} ${dir}`}
-                      value={clue}
-                      onChange={(e) => dispatch({ type: "SET_CLUE", key: k, clue: e.target.value })}
-                    />
-                    <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
-                      {clue.length || ""}
-                    </span>
-                    <button
-                      type="button"
-                      className={ICON_BUTTON}
-                      aria-label={`Suggest clues for ${s.number} ${dir}`}
-                      title="Suggest clues"
-                      disabled={!entryAnswers(grid)[s.id] || busy !== null}
-                      onClick={() => suggest(s.id, k)}
-                    >
-                      <WandSparkles className="size-4" aria-hidden="true" />
-                    </button>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <input
+                        className={`${INPUT} h-10 md:text-sm`}
+                        aria-label={`Clue for ${s.number} ${dir}`}
+                        value={clue}
+                        onChange={(e) => dispatch({ type: "SET_CLUE", key: k, clue: e.target.value })}
+                      />
+                      <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
+                        {clue.length || ""}
+                      </span>
+                      <button
+                        type="button"
+                        className={ICON_BUTTON}
+                        aria-label={`Suggest clues for ${s.number} ${dir}`}
+                        title="Suggest clues"
+                        disabled={!entryAnswers(grid)[s.id] || busy !== null}
+                        onClick={() => suggest(s.id, k)}
+                      >
+                        <WandSparkles className="size-4" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 pl-26">
-                    <input
-                      className={`${INPUT} h-9 text-muted md:text-xs`}
-                      placeholder="Speed clue (race hint)"
-                      aria-label={`Speed clue for ${s.number} ${dir}`}
-                      value={state.speedClues[k] ?? ""}
-                      onChange={(e) => dispatch({ type: "SET_SPEED_CLUE", key: k, clue: e.target.value })}
-                    />
-                  </div>
+                  {showHints && (
+                    <div className="flex items-center gap-2 sm:pl-26">
+                      <Zap className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+                      <input
+                        className={`${INPUT} h-10 md:text-sm`}
+                        placeholder="Race hint"
+                        aria-label={`Race hint for ${s.number} ${dir}`}
+                        value={state.speedClues[k] ?? ""}
+                        onChange={(e) => dispatch({ type: "SET_SPEED_CLUE", key: k, clue: e.target.value })}
+                      />
+                    </div>
+                  )}
                   {alts && (
-                    <ul className="flex flex-wrap gap-1.5 pl-26" aria-label={`Suggestions for ${s.number} ${dir}`}>
+                    <ul className="flex flex-wrap gap-1.5 sm:pl-26" aria-label={`Suggestions for ${s.number} ${dir}`}>
                       {alts.length === 0 && <li className="text-xs text-muted">No usable suggestions; try again.</li>}
                       {alts.map((alt) => (
                         <li key={alt}>
