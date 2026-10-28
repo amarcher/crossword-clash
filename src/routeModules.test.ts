@@ -3,7 +3,7 @@ import { createRoutePrefetcher } from "./routeModules";
 
 function loaders() {
   return {
-    "/classics": vi.fn(() => Promise.resolve({})),
+    "/archive": vi.fn(() => Promise.resolve({})),
     "/daily/leaderboard": vi.fn(() => Promise.resolve({})),
     "/daily": vi.fn(() => Promise.resolve({})),
     "/broken": vi.fn(() => Promise.reject(new Error("offline"))),
@@ -14,12 +14,12 @@ describe("createRoutePrefetcher", () => {
   it("loads a route's module once, however many times it is warmed", async () => {
     const l = loaders();
     const p = createRoutePrefetcher(l);
-    const a = p.prefetch("/classics");
-    const b = p.prefetch("/classics");
+    const a = p.prefetch("/archive");
+    const b = p.prefetch("/archive");
     expect(a).toBe(b);
     await a;
-    expect(l["/classics"]).toHaveBeenCalledTimes(1);
-    expect(p.isLoaded("/classics")).toBe(true);
+    expect(l["/archive"]).toHaveBeenCalledTimes(1);
+    expect(p.isLoaded("/archive")).toBe(true);
   });
 
   it("matches the longest prefix on a path boundary and ignores query/hash", async () => {
@@ -30,8 +30,8 @@ describe("createRoutePrefetcher", () => {
     expect(l["/daily"]).not.toHaveBeenCalled();
     expect(p.isLoaded("/daily/leaderboard")).toBe(true);
     expect(p.isLoaded("/daily")).toBe(false);
-    // "/classicsfoo" is not under "/classics".
-    expect(p.prefetch("/classicsfoo")).toBeNull();
+    // "/archivefoo" is not under "/archive".
+    expect(p.prefetch("/archivefoo")).toBeNull();
   });
 
   it("returns null for statically bundled paths, which count as loaded", () => {

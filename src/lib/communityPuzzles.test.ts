@@ -216,7 +216,7 @@ describe("publishProblems", () => {
   it("refuses one of ours by identity", () => {
     const state = studio();
     const ours = new Set([puzzleIdentity(normalizeTransferPuzzle(toPublishSnapshot(state, "")))]);
-    expect(publishProblems(state, { ours })).toEqual(["This is a Crossword Clash puzzle (a daily or a classic); publish your own."]);
+    expect(publishProblems(state, { ours })).toEqual(["This is a Crossword Clash daily; publish your own."]);
     expect(publishProblems(state, { ours: new Set(["other"]) })).toEqual([]);
   });
 });

@@ -27,8 +27,6 @@
     "dailyLeaderboard": "Leaderboard",
     "nudge": "Race friends to fill a crossword — or solve today's Mini solo.",
     "nudgeDismiss": "Got it",
-    "classicLibrary": "Classic library",
-    "classicLibrarySubtitle": "Puzzles from the first crossword book ever published (1924)",
     "pastPuzzles": "Past puzzles",
     "pastPuzzlesSubtitle": "Catch up on the dailies you missed",
     "how": {
@@ -92,10 +90,6 @@
     "browseNative": "Tap to choose a file (.puz, .ipuz, .jpz, .xd)",
     "tileFileDesc": ".puz, .ipuz, .jpz, .xd from AVCX, Lollapuzzoola, BEQ, anywhere.",
     "tileSampleTitle": "Try a sample",
-    "classicTitle": "Classic puzzles",
-    "classicSubtitle": "From the first crossword book ever published (1924). Public domain — tap one to play.",
-    "classicError": "Couldn't load that puzzle. Please try another.",
-    "classicSeeAll": "See all {{count}} in the classic library →",
     "rightsNote": "Only import puzzles you have the right to use. See our <anchor>copyright policy</anchor>."
   },
   "importing": {
@@ -257,10 +251,6 @@
     "shareFailed": "Couldn’t share — try again",
     "saveImage": "Save image",
     "upNext": "Up next",
-    "nextClassic": "Next classic: No. {{number}}",
-    "nextClassicSubtitle": "{{title}} · {{size}}",
-    "browseLibrary": "Browse the library",
-    "browseLibraryHint": "Free classics from the first crossword book",
     "raceFresh": "Race a friend live",
     "raceFreshHint": "Host a fresh puzzle — invite by link or QR",
     "nextPuzzleSameRoom": "Next puzzle, same room",
@@ -406,37 +396,10 @@
     "nothingThatDay": "Nothing was published on this day.",
     "today": "Today",
     "loadError": "Couldn't load that puzzle. Please try again.",
-    "classicsSubtitle": "{{solved}} of {{total}} solved",
+    "loadingPuzzle": "Loading…",
     "lockedPlusTitle": "Go Plus to play puzzles older than {{count}} days",
     "lockedPlusBody": "Every daily since the archive began, on every device you sign in on.",
     "lockedPlusLabel": "locked, Plus plays every day"
-  },
-  "classics": {
-    "title": "Classic library",
-    "subtitle": "{{count}} puzzles from The Cross Word Puzzle Book (1924) — the first crossword book ever published. Free, public domain, and still a good fight.",
-    "subtitleNoCount": "Puzzles from The Cross Word Puzzle Book (1924) — the first crossword book ever published.",
-    "progress": "{{solved}} of {{total}} solved",
-    "filterAll": "All sizes",
-    "size": {
-      "small": "Small",
-      "medium": "Medium",
-      "large": "Large",
-      "giant": "Giant"
-    },
-    "surpriseMe": "Surprise me",
-    "hideSolved": "Hide solved",
-    "loading": "Loading the library…",
-    "unavailable": "The library couldn't be loaded right now.",
-    "emptyFilter": "Nothing left here — try another size, or show solved puzzles.",
-    "loadError": "Couldn't load that puzzle. Please try another.",
-    "loadingPuzzle": "Loading…",
-    "cardEyebrow": "No. {{number}} · {{size}} · {{clues}} clues",
-    "by": "by {{author}}",
-    "playSolo": "Play solo",
-    "playAgain": "Play again",
-    "raceFriends": "Race friends",
-    "credit": "Puzzles from The Cross Word Puzzle Book, edited by Prosper Buranelli, F. Gregory Hartswick and Margaret Petherbridge (Plaza Publishing, 1924). Public domain. Text via Project Gutenberg; .puz files via crosserville.com.",
-    "backToMenu": "← Back to menu"
   },
   "keyboard": {
     "label": "Crossword keyboard",
@@ -597,7 +560,6 @@
     "sourceDaily": "Daily",
     "sourceNyt": "NYT",
     "sourceOther": "Puzzle",
-    "sourceClassic": "Classic",
     "untimed": "Solved",
     "yourAccountLink": "Open your account",
     "signedInBody": "Your account page has your history, your username and your subscription.",
@@ -623,10 +585,6 @@
     "archive": {
       "title": "Past Daily Crosswords — Crossword Clash",
       "description": "Browse every past Daily Mini, Midi and Large with your own times, and catch up on the ones you missed."
-    },
-    "classics": {
-      "title": "Free Classic Crossword Puzzles from 1924 — Crossword Clash",
-      "description": "Play free public-domain crosswords from The Cross Word Puzzle Book (1924), the first crossword book ever published. Solve solo or race friends in real time."
     },
     "privacy": {
       "description": "How Crossword Clash handles your data: anonymous play by default, optional accounts, analytics and ad cookies by consent, and what the native apps store."
@@ -659,8 +617,8 @@
     "subtitleRace": "Everyone races the same fresh puzzle. You'll get a room code to share.",
     "subtitleNext": "The room keeps its code — players follow you to the new puzzle.",
     "todaysDailies": "Today's dailies",
-    "allDailiesSolved": "You've solved all of today's dailies — pick a classic below.",
-    "classics": "Classic library",
+    "allDailiesSolved": "You've solved all of today's dailies — tomorrow brings three more.",
+    "loading": "Loading today's dailies…",
     "pick": "Pick",
     "setting": "Setting up…",
     "error": "Couldn't set that puzzle up. Please try another.",

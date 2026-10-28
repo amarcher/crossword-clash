@@ -1,5 +1,7 @@
 # Navigation audit — finishing, sharing, leaderboard, and the way back
 
+> **2026-10-28:** the classic library (`/classics`, the 1924 book) was removed at Andrew's decision ("the classics are antiquated"). Mentions of it below are historical; the daily feed and the archive are the only bundled puzzles now.
+
 Audited 2026-10-20 on `main` (3e6f9a8). Covers what happens after a puzzle is
 finished (the completion modal and its actions), what "Share" actually sends,
 the daily leaderboard round trip, the "race a friend" paths, and where every

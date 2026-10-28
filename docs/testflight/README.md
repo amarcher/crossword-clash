@@ -144,8 +144,8 @@ this build.
   `https://crosswordclash.com/daily/<day>/<slot>?beat=…`; every other puzzle
   keeps the `#puzzle=` payload. "Save image" and the challenge-link row stay
   hidden in the apps.
-- "Up next" after a finish (unsolved dailies, then an unplayed classic, then
-  the library) and a fresh-puzzle picker for "Race a friend live" and the
+- "Up next" after a finish (today's unsolved dailies, then yesterday's) and
+  a fresh-puzzle picker for "Race a friend live" and the
   host's "Next puzzle, same room".
 - Daily Midi and Daily Large tiles beside the mini, each with its own
   leaderboard. All three slots come from the website feed the app already

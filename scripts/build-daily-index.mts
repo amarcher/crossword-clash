@@ -7,8 +7,8 @@
  * public/daily-puzzles/index.json plus one index/YYYY-MM.json per month (see
  * src/lib/dailyIndex.ts for the shape). `pnpm build`, `pnpm dev` and
  * `pnpm daily:add` (which imports `buildDailyIndex`) run it, so a published
- * day is in the archive on the same deploy. The output is committed, like
- * the classics' manifest; dailyIndex.test.ts fails if it drifts from the files.
+ * day is in the archive on the same deploy. The output is committed;
+ * dailyIndex.test.ts fails if it drifts from the files.
  */
 import fs from "node:fs";
 import path from "node:path";

@@ -58,7 +58,7 @@ export type PuzzleAction =
 
 /**
  * The direction the cursor should take at (row, col) when it wants `wanted`.
- * A square that belongs to only one word (common in the 1924 classics and in
+ * A square that belongs to only one word (common in older puzzles and in
  * British grids, never in standard American ones) has a single-cell "word" in
  * the other direction; landing there in that direction leaves a one-cell
  * highlight and no clue. Flip to the real word instead.

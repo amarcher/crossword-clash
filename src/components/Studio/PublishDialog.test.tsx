@@ -10,7 +10,6 @@ import type { CommunityPuzzle, PublisherRow } from "../../lib/communityPuzzles";
 const account = vi.hoisted(() => ({ fetchProfile: vi.fn(), accountName: () => "Ada Lovelace" }));
 vi.mock("../../lib/account", () => account);
 vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
-vi.mock("../../lib/classicLibrary", () => ({ knownClassicManifest: () => null, prefetchClassicManifest: () => Promise.resolve() }));
 vi.mock("../../lib/dailyIndex", () => ({ knownPublishedIndex: () => null, prefetchDailyIndex: () => Promise.resolve() }));
 // The picker's own dependencies, so the no-username path renders.
 vi.mock("../../lib/playerName", () => ({ savePlayerName: vi.fn() }));

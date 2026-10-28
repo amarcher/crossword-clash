@@ -9,7 +9,6 @@ import type { AccountContextValue } from "../contexts/AccountContext";
 import type { SolveRow } from "../lib/solveHistory";
 import type { SoloProgressStore } from "../lib/soloProgress";
 import type { DailyIndexEntry } from "../lib/dailyIndex";
-import type { ClassicEntry } from "../lib/classicLibrary";
 import type { Puzzle } from "../types/puzzle";
 
 const navigate = vi.fn();
@@ -36,10 +35,7 @@ const puzzle = { title: "Game Night", width: 5, height: 5, cells: [], clues: [] 
 const dailies: DailyIndexEntry[] = [
   { day: "2026-10-20", slot: "mini", title: "Game Night", theme: "Board games", author: "", width: 5, height: 5, clues: 10, identity: "mini-id", blocks: "" },
 ];
-const classics: ClassicEntry[] = [{ file: "cwpb1.puz", number: 1, title: "Puzzle No. 1", author: "", width: 11, height: 11, clues: 40, identity: "classic-id", blurb: "" }];
 vi.mock("../lib/dailyIndex", () => ({ knownPublishedIndex: () => dailies, loadPublishedIndex: async () => dailies }));
-const loadClassicPuzzle = vi.fn(async () => ({ ...puzzle, title: "Puzzle No. 1" }));
-vi.mock("../lib/classicLibrary", () => ({ knownClassicManifest: () => classics, loadClassicManifest: async () => classics, loadClassicPuzzle: () => loadClassicPuzzle() }));
 const fetchDailyForDay = vi.fn(async () => ({ puzzle, theme: "Board games" }));
 vi.mock("../lib/dailyFeed", () => ({ fetchDailyForDay: (...args: unknown[]) => fetchDailyForDay(...(args as [])) }));
 
@@ -103,7 +99,6 @@ afterEach(() => {
   game.handleSoloPuzzleLoaded.mockClear();
   game.setSoloTheme.mockClear();
   fetchDailyForDay.mockClear();
-  loadClassicPuzzle.mockClear();
   signOut.mockClear();
 });
 
@@ -176,21 +171,18 @@ describe("AccountScreen (/account)", () => {
     expect(screen.getByText(/couldn't be loaded/)).toBeTruthy();
   });
 
-  it("lists the puzzles in progress by name and resumes one on the daily path", async () => {
+  it("lists the puzzles in progress by name (never an unknown import) and resumes one on the daily path", async () => {
     store = {
       "mini-id": { key: "mini-id", cells: {}, elapsedMs: 61_000, updatedAt: 20, filled: 2, total: 21 },
-      "classic-id": { key: "classic-id", cells: {}, elapsedMs: 5_000, updatedAt: 10, filled: 1, total: 80 },
       "unknown-id": { key: "unknown-id", cells: {}, elapsedMs: 1, updatedAt: 30, filled: 1, total: 9 },
     };
     renderScreen();
     const section = screen.getByRole("region", { name: "In progress" }) ?? screen.getByText("In progress").closest("section")!;
     const resumes = within(section).getAllByRole("button", { name: /Resume/ });
-    expect(resumes).toHaveLength(2);
+    expect(resumes).toHaveLength(1);
     expect(section.textContent).toContain("Game Night");
+    expect(section.textContent).toContain("Daily Mini · Oct 20");
     expect(section.textContent).toContain("2 of 21 filled · 1:01");
-    expect(section.textContent).toContain("Puzzle No. 1");
-    expect(section.textContent).toContain("Classic");
-    expect(section.textContent.indexOf("Game Night")).toBeLessThan(section.textContent.indexOf("Puzzle No. 1"));
 
     fireEvent.click(resumes[0]);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
@@ -199,19 +191,16 @@ describe("AccountScreen (/account)", () => {
     expect(game.setSoloTheme).toHaveBeenCalledWith("Board games");
   });
 
-  it("resumes a classic through the library loader, and a solved puzzle's record is not listed", async () => {
+  it("drops a solved puzzle's record from the in-progress list", () => {
     store = {
       "mini-id": { key: "mini-id", cells: {}, elapsedMs: 61_000, updatedAt: 20, filled: 2, total: 21 },
-      "classic-id": { key: "classic-id", cells: {}, elapsedMs: 5_000, updatedAt: 10, filled: 1, total: 80 },
     };
     bestTimes = { "mini-id": 90 };
     renderScreen();
     const section = screen.getByText("In progress").closest("section")!;
     expect(section.textContent).not.toContain("Game Night");
-    fireEvent.click(within(section).getByRole("button", { name: /Resume/ }));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
-    expect(loadClassicPuzzle).toHaveBeenCalledTimes(1);
-    expect(game.setSoloTheme).toHaveBeenCalledWith(null);
+    expect(within(section).queryByRole("button", { name: /Resume/ })).toBeNull();
+    expect(section.textContent).toContain("Nothing half-finished");
   });
 
   it("shows the Plus card only behind the launch switch: the pitch, or the subscriber controls", () => {

@@ -6,7 +6,7 @@
  * the whole puzzle in a `#puzzle=` hash. The route loads that day's puzzle
  * from the feed (past days are served too) and lands on ChallengeScreen when
  * `beat` is present, or on the plain puzzle-ready screen without it.
- * Imported and classic puzzles keep `buildChallengeUrl` (challenge.ts).
+ * Imported puzzles keep `buildChallengeUrl` (challenge.ts).
  *
  * Pure and unit-tested in dailyChallenge.test.ts.
  */
