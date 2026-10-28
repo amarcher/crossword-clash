@@ -106,7 +106,7 @@ describe("AccountSheet Plus view", () => {
     expect(screen.queryByRole("button", { name: /Get Plus|Monthly|Restore purchases/ })).toBeNull();
   });
 
-  it("in the apps, still lets a subscriber who bought before sign-in-first manage and restore, with the sign-in prompt beneath", () => {
+  it("in the apps, still lets a subscriber who bought before sign-in-first manage, with the sign-in prompt beneath", () => {
     native.available = true;
     const plusRow = {
       user_id: "anon",
@@ -121,7 +121,7 @@ describe("AccountSheet Plus view", () => {
     };
     renderSheet("plus", { user: null, profile: null, plus: true, plusRow });
     expect(screen.getByRole("button", { name: "Manage in the store" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Restore purchases" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Restore purchases" })).toBeNull();
     expect(screen.getByText(/Keep Plus on every device/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Continue with Apple" })).toBeTruthy();
   });

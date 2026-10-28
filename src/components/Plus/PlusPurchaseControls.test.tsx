@@ -147,23 +147,28 @@ describe("PlusPurchaseControls in the apps", () => {
       />,
     );
     expect(screen.getByRole("button", { name: "Manage in the store" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Restore purchases" })).toBeTruthy();
+    // Nothing to restore for a subscriber; the paywall's own Restore covers Apple's rule.
+    expect(screen.queryByRole("button", { name: "Restore purchases" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
     expect(screen.getByText("Sign in to keep it")).toBeTruthy();
   });
 
-  it("puts a subscriber's restore confirmation first, above the renewal line, not under the sign-in prompt", async () => {
-    purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
-    render(
+  it("puts the purchase confirmation first, above the renewal line, not under the sign-in prompt", async () => {
+    const { rerender } = render(
+      <PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" signInPrompt={<p>Sign in to keep it</p>} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    // The refresh flips the account to a subscriber; the notice must lead that view.
+    rerender(
       <PlusPurchaseControls
         account={{ signedIn: false, plus: true, plusRow: row({ source: "revenuecat" }), refreshEntitlements: refresh }}
         placement="sheet"
         signInPrompt={<p>Sign in to keep it</p>}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Restore purchases" }));
     const notice = await screen.findByRole("status");
-    expect(notice.textContent).toBe("Your Plus is back on this device.");
+    expect(notice.textContent).toBe("You're Plus. Thank you!");
     const renews = screen.getByText(/Renews on/);
     // DOCUMENT_POSITION_FOLLOWING: the renewal line comes after the notice.
     expect(notice.compareDocumentPosition(renews) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -135,11 +135,8 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
             {row?.source === "stripe" ? t("plus.manage") : t("plus.manageInStore")}
           </Button>
         )}
-        {native && (
-          <Button variant="ghost" size="md" block disabled={busy !== null} aria-busy={busy === "restore" || undefined} onClick={restore}>
-            {t("plus.restore")}
-          </Button>
-        )}
+        {/* No "Restore purchases" here: Apple's 3.1.1 wants restore reachable, and the
+            non-subscriber view below has it; a subscriber has nothing to restore. */}
         {native && !account.signedIn && signInPrompt}
       </div>
     );
