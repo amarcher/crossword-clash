@@ -33,14 +33,19 @@ export interface SoloTimerApi {
 
 /**
  * Drives the solo elapsed timer and records personal-best / streak on finish.
+ * `assisted` (a revealed square, solo with Autocheck off) makes the finish
+ * count as solved without touching either record.
  *
  * The time source is wall-clock based and resumes across reloads: accumulated
  * milliseconds live in localStorage and the live segment is `now - anchor`.
  * Crucially this hook never re-renders on each tick — the visible
  * `<SoloTimer>` owns its own per-second state and pulls from `getElapsedSeconds`.
  */
-export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTimerApi {
+export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean, assisted = false): SoloTimerApi {
   const key = useMemo(() => (puzzle ? puzzleIdentity(puzzle) : null), [puzzle]);
+  // Read at the moment of completion, never a reason to re-run it.
+  const assistedRef = useRef(assisted);
+  assistedRef.current = assisted;
 
   // Accumulated ms from earlier segments/reloads, plus the wall-clock anchor of
   // the segment currently running (null when paused/stopped).
@@ -125,7 +130,7 @@ export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean): SoloTi
     saveSoloTimer({ key, elapsedMs: baseMsRef.current, completed: true });
     clearProgress(key);
     setFresh(true);
-    setResult(recordSoloCompletion(key, finishSeconds));
+    setResult(recordSoloCompletion(key, finishSeconds, new Date(), { assisted: assistedRef.current }));
   }, [key, isComplete]);
 
   // Checkpoint the running clock so a reload resumes accurately.

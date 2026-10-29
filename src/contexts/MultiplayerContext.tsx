@@ -91,6 +91,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     lockedUntil,
     setLockedUntil,
     inputLetter,
+    autocheck,
   } = game;
 
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
@@ -229,7 +230,10 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     }));
   }, [multiplayerActive, multiplayer.players, scoreByPlayer, clueCountsByPlayer]);
 
-  // Solo input wrapper
+  // Solo input wrapper. With Autocheck on (soloSettings.ts) a wrong letter is
+  // refused here — the square flashes, nothing is written, the miss is
+  // counted; off, every letter goes straight to the reducer, which writes it
+  // as typed and leaves the judging to Check / the finish.
   const soloInputLetter = useCallback(
     (letter: string) => {
       if (!puzzle || !selectedCell) return;
@@ -237,7 +241,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
       const cell = puzzle.cells[row]?.[col];
       if (!cell || cell.solution === null) return;
 
-      if (playerCells[`${row},${col}`]?.correct) {
+      if (!autocheck || playerCells[`${row},${col}`]?.correct) {
         inputLetter(letter);
         return;
       }
@@ -248,7 +252,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
       }
       inputLetter(letter);
     },
-    [puzzle, selectedCell, playerCells, inputLetter, triggerReject],
+    [puzzle, selectedCell, playerCells, inputLetter, triggerReject, autocheck],
   );
 
   // Multiplayer input wrapper

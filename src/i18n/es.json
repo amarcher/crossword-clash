@@ -775,5 +775,18 @@
     "cancel": "Cancelar",
     "close": "Cerrar",
     "done": "Listo"
+  },
+  "autocheck": {
+    "options": "Opciones del crucigrama",
+    "label": "Autocomprobación",
+    "hint": "Apagada: escribe libremente y comprueba cuando la cuadrícula esté llena",
+    "filledWrong_one": "Llena, pero {{count}} casilla no es correcta",
+    "filledWrong_other": "Llena, pero {{count}} casillas no son correctas",
+    "checkPuzzle": "Comprobar crucigrama",
+    "checkWord": "Comprobar palabra",
+    "revealSquare": "Revelar casilla",
+    "dismiss": "Cerrar",
+    "solvedWithReveals": "Resuelto con casillas reveladas",
+    "noAutocheck": "Sin autocomprobación"
   }
 }

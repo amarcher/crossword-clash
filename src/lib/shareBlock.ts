@@ -17,6 +17,12 @@
  * Rows are the grid's rows: ⬛ a block, 🟩/🟨/🟧 a cell filled in the first /
  * middle / last third of the solve, 🟥 a cell that took a wrong letter first.
  * No letters, so nothing is spoiled; the shape plus the pace tells the story.
+ *
+ * What 🟥 means depends on how the puzzle was played (`wrongCells` is the
+ * caller's): with Autocheck on it is a square where a wrong letter was refused;
+ * with Autocheck off (soloSettings.ts) nothing is refused, so it is a square
+ * that was still wrong when the solver asked for a check, or that they had
+ * revealed. A wrong letter the solver fixed on their own never shows.
  * Grids wider than MAX_ROW_WIDTH get one 15-block pace bar instead of rows.
  * A live race colours cells by who claimed them, in the player-colour order.
  *

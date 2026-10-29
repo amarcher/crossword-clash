@@ -20,6 +20,12 @@ interface PlayInsightsInput {
   active?: boolean;
   /** Playing as an account (not the anonymous default); recorded as signed_in. */
   signedIn?: boolean;
+  /**
+   * The solo Autocheck setting as it stands (soloSettings.ts); races leave it
+   * unset. Recorded as `autocheck`, latched false for the whole visit once it
+   * was off while the grid was unfinished.
+   */
+  autocheck?: boolean;
 }
 
 /**
@@ -27,12 +33,18 @@ interface PlayInsightsInput {
  * when the puzzle is finished, the page is hidden or closed, or the player
  * leaves the screen. Only visits with real input are sent.
  */
-export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wrongLetters, isComplete, mode, source, localPlayerId, active = true, signedIn = false }: PlayInsightsInput) {
+export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wrongLetters, isComplete, mode, source, localPlayerId, active = true, signedIn = false, autocheck = true }: PlayInsightsInput) {
   const tracker = useRef<PlaySessionTracker | null>(null);
   const sourceRef = useRef(source);
   sourceRef.current = source;
   const signedInRef = useRef(signedIn);
   signedInRef.current = signedIn;
+  // Once off while there was still solving to do, the visit was a free-typing
+  // one (the latch is reset per visit below, which runs after this effect).
+  const freeTypedRef = useRef(false);
+  useEffect(() => {
+    if (!autocheck && !isComplete) freeTypedRef.current = true;
+  }, [autocheck, isComplete]);
   const latest = useRef({ playerCells, direction, activeClue, isComplete });
   latest.current = { playerCells, direction, activeClue, isComplete };
   // Reopening a finished puzzle isn't a new completion.
@@ -42,7 +54,7 @@ export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wr
 
   const flush = () => {
     const t = tracker.current;
-    if (t?.hasActivity) sendPlaySession({ ...t.record(Date.now()), source: sourceRef.current, signed_in: signedInRef.current });
+    if (t?.hasActivity) sendPlaySession({ ...t.record(Date.now()), source: sourceRef.current, signed_in: signedInRef.current, autocheck: !freeTypedRef.current });
   };
 
   // A new visit per puzzle (and per return to the play screen).
@@ -50,6 +62,7 @@ export function usePlayInsights({ puzzle, playerCells, direction, activeClue, wr
     if (!enabled || !puzzle || !key) return;
     watchPlayInsightsAuth();
     startedComplete.current = latest.current.isComplete;
+    freeTypedRef.current = !autocheck && !latest.current.isComplete;
     tracker.current = new PlaySessionTracker(puzzle, latest.current.playerCells, { puzzleKey: key, source: sourceRef.current, mode, client: playClient(), platform: platformLabel(), signedIn: signedInRef.current }, Date.now());
     const onHide = () => {
       if (document.visibilityState === "hidden") flush();

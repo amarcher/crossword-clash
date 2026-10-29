@@ -53,6 +53,18 @@ export interface CellState {
    * reads the relative order and spread, never the absolute time.
    */
   at?: number;
+  /**
+   * Set by CHECK_CELLS on a letter that is not the solution (solo play with
+   * Autocheck off, see soloSettings.ts); dropped the moment the square is
+   * retyped or erased, since a changed cell is a new CellState.
+   */
+  checked?: "wrong";
+  /**
+   * Written by REVEAL_CELL: the solution, locked against typing and erasing.
+   * A finish with a revealed square counts as solved but "assisted" — no best
+   * time, no streak, no leaderboard time.
+   */
+  revealed?: boolean;
 }
 
 export interface CellCoord {

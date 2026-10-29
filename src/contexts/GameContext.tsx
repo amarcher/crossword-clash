@@ -9,6 +9,7 @@ import { loadPlayerName } from "../lib/playerName";
 import type { PendingDailyResult } from "../lib/dailyLeaderboard";
 import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import { clearProgress, filledCells, getProgress, recordProgressCells, whiteCellCount } from "../lib/soloProgress";
+import { useSoloSettings } from "../lib/soloSettings";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { PuzzleAction } from "../hooks/usePuzzle";
@@ -48,6 +49,16 @@ interface GameContextValue {
   nextWord: () => void;
   prevWord: () => void;
   reset: () => void;
+  /**
+   * Whether the reducer refuses wrong letters right now: the device's solo
+   * Autocheck setting (soloSettings.ts), forced on in a room. The solo play
+   * screen owns the toggle; this is the effective value the grid plays by.
+   */
+  autocheck: boolean;
+  /** Mark the wrong letters among the given squares (solo, autocheck off). */
+  checkCells: (cells: CellCoord[]) => void;
+  /** Write and lock one square's solution; the finish then counts as assisted. */
+  revealCell: (row: number, col: number) => void;
 
   // Game metadata
   gameId: string | null;
@@ -115,6 +126,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch,
     loadPuzzle,
   } = puzzleHook;
+  const { autocheck: autocheckSetting } = useSoloSettings();
 
   // Compute initial state from URL params / localStorage (synchronous, no effects)
   const mpSession = useMemo(() => loadMpSession(), []);
@@ -139,6 +151,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return initialSavedSession?.gameId ?? null;
   });
   const [isMultiplayer, setIsMultiplayer] = useState(() => !!mpSession);
+  // The reducer plays by the device's Autocheck setting in solo and always
+  // refuses wrong letters in a room (correct letters lock in there).
+  const autocheck = autocheckSetting || isMultiplayer;
+  useEffect(() => {
+    dispatch({ type: "SET_AUTOCHECK", autocheck });
+  }, [autocheck, dispatch]);
   const [displayName, setDisplayName] = useState(
     () => mpSession?.displayName ?? loadPlayerName() ?? tStatic('common.defaultPlayerName'),
   );
@@ -271,6 +289,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const value: GameContextValue = {
     ...puzzleHook,
+    autocheck: puzzleHook.autocheck,
     gameId,
     setGameId,
     isMultiplayer,

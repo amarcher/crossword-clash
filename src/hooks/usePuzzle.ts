@@ -13,6 +13,7 @@ import {
   getNextWordStart,
   getPrevWordStart,
   getCompletedClues,
+  getFilledClues,
   isBlack,
 } from "../lib/gridUtils";
 
@@ -24,8 +25,18 @@ export interface PuzzleState {
   playerCells: Record<string, CellState>;
   selectedCell: CellCoord | null;
   direction: Direction;
+  /** Correct letters in the grid (not letters typed): `isComplete` is score === totalWhiteCells. */
   score: number;
   totalWhiteCells: number;
+  /**
+   * Solo Autocheck (src/lib/soloSettings.ts). On, INPUT_LETTER refuses a wrong
+   * letter and a square counts as filled only when correct; off, any letter is
+   * written as typed, a square with a letter counts as filled for the cursor
+   * and the clue list (so nothing leaks which ones are wrong), and CHECK_CELLS
+   * / REVEAL_CELL do the judging. Always on in a room. Set by SET_AUTOCHECK and
+   * kept across LOAD_PUZZLE and RESET.
+   */
+  autocheck: boolean;
 }
 
 export const initialState: PuzzleState = {
@@ -35,6 +46,7 @@ export const initialState: PuzzleState = {
   direction: "across",
   score: 0,
   totalWhiteCells: 0,
+  autocheck: true,
 };
 
 // --- Actions ---
@@ -52,9 +64,26 @@ export type PuzzleAction =
   | { type: "PREV_WORD" }
   | { type: "REMOTE_CELL_CLAIM"; row: number; col: number; letter: string; playerId: string; at?: number }
   | { type: "HYDRATE_CELLS"; cells: Record<string, CellState>; score: number }
-  | { type: "ROLLBACK_CELL"; row: number; col: number; playerId: string };
+  | { type: "ROLLBACK_CELL"; row: number; col: number; playerId: string }
+  | { type: "SET_AUTOCHECK"; autocheck: boolean }
+  /** Mark the wrong letters among `cells` (`checked: "wrong"`); correct and empty squares are left alone. */
+  | { type: "CHECK_CELLS"; cells: CellCoord[] }
+  /** Write the solution into one square and lock it (`revealed`). The cursor stays. */
+  | { type: "REVEAL_CELL"; row: number; col: number; at?: number };
 
 // --- Helpers ---
+
+/**
+ * Whether the cursor should skip the square at `key`: a correct letter under
+ * autocheck (the only kind that exists then), any letter without it — a solver
+ * typing freely must not learn which squares are wrong from where the cursor
+ * lands.
+ */
+function occupied(cells: Record<string, CellState>, key: string, autocheck: boolean): boolean {
+  const c = cells[key];
+  // A square a check has judged wrong is known to need a letter.
+  return autocheck ? !!c?.correct : !!c?.letter && c.checked !== "wrong";
+}
 
 /**
  * The direction the cursor should take at (row, col) when it wants `wanted`.
@@ -91,13 +120,14 @@ function advanceCursor(
   row: number,
   col: number,
   direction: Direction,
+  autocheck: boolean,
 ): { coord: CellCoord; direction: Direction } | null {
   // Walk forward through the current word, skipping filled cells
   const wordCells = getWordCells(puzzle, row, col, direction);
   const currentIdx = wordCells.findIndex((c) => c.row === row && c.col === col);
   for (let i = currentIdx + 1; i < wordCells.length; i++) {
     const c = wordCells[i];
-    if (!playerCells[`${c.row},${c.col}`]?.correct) {
+    if (!occupied(playerCells, `${c.row},${c.col}`, autocheck)) {
       return { coord: c, direction };
     }
   }
@@ -117,13 +147,19 @@ function advanceCursor(
   for (let offset = 1; offset <= allClues.length; offset++) {
     const clue = allClues[(startIdx + offset) % allClues.length];
     const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
-    const firstEmpty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.correct);
+    const firstEmpty = cells.find((c) => !occupied(playerCells, `${c.row},${c.col}`, autocheck));
     if (firstEmpty) {
       return {
         coord: firstEmpty,
         direction: settleDirection(puzzle, firstEmpty.row, firstEmpty.col, clue.direction),
       };
     }
+  }
+
+  // Without autocheck a full grid is still being edited (the solver may be
+  // retyping an entry they doubt), so step along the word instead of freezing.
+  if (!autocheck && currentIdx >= 0 && currentIdx + 1 < wordCells.length) {
+    return { coord: wordCells[currentIdx + 1], direction };
   }
 
   return null;
@@ -168,7 +204,11 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
     }
 
     case "RESET":
-      return initialState;
+      // The setting outlives the puzzle; the grid does not.
+      return { ...initialState, autocheck: state.autocheck };
+
+    case "SET_AUTOCHECK":
+      return state.autocheck === action.autocheck ? state : { ...state, autocheck: action.autocheck };
 
     case "SELECT_CELL": {
       if (!state.puzzle || isBlack(state.puzzle, action.row, action.col)) {
@@ -219,29 +259,33 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
       const key = `${row},${col}`;
       const letter = action.letter.toUpperCase();
+      const existing = state.playerCells[key];
 
-      // Already correctly filled — advance to next empty cell or next word
-      if (state.playerCells[key]?.correct) {
-        const next = advanceCursor(state.puzzle, state.playerCells, row, col, state.direction);
+      // A settled square — correct under autocheck, or revealed — only moves
+      // the cursor on. Without autocheck a correct letter is overwritable like
+      // any other: refusing to change it would give its correctness away.
+      if (existing?.correct && (state.autocheck || existing.revealed)) {
+        const next = advanceCursor(state.puzzle, state.playerCells, row, col, state.direction, state.autocheck);
         return next
           ? { ...state, selectedCell: next.coord, direction: next.direction }
           : state;
       }
 
       const correct = letter === cell.solution;
-      if (!correct) {
+      if (!correct && state.autocheck) {
         // Incorrect letter — silently reject (don't place it)
         return state;
       }
 
-      // Correct letter — place it and advance. `at` records when, for the
-      // spoiler-free share block's pace colours (callers may pass a clock).
+      // Place the letter and advance. `at` records when, for the spoiler-free
+      // share block's pace colours (callers may pass a clock). A fresh
+      // CellState drops any `checked` mark the square carried.
       const newCells = {
         ...state.playerCells,
-        [key]: { letter, correct: true, playerId: action.playerId, at: action.at ?? Date.now() },
+        [key]: { letter, correct, playerId: action.playerId, at: action.at ?? Date.now() },
       };
-      const newScore = state.score + 1;
-      const next = advanceCursor(state.puzzle, newCells, row, col, state.direction);
+      const newScore = state.score - (existing?.correct ? 1 : 0) + (correct ? 1 : 0);
+      const next = advanceCursor(state.puzzle, newCells, row, col, state.direction, state.autocheck);
       return {
         ...state,
         playerCells: newCells,
@@ -255,15 +299,17 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       if (!state.puzzle || !state.selectedCell) return state;
       const { row, col } = state.selectedCell;
       const key = `${row},${col}`;
+      const current = state.playerCells[key];
 
-      // If current cell has a letter, delete it
-      if (state.playerCells[key]) {
+      // If current cell has a letter, delete it (a revealed square is locked:
+      // treat it as empty and step back). Only a correct letter was counted.
+      if (current && !current.revealed) {
         const newCells = { ...state.playerCells };
         delete newCells[key];
         return {
           ...state,
           playerCells: newCells,
-          score: state.score - 1,
+          score: state.score - (current.correct ? 1 : 0),
         };
       }
 
@@ -271,13 +317,14 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       const prev = getPrevCell(state.puzzle, row, col, state.direction);
       if (prev) {
         const prevKey = `${prev.row},${prev.col}`;
-        if (state.playerCells[prevKey]) {
+        const prevState = state.playerCells[prevKey];
+        if (prevState && !prevState.revealed) {
           const newCells = { ...state.playerCells };
           delete newCells[prevKey];
           return {
             ...state,
             playerCells: newCells,
-            score: state.score - 1,
+            score: state.score - (prevState.correct ? 1 : 0),
             selectedCell: prev,
           };
         }
@@ -315,7 +362,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
     case "NEXT_WORD": {
       if (!state.puzzle || !state.selectedCell) return state;
-      const completed = getCompletedClues(state.puzzle, state.playerCells);
+      const completed = (state.autocheck ? getCompletedClues : getFilledClues)(state.puzzle, state.playerCells);
       const { coord, direction } = getNextWordStart(
         state.puzzle,
         state.selectedCell.row,
@@ -328,7 +375,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
     case "PREV_WORD": {
       if (!state.puzzle || !state.selectedCell) return state;
-      const completed = getCompletedClues(state.puzzle, state.playerCells);
+      const completed = (state.autocheck ? getCompletedClues : getFilledClues)(state.puzzle, state.playerCells);
       const { coord, direction } = getPrevWordStart(
         state.puzzle,
         state.selectedCell.row,
@@ -374,6 +421,51 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         ...state,
         playerCells: newCells,
         score: state.score - 1,
+      };
+    }
+
+    case "CHECK_CELLS": {
+      if (!state.puzzle) return state;
+      let newCells: Record<string, CellState> | null = null;
+      let firstWrong: CellCoord | null = null;
+      for (const { row, col } of action.cells) {
+        const key = `${row},${col}`;
+        const c = state.playerCells[key];
+        if (!c?.letter || c.correct || c.checked === "wrong") continue;
+        newCells ??= { ...state.playerCells };
+        newCells[key] = { ...c, checked: "wrong" };
+        firstWrong ??= { row, col };
+      }
+      if (!newCells) return state;
+      // The cursor lands on the first square just marked, unless it is already
+      // on one, so the solver can retype at once (and the keyboard stays put).
+      const sel = state.selectedCell;
+      const onWrong = sel && newCells[`${sel.row},${sel.col}`]?.checked === "wrong";
+      return onWrong || !firstWrong
+        ? { ...state, playerCells: newCells }
+        : {
+            ...state,
+            playerCells: newCells,
+            selectedCell: firstWrong,
+            direction: settleDirection(state.puzzle, firstWrong.row, firstWrong.col, state.direction),
+          };
+    }
+
+    case "REVEAL_CELL": {
+      if (!state.puzzle) return state;
+      const cell = state.puzzle.cells[action.row]?.[action.col];
+      if (!cell || cell.solution === null) return state;
+      const key = `${action.row},${action.col}`;
+      const existing = state.playerCells[key];
+      if (existing?.revealed) return state;
+      const newCells = {
+        ...state.playerCells,
+        [key]: { letter: cell.solution, correct: true, revealed: true, playerId: existing?.playerId, at: action.at ?? Date.now() },
+      };
+      return {
+        ...state,
+        playerCells: newCells,
+        score: state.score + (existing?.correct ? 0 : 1),
       };
     }
 
@@ -442,6 +534,18 @@ export function usePuzzle() {
   const nextWord = useCallback(() => dispatch({ type: "NEXT_WORD" }), []);
   const prevWord = useCallback(() => dispatch({ type: "PREV_WORD" }), []);
   const reset = useCallback(() => dispatch({ type: "RESET" }), []);
+  const setAutocheck = useCallback(
+    (autocheck: boolean) => dispatch({ type: "SET_AUTOCHECK", autocheck }),
+    [],
+  );
+  const checkCells = useCallback(
+    (cells: CellCoord[]) => dispatch({ type: "CHECK_CELLS", cells }),
+    [],
+  );
+  const revealCell = useCallback(
+    (row: number, col: number) => dispatch({ type: "REVEAL_CELL", row, col }),
+    [],
+  );
 
   return {
     ...state,
@@ -459,5 +563,8 @@ export function usePuzzle() {
     nextWord,
     prevWord,
     reset,
+    setAutocheck,
+    checkCells,
+    revealCell,
   };
 }

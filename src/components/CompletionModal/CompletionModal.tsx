@@ -56,6 +56,11 @@ interface CompletionModalProps {
   isNewBest?: boolean;
   /** Best on record *before* this finish (null on the first-ever solve). */
   previousBest?: number | null;
+  /**
+   * The grid was finished with a revealed square (solo, Autocheck off): the
+   * time row says so instead of claiming a best, since none was recorded.
+   */
+  assisted?: boolean;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
   /**
@@ -157,6 +162,7 @@ export function CompletionModal({
   bestSeconds,
   isNewBest,
   previousBest,
+  assisted,
   streakCount,
   nytHook,
   raceSeconds,
@@ -468,7 +474,7 @@ export function CompletionModal({
               // Celebrate only a genuine record — beating a time that was
               // already on record. The first-ever solve is a best-of-one, not
               // an achievement, so it reads as a plain "your time".
-              const celebrateBest = isNewBest === true && previousBest != null;
+              const celebrateBest = !assisted && isNewBest === true && previousBest != null;
               return (
                 <div
                   className={`mb-4 rounded-xl px-4 py-3 text-center ${
@@ -491,7 +497,9 @@ export function CompletionModal({
                         : textSub
                     }`}
                   >
-                    {celebrateBest
+                    {assisted
+                      ? t('autocheck.solvedWithReveals')
+                      : celebrateBest
                       ? t('soloStats.newBestBeat', { time: formatDuration(previousBest as number) })
                       : isNewBest
                         ? t('soloStats.timerLabel')

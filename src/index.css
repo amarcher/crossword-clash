@@ -303,6 +303,26 @@ select,
   }
 }
 
+/* Solo without Autocheck (soloSettings.ts): a square Check judged wrong keeps
+   its letter in red under a thin diagonal slash, NYT-style; a revealed square
+   carries a small brand-coloured corner. Both sit under the letter. The rose
+   fallback is Tailwind's rose-600, since the variable is only emitted when a
+   utility uses it. */
+.cell-wrong-slash {
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.8px),
+    var(--color-rose-600, #e11d48) calc(50% - 0.8px),
+    var(--color-rose-600, #e11d48) calc(50% + 0.8px),
+    transparent calc(50% + 0.8px)
+  );
+}
+.cell-revealed-mark {
+  width: 24cqi;
+  height: 24cqi;
+  background: linear-gradient(to bottom left, var(--color-brand-500) 50%, transparent 50%);
+}
+
 /* Completion modal — scale-up + fade-in */
 @keyframes modal-enter {
   0% {
