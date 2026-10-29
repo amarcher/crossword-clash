@@ -50,8 +50,12 @@ export function SiteBar({ backLabel, backTo = "/menu", onBack, plain, right }: S
       <TransitionLink to={backTo} className={LINK}>{backInner}</TransitionLink>
     );
   }
+  // `relative z-30`: the header's view-transition-name makes it a stacking context of its own, so
+  // without a z-index of its own every menu that opens from it (the avatar menu, the studio's
+  // account menu) painted under positioned content further down the page, like the studio grid.
+  // Dialogs (z-50) and the studio tab bar (z-40) still sit above it.
   return (
-    <header data-site-bar className="vt-site-bar flex w-full items-center justify-between gap-3">
+    <header data-site-bar className="vt-site-bar relative z-30 flex w-full items-center justify-between gap-3">
       {plain ? (
         <a href="/menu" className={LOGO}>{logo}</a>
       ) : (
