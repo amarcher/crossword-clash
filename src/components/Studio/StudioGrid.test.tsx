@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
-import { StudioGrid } from "./StudioGrid";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { LONG_PRESS_MS, StudioGrid } from "./StudioGrid";
 import { gridFromRows } from "../../lib/seedgrid/grid";
 import type { HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
 
@@ -17,11 +17,12 @@ const grid = gridFromRows(["CAT..", "A..U.", ".#..N", "..R..", "....S"]);
 function renderGrid(cursor: number, direction: "across" | "down" = "across", handlers = input()) {
   const onToggleBlock = vi.fn();
   const onToggleDirection = vi.fn();
+  const onShowWords = vi.fn();
   const onSelect = vi.fn();
   const utils = render(
-    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={onSelect} onToggleBlock={onToggleBlock} onToggleDirection={onToggleDirection} input={handlers} />,
+    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={onSelect} onToggleBlock={onToggleBlock} onToggleDirection={onToggleDirection} onShowWords={onShowWords} input={handlers} />,
   );
-  return { ...utils, handlers, onToggleBlock, onToggleDirection, onSelect, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
+  return { ...utils, handlers, onToggleBlock, onToggleDirection, onShowWords, onSelect, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
 }
 
 describe("StudioGrid block cursor", () => {
@@ -62,6 +63,60 @@ describe("StudioGrid right-click menu", () => {
     expect(onToggleDirection).toHaveBeenCalled();
     expect(onToggleBlock).not.toHaveBeenCalled();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("lists the entries through the square and hands one to onShowWords", () => {
+    const { onShowWords } = renderGrid(0);
+    // Row 1, Column 1 ("C") starts 1 Across and 1 Down.
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Words for 1 Down" }));
+    expect(onShowWords).toHaveBeenCalledWith(0, "down");
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("opens on a long press with a finger, and the release does not close it or select again", () => {
+    vi.useFakeTimers();
+    try {
+      const { onSelect } = renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      expect(screen.getByRole("menu", { name: "Square" })).toBeTruthy();
+      expect(onSelect).toHaveBeenCalledWith(3);
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      fireEvent.click(cell);
+      expect(screen.getByRole("menu")).toBeTruthy();
+      expect(onSelect).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not open on a short tap or a drag", () => {
+    vi.useFakeTimers();
+    try {
+      renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS / 2);
+      });
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS);
+      });
+      expect(screen.queryByRole("menu")).toBeNull();
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      fireEvent.pointerMove(cell, { pointerType: "touch", clientX: 80, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      expect(screen.queryByRole("menu")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("closes on Escape", () => {

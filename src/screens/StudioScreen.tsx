@@ -433,6 +433,11 @@ export function StudioScreen() {
           onSelect={(cell) => dispatch({ type: "SELECT", cell })}
           onToggleBlock={(cell) => dispatch({ type: "TOGGLE_BLOCK", cell })}
           onToggleDirection={() => dispatch({ type: "TOGGLE_DIR" })}
+          onShowWords={(cell, dir) => {
+            dispatch({ type: "SELECT", cell });
+            dispatch({ type: "SET_DIR", dir });
+            if (!desktop) setTab("words");
+          }}
           input={gridInput}
         />
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -473,8 +478,8 @@ export function StudioScreen() {
         )}
         <p className="mt-1 text-xs text-subtle">
           {desktop
-            ? 'Type to write (your letters are bold and kept). Right-click a square, or press ".", to make it black or white again; space, Enter or a second tap switches between across and down.'
-            : "Tap a square and type (your letters are bold and kept). Block makes the square black or white again; a second tap on a square switches between across and down. Words shows what fits the selected entry."}
+            ? 'Type to write (your letters are bold and kept). Right-click a square for black / white, direction and the words through it; "." also toggles a black square, and a letter typed on one opens it again. Space, Enter or a second tap switches between across and down.'
+            : "Tap a square and type (your letters are bold and kept). Hold a square for black / white, direction and the words through it; typing a letter on a black square opens it again. A second tap switches between across and down."}
         </p>
       </div>
     </section>
