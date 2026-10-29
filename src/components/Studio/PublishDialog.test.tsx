@@ -13,6 +13,9 @@ vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("../../lib/dailyIndex", () => ({ knownPublishedIndex: () => null, prefetchDailyIndex: () => Promise.resolve() }));
 // The picker's own dependencies, so the no-username path renders.
 vi.mock("../../lib/playerName", () => ({ savePlayerName: vi.fn() }));
+// The site address links are built on: the page's own origin on the web, the public site in the apps.
+const origin = vi.hoisted(() => ({ value: "https://preview.example" }));
+vi.mock("../../lib/shareOrigin", () => ({ shareOrigin: () => origin.value }));
 const community = vi.hoisted(() => ({
   acceptPublishingTerms: vi.fn(),
   fetchPublisher: vi.fn(),
@@ -42,6 +45,7 @@ const existing: CommunityPuzzle = {
 const props = () => ({ state: studio(), dispatch: vi.fn(), user, existing: null, onClose: vi.fn(), onChanged: vi.fn() });
 
 beforeEach(() => {
+  origin.value = "https://preview.example";
   account.fetchProfile.mockResolvedValue({ user_id: "u1", username: "ada", display_name: null });
   community.fetchPublisher.mockResolvedValue(publisher);
   community.publishPuzzle.mockReset();
@@ -78,8 +82,22 @@ describe("PublishDialog", () => {
     const input = community.publishPuzzle.mock.calls[0][0];
     expect(input).toMatchObject({ studioId: "p-1", title: "Farm", difficulty: "medium", lang: "en" });
     expect(input.snapshot.author).toBe("ada");
-    expect(screen.getByText(/\/puzzles\/abcdefgh$/)).toBeTruthy();
+    expect(screen.getByText("https://preview.example/puzzles/abcdefgh")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /View puzzle/ }).getAttribute("href")).toBe("https://preview.example/puzzles/abcdefgh");
     expect(p.onChanged).toHaveBeenCalled();
+  });
+
+  it("in the apps, shows the public link and opens the puzzle in place", async () => {
+    origin.value = "https://crosswordclash.com";
+    community.publishPuzzle.mockResolvedValue({ id: "row-1", shortId: "abcdefgh", version: 1 });
+    const onViewPuzzle = vi.fn();
+    render(<PublishDialog {...props()} onViewPuzzle={onViewPuzzle} />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Publish$/ }));
+    await screen.findByText(/Your puzzle is live/);
+    expect(screen.getByText("https://crosswordclash.com/puzzles/abcdefgh")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /View puzzle/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /View puzzle/ }));
+    expect(onViewPuzzle).toHaveBeenCalledWith("abcdefgh");
   });
 
   it("lists what is wrong and keeps Publish disabled", async () => {

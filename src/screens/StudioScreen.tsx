@@ -27,7 +27,7 @@ import { normalizeEntry } from "../lib/seedgrid/dictionary";
 import { toIpuz, toTransferPuzzle, type ClueSet } from "../lib/seedgrid/ipuz";
 import { toPuz } from "../lib/seedgrid/puz";
 import { communityEnabled } from "../lib/community";
-import { fetchMyPuzzles, type CommunityPuzzle } from "../lib/communityPuzzles";
+import { fetchMyPuzzles, puzzlePath, type CommunityPuzzle } from "../lib/communityPuzzles";
 import { exportNatively, nativeExportAvailable } from "../lib/nativeExport";
 import { studioAdminPanelsAllowed } from "../lib/studioGate";
 import { PublishDialog } from "../components/Studio/PublishDialog";
@@ -713,7 +713,17 @@ export function StudioScreen() {
         </>
       )}
       {publishOpen && (
-        <PublishDialog state={state} dispatch={dispatch} user={account.user} existing={published[state.id] ?? null} onClose={() => setPublishOpen(false)} onChanged={refreshPublished} />
+        <PublishDialog state={state} dispatch={dispatch} user={account.user} existing={published[state.id] ?? null} onClose={() => setPublishOpen(false)}
+          onChanged={refreshPublished}
+          onViewPuzzle={
+            Capacitor.isNativePlatform()
+              ? (shortId) => {
+                  fileCurrent();
+                  navigate(puzzlePath(shortId));
+                }
+              : undefined
+          }
+        />
       )}
     </PageShell>
   );

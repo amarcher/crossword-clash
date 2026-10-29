@@ -26,6 +26,7 @@ import {
 } from "../../lib/communityPuzzles";
 import { knownPublishedIndex, prefetchDailyIndex } from "../../lib/dailyIndex";
 import { dayKey } from "../../lib/soloStats";
+import { shareOrigin } from "../../lib/shareOrigin";
 import { LEGAL_CONTACT_EMAIL } from "../../screens/legal/legalContent";
 import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
 import type { StudioAction, StudioState } from "../../lib/seedgrid/studioState";
@@ -41,6 +42,11 @@ interface PublishDialogProps {
   onClose: () => void;
   /** After a publish, update or unpublish: the studio refetches its rows. */
   onChanged: () => void;
+  /**
+   * Opens the published puzzle's page inside this app. Given in the apps, where a new tab has
+   * nowhere to go; without it "View puzzle" opens the page in a new tab.
+   */
+  onViewPuzzle?: (shortId: string) => void;
 }
 
 const INPUT =
@@ -66,8 +72,8 @@ const REFUSALS: Record<CommunityErrorKind, string> = {
 
 const uiLang = (): CommunityLang => (i18n.language?.startsWith("es") ? "es" : "en");
 
-/** The puzzle's page on this site. */
-export const puzzleUrl = (shortId: string) => `${window.location.origin}${puzzlePath(shortId)}`;
+/** The puzzle's public page: the site's address even in the apps, whose own origin is local to the device. */
+export const puzzleUrl = (shortId: string) => `${shareOrigin()}${puzzlePath(shortId)}`;
 
 /**
  * Publish (or update, or unpublish) the open studio puzzle to the community
@@ -77,7 +83,7 @@ export const puzzleUrl = (shortId: string) => `${window.location.origin}${puzzle
  * checks (publishProblems) run here before the button enables; the server
  * holds the limits and the duplicate rule.
  */
-export function PublishDialog({ state, dispatch, user, existing, onClose, onChanged }: PublishDialogProps) {
+export function PublishDialog({ state, dispatch, user, existing, onClose, onChanged, onViewPuzzle }: PublishDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const handleEscape = useCallback(() => onClose(), [onClose]);
@@ -212,9 +218,15 @@ export function PublishDialog({ state, dispatch, user, existing, onClose, onChan
           <Button variant="soft" onClick={() => copyLink(result.shortId)}>
             {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />} {copied ? "Copied" : "Copy link"}
           </Button>
-          <a href={url} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-brand-700 hover:bg-surface-sunken">
-            <ExternalLink className="size-4" aria-hidden="true" /> View puzzle
-          </a>
+          {onViewPuzzle ? (
+            <Button variant="ghost" onClick={() => onViewPuzzle(result.shortId)}>
+              <ExternalLink className="size-4" aria-hidden="true" /> View puzzle
+            </Button>
+          ) : (
+            <a href={url} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-brand-700 hover:bg-surface-sunken">
+              <ExternalLink className="size-4" aria-hidden="true" /> View puzzle
+            </a>
+          )}
           <Button variant="secondary" className="ml-auto" onClick={onClose}>
             Done
           </Button>
