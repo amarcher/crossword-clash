@@ -13,8 +13,11 @@ interface TitleProps {
 
 // Comp aspect of the animation (see crossword-lottie/scripts/build-crossword-logo.mjs).
 // Two rows of crossword cells — wide and short — sized by width so it scales
-// down on narrow screens.
-const ANIM_BOX = { width: "min(92vw, 600px)", aspectRatio: "1222 / 326" } as const;
+// down on narrow screens. The width is the column's, never the viewport's: in
+// the apps `#root` pads the safe-area insets, and on the iPhone Duo's outer
+// screen the camera and status bar take a strip down the right edge, so a
+// `vw` width ran under the clock and cut off the final D.
+const ANIM_BOX = { width: "min(100%, 600px)", aspectRatio: "1222 / 326" } as const;
 // The wordmark's width inside the comp: 2292 of 2444 (= 1222 × 2) units.
 const STILL_WIDTH = { width: `${((2292 / 2444) * 100).toFixed(3)}%` } as const;
 
