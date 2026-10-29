@@ -1,0 +1,5 @@
+This update (1.1.0, build 20) is the first app build with community puzzles, and the studio gets the touch moves you asked for.
+
+1. Menu: "Community puzzles" is back in the Solve-on-your-own list, and "Build a crossword" sits right under it. Browse, play and race a community puzzle; in the studio, Publish is under More.
+2. Studio grid: hold a square for a menu with black / white, across / down and "Words for …" (which opens the Words tab on that entry). Typing a letter on a black square turns it white and writes the letter; its mirror square opens too. The menu from the right-hand column should open leftwards, fully on screen, and a tap right after a long press should still work.
+3. Everything from build 19 still applies: the studio for Plus subscribers with the one-time word list download, Play test in the app, Export through the share sheet.
