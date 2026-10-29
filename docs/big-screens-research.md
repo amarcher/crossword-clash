@@ -38,12 +38,22 @@ reflows. No measurements are taken at mount that would break on resize.
 
 ## Quick fixes (small, high value)
 
-1. **Build with Xcode 27.1.** This Mac has Xcode 26.6, so every build so far,
-   build 20 included, runs letterboxed at phone size on the Duo's inner
-   screen. CNN described unoptimized apps there as "a blown-up phone app".
-   Rebuilding with the iOS 27.1 SDK makes the app edge to edge with no code
-   change. Then test the Duo simulator in Xcode 27.1's Device Hub. Once built
-   with 27.1, **Duo screenshots are required from April 2027**.
+1. **Done (2026-10-29): build with Xcode 27.1.** Xcode 27.1 (27A9275, iOS 27.1
+   SDK) is now this Mac's active Xcode. Builds up to 21 were made with 26.6 and
+   run letterboxed at phone size on the Duo's inner screen (CNN called
+   unoptimized apps there "a blown-up phone app"); build 22 on is linked
+   against the 27.1 SDK, which makes the app edge to edge with no code change.
+   No Info.plist change was needed: no `UIRequiresFullScreen`,
+   `TARGETED_DEVICE_FAMILY = "1,2"`, all four iPad orientations. Checked on the
+   iPhone Duo simulator (iOS 27.1 runtime, outer screen, 466×678 pt): the app
+   fills the screen. The outer screen puts the camera and status bar in a strip
+   down the right edge, which `.native-app #root` pads out like any inset; the
+   one thing that ignored it was the menu wordmark, sized `92vw`, whose final D
+   ran under the clock. It is now sized by its column (`Title.tsx`). The menu
+   and the play screen (grid, clue bar, in-app keyboard) fit with nothing cut
+   off. The inner (unfolded) screen was not checked: the simulator control
+   used here has no fold action. **Duo screenshots are required from April
+   2027** for builds made with 27.1.
 2. **Done (`claude/big-screen-fixes`): hide the in-app keyboard when a hardware keyboard is in use.** Use "last
    input modality": a physical keypress hides `PuzzleKeyboard`, a touch on the
    grid brings it back, and the choice is remembered per device. This hands
@@ -60,9 +70,10 @@ reflows. No measurements are taken at mount that would break on resize.
 5. **Done: keep the TV / host screen awake** with the Screen Wake Lock API, or a
    keep-awake plugin in the apps. A tablet propped up as the scoreboard
    currently dims and locks.
-6. **Remove the stale `classics` screenshots** from both App Store sets
-   (`docs/app-store/screenshots/*/0?-classics.png`). The classic library was
-   removed today.
+6. **Done (2026-10-29): removed the stale `classics` screenshots** from both
+   App Store sets (the classic library was removed on 2026-10-28); the iPhone
+   set's finish screenshot is now `05-complete.png`. App Store Connect keeps
+   whatever was uploaded, so delete them there too.
 
 ## Layout work (medium)
 
