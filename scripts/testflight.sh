@@ -17,6 +17,17 @@ if [[ "$(uname)" != "Darwin" ]]; then
 fi
 command -v xcodebuild >/dev/null || { echo "testflight: xcodebuild not found; install Xcode." >&2; exit 1; }
 
+# The web build bakes feature switches in from .env.local; an app built
+# without one ships with that feature silently missing (builds 11–19 had no
+# community puzzles and no Publish because VITE_COMMUNITY was never set here).
+# Keep this list equal to the switches production (Vercel) has on.
+for flag in VITE_PLUS VITE_COMMUNITY; do
+  if ! grep -q "^${flag}=1" .env.local 2>/dev/null; then
+    echo "testflight: .env.local must set ${flag}=1 (production has it on); refusing to build an app without it." >&2
+    exit 1
+  fi
+done
+
 sync=1 plist=ios/ExportOptions-TestFlight-Upload.plist what=upload
 for arg in "$@"; do
   case "$arg" in
