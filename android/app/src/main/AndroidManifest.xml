@@ -26,7 +26,7 @@
 
         <activity android:name=".NytImportActivity" android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|uiMode"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|uiMode|density"
             android:windowSoftInputMode="adjustResize" />
 
         <provider

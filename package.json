@@ -36,6 +36,7 @@
     "stripe:portal-config": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/stripe-portal-config.mts"
   },
   "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
     "@capacitor/android": "^8.5.1",
     "@capacitor/core": "^8.5.1",
     "@capacitor/filesystem": "8.1.5",

@@ -407,7 +407,8 @@
     "label": "Teclado de crucigrama",
     "switchDirection": "Cambiar horizontal / vertical",
     "delete": "Borrar letra",
-    "backToPuzzle": "Volver al crucigrama"
+    "backToPuzzle": "Volver al crucigrama",
+    "show": "Mostrar teclado"
   },
   "spectator": {
     "join": "Unirse como TV",

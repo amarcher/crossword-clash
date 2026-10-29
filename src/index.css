@@ -169,10 +169,34 @@
 .puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
 .puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }
 .puzzle-key:disabled { opacity: .45; }
+/* A physical keyboard is in use: the in-app keys give way to one button that brings them back. */
+.native-keyboard-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 6px 12px max(6px, env(safe-area-inset-bottom));
+}
+.native-keyboard-toggle > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 0 #a4aab3;
+  touch-action: manipulation;
+}
+.native-keyboard-toggle > button:active { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
+.native-keyboard-toggle > button:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: 2px; }
 .native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
 .native-clue-sheet ul { overscroll-behavior: contain; }
 @media (min-width: 768px) {
   .native-game-clues { display: block; width: clamp(220px, 28vw, 380px); padding: 12px; min-height: 0; overflow: hidden; }
+  /* With the clue list on screen and a physical keyboard (Tab, Space, arrows), the clue bar only repeats the list. */
+  .native-game-layout[data-keyboard="hardware"] .native-clue-bar { display: none; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   .native-game-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); grid-template-rows: auto minmax(0, 1fr); }
@@ -180,6 +204,7 @@
   .native-game-main { padding-bottom: env(safe-area-inset-bottom); }
   .native-game-clues { display: none; }
   .native-game-controls { align-self: end; }
+  .native-game-layout[data-keyboard="hardware"] .native-clue-bar { display: flex; }
   .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
   .puzzle-key { height: 44px; }
 }

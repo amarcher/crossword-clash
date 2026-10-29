@@ -6,6 +6,7 @@ import { TVBrand } from "../../components/Layout/TVBrand";
 import { TVSegmented } from "../../components/Layout/TVSegmented";
 import { buttonClass } from "../../components/ui";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
+import { useKeepAwake } from "../../lib/keepAwake";
 import { useHostContext } from "../../layouts/HostLayout";
 import { WRONG_ANSWER_TIMEOUT_OPTIONS } from "../../lib/gameSettings";
 
@@ -15,6 +16,8 @@ export function HostLobbyScreen() {
   const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom } = host;
 
   useBeforeUnload(true);
+  // A shared screen nobody touches: keep it from dimming while players join.
+  useKeepAwake(true);
 
   if (!host.puzzle) return <Navigate to="/host" replace />;
 
