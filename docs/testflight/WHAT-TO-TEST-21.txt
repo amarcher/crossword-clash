@@ -1,0 +1,6 @@
+This update (1.1.0, build 21) adds an Autocheck setting to solo play.
+
+1. Open a daily puzzle solo. Autocheck is on by default and works as before: a wrong letter is refused.
+2. Turn Autocheck off (the switch is under the scoreboard in the clue sheet on a phone). Now any letter is accepted and nothing tells you which are wrong. Fill the grid with a mistake in it: a notice says how many squares aren't right, with Check puzzle, Check word and Reveal square. Fix the squares and the puzzle completes as usual.
+3. A finish that used Reveal says "Solved with reveals" and does not count for a best time, a streak or the leaderboard. A clean finish without autocheck posts to the leaderboard with a "No autocheck" chip.
+4. Everything from build 20 still applies: community puzzles and Publish, the studio and its long-press menu, "Build a crossword" on the menu.
