@@ -1,4 +1,4 @@
-import { memo, useEffect, useId, useMemo, useState } from "react";
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { slotsOf, type Grid } from "../../lib/seedgrid/grid";
 import { heatLevel } from "../../lib/seedgrid/studioState";
 import { useHiddenGridInput, type HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
@@ -15,9 +15,17 @@ interface StudioGridProps {
   onToggleBlock: (cell: number) => void;
   /** Right-click menu: switch between writing across and down. */
   onToggleDirection: () => void;
+  /** Menu: show the candidate words for the entry through this square in that direction (the phone layout opens its Words tab). */
+  onShowWords: (cell: number, direction: "across" | "down") => void;
   /** Keyboard handlers for the hidden input (letters, erase, arrows, space, "."). */
   input: HiddenGridInputHandlers;
 }
+
+/** A touch held this long on a square opens the menu (the right-click of a phone). */
+export const LONG_PRESS_MS = 450;
+const LONG_PRESS_SLOP_PX = 8;
+/** How long after a long press a click on the pressed square is taken as its release, not a new tap. */
+export const PRESS_CLICK_GRACE_MS = 400;
 
 const MENU_ITEM =
   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink hover:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none";
@@ -40,9 +48,21 @@ const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle",
  * (black square on / off, across / down), because "." was the only way to
  * place a block and nobody found it.
  */
-export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, onToggleBlock, onToggleDirection, input }: StudioGridProps) {
+export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, onToggleBlock, onToggleDirection, onShowWords, input }: StudioGridProps) {
   const gridId = useId();
-  const [menu, setMenu] = useState<{ cell: number; x: number; y: number } | null>(null);
+  // x / y are the press point inside the grid shell; `flip` opens the menu
+  // leftwards when the press is in the right half, so a press near the right
+  // edge (a phone's thumb lives there) never puts the menu off-screen.
+  const [menu, setMenu] = useState<{ cell: number; x: number; y: number; flip: boolean } | null>(null);
+  // Long-press bookkeeping: the timer, where the touch started, and whether a
+  // press just opened the menu (so the click that follows a release does not
+  // immediately close it or pull the keyboard up).
+  const press = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const pressedRef = useRef(false);
+  const cancelPress = () => {
+    if (press.current) window.clearTimeout(press.current.timer);
+    press.current = null;
+  };
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -56,13 +76,57 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
       document.removeEventListener("keydown", onKey);
     };
   }, [menu]);
+  const showMenu = (cell: number, target: HTMLElement, clientX: number, clientY: number) => {
+    onSelect(cell);
+    const box = (target.closest(".grid-shell") as HTMLElement | null)?.getBoundingClientRect();
+    const x = clientX - (box?.left ?? 0);
+    setMenu({ cell, x, y: clientY - (box?.top ?? 0), flip: !!box && x > box.width / 2 });
+  };
   const openMenu = (cell: number) => (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    onSelect(cell);
-    const shell = e.currentTarget.closest(".grid-shell") as HTMLElement | null;
-    const box = shell?.getBoundingClientRect();
-    setMenu({ cell, x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) });
+    showMenu(cell, e.currentTarget, e.clientX, e.clientY);
   };
+  // Touch and pen: hold a square to open the same menu (iOS fires no
+  // contextmenu for a long press, and its callout is turned off in CSS).
+  const pressStart = (cell: number) => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse") return;
+    cancelPress();
+    const target = e.currentTarget;
+    const { clientX, clientY } = e;
+    press.current = {
+      x: clientX,
+      y: clientY,
+      timer: window.setTimeout(() => {
+        press.current = null;
+        // Swallow the click that may follow the release — and only that one:
+        // iOS sends no click after a long press, so the flag must expire or
+        // it would eat the next real tap on a square.
+        pressedRef.current = true;
+        window.setTimeout(() => {
+          pressedRef.current = false;
+        }, PRESS_CLICK_GRACE_MS);
+        showMenu(cell, target, clientX, clientY);
+      }, LONG_PRESS_MS),
+    };
+  };
+  const pressMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (press.current && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > LONG_PRESS_SLOP_PX) cancelPress();
+  };
+  const cellClick = (i: number) => () => {
+    if (pressedRef.current) {
+      // The release after a long press: the menu is up, leave it.
+      pressedRef.current = false;
+      return;
+    }
+    onSelect(i);
+    focus();
+  };
+  const wordItems = useMemo(() => {
+    if (!menu || grid.cells[menu.cell] === "#") return [];
+    return slotsOf(grid)
+      .filter((s) => s.cells.includes(menu.cell))
+      .map((s) => ({ dir: s.dir, label: `Words for ${s.number} ${s.dir === "across" ? "Across" : "Down"}` }));
+  }, [menu, grid]);
   const cellId = (i: number) => `${gridId}-${i}`;
   const { inputProps, focus } = useHiddenGridInput(input, {
     label: "Grid entry",
@@ -85,7 +149,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
         id={gridId}
         role="grid"
         aria-label="Puzzle grid"
-        className="grid gap-px overflow-hidden rounded-lg border-2 border-ink bg-ink select-none touch-manipulation"
+        className="grid gap-px overflow-hidden rounded-lg border-2 border-ink bg-ink select-none touch-manipulation [-webkit-touch-callout:none]"
         style={{ gridTemplateColumns: `repeat(${w}, minmax(0, 1fr))` }}
       >
         {grid.cells.map((cell, i) => {
@@ -102,11 +166,12 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
                 aria-label={`${place(i)}, block`}
                 aria-selected={isCursor}
                 className={`relative aspect-square bg-ink cursor-pointer ${isCursor ? "outline-3 -outline-offset-3 outline-gold-400" : ""}`}
-                onClick={() => {
-                  onSelect(i);
-                  focus();
-                }}
+                onClick={cellClick(i)}
                 onContextMenu={openMenu(i)}
+                onPointerDown={pressStart(i)}
+                onPointerMove={pressMove}
+                onPointerUp={cancelPress}
+                onPointerCancel={cancelPress}
               >
                 {isCursor && (
                   // "You are here" only: a direction glyph on a block meant
@@ -144,11 +209,12 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
               aria-label={parts.join(", ")}
               aria-selected={isCursor}
               className={`relative aspect-square flex items-center justify-center ${bg} cursor-pointer`}
-              onClick={() => {
-                onSelect(i);
-                focus();
-              }}
+              onClick={cellClick(i)}
               onContextMenu={openMenu(i)}
+              onPointerDown={pressStart(i)}
+              onPointerMove={pressMove}
+              onPointerUp={cancelPress}
+              onPointerCancel={cancelPress}
             >
               {numbers.has(i) && (
                 <span
@@ -178,7 +244,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           role="menu"
           aria-label="Square"
           className="absolute z-20 min-w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-overlay"
-          style={{ left: Math.max(0, menu.x - 8), top: menu.y + 4 }}
+          style={menu.flip ? { right: `calc(100% - ${menu.x + 8}px)`, top: menu.y + 4 } : { left: Math.max(0, menu.x - 8), top: menu.y + 4 }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
@@ -205,6 +271,20 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           >
             {direction === "across" ? "Write down ▾" : "Write across ▸"}
           </button>
+          {wordItems.map((item) => (
+            <button
+              key={item.dir}
+              type="button"
+              role="menuitem"
+              className={MENU_ITEM}
+              onClick={() => {
+                onShowWords(menu.cell, item.dir);
+                setMenu(null);
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
-import { StudioGrid } from "./StudioGrid";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import { LONG_PRESS_MS, PRESS_CLICK_GRACE_MS, StudioGrid } from "./StudioGrid";
 import { gridFromRows } from "../../lib/seedgrid/grid";
 import type { HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
 
@@ -17,11 +17,12 @@ const grid = gridFromRows(["CAT..", "A..U.", ".#..N", "..R..", "....S"]);
 function renderGrid(cursor: number, direction: "across" | "down" = "across", handlers = input()) {
   const onToggleBlock = vi.fn();
   const onToggleDirection = vi.fn();
+  const onShowWords = vi.fn();
   const onSelect = vi.fn();
   const utils = render(
-    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={onSelect} onToggleBlock={onToggleBlock} onToggleDirection={onToggleDirection} input={handlers} />,
+    <StudioGrid grid={grid} cursor={cursor} direction={direction} activeCells={[0, 1, 2]} onSelect={onSelect} onToggleBlock={onToggleBlock} onToggleDirection={onToggleDirection} onShowWords={onShowWords} input={handlers} />,
   );
-  return { ...utils, handlers, onToggleBlock, onToggleDirection, onSelect, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
+  return { ...utils, handlers, onToggleBlock, onToggleDirection, onShowWords, onSelect, hidden: screen.getByLabelText("Grid entry") as HTMLInputElement };
 }
 
 describe("StudioGrid block cursor", () => {
@@ -62,6 +63,95 @@ describe("StudioGrid right-click menu", () => {
     expect(onToggleDirection).toHaveBeenCalled();
     expect(onToggleBlock).not.toHaveBeenCalled();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("lists the entries through the square and hands one to onShowWords", () => {
+    const { onShowWords } = renderGrid(0);
+    // Row 1, Column 1 ("C") starts 1 Across and 1 Down.
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Words for 1 Down" }));
+    expect(onShowWords).toHaveBeenCalledWith(0, "down");
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("opens on a long press with a finger, and the release does not close it or select again", () => {
+    vi.useFakeTimers();
+    try {
+      const { onSelect } = renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      expect(screen.getByRole("menu", { name: "Square" })).toBeTruthy();
+      expect(onSelect).toHaveBeenCalledWith(3);
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      fireEvent.click(cell);
+      expect(screen.getByRole("menu")).toBeTruthy();
+      expect(onSelect).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("takes a tap after the grace period as a real tap again (iOS sends no click after a long press)", () => {
+    vi.useFakeTimers();
+    try {
+      const { onSelect } = renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      act(() => {
+        vi.advanceTimersByTime(PRESS_CLICK_GRACE_MS + 10);
+      });
+      fireEvent.keyDown(document, { key: "Escape" });
+      fireEvent.click(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }));
+      expect(onSelect).toHaveBeenLastCalledWith(0);
+      expect(onSelect).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not open on a short tap or a drag", () => {
+    vi.useFakeTimers();
+    try {
+      renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS / 2);
+      });
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS);
+      });
+      expect(screen.queryByRole("menu")).toBeNull();
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      fireEvent.pointerMove(cell, { pointerType: "touch", clientX: 80, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      expect(screen.queryByRole("menu")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens leftwards from a press in the right half of the grid, so it stays on screen", () => {
+    renderGrid(0);
+    const shell = document.querySelector(".grid-shell") as HTMLElement;
+    shell.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 300, right: 300, bottom: 300, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 5/ }), { clientX: 280, clientY: 30 });
+    const menu = screen.getByRole("menu", { name: "Square" });
+    expect(menu.style.right).toBe("calc(100% - 288px)");
+    expect(menu.style.left).toBe("");
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }), { clientX: 20, clientY: 30 });
+    expect(screen.getByRole("menu").style.left).toBe("12px");
   });
 
   it("closes on Escape", () => {

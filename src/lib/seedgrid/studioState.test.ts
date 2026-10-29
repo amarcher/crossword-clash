@@ -41,9 +41,21 @@ describe("studio state", () => {
     // By keyboard as well: walk onto a black and toggle it.
     s = run(s, { type: "TOGGLE_BLOCK", cell: 13 }, { type: "SELECT", cell: 11 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "TOGGLE_BLOCK" });
     expect(s.grid.cells[13]).toBe("");
-    // Typing on a black does nothing.
+    // Typing on a black opens it, its mirror partner too, and lands the letter.
     s = run(s, { type: "TOGGLE_BLOCK" }, { type: "TYPE", letter: "a" });
-    expect(s.grid.cells[13]).toBe("#");
+    expect(s.grid.cells[13]).toBe("A");
+    expect(s.grid.locked[13]).toBe(true);
+    expect(s.grid.cells[11]).toBe("");
+    expect(s.grid.cells.every((c) => c !== "#")).toBe(true);
+  });
+
+  it("SET_DIR sets the writing direction without toggling", () => {
+    let s = run(initialStudioState(5), { type: "SET_DIR", dir: "down" });
+    expect(s.dir).toBe("down");
+    s = run(s, { type: "SET_DIR", dir: "down" });
+    expect(s.dir).toBe("down");
+    s = run(s, { type: "SET_DIR", dir: "across" });
+    expect(s.dir).toBe("across");
   });
 
   it("finds complete entries that repeat a word", () => {
