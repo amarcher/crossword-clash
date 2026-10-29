@@ -119,6 +119,19 @@ describe("StudioGrid right-click menu", () => {
     }
   });
 
+  it("opens leftwards from a press in the right half of the grid, so it stays on screen", () => {
+    renderGrid(0);
+    const shell = document.querySelector(".grid-shell") as HTMLElement;
+    shell.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 300, right: 300, bottom: 300, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 5/ }), { clientX: 280, clientY: 30 });
+    const menu = screen.getByRole("menu", { name: "Square" });
+    expect(menu.style.right).toBe("calc(100% - 288px)");
+    expect(menu.style.left).toBe("");
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }), { clientX: 20, clientY: 30 });
+    expect(screen.getByRole("menu").style.left).toBe("12px");
+  });
+
   it("closes on Escape", () => {
     renderGrid(0);
     fireEvent.contextMenu(screen.getByRole("gridcell", { name: /^Row 1, Column 4/ }));

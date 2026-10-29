@@ -48,7 +48,10 @@ const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle",
  */
 export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, onToggleBlock, onToggleDirection, onShowWords, input }: StudioGridProps) {
   const gridId = useId();
-  const [menu, setMenu] = useState<{ cell: number; x: number; y: number } | null>(null);
+  // x / y are the press point inside the grid shell; `flip` opens the menu
+  // leftwards when the press is in the right half, so a press near the right
+  // edge (a phone's thumb lives there) never puts the menu off-screen.
+  const [menu, setMenu] = useState<{ cell: number; x: number; y: number; flip: boolean } | null>(null);
   // Long-press bookkeeping: the timer, where the touch started, and whether a
   // press just opened the menu (so the click that follows a release does not
   // immediately close it or pull the keyboard up).
@@ -74,7 +77,8 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
   const showMenu = (cell: number, target: HTMLElement, clientX: number, clientY: number) => {
     onSelect(cell);
     const box = (target.closest(".grid-shell") as HTMLElement | null)?.getBoundingClientRect();
-    setMenu({ cell, x: clientX - (box?.left ?? 0), y: clientY - (box?.top ?? 0) });
+    const x = clientX - (box?.left ?? 0);
+    setMenu({ cell, x, y: clientY - (box?.top ?? 0), flip: !!box && x > box.width / 2 });
   };
   const openMenu = (cell: number) => (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -232,7 +236,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           role="menu"
           aria-label="Square"
           className="absolute z-20 min-w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-overlay"
-          style={{ left: Math.max(0, menu.x - 8), top: menu.y + 4 }}
+          style={menu.flip ? { right: `calc(100% - ${menu.x + 8}px)`, top: menu.y + 4 } : { left: Math.max(0, menu.x - 8), top: menu.y + 4 }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
