@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
-import { LONG_PRESS_MS, StudioGrid } from "./StudioGrid";
+import { LONG_PRESS_MS, PRESS_CLICK_GRACE_MS, StudioGrid } from "./StudioGrid";
 import { gridFromRows } from "../../lib/seedgrid/grid";
 import type { HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
 
@@ -89,6 +89,28 @@ describe("StudioGrid right-click menu", () => {
       fireEvent.click(cell);
       expect(screen.getByRole("menu")).toBeTruthy();
       expect(onSelect).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("takes a tap after the grace period as a real tap again (iOS sends no click after a long press)", () => {
+    vi.useFakeTimers();
+    try {
+      const { onSelect } = renderGrid(0);
+      const cell = screen.getByRole("gridcell", { name: /^Row 1, Column 4/ });
+      fireEvent.pointerDown(cell, { pointerType: "touch", clientX: 50, clientY: 50 });
+      act(() => {
+        vi.advanceTimersByTime(LONG_PRESS_MS + 10);
+      });
+      fireEvent.pointerUp(cell, { pointerType: "touch" });
+      act(() => {
+        vi.advanceTimersByTime(PRESS_CLICK_GRACE_MS + 10);
+      });
+      fireEvent.keyDown(document, { key: "Escape" });
+      fireEvent.click(screen.getByRole("gridcell", { name: /^Row 1, Column 1/ }));
+      expect(onSelect).toHaveBeenLastCalledWith(0);
+      expect(onSelect).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();
     }

@@ -24,6 +24,8 @@ interface StudioGridProps {
 /** A touch held this long on a square opens the menu (the right-click of a phone). */
 export const LONG_PRESS_MS = 450;
 const LONG_PRESS_SLOP_PX = 8;
+/** How long after a long press a click on the pressed square is taken as its release, not a new tap. */
+export const PRESS_CLICK_GRACE_MS = 400;
 
 const MENU_ITEM =
   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink hover:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none";
@@ -96,7 +98,13 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
       y: clientY,
       timer: window.setTimeout(() => {
         press.current = null;
+        // Swallow the click that may follow the release — and only that one:
+        // iOS sends no click after a long press, so the flag must expire or
+        // it would eat the next real tap on a square.
         pressedRef.current = true;
+        window.setTimeout(() => {
+          pressedRef.current = false;
+        }, PRESS_CLICK_GRACE_MS);
         showMenu(cell, target, clientX, clientY);
       }, LONG_PRESS_MS),
     };
