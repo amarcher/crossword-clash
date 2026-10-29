@@ -13,11 +13,12 @@ import { useSyncExternalStore } from "react";
  */
 export const HARDWARE_KEYBOARD_KEY = "crossword-clash:hardware-keyboard";
 
-const PHYSICAL_KEYS = new Set(["Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-
 /**
  * A key press that came from a physical keyboard aimed at the grid: a letter
- * or a navigation key, with nothing focused that takes text. Presses into a
+ * or Backspace, with nothing focused that takes text. Arrows and Tab are left
+ * out on purpose: game-controller D-pads, page-turner pedals, clickers and
+ * Switch Control send those too, and switching the in-app keys off for one of
+ * them would leave the player with no way to type letters. Presses into a
  * text field are skipped because an OS keyboard types there too, and so are
  * IME/"Unidentified" keys (Android soft keyboards report those).
  */
@@ -25,7 +26,7 @@ export function isPhysicalGridKey(e: Pick<KeyboardEvent, "key" | "isComposing" |
   if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return false;
   const target = e.target instanceof Element ? e.target : null;
   if (target?.closest('input, textarea, select, [contenteditable="true"]')) return false;
-  return /^[a-zA-Z]$/.test(e.key) || PHYSICAL_KEYS.has(e.key);
+  return /^[a-zA-Z]$/.test(e.key) || e.key === "Backspace";
 }
 
 function read(): boolean {

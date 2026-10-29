@@ -50,6 +50,19 @@ describe("keepScreenAwake on the web", () => {
     release();
   });
 
+  it("sends one request at a time, so a hide and show while it is pending leaks no lock", async () => {
+    const { request, sentinels } = fakeWakeLock();
+    const release = keepScreenAwake();
+    visibility = "hidden";
+    document.dispatchEvent(new Event("visibilitychange"));
+    visibility = "visible";
+    document.dispatchEvent(new Event("visibilitychange"));
+    await flush();
+    expect(request).toHaveBeenCalledTimes(1);
+    release();
+    expect(sentinels.every((s) => s.release.mock.calls.length === 1)).toBe(true);
+  });
+
   it("does nothing where the API is missing or refuses", async () => {
     expect(() => keepScreenAwake()()).not.toThrow();
     Object.defineProperty(navigator, "wakeLock", { value: { request: vi.fn(async () => { throw new Error("NotAllowed"); }) }, configurable: true });

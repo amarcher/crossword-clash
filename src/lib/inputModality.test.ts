@@ -23,9 +23,15 @@ afterEach(() => {
 });
 
 describe("isPhysicalGridKey", () => {
-  it("takes letters and the grid's navigation keys", () => {
-    for (const k of ["a", "Z", "Backspace", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+  it("takes letters and Backspace", () => {
+    for (const k of ["a", "Z", "Backspace"]) {
       expect(isPhysicalGridKey(key({ key: k }))).toBe(true);
+    }
+  });
+
+  it("leaves arrows and Tab alone, since D-pads, pedals and Switch Control send them too", () => {
+    for (const k of ["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+      expect(isPhysicalGridKey(key({ key: k }))).toBe(false);
     }
   });
 

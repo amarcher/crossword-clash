@@ -54,9 +54,13 @@ function nativeKeepAwake(): () => void {
 function webKeepAwake(): () => void {
   if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return () => {};
   let sentinel: WakeLockSentinel | null = null;
+  // One request at a time: a hide/show while the first is still pending must not
+  // send a second one, or the first lock it grants is overwritten and never released.
+  let pending = false;
   let released = false;
   const acquire = () => {
-    if (released || document.visibilityState !== "visible" || (sentinel && !sentinel.released)) return;
+    if (released || pending || document.visibilityState !== "visible" || (sentinel && !sentinel.released)) return;
+    pending = true;
     navigator.wakeLock
       .request("screen")
       .then((s) => {
@@ -64,7 +68,13 @@ function webKeepAwake(): () => void {
         else sentinel = s;
       })
       // Refused (battery saver, no user activation yet, policy): the screen may dim, nothing else breaks.
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        pending = false;
+        // The page came back while the request was pending and the browser already
+        // dropped what it granted: ask once more.
+        if (!released && sentinel?.released) acquire();
+      });
   };
   const onVisibility = () => acquire();
   document.addEventListener("visibilitychange", onVisibility);
