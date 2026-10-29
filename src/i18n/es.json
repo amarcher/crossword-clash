@@ -54,7 +54,9 @@
     "androidAppSubtitle": "Gratis en Google Play, con un teclado hecho para crucigramas",
     "dailyMidiEyebrow": "Midi del día",
     "communityPuzzles": "Crucigramas de la comunidad",
-    "communityPuzzlesSubtitle": "Crucigramas creados por otros jugadores"
+    "communityPuzzlesSubtitle": "Crucigramas creados por otros jugadores",
+    "buildPuzzle": "Crea un crucigrama",
+    "buildPuzzleSubtitle": "Hazlo tú en el estudio, con ayuda de la IA · Plus"
   },
   "hostName": {
     "heading": "Crear una partida",

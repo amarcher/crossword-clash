@@ -54,7 +54,9 @@
     "androidAppSubtitle": "Free on Google Play, with a keyboard made for crosswords",
     "dailyMidiEyebrow": "Daily Midi",
     "communityPuzzles": "Community puzzles",
-    "communityPuzzlesSubtitle": "Crosswords made by other players"
+    "communityPuzzlesSubtitle": "Crosswords made by other players",
+    "buildPuzzle": "Build a crossword",
+    "buildPuzzleSubtitle": "Make your own in the studio, with AI help · Plus"
   },
   "hostName": {
     "heading": "Host a game",

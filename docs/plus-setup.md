@@ -454,3 +454,6 @@ environments). What is still open is marked below.
 - [x] Resend domain `crosswordclash.com` verified 2026-10-27 (DKIM TXT `resend._domainkey` plus CNAMEs `rsend` and `send` → `*.forge.rmta.net`, added at Squarespace, which holds the zone since Google Domains closed); a test report fired the trigger → `report-alert` → Resend with `{"ok":true}`
 - [x] One real purchase 2026-10-28 (yearly, $24.99 + $1.56 tax, invoice PAOCMNW5-0001): both webhooks delivered, row active, portal opened with the Plus configuration; cancelled and refunded in full, `customer.subscription.deleted` expired the row; the owner's row was then turned into a permanent `grant`. It also found the tax-mode bug fixed in PR #146 (`customer_update` sent for a first-time buyer)
 - [ ] App build 19 (after the studio-on-phones PR merges): `pnpm mobile:sync` with `VITE_PLUS=1`, bump the build numbers to 19, TestFlight, then both store submissions; the review notes should say where AI-drafted clues are moderated (§3.6, "Build 19")
+
+
+**Build 20 (2026-10-28):** the first app build with community puzzles and Publish — `VITE_COMMUNITY=1` had never been in `.env.local`, so builds 11–19 lacked them; `scripts/testflight.sh` now refuses to build without the production switches. The menu gains a "Build a crossword" row.

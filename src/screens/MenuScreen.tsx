@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { CalendarDays, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
+import { CalendarDays, Flame, Hash, Newspaper, PencilRuler, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
@@ -13,6 +13,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { communityEnabled } from "../lib/community";
+import { studioRouteEnabled } from "../lib/studioGate";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
@@ -330,6 +331,18 @@ export function MenuScreen() {
                   title={t("menu.communityPuzzles")}
                   subtitle={t("menu.communityPuzzlesSubtitle")}
                   onClick={() => track("mode_selected", { mode: "community" })}
+                />
+              )}
+              {/* The studio on the home screen, not only behind the avatar menu
+                  (owner's note on build 19); the gate at /studio handles sign-in
+                  and the Plus pitch, so the row shows wherever the route exists. */}
+              {studioRouteEnabled() && (
+                <ListRow
+                  icon={PencilRuler}
+                  to="/studio"
+                  title={t("menu.buildPuzzle")}
+                  subtitle={t("menu.buildPuzzleSubtitle")}
+                  onClick={() => track("mode_selected", { mode: "studio" })}
                 />
               )}
               {nativeNyt && (
