@@ -17,6 +17,17 @@ if [[ "$(uname)" != "Darwin" ]]; then
 fi
 command -v xcodebuild >/dev/null || { echo "testflight: xcodebuild not found; install Xcode." >&2; exit 1; }
 
+# The SDK the app is built with decides how it looks on the iPhone Duo: a build
+# from Xcode 26 or earlier runs letterboxed at phone size on the inner screen,
+# one from the iOS 27.1 SDK (Xcode 27.1) fills it, with no code change. Builds
+# up to 21 came from Xcode 26.6; refuse to make another one like them.
+min_xcode=27.1
+xcode=$(xcodebuild -version | sed -n 's/^Xcode \([0-9][0-9.]*\).*/\1/p')
+if [[ -z "$xcode" ]] || [[ "$(printf '%s\n' "$min_xcode" "$xcode" | sort -V | head -1)" != "$min_xcode" ]]; then
+  echo "testflight: Xcode ${xcode:-?} is active; ${min_xcode} or later is needed (full screen on iPhone Duo). Install it, or point xcode-select at it." >&2
+  exit 1
+fi
+
 # The web build bakes feature switches in from .env.local; an app built
 # without one ships with that feature silently missing (builds 11–19 had no
 # community puzzles and no Publish because VITE_COMMUNITY was never set here).
