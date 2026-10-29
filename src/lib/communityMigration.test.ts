@@ -169,3 +169,14 @@ describe("community migration: retention", () => {
     expect(sql).toMatch(/SELECT cron\.schedule\('community-sweep', '\d+ \d+ \* \* \*', \$\$SELECT public\.community_sweep\(\)\$\$\);/);
   });
 });
+
+describe("community short ids", () => {
+  it("calls pgcrypto by its schema in the newest definition: on Supabase it lives in `extensions`, outside the pinned search path", () => {
+    const fix = readFileSync(here("../../supabase/migrations/20261029000000_community_short_id_fix.sql"), "utf8");
+    expect(fix).toContain("CREATE OR REPLACE FUNCTION public.community_short_id()");
+    expect(fix).toContain("extensions.gen_random_bytes(8)");
+    expect(fix).toMatch(/SET search_path = public, pg_temp/);
+    expect(fix).toContain("REVOKE ALL ON FUNCTION public.community_short_id() FROM PUBLIC;");
+  });
+});
+
