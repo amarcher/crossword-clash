@@ -1,7 +1,8 @@
-This update (1.1.0, build 22) fixes two things from build 21 and adds keyboard and TV improvements.
+This update (1.1.0, build 22) is the first built with Xcode 27.1, fixes two things from build 21 and adds keyboard and TV improvements.
 
 1. Publish a puzzle from the studio. The link in the "Published" box now starts with https://crosswordclash.com/puzzles/ (it used to say capacitor://localhost). Copy link copies that address, and View puzzle opens the puzzle's page inside the app. Copy link on a community puzzle's page gives the same kind of link.
 2. On the studio page, tap your profile button at the top. The menu now opens on top of the crossword grid instead of underneath it. The same goes for the profile menu on other pages.
 3. With a hardware keyboard (an iPad keyboard or a Bluetooth keyboard), start a puzzle and type a letter. The on-screen keyboard steps aside for a "Show keyboard" button, and the app remembers that on this device. Tapping the button brings the on-screen keyboard back.
 4. Host a game on the TV view and leave the lobby or the game on screen. The screen should stay on instead of going to sleep.
-5. Everything from build 21 still applies: Autocheck in solo play, community puzzles and Publish, the studio and its long-press menu.
+5. On an iPhone Duo, open the app on the inner screen. It should fill the screen edge to edge instead of running as a phone-sized app with bars around it (every build up to 21 did that). Fold and unfold mid-puzzle: the puzzle should carry on without reloading.
+6. Everything from build 21 still applies: Autocheck in solo play, community puzzles and Publish, the studio and its long-press menu.
