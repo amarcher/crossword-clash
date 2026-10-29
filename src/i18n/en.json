@@ -775,5 +775,18 @@
     "cancel": "Cancel",
     "close": "Close",
     "done": "Done"
+  },
+  "autocheck": {
+    "options": "Puzzle options",
+    "label": "Autocheck",
+    "hint": "Off: type freely, check when the grid is full",
+    "filledWrong_one": "Filled, but {{count}} square isn't right",
+    "filledWrong_other": "Filled, but {{count}} squares aren't right",
+    "checkPuzzle": "Check puzzle",
+    "checkWord": "Check word",
+    "revealSquare": "Reveal square",
+    "dismiss": "Dismiss",
+    "solvedWithReveals": "Solved with reveals",
+    "noAutocheck": "No autocheck"
   }
 }

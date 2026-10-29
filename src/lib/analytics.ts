@@ -29,7 +29,12 @@ export type AnalyticsEvent =
   | "puzzle_imported"
   | "mode_selected"
   | "game_started"
+  /** Params include `autocheck` (the solo setting for this solve) and `assisted` (a revealed square). */
   | "puzzle_completed"
+  /** The solo Autocheck switch was flipped. Param `on`. */
+  | "autocheck_toggled"
+  /** Solo without autocheck: a check or a reveal was asked for. Param `scope` (puzzle | word | reveal). */
+  | "puzzle_checked"
   | "narrator_enabled"
   | "language_changed"
   | "result_shared"

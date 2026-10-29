@@ -327,4 +327,16 @@ describe("recordSolve", () => {
     await expect(recordSolve("u2", { puzzleKey: "p", title: "", source: "other", mode: "solo", seconds: 30 })).resolves.toBeNull();
     warn.mockRestore();
   });
+
+  it("an assisted finish (a revealed square) is judged against the history but never written to it", async () => {
+    selectResult = { data: [row({ puzzle_key: "p", completed_day: "2026-10-15", seconds: 80, source: "daily" })], error: null };
+    const now = new Date("2026-10-16T09:30:00");
+    const outcome = await recordSolve("u1", { puzzleKey: "p", title: "Mini", source: "daily", mode: "solo", seconds: 70, assisted: true }, now);
+    expect(outcome).toMatchObject({ previousBest: 80, bestSeconds: 80, isNewBest: false });
+    // The streak is yesterday's, still alive today, not extended by this finish.
+    expect(outcome?.streak.current).toBe(1);
+    expect(rpcCalls).toHaveLength(0);
+    expect(getSolveHistoryState()?.summary.bestTimes).toEqual({ p: 80 });
+    expect(getSolveHistoryState()?.rows).toHaveLength(1);
+  });
 });

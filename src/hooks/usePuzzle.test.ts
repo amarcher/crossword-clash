@@ -577,3 +577,145 @@ describe("puzzleReducer", () => {
     });
   });
 });
+
+// Solo "Autocheck" off (src/lib/soloSettings.ts): letters are written as
+// typed, nothing is refused, and CHECK_CELLS / REVEAL_CELL do the judging.
+describe("puzzleReducer without autocheck", () => {
+  function freeState(): PuzzleState {
+    return puzzleReducer(loadedState(), { type: "SET_AUTOCHECK", autocheck: false });
+  }
+  const type = (state: PuzzleState, letters: string) =>
+    [...letters].reduce((s, letter) => puzzleReducer(s, { type: "INPUT_LETTER", letter, at: 1 }), state);
+
+  it("writes a wrong letter as typed, advances past it, and does not count it", () => {
+    const state = type(freeState(), "x");
+    expect(state.playerCells["0,0"]).toMatchObject({ letter: "X", correct: false });
+    expect(state.selectedCell).toEqual({ row: 0, col: 1 });
+    expect(state.score).toBe(0);
+  });
+
+  it("overwrites any letter, right or wrong, keeping the score to the correct ones", () => {
+    let state = type(freeState(), "c");
+    expect(state.score).toBe(1);
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = type(state, "x");
+    expect(state.playerCells["0,0"]).toMatchObject({ letter: "X", correct: false });
+    expect(state.score).toBe(0);
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = type(state, "c");
+    expect(state.playerCells["0,0"]).toMatchObject({ letter: "C", correct: true });
+    expect(state.score).toBe(1);
+  });
+
+  it("treats any letter as filled for the cursor and the word list, so nothing leaks which are wrong", () => {
+    // CAT with a wrong middle letter: the cursor still moves on to the next word.
+    let state = type(freeState(), "cxt");
+    expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+    // Tab from 1-Across skips it (filled), landing on 3-Across's first empty cell.
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = puzzleReducer(state, { type: "NEXT_WORD" });
+    expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+  });
+
+  it("erasing a wrong letter leaves the score alone; erasing a correct one lowers it", () => {
+    let state = type(freeState(), "cx");
+    expect(state.score).toBe(1);
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 1 });
+    state = puzzleReducer(state, { type: "DELETE_LETTER" });
+    expect(state.playerCells["0,1"]).toBeUndefined();
+    expect(state.score).toBe(1);
+    state = puzzleReducer(state, { type: "DELETE_LETTER" });
+    expect(state.playerCells["0,0"]).toBeUndefined();
+    expect(state.score).toBe(0);
+  });
+
+  it("is not complete until every square is correct", () => {
+    // CAT, BET, then A (1-Down) and the last square of 2-Down wrong.
+    let state = type(freeState(), "catbetax");
+    expect(Object.keys(state.playerCells)).toHaveLength(8);
+    expect(state.score).toBe(7);
+    expect(state.score === state.totalWhiteCells).toBe(false);
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 1, col: 2 });
+    state = type(state, "o");
+    expect(state.score).toBe(8);
+  });
+
+  it("CHECK_CELLS marks the wrong letters among the given squares, leaves the rest alone, and puts the cursor on the first mark", () => {
+    let state = type(freeState(), "cxt");
+    const before = state.playerCells;
+    expect(state.selectedCell).toEqual({ row: 2, col: 0 });
+    state = puzzleReducer(state, { type: "CHECK_CELLS", cells: [{ row: 0, col: 0 }, { row: 0, col: 1 }, { row: 2, col: 2 }] });
+    expect(state.playerCells["0,1"]).toMatchObject({ letter: "X", correct: false, checked: "wrong" });
+    expect(state.selectedCell).toEqual({ row: 0, col: 1 });
+    expect(state.playerCells["0,0"].checked).toBeUndefined();
+    expect(state.playerCells["0,2"].checked).toBeUndefined();
+    expect(state.playerCells["2,2"]).toBeUndefined();
+    // Nothing to mark → the same state object.
+    expect(puzzleReducer(state, { type: "CHECK_CELLS", cells: [{ row: 0, col: 0 }] })).toBe(state);
+    expect(before["0,1"].checked).toBeUndefined();
+    // Retyping the square drops the mark; a marked square is where the cursor goes next.
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    expect(type(state, "c").selectedCell).toEqual({ row: 0, col: 1 });
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 1 });
+    state = type(state, "a");
+    expect(state.playerCells["0,1"]).toMatchObject({ letter: "A", correct: true });
+    expect(state.playerCells["0,1"].checked).toBeUndefined();
+  });
+
+  it("steps along the word once the grid is full, instead of freezing the cursor", () => {
+    // CAT, BET, A, X: everything typed, nothing known wrong.
+    let state = type(freeState(), "catbetax");
+    expect(state.selectedCell).toEqual({ row: 2, col: 2 });
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = puzzleReducer(state, { type: "SET_DIRECTION", direction: "across" });
+    state = type(state, "c");
+    expect(state.selectedCell).toEqual({ row: 0, col: 1 });
+    // At the end of the word with nowhere to go, the cursor stays.
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 2 });
+    expect(type(state, "t").selectedCell).toEqual({ row: 0, col: 2 });
+  });
+
+  it("REVEAL_CELL writes the solution, counts it, locks it against typing and erasing, and keeps the cursor", () => {
+    let state = type(freeState(), "x");
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = puzzleReducer(state, { type: "REVEAL_CELL", row: 0, col: 0, at: 5 });
+    expect(state.playerCells["0,0"]).toMatchObject({ letter: "C", correct: true, revealed: true, at: 5 });
+    expect(state.score).toBe(1);
+    expect(state.selectedCell).toEqual({ row: 0, col: 0 });
+    // Typing on it only moves the cursor on; erasing steps back past it.
+    const typed = type(state, "z");
+    expect(typed.playerCells["0,0"].letter).toBe("C");
+    expect(typed.selectedCell).toEqual({ row: 0, col: 1 });
+    const erased = puzzleReducer(state, { type: "DELETE_LETTER" });
+    expect(erased.playerCells["0,0"].letter).toBe("C");
+    expect(erased.score).toBe(1);
+    // Revealing an already-correct square marks it revealed without double counting; a black square is ignored.
+    const correct = type(freeState(), "c");
+    const revealedCorrect = puzzleReducer(correct, { type: "REVEAL_CELL", row: 0, col: 0 });
+    expect(revealedCorrect.playerCells["0,0"].revealed).toBe(true);
+    expect(revealedCorrect.score).toBe(1);
+    expect(puzzleReducer(correct, { type: "REVEAL_CELL", row: 1, col: 1 })).toBe(correct);
+  });
+
+  it("keeps the setting across RESET and LOAD_PUZZLE, and SET_AUTOCHECK is a no-op when unchanged", () => {
+    const off = freeState();
+    expect(puzzleReducer(off, { type: "SET_AUTOCHECK", autocheck: false })).toBe(off);
+    const reset = puzzleReducer(off, { type: "RESET" });
+    expect(reset.puzzle).toBeNull();
+    expect(reset.autocheck).toBe(false);
+    const reloaded = puzzleReducer(reset, { type: "LOAD_PUZZLE", puzzle: makeTestPuzzle() });
+    expect(reloaded.autocheck).toBe(false);
+    expect(initialState.autocheck).toBe(true);
+  });
+
+  it("with autocheck back on, a wrong letter is refused again and a settled square only advances", () => {
+    let state = type(freeState(), "x");
+    state = puzzleReducer(state, { type: "SET_AUTOCHECK", autocheck: true });
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    // The free-typed wrong letter stays until the right one replaces it.
+    expect(type(state, "z").playerCells["0,0"].letter).toBe("X");
+    state = type(state, "c");
+    expect(state.playerCells["0,0"]).toMatchObject({ letter: "C", correct: true });
+    expect(state.score).toBe(1);
+  });
+});

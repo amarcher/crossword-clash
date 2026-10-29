@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
-import { Flag } from "lucide-react";
+import { Flag, X } from "lucide-react";
 import { ActiveClueCard, CluePanel } from "../components/CluePanel";
 import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
@@ -13,6 +13,8 @@ import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
 import { FinishedBar } from "../components/FinishedBar";
 import { AccountControl } from "../components/Account/AccountControl";
+import { AutocheckSwitch, SoloOptions } from "../components/SoloOptions";
+import { useSoloSettings } from "../lib/soloSettings";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,7 +36,7 @@ import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challe
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
-import { firstEmptyCell } from "../lib/gridUtils";
+import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -67,9 +69,33 @@ export function SoloPlayScreen() {
     completionModalDismissed,
     setCompletionModalDismissed,
     soloTheme,
+    autocheck,
+    checkCells,
+    revealCell,
   } = game;
 
-  const { soloInputLetter, rejectedCell, wrongLetters, wrongCells, completedClues } = mp;
+  const { soloInputLetter, rejectedCell, wrongLetters, wrongCells, completedClues: correctClues } = mp;
+  const { setAutocheck } = useSoloSettings();
+
+  // Autocheck off (soloSettings.ts): a square with any letter is "filled" to
+  // the solver, so the clue list strikes through typed words, the scoreboard
+  // counts typed squares, and only Check / the finish tells wrong from right.
+  const completedClues = useMemo(
+    () => (autocheck || !puzzle ? correctClues : getFilledClues(puzzle, playerCells)),
+    [autocheck, puzzle, playerCells, correctClues],
+  );
+  const { filled, wrong, assisted } = useMemo(() => {
+    let filled = 0;
+    let wrong = 0;
+    let assisted = false;
+    for (const c of Object.values(playerCells)) {
+      if (!c.letter) continue;
+      filled++;
+      if (!c.correct) wrong++;
+      if (c.revealed) assisted = true;
+    }
+    return { filled, wrong, assisted };
+  }, [playerCells]);
 
   const gridInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,10 +113,12 @@ export function SoloPlayScreen() {
 
   useGridNavigation(navActions);
 
-  // Elapsed timer + personal-best / streak tracking (solo only).
+  // Elapsed timer + personal-best / streak tracking (solo only). A finish with
+  // a revealed square is "assisted": solved, but no record and no streak.
   const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult } = useSoloTimer(
     puzzle,
     isComplete,
+    assisted,
   );
   const fromNyt = puzzle?.origin === "nyt-bookmarklet";
 
@@ -118,6 +146,10 @@ export function SoloPlayScreen() {
   // puzzles never post.
   const dailySlot = useTodaysDailySlot(puzzle);
   const isDaily = dailySlot !== null;
+  // Whether this solve was ever typed freely: Autocheck off while the grid was
+  // unfinished, or wrong letters restored from such a visit. Recorded with the
+  // play-insights row and the daily board entry; reset per puzzle below.
+  const [usedFreeTyping, setUsedFreeTyping] = useState(false);
   usePlayInsights({
     puzzle,
     playerCells,
@@ -128,6 +160,7 @@ export function SoloPlayScreen() {
     mode: "solo",
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
     signedIn: !!user && !user.is_anonymous,
+    autocheck: !usedFreeTyping,
   });
   // The finish is also parked in context as a pending result, so the board
   // can await the round trip instead of racing it (audit §3, item 9).
@@ -137,12 +170,19 @@ export function SoloPlayScreen() {
     if (!soloResult || dailySubmittedRef.current) return;
     if (!dailySlot || !user) return;
     dailySubmittedRef.current = true;
+    // A finish that used Reveal posts no time: the board is for solves.
+    if (soloResult.assisted) return;
     const day = todayKey();
-    const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)) };
+    const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
     const settled = submitDailyResult({ day, slot: dailySlot, ...entry, gameId: game.gameId });
     setPendingDailyResult({ day, slot: dailySlot, entry, settled });
-  }, [soloResult, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult]);
+  }, [soloResult, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
+  // The share block's red squares (shareBlock.ts): with Autocheck on, the
+  // squares where a wrong letter was refused; off, every square a check
+  // judged wrong or the solver revealed — remembered here because a retyped
+  // square is a new CellState without the mark.
+  const [flaggedCells, setFlaggedCells] = useState<string[]>([]);
   // "Up next" moves the next daily into THIS screen, so everything latched
   // "once per puzzle" above resets when the puzzle changes.
   const puzzleKey = puzzle ? puzzleIdentity(puzzle) : null;
@@ -153,7 +193,68 @@ export function SoloPlayScreen() {
     setServerOutcome(null);
     setBoardSignedAs(null);
     setNytStreak(null);
+    setUsedFreeTyping(false);
+    setFlaggedCells([]);
   }, [puzzleKey]);
+  // Declared after the reset above so a puzzle change re-latches in order.
+  useEffect(() => {
+    if ((!autocheck && !isComplete) || wrong > 0) setUsedFreeTyping(true);
+  }, [autocheck, isComplete, wrong, puzzleKey]);
+
+  useEffect(() => {
+    const keys = Object.entries(playerCells)
+      .filter(([, c]) => c.checked === "wrong" || c.revealed)
+      .map(([k]) => k);
+    if (keys.length === 0) return;
+    setFlaggedCells((prev) => {
+      const add = keys.filter((k) => !prev.includes(k));
+      return add.length ? [...prev, ...add] : prev;
+    });
+  }, [playerCells]);
+  const shareWrongCells = useMemo(
+    () => (flaggedCells.length ? [...new Set([...wrongCells, ...flaggedCells])] : wrongCells),
+    [wrongCells, flaggedCells],
+  );
+
+  // Autocheck off and the grid full but not right: a quiet notice over the
+  // grid with the three ways out. Dismissed until the grid changes again.
+  const [noticeDismissedFor, setNoticeDismissedFor] = useState<Record<string, unknown> | null>(null);
+  const showWrongNotice =
+    !autocheck && !isComplete && totalWhiteCells > 0 && filled === totalWhiteCells && noticeDismissedFor !== playerCells;
+  const allCells = useMemo(
+    () => (puzzle ? puzzle.cells.flat().filter((c) => c.solution !== null).map((c) => ({ row: c.row, col: c.col })) : []),
+    [puzzle],
+  );
+  const handleCheckPuzzle = useCallback(() => {
+    checkCells(allCells);
+    track("puzzle_checked", { scope: "puzzle" });
+    gridInputRef.current?.focus();
+  }, [checkCells, allCells]);
+  const handleCheckWord = useCallback(() => {
+    const cells = [...highlightedCells].map((k) => {
+      const [row, col] = k.split(",").map(Number);
+      return { row, col };
+    });
+    checkCells(cells);
+    track("puzzle_checked", { scope: "word" });
+    gridInputRef.current?.focus();
+  }, [checkCells, highlightedCells]);
+  const handleRevealSquare = useCallback(() => {
+    if (!selectedCell) return;
+    revealCell(selectedCell.row, selectedCell.col);
+    track("puzzle_checked", { scope: "reveal" });
+    gridInputRef.current?.focus();
+  }, [revealCell, selectedCell]);
+  // Turning Autocheck back on judges what is already there, so the wrong
+  // letters typed freely show up at once instead of silently blocking the finish.
+  const handleAutocheckChange = useCallback(
+    (on: boolean) => {
+      setAutocheck(on);
+      track("autocheck_toggled", { on });
+      if (on && allCells.length) checkCells(allCells);
+    },
+    [setAutocheck, checkCells, allCells],
+  );
 
   // Signed-in solvers: file the finish in the account's solve history and
   // judge best time and streak against that history, which every device
@@ -172,6 +273,7 @@ export function SoloPlayScreen() {
       source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
       mode: "solo",
       seconds: soloResult.finishSeconds,
+      assisted: soloResult.assisted,
     }).then((outcome) => outcome && setServerOutcome(outcome));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
 
@@ -239,8 +341,10 @@ export function SoloPlayScreen() {
       size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined,
       cells: totalWhiteCells,
       duration_seconds: getElapsedSeconds(),
+      autocheck: !usedFreeTyping,
+      assisted,
     });
-  }, [isComplete, puzzle, totalWhiteCells, getElapsedSeconds]);
+  }, [isComplete, puzzle, totalWhiteCells, getElapsedSeconds, usedFreeTyping, assisted]);
 
   // NYT-bookmarklet return loop: finishing an imported NYT puzzle rolls the
   // NYT streak (same-day repeats/reloads are no-ops) and the modal nudges
@@ -370,6 +474,8 @@ export function SoloPlayScreen() {
                     )}
                   </div>
                 )}
+                {/* The gear needs header room a phone doesn't have: there the switch sits in the clue sheet. */}
+                <SoloOptions autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="hidden md:block" />
                 <button
                   onClick={handleReset}
                   className={buttonClass("secondary", "sm")}
@@ -395,6 +501,36 @@ export function SoloPlayScreen() {
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
             />
+            {showWrongNotice && (
+              <div
+                role="status"
+                data-testid="wrong-notice"
+                className="absolute inset-x-2 bottom-2 z-10 rounded-2xl bg-surface/95 p-3 shadow-overlay ring-1 ring-line backdrop-blur-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="pt-2 text-sm font-semibold text-ink">{t("autocheck.filledWrong", { count: wrong })}</p>
+                  <button
+                    type="button"
+                    aria-label={t("autocheck.dismiss")}
+                    onClick={() => setNoticeDismissedFor(playerCells)}
+                    className="-m-1.5 grid size-11 shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-sunken active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <button type="button" onClick={handleCheckPuzzle} className={buttonClass("primary", "md")}>
+                    {t("autocheck.checkPuzzle")}
+                  </button>
+                  <button type="button" onClick={handleCheckWord} className={buttonClass("secondary", "md")}>
+                    {t("autocheck.checkWord")}
+                  </button>
+                  <button type="button" onClick={handleRevealSquare} className={buttonClass("secondary", "md")}>
+                    {t("autocheck.revealSquare")}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         }
         mobileClueBar={
@@ -412,11 +548,14 @@ export function SoloPlayScreen() {
               open={clueSheetOpen}
               onClose={() => setClueSheetOpen(false)}
               scoreboard={
-                <Scoreboard
-                  score={score}
-                  totalCells={totalWhiteCells}
-                  isComplete={isComplete}
-                />
+                <>
+                  <Scoreboard
+                    score={autocheck ? score : filled}
+                    totalCells={totalWhiteCells}
+                    isComplete={isComplete}
+                  />
+                  <AutocheckSwitch autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="ring-1 ring-line" />
+                </>
               }
               cluePanel={
                 <CluePanel
@@ -441,7 +580,7 @@ export function SoloPlayScreen() {
             />
             </div>
             <Scoreboard
-              score={score}
+              score={autocheck ? score : filled}
               totalCells={totalWhiteCells}
               isComplete={isComplete}
             />
@@ -458,6 +597,7 @@ export function SoloPlayScreen() {
         bestSeconds={shownResult?.bestSeconds}
         isNewBest={shownResult?.isNewBest}
         previousBest={shownResult?.previousBest}
+        assisted={assisted}
         streakCount={shownResult?.streak}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
@@ -465,7 +605,7 @@ export function SoloPlayScreen() {
         dailySign={dailySign}
         challengePuzzle={puzzle}
         playerCells={playerCells}
-        wrongCells={wrongCells}
+        wrongCells={shareWrongCells}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
         nextUp={nextUp}

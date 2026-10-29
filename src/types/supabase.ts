@@ -125,6 +125,7 @@ export interface Database {
           mode: string;
           seconds: number;
           game_id: string | null;
+          autocheck: boolean | null;
           created_at: string;
         };
         Insert: {
@@ -136,6 +137,7 @@ export interface Database {
           mode: string;
           seconds: number;
           game_id?: string | null;
+          autocheck?: boolean | null;
           created_at?: string;
         };
         Update: {
@@ -147,6 +149,7 @@ export interface Database {
           mode?: string;
           seconds?: number;
           game_id?: string | null;
+          autocheck?: boolean | null;
           created_at?: string;
         };
         Relationships: [];

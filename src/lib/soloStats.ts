@@ -51,6 +51,11 @@ export interface SoloCompletionResult {
   previousBest: number | null;
   /** Streak state after counting today's play. */
   streak: StreakState;
+  /**
+   * The grid was finished with a revealed square (solo, Autocheck off): it
+   * counts as solved, but the time set no record and the day rolled no streak.
+   */
+  assisted?: boolean;
 }
 
 export const EMPTY_STREAK: StreakState = {
@@ -288,10 +293,22 @@ export function recordSoloCompletion(
   key: string,
   durationSec: number,
   now: Date = new Date(),
+  options: { assisted?: boolean } = {},
 ): SoloCompletionResult {
   const finishSeconds = Math.max(0, Math.floor(durationSec));
   const stats = loadSoloStats();
   const previousBest = stats.bestTimes[key] ?? null;
+  if (options.assisted) {
+    // A finish that used Reveal: nothing on record changes.
+    return {
+      finishSeconds,
+      bestSeconds: previousBest ?? finishSeconds,
+      isNewBest: false,
+      previousBest,
+      streak: { ...stats.streak, current: effectiveStreak(stats.streak, dayKey(now)) },
+      assisted: true,
+    };
+  }
   const { bestTimes, best, isNewBest: beat } = applyBestTime(
     stats.bestTimes,
     key,
