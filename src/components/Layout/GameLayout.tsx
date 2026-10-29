@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
+import { useTranslation } from "react-i18next";
 import { PAGE_GUTTER } from "../PageShell";
+import { setHardwareKeyboard, useHardwareKeyboard } from "../../lib/inputModality";
 
 interface GameLayoutProps {
   header: ReactNode;
@@ -10,22 +12,44 @@ interface GameLayoutProps {
   keyboard?: ReactNode;
 }
 
-export function GameLayout({ header, grid, clues, mobileClueBar, keyboard }: GameLayoutProps) {
-  if (Capacitor.isNativePlatform()) {
-    return (
-      <div className="native-game-layout">
-        <header className="native-game-header">{header}</header>
-        <main className="native-game-main">
-          <div className="native-grid-slot">{grid}</div>
-          <aside className="native-game-clues">{clues}</aside>
-        </main>
-        <footer className="native-game-controls">
-          {mobileClueBar}
-          {keyboard}
-        </footer>
-      </div>
-    );
-  }
+/**
+ * The apps' play screen: header, grid (with the clue list beside it from 768px),
+ * and a footer with the clue bar and the in-app keyboard. Once a physical
+ * keyboard is used the in-app keys give way to a "Show keyboard" button, and
+ * where the clue list is on screen the clue bar goes too (Tab, Space and the
+ * arrows do its job) — see `inputModality.ts`.
+ */
+export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard }: GameLayoutProps) {
+  const { t } = useTranslation();
+  const hardware = useHardwareKeyboard();
+  return (
+    <div className="native-game-layout" data-keyboard={hardware ? "hardware" : "screen"}>
+      <header className="native-game-header">{header}</header>
+      <main className="native-game-main">
+        <div className="native-grid-slot">{grid}</div>
+        <aside className="native-game-clues">{clues}</aside>
+      </main>
+      <footer className="native-game-controls">
+        {mobileClueBar}
+        {hardware && keyboard ? (
+          <div className="native-keyboard-toggle">
+            <button type="button" onClick={() => setHardwareKeyboard(false)}>
+              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="2.5" y="6" width="19" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M8 14h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              {t("keyboard.show")}
+            </button>
+          </div>
+        ) : keyboard}
+      </footer>
+    </div>
+  );
+}
+
+export function GameLayout(props: GameLayoutProps) {
+  if (Capacitor.isNativePlatform()) return <NativeGameLayout {...props} />;
+  const { header, grid, clues, mobileClueBar } = props;
   return (
     <div className={`h-dvh bg-canvas flex flex-col overflow-hidden ${mobileClueBar ? "grid-offset-mobile" : ""}`}>
       {/* Same gutter as PageShell, so the title sits where the menu and inner pages put their content. */}

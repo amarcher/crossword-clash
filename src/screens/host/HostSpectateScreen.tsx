@@ -11,6 +11,7 @@ import { buttonClass } from "../../components/ui";
 import { CompletionModal } from "../../components/CompletionModal";
 import { TTSMuteButton, TTSSettingsModal } from "../../components/TTSControls";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
+import { useKeepAwake } from "../../lib/keepAwake";
 import { useHostContext } from "../../layouts/HostLayout";
 
 export function HostSpectateScreen() {
@@ -41,6 +42,8 @@ export function HostSpectateScreen() {
   } = host;
 
   useBeforeUnload(multiplayer.gameStatus === "active");
+  // The scoreboard on a propped-up tablet or TV stays lit for the whole game and its finish.
+  useKeepAwake(true);
 
   // Show a transient banner when the narrator falls back to another backend.
   // Auto-dismisses after 8s; the user can click to dismiss sooner.

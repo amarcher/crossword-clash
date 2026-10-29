@@ -407,7 +407,8 @@
     "label": "Crossword keyboard",
     "switchDirection": "Switch Across / Down",
     "delete": "Delete letter",
-    "backToPuzzle": "Back to puzzle"
+    "backToPuzzle": "Back to puzzle",
+    "show": "Show keyboard"
   },
   "spectator": {
     "join": "Join as TV",
