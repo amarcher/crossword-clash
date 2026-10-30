@@ -267,6 +267,33 @@ describe("GameLobby", () => {
       );
       expect(screen.getByText("Host")).toBeDefined();
     });
+
+    it("lists the players before the room code, QR code and settings, so a phone shows the roster above the fold", () => {
+      for (const isHost of [true, false]) {
+        cleanup();
+        render(
+          <GameLobby
+            shareCode="ABC123"
+            players={mockPlayers}
+            isHost={isHost}
+            onStartGame={() => {}}
+            onCloseRoom={() => {}}
+            onLeave={() => {}}
+            wrongAnswerTimeout={0}
+            onWrongAnswerTimeoutChange={() => {}}
+          />,
+        );
+        const roster = screen.getByText("Players (2)");
+        // The page is one column on a phone, so DOM order is visual order.
+        const follows = (node: Element) => Boolean(roster.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(follows(screen.getByText("Room code")), `room code after the roster (host: ${isHost})`).toBe(true);
+        expect(follows(screen.getByTestId("qr-code")), `QR after the roster (host: ${isHost})`).toBe(true);
+        if (isHost) {
+          expect(follows(screen.getByText("Game settings")), "settings after the roster").toBe(true);
+          expect(follows(screen.getByText("Start Game")), "Start after the roster").toBe(true);
+        }
+      }
+    });
   });
 
   describe("timeout selector", () => {

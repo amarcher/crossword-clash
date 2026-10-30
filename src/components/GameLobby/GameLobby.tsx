@@ -78,6 +78,12 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
     isHost &&
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
 
+  // DOM order is phone order: the roster leads, then how people get in, then
+  // the host's settings beside the Start button they gate. On desktop the
+  // join column moves to the right and spans the roster, settings and actions.
+  const column = shareCode ? "lg:col-start-1" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md";
+  const joinRows = showSettings ? "lg:row-span-3" : "lg:row-span-2";
+
   return (
     <FlowPage
       wide
@@ -96,9 +102,37 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
       subtitle={isHost ? t("lobby.shareInvite") : t("lobby.guestSubtitle")}
     >
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-x-6">
-        {/* Left column: how people get in. */}
+        {/* Who is here: first on the page, so a phone shows the roster above the fold. */}
+        <section className={column}>
+          <Card className="p-5">
+            <Eyebrow as="h2">{t("lobby.players", { count: players.length })}</Eyebrow>
+            <ul className="mt-3 grid gap-2">
+              {players.map((player, i) => (
+                <li key={player.userId} className="flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5">
+                  <span
+                    className="size-3.5 shrink-0 rounded-full ring-2 ring-white"
+                    style={{ backgroundColor: player.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">{player.displayName}</span>
+                  {i === 0 && (
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{t("lobby.host")}</span>
+                  )}
+                </li>
+              ))}
+              {needMore && (
+                <li className="flex min-h-12 items-center gap-3 rounded-xl border border-dashed border-line-strong px-3.5 text-muted">
+                  <Users className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+                  <span className="text-sm">{t("lobby.waitingForPlayers")}</span>
+                </li>
+              )}
+            </ul>
+          </Card>
+        </section>
+
+        {/* How people get in: below the roster on phones, the right column on desktop. */}
         {shareCode && (
-          <section className="grid gap-4 lg:row-span-3">
+          <section className={`grid gap-4 lg:col-start-2 lg:row-start-1 ${joinRows}`}>
             <Card className="p-5">
               <Eyebrow>{t("lobby.roomCode")}</Eyebrow>
               <button
@@ -160,34 +194,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           </section>
         )}
 
-        {/* Right column: who is here + settings. */}
-        <section className={`grid gap-4 ${shareCode ? "" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md"}`}>
-          <Card className="p-5">
-            <Eyebrow as="h2">{t("lobby.players", { count: players.length })}</Eyebrow>
-            <ul className="mt-3 grid gap-2">
-              {players.map((player, i) => (
-                <li key={player.userId} className="flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5">
-                  <span
-                    className="size-3.5 shrink-0 rounded-full ring-2 ring-white"
-                    style={{ backgroundColor: player.color }}
-                    aria-hidden="true"
-                  />
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">{player.displayName}</span>
-                  {i === 0 && (
-                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{t("lobby.host")}</span>
-                  )}
-                </li>
-              ))}
-              {needMore && (
-                <li className="flex min-h-12 items-center gap-3 rounded-xl border border-dashed border-line-strong px-3.5 text-muted">
-                  <Users className="size-4 shrink-0 text-subtle" aria-hidden="true" />
-                  <span className="text-sm">{t("lobby.waitingForPlayers")}</span>
-                </li>
-              )}
-            </ul>
-          </Card>
-
-          {showSettings && (
+        {/* The host's settings, right above the Start button they apply to. */}
+        {showSettings && (
+          <section className={column}>
             <Card className="p-5">
               <Eyebrow as="h2">{t("lobby.gameSettings")}</Eyebrow>
               <div className="mt-4 grid gap-5">
@@ -199,13 +208,12 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                 )}
               </div>
             </Card>
-          )}
-
-        </section>
+          </section>
+        )}
 
         {/* Actions: sticky to the bottom of the viewport on phones, inline on desktop. */}
         <div
-          className="sticky bottom-0 z-10 -mx-4 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur lg:static lg:col-start-2 lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+          className={`sticky bottom-0 z-10 -mx-4 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${shareCode ? "lg:mx-0" : ""} ${column}`}
         >
           {isHost ? (
             <Button size="lg" block onClick={onStartGame} disabled={needMore}>

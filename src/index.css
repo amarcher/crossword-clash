@@ -566,6 +566,8 @@ select,
   .tv-t-2xl { font-size: 30px; }
   .tv-stage { height: auto; min-height: 100dvh; overflow: visible; overflow-x: clip; }
   .tv-lobby { display: flex; flex-direction: column; height: auto; }
+  /* Stacked, the roster leads and the join column follows, as in the phone lobby. */
+  .tv-lobby-join { order: 1; }
   .tv-main { flex-direction: column; height: auto; }
   .tv-grid-slot { flex: none; height: 92vw; }
   .tv-side { width: 100%; }
