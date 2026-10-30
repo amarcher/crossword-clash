@@ -136,7 +136,7 @@ src/
     CrosswordGrid/  # Grid + Cell (container query font scaling) + keyboard nav + hidden mobile input
     ClueBar/        # MobileClueBar (prev/next word, direction toggle, active clue display)
     CluePanel/      # Clue list with active highlighting + strikethrough for completed words
-    GameLobby/      # GameLobby (share code, QR code, player list, timeout selector, close room, non-host leave) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
+    GameLobby/      # GameLobby (DOM order is phone order: the host's Start button or a joiner's waiting status first — the most important line on the page — then the player list, then share code + QR, then the host's settings; no bottom bar; on desktop the join column moves right and spans the rest; close room, non-host leave) + JoinGame (code input) + TimeoutSelector (wrong answer penalty presets)
     Layout/         # GameLayout (responsive, mobile clue list flex-shrinks behind keyboard) + TVLayout (spectator with clue panel)
     PuzzleImporter/ # File upload/drag-and-drop
     TTSControls/    # TTSMuteButton + TTSSettingsModal (narrator engine + TTS engine + voice selectors)
@@ -270,7 +270,7 @@ VITE_SUPABASE_ANON_KEY=...
 - **CluePanel.test.tsx** (17 tests): Across/Down sections rendering, all clues rendered, active clue highlighting, clue click callback, strikethrough for completed clues (line-through + text-neutral-400), no strikethrough when absent/empty, partial completion, both directions, active+completed coexistence, completed clues still clickable
 - **Cell.test.tsx** (17 tests): blendOnWhite color math (alpha 0/1/0.12, opaque output), cell rendering (black cell, white cell, numbers, letters), text classes (text-black for letters, text-neutral-800 for numbers), background priority (selected > highlighted > playerColor > white), player color as opaque inline style, click handler
 - **useClueAnnouncer.test.ts** (8 tests): Initial mount skips announcements, new clue triggers speech, last-cell-in-word attribution, no re-announcement of previously completed clues, unknown-player fallback, 2/5s rate cap, disabled state still tracks completions to prevent later blast, null puzzle is a no-op
-- **GameLobby.test.tsx** (24 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, non-host leave button (visibility + callback), player list, share code display, timeout selector visibility/callback. Uses `@testing-library/react` with per-file `jsdom` environment.
+- **GameLobby.test.tsx** (27 tests): QR code rendering/URL encoding, Close Room visibility/callback, host controls (Start Game enable/disable), non-host view, non-host leave button (visibility + callback), player list (and the DOM order Start/status → players → room code, QR, settings for host and joiner), share code display, timeout selector visibility/callback. Uses `@testing-library/react` with per-file `jsdom` environment.
 - **GameLobby/JoinGame.test.tsx** (2 tests): the code field has focus on arrival; a link that filled the code hands the focus to the name field
 - **TimeoutSelector.test.tsx** (9 tests): All presets rendered, heading, selected option highlighting, unselected styles, onChange callback, dark/light variant styles
 - **LockoutOverlay.test.tsx** (7 tests): Renders nothing when 0 or past, shows countdown, ticks down over time, disappears on expiry, lockout-pulse class, pointer-events-none
