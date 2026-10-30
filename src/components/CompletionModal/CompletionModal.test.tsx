@@ -70,7 +70,8 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal open={true} totalCells={8} totalClues={4} players={makePlayers()} />,
     );
-    expect(getByText("Alice wins!")).toBeTruthy();
+    expect(getByText("Alice wins with 5 squares!")).toBeTruthy();
+    expect(getByText("Squares")).toBeTruthy();
     expect(getByText("Alice")).toBeTruthy();
     expect(getByText("Bob")).toBeTruthy();
   });
@@ -81,7 +82,41 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal open={true} totalCells={10} totalClues={4} players={players} />,
     );
-    expect(getByText("It's a tie!")).toBeTruthy();
+    expect(getByText("It's a tie at 5 squares!")).toBeTruthy();
+  });
+
+  it("explains the share squares under the preview: by claimant in a race, by pace in solo", () => {
+    const puzzle = buildPuzzle({ title: "Deep Blue", grid: ["#whom", "trace", "holes", "atlas", "neon#"], clueTexts: {} });
+    const cells = {
+      "0,1": { letter: "W", correct: true, playerId: "bob", at: 1 },
+      "1,0": { letter: "T", correct: true, playerId: "alice", at: 2 },
+    };
+    const { getByTestId, rerender } = render(
+      <CompletionModal
+        {...SOLO_PROPS}
+        players={makePlayers()}
+        currentUserId="alice"
+        challengePuzzle={puzzle}
+        playerCells={cells}
+        playerColors={{ alice: "#3b82f6", bob: "#ef4444" }}
+        challengerName="Alice"
+      />,
+    );
+    // Named in the standings order, with the squares the rows use.
+    expect(getByTestId("share-legend").textContent).toBe("Who solved each square: 🟦 Alice, 🟥 Bob");
+    expect(getByTestId("share-block-preview").textContent).toContain("⬛🟥⬜⬜⬜");
+
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} playerCells={cells} challengerName="Alice" />);
+    expect(getByTestId("share-legend").textContent).toBe("🟩 early · 🟨 mid · 🟧 late · 🟥 wrong letter");
+
+    // A wide grid shares a pace bar, so the legend explains stretches instead.
+    const wide = buildPuzzle({ title: "Wide", grid: ["abcdefghijk", "abcdefghijk"], clueTexts: {} });
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={wide} playerCells={{}} challengerName="Alice" />);
+    expect(getByTestId("share-legend").textContent).toContain("Pace by stretch");
+    rerender(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={{ alice: "#3b82f6" }} challengerName="Alice" />,
+    );
+    expect(getByTestId("share-legend").textContent).toBe("Most squares per stretch: 🟦 Alice, 🟥 Bob");
   });
 
   it("shows player stats in table", () => {

@@ -17,7 +17,7 @@ import { ShareResultButton } from "./ShareResultButton";
 import { SaveImageButton } from "./SaveImageButton";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
-import { buildShareBlock, type ShareBlock } from "../../lib/shareBlock";
+import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
 import { buildDailyLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { compressPuzzleToHash } from "../../lib/puzzleUrl";
@@ -279,6 +279,16 @@ export function CompletionModal({
         : shareIsTie
           ? t("completion.tie")
           : t("completion.wins", { name: shareWinnerName ?? "" });
+  // One line under the preview saying what the squares mean. A shared grid
+  // is coloured by claimant (named, in the standings order); everything else
+  // — solo, an async copy — by the pace of the solve, red for a wrong letter.
+  // Grids wider than MAX_ROW_WIDTH share a pace bar instead of rows.
+  const wideGrid = !!challengePuzzle && challengePuzzle.width > MAX_ROW_WIDTH;
+  const shareLegend = !challengePuzzle
+    ? undefined
+    : isMultiplayer && playerColors
+      ? t(wideGrid ? "completion.legendRaceBar" : "completion.legendRace", { players: claimantLegend(ranked) })
+      : t(wideGrid ? "completion.legendSoloBar" : "completion.legendSolo");
   const shareDaily = dailySlot ? t(SLOT_EYEBROW[dailySlot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
@@ -358,7 +368,8 @@ export function CompletionModal({
         {isMultiplayer ? (
           <>
             {/* Outcome line: async → fastest finisher (or waiting), co-op →
-                team finish, versus → most cells claimed. */}
+                team finish, versus → most squares solved (the line says so:
+                players asked whether it was squares or clues — it is squares). */}
             <p className={`text-center mb-5 ${textSub}`}>
               {isAsync
                 ? asyncAllDone
@@ -369,8 +380,8 @@ export function CompletionModal({
                 : coop
                   ? t('completion.coopSolved')
                   : isTie
-                    ? t('completion.tie')
-                    : t('completion.wins', { name: winner.displayName })}
+                    ? t('completion.tieSquares', { count: winner.cellsClaimed })
+                    : t('completion.winsSquares', { name: winner.displayName, count: winner.cellsClaimed })}
             </p>
 
             {/* Headline time: your own finish (async) or the shared race time. */}
@@ -424,7 +435,7 @@ export function CompletionModal({
                     <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
                       <th className="text-left py-2 px-3">#</th>
                       <th className="text-left py-2 px-3">{t('completion.player')}</th>
-                      <th className="text-right py-2 px-3">{t('completion.cells')}</th>
+                      <th className="text-right py-2 px-3">{t('completion.squares')}</th>
                       <th className="text-right py-2 px-3">{t('completion.clues')}</th>
                     </tr>
                   </thead>
@@ -613,6 +624,7 @@ export function CompletionModal({
               hasTime={shareSeconds !== undefined}
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
               daily={!!dailySlot && !isMultiplayer}
+              legend={shareLegend}
               onNameSigned={dailySign?.onSign}
               darkMode={darkMode}
             />
