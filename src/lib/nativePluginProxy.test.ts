@@ -99,7 +99,11 @@ describe("native sign-in plugin loading", () => {
     socialImpl.initialize = async (args: unknown) => {
       seen.push(args as Record<string, unknown>);
     };
-    socialImpl.login = async () => ({ result: { idToken: "tok" } });
+    const logins: { provider: string; options: Record<string, unknown> }[] = [];
+    socialImpl.login = async (args: unknown) => {
+      logins.push(args as { provider: string; options: Record<string, unknown> });
+      return { result: { idToken: "tok" } };
+    };
     const mod = await import("./nativeSignIn");
     for (const value of ["ios", "android"]) {
       platform.value = value;
@@ -108,6 +112,10 @@ describe("native sign-in plugin loading", () => {
     }
     platform.value = "ios";
     expect(seen).toHaveLength(2);
+    // Android Google login carries no scopes (the plugin would demand a modified MainActivity); iOS keeps them.
+    expect(logins[0]).toMatchObject({ provider: "google", options: { scopes: ["email", "profile"] } });
+    expect(logins[1]).toMatchObject({ provider: "google" });
+    expect(logins[1].options).not.toHaveProperty("scopes");
     expect(seen[0]).toMatchObject({ apple: { clientId: "com.crosswordclash.app" }, google: { webClientId: "web-client" } });
     expect(seen[1]).not.toHaveProperty("apple");
     expect(seen[1]).toMatchObject({ google: { webClientId: "web-client" } });

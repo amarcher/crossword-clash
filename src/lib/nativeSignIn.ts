@@ -106,7 +106,12 @@ export async function nativeIdToken(provider: AuthProvider): Promise<NativeIdTok
   const { sl } = await socialLogin();
   let result: { result?: unknown };
   try {
-    result = await sl.login({ provider, options: { scopes: provider === "apple" ? ["email", "name"] : ["email", "profile"], nonce: hashed } });
+    // Google on Android: no `scopes`. The plugin's Credential Manager flow returns an id token
+    // carrying email and profile by default, and any explicit scope switches it to a legacy flow
+    // that refuses to run without a modified MainActivity ("You CANNOT use scopes without
+    // modifying the main activity", 1.1.0 build 7). iOS takes the scopes as before.
+    const scopes = provider === "apple" ? ["email", "name"] : Capacitor.getPlatform() === "android" ? undefined : ["email", "profile"];
+    result = await sl.login({ provider, options: { ...(scopes ? { scopes } : {}), nonce: hashed } });
   } catch (err) {
     if (err && typeof err === "object" && ((err as { code?: string }).code === "USER_CANCELLED" || /cancel/i.test(String((err as { message?: string }).message)))) {
       const cancelled = new Error("cancelled") as Error & { cause?: unknown };
