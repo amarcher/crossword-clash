@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildShareBlock,
   formatShareDay,
+  claimantLegend,
   gridRows,
   paceBar,
   paceThird,
@@ -149,6 +150,19 @@ describe("gridRows", () => {
     expect([...rows[0]][1]).toBe("🟦".replace("🟦", "🟥")); // bob is red
     expect([...rows[0]][2]).toBe("🟦"); // alice is blue; a race never shows wrong cells
     expect([...rows[2]][2]).toBe(EMPTY); // no claimant on record
+  });
+});
+
+describe("claimantLegend", () => {
+  it("names each player after their square, in the order given, whatever their presence", () => {
+    expect(claimantLegend([{ displayName: "Archer", color: "#3b82f6" }, { displayName: "Alicia", color: "#ef4444" }])).toBe(
+      "🟦 Archer, 🟥 Alicia",
+    );
+    expect(claimantLegend([])).toBe("");
+  });
+
+  it("gives a player with an unknown colour the empty square", () => {
+    expect(claimantLegend([{ displayName: "Zed", color: "#000000" }])).toBe(`${EMPTY} Zed`);
   });
 });
 

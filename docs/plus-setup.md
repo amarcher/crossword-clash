@@ -328,6 +328,40 @@ only once 3.1 is done in live mode; everything stays hidden before that.
    (`com.googleusercontent.apps.<id>`); the Capgo plugin's README shows the
    exact plist snippet. Nothing is needed in the Android manifest.
 
+**State 2026-10-30 (done through the Play Developer API, not the console):**
+the merchant account exists (the organization's existing FABLE DESIGNER LLC
+payments profile 5459-1455-2708 attached to Play on 2026-10-30; public
+merchant name, website, support email and the `GOOGLE*` statement name are
+**per payments profile**, one per developer account, so they are shared by
+every app on the Fable Designer account; each app keeps its own store-listing
+contact). Service account `play-publisher@crossword-clash.iam.gserviceaccount.com`
+(Cloud project `crossword-clash`, Play Developer API enabled; key at
+`~/.config/crossword-clash/play-service-account.json`, mode 600, never in the
+repo) invited into Play Console with View app info, View financial data,
+Manage orders and subscriptions, Release to production, Release to testing
+tracks, Manage testing tracks and Manage store presence on Crossword Clash
+only; RevenueCat's Play app takes the same JSON. The Subscriptions page
+refuses to create products until a bundle with `com.android.vending.BILLING`
+exists on some track, so `5 (1.1.0)` (built with `VITE_PLUS` unset, so it
+cannot reach the web checkout) was uploaded as a **draft** on Internal testing
+through `edits` + `bundles` + `tracks/internal` (release notes are capped at
+500 characters). Subscriptions `plus_monthly` (base plan `monthly`, P1M) and
+`plus_annual` (base plan `annual`, P1Y) created with `regionsVersion.version=
+2026/01` (the API names the latest version in its error when given an old
+one), prices from `pricing:convertRegionPrices` for every one of the 174
+regions plus `otherRegionsConfig` in USD/EUR, en-US + es-ES listings (benefits
+are capped at 40 characters), base plans **activated**. RevenueCat product ids
+for Play subscriptions are `plus_monthly:monthly` / `plus_annual:annual`.
+RevenueCat (later that day): Play Store app `app731b4b8b90` with the
+service-account JSON (uploaded by Andrew), the two products imported through
+the Play Store "Import" button as `plus_monthly:monthly` / `plus_annual:annual`,
+attached to entitlement `plus` and added to offering `default`'s
+`$rc_monthly` / `$rc_annual` packages beside the App Store products; its
+public SDK key is `VITE_REVENUECAT_ANDROID_KEY` in `.env.local`. The Plus
+build `6 (1.1.0)` is rolled out on Internal testing. Still open: license
+testers (Setup → License testing, the Google account on the test device), a
+test purchase on Android, Play real-time developer notifications for
+RevenueCat (optional), the production rollout.
 ### 3.5 RevenueCat
 
 1. **Project** "Crossword Clash" with two apps: App Store (bundle id, the
@@ -385,7 +419,7 @@ sandbox Apple Account prompt, plus `facebook: false` for the sign-in plugin. Goo
 (`…-0skrplb0r6c6apr9lteai0a2uqo70uth`, = `VITE_GOOGLE_WEB_CLIENT_ID`), an iOS
 client (`…-bhbf4mkmo94i09jjsqj34hblt0prqtk3`, = `VITE_GOOGLE_IOS_CLIENT_ID`,
 reversed in `Info.plist`) and two Android clients for `com.crosswordclash.app`
-(Play app-signing SHA-1 `41:A9:…:AC:95`, upload key `35:9E:…:A8:9A`). Supabase
+(Play app-signing SHA-1 `E7:48:68:26:…:FB:69:A1`, upload key `35:9E:…:A8:9A`; until 2026-10-30 the Play client held the first 20 bytes of the signing certificate's SHA-**256** `41:A9:CB:D8:…` pasted as its SHA-1, and every Google sign-in from a Play-signed build failed with `[16] Account reauth failed` — the plugin logs `signingSha1=` on failure, and `apksigner verify --print-certs` on the Play-signed APK from `generatedApks` is the authoritative value). Supabase
 → Providers: Google lists the web + iOS ids, Apple lists
 `com.crosswordclash.signin` + `com.crosswordclash.app`. The repo branch has the
 1.1.0 version bump, `App.entitlements` with Sign in with Apple and the Google
