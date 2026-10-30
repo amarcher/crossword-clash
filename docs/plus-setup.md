@@ -352,8 +352,16 @@ one), prices from `pricing:convertRegionPrices` for every one of the 174
 regions plus `otherRegionsConfig` in USD/EUR, en-US + es-ES listings (benefits
 are capped at 40 characters), base plans **activated**. RevenueCat product ids
 for Play subscriptions are `plus_monthly:monthly` / `plus_annual:annual`.
-Still open: RevenueCat Play app + `VITE_REVENUECAT_ANDROID_KEY`, license
-testers, the Plus build (`versionCode` 6) and its Play submission.
+RevenueCat (later that day): Play Store app `app731b4b8b90` with the
+service-account JSON (uploaded by Andrew), the two products imported through
+the Play Store "Import" button as `plus_monthly:monthly` / `plus_annual:annual`,
+attached to entitlement `plus` and added to offering `default`'s
+`$rc_monthly` / `$rc_annual` packages beside the App Store products; its
+public SDK key is `VITE_REVENUECAT_ANDROID_KEY` in `.env.local`. The Plus
+build `6 (1.1.0)` is rolled out on Internal testing. Still open: license
+testers (Setup → License testing, the Google account on the test device), a
+test purchase on Android, Play real-time developer notifications for
+RevenueCat (optional), the production rollout.
 ### 3.5 RevenueCat
 
 1. **Project** "Crossword Clash" with two apps: App Store (bundle id, the
