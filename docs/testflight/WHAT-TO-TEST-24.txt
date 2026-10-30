@@ -1,0 +1,6 @@
+This update (1.1.0, build 24) is the release candidate for the App Store. New since build 23:
+
+1. Sign in: the Apple and Google buttons are now the official ones (Apple logo on black, the Google "G" on white). Both still open the same sign-in.
+2. Game lobby: the Start game button (or "Waiting for host…" for a joiner) is first on the page, then the players in the room, then the room code and QR.
+3. Finish a race or co-op game, then have the other player leave or put your phone to sleep and come back: the final standings, scores and share preview stay exactly as they were. A line under the share preview explains the coloured squares.
+4. Everything from build 23 still applies: full screen on iPhone Duo (Xcode 27.1+), public puzzle links after a publish, the profile menu above the studio grid, hardware keyboards, TV screens staying awake, Autocheck, community puzzles, the studio, and the share sheet carrying the emoji grid.
