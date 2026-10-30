@@ -64,8 +64,12 @@ async function socialLogin(): Promise<{ sl: SocialLogin }> {
   if (!plugin) {
     plugin = import("@capgo/capacitor-social-login").then(async (m) => {
       const env = import.meta.env as NativeSignInEnv;
+      // Apple only on iOS: the plugin's Android implementation of Sign in with Apple goes through
+      // a web redirect and refuses an `apple` section without `redirectUrl` ("apple.android.redirectUrl
+      // is null or empty" stopped every Google sign-in on Android in 1.1.0 build 6). Apple is never
+      // offered on Android (`nativeProviders`), so the section is simply left out there.
       await m.SocialLogin.initialize({
-        apple: { clientId: "com.crosswordclash.app" },
+        ...(Capacitor.getPlatform() === "ios" ? { apple: { clientId: "com.crosswordclash.app" } } : {}),
         ...(env.VITE_GOOGLE_WEB_CLIENT_ID
           ? { google: { webClientId: env.VITE_GOOGLE_WEB_CLIENT_ID, iOSClientId: env.VITE_GOOGLE_IOS_CLIENT_ID, iOSServerClientId: env.VITE_GOOGLE_WEB_CLIENT_ID, mode: "online" as const } }
           : {}),
