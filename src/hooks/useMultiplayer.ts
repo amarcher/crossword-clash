@@ -12,6 +12,7 @@ import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-
 import { reportError } from "../lib/errorReporting";
 import { displayableName } from "../lib/nameFilter";
 import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
+import { buildFinalStandings, mergeRosters, type FinalStandings } from "../lib/finalStandings";
 
 interface TrackedPresence {
   user_id: string;
@@ -100,6 +101,15 @@ interface UseMultiplayerReturn {
    * elapsed seconds it recorded (or null when the race clock is unknown).
    */
   finishRace: () => number | null;
+  /**
+   * The frozen record of the finished game (finalStandings.ts): every player
+   * who was in it, their colour, squares and finish time, and the winner.
+   * Taken once when the room completes (or when a completed room is
+   * hydrated) from the claimed cells plus the presence AND DB rosters, and
+   * never touched by presence again — so a partner who leaves after the
+   * finish keeps their row. Null while the game is in progress.
+   */
+  finalStandings: FinalStandings | null;
 }
 
 export function useMultiplayer({
@@ -134,6 +144,21 @@ export function useMultiplayer({
   const [completedAtMs, setCompletedAtMs] = useState<number | null>(null);
   // Async ("time trial") mode: per-player finish times, userId → seconds.
   const [raceFinishTimes, setRaceFinishTimes] = useState<Record<string, number>>({});
+  // The finished game's record, keyed by room like statusState so a new room
+  // never reads the last game's standings.
+  const [finalState, setFinalState] = useState<{ gameId: string; standings: FinalStandings } | null>(null);
+  const finalStandings = finalState !== null && finalState.gameId === gameId ? finalState.standings : null;
+  // The DB `players` rows from the last hydrate: the roster that outlives
+  // presence, so the record lists a player who has already dropped.
+  const dbPlayersRef = useRef<Player[]>([]);
+  // Claims whose server round trip has not answered yet, and a tick for each
+  // answer. The finish waits for them: the optimistic last letter completes
+  // the local grid before `claim_cell` has run, and marking the game
+  // completed in that same tick made the RPC refuse that very claim (it only
+  // claims in an `active` game) — the finisher's last square rolled back and
+  // the DB kept one cell fewer than the grid.
+  const pendingClaimsRef = useRef(0);
+  const [claimsSettled, setClaimsSettled] = useState(0);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const playerCellsRef = useRef(playerCells);
   playerCellsRef.current = playerCells;
@@ -158,6 +183,7 @@ export function useMultiplayer({
     const state = await fetchGameState(gameId);
     if (!state) return null;
 
+    dbPlayersRef.current = state.players;
     setPlayers(state.players);
     // The DB stores 'closed' as a separate status; surface it as
     // isRoomClosed so backgrounded players who missed the broadcast
@@ -209,6 +235,7 @@ export function useMultiplayer({
     // The rest of the previous room's state goes too, so a new lobby never
     // shows the last roster, clock or settings while this room loads.
     setPlayers([]);
+    dbPlayersRef.current = [];
     setShareCode(null);
     setStartedAtMs(null);
     setCompletedAtMs(null);
@@ -361,6 +388,8 @@ export function useMultiplayer({
   useEffect(() => {
     if (gameStatus !== "active") return;
     if (resolveRaceMode(gameSettings) === "async") return;
+    // Only once every claim of ours has been answered (see pendingClaimsRef).
+    if (pendingClaimsRef.current > 0) return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
     if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
       const completedAt = Date.now();
@@ -387,7 +416,7 @@ export function useMultiplayer({
           });
       }
     }
-  }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus]);
+  }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus, claimsSettled]);
 
   // Async mode: the game is over when every player has a finish time.
   useEffect(() => {
@@ -414,6 +443,27 @@ export function useMultiplayer({
         });
     }
   }, [gameStatus, gameSettings, players, raceFinishTimes, gameId, setGameStatus]);
+
+  // Freeze the record the moment the room is complete. The claimed cells
+  // carry their claimants; the roster is presence merged with the DB rows,
+  // so a player who already left is still listed with the colour they had.
+  // A shared grid waits for its last claim (the `game_completed` broadcast
+  // can overtake the final `cell_claimed`); a hydrated completed room gets
+  // the record from the DB's cells and rows on the same path. Presence
+  // changes after this never touch it: the state is only ever set once per
+  // room id.
+  useEffect(() => {
+    if (!gameId || gameStatus !== "completed") return;
+    if (finalState !== null && finalState.gameId === gameId) return;
+    const mode = resolveRaceMode(gameSettings);
+    if (mode !== "async") {
+      const filled = Object.values(playerCells).filter((c) => c.correct).length;
+      if (totalWhiteCells > 0 && filled < totalWhiteCells) return;
+    }
+    const roster = mergeRosters(players, dbPlayersRef.current);
+    if (roster.length === 0) return;
+    setFinalState({ gameId, standings: buildFinalStandings(roster, playerCells, raceFinishTimes, mode) });
+  }, [gameId, gameStatus, finalState, gameSettings, playerCells, totalWhiteCells, players, raceFinishTimes]);
 
   /**
    * Async mode: the local player just filled their own copy. Compute the
@@ -456,13 +506,14 @@ export function useMultiplayer({
       });
 
       // Server claim
-      const success = await claimCellOnServer(
-        gameId,
-        key,
-        letter.toUpperCase(),
-        userId,
-        true,
-      );
+      pendingClaimsRef.current += 1;
+      let success: boolean;
+      try {
+        success = await claimCellOnServer(gameId, key, letter.toUpperCase(), userId, true);
+      } finally {
+        pendingClaimsRef.current -= 1;
+        setClaimsSettled((n) => n + 1);
+      }
 
       if (success) {
         // Broadcast to others. State is already authoritative in DB; the
@@ -613,5 +664,6 @@ export function useMultiplayer({
     raceStartedAt: startedAtMs,
     raceFinishTimes,
     finishRace,
+    finalStandings,
   };
 }

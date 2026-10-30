@@ -7,6 +7,7 @@ import { saveMpSession, clearMpSession, touchMpSession } from "../lib/sessionPer
 import { resolveRaceMode } from "../lib/gameSettings";
 import type { Player, GameSettings, RaceMode } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
+import type { FinalStandings } from "../lib/finalStandings";
 
 interface MultiplayerContextValue {
   // Core multiplayer hook return
@@ -40,6 +41,8 @@ interface MultiplayerContextValue {
   finishRace: () => number | null;
   /** The room's play mode (defaults to "versus" for legacy games). */
   raceMode: RaceMode;
+  /** The finished game's frozen record (see useMultiplayer); null while in progress. */
+  finalStandings: FinalStandings | null;
 
   // Derived values
   multiplayerActive: boolean;
@@ -173,15 +176,24 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     };
   }, [multiplayerActive, multiplayer.gameStatus]);
 
+  // The roster the finished screens read: the frozen record once the game is
+  // over (finalStandings.ts — a partner who leaves keeps their row, colour and
+  // squares), the live presence roster while it is in progress.
+  const { finalStandings } = multiplayer;
+  const roster = useMemo<Pick<Player, "userId" | "displayName" | "color">[]>(
+    () => finalStandings?.players ?? multiplayer.players,
+    [finalStandings, multiplayer.players],
+  );
+
   // Build playerColorMap
   const playerColorMap = useMemo(() => {
     if (!multiplayerActive) return undefined;
     const map: Record<string, string> = {};
-    for (const p of multiplayer.players) {
+    for (const p of roster) {
       map[p.userId] = p.color;
     }
     return map;
-  }, [multiplayerActive, multiplayer.players]);
+  }, [multiplayerActive, roster]);
 
   const completedClues = useMemo(
     () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
@@ -211,24 +223,34 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   const multiplayerPlayers = useMemo(
     () =>
       multiplayerActive
-        ? multiplayer.players.map((p) => ({
-            ...p,
-            score: scoreByPlayer.get(p.userId) ?? 0,
-          }))
+        ? finalStandings
+          ? finalStandings.players.map((p) => ({
+              id: p.userId,
+              gameId: gameId ?? "",
+              userId: p.userId,
+              displayName: p.displayName,
+              color: p.color,
+              score: p.cellsClaimed,
+              raceSeconds: p.raceSeconds,
+            }))
+          : multiplayer.players.map((p) => ({
+              ...p,
+              score: scoreByPlayer.get(p.userId) ?? 0,
+            }))
         : [],
-    [multiplayerActive, multiplayer.players, scoreByPlayer],
+    [multiplayerActive, finalStandings, gameId, multiplayer.players, scoreByPlayer],
   );
 
   const playerResults: PlayerResult[] | undefined = useMemo(() => {
     if (!multiplayerActive) return undefined;
-    return multiplayer.players.map((p) => ({
+    return multiplayerPlayers.map((p) => ({
       userId: p.userId,
       displayName: p.displayName,
       color: p.color,
-      cellsClaimed: scoreByPlayer.get(p.userId) ?? 0,
+      cellsClaimed: p.score,
       cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
     }));
-  }, [multiplayerActive, multiplayer.players, scoreByPlayer, clueCountsByPlayer]);
+  }, [multiplayerActive, multiplayerPlayers, clueCountsByPlayer]);
 
   // Solo input wrapper. With Autocheck on (soloSettings.ts) a wrong letter is
   // refused here — the square flashes, nothing is written, the miss is

@@ -529,22 +529,36 @@ export function HostLayout() {
     return counts;
   }, [playerCells]);
 
+  // Once the game is over the frozen record (finalStandings.ts) is the
+  // roster, so a player who leaves the room keeps their colour and row on
+  // the TV's grid, scoreboard and completion screen.
+  const { finalStandings } = multiplayer;
   const multiplayerPlayers = useMemo(
     () =>
-      multiplayer.players.map((p) => ({
-        ...p,
-        score: scoreByPlayer.get(p.userId) ?? 0,
-      })),
-    [multiplayer.players, scoreByPlayer],
+      finalStandings
+        ? finalStandings.players.map((p) => ({
+            id: p.userId,
+            gameId: gameId ?? "",
+            userId: p.userId,
+            displayName: p.displayName,
+            color: p.color,
+            score: p.cellsClaimed,
+            raceSeconds: p.raceSeconds,
+          }))
+        : multiplayer.players.map((p) => ({
+            ...p,
+            score: scoreByPlayer.get(p.userId) ?? 0,
+          })),
+    [finalStandings, gameId, multiplayer.players, scoreByPlayer],
   );
 
   const playerColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const p of multiplayer.players) {
+    for (const p of finalStandings?.players ?? multiplayer.players) {
       map[p.userId] = p.color;
     }
     return map;
-  }, [multiplayer.players]);
+  }, [finalStandings, multiplayer.players]);
 
   const completedClues = useMemo(
     () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),

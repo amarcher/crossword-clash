@@ -24,6 +24,8 @@ interface ShareResultButtonProps {
   puzzleSize?: string;
   /** True when the puzzle was today's daily: the button says "Share your time". */
   daily?: boolean;
+  /** One line under the preview saying what the squares mean (the modal words it per mode). */
+  legend?: string;
   /**
    * Fired when the finisher types a name to sign the share — lets the screen
    * reuse it (e.g. claim the daily-leaderboard entry with it too).
@@ -70,6 +72,7 @@ export function ShareResultButton({
   hasTime,
   puzzleSize,
   daily,
+  legend,
   onNameSigned,
   darkMode,
 }: ShareResultButtonProps) {
@@ -136,7 +139,7 @@ export function ShareResultButton({
 
   return (
     <div className="col-span-2 flex flex-col gap-2" data-testid="share-result">
-      <ShareBlockPreview block={block} darkMode={darkMode} />
+      <ShareBlockPreview block={block} legend={legend} darkMode={darkMode} />
       {signing && (
         <input
           type="text"
@@ -164,8 +167,12 @@ export function ShareResultButton({
   );
 }
 
-/** The block as it will paste: header, stats, the emoji rows, then the link. */
-export function ShareBlockPreview({ block, darkMode }: { block: ShareBlock; darkMode?: boolean }) {
+/**
+ * The block as it will paste: header, stats, the emoji rows, then the link —
+ * and, when given, one legend line under the rows saying what the squares
+ * mean (not part of the shared text).
+ */
+export function ShareBlockPreview({ block, legend, darkMode }: { block: ShareBlock; legend?: string; darkMode?: boolean }) {
   const { t } = useTranslation();
   return (
     <div
@@ -185,6 +192,11 @@ export function ShareBlockPreview({ block, darkMode }: { block: ShareBlock; dark
           <div key={i}>{row}</div>
         ))}
       </div>
+      {legend && (
+        <p data-testid="share-legend" className={`mt-1.5 text-[11px] leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>
+          {legend}
+        </p>
+      )}
       <p className={`mt-2 break-all text-xs ${darkMode ? "text-white/50" : "text-subtle"}`}>
         {block.cta} {displayLink(block.link)}
       </p>
