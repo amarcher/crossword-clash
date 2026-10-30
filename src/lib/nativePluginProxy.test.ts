@@ -26,7 +26,8 @@ const calls: string[] = [];
 const purchasesImpl: Record<string, (...args: unknown[]) => unknown> = {};
 const socialImpl: Record<string, (...args: unknown[]) => unknown> = {};
 
-vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => "ios", isNativePlatform: () => true } }));
+const platform = vi.hoisted(() => ({ value: "ios" }));
+vi.mock("@capacitor/core", () => ({ Capacitor: { getPlatform: () => platform.value, isNativePlatform: () => true } }));
 vi.mock("@revenuecat/purchases-capacitor", () => ({ Purchases: pluginLike(purchasesImpl, calls) }));
 vi.mock("@capgo/capacitor-social-login", () => ({ SocialLogin: pluginLike(socialImpl, calls) }));
 
@@ -90,5 +91,33 @@ describe("native sign-in plugin loading", () => {
     await settles(mod.nativeIdToken("google"));
     expect(calls.filter((c) => c === "initialize")).toHaveLength(1);
     expect(calls).not.toContain("then");
+  });
+
+  it("passes the Apple section to the plugin on iOS only (Android refuses it without a redirectUrl)", async () => {
+    vi.stubEnv("VITE_GOOGLE_WEB_CLIENT_ID", "web-client");
+    const seen: Record<string, unknown>[] = [];
+    socialImpl.initialize = async (args: unknown) => {
+      seen.push(args as Record<string, unknown>);
+    };
+    const logins: { provider: string; options: Record<string, unknown> }[] = [];
+    socialImpl.login = async (args: unknown) => {
+      logins.push(args as { provider: string; options: Record<string, unknown> });
+      return { result: { idToken: "tok" } };
+    };
+    const mod = await import("./nativeSignIn");
+    for (const value of ["ios", "android"]) {
+      platform.value = value;
+      mod.resetNativeSignInForTests();
+      await settles(mod.nativeIdToken("google"));
+    }
+    platform.value = "ios";
+    expect(seen).toHaveLength(2);
+    // Android Google login carries no scopes (the plugin would demand a modified MainActivity); iOS keeps them.
+    expect(logins[0]).toMatchObject({ provider: "google", options: { scopes: ["email", "profile"] } });
+    expect(logins[1]).toMatchObject({ provider: "google" });
+    expect(logins[1].options).not.toHaveProperty("scopes");
+    expect(seen[0]).toMatchObject({ apple: { clientId: "com.crosswordclash.app" }, google: { webClientId: "web-client" } });
+    expect(seen[1]).not.toHaveProperty("apple");
+    expect(seen[1]).toMatchObject({ google: { webClientId: "web-client" } });
   });
 });
