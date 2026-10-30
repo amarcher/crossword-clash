@@ -78,9 +78,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
     isHost &&
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
 
-  // DOM order is phone order: the roster leads, then how people get in, then
-  // the host's settings beside the Start button they gate. On desktop the
-  // join column moves to the right and spans the roster, settings and actions.
+  // DOM order is phone order: Start (host) or the waiting status (joiner), the
+  // roster, then how people get in, then the host's settings. On desktop the
+  // join column moves to the right and spans the left column's rows.
   const column = shareCode ? "lg:col-start-1" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md";
   const joinRows = showSettings ? "lg:row-span-3" : "lg:row-span-2";
 
@@ -102,6 +102,24 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
       subtitle={isHost ? t("lobby.shareInvite") : t("lobby.guestSubtitle")}
     >
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-x-6">
+        {/* The most important line on the page leads (Andrew, 2026-10-30): the host's Start,
+            or a joiner's "waiting for the host" status. Right above the roster, never a bottom bar. */}
+        <div className={column}>
+          {isHost ? (
+            <Button size="lg" block onClick={onStartGame} disabled={needMore}>
+              {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
+            </Button>
+          ) : (
+            <p
+              role="status"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 text-[15px] font-semibold text-brand-700"
+            >
+              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              {t("lobby.waitingForHost")}
+            </p>
+          )}
+        </div>
+
         {/* Who is here: first on the page, so a phone shows the roster above the fold. */}
         <section className={column}>
           <Card className="p-5">
@@ -194,7 +212,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           </section>
         )}
 
-        {/* The host's settings, right above the Start button they apply to. */}
+        {/* The host's settings, last: they are tweaked once, before Start. */}
         {showSettings && (
           <section className={column}>
             <Card className="p-5">
@@ -210,22 +228,6 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             </Card>
           </section>
         )}
-
-        {/* Actions: sticky to the bottom of the viewport on phones, inline on desktop. */}
-        <div
-          className={`sticky bottom-0 z-10 -mx-4 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${shareCode ? "lg:mx-0" : ""} ${column}`}
-        >
-          {isHost ? (
-            <Button size="lg" block onClick={onStartGame} disabled={needMore}>
-              {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
-            </Button>
-          ) : (
-            <p className="flex min-h-12 items-center justify-center gap-2 text-sm font-medium text-muted" role="status">
-              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t("lobby.waitingForHost")}
-            </p>
-          )}
-        </div>
       </div>
     </FlowPage>
   );

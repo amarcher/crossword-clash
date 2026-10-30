@@ -268,7 +268,7 @@ describe("GameLobby", () => {
       expect(screen.getByText("Host")).toBeDefined();
     });
 
-    it("lists the players before the room code, QR code and settings, so a phone shows the roster above the fold", () => {
+    it("leads with Start or the waiting status, then the players, then the room code, QR code and settings", () => {
       for (const isHost of [true, false]) {
         cleanup();
         render(
@@ -288,9 +288,12 @@ describe("GameLobby", () => {
         const follows = (node: Element) => Boolean(roster.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING);
         expect(follows(screen.getByText("Room code")), `room code after the roster (host: ${isHost})`).toBe(true);
         expect(follows(screen.getByTestId("qr-code")), `QR after the roster (host: ${isHost})`).toBe(true);
+        // The most important line leads: the host's Start, or a joiner's waiting status.
         if (isHost) {
           expect(follows(screen.getByText("Game settings")), "settings after the roster").toBe(true);
-          expect(follows(screen.getByText("Start Game")), "Start after the roster").toBe(true);
+          expect(follows(screen.getByText("Start Game")), "Start before the roster").toBe(false);
+        } else {
+          expect(follows(screen.getByRole("status")), "waiting status before the roster").toBe(false);
         }
       }
     });
