@@ -85,38 +85,50 @@ describe("CompletionModal", () => {
     expect(getByText("It's a tie at 5 squares!")).toBeTruthy();
   });
 
-  it("explains the share squares under the preview: by claimant in a race, by pace in solo", () => {
+  describe("share-square legend under the preview", () => {
     const puzzle = buildPuzzle({ title: "Deep Blue", grid: ["#whom", "trace", "holes", "atlas", "neon#"], clueTexts: {} });
+    // 11 wide: the block is the single 15-square pace bar, not grid rows.
+    const wide = buildPuzzle({ title: "Wide", grid: ["abcdefghijk", "abcdefghijk"], clueTexts: {} });
     const cells = {
       "0,1": { letter: "W", correct: true, playerId: "bob", at: 1 },
       "1,0": { letter: "T", correct: true, playerId: "alice", at: 2 },
     };
-    const { getByTestId, rerender } = render(
-      <CompletionModal
-        {...SOLO_PROPS}
-        players={makePlayers()}
-        currentUserId="alice"
-        challengePuzzle={puzzle}
-        playerCells={cells}
-        playerColors={{ alice: "#3b82f6", bob: "#ef4444" }}
-        challengerName="Alice"
-      />,
-    );
-    // Named in the standings order, with the squares the rows use.
-    expect(getByTestId("share-legend").textContent).toBe("Who solved each square: 🟦 Alice, 🟥 Bob");
-    expect(getByTestId("share-block-preview").textContent).toContain("⬛🟥⬜⬜⬜");
+    const colors = { alice: "#3b82f6", bob: "#ef4444" };
 
-    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} playerCells={cells} challengerName="Alice" />);
-    expect(getByTestId("share-legend").textContent).toBe("🟩 early · 🟨 mid · 🟧 late · 🟥 wrong letter");
+    it("grid rows in a race: names each claimant after their square, in the standings order", () => {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" challengePuzzle={puzzle} playerCells={cells} playerColors={colors} challengerName="Alice" />,
+      );
+      expect(getByTestId("share-legend").textContent).toBe("Who solved each square: 🟦 Alice, 🟥 Bob");
+      expect(getByTestId("share-block-preview").textContent).toContain("⬛🟥⬜⬜⬜");
+    });
 
-    // A wide grid shares a pace bar, so the legend explains stretches instead.
-    const wide = buildPuzzle({ title: "Wide", grid: ["abcdefghijk", "abcdefghijk"], clueTexts: {} });
-    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={wide} playerCells={{}} challengerName="Alice" />);
-    expect(getByTestId("share-legend").textContent).toContain("Pace by stretch");
-    rerender(
-      <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={{ alice: "#3b82f6" }} challengerName="Alice" />,
-    );
-    expect(getByTestId("share-legend").textContent).toBe("Most squares per stretch: 🟦 Alice, 🟥 Bob");
+    it("grid rows in solo: the pace thirds and the wrong-letter red", () => {
+      const { getByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} playerCells={cells} challengerName="Alice" />);
+      expect(getByTestId("share-legend").textContent).toBe("🟩 early · 🟨 mid · 🟧 late · 🟥 wrong letter");
+    });
+
+    it("pace bar in a race (wider than 9): a fifteenth of the race per square, by who solved most then", () => {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={colors} challengerName="Alice" />,
+      );
+      expect(getByTestId("share-legend").textContent).toBe(
+        "Each square is a fifteenth of the race, coloured by who solved most then: 🟦 Alice, 🟥 Bob",
+      );
+      expect([...getByTestId("share-block-preview").querySelectorAll("div[aria-hidden] > div")]).toHaveLength(1);
+    });
+
+    it("pace bar in solo: a fifteenth of the solve per square, fast / even / slow and a wrong letter in that stretch", () => {
+      const { getByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={wide} playerCells={{}} challengerName="Alice" />);
+      expect(getByTestId("share-legend").textContent).toBe(
+        "Each square is a fifteenth of your solve: 🟩 fast · 🟨 even · 🟧 slow · 🟥 a wrong letter then",
+      );
+    });
+
+    it("no legend without a puzzle to share", () => {
+      const { queryByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+      expect(queryByTestId("share-legend")).toBeNull();
+    });
   });
 
   it("shows player stats in table", () => {
