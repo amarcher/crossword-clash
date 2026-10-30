@@ -5,8 +5,9 @@
 #   pnpm testflight --no-sync  # skip pnpm mobile:sync (web build already copied)
 #   pnpm testflight --export   # sign a local IPA instead of uploading
 #
-# Signing and the upload use the Apple account signed in to Xcode
-# (-allowProvisioningUpdates); nothing here reads a key or password.
+# Signing uses the local distribution certificate; App Store Connect access for
+# the export and the upload comes from the ASC_API_* key (never the Apple account
+# signed in to Xcode, whose session expires). Nothing here reads a password.
 # Bump CURRENT_PROJECT_VERSION in ios/App/App.xcodeproj before each upload.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -39,11 +40,15 @@ for flag in VITE_PLUS VITE_COMMUNITY; do
   fi
 done
 
-sync=1 plist=ios/ExportOptions-TestFlight-Upload.plist what=upload
+: "${ASC_API_KEY_ID:?set ASC_API_KEY_ID (the App Store Connect API key for the personal team)}"
+: "${ASC_API_ISSUER_ID:?set ASC_API_ISSUER_ID}"
+[[ -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8" ]] || { echo "testflight: ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8 is missing." >&2; exit 1; }
+
+sync=1 plist=ios/ExportOptions-TestFlight.plist what=upload
 for arg in "$@"; do
   case "$arg" in
     --no-sync) sync=0 ;;
-    --export) plist=ios/ExportOptions-TestFlight.plist what=export ;;
+    --export) what=export ;;
     *) echo "testflight: unknown option $arg" >&2; exit 2 ;;
   esac
 done
@@ -67,13 +72,21 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -derivedDataPath ios/DerivedData \
   -archivePath "$archive" -allowProvisioningUpdates archive
 
+# Export signs with the App Store Connect API key, never the Apple account
+# signed in to Xcode: that session expires without warning ("Failed to Use
+# Accounts" stopped build 23 on 2026-10-30), the key does not. The upload goes
+# through altool with the same key for the same reason.
 xcodebuild -exportArchive \
   -archivePath "$archive" \
   -exportPath "$export_dir" \
   -exportOptionsPlist "$plist" \
-  -allowProvisioningUpdates
+  -allowProvisioningUpdates \
+  -authenticationKeyPath "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8" \
+  -authenticationKeyID "$ASC_API_KEY_ID" \
+  -authenticationKeyIssuerID "$ASC_API_ISSUER_ID"
 
 if [[ $what == upload ]]; then
+  xcrun altool --upload-app -f "$export_dir/App.ipa" -t ios --apiKey "$ASC_API_KEY_ID" --apiIssuer "$ASC_API_ISSUER_ID"
   echo "== Uploaded $version ($build). Processing takes a few minutes; then assign the build to a group in App Store Connect:"
   echo "   https://appstoreconnect.apple.com/apps/6811111993/testflight"
 else

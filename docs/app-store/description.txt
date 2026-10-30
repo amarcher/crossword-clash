@@ -10,8 +10,11 @@ PLAY TOGETHER
 • Optional wrong-answer penalty to keep the guessers honest
 
 SOLVE ON YOUR OWN
-• A fresh mini crossword every day, with streaks and a daily leaderboard
+• Three fresh crosswords every day: the Mini, the Midi and the Large, each with streaks and a daily leaderboard
+• A calendar of every past daily to catch up on
+• Puzzles made by other solvers in the community library
 • Open your own .puz, .ipuz, .jpz and .xd puzzle files
+• Autocheck on or off: have wrong letters refused, or type freely and check at the end
 • Your progress is saved automatically
 
 MADE FOR TOUCH
@@ -19,4 +22,14 @@ MADE FOR TOUCH
 • iPhone and iPad, portrait or landscape
 • English and Spanish
 
-Free to play. No account, no ads and no in-app purchases.
+Free to play, with no ads. Sign in with Apple or Google (optional) to keep your username, solve history and streaks on every device.
+
+CROSSWORD CLASH PLUS (optional subscription)
+• The full daily archive, back to the first day
+• The construction studio: build your own crossword with a word-fill engine and AI help for clues and titles, then publish it for everyone
+• Progress synced across your devices
+• More narrator time on the TV view
+$3.99 a month or $24.99 a year, billed to your Apple ID and renewing automatically until cancelled in Settings.
+
+Terms of Use: https://crosswordclash.com/terms
+Privacy Policy: https://crosswordclash.com/privacy
