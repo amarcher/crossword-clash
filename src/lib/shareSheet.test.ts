@@ -22,11 +22,13 @@ describe("selectTextShareMethod", () => {
 });
 
 describe("shareText", () => {
-  it("native: hands the body and the URL to the plugin as separate items", async () => {
+  it("native: hands the plugin the whole block as one text item and no url (iOS would share the url alone)", async () => {
     const nativeShare = vi.fn().mockResolvedValue({});
     const result = await shareText(PAYLOAD, { nativePlatform: true, canWebShare: false, canCopy: true, nativeShare });
     expect(result).toEqual({ method: "native", outcome: "shared" });
-    expect(nativeShare).toHaveBeenCalledWith(expect.objectContaining({ text: PAYLOAD.body, url: PAYLOAD.url }));
+    expect(nativeShare).toHaveBeenCalledWith(expect.objectContaining({ text: PAYLOAD.text }));
+    expect(nativeShare.mock.calls[0][0]).not.toHaveProperty("url");
+    expect(PAYLOAD.text).toContain(PAYLOAD.url);
   });
 
   it("native: a cancelled sheet is a dismissal, not a copy", async () => {
