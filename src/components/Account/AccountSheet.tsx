@@ -8,6 +8,7 @@ import { PlusPurchaseControls } from "../Plus/PlusPurchaseControls";
 import { track } from "../../lib/analytics";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { Button } from "../ui";
+import { ProviderButton } from "./ProviderButton";
 import { UsernamePicker } from "./UsernamePicker";
 import { PlusPitch } from "../Plus/PlusPitch";
 import type { AccountContextValue } from "../../contexts/AccountContext";
@@ -90,9 +91,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   const providerButtons = (
     <>
       {providers.map((provider) => (
-        <Button key={provider} variant="secondary" size="lg" block disabled={busy || !enabled?.[provider]} aria-busy={busy || undefined} onClick={() => signIn(provider)}>
-          {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
-        </Button>
+        <ProviderButton key={provider} provider={provider} size="lg" disabled={!enabled?.[provider]} busy={busy} onClick={() => signIn(provider)} />
       ))}
       {enabled && !providers.some((p) => enabled[p]) && <p className="text-center text-xs text-muted">{t("account.noProviders")}</p>}
     </>
