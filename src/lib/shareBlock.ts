@@ -116,6 +116,16 @@ export function playerSquare(hex: string | undefined): string {
   return index === -1 ? EMPTY : PLAYER_SQUARES[index % PLAYER_SQUARES.length];
 }
 
+/**
+ * "🟦 Archer, 🟥 Alicia" — each player's square and name, for the legend under
+ * the preview of a race block. The squares follow the players' hex colours, so
+ * pass the frozen record's roster and the legend matches the rows whoever is
+ * still in the room.
+ */
+export function claimantLegend(players: readonly { displayName: string; color: string }[]): string {
+  return players.map((p) => `${playerSquare(p.color)} ${p.displayName}`).join(", ");
+}
+
 /** Which third of [start, end] `at` falls in: 0, 1 or 2. A degenerate span is all first-third. */
 export function paceThird(at: number | undefined, start: number, end: number): 0 | 1 | 2 {
   if (at === undefined || end <= start) return 0;
