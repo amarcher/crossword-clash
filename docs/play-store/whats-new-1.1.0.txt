@@ -1,0 +1,9 @@
+<en-US>
+Sign in with Google or Apple to keep your username, solve history and streaks on every device.
+
+Community puzzles: play crosswords made by other solvers, from the Community puzzles row on the menu.
+
+Autocheck setting: leave it on to have wrong letters refused, or turn it off to type freely and check when the grid is full.
+
+Also: the app works with a hardware keyboard, the TV view keeps the screen awake, you're told when an update is available, and the share sheet after a finish carries your emoji grid and time.
+</en-US>

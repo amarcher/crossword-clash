@@ -20,12 +20,14 @@ that is newer than the store build always reports no update; the iOS banner
 can only be seen on a store install older than the live version.
 Use a new archive path so prior artifacts remain available.
 
-On a Mac with Xcode signed in to the team, `pnpm testflight`
-(`scripts/testflight.sh`) does all of it: `pnpm mobile:sync`, the Release
-archive named after the project's version and build, and the export with
-`ios/ExportOptions-TestFlight-Upload.plist`, which uploads straight to
-App Store Connect. `--export` signs a local IPA instead
-(`ios/ExportOptions-TestFlight.plist`); `--no-sync` skips the web build.
+With Xcode 27.1 or later and the `ASC_API_KEY_ID` / `ASC_API_ISSUER_ID`
+key in the shell, `pnpm testflight` (`scripts/testflight.sh`) does all of
+it: `pnpm mobile:sync`, the Release archive named after the project's
+version and build, the export with `ios/ExportOptions-TestFlight.plist`
+(signed with the local distribution certificate; App Store Connect access
+through the API key, never the Apple account signed in to Xcode, whose
+session expires without warning) and the upload with `xcrun altool`.
+`--export` stops at the signed IPA; `--no-sync` skips the web build.
 Assigning the processed build to a tester group and pasting the
 `WHAT-TO-TEST-<build>.txt` notes stays a manual step in App Store Connect.
 The steps by hand:
