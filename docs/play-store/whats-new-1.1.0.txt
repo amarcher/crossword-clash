@@ -5,5 +5,5 @@ Community puzzles: play crosswords made by other solvers, from the Community puz
 
 Autocheck setting: leave it on to have wrong letters refused, or turn it off to type freely and check when the grid is full.
 
-Also: the app works with a hardware keyboard, the TV view keeps the screen awake, you're told when an update is available, and the share sheet after a finish carries your emoji grid and time.
+Also: hardware keyboard support, the TV view keeps the screen awake, an update notice when a new version is out, and the share sheet carries your emoji grid and time.
 </en-US>

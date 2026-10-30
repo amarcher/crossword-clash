@@ -328,6 +328,32 @@ only once 3.1 is done in live mode; everything stays hidden before that.
    (`com.googleusercontent.apps.<id>`); the Capgo plugin's README shows the
    exact plist snippet. Nothing is needed in the Android manifest.
 
+**State 2026-10-30 (done through the Play Developer API, not the console):**
+the merchant account exists (the organization's existing FABLE DESIGNER LLC
+payments profile 5459-1455-2708 attached to Play on 2026-10-30; public
+merchant name, website, support email and the `GOOGLE*` statement name are
+**per payments profile**, one per developer account, so they are shared by
+every app on the Fable Designer account; each app keeps its own store-listing
+contact). Service account `play-publisher@crossword-clash.iam.gserviceaccount.com`
+(Cloud project `crossword-clash`, Play Developer API enabled; key at
+`~/.config/crossword-clash/play-service-account.json`, mode 600, never in the
+repo) invited into Play Console with View app info, View financial data,
+Manage orders and subscriptions, Release to production, Release to testing
+tracks, Manage testing tracks and Manage store presence on Crossword Clash
+only; RevenueCat's Play app takes the same JSON. The Subscriptions page
+refuses to create products until a bundle with `com.android.vending.BILLING`
+exists on some track, so `5 (1.1.0)` (built with `VITE_PLUS` unset, so it
+cannot reach the web checkout) was uploaded as a **draft** on Internal testing
+through `edits` + `bundles` + `tracks/internal` (release notes are capped at
+500 characters). Subscriptions `plus_monthly` (base plan `monthly`, P1M) and
+`plus_annual` (base plan `annual`, P1Y) created with `regionsVersion.version=
+2026/01` (the API names the latest version in its error when given an old
+one), prices from `pricing:convertRegionPrices` for every one of the 174
+regions plus `otherRegionsConfig` in USD/EUR, en-US + es-ES listings (benefits
+are capped at 40 characters), base plans **activated**. RevenueCat product ids
+for Play subscriptions are `plus_monthly:monthly` / `plus_annual:annual`.
+Still open: RevenueCat Play app + `VITE_REVENUECAT_ANDROID_KEY`, license
+testers, the Plus build (`versionCode` 6) and its Play submission.
 ### 3.5 RevenueCat
 
 1. **Project** "Crossword Clash" with two apps: App Store (bundle id, the
