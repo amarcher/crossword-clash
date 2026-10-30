@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { LogIn, LogOut } from "lucide-react";
 import { Button } from "../ui";
+import { ProviderButton } from "../Account/ProviderButton";
 import { accountName, fetchEnabledProviders, resumeStudioSignIn, signInToStudio, signOutOfStudio, type StudioProvider } from "../../lib/studioAuth";
 import type { StudioAccount as Account } from "../../hooks/useStudioAccount";
 
-const PROVIDERS: { id: StudioProvider; label: string }[] = [
-  { id: "apple", label: "Continue with Apple" },
-  { id: "google", label: "Continue with Google" },
-];
+// Apple first: its button must never be the less prominent one (HIG).
+const PROVIDERS: StudioProvider[] = ["apple", "google"];
 
 /**
  * The studio's sign-in control, in the top bar: "Sign in" opens Apple and
@@ -109,15 +108,20 @@ export function StudioAccount({ account }: { account: Account }) {
             <>
               <p className="text-sm text-ink-soft">Sign in to use the studio as yourself.</p>
               <div className="mt-2 flex flex-col gap-2">
-                {PROVIDERS.map((p) => (
-                  <Button key={p.id} variant="secondary" className="w-full" disabled={busy || !enabled?.[p.id]} onClick={() =>
+                {PROVIDERS.map((provider) => (
+                  <ProviderButton
+                    key={provider}
+                    provider={provider}
+                    size="md"
+                    disabled={!enabled?.[provider]}
+                    busy={busy}
+                    onClick={() =>
                       void act(async () => {
                         // Native: the OS sheet answers in place; the auth listener updates the account.
-                        if ((await signInToStudio(p.id)) !== "redirecting") setBusy(false);
+                        if ((await signInToStudio(provider)) !== "redirecting") setBusy(false);
                       })
-                    }>
-                    {p.label}
-                  </Button>
+                    }
+                  />
                 ))}
               </div>
               {enabled && !enabled.apple && !enabled.google && (

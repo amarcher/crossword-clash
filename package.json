@@ -47,6 +47,7 @@
     "@elevenlabs/client": "^1.10.0",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource/roboto": "5.3.0",
     "@revenuecat/purchases-capacitor": "^13.7.6",
     "@sentry/react": "^11.1.0",
     "@supabase/supabase-js": "^2.118.0",

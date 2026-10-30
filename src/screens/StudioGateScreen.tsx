@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PencilRuler } from "lucide-react";
 import { PageShell } from "../components/PageShell";
-import { Button } from "../components/ui";
+import { ProviderButton } from "../components/Account/ProviderButton";
 import { PlusPitch } from "../components/Plus/PlusPitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { useStudioAccount } from "../hooks/useStudioAccount";
@@ -119,9 +119,7 @@ function SignInButtons() {
     <div className="flex flex-col gap-2.5">
       <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
       {availableProviders().map((provider) => (
-        <Button key={provider} variant="secondary" size="lg" block disabled={busy || !enabled?.[provider]} aria-busy={busy || undefined} onClick={() => void signIn(provider)}>
-          {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
-        </Button>
+        <ProviderButton key={provider} provider={provider} size="lg" disabled={!enabled?.[provider]} busy={busy} onClick={() => void signIn(provider)} />
       ))}
       {error && (
         <p role="alert" className="rounded-xl bg-gold-50 px-3 py-2 text-xs leading-relaxed text-ink-soft">
