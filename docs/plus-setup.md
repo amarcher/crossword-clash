@@ -385,7 +385,7 @@ sandbox Apple Account prompt, plus `facebook: false` for the sign-in plugin. Goo
 (`…-0skrplb0r6c6apr9lteai0a2uqo70uth`, = `VITE_GOOGLE_WEB_CLIENT_ID`), an iOS
 client (`…-bhbf4mkmo94i09jjsqj34hblt0prqtk3`, = `VITE_GOOGLE_IOS_CLIENT_ID`,
 reversed in `Info.plist`) and two Android clients for `com.crosswordclash.app`
-(Play app-signing SHA-1 `41:A9:…:AC:95`, upload key `35:9E:…:A8:9A`). Supabase
+(Play app-signing SHA-1 `E7:48:68:26:…:FB:69:A1`, upload key `35:9E:…:A8:9A`; until 2026-10-30 the Play client held the first 20 bytes of the signing certificate's SHA-**256** `41:A9:CB:D8:…` pasted as its SHA-1, and every Google sign-in from a Play-signed build failed with `[16] Account reauth failed` — the plugin logs `signingSha1=` on failure, and `apksigner verify --print-certs` on the Play-signed APK from `generatedApks` is the authoritative value). Supabase
 → Providers: Google lists the web + iOS ids, Apple lists
 `com.crosswordclash.signin` + `com.crosswordclash.app`. The repo branch has the
 1.1.0 version bump, `App.entitlements` with Sign in with Apple and the Google
