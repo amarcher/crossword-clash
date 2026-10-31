@@ -6,6 +6,7 @@ import { HostLayout } from "./layouts/HostLayout";
 import { screenModules as m } from "./routeModules";
 import { studioRouteEnabled } from "./lib/studioGate";
 import { communityEnabled } from "./lib/community";
+import { friendsEnabled } from "./lib/friends";
 import { RouteErrorScreen } from "./screens/RouteErrorScreen";
 import { NotFoundScreen } from "./screens/NotFoundScreen";
 
@@ -165,6 +166,13 @@ export const routes: RouteObject[] = [
           { path: "archive", lazy: () => m.archive().then((s) => ({ Component: s.ArchiveScreen })) },
           // The signed-in solver's page: identity, Plus, streaks, recent solves, puzzles in progress.
           { path: "account", lazy: () => m.account().then((s) => ({ Component: s.AccountScreen })) },
+          // Friends (docs/friends-spec.md §3.6), behind the launch switch: the Race friends screen and the friends list.
+          ...(friendsEnabled()
+            ? [
+                { path: "race", lazy: () => m.race().then((s) => ({ Component: s.RaceScreen })) },
+                { path: "race/friends", lazy: () => m.friends().then((s) => ({ Component: s.FriendsScreen })) },
+              ]
+            : []),
           // Community puzzles (docs/community-puzzles-spec.md), behind the launch switch: browse, an author's list, one puzzle's page.
           ...(communityEnabled()
             ? [

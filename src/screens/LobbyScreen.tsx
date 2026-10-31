@@ -7,6 +7,7 @@ import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
 import { useConfirm } from "../components/ConfirmDialog";
+import { LobbyInvites } from "../components/Friends";
 
 export function LobbyScreen() {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ export function LobbyScreen() {
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
       raceMode={game.raceMode}
       onRaceModeChange={game.setRaceMode}
+      invites={game.gameId ? <LobbyInvites gameId={game.gameId} /> : null}
     />
   );
 }
