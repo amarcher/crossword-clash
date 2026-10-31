@@ -2,45 +2,103 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "proxy": {
     "entrypoint": "proxy.ts",
-    "matcher": ["/daily-puzzles/:path*"]
+    "matcher": [
+      "/daily-puzzles/:path*"
+    ]
   },
   "redirects": [
-    { "source": "/classics", "destination": "/menu", "permanent": true }
+    {
+      "source": "/classics",
+      "destination": "/menu",
+      "permanent": true
+    }
   ],
   "rewrites": [
-    { "source": "/share", "destination": "/api/share" },
-    { "source": "/daily/:day(\\d{4}-\\d{2}-\\d{2})/:slot(mini|midi|large)", "destination": "/api/share?t=daily&day=:day&slot=:slot" },
-    { "source": "/daily-puzzles/midi/:day.json", "destination": "/api/daily?day=:day&slot=midi" },
-    { "source": "/daily-puzzles/large/:day.json", "destination": "/api/daily?day=:day&slot=large" },
-    { "source": "/daily-puzzles/:day.json", "destination": "/api/daily?day=:day" },
-    { "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)", "destination": "/index.html" }
+    {
+      "source": "/share",
+      "destination": "/api/share"
+    },
+    {
+      "source": "/daily/:day(\\d{4}-\\d{2}-\\d{2})/:slot(mini|midi|large)",
+      "destination": "/api/share?t=daily&day=:day&slot=:slot"
+    },
+    {
+      "source": "/daily-puzzles/midi/:day.json",
+      "destination": "/api/daily?day=:day&slot=midi"
+    },
+    {
+      "source": "/daily-puzzles/large/:day.json",
+      "destination": "/api/daily?day=:day&slot=large"
+    },
+    {
+      "source": "/daily-puzzles/:day.json",
+      "destination": "/api/daily?day=:day"
+    },
+    {
+      "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(self)" },
-        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self'" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), geolocation=(), microphone=(self)"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
       "source": "/daily-puzzles/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ]
