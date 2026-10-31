@@ -4,6 +4,7 @@
 #   pnpm testflight            # sync, archive, upload
 #   pnpm testflight --no-sync  # skip pnpm mobile:sync (web build already copied)
 #   pnpm testflight --export   # sign a local IPA instead of uploading
+#   pnpm testflight --automatic # export with Xcode-managed signing (needs a signed-in Xcode account)
 #
 # Signing uses the local distribution certificate; App Store Connect access for
 # the export and the upload comes from the ASC_API_* key (never the Apple account
@@ -44,11 +45,20 @@ done
 : "${ASC_API_ISSUER_ID:?set ASC_API_ISSUER_ID}"
 [[ -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8" ]] || { echo "testflight: ~/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8 is missing." >&2; exit 1; }
 
-sync=1 plist=ios/ExportOptions-TestFlight.plist what=upload
+# The export signs MANUALLY with the "Crossword Clash App Store (API)" profile
+# (ios/ExportOptions-TestFlight-manual.plist): the API key may not use Apple's
+# cloud signing, so with automatic signing a new App ID capability (Associated
+# Domains, build 25) left the export asking an expired Xcode account. The
+# profile was created through the ASC API (POST /v1/profiles, IOS_APP_STORE,
+# the local "Apple Distribution: Andrew Archer" certificate) and installed in
+# ~/Library/MobileDevice/Provisioning Profiles; when a capability changes,
+# create a new one the same way and install it. --automatic uses the old plist.
+sync=1 plist=ios/ExportOptions-TestFlight-manual.plist what=upload
 for arg in "$@"; do
   case "$arg" in
     --no-sync) sync=0 ;;
     --export) what=export ;;
+    --automatic) plist=ios/ExportOptions-TestFlight.plist ;;
     *) echo "testflight: unknown option $arg" >&2; exit 2 ;;
   esac
 done
