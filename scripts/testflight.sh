@@ -67,10 +67,17 @@ fi
 echo "== Crossword Clash $version ($build): $what"
 if [[ $sync == 1 ]]; then pnpm mobile:sync; fi
 
+# The archive signs with the same API key: a new capability on the App ID
+# (Associated Domains, build 25) needs a regenerated profile, and without the
+# key Xcode asks an Apple account that may have expired ("No Accounts").
 xcodebuild -project ios/App/App.xcodeproj -scheme App \
   -configuration Release -destination 'generic/platform=iOS' \
   -derivedDataPath ios/DerivedData \
-  -archivePath "$archive" -allowProvisioningUpdates archive
+  -archivePath "$archive" -allowProvisioningUpdates \
+  -authenticationKeyPath "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY_ID}.p8" \
+  -authenticationKeyID "$ASC_API_KEY_ID" \
+  -authenticationKeyIssuerID "$ASC_API_ISSUER_ID" \
+  archive
 
 # Export signs with the App Store Connect API key, never the Apple account
 # signed in to Xcode: that session expires without warning ("Failed to Use
