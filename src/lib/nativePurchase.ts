@@ -24,6 +24,8 @@ export interface NativePlanPrice {
   plan: PlusPlan;
   /** The store's localized price string, e.g. "$24.99". */
   priceString: string;
+  /** The same price as a number in the store's currency, for the annual saving. */
+  price: number;
 }
 
 function platformKey(platform = Capacitor.getPlatform()): string | undefined {
@@ -46,6 +48,8 @@ export function nativePurchaseAvailable(): boolean {
 
 let sdk: Promise<PurchasesModule> | null = null;
 let configuredFor: string | null = null;
+/** The latest configure / logIn in flight, so a purchase never runs under the previous user. */
+let syncing: Promise<void> = Promise.resolve();
 
 /**
  * The plugin module. Callers read `.Purchases` off it synchronously, and no
@@ -71,15 +75,28 @@ async function purchases(): Promise<{ p: Purchases }> {
  * Configures the SDK for the session user, or switches it to a new user
  * (`logIn`) when the uid changes after a sign-in. Idempotent per uid.
  */
-export async function syncNativePurchaseUser(userId: string): Promise<void> {
-  if (!nativePurchaseAvailable()) return;
+export function syncNativePurchaseUser(userId: string): Promise<void> {
+  if (!nativePurchaseAvailable()) return Promise.resolve();
   const key = platformKey();
-  if (!key || configuredFor === userId) return;
-  const { p } = await purchases();
-  // configure is a fire-and-forget native method (no promise); logIn answers.
-  if (configuredFor === null) p.configure({ apiKey: key, appUserID: userId });
-  else await p.logIn({ appUserID: userId });
-  configuredFor = userId;
+  if (!key) return Promise.resolve();
+  // Chained, so a sign-in right after launch can't race the first configure,
+  // and a purchase can wait for the user it is meant for (awaitUserSync).
+  const run = syncing.catch(() => undefined).then(async () => {
+    if (configuredFor === userId) return;
+    const { p } = await purchases();
+    // configure is a fire-and-forget native method (no promise); logIn answers.
+    if (configuredFor === null) p.configure({ apiKey: key, appUserID: userId });
+    else await p.logIn({ appUserID: userId });
+    configuredFor = userId;
+  });
+  syncing = run;
+  return run;
+}
+
+/** Waits for the latest user switch. Throws if it failed, so nothing is bought under the wrong user. */
+async function awaitUserSync(): Promise<void> {
+  await syncing;
+  if (configuredFor === null) throw new Error("The store isn't ready yet. Please try again in a moment.");
 }
 
 const PACKAGE_FOR_PLAN: Record<PlusPlan, string> = { annual: "$rc_annual", monthly: "$rc_monthly" };
@@ -97,7 +114,7 @@ export async function fetchNativePrices(): Promise<NativePlanPrice[]> {
     return (Object.keys(PACKAGE_FOR_PLAN) as PlusPlan[])
       .map((plan) => ({ plan, pkg: packages.find((p) => p.identifier === PACKAGE_FOR_PLAN[plan]) }))
       .filter((x): x is { plan: PlusPlan; pkg: PurchasesPackage } => !!x.pkg)
-      .map(({ plan, pkg }) => ({ plan, priceString: pkg.product.priceString }));
+      .map(({ plan, pkg }) => ({ plan, priceString: pkg.product.priceString, price: pkg.product.price }));
   } catch {
     return [];
   }
@@ -107,6 +124,7 @@ export type NativePurchaseOutcome = "purchased" | "cancelled";
 
 /** Buys a plan through the store. Throws on a real error; a user cancellation is an outcome, not an error. */
 export async function purchaseNativePlan(plan: PlusPlan): Promise<NativePurchaseOutcome> {
+  await awaitUserSync();
   const { p } = await purchases();
   const pkg = (await currentPackages()).find((x) => x.identifier === PACKAGE_FOR_PLAN[plan]);
   if (!pkg) throw new Error("That plan isn't available in the store right now.");
@@ -121,6 +139,7 @@ export async function purchaseNativePlan(plan: PlusPlan): Promise<NativePurchase
 
 /** Re-presents the store receipt (a new device, a reinstall). The caller reconciles afterwards. */
 export async function restoreNativePurchases(): Promise<void> {
+  await awaitUserSync();
   await (await purchases()).p.restorePurchases();
 }
 
@@ -128,4 +147,5 @@ export async function restoreNativePurchases(): Promise<void> {
 export function resetNativePurchasesForTests(): void {
   sdk = null;
   configuredFor = null;
+  syncing = Promise.resolve();
 }
