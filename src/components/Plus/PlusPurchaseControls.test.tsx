@@ -102,6 +102,7 @@ describe("PlusPurchaseControls in the apps", () => {
 
   it("shows the store's prices, buys through RevenueCat, reconciles, refreshes and tracks", async () => {
     native.prices = [{ plan: "annual", priceString: "24,99 €" }];
+    purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Get Plus yearly · 24,99 €" })).toBeTruthy());
     // The monthly price falls back to the list price until the store answers.
@@ -112,6 +113,20 @@ describe("PlusPurchaseControls in the apps", () => {
     expect(track).toHaveBeenCalledWith("purchase_completed", { channel: "revenuecat", plan: "annual" });
     expect(screen.getByRole("status").textContent).toBe("You're Plus. Thank you!");
     expect(purchase.startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("doesn't claim Plus when the store took the payment but no Plus row has landed yet", async () => {
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    fireEvent.click(screen.getByRole("button", { name: /Get Plus yearly/ }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect(screen.getByRole("status").textContent).toMatch(/can take a minute/);
+    expect(screen.getByRole("status").textContent).not.toMatch(/You're Plus/);
+  });
+
+  it("links Terms and Privacy to the public site, since a relative link opens nothing in the app", () => {
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    expect(screen.getByRole("link", { name: "Terms of Service" }).getAttribute("href")).toBe("https://crosswordclash.com/terms");
+    expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("https://crosswordclash.com/privacy");
   });
 
   it("treats a dismissed store sheet as nothing happened", async () => {
@@ -157,6 +172,7 @@ describe("PlusPurchaseControls in the apps", () => {
     const { rerender } = render(
       <PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" signInPrompt={<p>Sign in to keep it</p>} />,
     );
+    purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
     fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     // The refresh flips the account to a subscriber; the notice must lead that view.
