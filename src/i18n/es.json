@@ -892,6 +892,10 @@
     "errorAlreadyRequested": "Ya le has enviado una solicitud.",
     "errorRateLimited": "Son muchas solicitudes para un día. Inténtalo mañana.",
     "errorTooMany": "Hay demasiadas solicitudes esperando respuesta.",
-    "errorGeneric": "No se pudo completar. Inténtalo de nuevo."
+    "errorGeneric": "No se pudo completar. Inténtalo de nuevo.",
+    "sendToFriend": "Enviar a un amigo",
+    "sendToFriendHint": "Recibe tu tiempo a superar en la app, sin hoja de compartir.",
+    "send": "Enviar",
+    "sent": "Enviado"
   }
 }

@@ -892,6 +892,10 @@
     "errorAlreadyRequested": "You've already asked them.",
     "errorRateLimited": "That's a lot of requests for one day. Try again tomorrow.",
     "errorTooMany": "Too many requests are waiting for an answer.",
-    "errorGeneric": "That didn't go through. Please try again."
+    "errorGeneric": "That didn't go through. Please try again.",
+    "sendToFriend": "Send to a friend",
+    "sendToFriendHint": "They get your time to beat in the app, no share sheet needed.",
+    "send": "Send",
+    "sent": "Sent"
   }
 }
