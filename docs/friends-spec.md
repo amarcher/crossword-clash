@@ -130,11 +130,11 @@ phase can merge dark and flip when its store forms and legal text are live.
 sign-in pitch (`openAccount({ placement: "friends" })`). In the apps this
 works since native sign-in; nothing is Plus-gated.
 
-**Where.** `/friends` (`FriendsScreen`, chunk `friends` in `screenModules`),
-reached from a fourth row in the menu's "Race friends" section ("Friends ·
-race the people you know") and from the account menu. The lobby gains an
-**Invite friends** list (§3.2) and the completion modal's "Race a friend
-live" row leads here when the player has friends.
+**Where.** On the **Race friends** screen (`/race`, §3.6), which replaces the
+menu's Start a game / Join with a code rows and is where the friends list,
+the invites inbox, the code field and Start a room all live; the account
+menu links it too. The lobby gains an **Invite friends** list (§3.2) and the
+completion modal's "Race a friend live" row leads here.
 
 **Adding a friend, three ways.**
 
@@ -192,8 +192,8 @@ Delivery before push exists:
   you to race · *Birds of a feather* · Join". Join navigates to
   `/join?join=CODE` with the viewer's username as the name, exactly what the
   app link does. Dismiss marks `seen_at`.
-- If not, the invite waits in an **Inbox** on `/friends` and as a badge on
-  the menu row, read on sign-in and on `visibilitychange`; an invite to a
+- If not, the invite waits at the top of the Race friends screen (§3.6)
+  and as a badge on its menu row, read on sign-in and on `visibilitychange`; an invite to a
   room that is no longer `waiting` is shown struck through ("Started without
   you · Ask for a rematch") and deleted by the sweep (§5.4).
 
@@ -409,6 +409,74 @@ verification step. The iOS purpose string
 is out of process): "Crossword Clash reads the contacts you pick to find
 friends who already play. Only scrambled codes of their email addresses and
 numbers leave your phone."
+
+### 3.6 The menu's multiplayer entry points: "Race friends" becomes a screen
+
+**Today.** The daily tile's **Race friends** button and the "Play with
+friends" section's **Start a game** row both go straight to the host name
+screen (`MenuScreen.tsx:106-116,272-279`, `to="/host-game/name"`); **Join
+with a code** is the quieter row beneath it (`:280-287`, `/join`). A
+newcomer told "join my game" has to find that row, and a host has nothing
+to do on the name screen but type a name they already have. Two fixes were
+on the table before friends existed: make Race friends a fork between Start
+and Join, or keep it on hosting and add a "Have a code?" link to the name
+screen. Andrew ruled on 2026-10-31 that friends reshape these entry points
+instead (§10), so this spec proposes the shape.
+
+**Proposal: one screen, `/race` (`RaceScreen`, chunk `race`).** The daily
+tile's Race friends button (carrying the daily as `urlPuzzle`, shown as a
+chip "Racing: Today's Mini · change") and a single menu row **Race friends ·
+challenge, join or start** (replacing Start a game and Join with a code; TV
+mode keeps its row) both open it. Its blocks, in the order they appear on a
+phone:
+
+1. **From your friends** (accounts with pending `room_invites`): "Alicia
+   opened a room · *Birds of a feather* · **Join**", "Archer solved today's
+   mini in 1:42 · **Beat it**". Join is the app link's path (`/join?join=`)
+   with the username as the name. This is the common join with no code.
+2. **Friends**, each with **Challenge** (the host flow with that friend
+   pre-selected for the lobby's invite list and the chip's puzzle if any)
+   and an **Add friends** row (username search, people you have raced).
+3. **Start a room**: the host flow for the chip's puzzle, or the puzzle
+   picker when there is none (`/pick-puzzle?intent=race`).
+4. **Join with a code**: `JoinGame` embedded inline, six boxes and Join,
+   with "or scan the room's QR with your camera" beneath. Always on the
+   screen, never behind a link, because the code is the one path that works
+   for everyone; it is the fallback rather than the front door.
+
+The order is **by state**, so the most useful block is first: with no
+friends and no invites (every newcomer), the code field and Start a room
+come first and the friends blocks become one "Add friends to race them in a
+tap" card; with friends and no invites, Friends first; with invites,
+invites first. On a 375 px phone every arrangement puts its first block and
+the code field's top within the first screen.
+
+**Signed-out and anonymous visitors.** Blocks 3 and 4 only, plus a quiet
+sign-in row "Sign in to keep a friends list and get invited" (`openAccount({
+placement: "race" })`); nothing about friends is shown as locked or greyed.
+The screen is identical with `VITE_FRIENDS` off, which is how it can ship
+ahead of phase (a) if the join problem needs fixing sooner.
+
+**Degradation on the web.** No push: an invite reaches a web player through
+the Realtime banner while the site is open, else it waits in block 1 for
+the next visit, with the badge on the menu row read on load; everything
+else is the same. Challenge for a friend who is on the web shows "Invited"
+to the host exactly as in the apps; the host cannot tell the two apart and
+does not need to.
+
+**Where the existing flows sit.** The lobby keeps the code, the QR and the
+Share invite link unchanged (`GameLobby.tsx:150-212`); Share is also the
+Challenge for anyone not on the list. Deep links do not pass through the
+screen: `/?join=CODE` and `/share?t=race&code=` map to `/join?join=CODE`
+(`appLinkTarget`, `appLinks.ts:41-45`) and `/join` stays a route, so a
+scanned QR or a tapped invite link lands on the code already filled, as
+today. The two earlier fixes are folded in: the screen *is* the fork, with
+friends above it, and the host name screen gains the one-line "Have a code
+instead? Join a game" link for players who arrived from the daily tile.
+
+**Measuring the change.** `mode_selected { mode: "race" }` on the row and
+tile, and `race_action { action }` on the screen (§7), so the share of
+joins by invite, code, QR and link is visible for the first time.
 
 ---
 
@@ -678,6 +746,7 @@ come from the tables):
 | `player_blocked` | `placement` (request \| friend \| room) | Block |
 | `room_invite_sent` | `channel` (inapp \| share), `kind` (room \| beat) | Invite / Send to a friend; `share` is the existing share-sheet path, tagged now so the two can be compared |
 | `room_invite_opened` | `via` (banner \| inbox \| push) | the invitee tapped Join |
+| `race_action` | `action` (invite-join \| challenge \| start \| join-code \| add-friend), `signed_in` | a tap on the Race friends screen (§3.6) |
 | `room_invite_pushed` | `kind` | server-side count from `push_log`, surfaced in the insights panel, not GA |
 | `push_permission_prompted` | `placement` (reminder \| invites \| requests) | the OS prompt was shown |
 | `push_permission_result` | `granted` | the answer |
@@ -779,9 +848,11 @@ come from the tables):
 10. **Web push.** **Recommendation: not in this plan.** The website keeps
     the banner/inbox delivery; revisit if the website's share of races stays
     above the apps'.
-11. **Where the Friends screen lives on the menu.** **Recommendation:** a
-    fourth row in the "Race friends" section, not a top-level tile; the
-    section already groups the social entry points.
+11. **The Race friends screen (§3.6): block order by state, or fixed?**
+    **Recommendation: by state**, so a newcomer sees the code field first
+    and a player with invites sees them first; a fixed order would put one
+    of them below the fold. And keep the "Have a code instead?" link on the
+    host name screen as the cheap second path.
 
 ---
 
@@ -793,6 +864,7 @@ come from the tables):
 | 2026-10-31 | Andrew's idea: contacts import to find friends, direct challenges, push suggestions when a room opens | The brief for this spec |
 | 2026-10-31 | The main session's recommendation, accepted by Andrew: start without contacts; friends from usernames and "people you have raced", "Challenge a friend" through the share sheet, push later and first for something simple | §3's phase order: (a) friends, (b) challenge, (c) push with a daily reminder, (d) invites by push, (e) contacts last and optional |
 | 2026-10-31 | Research finding: Google Play's Contacts Permissions policy (announced 2026-04-15, effective 2027-01-27) and Apple 5.1.1(iii) both steer friend-finding to the system picker; no provider gives us phone numbers | Phase (e) redesigned around the picker and verified, self-registered, mutually opted-in identifiers; recommended deferred (§9 Q1) |
+| 2026-10-31 | **Join Game prominence folded into the friends design** (Andrew): rather than fix "Join with a code" on its own (a fork under Race friends, or a "Have a code?" link on the host name screen), the friends work reshapes the menu's multiplayer entry points | §3.6: one Race friends screen with invites, friends, Start a room and an always-visible code field, ordered by state; the code is the fallback, not the front door |
 | 2026-10-31 | Spec written; questions 1–11 put to Andrew | Awaiting rulings |
 
 ---
