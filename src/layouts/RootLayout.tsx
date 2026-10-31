@@ -5,6 +5,8 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { AccountProvider } from "../contexts/AccountContext";
 import { GameProvider } from "../contexts/GameContext";
 import { MultiplayerProvider } from "../contexts/MultiplayerContext";
+import { FriendsProvider } from "../contexts/FriendsContext";
+import { InviteBanner } from "../components/Friends";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -197,10 +199,13 @@ export function RootLayout() {
       <AccountProvider>
         <GameProvider>
           <MultiplayerProvider>
-            <RoutingEffects>
-              <Outlet />
-            </RoutingEffects>
-            <ToastViewport />
+            <FriendsProvider>
+              <RoutingEffects>
+                <Outlet />
+              </RoutingEffects>
+              <InviteBanner />
+              <ToastViewport />
+            </FriendsProvider>
           </MultiplayerProvider>
         </GameProvider>
       </AccountProvider>

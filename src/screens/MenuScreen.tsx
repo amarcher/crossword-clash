@@ -13,6 +13,8 @@ import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { communityEnabled } from "../lib/community";
+import { friendsEnabled } from "../lib/friends";
+import { useFriends } from "../contexts/FriendsContext";
 import { studioRouteEnabled } from "../lib/studioGate";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
@@ -110,7 +112,7 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
             className="flex-1"
             onClick={onRace}
             disabled={disabled || !daily}
-            {...prefetchOnIntent("/host-game/name")}
+            {...prefetchOnIntent(friendsEnabled() ? "/race" : "/host-game/name")}
           >
             <Swords className="size-4.5" aria-hidden="true" />
             {t("menu.raceFriends")}
@@ -189,10 +191,14 @@ export function MenuScreen() {
       // when the host starts. Same lobby mechanic as any imported puzzle.
       if (!daily) return;
       setUrlPuzzle(daily.puzzle);
-      navigate("/host-game/name");
+      // With friends on, the Race friends screen (docs/friends-spec.md §3.6)
+      // takes the daily as its chip: challenge a friend, or start the room.
+      navigate(friendsEnabled() ? "/race" : "/host-game/name");
     },
     [setUrlPuzzle, navigate],
   );
+  // The menu row's badge: open invites the player has not seen.
+  const { unseenInvites } = useFriends();
 
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
@@ -269,22 +275,46 @@ export function MenuScreen() {
             <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>
               <ListGroup>
-                <ListRow
-                  icon={Users}
-                  to="/host-game/name"
-                  title={t("menu.startGame")}
-                  subtitle={t("menu.startGameSubtitle")}
-                  disabled={disabled}
-                  onClick={() => track("mode_selected", { mode: "host" })}
-                />
-                <ListRow
-                  icon={Hash}
-                  to="/join"
-                  title={t("menu.joinGame")}
-                  subtitle={t("menu.joinGameSubtitle")}
-                  disabled={disabled}
-                  onClick={() => track("mode_selected", { mode: "join" })}
-                />
+                {friendsEnabled() ? (
+                  // One row for the social entry points (docs/friends-spec.md §3.6): the
+                  // Race friends screen holds invites, friends, Start a room and the code.
+                  <ListRow
+                    icon={Swords}
+                    to="/race"
+                    title={
+                      <span className="flex items-center gap-2">
+                        {t("menu.raceHub")}
+                        {unseenInvites.length > 0 && (
+                          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">
+                            {t("menu.raceHubInvites", { count: unseenInvites.length })}
+                          </span>
+                        )}
+                      </span>
+                    }
+                    subtitle={t("menu.raceHubSubtitle")}
+                    disabled={disabled}
+                    onClick={() => track("mode_selected", { mode: "race" })}
+                  />
+                ) : (
+                  <>
+                    <ListRow
+                      icon={Users}
+                      to="/host-game/name"
+                      title={t("menu.startGame")}
+                      subtitle={t("menu.startGameSubtitle")}
+                      disabled={disabled}
+                      onClick={() => track("mode_selected", { mode: "host" })}
+                    />
+                    <ListRow
+                      icon={Hash}
+                      to="/join"
+                      title={t("menu.joinGame")}
+                      subtitle={t("menu.joinGameSubtitle")}
+                      disabled={disabled}
+                      onClick={() => track("mode_selected", { mode: "join" })}
+                    />
+                  </>
+                )}
                 <ListRow
                   icon={Tv}
                   to="/host"
