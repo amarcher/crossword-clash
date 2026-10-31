@@ -22,6 +22,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links: the site's shareable pages open in the app once Android has verified
+                 /.well-known/assetlinks.json (the Play signing key and the upload key are listed).
+                 An intent filter cannot see a query string, so "/" claims the room-invite QR
+                 (/?join=CODE) and the plain home link alike; src/lib/appLinks.ts routes each. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="crosswordclash.com" />
+                <data android:path="/" />
+                <data android:path="/share" />
+                <data android:path="/join" />
+                <data android:pathPrefix="/daily/" />
+                <data android:pathPrefix="/puzzles/" />
+            </intent-filter>
+
         </activity>
 
         <activity android:name=".NytImportActivity" android:exported="false"

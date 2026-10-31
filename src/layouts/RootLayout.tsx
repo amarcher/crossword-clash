@@ -13,6 +13,7 @@ import { loadMpSession, clearMpSession, saveMpSession, isRecentMpSession } from 
 import { rejoinGame } from "../lib/puzzleService";
 import { ToastViewport } from "../components/ToastViewport";
 import { usePageViews } from "../hooks/usePageViews";
+import { startAppLinks } from "../lib/appLinks";
 
 /**
  * Inner component that handles routing side effects:
@@ -47,6 +48,18 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [navigate, game]);
+
+  // Links opened into the apps (universal links / App Links): a room's QR
+  // code or invite lands on the join screen, a challenge or community link
+  // on its page; a puzzle payload goes through the hash listener above.
+  useEffect(
+    () =>
+      startAppLinks((target) => {
+        if (target.kind === "hash") window.location.hash = target.hash;
+        else navigate(target.to);
+      }),
+    [navigate],
+  );
 
   // When host closes the room: show explanatory modal to non-hosts before
   // teleporting them to the menu. Hosts navigate themselves via their UI;

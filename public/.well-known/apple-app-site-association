@@ -1,0 +1,39 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "J39B2498YF.com.crosswordclash.app"
+        ],
+        "components": [
+          {
+            "/": "/",
+            "?": {
+              "join": "*"
+            },
+            "comment": "Room invite QR code: /?join=CODE"
+          },
+          {
+            "/": "/share",
+            "?": {
+              "t": "race"
+            },
+            "comment": "Room invite link: /share?t=race&code=CODE"
+          },
+          {
+            "/": "/join",
+            "comment": "The join screen"
+          },
+          {
+            "/": "/daily/????-??-??/*",
+            "comment": "Daily challenge links: /daily/YYYY-MM-DD/slot"
+          },
+          {
+            "/": "/puzzles/*",
+            "comment": "Community puzzle pages"
+          }
+        ]
+      }
+    ]
+  }
+}
