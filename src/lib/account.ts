@@ -6,7 +6,7 @@
  * A browser that already has an anonymous player gets the provider linked to
  * that same user, so nothing it played is orphaned; if the provider account
  * already exists, linking fails on the way back and we sign in to that
- * account instead (see resumeSignIn).
+ * account instead (see resumeSignIn and accountElsewhere).
  */
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
@@ -110,6 +110,21 @@ export function forgetKnownProvidersForTests(): void {
   }
 }
 
+/**
+ * Whether a refused link means the provider already belongs to an account,
+ * so a plain sign-in reaches it. Supabase answers `identity_already_exists`
+ * when this very identity (provider + subject) has an account, and
+ * `email_exists` when the identity is new but its verified email belongs to
+ * another account — Apple on a device whose account was made with Google
+ * (1.1.0 build 24 showed "A user with this email address has already been
+ * registered" and stopped). In both cases the plain sign-in lands in that
+ * account: for a new identity Supabase's automatic linking attaches it to
+ * the user with the same verified email.
+ */
+export function accountElsewhere(code: string | undefined): boolean {
+  return code === "identity_already_exists" || code === "email_exists";
+}
+
 function pendingProvider(): AuthProvider | null {
   const value = recall(PENDING_KEY);
   return value === "apple" || value === "google" ? value : null;
@@ -169,9 +184,10 @@ export async function signInWith(provider: AuthProvider, opts: { returnTo?: stri
 /**
  * The native path (docs/monetization-spec.md §3.5): the OS sheet's id token
  * is LINKED to the current anonymous user (`linkIdentity` with the token, so
- * the uid — and any Plus bought on it — stays); if that identity already has
- * an account (made on the web, say), the app signs in to it instead
- * (`signInWithIdToken`), and the uid changes. Needs "manual linking" on in
+ * the uid — and any Plus bought on it — stays); if that identity, or its
+ * email, already has an account (made on the web, or with the other
+ * provider), the app signs in to it instead (`signInWithIdToken`,
+ * accountElsewhere), and the uid changes. Needs "manual linking" on in
  * Supabase and the bundle id among the Apple client ids.
  */
 export async function signInNatively(provider: AuthProvider): Promise<SignInOutcome> {
@@ -188,7 +204,7 @@ export async function signInNatively(provider: AuthProvider): Promise<SignInOutc
   if (data.session?.user.is_anonymous && !isKnownProvider(provider)) {
     const { error } = await auth.linkIdentity({ provider, token, nonce });
     if (!error) return "signed-in";
-    if (error.code !== "identity_already_exists") throw error;
+    if (!accountElsewhere(error.code)) throw error;
     rememberKnownProvider(provider);
   }
   const { error } = await auth.signInWithIdToken({ provider, token, nonce });
@@ -221,7 +237,7 @@ async function finishSignIn(): Promise<SignInReturn> {
   remember(RETURN_KEY, null);
   if (!error) return { returned, error: null };
   window.history.replaceState(null, "", window.location.pathname);
-  if (error.code === "identity_already_exists" && provider) {
+  if (accountElsewhere(error.code) && provider) {
     // Next time on this device: straight to sign-in, one round trip.
     rememberKnownProvider(provider);
     const { error: signInError } = await client().auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin + window.location.pathname } });
@@ -242,6 +258,11 @@ let resumed: Promise<SignInReturn> | null = null;
 export function resumeSignIn(): Promise<SignInReturn> {
   if (!resumed) resumed = finishSignIn();
   return resumed;
+}
+
+/** Test hook: the next resumeSignIn reads the address bar again. */
+export function resetSignInForTests(): void {
+  resumed = null;
 }
 
 /**

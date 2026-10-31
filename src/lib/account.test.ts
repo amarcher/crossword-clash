@@ -30,11 +30,32 @@ vi.mock("./supabaseClient", () => ({
       getSession: () => (calls.push({ method: "getSession", args: [] }), Promise.resolve({ data: { session: sessionUser ? { user: sessionUser } : null } })),
       linkIdentity: (args: unknown) => (calls.push({ method: "linkIdentity", args: [args] }), Promise.resolve({ error: linkError })),
       signInWithOAuth: (args: unknown) => (calls.push({ method: "signInWithOAuth", args: [args] }), Promise.resolve({ error: null })),
+      signInWithIdToken: (args: unknown) => (calls.push({ method: "signInWithIdToken", args: [args] }), Promise.resolve({ error: null })),
     },
   },
 }));
 
-import { deleteAccount, fetchProfile, forgetKnownProvidersForTests, isKnownProvider, isUsernameTaken, saveUsername, signInWith, signOut } from "./account";
+// The OS sheet, already answered: the native path only needs its token.
+vi.mock("./nativeSignIn", () => ({
+  nativeIdToken: (provider: string) => Promise.resolve({ token: `id-token-${provider}`, nonce: "raw-nonce" }),
+  nativeProviders: () => ["apple", "google"],
+  nativeSignInAvailable: () => true,
+}));
+
+import {
+  accountElsewhere,
+  deleteAccount,
+  fetchProfile,
+  forgetKnownProvidersForTests,
+  isKnownProvider,
+  isUsernameTaken,
+  resetSignInForTests,
+  resumeSignIn,
+  saveUsername,
+  signInNatively,
+  signInWith,
+  signOut,
+} from "./account";
 
 let sessionUser: { is_anonymous: boolean; app_metadata?: { provider?: string } } | null = null;
 let linkError: { code: string; message: string } | null = null;
@@ -46,7 +67,9 @@ beforeEach(() => {
   sessionUser = null;
   linkError = null;
   forgetKnownProvidersForTests();
+  resetSignInForTests();
   sessionStorage.clear();
+  window.history.replaceState(null, "", "/menu");
 });
 
 const names = () => calls.map((c) => c.method);
@@ -149,5 +172,75 @@ describe("signInWith on the web", () => {
     sessionUser = { is_anonymous: true };
     await signInWith("apple");
     expect(names()).toContain("linkIdentity");
+  });
+});
+
+
+describe("accountElsewhere", () => {
+  it("is the two refusals that mean the provider already has an account", () => {
+    expect(accountElsewhere("identity_already_exists")).toBe(true);
+    expect(accountElsewhere("email_exists")).toBe(true);
+    expect(accountElsewhere("manual_linking_disabled")).toBe(false);
+    expect(accountElsewhere(undefined)).toBe(false);
+  });
+});
+
+describe("signInNatively", () => {
+  const idTokenCall = () => calls.find((c) => c.method === "signInWithIdToken")?.args[0];
+
+  it("links the OS sheet's token to the anonymous user the first time", async () => {
+    sessionUser = { is_anonymous: true };
+    expect(await signInNatively("apple")).toBe("signed-in");
+    expect(names()).toContain("linkIdentity");
+    expect(names()).not.toContain("signInWithIdToken");
+  });
+
+  it("signs in to the existing account when the identity's email already has one (Apple after Google)", async () => {
+    // Supabase refuses to attach a new identity whose verified email belongs to another user;
+    // the plain sign-in reaches that user, and automatic linking adds the identity to it.
+    sessionUser = { is_anonymous: true };
+    linkError = { code: "email_exists", message: "A user with this email address has already been registered" };
+    expect(await signInNatively("apple")).toBe("signed-in");
+    expect(names()).toEqual(expect.arrayContaining(["linkIdentity", "signInWithIdToken"]));
+    expect(idTokenCall()).toEqual({ provider: "apple", token: "id-token-apple", nonce: "raw-nonce" });
+    // Next time on this device: straight to sign-in.
+    expect(isKnownProvider("apple")).toBe(true);
+  });
+
+  it("signs in to the existing account when the identity itself already has one", async () => {
+    sessionUser = { is_anonymous: true };
+    linkError = { code: "identity_already_exists", message: "Identity is already linked to another user" };
+    expect(await signInNatively("google")).toBe("signed-in");
+    expect(idTokenCall()).toEqual({ provider: "google", token: "id-token-google", nonce: "raw-nonce" });
+    expect(isKnownProvider("google")).toBe(true);
+  });
+
+  it("surfaces any other link refusal and never falls back", async () => {
+    sessionUser = { is_anonymous: true };
+    linkError = { code: "manual_linking_disabled", message: "Manual linking is disabled" };
+    await expect(signInNatively("apple")).rejects.toMatchObject({ code: "manual_linking_disabled" });
+    expect(names()).not.toContain("signInWithIdToken");
+    expect(isKnownProvider("apple")).toBe(false);
+  });
+});
+
+describe("resumeSignIn on the web", () => {
+  it("finishes a link refused for an existing email by signing in to that account", async () => {
+    sessionStorage.setItem("crossword-clash:sign-in", "apple");
+    sessionStorage.setItem("crossword-clash:sign-in-return", "/menu");
+    window.history.replaceState(null, "", "/menu#error=server_error&error_code=email_exists&error_description=A+user+with+this+email+address+has+already+been+registered");
+    expect(await resumeSignIn()).toEqual({ returned: true, error: null });
+    const oauth = calls.find((c) => c.method === "signInWithOAuth")?.args[0] as { provider: string };
+    expect(oauth.provider).toBe("apple");
+    expect(isKnownProvider("apple")).toBe(true);
+    expect(window.location.hash).toBe("");
+  });
+
+  it("shows any other refusal instead", async () => {
+    sessionStorage.setItem("crossword-clash:sign-in", "apple");
+    window.history.replaceState(null, "", "/menu#error=server_error&error_code=manual_linking_disabled&error_description=Manual+linking+is+disabled");
+    const result = await resumeSignIn();
+    expect(result.error).toContain("Manual linking is disabled");
+    expect(names()).not.toContain("signInWithOAuth");
   });
 });
