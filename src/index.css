@@ -259,11 +259,15 @@
      room. Previous 7rem (112px) cut into the bar; 9rem (144px) keeps the
      full grid visible above MobileClueBar before the keyboard summons. */
   --grid-h-offset: 9rem;
+  /* The fixed MobileClueBar (h-12) covers the bottom of the scroller: the grid
+     keeps the active cell above it when it scrolls the cell into view. */
+  --clue-bar-height: 48px;
 }
 @media (min-width: 768px) {
   .grid-offset-mobile {
     /* Desktop: header ~72px + main py-4 32px = ~104px */
     --grid-h-offset: 6.5rem;
+    --clue-bar-height: 0px;
   }
 }
 
