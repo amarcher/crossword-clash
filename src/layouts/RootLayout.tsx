@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AuthProvider } from "../contexts/AuthContext";
@@ -24,7 +24,7 @@ import { startAppLinks } from "../lib/appLinks";
  * - new_game broadcast redirect
  * - game_started transition
  */
-function RoutingEffects({ children }: { children: React.ReactNode }) {
+export function RoutingEffects({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
@@ -94,13 +94,21 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     }
   }, [mp.isRoomClosed, mp.isHost, game, navigate]);
 
-  // Handle new_game broadcast for non-host players
+  // Handle new_game broadcast for non-host players: once per room. The
+  // rejoin screen inserts this player's row in the new game (under the name
+  // they typed, from the session) and only then switches the game id, so the
+  // room hook subscribes to a game whose row it can track presence from.
+  // Switching the id here first made the hook hydrate before the row existed,
+  // which left the player out of everyone's roster; and with the whole game
+  // context in the dependencies the effect re-ran on every render while the
+  // id stayed set, bouncing the player back to /rejoin.
+  const handledNewGame = useRef<string | null>(null);
   useEffect(() => {
-    if (!mp.newGameId || mp.isHost) return;
-    game.setGameId(mp.newGameId);
+    if (!mp.newGameId || mp.isHost || handledNewGame.current === mp.newGameId) return;
+    handledNewGame.current = mp.newGameId;
     saveMpSession({ gameId: mp.newGameId, shareCode: mp.shareCode, displayName: game.displayName });
     navigate("/rejoin");
-  }, [mp.newGameId, mp.isHost, mp.shareCode, game, navigate]);
+  }, [mp.newGameId, mp.isHost, mp.shareCode, game.displayName, navigate]);
 
   return (
     <>

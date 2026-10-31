@@ -26,12 +26,16 @@ export function HostNameScreen() {
   const { profile } = useAccountContext();
 
   // A signed-in solver starts from their username (still editable). Applied
-  // once, so a name typed over it stays.
+  // once, and never over a name the player has already started typing: the
+  // profile loads a beat after the screen, and a prefill that landed on top
+  // of "Arch" created the room as "Archer" (Andrew, 2026-10-30). The join
+  // form keeps the same `nameTouched` guard.
   const prefilled = useRef(false);
+  const nameTouched = useRef(false);
   const username = profile?.username;
   const setDisplayName = game.setDisplayName;
   useEffect(() => {
-    if (prefilled.current || !username) return;
+    if (prefilled.current || nameTouched.current || !username) return;
     prefilled.current = true;
     setDisplayName(username);
   }, [username, setDisplayName]);
@@ -137,7 +141,10 @@ export function HostNameScreen() {
           type="text"
           name="xw-handle"
           value={game.displayName}
-          onChange={(e) => game.setDisplayName(e.target.value)}
+          onChange={(e) => {
+            nameTouched.current = true;
+            game.setDisplayName(e.target.value);
+          }}
           maxLength={20}
           enterKeyHint="go"
           autoCapitalize="words"
