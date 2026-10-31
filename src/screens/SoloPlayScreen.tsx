@@ -547,6 +547,7 @@ export function SoloPlayScreen() {
             <MobileClueSheet
               open={clueSheetOpen}
               onClose={() => setClueSheetOpen(false)}
+              inputRef={gridInputRef}
               scoreboard={
                 <>
                   <Scoreboard

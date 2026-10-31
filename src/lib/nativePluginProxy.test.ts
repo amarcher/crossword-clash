@@ -67,8 +67,38 @@ describe("RevenueCat plugin loading", () => {
     mod.resetNativePurchasesForTests();
     purchasesImpl.getOfferings = async () => ({ current: { availablePackages: [{ identifier: "$rc_monthly", product: { priceString: "$3.99" } }] } });
     purchasesImpl.purchasePackage = async () => { throw { userCancelled: true }; };
+    purchasesImpl.configure = () => "-1";
+    await settles(mod.syncNativePurchaseUser("user-1"));
     await expect(settles(mod.purchaseNativePlan("annual"))).rejects.toThrow(/isn't available/);
     await expect(settles(mod.purchaseNativePlan("monthly"))).resolves.toBe("cancelled");
+  });
+});
+
+describe("RevenueCat user switching", () => {
+  it("refuses to buy before the SDK has a user", async () => {
+    const mod = await import("./nativePurchase");
+    mod.resetNativePurchasesForTests();
+    await expect(settles(mod.purchaseNativePlan("annual"))).rejects.toThrow(/isn't ready/);
+    expect(calls).not.toContain("purchasePackage");
+  });
+
+  it("waits for a sign-in's logIn before buying, so the purchase lands on the signed-in account", async () => {
+    const mod = await import("./nativePurchase");
+    mod.resetNativePurchasesForTests();
+    const order: string[] = [];
+    let finishLogIn: () => void = () => {};
+    purchasesImpl.configure = () => "-1";
+    purchasesImpl.logIn = () => new Promise<void>((resolve) => { finishLogIn = () => { order.push("logIn"); resolve(); }; });
+    purchasesImpl.getOfferings = async () => ({ current: { availablePackages: [{ identifier: "$rc_annual", product: { priceString: "$24.99", price: 24.99 } }] } });
+    purchasesImpl.purchasePackage = async () => { order.push("purchase"); return { customerInfo: {} }; };
+    await settles(mod.syncNativePurchaseUser("anon-1"));
+    void mod.syncNativePurchaseUser("account-1");
+    const bought = mod.purchaseNativePlan("annual");
+    await new Promise((r) => setTimeout(r, 10));
+    expect(order).toEqual([]);
+    finishLogIn();
+    await expect(settles(bought)).resolves.toBe("purchased");
+    expect(order).toEqual(["logIn", "purchase"]);
   });
 });
 
