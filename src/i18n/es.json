@@ -897,5 +897,23 @@
     "sendToFriendHint": "Recibe tu tiempo a superar en la app, sin hoja de compartir.",
     "send": "Enviar",
     "sent": "Enviado"
+  },
+  "push": {
+    "heading": "Notificaciones",
+    "intro": "Solo lo que actives. Nunca se envía publicidad.",
+    "deniedTitle": "Las notificaciones están desactivadas para Crossword Clash",
+    "deniedBody": "Permítelas en los Ajustes del teléfono para usar estos interruptores.",
+    "reminder": "Recordatorio diario",
+    "reminderHint": "“El mini de hoy está listo” a las {{hour}}",
+    "reminderAt": "Recordarme a las",
+    "invites": "Invitaciones a salas",
+    "invitesHint": "Cuando un amigo te invita a competir o a superar un tiempo",
+    "requests": "Solicitudes de amistad",
+    "requestsHint": "Cuando alguien quiere ser tu amigo",
+    "quiet": "Horas de silencio",
+    "quietHint": "Nada entre las {{start}} y las {{end}}",
+    "quietInvites": "Dejar pasar las invitaciones a salas",
+    "remindTomorrow": "Recuérdamelo mañana",
+    "remindTomorrowHint": "Una notificación cuando los crucigramas del día estén listos. Desactívala cuando quieras."
   }
 }
