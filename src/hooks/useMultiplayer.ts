@@ -13,6 +13,7 @@ import { reportError } from "../lib/errorReporting";
 import { displayableName } from "../lib/nameFilter";
 import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
 import { buildFinalStandings, mergeRosters, type FinalStandings } from "../lib/finalStandings";
+import { liveRoster } from "../lib/roster";
 
 interface TrackedPresence {
   user_id: string;
@@ -53,6 +54,13 @@ interface UseMultiplayerOptions {
   dispatch: Dispatch;
   playerCells: Record<string, CellState>;
   totalWhiteCells: number;
+  /**
+   * The name this player typed (GameContext.displayName): the one source for
+   * their own roster row and presence entry. The DB row and the presence
+   * payload are copies of it, so neither can show an older name of theirs.
+   * Omitted by a spectator, who has no row and never tracks.
+   */
+  displayName?: string;
   onCellClaimed?: (row: number, col: number, letter: string, playerId: string) => void;
   onWrongLetter?: (
     row: number,
@@ -119,6 +127,7 @@ export function useMultiplayer({
   dispatch,
   playerCells,
   totalWhiteCells,
+  displayName,
   onCellClaimed,
   onWrongLetter,
 }: UseMultiplayerOptions): UseMultiplayerReturn {
@@ -151,6 +160,12 @@ export function useMultiplayer({
   // The DB `players` rows from the last hydrate: the roster that outlives
   // presence, so the record lists a player who has already dropped.
   const dbPlayersRef = useRef<Player[]>([]);
+  // The last non-empty presence roster, null until presence has warmed (an
+  // empty sync before then is our own track() not landed yet; after it, an
+  // empty sync means everyone legitimately left).
+  const presenceRef = useRef<Player[] | null>(null);
+  const displayNameRef = useRef(displayName);
+  displayNameRef.current = displayName;
   // Claims whose server round trip has not answered yet, and a tick for each
   // answer. The finish waits for them: the optimistic last letter completes
   // the local grid before `claim_cell` has run, and marking the game
@@ -172,10 +187,29 @@ export function useMultiplayer({
   // that locks drops the socket, the server forgets the presence, and the
   // rejoin alone would leave this player missing from everyone's roster.
   const trackedRef = useRef<TrackedPresence | null>(null);
-  // Flips true the first time presence sync delivers a non-empty roster.
-  // Once warmed, we trust empty syncs (legitimately "all players left")
-  // — before that, an empty sync just means our own track() hasn't landed.
-  const presenceWarmedRef = useRef(false);
+
+  // `players` is always derived from the two sources through liveRoster:
+  // presence membership once warmed (DB rows before), DB order, the typed
+  // name on this player's row. Hydrate and sync both go through here, so
+  // neither can rename or reorder what the other showed.
+  const refreshRoster = useCallback(() => {
+    const typed = displayNameRef.current;
+    setPlayers(liveRoster(presenceRef.current, dbPlayersRef.current, typed !== undefined ? { userId, displayName: typed } : undefined));
+  }, [userId]);
+
+  // Track this client into presence from its DB row (colour) and the typed
+  // name, the first time the row is seen. SUBSCRIBED fires again after every
+  // reconnect, and the server has forgotten us by then, so the subscribe
+  // handler re-sends `trackedRef` each time rather than tracking once.
+  const trackSelf = useCallback((rows: Player[]) => {
+    if (trackedRef.current || !userId) return;
+    const self = rows.find((p) => p.userId === userId);
+    if (!self) return;
+    const typed = displayNameRef.current?.trim() ? displayNameRef.current : self.displayName;
+    const payload = { user_id: userId, display_name: displayableName(typed), color: self.color } satisfies TrackedPresence;
+    trackedRef.current = payload;
+    void channelRef.current?.track(payload);
+  }, [userId]);
 
   // Hydrate state from DB — returns fetched state for callers
   const hydrate = useCallback(async () => {
@@ -184,7 +218,11 @@ export function useMultiplayer({
     if (!state) return null;
 
     dbPlayersRef.current = state.players;
-    setPlayers(state.players);
+    refreshRoster();
+    // Our own row may land after the first hydrate (the rejoin that follows
+    // a "next puzzle" inserts it while the channel is already up): track as
+    // soon as a hydrate finds it, not only on SUBSCRIBED.
+    trackSelf(state.players);
     // The DB stores 'closed' as a separate status; surface it as
     // isRoomClosed so backgrounded players who missed the broadcast
     // recover correctly. Other statuses pass through to gameStatus.
@@ -223,7 +261,7 @@ export function useMultiplayer({
     dispatch({ type: "HYDRATE_CELLS", cells: state.cells, score });
 
     return state;
-  }, [gameId, userId, dispatch, setGameStatus]);
+  }, [gameId, userId, dispatch, setGameStatus, refreshRoster, trackSelf]);
 
   // Subscribe to Broadcast channel
   useEffect(() => {
@@ -231,7 +269,7 @@ export function useMultiplayer({
 
     setHydratedFor(null);
     trackedRef.current = null;
-    presenceWarmedRef.current = false;
+    presenceRef.current = null;
     // The rest of the previous room's state goes too, so a new lobby never
     // shows the last roster, clock or settings while this room loads.
     setPlayers([]);
@@ -293,16 +331,11 @@ export function useMultiplayer({
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState<TrackedPresence>();
       const fromPresence = presenceStateToPlayers(state, gameId);
-      if (fromPresence.length > 0) {
-        presenceWarmedRef.current = true;
-        setPlayers(fromPresence);
-      } else if (presenceWarmedRef.current) {
-        // Already warmed — an empty sync now means everyone legitimately
-        // left. Trust it (don't keep stale players visible forever).
-        setPlayers([]);
-      }
-      // Else: still warming up (our own track hasn't landed), keep the
-      // initial DB hydrate roster in place to avoid a blank-then-fill flash.
+      // An empty sync before presence has warmed is our own track() not
+      // landed yet: keep the DB bootstrap in place (no blank-then-fill
+      // flash). Once warmed, an empty sync means everyone legitimately left.
+      if (fromPresence.length > 0 || presenceRef.current !== null) presenceRef.current = fromPresence;
+      refreshRoster();
     });
 
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
@@ -344,22 +377,14 @@ export function useMultiplayer({
         reportError(err ?? new Error("Realtime channel error"), { op: "realtime subscribe", gameId });
       }
       if (status === "SUBSCRIBED") {
-        const state = await hydrate();
+        // A reconnect: the server forgot our presence while the socket was
+        // down, so re-send what we tracked. The first time, hydrate tracks
+        // us from our DB row (trackSelf); a spectator has no row and stays
+        // invisible.
+        const tracked = trackedRef.current;
+        await hydrate();
         setHydratedFor(gameId);
-
-        // Track our presence so other clients see us live. Spectators
-        // (no DB player row) skip tracking and remain invisible. SUBSCRIBED
-        // fires again after every reconnect, and the server has forgotten us
-        // by then, so this re-tracks each time rather than once.
-        let payload = trackedRef.current;
-        if (!payload && state) {
-          const self = state.players.find((p) => p.userId === userId);
-          if (self) payload = { user_id: userId, display_name: self.displayName, color: self.color } satisfies TrackedPresence;
-        }
-        if (payload) {
-          trackedRef.current = payload;
-          await channel.track(payload);
-        }
+        if (tracked) await channel.track(tracked);
       }
     });
 
@@ -367,7 +392,7 @@ export function useMultiplayer({
       channel.unsubscribe();
       channelRef.current = null;
     };
-  }, [gameId, userId, dispatch, hydrate, setGameStatus]);
+  }, [gameId, userId, dispatch, hydrate, setGameStatus, refreshRoster]);
 
   // Tab wake: re-hydrate from the DB and make sure we are still in presence
   // (a socket that died while the page was hidden took our entry with it).

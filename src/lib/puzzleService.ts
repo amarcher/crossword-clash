@@ -3,6 +3,7 @@ import { emitToast } from "./toastBus";
 import { getPlayerColor } from "./playerColors";
 import type { Puzzle, CellState } from "../types/puzzle";
 import type { Player } from "../types/game";
+import type { Database } from "../types/supabase";
 import { reportError } from "./errorReporting";
 import { displayableName } from "./nameFilter";
 import { puzzleContentHash } from "./puzzleHash";
@@ -144,6 +145,30 @@ export async function claimCellOnServer(
   return data ?? false;
 }
 
+type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
+
+/**
+ * A returning player's typed name replaces the one on their existing row.
+ * A row lives for the whole game (UNIQUE(game_id, user_id)), so a join or
+ * rejoin under another name — a changed mind, a second device, the username
+ * prefill a player typed over — used to keep the old `display_name`, and the
+ * presence payload (built from the row) then repeated it to every roster.
+ * The "Players can update their own record" policy allows the write; a
+ * refused write keeps the old name rather than failing the join. A blank
+ * name (nothing typed) never renames a row.
+ */
+async function adoptTypedName(row: PlayerRow, displayName: string): Promise<PlayerRow> {
+  if (!supabase || !displayName.trim()) return row;
+  const next = displayableName(displayName);
+  if (next === row.display_name) return row;
+  const { error } = await supabase.from("players").update({ display_name: next }).eq("id", row.id);
+  if (error) {
+    reportError(error, { op: "rename player" });
+    return row;
+  }
+  return { ...row, display_name: next };
+}
+
 /**
  * Join a multiplayer game by short code.
  * Creates a player row and returns the game data + puzzle + players.
@@ -191,8 +216,10 @@ export async function joinGame(
   const players = existingPlayers ?? [];
 
   // Check if user already joined
-  const alreadyJoined = players.find((p) => p.user_id === userId);
-  if (!alreadyJoined) {
+  const alreadyJoined = players.findIndex((p) => p.user_id === userId);
+  if (alreadyJoined >= 0) {
+    players[alreadyJoined] = await adoptTypedName(players[alreadyJoined], displayName);
+  } else {
     const color = getPlayerColor(players.length);
     const { error: playerError } = await supabase.from("players").insert({
       game_id: game.id,
@@ -404,10 +431,13 @@ export async function rejoinGame(
   const players = playersResult.data ?? [];
 
   // Ensure player row exists (handles rare session-loss case where
-  // anonymous auth gave a new user_id). Spectators skip this.
+  // anonymous auth gave a new user_id), carrying the name the player
+  // typed (the session's). Spectators skip this.
   if (!options?.spectator) {
-    const alreadyJoined = players.find((p) => p.user_id === userId);
-    if (!alreadyJoined) {
+    const alreadyJoined = players.findIndex((p) => p.user_id === userId);
+    if (alreadyJoined >= 0) {
+      players[alreadyJoined] = await adoptTypedName(players[alreadyJoined], displayName);
+    } else {
       const color = getPlayerColor(players.length);
       const { data: newPlayer, error: playerError } = await supabase
         .from("players")
