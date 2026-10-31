@@ -1,0 +1,7 @@
+This update (1.1.0, build 25) carries five fixes since build 24. Please try:
+
+1. Sign in with Apple on a device whose account was made with Google. It should land in that same account (one username, same history) instead of "A user with this email address has already been registered".
+2. Plus: sign in on the paywall and tap Buy straight away. The purchase should attach to the signed-in account. After buying, the sheet says "You're Plus" only once Plus has really landed; otherwise it says Plus can take a minute and to tap Restore. The price tiles show the App Store's prices, and Terms / Privacy open Safari.
+3. Room invites: with this build installed, scan a lobby QR code with the Camera app, or tap an invite link in Messages. It should open the app on the join screen, not Safari. (The site side was published today; Apple can take a few hours to notice.)
+4. Account deletion warns that an App Store subscription keeps billing until cancelled with Apple.
+5. Everything from build 24 still applies: official sign-in buttons, the lobby order, frozen standings after a finish, full screen on iPhone Duo.
