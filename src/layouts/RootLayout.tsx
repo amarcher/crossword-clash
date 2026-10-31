@@ -7,6 +7,7 @@ import { GameProvider } from "../contexts/GameContext";
 import { MultiplayerProvider } from "../contexts/MultiplayerContext";
 import { FriendsProvider } from "../contexts/FriendsContext";
 import { InviteBanner } from "../components/Friends";
+import { PushEffects } from "../components/Push";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -204,6 +205,7 @@ export function RootLayout() {
                 <Outlet />
               </RoutingEffects>
               <InviteBanner />
+              <PushEffects />
               <ToastViewport />
             </FriendsProvider>
           </MultiplayerProvider>

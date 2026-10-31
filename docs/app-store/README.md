@@ -47,7 +47,10 @@ M5) of live games on the production backend, with the alpha channel removed.
      User ID* (the anonymous Supabase ID) and *User Content → Gameplay Content*
      (display name, game progress, leaderboard times), both for App
      Functionality, not linked to identity, not used for tracking. This matches
-     `ios/App/App/PrivacyInfo.xcprivacy`.
+     `ios/App/App/PrivacyInfo.xcprivacy`. With push notifications
+     (`VITE_PUSH=1`, docs/push-setup.md) add *Identifiers → Device ID* (the
+     APNs push token), collected, linked to the user, App Functionality, not
+     used for tracking; the privacy manifest already declares it.
    - **Age rating** questionnaire. Everything is "None"/"No"; the one judgement
      call is User-Generated Content, since display names are visible to others.
    - **Content rights** declaration.

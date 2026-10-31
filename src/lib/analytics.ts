@@ -92,7 +92,15 @@ export type AnalyticsEvent =
   /** The invitee tapped Join. Params `via` (banner | inbox), `kind`. */
   | "room_invite_opened"
   /** A tap on the Race friends screen. Params `action` (invite-join | challenge | start | join-code | add-friend | sign-in), `signed_in`. */
-  | "race_action";
+  | "race_action"
+  /** Push (docs/friends-spec.md §7): the OS prompt was shown. Param `placement` (account | completion). */
+  | "push_permission_prompted"
+  /** The answer to that prompt. Params `placement`, `granted`. */
+  | "push_permission_result"
+  /** A notification tap launched or foregrounded the app. */
+  | "push_opened"
+  /** The daily reminder switch. Params `on`, `hour`, `placement`. */
+  | "reminder_toggled";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

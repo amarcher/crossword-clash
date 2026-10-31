@@ -4,6 +4,7 @@ import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOu
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
+import { NotificationSettings } from "../components/Push";
 import { avatarInitial } from "../components/Account/AccountControl";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -171,6 +172,9 @@ export function AccountScreen() {
               {username ? t("account.changeUsername") : t("account.chooseUsername")}
             </Button>
           </Card>
+
+          {/* The apps only: notification switches (docs/friends-spec.md §3.3). */}
+          <NotificationSettings placement="account" />
 
           {/* Overview */}
           <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-overview">

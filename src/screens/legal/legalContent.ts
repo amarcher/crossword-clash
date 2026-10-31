@@ -72,6 +72,12 @@ const en: LegalContent = {
         ],
       },
       {
+        heading: "Notifications (apps)",
+        paragraphs: [
+          "If you turn on notifications in the app, your phone gives us a push token, a code Apple or Google issues so we can send notifications to that device. We store the token with your ID (anonymous or account), the platform, your language and time zone, and which kinds of notification you turned on (a daily puzzle reminder, room invitations, friend requests) and your quiet hours. Notifications are delivered through Apple's Push Notification service on iPhone and Google's Firebase Cloud Messaging on Android; they carry only what you see in them (a username, a puzzle title, a room code), never anything sensitive. We keep a log of what was sent and why something was not, without its text, for 30 days. A token we have not seen for 90 days is deleted; turning notifications off in your phone's settings, signing out or deleting your account stops them. We never send marketing by notification.",
+        ],
+      },
+      {
         heading: "Information stored on our servers (Supabase)",
         paragraphs: ["When Supabase is available, the following is stored in our database:"],
         items: [
@@ -148,7 +154,7 @@ const en: LegalContent = {
       {
         heading: "Retention and your choices",
         paragraphs: [
-          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Published puzzles stay until unpublished (then 30 days), removed (then 30 days) or the account is deleted; resolved reports are kept for a year. Friend requests are deleted after 30 days if unanswered and room invitations after 7 days. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
+          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Published puzzles stay until unpublished (then 30 days), removed (then 30 days) or the account is deleted; resolved reports are kept for a year. Friend requests are deleted after 30 days if unanswered and room invitations after 7 days. Push tokens are deleted 90 days after the device was last seen and the notification log after 30 days. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
         ],
       },
       {
@@ -400,6 +406,12 @@ const es: LegalContent = {
         ],
       },
       {
+        heading: "Notificaciones (apps)",
+        paragraphs: [
+          "Si activas las notificaciones en la app, tu teléfono nos da un token de notificaciones, un código que emite Apple o Google para que podamos enviar notificaciones a ese dispositivo. Guardamos el token con tu ID (anónimo o de cuenta), la plataforma, tu idioma y zona horaria, qué tipos de notificación activaste (recordatorio diario, invitaciones a salas, solicitudes de amistad) y tus horas de silencio. Las notificaciones se entregan a través del servicio Apple Push Notification en iPhone y Firebase Cloud Messaging de Google en Android; solo llevan lo que ves en ellas (un nombre de usuario, el título de un crucigrama, un código de sala), nunca nada sensible. Guardamos un registro de lo enviado y de por qué algo no se envió, sin su texto, durante 30 días. Un token que no vemos en 90 días se borra; desactivar las notificaciones en los ajustes del teléfono, cerrar sesión o borrar tu cuenta las detiene. Nunca enviamos publicidad por notificación.",
+        ],
+      },
+      {
         heading: "Información guardada en nuestros servidores (Supabase)",
         paragraphs: ["Cuando Supabase está disponible, se guarda lo siguiente en nuestra base de datos:"],
         items: [
@@ -476,7 +488,7 @@ const es: LegalContent = {
       {
         heading: "Conservación y tus opciones",
         paragraphs: [
-          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Los crucigramas publicados se conservan hasta que se retiran (y 30 días más), se eliminan (y 30 días más) o se borra la cuenta; las denuncias resueltas se conservan un año. Las solicitudes de amistad sin respuesta se borran a los 30 días y las invitaciones a salas a los 7 días. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
+          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Los crucigramas publicados se conservan hasta que se retiran (y 30 días más), se eliminan (y 30 días más) o se borra la cuenta; las denuncias resueltas se conservan un año. Las solicitudes de amistad sin respuesta se borran a los 30 días y las invitaciones a salas a los 7 días. Los tokens de notificaciones se borran 90 días después de la última vez que vimos el dispositivo, y el registro de notificaciones a los 30 días. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
         ],
       },
       {
