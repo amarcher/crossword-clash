@@ -412,6 +412,7 @@ export function MultiplayerPlayScreen() {
             <MobileClueSheet
               open={clueSheetOpen}
               onClose={() => setClueSheetOpen(false)}
+              inputRef={gridInputRef}
               scoreboard={
                 isAsync ? (
                   raceStatusPanel
