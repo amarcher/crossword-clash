@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui";
@@ -6,7 +6,9 @@ import { track } from "../../lib/analytics";
 import type { EntitlementRow } from "../../lib/entitlements";
 import { formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { openBillingPortal, reconcileEntitlements, startCheckout, storeManagementUrl, type PlusPlan } from "../../lib/plusPurchase";
-import { fetchNativePrices, nativePurchaseAvailable, purchaseNativePlan, purchasePlatform, restoreNativePurchases, type NativePlanPrice } from "../../lib/nativePurchase";
+import { nativePurchaseAvailable, purchaseNativePlan, purchasePlatform, restoreNativePurchases } from "../../lib/nativePurchase";
+import { SITE_ORIGIN } from "../../lib/pageMeta";
+import { useStorePrices } from "../../hooks/useStorePrices";
 
 export interface PurchaseAccount {
   /** Signed in to a real account (null while anonymous). */
@@ -43,16 +45,7 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   const channel = native ? "revenuecat" : "stripe";
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-  const [prices, setPrices] = useState<NativePlanPrice[]>([]);
-
-  useEffect(() => {
-    if (!native) return;
-    let live = true;
-    void fetchNativePrices().then((p) => live && setPrices(p));
-    return () => {
-      live = false;
-    };
-  }, [native]);
+  const prices = useStorePrices();
 
   const priceFor = (plan: PlusPlan) =>
     prices.find((p) => p.plan === plan)?.priceString ?? formatUsd(plan === "annual" ? PLUS_ANNUAL_USD : PLUS_MONTHLY_USD, i18n.language);
@@ -75,10 +68,13 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
       if (native) {
         const outcome = await purchaseNativePlan(plan);
         if (outcome === "cancelled") return;
-        await reconcileEntitlements("revenuecat").catch(() => []);
+        const rows = await reconcileEntitlements("revenuecat").catch(() => [] as EntitlementRow[]);
         await account.refreshEntitlements();
         track("purchase_completed", { channel, plan });
-        setNotice({ kind: "ok", text: t("plus.purchased") });
+        // The store took the money; if our row isn't there yet (webhook in flight, RevenueCat
+        // still validating), don't say "You're Plus" over the buy buttons.
+        const found = rows.some((r) => (r.status === "active" || r.status === "grace") && (r.product === "plus" || r.product === "supporter"));
+        setNotice({ kind: "ok", text: t(found ? "plus.purchased" : "plus.purchasePending") });
       } else {
         await startCheckout(plan, returnTo);
         // The browser is leaving for Stripe; stay busy meanwhile.
@@ -107,14 +103,17 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
       if (url) window.open(url, "_blank", "noopener");
     });
 
+  // In the apps a relative link opens nothing on iOS (WebKit hands capacitor://localhost/terms
+  // to UIApplication.open) and replaces the app on Android; the public site opens in the browser.
+  const legalHref = (path: string) => (native ? `${SITE_ORIGIN}${path}` : path);
   const legal = (
     <p className="text-center text-xs leading-relaxed text-subtle">
       {t("plus.legalNote")}{" "}
-      <a className={LINK} href="/terms" target="_blank" rel="noopener">
+      <a className={LINK} href={legalHref("/terms")} target="_blank" rel="noopener">
         {t("plus.terms")}
       </a>{" "}
       ·{" "}
-      <a className={LINK} href="/privacy" target="_blank" rel="noopener">
+      <a className={LINK} href={legalHref("/privacy")} target="_blank" rel="noopener">
         {t("plus.privacy")}
       </a>
     </p>
