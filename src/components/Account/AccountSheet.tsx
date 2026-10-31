@@ -141,7 +141,13 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             ) : view === "username" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.usernameBody")}</p>
             ) : view === "delete" ? (
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
+              <>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
+                {/* Deleting the account can't cancel a store subscription (Apple asks apps to say so). */}
+                {account.plus && account.plusRow?.source === "revenuecat" && (
+                  <p className="mt-1.5 text-sm font-medium leading-relaxed text-ink-soft">{t("account.deleteStoreSubscription")}</p>
+                )}
+              </>
             ) : user ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.signedInBody")}</p>
             ) : (
