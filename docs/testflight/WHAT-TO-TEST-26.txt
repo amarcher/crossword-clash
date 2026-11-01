@@ -1,0 +1,8 @@
+This build (1.1.0, build 26) adds friends, room invites and notifications. Please try, ideally with two phones:
+
+1. Race friends: the menu's "Race friends" row. Search a friend by username and send a request; accept it on the other phone (Race friends → Friends). You need to be signed in with a username.
+2. Challenge: tap a friend's Challenge. A room opens for you; your friend sees an invite banner in the app with Join, and the lobby lists who you invited.
+3. Notifications: Your account → Notifications. Turn on "Daily puzzle reminder" — the phone asks for permission the first time, never on launch. Room invites and friend requests are on by default once allowed. A reminder arrives at the hour you pick, in your time zone, and not after a day you already solved.
+4. After finishing a daily: "Remind me tomorrow" and "Send to a friend" (the beat-my-time link lands in-app, as an invite, instead of the share sheet).
+5. A tapped notification opens the right screen: the join screen for an invite, the puzzle for a reminder.
+6. Everything from build 25 still applies.
