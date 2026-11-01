@@ -52,6 +52,12 @@ export interface SoloCompletionResult {
   /** Streak state after counting today's play. */
   streak: StreakState;
   /**
+   * True when this finish added today to the streak; false when today had
+   * already counted (a second finish on the same day) or nothing was recorded.
+   * Absent for a restored finish, whose own day is long counted.
+   */
+  streakAdvanced?: boolean;
+  /**
    * The grid was finished with a revealed square (solo, Autocheck off): it
    * counts as solved, but the time set no record and the day rolled no streak.
    */
@@ -306,6 +312,7 @@ export function recordSoloCompletion(
       isNewBest: false,
       previousBest,
       streak: { ...stats.streak, current: effectiveStreak(stats.streak, dayKey(now)) },
+      streakAdvanced: false,
       assisted: true,
     };
   }
@@ -314,9 +321,11 @@ export function recordSoloCompletion(
     key,
     finishSeconds,
   );
-  const streak = rollStreak(stats.streak, dayKey(now));
+  const today = dayKey(now);
+  const streak = rollStreak(stats.streak, today);
   saveSoloStats({ version: 1, bestTimes, streak, nytStreak: stats.nytStreak });
-  return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak };
+  const streakAdvanced = streak.lastPlayedDay === today && stats.streak.lastPlayedDay !== today;
+  return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak, streakAdvanced };
 }
 
 /**

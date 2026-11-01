@@ -157,8 +157,25 @@ describe("judgeSolve", () => {
   it("reports the beaten time and a continued streak", () => {
     const history = [row({ puzzle_key: "p", completed_day: "2026-10-01", seconds: 60 })];
     const outcome = judgeSolve(history, row({ puzzle_key: "p", completed_day: "2026-10-02", seconds: 50 }));
-    expect(outcome).toMatchObject({ previousBest: 60, bestSeconds: 50, isNewBest: true });
+    expect(outcome).toMatchObject({ previousBest: 60, bestSeconds: 50, isNewBest: true, streakAdvanced: true });
     expect(outcome.streak).toMatchObject({ current: 2, lastPlayedDay: "2026-10-02" });
+  });
+
+  // Nov 1 2026: yesterday's mini replayed at 4:17 pm took the streak from 5 to 6; today's daily
+  // three minutes later found the day already counted and showed 6 again — correct, but it read
+  // as a streak that failed to move, so the outcome now says which it was.
+  it("knows whether the finish added its day to the streak", () => {
+    const history = [row({ puzzle_key: "a", completed_day: "2026-10-31", seconds: 60 })];
+    const first = judgeSolve(history, row({ puzzle_key: "b", completed_day: "2026-11-01", seconds: 50 }));
+    expect(first.streakAdvanced).toBe(true);
+    expect(first.streak.current).toBe(2);
+    const second = judgeSolve(mergeRows(history, [row({ puzzle_key: "b", completed_day: "2026-11-01", seconds: 50 })]), row({ puzzle_key: "c", completed_day: "2026-11-01", seconds: 40 }));
+    expect(second.streakAdvanced).toBe(false);
+    expect(second.streak.current).toBe(2);
+    const assisted = judgeSolve(history, row({ puzzle_key: "b", completed_day: "2026-11-01", seconds: 50 }), true);
+    expect(assisted.streakAdvanced).toBe(false);
+    const untracked = judgeSolve(history, row({ puzzle_key: "n", completed_day: "2026-11-01", seconds: null, mode: "import", source: "other" }));
+    expect(untracked.streakAdvanced).toBe(false);
   });
 
   it("is not a new best when slower, and an untimed finish is never a best", () => {
