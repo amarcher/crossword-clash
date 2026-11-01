@@ -52,6 +52,15 @@ capability through the ASC API):
    the capability up on the next build. A build made before the capability
    exists fails to register (the plugin's `registrationError`), nothing
    worse.
+3. **The capability change invalidated the manual App Store profile** the
+   TestFlight script signs with ("Crossword Clash App Store (API)", see
+   `scripts/testflight.sh`). Recreated through the ASC API on 2026-10-31:
+   DELETE the `INVALID` profile, POST a new `IOS_APP_STORE` profile with the
+   same name, bundle id `75MZZ652JR` and certificate `Z7FXVDNWJ8`, install
+   its `profileContent` under `~/Library/MobileDevice/Provisioning Profiles`
+   (new uuid `e9d967c2-f6ba-42fc-885c-e7bb3b735ec6`, the old file removed);
+   `security cms -D` on it shows `aps-environment: production` and
+   associated domains. Do the same after any later App ID capability change.
 
 ## 3. Google: the Firebase project and the service account
 
@@ -145,9 +154,10 @@ was sent.
 
 ## 6. Store forms
 
-- **App Store Connect → App Privacy**: add *Identifiers → Device ID*
-  (the push token), collected, linked to the user, App Functionality, not
-  used for tracking. `ios/App/App/PrivacyInfo.xcprivacy` already declares it.
+- **App Store Connect → App Privacy**: *Identifiers → Device ID* (the push
+  token), collected, linked to the user, App Functionality, not used for
+  tracking — published 2026-10-31. `ios/App/App/PrivacyInfo.xcprivacy`
+  declares the same.
 - **Play Console → Data safety**: add *Device or other IDs* (the FCM token
   and the Firebase installation id), collected, not shared (Google is the
   service provider), required for notifications, App functionality. The
