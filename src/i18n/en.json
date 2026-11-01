@@ -897,5 +897,23 @@
     "sendToFriendHint": "They get your time to beat in the app, no share sheet needed.",
     "send": "Send",
     "sent": "Sent"
+  },
+  "push": {
+    "heading": "Notifications",
+    "intro": "Only what you turn on. Nothing is sent for marketing.",
+    "deniedTitle": "Notifications are off for Crossword Clash",
+    "deniedBody": "Allow them in your phone's Settings to use these switches.",
+    "reminder": "Daily puzzle reminder",
+    "reminderHint": "“Today's mini is ready” at {{hour}}",
+    "reminderAt": "Remind me at",
+    "invites": "Room invites",
+    "invitesHint": "When a friend invites you to race or to beat a time",
+    "requests": "Friend requests",
+    "requestsHint": "When someone asks to be friends",
+    "quiet": "Quiet hours",
+    "quietHint": "Nothing between {{start}} and {{end}}",
+    "quietInvites": "Still let room invites through",
+    "remindTomorrow": "Remind me tomorrow",
+    "remindTomorrowHint": "One notification when the day's puzzles are ready. Turn it off any time."
   }
 }

@@ -399,6 +399,85 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      /** A device the player allowed notifications on (APNs or FCM token); the device upserts its own row by token. */
+      device_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          platform: "ios" | "android";
+          token: string;
+          app_version: string | null;
+          locale: "en" | "es";
+          timezone: string;
+          created_at: string;
+          last_seen_at: string;
+          failed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          platform: "ios" | "android";
+          token: string;
+          app_version?: string | null;
+          locale?: "en" | "es";
+          timezone?: string;
+          created_at?: string;
+          last_seen_at?: string;
+          failed_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          platform?: "ios" | "android";
+          app_version?: string | null;
+          locale?: "en" | "es";
+          timezone?: string;
+          last_seen_at?: string;
+          failed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      /** The per-kind notification switches, reminder hour and quiet hours; one row per user, own-row RLS. */
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          daily_reminder: boolean;
+          daily_reminder_hour: number;
+          room_invites: boolean;
+          friend_requests: boolean;
+          quiet_hours: boolean;
+          quiet_start: number;
+          quiet_end: number;
+          quiet_allow_invites: boolean;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          daily_reminder?: boolean;
+          daily_reminder_hour?: number;
+          room_invites?: boolean;
+          friend_requests?: boolean;
+          quiet_hours?: boolean;
+          quiet_start?: number;
+          quiet_end?: number;
+          quiet_allow_invites?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          daily_reminder?: boolean;
+          daily_reminder_hour?: number;
+          room_invites?: boolean;
+          friend_requests?: boolean;
+          quiet_hours?: boolean;
+          quiet_start?: number;
+          quiet_end?: number;
+          quiet_allow_invites?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       /** published_puzzles joined with the author's username (security_invoker: the table's RLS applies). */
