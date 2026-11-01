@@ -233,6 +233,8 @@
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} cells filled",
     "backToMenu": "Back to menu",
+    "close": "Close",
+    "streakCountedToday": "Today already counted — one day per day",
     "ariaLabel": "Puzzle complete",
     "share": "Share",
     "sharing": "Preparing…",

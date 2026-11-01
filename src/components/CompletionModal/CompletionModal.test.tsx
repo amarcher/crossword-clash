@@ -196,6 +196,36 @@ describe("CompletionModal", () => {
     expect(onBackToMenu).toHaveBeenCalledOnce();
   });
 
+  // The modal is taller than a phone screen, so "Back to menu" at its foot was the only way out
+  // for a reader who did not scroll (Andrew, 2026-11-01): a close control sits at the top too.
+  it("offers a close control at the top that leaves the same way as Back to menu", () => {
+    const onBackToMenu = vi.fn();
+    const { getByRole, container } = render(<CompletionModal {...SOLO_PROPS} onBackToMenu={onBackToMenu} />);
+    const close = getByRole("button", { name: "Close" });
+    const dialog = container.querySelector("[role='dialog']")!;
+    expect(dialog.firstElementChild).toBe(close);
+    expect(close.classList.contains("size-11")).toBe(true);
+    fireEvent.click(close);
+    expect(onBackToMenu).toHaveBeenCalledOnce();
+  });
+
+  it("has no close control without a way back", () => {
+    const { queryByRole } = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(queryByRole("button", { name: "Close" })).toBeNull();
+  });
+
+  it("says when the streak already counted today, and nothing when the finish advanced it", () => {
+    const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced={false} />);
+    expect(counted.getByText("6-day streak")).toBeTruthy();
+    expect(counted.getByText(/Today already counted/)).toBeTruthy();
+    counted.unmount();
+    const advanced = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced />);
+    expect(advanced.queryByText(/Today already counted/)).toBeNull();
+    advanced.unmount();
+    const unknown = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
+    expect(unknown.queryByText(/Today already counted/)).toBeNull();
+  });
+
   it("applies dark mode classes when darkMode is true", () => {
     const { container } = render(
       <CompletionModal {...SOLO_PROPS} darkMode />,

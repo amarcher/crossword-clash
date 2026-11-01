@@ -285,6 +285,7 @@ export function SoloPlayScreen() {
         isNewBest: serverOutcome.isNewBest,
         previousBest: serverOutcome.previousBest,
         streak: serverOutcome.streak.current,
+        streakAdvanced: serverOutcome.streakAdvanced,
         nytStreak: serverOutcome.nytStreak.current,
       };
     }
@@ -295,6 +296,7 @@ export function SoloPlayScreen() {
         isNewBest: false,
         previousBest: null,
         streak: effectiveStreak(history.summary.streak, today),
+        streakAdvanced: undefined,
         nytStreak: effectiveStreak(history.summary.nytStreak, today),
       };
     }
@@ -303,6 +305,7 @@ export function SoloPlayScreen() {
       isNewBest: soloResult.isNewBest,
       previousBest: soloResult.previousBest,
       streak: soloResult.streak.current,
+      streakAdvanced: soloResult.streakAdvanced,
       nytStreak: null,
     };
   }, [soloResult, serverOutcome, freshResult, history.summary, puzzle]);
@@ -600,6 +603,7 @@ export function SoloPlayScreen() {
         previousBest={shownResult?.previousBest}
         assisted={assisted}
         streakCount={shownResult?.streak}
+        streakAdvanced={shownResult?.streakAdvanced}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}

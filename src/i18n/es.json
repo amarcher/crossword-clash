@@ -233,6 +233,8 @@
     "total": "Total",
     "cellsFilled": "{{score}}/{{total}} celdas completadas",
     "backToMenu": "Volver al menú",
+    "close": "Cerrar",
+    "streakCountedToday": "Hoy ya estaba contado: un día por día",
     "ariaLabel": "Crucigrama completo",
     "share": "Compartir",
     "sharing": "Preparando…",

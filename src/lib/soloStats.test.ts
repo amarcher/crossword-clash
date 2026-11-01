@@ -306,6 +306,17 @@ describe("persistence (localStorage)", () => {
     expect(res.isNewBest).toBe(true);
     expect(res.bestSeconds).toBe(238);
     expect(res.streak.current).toBe(2); // consecutive day
+    expect(res.streakAdvanced).toBe(true);
+  });
+
+  it("says when a second finish on the same day did not advance the streak", () => {
+    const first = recordSoloCompletion("k", 272, new Date(2026, 5, 30, 9));
+    expect(first.streakAdvanced).toBe(true);
+    const second = recordSoloCompletion("j", 100, new Date(2026, 5, 30, 20));
+    expect(second.streakAdvanced).toBe(false);
+    expect(second.streak.current).toBe(1);
+    const assisted = recordSoloCompletion("m", 100, new Date(2026, 6, 1), { assisted: true });
+    expect(assisted.streakAdvanced).toBe(false);
   });
 
   it("exposes previousBest: null on first solve, the beaten time on a record", () => {
@@ -372,6 +383,7 @@ describe("assisted completion (a revealed square)", () => {
       isNewBest: false,
       previousBest: 120,
       streak: expect.objectContaining({ current: 1, lastPlayedDay: "2026-10-27" }),
+      streakAdvanced: false,
       assisted: true,
     });
     expect(loadSoloStats().bestTimes).toEqual({ k: 120 });
