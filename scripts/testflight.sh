@@ -34,7 +34,7 @@ fi
 # without one ships with that feature silently missing (builds 11–19 had no
 # community puzzles and no Publish because VITE_COMMUNITY was never set here).
 # Keep this list equal to the switches production (Vercel) has on.
-for flag in VITE_PLUS VITE_COMMUNITY; do
+for flag in VITE_PLUS VITE_COMMUNITY VITE_FRIENDS VITE_PUSH; do
   if ! grep -q "^${flag}=1" .env.local 2>/dev/null; then
     echo "testflight: .env.local must set ${flag}=1 (production has it on); refusing to build an app without it." >&2
     exit 1

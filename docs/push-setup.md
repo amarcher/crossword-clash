@@ -29,20 +29,29 @@ Nothing runs at apply time.
 
 ## 2. Apple: the APNs key and the capability
 
-1. In the developer account, Certificates, Identifiers & Profiles → Keys →
-   add a key with **Apple Push Notifications service (APNs)**, team-scoped,
-   **Production**. Download the `.p8` once (Apple never shows it again) and
-   note the 10-character **Key ID**. The Team ID is on the membership page.
-   This is a different key from the `ASC_API_*` key the TestFlight script
-   uses.
-2. Add the **Push Notifications** capability to the App ID
-   `com.crosswordclash.app` (the Associated Domains capability was added
-   through the ASC API on 2026-10-30; the same `bundleIds/{id}/capabilities`
-   call with `PUSH_NOTIFICATIONS` works, or tick it in the portal). The
-   repo's `App.entitlements` already carries `aps-environment: production`;
-   Xcode's automatic signing picks the capability up on the next build. A
-   build made before the capability exists fails to register (the plugin's
-   `registrationError`), nothing worse.
+Done 2026-10-31 (the key through the portal in the in-app browser, the
+capability through the ASC API):
+
+1. Key **Crossword Clash APNs**, Key ID `XCYXKS23C7`, team `J39B2498YF`
+   (Andrew Archer, the personal team — the portal opens on Fable Designer
+   LLC by default, and a key made there would be refused for this app),
+   APNs, team-scoped, environment **Sandbox & Production** (frozen at
+   creation; the one key serves TestFlight, the App Store and an Xcode
+   development build, so `APNS_SANDBOX=1` needs no second key). The `.p8` is
+   at `~/.appstoreconnect/private_keys/AuthKey_XCYXKS23C7.p8` (mode 600,
+   beside the ASC API keys; Apple never serves it again). It is a different
+   key from the `ASC_API_*` key the TestFlight script uses. Verified by
+   sending to a bogus device token on both `api.push.apple.com` and
+   `api.sandbox.push.apple.com`: `400 BadDeviceToken` means the provider
+   token was accepted (a refused key answers `403 InvalidProviderToken`).
+2. The **Push Notifications** capability was added to the App ID
+   `com.crosswordclash.app` (bundle id resource `75MZZ652JR`) through the
+   ASC API, the same `bundleIds/{id}/capabilities` call that added
+   Associated Domains on 2026-10-30. The repo's `App.entitlements` already
+   carries `aps-environment: production`; Xcode's automatic signing picks
+   the capability up on the next build. A build made before the capability
+   exists fails to register (the plugin's `registrationError`), nothing
+   worse.
 
 ## 3. Google: the Firebase project and the service account
 
@@ -102,6 +111,10 @@ curl -s -X POST "https://rdqdhawlxuclfxpsvdgs.supabase.co/functions/v1/send-push
 
 The answer counts `sent` / `failed` / `unregistered`; a `failed` with
 `apns_not_configured` or `fcm_not_configured` names the missing secret.
+All six secrets were set on 2026-10-31 and the function answered the test
+route for a user with no device (`no_token: 1`); the credentials themselves
+were proven against APNs and FCM with bogus device tokens (§2, §3), so the
+first real device only exercises registration.
 
 ## 5. The two callers
 
@@ -143,8 +156,9 @@ was sent.
 
 ## 7. The switch and the builds
 
-Set `VITE_PUSH=1` in `.env.local` (the app builds read it; add it to
-`scripts/testflight.sh`'s required switches once live) and on Vercel (the
+Set `VITE_PUSH=1` in `.env.local` (done 2026-10-31 together with
+`VITE_FRIENDS=1`; both are in `scripts/testflight.sh`'s required switches)
+and on Vercel (the
 website never registers a token, but the switch keeps the two builds'
 feature sets equal). Then a new iOS build and Android release carry the
 plugin, the entitlement, `POST_NOTIFICATIONS` and the status-bar icon.
