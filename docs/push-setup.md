@@ -46,15 +46,31 @@ Nothing runs at apply time.
 
 ## 3. Google: the Firebase project and the service account
 
-1. Create a Firebase project (any name) and add an Android app with package
-   name `com.crosswordclash.app`. Download `google-services.json` into
-   `android/app/` and commit it (it holds no secret; the Android template's
-   `build.gradle` applies the Google services plugin only when the file
-   exists, so the Android build is unchanged until then).
-2. Project settings → Cloud Messaging: make sure the **Firebase Cloud
-   Messaging API (V1)** is enabled (the legacy API is gone).
-3. Project settings → Service accounts → **Generate new private key**. The
-   JSON file is the `FCM_SERVICE_ACCOUNT` secret, whole.
+Done 2026-10-31 from the CLI, no console needed: Firebase was attached to
+the **existing** `crossword-clash` Cloud project (number 947795730277, the
+one the Play publisher service account lives in) rather than a new one, so
+Play and push share a project.
+
+1. `gcloud services enable firebase.googleapis.com fcm.googleapis.com`, then
+   `POST https://firebase.googleapis.com/v1beta1/projects/crossword-clash:addFirebase`
+   (a `gcloud auth print-access-token` bearer plus
+   `x-goog-user-project: crossword-clash`; the API refuses user credentials
+   without a quota project) and `POST …/androidApps` with package name
+   `com.crosswordclash.app`. `GET …/androidApps/{appId}/config` returns
+   `google-services.json` base64-encoded; it is committed at
+   `android/app/google-services.json` (it holds no secret; the Android
+   template's `build.gradle` applies the Google services plugin only when the
+   file exists).
+2. Firebase Cloud Messaging API (V1) is `fcm.googleapis.com`, enabled above.
+3. The sender is a dedicated service account,
+   `fcm-sender@crossword-clash.iam.gserviceaccount.com`, with
+   `roles/firebasecloudmessaging.admin` (the role that carries
+   `cloudmessaging.messages.create`; the Firebase console's own
+   `firebase-adminsdk-…` account is only created when the console is
+   opened, so the API path has to make its own). Its key is at
+   `~/.config/crossword-clash/fcm-service-account.json` (mode 600, beside
+   the Play publisher key, never in the repo) and is the
+   `FCM_SERVICE_ACCOUNT` secret, whole.
 
 ## 4. Secrets and the function
 
