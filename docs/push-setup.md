@@ -158,10 +158,12 @@ was sent.
   token), collected, linked to the user, App Functionality, not used for
   tracking — published 2026-10-31. `ios/App/App/PrivacyInfo.xcprivacy`
   declares the same.
-- **Play Console → Data safety**: add *Device or other IDs* (the FCM token
-  and the Firebase installation id), collected, not shared (Google is the
-  service provider), required for notifications, App functionality. The
-  **Notification permission** needs no declaration.
+- **Play Console → Data safety**: *Device or other IDs* (the FCM token and
+  the Firebase installation id), collected, not shared (Google is the
+  service provider), not ephemeral, required, App functionality — submitted
+  for review 2026-10-31 (reviews take up to 7 days; the row shows "Changes
+  in review" on Publishing overview meanwhile). The **Notification
+  permission** needs no declaration.
 - Both READMEs under `docs/app-store/` and `docs/play-store/` carry the rows.
 
 ## 7. The switch and the builds
