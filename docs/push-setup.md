@@ -158,9 +158,9 @@ was sent.
 
 Set `VITE_PUSH=1` in `.env.local` (done 2026-10-31 together with
 `VITE_FRIENDS=1`; both are in `scripts/testflight.sh`'s required switches)
-and on Vercel (the
-website never registers a token, but the switch keeps the two builds'
-feature sets equal). Then a new iOS build and Android release carry the
+and on Vercel (done 2026-10-31 for Production and Preview, like `VITE_PLUS`
+and `VITE_COMMUNITY`; the website never registers a token, but the switch
+keeps the two builds' feature sets equal). Then a new iOS build and Android release carry the
 plugin, the entitlement, `POST_NOTIFICATIONS` and the status-bar icon.
 
 What the player sees: nothing until they turn a switch on, on the account
