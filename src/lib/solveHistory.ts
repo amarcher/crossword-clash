@@ -77,6 +77,12 @@ export interface SolveOutcome {
   isNewBest: boolean;
   /** The daily streak after this finish, `current` already effective for its day. */
   streak: StreakState;
+  /**
+   * True when this finish added its day to the daily streak. False for a second
+   * finish on a day that already counted (the streak stays where it was: one
+   * day per day) and for an assisted finish, which records nothing.
+   */
+  streakAdvanced: boolean;
   /** The NYT streak after this finish, `current` already effective for its day. */
   nytStreak: StreakState;
   summary: SolveSummary;
@@ -217,6 +223,7 @@ export function judgeSolve(rows: readonly SolveRow[], row: SolveRow, assisted = 
       bestSeconds: previousBest,
       isNewBest: false,
       streak: { ...before.streak, current: effectiveStreak(before.streak, row.completed_day) },
+      streakAdvanced: false,
       nytStreak: { ...before.nytStreak, current: effectiveStreak(before.nytStreak, row.completed_day) },
       summary: before,
     };
@@ -228,6 +235,7 @@ export function judgeSolve(rows: readonly SolveRow[], row: SolveRow, assisted = 
     bestSeconds: summary.bestTimes[row.puzzle_key] ?? null,
     isNewBest: beat,
     streak: { ...summary.streak, current: effectiveStreak(summary.streak, row.completed_day) },
+    streakAdvanced: countsForDailyStreak(row) && before.streak.lastPlayedDay !== row.completed_day,
     nytStreak: { ...summary.nytStreak, current: effectiveStreak(summary.nytStreak, row.completed_day) },
     summary,
   };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -65,6 +65,12 @@ interface CompletionModalProps {
   assisted?: boolean;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
+  /**
+   * Whether this finish added today to the streak. `false` adds a note under
+   * the streak row — a second finish on a day that already counted looked like
+   * a streak that failed to move (Andrew, 2026-11-01); omit when unknown.
+   */
+  streakAdvanced?: boolean;
   /**
    * Present when the finished puzzle came from the NYT bookmarklet: shows the
    * "same time tomorrow" nudge and, when > 0, the NYT streak. This is the
@@ -166,6 +172,7 @@ export function CompletionModal({
   previousBest,
   assisted,
   streakCount,
+  streakAdvanced,
   nytHook,
   raceSeconds,
   onViewLeaderboard,
@@ -355,6 +362,23 @@ export function CompletionModal({
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
+        {/* The way out, where a dialog's close is expected. "Back to menu" at the
+            foot of the list stays for readers who scroll; on a phone the modal is
+            taller than the screen, so a reader who only wanted out had to find it
+            there or hit the sliver of backdrop. */}
+        {onBackToMenu && (
+          <button
+            type="button"
+            onClick={onBackToMenu}
+            aria-label={t('completion.close')}
+            className={`absolute right-3 top-3 grid size-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand-500 ${
+              darkMode ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted hover:bg-surface-sunken hover:text-ink"
+            }`}
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
+        )}
+
         {/* Trophy */}
         <div className="mb-4 flex justify-center">
           <span className={`trophy-pulse grid size-14 place-items-center rounded-full ${darkMode ? "bg-gold-500/15" : "bg-gold-50 ring-1 ring-gold-100"}`}>
@@ -525,10 +549,15 @@ export function CompletionModal({
             })()}
 
             {streakCount !== undefined && streakCount > 0 && (
-              <p className={`mb-5 flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
-                <Flame className="size-4 text-gold-500" aria-hidden="true" />
-                {t('soloStats.streakDays', { count: streakCount })}
-              </p>
+              <div className="mb-5 text-center">
+                <p className={`flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
+                  <Flame className="size-4 text-gold-500" aria-hidden="true" />
+                  {t('soloStats.streakDays', { count: streakCount })}
+                </p>
+                {streakAdvanced === false && !assisted && (
+                  <p className={`mt-0.5 text-xs ${textSub}`}>{t('completion.streakCountedToday')}</p>
+                )}
+              </div>
             )}
 
             {nytHook && (
