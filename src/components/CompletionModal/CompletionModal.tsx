@@ -15,6 +15,8 @@ import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { SaveImageButton } from "./SaveImageButton";
+import { SendToFriend } from "../Friends";
+import { ReminderSwitch } from "../Push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
@@ -626,6 +628,16 @@ export function CompletionModal({
               daily={!!dailySlot && !isMultiplayer}
               legend={shareLegend}
               onNameSigned={dailySign?.onSign}
+              darkMode={darkMode}
+            />
+          )}
+          {/* A daily finish with friends: the beat-my-time link delivered in-app
+              (docs/friends-spec.md §3.2). Renders nothing without friends. */}
+          {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
+          {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
+          {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
+            <SendToFriend
+              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName") })}
               darkMode={darkMode}
             />
           )}

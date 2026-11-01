@@ -40,6 +40,8 @@ export const screenModules = {
     ]).then(([screen]) => screen),
   communityBrowse: () => import("./screens/CommunityBrowseScreen"),
   communityPuzzle: () => import("./screens/CommunityPuzzleScreen"),
+  race: () => import("./screens/RaceScreen"),
+  friends: () => import("./screens/FriendsScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -81,6 +83,8 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   // One prefix for both community chunks: a link to a page or the list warms the pair (both are small).
   "/puzzles": () => Promise.all([screenModules.communityBrowse(), screenModules.communityPuzzle()]),
   "/pick-puzzle": screenModules.puzzlePicker,
+  // One prefix for both friends chunks: the hub links the list and both are small.
+  "/race": () => Promise.all([screenModules.race(), screenModules.friends()]),
   "/host-game/name": screenModules.hostName,
   "/host-game/import": screenModules.hostImport,
   "/lobby": screenModules.lobby,

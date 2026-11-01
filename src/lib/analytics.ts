@@ -80,7 +80,27 @@ export type AnalyticsEvent =
   /** The player tapped Update on that banner. Param `version`. */
   | "app_update_tapped"
   /** The player tapped Later on that banner. Param `version`. */
-  | "app_update_dismissed";
+  | "app_update_dismissed"
+  /** Friends (docs/friends-spec.md §7): a request went out. Params `method` (username | raced), `outcome` (pending | accepted | sent). */
+  | "friend_request_sent"
+  /** Accept / Decline on a request. Param `accepted`. */
+  | "friend_request_responded"
+  | "friend_removed"
+  | "player_blocked"
+  /** An in-app invite was written. Params `channel` (inapp), `kind` (room | beat). */
+  | "room_invite_sent"
+  /** The invitee tapped Join. Params `via` (banner | inbox), `kind`. */
+  | "room_invite_opened"
+  /** A tap on the Race friends screen. Params `action` (invite-join | challenge | start | join-code | add-friend | sign-in), `signed_in`. */
+  | "race_action"
+  /** Push (docs/friends-spec.md §7): the OS prompt was shown. Param `placement` (account | completion). */
+  | "push_permission_prompted"
+  /** The answer to that prompt. Params `placement`, `granted`. */
+  | "push_permission_result"
+  /** A notification tap launched or foregrounded the app. */
+  | "push_opened"
+  /** The daily reminder switch. Params `on`, `hour`, `placement`. */
+  | "reminder_toggled";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

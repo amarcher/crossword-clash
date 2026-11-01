@@ -167,6 +167,13 @@ Done by Claude, nothing submitted or rolled out:
     functionality.
   - *App activity → App interactions* (play statistics per puzzle and clue,
     platform label), Analytics. Added for 1.0.2.
+  - *Device or other IDs* (the FCM push token and the Firebase installation
+    id; Google is the service provider, so not "shared"), required for
+    notifications, App functionality. Submitted for review 2026-10-31 (the
+    Data safety page is `app-content/data-privacy-security` under the app;
+    the Save on its Preview step only stages the change, Publishing
+    overview's "Submit changes for review" sends it). The Android 13
+    notification permission itself needs no declaration.
   No data is used for advertising; the Android build has no ads SDK, no Google
   Analytics and no crash reporting.
 - **News app, COVID-19, government, financial, health:** No to each.

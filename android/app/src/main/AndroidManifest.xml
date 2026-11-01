@@ -50,6 +50,9 @@
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
+            <!-- Push: the status-bar icon (white on transparent) and the channel the sender names. -->
+            <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notification" />
+            <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="crossword-clash" />
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
@@ -59,4 +62,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: notifications are a runtime permission; the app asks only when a
+         notification switch is turned on (src/lib/push.ts), never on launch. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
