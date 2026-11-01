@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { TransitionLink } from "../components/ui";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { FlowPage, TextField } from "../components/Flow";
@@ -153,6 +154,13 @@ export function HostNameScreen() {
           {busy ? t('hostName.creating') : connecting ? t('join.connecting') : game.urlPuzzle ? t('hostName.createRoom') : t('hostName.choosePuzzle')}
         </Button>
       </form>
+      {/* A player who meant to join (the daily tile's Race friends lands here) has a one-line way out. */}
+      <p className="mt-6 text-center text-sm text-muted">
+        {t('hostName.haveCode')}{' '}
+        <TransitionLink to="/join" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500">
+          {t('hostName.joinInstead')}
+        </TransitionLink>
+      </p>
     </FlowPage>
   );
 }

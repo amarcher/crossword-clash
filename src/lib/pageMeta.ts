@@ -37,6 +37,9 @@ export function pageMetaFor(pathname: string, t: Translate): PageMeta {
   if (path === "/puzzles" || path.startsWith("/puzzles/")) {
     return { title: t("meta.community.title"), description: t("meta.community.description"), canonical: canonicalFor("/puzzles") };
   }
+  if (path === "/race" || path.startsWith("/race/")) {
+    return { title: t("meta.race.title"), description: t("meta.race.description"), canonical: canonicalFor("/race") };
+  }
   switch (path) {
     case "/archive":
       return { title: t("meta.archive.title"), description: t("meta.archive.description"), canonical: canonicalFor(path) };

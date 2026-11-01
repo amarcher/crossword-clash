@@ -15,7 +15,7 @@
  * in DMCA_AGENT below; the legal tests refuse to ship a [PLACEHOLDER].
  */
 
-export const LEGAL_LAST_UPDATED = "2026-10-28";
+export const LEGAL_LAST_UPDATED = "2026-10-31";
 export const LEGAL_CONTACT_EMAIL = "acesuplabs@gmail.com";
 
 export interface LegalSection {
@@ -67,6 +67,7 @@ const en: LegalContent = {
         heading: "Accounts (optional)",
         paragraphs: [
           "On the website you can sign in with Apple or Google to keep your solve history across devices and to have a public username. Signing in is optional: everything in the game works without it. When you sign in, Supabase links the provider to your existing anonymous ID, so your games and times stay with you, and stores the provider's user ID and the email address the provider shares with us (Apple lets you hide it). We also store the username you choose, which is public: it appears wherever your display name would, such as in games and on leaderboards. We never see your password. While you are signed in we also keep your solve history on our servers, so it follows you to your other devices: for each puzzle you finish, its title and a fingerprint of its grid, whether it was a daily, an NYT import or another puzzle, whether you played solo or in which race mode, your finish time, and the date you finished on (your local day), which is what your streaks are counted from. Solves made on a device before you signed in are uploaded once, the first time you sign in there. Without an account, all of this stays in your browser only. You can delete your account and its data at any time from the account menu, or by emailing us at " + C + ".",
+          "Friends. If you add friends, we store who asked whom, when, and whether it was accepted, and who you have blocked (the blocked person is not told). Your friends see your username and that you share a friends list; nobody else sees your friends. \"People you have raced\" is worked out from the rooms you were both in, which we already keep for 90 days. When you invite a friend to a room or send them a time to beat, we store the invitation (who, whom, which room or puzzle, when) for 7 days. Pending friend requests are deleted after 30 days. Removing a friend or deleting your account removes these records.",
           "If you subscribe to Crossword Clash Plus, we store an entitlement record against your ID: the product, where it was bought (Apple, Google or Stripe), its status and renewal date, the subscription or transaction identifier the store gave us, and a log of the store's notifications about it. Payments are handled by Apple, Google or Stripe; we never see your card number. In the apps, RevenueCat processes store receipts for us and receives your ID. On the website, Stripe receives your email address for receipts. For the metered Plus features (AI host minutes, studio clue drafts) we count your monthly use. Plus is sold to signed-in accounts, so the record is attached to your account; deleting your account cancels a web subscription and removes the record.",
         ],
       },
@@ -147,7 +148,7 @@ const en: LegalContent = {
       {
         heading: "Retention and your choices",
         paragraphs: [
-          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Published puzzles stay until unpublished (then 30 days), removed (then 30 days) or the account is deleted; resolved reports are kept for a year. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
+          "Game records are deleted 90 days after the game ends or is closed (rooms nobody has touched for a day are closed automatically), puzzles nobody is playing are deleted with them, and anonymous IDs that have not been used for 30 days and have no records are removed. Play statistics keep their per-clue detail for 180 days and are deleted after two years. Published puzzles stay until unpublished (then 30 days), removed (then 30 days) or the account is deleted; resolved reports are kept for a year. Friend requests are deleted after 30 days if unanswered and room invitations after 7 days. Leaderboard entries are kept until we delete them. Request deletion or a copy of the data tied to your anonymous ID by contacting us and, if possible, telling us your display name and room code. You can also clear local data in your browser or app settings, which resets your anonymous ID.",
         ],
       },
       {
@@ -280,9 +281,15 @@ const en: LegalContent = {
         ],
       },
       {
+        heading: "Friends and invitations",
+        paragraphs: [
+          "Friends features are for accounts with a username. You may add people by username or from rooms you shared, and invite friends to a room or to beat a time. Invitations are fixed messages; there is no messaging. Don't send repeated requests to people who have declined, and don't use friends features to harass anyone. You can block any player, and we may remove the friends features from accounts that abuse them.",
+        ],
+      },
+      {
         heading: "Reports, removal and blocking",
         paragraphs: [
-          "Every published puzzle can be reported, for example as copied, offensive or nonsense. We review reports promptly and aim to act within 24 hours. We may remove any puzzle or name, and suspend or close accounts, that break these terms, with or without notice. You can hide an author's puzzles so you no longer see them. If you think we got a decision wrong, email " + C + ".",
+          "Every published puzzle can be reported, for example as copied, offensive or nonsense. We review reports promptly and aim to act within 24 hours. We may remove any puzzle or name, and suspend or close accounts, that break these terms, with or without notice. You can hide an author's puzzles so you no longer see them, and block any player. If you think we got a decision wrong, email " + C + ".",
         ],
       },
       {
@@ -388,6 +395,7 @@ const es: LegalContent = {
         heading: "Cuentas (opcional)",
         paragraphs: [
           "En el sitio web puedes iniciar sesión con Apple o Google para conservar tu historial de partidas en todos tus dispositivos y tener un nombre de usuario público. Iniciar sesión es opcional: todo el juego funciona sin cuenta. Al iniciar sesión, Supabase vincula el proveedor a tu identificador anónimo existente, así tus partidas y tiempos siguen siendo tuyos, y guarda el identificador de usuario del proveedor y el correo que este nos comparte (Apple permite ocultarlo). También guardamos el nombre de usuario que elijas, que es público: aparece donde aparecería tu nombre visible, por ejemplo en las partidas y en las clasificaciones. Nunca vemos tu contraseña. Mientras tienes la sesión iniciada también guardamos tu historial de partidas en nuestros servidores, para que te acompañe en tus otros dispositivos: por cada crucigrama que terminas, su título y una huella de su cuadrícula, si era el diario, una importación del NYT u otro crucigrama, si jugaste en solitario o en qué modo de carrera, tu tiempo y la fecha en que lo terminaste (tu día local), de la que se calculan tus rachas. Las partidas hechas en un dispositivo antes de iniciar sesión se suben una sola vez, la primera vez que inicias sesión en él. Sin cuenta, todo esto se queda solo en tu navegador. Puedes eliminar tu cuenta y sus datos en cualquier momento desde el menú de la cuenta, o escribiéndonos a " + C + ".",
+          "Amigos. Si añades amigos, guardamos quién pidió a quién, cuándo y si fue aceptado, y a quién has bloqueado (la persona bloqueada no es avisada). Tus amigos ven tu nombre de usuario y que compartís una lista de amigos; nadie más ve tus amigos. \"Personas con las que has competido\" se calcula a partir de las salas en las que estuvisteis juntos, que ya conservamos durante 90 días. Cuando invitas a un amigo a una sala o le envías un tiempo a superar, guardamos la invitación (quién, a quién, qué sala o crucigrama, cuándo) durante 7 días. Las solicitudes de amistad pendientes se borran a los 30 días. Quitar a un amigo o borrar tu cuenta elimina estos registros.",
           "Si te suscribes a Crossword Clash Plus, guardamos un registro de derecho asociado a tu ID: el producto, dónde se compró (Apple, Google o Stripe), su estado y fecha de renovación, el identificador de suscripción o transacción que nos dio la tienda y un registro de las notificaciones de la tienda al respecto. Los pagos los gestionan Apple, Google o Stripe; nunca vemos el número de tu tarjeta. En las apps, RevenueCat procesa los recibos de la tienda por nosotros y recibe tu ID. En el sitio web, Stripe recibe tu correo electrónico para los recibos. Para las funciones de Plus con límite (minutos del presentador con IA, borradores de pistas del estudio) contamos tu uso mensual. Plus se vende a cuentas con sesión iniciada, así que el registro queda asociado a tu cuenta; eliminar tu cuenta cancela una suscripción web y borra el registro.",
         ],
       },
@@ -468,7 +476,7 @@ const es: LegalContent = {
       {
         heading: "Conservación y tus opciones",
         paragraphs: [
-          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Los crucigramas publicados se conservan hasta que se retiran (y 30 días más), se eliminan (y 30 días más) o se borra la cuenta; las denuncias resueltas se conservan un año. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
+          "Los registros de partidas se eliminan 90 días después de que la partida termine o se cierre (las salas que nadie ha tocado en un día se cierran automáticamente), los crucigramas que nadie juega se eliminan con ellas, y los identificadores anónimos sin uso durante 30 días y sin registros se borran. Las estadísticas de juego conservan el detalle por pista durante 180 días y se eliminan a los dos años. Los crucigramas publicados se conservan hasta que se retiran (y 30 días más), se eliminan (y 30 días más) o se borra la cuenta; las denuncias resueltas se conservan un año. Las solicitudes de amistad sin respuesta se borran a los 30 días y las invitaciones a salas a los 7 días. Las entradas de la clasificación se conservan hasta que las eliminemos. Puedes solicitar la eliminación o una copia de los datos vinculados a tu identificador anónimo escribiéndonos e indicando, si es posible, tu nombre visible y el código de sala. También puedes borrar los datos locales en los ajustes de tu navegador o app, lo que reinicia tu identificador anónimo.",
         ],
       },
       {
@@ -598,6 +606,12 @@ const es: LegalContent = {
           "ser de odio, acosador, sexualmente explícito ni denigrar a un grupo o a una persona real;",
           "compartir datos personales de alguien ni usarse para enviar mensajes a alguien o sobre alguien;",
           "ser spam, un sinsentido o estar roto a propósito.",
+        ],
+      },
+      {
+        heading: "Amigos e invitaciones",
+        paragraphs: [
+          "Las funciones de amigos son para cuentas con nombre de usuario. Puedes añadir personas por su nombre de usuario o desde salas que compartisteis, e invitar a amigos a una sala o a superar un tiempo. Las invitaciones son mensajes fijos; no hay mensajería. No envíes solicitudes repetidas a quien las haya rechazado ni uses las funciones de amigos para acosar a nadie. Puedes bloquear a cualquier jugador, y podemos retirar las funciones de amigos a las cuentas que abusen de ellas.",
         ],
       },
       {

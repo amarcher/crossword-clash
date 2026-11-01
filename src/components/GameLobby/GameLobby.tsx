@@ -1,5 +1,5 @@
 import { shareOrigin } from "../../lib/shareOrigin";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
 import { Check, Link2, Loader2, Share2, Users } from "lucide-react";
@@ -21,9 +21,11 @@ interface GameLobbyProps {
   onWrongAnswerTimeoutChange?: (value: number) => void;
   raceMode?: RaceMode;
   onRaceModeChange?: (value: RaceMode) => void;
+  /** The friends invite list (docs/friends-spec.md §3.2), shown above the room code; null when the viewer has none. */
+  invites?: ReactNode;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -151,6 +153,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
         {/* How people get in: below the roster on phones, the right column on desktop. */}
         {shareCode && (
           <section className={`grid gap-4 lg:col-start-2 lg:row-start-1 ${joinRows}`}>
+            {invites}
             <Card className="p-5">
               <Eyebrow>{t("lobby.roomCode")}</Eyebrow>
               <button
