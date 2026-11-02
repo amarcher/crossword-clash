@@ -146,6 +146,8 @@ async function renderRoom() {
   );
   await act(async () => {
     game.loadPuzzle(puzzle);
+    // The name this player typed: their own roster row always carries it.
+    game.setDisplayName(me.displayName);
     game.setGameId("g1");
     game.setIsMultiplayer(true);
   });

@@ -130,6 +130,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
           dispatch,
           playerCells,
           totalWhiteCells,
+          displayName,
         }
       : {
           gameId: "",
