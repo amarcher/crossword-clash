@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { inProgressRows, recentSolves, solveDate } from "./accountHistory";
 import type { ArchiveProgress } from "./archive";
-import type { ClassicEntry } from "./classicLibrary";
 import type { DailyIndexEntry } from "./dailyIndex";
 import type { SolveRow } from "./solveHistory";
 
@@ -18,7 +17,6 @@ const daily = (identity: string, day: string, title: string): DailyIndexEntry =>
   identity,
   blocks: "...../...../...../...../.....",
 });
-const classic = (identity: string, title: string): ClassicEntry => ({ file: "cwpb1.puz", number: 1, title, author: "", width: 11, height: 11, clues: 40, identity, blurb: "" });
 const row = (over: Partial<SolveRow>): SolveRow => ({
   puzzle_key: "k",
   title: "T",
@@ -31,27 +29,26 @@ const row = (over: Partial<SolveRow>): SolveRow => ({
 });
 
 describe("inProgressRows", () => {
-  it("names each record from the daily index or the classic manifest, newest touch first, and skips the rest", () => {
+  it("names each record from the daily index, newest touch first, and skips the rest", () => {
     const rows = inProgressRows(
-      { d1: progress(10), c1: progress(30), d2: progress(20), imported: progress(99) },
+      { d1: progress(10), d2: progress(20), imported: progress(99) },
       {},
       [daily("d1", "2026-10-20", "Monday"), daily("d2", "2026-10-21", "Tuesday")],
-      [classic("c1", "Classic One")],
     );
     expect(rows.map((r) => [r.kind, r.entry.title])).toEqual([
-      ["classic", "Classic One"],
       ["daily", "Tuesday"],
       ["daily", "Monday"],
     ]);
   });
 
-  it("drops a record for a puzzle the account has since solved, and copes with missing lists", () => {
-    expect(inProgressRows({ d1: progress(1) }, { d1: 42 }, [daily("d1", "2026-10-20", "Monday")], null)).toEqual([]);
-    expect(inProgressRows({ d1: progress(1) }, {}, undefined, undefined)).toEqual([]);
+  it("drops a record for a puzzle the account has since solved, and copes with a missing list", () => {
+    expect(inProgressRows({ d1: progress(1) }, { d1: 42 }, [daily("d1", "2026-10-20", "Monday")])).toEqual([]);
+    expect(inProgressRows({ d1: progress(1) }, {}, undefined)).toEqual([]);
+    expect(inProgressRows({ d1: progress(1) }, {}, null)).toEqual([]);
   });
 
   it("orders same-moment dailies by the newer day", () => {
-    const rows = inProgressRows({ a: progress(0), b: progress(0) }, {}, [daily("a", "2026-10-01", "Old"), daily("b", "2026-10-02", "New")], []);
+    const rows = inProgressRows({ a: progress(0), b: progress(0) }, {}, [daily("a", "2026-10-01", "Old"), daily("b", "2026-10-02", "New")]);
     expect(rows.map((r) => r.entry.title)).toEqual(["New", "Old"]);
   });
 });

@@ -133,12 +133,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [syncId]);
 
-  // First sign-in: once the profile lookup settles with no username, ask for one.
+  // First sign-in: once the profile lookup settles with no username, ask for one —
+  // unless the sign-in was the paywall's own first step (the apps ask for an account
+  // before a purchase): then the Plus view stays put and the plans appear in place,
+  // and the username can wait for the account page's "Choose a username".
   useEffect(() => {
     if (!justReturned || !user || !profileReady) return;
     setJustReturned(false);
-    if (!profile) setSheet({ view: "username", placement: "first-sign-in" });
-  }, [justReturned, user, profile, profileReady]);
+    if (!profile && sheet?.view !== "plus") setSheet({ view: "username", placement: "first-sign-in" });
+  }, [justReturned, user, profile, profileReady, sheet?.view]);
 
   const signedIn = !!user;
   const openAccount = useCallback(

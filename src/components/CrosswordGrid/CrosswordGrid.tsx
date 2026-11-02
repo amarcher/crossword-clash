@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next";
 import type { Puzzle, CellState, PuzzleClue } from "../../types/puzzle";
 import { getWordCells } from "../../lib/gridUtils";
+import { scrollDeltaToReveal, scrollParent } from "../../lib/gridScroll";
 import { useHiddenGridInput, type HiddenGridInputHandlers } from "../../hooks/useHiddenGridInput";
 import { Cell } from "./Cell";
 import { Capacitor } from "@capacitor/core";
@@ -192,6 +193,52 @@ export function CrosswordGrid({
     }
   }, [interactive, navigationActions, selectedCell !== null, isTouchDevice]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep the active cell in view. On a phone the grid fills the width and
+  // never shrinks, so with the keyboard up the bottom rows sit under the fixed
+  // clue bar and the keys; the scroller (GameLayout's `main`, padded past the
+  // keyboard) is moved by exactly the overshoot, and not at all while the cell
+  // is visible — typing along a visible row never moves the grid. Runs when
+  // the selection moves and when the keyboard opens or closes (the visual
+  // viewport resizes); a layout without a scroller (the apps) is a no-op.
+  const shellRef = useRef<HTMLDivElement>(null);
+  const selectedRow = selectedCell?.row ?? -1;
+  const selectedCol = selectedCell?.col ?? -1;
+  useEffect(() => {
+    if (!interactive || selectedRow < 0) return;
+    const reveal = () => {
+      const shell = shellRef.current;
+      const cell = document.getElementById(cellId(selectedRow, selectedCol));
+      const container = scrollParent(shell);
+      if (!shell || !cell || !container) return;
+      const vv = window.visualViewport;
+      const viewportTop = vv ? vv.offsetTop : 0;
+      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const clueBar = parseFloat(getComputedStyle(shell).getPropertyValue("--clue-bar-height")) || 0;
+      const box = container.getBoundingClientRect();
+      const rect = cell.getBoundingClientRect();
+      const delta = scrollDeltaToReveal({
+        top: rect.top,
+        bottom: rect.bottom,
+        visibleTop: Math.max(box.top, viewportTop),
+        visibleBottom: Math.min(box.bottom, viewportBottom) - clueBar,
+      });
+      if (delta !== 0) container.scrollTop += delta;
+    };
+    reveal();
+    const vv = window.visualViewport;
+    if (!vv) return;
+    let rafId = 0;
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(reveal);
+    };
+    vv.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(rafId);
+      vv.removeEventListener("resize", onResize);
+    };
+  }, [interactive, selectedRow, selectedCol, cellId]);
+
   // Focus the hidden input when a cell is clicked (triggers mobile keyboard).
   // iOS requires .focus() synchronously within the user gesture — no rAF or setTimeout.
   const handleCellClick = useCallback(
@@ -222,8 +269,21 @@ export function CrosswordGrid({
       : `calc(${gridSize} * ${puzzle.height} / ${puzzle.width})`;
 
   return (
-    <div className="grid-shell relative shrink-0">
-      {interactive && navigationActions && !nativeKeyboard && <input {...inputProps} />}
+    <div ref={shellRef} className="grid-shell relative shrink-0">
+      {/* The hidden input sits on the active cell, so the browser's own
+          scroll-into-view on focus and the reveal effect above agree on
+          where "visible" is (it used to sit at the grid's centre, which
+          satisfied iOS while the bottom rows were under the keyboard). */}
+      {interactive && navigationActions && !nativeKeyboard && (
+        <input
+          {...inputProps}
+          style={
+            selectedCell
+              ? { ...inputProps.style, top: `${((selectedCell.row + 0.5) / puzzle.height) * 100}%`, left: `${((selectedCell.col + 0.5) / puzzle.width) * 100}%` }
+              : inputProps.style
+          }
+        />
+      )}
       <div
         id={gridId}
         role="grid"

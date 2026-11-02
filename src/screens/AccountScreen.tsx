@@ -4,6 +4,7 @@ import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOu
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
+import { NotificationSettings } from "../components/Push";
 import { avatarInitial } from "../components/Account/AccountControl";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -13,7 +14,6 @@ import { accountName, signOut } from "../lib/account";
 import { inProgressRows, recentSolves, solveDate, type InProgressRow } from "../lib/accountHistory";
 import { track } from "../lib/analytics";
 import { inProgressFrom } from "../lib/archive";
-import { knownClassicManifest, loadClassicManifest, loadClassicPuzzle, type ClassicEntry } from "../lib/classicLibrary";
 import { fetchDailyForDay, type DailySlot } from "../lib/dailyFeed";
 import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
 import { plusEnabled } from "../lib/plus";
@@ -50,8 +50,8 @@ function SourceChip({ row }: { row: Pick<SolveRow, "source"> }) {
  * /account — the signed-in solver's page: who they are (username, provider,
  * Change username), Plus once the launch switch is on (the subscriber view
  * or the pitch), streaks and the synced solve count, the puzzles in progress
- * (the per-puzzle solo store matched to the daily index and the classic
- * manifest, each with Resume on the daily / classic play path), the most
+ * (the per-puzzle solo store matched to the daily index, each with Resume
+ * on the daily play path), the most
  * recent solves, and at the bottom sign out and delete. Anonymous visitors
  * are sent to the menu with the sign-in sheet open.
  */
@@ -77,20 +77,18 @@ export function AccountScreen() {
   }, [ready, available, user, navigate, account]);
 
   // The names behind the progress store's keys: the daily index (warmed
-  // with this route's chunk) and the classic manifest.
+  // with this route's chunk).
   const [dailies, setDailies] = useState<DailyIndexEntry[] | null | undefined>(() => knownPublishedIndex(today));
-  const [classics, setClassics] = useState<ClassicEntry[] | null>(() => knownClassicManifest());
   useEffect(() => {
     let alive = true;
     if (dailies === undefined || dailies === null) void loadPublishedIndex(today).then((list) => alive && setDailies(list));
-    if (classics === null) void loadClassicManifest().then((list) => alive && setClassics(list));
     return () => {
       alive = false;
     };
-  }, [dailies, classics, today]);
+  }, [dailies, today]);
   // Read once, like /archive: resuming navigates away before it could change.
   const [inProgress] = useState(() => inProgressFrom(loadProgressStore(), loadSavedSession(), loadSoloTimer()));
-  const pending = useMemo(() => inProgressRows(inProgress, bestTimes, dailies, classics), [inProgress, bestTimes, dailies, classics]);
+  const pending = useMemo(() => inProgressRows(inProgress, bestTimes, dailies), [inProgress, bestTimes, dailies]);
   const recent = useMemo(() => recentSolves(history.rows), [history.rows]);
 
   // The account's community puzzles (docs/community-puzzles-spec.md §1.4), only with the switch on.
@@ -115,18 +113,11 @@ export function AccountScreen() {
       setError(null);
       setBusy(row.key);
       try {
-        if (row.kind === "daily") {
-          const daily = await fetchDailyForDay(row.entry.day, row.entry.slot);
-          if (!daily) throw new Error("not published");
-          track("mode_selected", { mode: "account-resume", slot: row.entry.slot });
-          await handleSoloPuzzleLoaded(daily.puzzle);
-          setSoloTheme(daily.theme || null);
-        } else {
-          const puzzle = await loadClassicPuzzle(row.entry);
-          track("mode_selected", { mode: "account-resume", slot: "classic" });
-          await handleSoloPuzzleLoaded(puzzle);
-          setSoloTheme(null);
-        }
+        const daily = await fetchDailyForDay(row.entry.day, row.entry.slot);
+        if (!daily) throw new Error("not published");
+        track("mode_selected", { mode: "account-resume", slot: row.entry.slot });
+        await handleSoloPuzzleLoaded(daily.puzzle);
+        setSoloTheme(daily.theme || null);
         navigate("/solo/play");
       } catch {
         setError(t("archive.loadError"));
@@ -181,6 +172,9 @@ export function AccountScreen() {
               {username ? t("account.changeUsername") : t("account.chooseUsername")}
             </Button>
           </Card>
+
+          {/* The apps only: notification switches (docs/friends-spec.md §3.3). */}
+          <NotificationSettings placement="account" />
 
           {/* Overview */}
           <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-overview">
@@ -267,7 +261,7 @@ export function AccountScreen() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold leading-snug text-ink">{row.entry.title}</p>
                       <p className="mt-0.5 text-sm leading-snug text-muted">
-                        {row.kind === "daily" ? `${t(SLOT_EYEBROW[row.entry.slot])} · ${solveDate(row.entry.day, locale, today)}` : t("account.sourceClassic")}
+                        {`${t(SLOT_EYEBROW[row.entry.slot])} · ${solveDate(row.entry.day, locale, today)}`}
                         {row.progress.total > 0 && (
                           <>
                             {" · "}

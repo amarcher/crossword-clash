@@ -8,7 +8,7 @@ import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
-import { LG_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { DAILY_SLOTS, isDailySlot, type DailySlot, displayTheme } from "../lib/dailyFeed";
 import type { DailyMini } from "../lib/dailyMinis";
 import {
@@ -27,6 +27,9 @@ import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
+
+/** Tailwind's `lg` breakpoint (64rem) — the width at which the boards spread out. */
+const LG_QUERY = "(min-width: 64rem)";
 
 /** Medal treatment for the podium, all in gold tokens (gold -> pale gold). */
 const MEDAL: Record<number, string> = {
@@ -318,6 +321,11 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
                           >
                             {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
                           </span>
+                          {e.autocheck === false && (
+                            <span className="shrink-0 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
+                              {t("autocheck.noAutocheck")}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">{formatDuration(e.seconds)}</td>

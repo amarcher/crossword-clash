@@ -1,7 +1,7 @@
 This update (1.0.2) rebuilds the finish around sharing, adds the Daily Midi and Daily Large, and refreshes the grid.
 
 1. Finish any puzzle. The completion screen now leads with one Share button. Tap it: the iOS share sheet should open with a spoiler-free emoji grid of your solve, your time and a "Beat my time" link. Send it to yourself and open the link on a phone or computer; it should load the same puzzle as a challenge against your time.
-2. Below Share, check "Up next": it should offer today's dailies you haven't solved, then a classic you haven't played. Tapping one should drop you straight into the puzzle. "Race a friend live" should open a picker of fresh puzzles, never the one you just finished.
+2. Below Share, check "Up next": it should offer today's dailies you haven't solved, then yesterday's. Tapping one should drop you straight into the puzzle. "Race a friend live" should open a picker of fresh puzzles, never the one you just finished.
 3. On the menu, look for up to three daily tiles: Mini, Midi and Large. Days without a published Midi or Large show no tile for them. Each daily has its own leaderboard; after solving one it should read "Solved in m:ss · #n today".
 4. Play a few words and watch the grid: gold fills, an ink frame on the active word, a block cursor, and arrow keys that skip black squares. Tell us about any flicker, a cursor that lands in the wrong square, or a letter that fails to appear.
 5. Host or join a room, leave it with Back to menu, and come back later. A lobby older than an hour should not reopen on its own; a finished puzzle should never come back when you tap Back to menu.

@@ -1,0 +1,5 @@
+<en-US>
+Fixes from testing: the back button sits on the left with the logo centred, the finish screen has a close control at the top, the streak line says when today already counted, and fast typing is judged square by square.
+
+Friends, room invites and notifications from the previous build are unchanged.
+</en-US>

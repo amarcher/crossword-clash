@@ -13,6 +13,7 @@ import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { track } from "../lib/analytics";
 import { authorPath, fetchCommunityPuzzle, puzzlePath, toPlayablePuzzle, type CommunityPuzzleFull } from "../lib/communityPuzzles";
 import { hideAuthor, unhideAuthor } from "../lib/hiddenAuthors";
+import { shareOrigin } from "../lib/shareOrigin";
 import { getProgress } from "../lib/soloProgress";
 import { formatDuration } from "../lib/soloStats";
 import { emitToast } from "../lib/toastBus";
@@ -132,7 +133,7 @@ export function CommunityPuzzleScreen() {
   );
 
   const copyLink = () => {
-    const url = `${window.location.origin}${puzzlePath(shortId)}`;
+    const url = `${shareOrigin()}${puzzlePath(shortId)}`;
     void navigator.clipboard?.writeText(url).then(
       () => emitToast({ message: t("community.linkCopied") }),
       () => undefined,

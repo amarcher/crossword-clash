@@ -63,40 +63,40 @@ describe("navigateWithTransition", () => {
   it("navigates plainly without the API or under reduced motion, still warming the chunk", async () => {
     mockCan.mockReturnValue(false);
     const navigate = vi.fn(async () => {});
-    await navigateWithTransition(navigate, "/classics");
-    expect(mockPrefetch).toHaveBeenCalledWith("/classics");
+    await navigateWithTransition(navigate, "/archive");
+    expect(mockPrefetch).toHaveBeenCalledWith("/archive");
     expect(mockWith).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith("/classics", {});
+    expect(navigate).toHaveBeenCalledWith("/archive", {});
   });
 
   it("fades when the chunk arrives within the budget", async () => {
     let resolveChunk!: () => void;
     mockPrefetch.mockReturnValue(new Promise<void>((r) => (resolveChunk = r)));
     const navigate = vi.fn(async () => {});
-    const done = navigateWithTransition(navigate, "/classics");
+    const done = navigateWithTransition(navigate, "/archive");
     await vi.advanceTimersByTimeAsync(TRANSITION_WAIT_MS / 2);
     expect(navigate).not.toHaveBeenCalled();
     resolveChunk();
     await done;
     expect(mockWith).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith("/classics", { flushSync: true });
+    expect(navigate).toHaveBeenCalledWith("/archive", { flushSync: true });
   });
 
   it("gives up on the fade and navigates plainly when the chunk is slow", async () => {
     mockPrefetch.mockReturnValue(new Promise<void>(() => {}));
     const navigate = vi.fn(async () => {});
-    const done = navigateWithTransition(navigate, "/classics");
+    const done = navigateWithTransition(navigate, "/archive");
     await vi.advanceTimersByTimeAsync(TRANSITION_WAIT_MS);
     await done;
     expect(mockWith).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith("/classics", {});
+    expect(navigate).toHaveBeenCalledWith("/archive", {});
   });
 
   it("navigates plainly when the chunk fails to load, so the router reports the error", async () => {
     mockPrefetch.mockReturnValue(Promise.reject(new Error("offline")));
     const navigate = vi.fn(async () => {});
-    await navigateWithTransition(navigate, "/classics");
+    await navigateWithTransition(navigate, "/archive");
     expect(mockWith).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith("/classics", {});
+    expect(navigate).toHaveBeenCalledWith("/archive", {});
   });
 });

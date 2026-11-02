@@ -125,6 +125,7 @@ export interface Database {
           mode: string;
           seconds: number;
           game_id: string | null;
+          autocheck: boolean | null;
           created_at: string;
         };
         Insert: {
@@ -136,6 +137,7 @@ export interface Database {
           mode: string;
           seconds: number;
           game_id?: string | null;
+          autocheck?: boolean | null;
           created_at?: string;
         };
         Update: {
@@ -147,6 +149,7 @@ export interface Database {
           mode?: string;
           seconds?: number;
           game_id?: string | null;
+          autocheck?: boolean | null;
           created_at?: string;
         };
         Relationships: [];
@@ -359,6 +362,122 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      /** A friend request (pending) or friendship (accepted) between two accounts; one row per pair. Written by send_friend_request / respond_friend_request; either party may delete. */
+      friendships: {
+        Row: {
+          requester_id: string;
+          recipient_id: string;
+          status: "pending" | "accepted";
+          created_at: string;
+          responded_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** One-directional blocks; only the blocker reads or writes their rows. */
+      blocks: {
+        Row: { blocker_id: string; blocked_id: string; created_at: string };
+        Insert: { blocker_id: string; blocked_id: string };
+        Update: never;
+        Relationships: [];
+      };
+      /** A friend's invitation into a waiting room ('room', with game_id) or to beat a daily time ('beat', with link). Written by invite_to_room / send_beat. */
+      room_invites: {
+        Row: {
+          id: string;
+          kind: "room" | "beat";
+          game_id: string | null;
+          link: string | null;
+          from_user_id: string;
+          to_user_id: string;
+          created_at: string;
+          pushed_at: string | null;
+          seen_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** A device the player allowed notifications on (APNs or FCM token); the device upserts its own row by token. */
+      device_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          platform: "ios" | "android";
+          token: string;
+          app_version: string | null;
+          locale: "en" | "es";
+          timezone: string;
+          created_at: string;
+          last_seen_at: string;
+          failed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          platform: "ios" | "android";
+          token: string;
+          app_version?: string | null;
+          locale?: "en" | "es";
+          timezone?: string;
+          created_at?: string;
+          last_seen_at?: string;
+          failed_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          platform?: "ios" | "android";
+          app_version?: string | null;
+          locale?: "en" | "es";
+          timezone?: string;
+          last_seen_at?: string;
+          failed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      /** The per-kind notification switches, reminder hour and quiet hours; one row per user, own-row RLS. */
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          daily_reminder: boolean;
+          daily_reminder_hour: number;
+          room_invites: boolean;
+          friend_requests: boolean;
+          quiet_hours: boolean;
+          quiet_start: number;
+          quiet_end: number;
+          quiet_allow_invites: boolean;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          daily_reminder?: boolean;
+          daily_reminder_hour?: number;
+          room_invites?: boolean;
+          friend_requests?: boolean;
+          quiet_hours?: boolean;
+          quiet_start?: number;
+          quiet_end?: number;
+          quiet_allow_invites?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          daily_reminder?: boolean;
+          daily_reminder_hour?: number;
+          room_invites?: boolean;
+          friend_requests?: boolean;
+          quiet_hours?: boolean;
+          quiet_start?: number;
+          quiet_end?: number;
+          quiet_allow_invites?: boolean;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       /** published_puzzles joined with the author's username (security_invoker: the table's RLS applies). */
@@ -391,6 +510,16 @@ export interface Database {
       };
     };
     Functions: {
+      /** Friends: sends a request by username; 'pending', 'accepted' (they had asked first) or 'sent' (a block: nothing written). Refusals are `friends:<code>` exceptions. */
+      send_friend_request: { Args: { p_username: string }; Returns: "pending" | "accepted" | "sent" };
+      respond_friend_request: { Args: { p_requester: string; p_accept: boolean }; Returns: undefined };
+      /** Accounts the caller shared a room with, from the game rows the sweep keeps. */
+      recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
+      /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */
+      invite_to_room: { Args: { p_game_id: string; p_friend: string }; Returns: string | null };
+      /** Sends a friend a daily "beat my time" link (the /daily/:day/:slot path only). */
+      send_beat: { Args: { p_friend: string; p_link: string }; Returns: string | null };
+      mark_invites_seen: { Args: { p_ids: string[] }; Returns: undefined };
       /** Records the caller's agreement to the publishing terms (a real account with a username). */
       accept_publishing_terms: {
         Args: { p_version: string };

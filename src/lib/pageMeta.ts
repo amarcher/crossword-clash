@@ -19,7 +19,7 @@ export interface PageMeta {
 }
 
 /** The content routes the build prerenders. Order is the order of output. */
-export const PRERENDERED_ROUTES = ["/", "/menu", "/classics", "/privacy", "/terms", "/support", "/copyright"] as const;
+export const PRERENDERED_ROUTES = ["/", "/menu", "/privacy", "/terms", "/support", "/copyright"] as const;
 export type PrerenderedRoute = (typeof PRERENDERED_ROUTES)[number];
 
 type Translate = (key: string) => string;
@@ -37,9 +37,10 @@ export function pageMetaFor(pathname: string, t: Translate): PageMeta {
   if (path === "/puzzles" || path.startsWith("/puzzles/")) {
     return { title: t("meta.community.title"), description: t("meta.community.description"), canonical: canonicalFor("/puzzles") };
   }
+  if (path === "/race" || path.startsWith("/race/")) {
+    return { title: t("meta.race.title"), description: t("meta.race.description"), canonical: canonicalFor("/race") };
+  }
   switch (path) {
-    case "/classics":
-      return { title: t("meta.classics.title"), description: t("meta.classics.description"), canonical: canonicalFor(path) };
     case "/archive":
       return { title: t("meta.archive.title"), description: t("meta.archive.description"), canonical: canonicalFor(path) };
     case "/account":

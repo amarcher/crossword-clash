@@ -7,6 +7,7 @@ import { saveMpSession, clearMpSession, touchMpSession } from "../lib/sessionPer
 import { resolveRaceMode } from "../lib/gameSettings";
 import type { Player, GameSettings, RaceMode } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
+import type { FinalStandings } from "../lib/finalStandings";
 
 interface MultiplayerContextValue {
   // Core multiplayer hook return
@@ -40,6 +41,8 @@ interface MultiplayerContextValue {
   finishRace: () => number | null;
   /** The room's play mode (defaults to "versus" for legacy games). */
   raceMode: RaceMode;
+  /** The finished game's frozen record (see useMultiplayer); null while in progress. */
+  finalStandings: FinalStandings | null;
 
   // Derived values
   multiplayerActive: boolean;
@@ -91,6 +94,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     lockedUntil,
     setLockedUntil,
     inputLetter,
+    rejection,
   } = game;
 
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
@@ -126,6 +130,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
           dispatch,
           playerCells,
           totalWhiteCells,
+          displayName,
         }
       : {
           gameId: "",
@@ -172,15 +177,24 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     };
   }, [multiplayerActive, multiplayer.gameStatus]);
 
+  // The roster the finished screens read: the frozen record once the game is
+  // over (finalStandings.ts — a partner who leaves keeps their row, colour and
+  // squares), the live presence roster while it is in progress.
+  const { finalStandings } = multiplayer;
+  const roster = useMemo<Pick<Player, "userId" | "displayName" | "color">[]>(
+    () => finalStandings?.players ?? multiplayer.players,
+    [finalStandings, multiplayer.players],
+  );
+
   // Build playerColorMap
   const playerColorMap = useMemo(() => {
     if (!multiplayerActive) return undefined;
     const map: Record<string, string> = {};
-    for (const p of multiplayer.players) {
+    for (const p of roster) {
       map[p.userId] = p.color;
     }
     return map;
-  }, [multiplayerActive, multiplayer.players]);
+  }, [multiplayerActive, roster]);
 
   const completedClues = useMemo(
     () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
@@ -210,45 +224,64 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   const multiplayerPlayers = useMemo(
     () =>
       multiplayerActive
-        ? multiplayer.players.map((p) => ({
-            ...p,
-            score: scoreByPlayer.get(p.userId) ?? 0,
-          }))
+        ? finalStandings
+          ? finalStandings.players.map((p) => ({
+              id: p.userId,
+              gameId: gameId ?? "",
+              userId: p.userId,
+              displayName: p.displayName,
+              color: p.color,
+              score: p.cellsClaimed,
+              raceSeconds: p.raceSeconds,
+            }))
+          : multiplayer.players.map((p) => ({
+              ...p,
+              score: scoreByPlayer.get(p.userId) ?? 0,
+            }))
         : [],
-    [multiplayerActive, multiplayer.players, scoreByPlayer],
+    [multiplayerActive, finalStandings, gameId, multiplayer.players, scoreByPlayer],
   );
 
   const playerResults: PlayerResult[] | undefined = useMemo(() => {
     if (!multiplayerActive) return undefined;
-    return multiplayer.players.map((p) => ({
+    return multiplayerPlayers.map((p) => ({
       userId: p.userId,
       displayName: p.displayName,
       color: p.color,
-      cellsClaimed: scoreByPlayer.get(p.userId) ?? 0,
+      cellsClaimed: p.score,
       cluesCompleted: clueCountsByPlayer.get(p.userId) ?? 0,
     }));
-  }, [multiplayerActive, multiplayer.players, scoreByPlayer, clueCountsByPlayer]);
+  }, [multiplayerActive, multiplayerPlayers, clueCountsByPlayer]);
 
-  // Solo input wrapper
+  // The reducer is the one judge of a letter (PuzzleState.rejection). A
+  // wrapper that compared the letter with `selectedCell` from its own render
+  // judged a second letter typed before that render against the first
+  // letter's square — T then Y into STY shook the grid at the Y (Andrew,
+  // 2026-11-01). The reducer sees the cursor as it stands when each action is
+  // processed, so every letter is judged against its own square; this effect
+  // turns each refusal it records into the flash, the wrong-letter count and,
+  // in an async race, the host's lockout penalty.
+  const seenRejectionRef = useRef(rejection?.seq ?? 0);
+  const asyncLockout = multiplayerActive && resolveRaceMode(multiplayer.gameSettings) === "async";
+  useEffect(() => {
+    if (!rejection || rejection.seq === seenRejectionRef.current) return;
+    seenRejectionRef.current = rejection.seq;
+    triggerReject(rejection.row, rejection.col);
+    if (asyncLockout) {
+      const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
+      if (timeoutMs > 0) {
+        // Math.max so a second wrong letter cannot shorten an active lockout.
+        setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
+      }
+    }
+  }, [rejection, triggerReject, asyncLockout, multiplayer.gameSettings, lockedUntil, setLockedUntil]);
+
+  // Solo input: straight to the reducer. With Autocheck on (soloSettings.ts)
+  // it refuses a wrong letter and records the refusal (flashed above); off,
+  // it writes the letter as typed and leaves the judging to Check / the finish.
   const soloInputLetter = useCallback(
-    (letter: string) => {
-      if (!puzzle || !selectedCell) return;
-      const { row, col } = selectedCell;
-      const cell = puzzle.cells[row]?.[col];
-      if (!cell || cell.solution === null) return;
-
-      if (playerCells[`${row},${col}`]?.correct) {
-        inputLetter(letter);
-        return;
-      }
-
-      if (letter.toUpperCase() !== cell.solution) {
-        triggerReject(row, col);
-        return;
-      }
-      inputLetter(letter);
-    },
-    [puzzle, selectedCell, playerCells, inputLetter, triggerReject],
+    (letter: string) => inputLetter(letter),
+    [inputLetter],
   );
 
   // Multiplayer input wrapper
@@ -282,37 +315,19 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     [multiplayerActive, selectedCell, puzzle, playerCells, direction, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
   );
 
-  // Async ("time trial") input: exactly the shared-grid flow minus the server
-  // claim/broadcast — the grid is the local player's own copy. Wrong letters
-  // still reject + apply the host's lockout penalty, and are NOT broadcast
-  // (nobody else can see this grid).
+  // Async ("time trial") input: the shared-grid flow minus the server
+  // claim/broadcast — the grid is the local player's own copy. The reducer
+  // judges the letter (a room always plays with autocheck on); a refusal is
+  // flashed and, through the effect above, costs the host's lockout penalty.
+  // Nothing is broadcast (nobody else can see this grid).
   const asyncInputLetter = useCallback(
     (letter: string) => {
-      if (!multiplayerActive || !selectedCell || !puzzle) return;
+      if (!multiplayerActive) return;
       if (Date.now() < lockedUntil) return;
-
-      const { row, col } = selectedCell;
-      const cell = puzzle.cells[row]?.[col];
-      if (!cell || cell.solution === null) return;
-
-      if (playerCells[`${row},${col}`]?.correct) {
-        // Already solved locally — just advance the cursor.
-        inputLetter(letter);
-        return;
-      }
-
-      if (letter.toUpperCase() !== cell.solution) {
-        triggerReject(row, col);
-        const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
-        if (timeoutMs > 0) {
-          setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
-        }
-        return;
-      }
       // Tag with the local user id so the fill renders in the player's color.
       inputLetter(letter, user?.id);
     },
-    [multiplayerActive, selectedCell, puzzle, playerCells, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter, user],
+    [multiplayerActive, lockedUntil, inputLetter, user],
   );
 
   // Suppress lint warnings for derived values that are consumed downstream

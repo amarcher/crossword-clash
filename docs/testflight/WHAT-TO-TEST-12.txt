@@ -1,0 +1,9 @@
+This update (1.1.0, build 12) changes how Plus is bought in the app: Plus now belongs to your account, so the app asks you to sign in before you subscribe, the same as the website.
+
+1. Signed out, open "Crossword Clash Plus" from the menu. Instead of the plans you should see "Plus belongs to your account…" with Continue with Apple and Continue with Google. Sign in: the same sheet should stay open and now show the two plans. (You are not asked for a username here; the account page offers it later.)
+2. Buy a plan with your sandbox tester account. The sheet should turn into "You're Plus. Thank you!" as the first line, above "Renews on …", with Manage in the store and Restore purchases under it.
+3. Close the sheet. The menu's "Crossword Clash Plus" row should still be there and now read "You're a subscriber · tap to manage"; tapping it reopens the sheet with Manage and Restore. The avatar menu's "Manage subscription" does the same.
+4. Manage in the store opens Apple's subscriptions page. Sandbox and TestFlight subscriptions never show up there (Apple keeps them under Settings > App Store > Sandbox Account); real purchases will.
+5. If you bought Plus on build 11 while signed out, this build still shows you Manage and Restore while signed out, with "Keep Plus on every device" and the sign-in buttons beneath; signing in keeps your Plus.
+6. The benefits list now says the studio is on the web: with Plus on your account, sign in at crosswordclash.com to use it.
+7. Everything else as in build 11: sign-in and username, past puzzles, community puzzles, dailies, racing, sharing, importing.

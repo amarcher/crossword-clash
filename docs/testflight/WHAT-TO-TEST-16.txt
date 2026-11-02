@@ -1,0 +1,5 @@
+This update (1.1.0, build 16) is build 15 plus three small things from its feedback.
+
+1. Import from NYT: the date now sits on the same line as "Daily Crossword" beside it, centred in its field, not on the top edge.
+2. The Plus sheet for a subscriber says "You have Plus." and offers Manage in the store; Restore purchases is only on the paywall for someone who has not subscribed yet.
+3. Everything from build 15 still applies: Create Room lands on Invite players, a locked phone stays in the lobby, the web Join page focuses the first code cell, sign-in and restore work.

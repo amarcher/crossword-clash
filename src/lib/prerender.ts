@@ -15,7 +15,7 @@ export function normalizePathname(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
-/** `/classics` → `classics/index.html`; `/` → `index.html` (Vercel and `vite preview` serve a folder's index). */
+/** `/privacy` → `privacy/index.html`; `/` → `index.html` (Vercel and `vite preview` serve a folder's index). */
 export function outputPathFor(route: string): string {
   const trimmed = route.replace(/^\/+|\/+$/g, "");
   return trimmed ? `${trimmed}/index.html` : "index.html";

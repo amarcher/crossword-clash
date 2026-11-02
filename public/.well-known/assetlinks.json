@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.crosswordclash.app",
+      "sha256_cert_fingerprints": [
+        "41:A9:CB:D8:9B:CB:62:77:9B:31:17:36:C1:3F:67:69:3C:C3:AC:95:C7:1B:F0:47:D0:CD:06:FA:03:CB:CC:36",
+        "DB:F4:AB:4E:50:4E:BE:14:54:6D:B4:E1:6D:06:1F:E0:0E:A5:BF:93:32:B7:AC:E0:DE:48:B6:71:7F:83:65:D3"
+      ]
+    }
+  }
+]

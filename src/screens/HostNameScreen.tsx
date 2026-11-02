@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { TransitionLink } from "../components/ui";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { FlowPage, TextField } from "../components/Flow";
@@ -26,12 +27,16 @@ export function HostNameScreen() {
   const { profile } = useAccountContext();
 
   // A signed-in solver starts from their username (still editable). Applied
-  // once, so a name typed over it stays.
+  // once, and never over a name the player has already started typing: the
+  // profile loads a beat after the screen, and a prefill that landed on top
+  // of "Arch" created the room as "Archer" (Andrew, 2026-10-30). The join
+  // form keeps the same `nameTouched` guard.
   const prefilled = useRef(false);
+  const nameTouched = useRef(false);
   const username = profile?.username;
   const setDisplayName = game.setDisplayName;
   useEffect(() => {
-    if (prefilled.current || !username) return;
+    if (prefilled.current || nameTouched.current || !username) return;
     prefilled.current = true;
     setDisplayName(username);
   }, [username, setDisplayName]);
@@ -137,7 +142,10 @@ export function HostNameScreen() {
           type="text"
           name="xw-handle"
           value={game.displayName}
-          onChange={(e) => game.setDisplayName(e.target.value)}
+          onChange={(e) => {
+            nameTouched.current = true;
+            game.setDisplayName(e.target.value);
+          }}
           maxLength={20}
           enterKeyHint="go"
           autoCapitalize="words"
@@ -153,6 +161,13 @@ export function HostNameScreen() {
           {busy ? t('hostName.creating') : connecting ? t('join.connecting') : game.urlPuzzle ? t('hostName.createRoom') : t('hostName.choosePuzzle')}
         </Button>
       </form>
+      {/* A player who meant to join (the daily tile's Race friends lands here) has a one-line way out. */}
+      <p className="mt-6 text-center text-sm text-muted">
+        {t('hostName.haveCode')}{' '}
+        <TransitionLink to="/join" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500">
+          {t('hostName.joinInstead')}
+        </TransitionLink>
+      </p>
     </FlowPage>
   );
 }

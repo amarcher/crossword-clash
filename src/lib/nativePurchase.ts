@@ -16,13 +16,16 @@
 import { Capacitor } from "@capacitor/core";
 import type { PlusPlan } from "./plusPurchase";
 
-type Purchases = typeof import("@revenuecat/purchases-capacitor").Purchases;
+type PurchasesModule = typeof import("@revenuecat/purchases-capacitor");
+type Purchases = PurchasesModule["Purchases"];
 type PurchasesPackage = import("@revenuecat/purchases-capacitor").PurchasesPackage;
 
 export interface NativePlanPrice {
   plan: PlusPlan;
   /** The store's localized price string, e.g. "$24.99". */
   priceString: string;
+  /** The same price as a number in the store's currency, for the annual saving. */
+  price: number;
 }
 
 function platformKey(platform = Capacitor.getPlatform()): string | undefined {
@@ -43,34 +46,63 @@ export function nativePurchaseAvailable(): boolean {
   return import.meta.env.MODE === "mobile" && Capacitor.isNativePlatform() && !!platformKey();
 }
 
-let sdk: Promise<Purchases> | null = null;
+let sdk: Promise<PurchasesModule> | null = null;
 let configuredFor: string | null = null;
+/** The latest configure / logIn in flight, so a purchase never runs under the previous user. */
+let syncing: Promise<void> = Promise.resolve();
 
-async function purchases(): Promise<Purchases> {
+/**
+ * The plugin module. Callers read `.Purchases` off it synchronously, and no
+ * promise here may ever resolve with the `Purchases` object itself: it is a
+ * Proxy that answers every property, `then` included, with a native-method
+ * wrapper, so a promise resolved with it is treated as a thenable, calls a
+ * native "then" that never answers, and hangs forever (the 1.1.0 build 10
+ * paywall froze on exactly this). A module namespace object has no `then`.
+ */
+async function sdkModule(): Promise<PurchasesModule> {
   // The static switch lets Rollup drop the import (and the plugin's chunk) from web builds.
   if (import.meta.env.MODE !== "mobile") throw new Error("Store purchases are only available in the apps.");
-  if (!sdk) sdk = import("@revenuecat/purchases-capacitor").then((m) => m.Purchases);
+  if (!sdk) sdk = import("@revenuecat/purchases-capacitor");
   return sdk;
+}
+
+/** Never `await purchases()` through another promise's resolution value; see sdkModule. */
+async function purchases(): Promise<{ p: Purchases }> {
+  return { p: (await sdkModule()).Purchases };
 }
 
 /**
  * Configures the SDK for the session user, or switches it to a new user
  * (`logIn`) when the uid changes after a sign-in. Idempotent per uid.
  */
-export async function syncNativePurchaseUser(userId: string): Promise<void> {
-  if (!nativePurchaseAvailable()) return;
+export function syncNativePurchaseUser(userId: string): Promise<void> {
+  if (!nativePurchaseAvailable()) return Promise.resolve();
   const key = platformKey();
-  if (!key || configuredFor === userId) return;
-  const p = await purchases();
-  if (configuredFor === null) await p.configure({ apiKey: key, appUserID: userId });
-  else await p.logIn({ appUserID: userId });
-  configuredFor = userId;
+  if (!key) return Promise.resolve();
+  // Chained, so a sign-in right after launch can't race the first configure,
+  // and a purchase can wait for the user it is meant for (awaitUserSync).
+  const run = syncing.catch(() => undefined).then(async () => {
+    if (configuredFor === userId) return;
+    const { p } = await purchases();
+    // configure is a fire-and-forget native method (no promise); logIn answers.
+    if (configuredFor === null) p.configure({ apiKey: key, appUserID: userId });
+    else await p.logIn({ appUserID: userId });
+    configuredFor = userId;
+  });
+  syncing = run;
+  return run;
+}
+
+/** Waits for the latest user switch. Throws if it failed, so nothing is bought under the wrong user. */
+async function awaitUserSync(): Promise<void> {
+  await syncing;
+  if (configuredFor === null) throw new Error("The store isn't ready yet. Please try again in a moment.");
 }
 
 const PACKAGE_FOR_PLAN: Record<PlusPlan, string> = { annual: "$rc_annual", monthly: "$rc_monthly" };
 
 async function currentPackages(): Promise<PurchasesPackage[]> {
-  const offerings = await (await purchases()).getOfferings();
+  const offerings = await (await purchases()).p.getOfferings();
   return offerings.current?.availablePackages ?? [];
 }
 
@@ -82,7 +114,7 @@ export async function fetchNativePrices(): Promise<NativePlanPrice[]> {
     return (Object.keys(PACKAGE_FOR_PLAN) as PlusPlan[])
       .map((plan) => ({ plan, pkg: packages.find((p) => p.identifier === PACKAGE_FOR_PLAN[plan]) }))
       .filter((x): x is { plan: PlusPlan; pkg: PurchasesPackage } => !!x.pkg)
-      .map(({ plan, pkg }) => ({ plan, priceString: pkg.product.priceString }));
+      .map(({ plan, pkg }) => ({ plan, priceString: pkg.product.priceString, price: pkg.product.price }));
   } catch {
     return [];
   }
@@ -92,7 +124,8 @@ export type NativePurchaseOutcome = "purchased" | "cancelled";
 
 /** Buys a plan through the store. Throws on a real error; a user cancellation is an outcome, not an error. */
 export async function purchaseNativePlan(plan: PlusPlan): Promise<NativePurchaseOutcome> {
-  const p = await purchases();
+  await awaitUserSync();
+  const { p } = await purchases();
   const pkg = (await currentPackages()).find((x) => x.identifier === PACKAGE_FOR_PLAN[plan]);
   if (!pkg) throw new Error("That plan isn't available in the store right now.");
   try {
@@ -106,11 +139,13 @@ export async function purchaseNativePlan(plan: PlusPlan): Promise<NativePurchase
 
 /** Re-presents the store receipt (a new device, a reinstall). The caller reconciles afterwards. */
 export async function restoreNativePurchases(): Promise<void> {
-  await (await purchases()).restorePurchases();
+  await awaitUserSync();
+  await (await purchases()).p.restorePurchases();
 }
 
 /** Test hook. */
 export function resetNativePurchasesForTests(): void {
   sdk = null;
   configuredFor = null;
+  syncing = Promise.resolve();
 }

@@ -6,7 +6,7 @@
  * A browser that already has an anonymous player gets the provider linked to
  * that same user, so nothing it played is orphaned; if the provider account
  * already exists, linking fails on the way back and we sign in to that
- * account instead (see resumeSignIn).
+ * account instead (see resumeSignIn and accountElsewhere).
  */
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
@@ -19,6 +19,8 @@ export const AUTH_PROVIDERS: AuthProvider[] = ["apple", "google"];
 const PENDING_KEY = "crossword-clash:sign-in";
 /** Marks the page the sign-in started from, so the return trip can finish there. */
 const RETURN_KEY = "crossword-clash:sign-in-return";
+/** Providers that have signed in to an existing account on this device (localStorage, JSON array). */
+const KNOWN_KEY = "crossword-clash:known-providers";
 
 export function isAccount(user: User | null | undefined): user is User {
   return !!user && !user.is_anonymous;
@@ -69,6 +71,60 @@ function recall(key: string): string | null {
   }
 }
 
+/**
+ * Whether this provider has already signed in to an existing account on this
+ * device. A first sign-in links the provider to the anonymous user so its
+ * history stays; once an identity is known to belong to an account, linking
+ * can only come back "identity already exists" and cost a second OAuth round
+ * trip (two Google account choosers in a row, the "double chooser" bug), so a
+ * returning device signs straight in.
+ */
+export function isKnownProvider(provider: AuthProvider): boolean {
+  try {
+    const raw = localStorage.getItem(KNOWN_KEY);
+    const list: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) && list.includes(provider);
+  } catch {
+    return false;
+  }
+}
+
+export function rememberKnownProvider(provider: AuthProvider): void {
+  try {
+    const raw = localStorage.getItem(KNOWN_KEY);
+    const list: unknown = raw ? JSON.parse(raw) : [];
+    const next = Array.isArray(list) ? list.filter((p): p is AuthProvider => p === "apple" || p === "google") : [];
+    if (!next.includes(provider)) next.push(provider);
+    localStorage.setItem(KNOWN_KEY, JSON.stringify(next));
+  } catch {
+    // Storage unavailable: the next sign-in simply tries the link first again.
+  }
+}
+
+/** Test hook. */
+export function forgetKnownProvidersForTests(): void {
+  try {
+    localStorage.removeItem(KNOWN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Whether a refused link means the provider already belongs to an account,
+ * so a plain sign-in reaches it. Supabase answers `identity_already_exists`
+ * when this very identity (provider + subject) has an account, and
+ * `email_exists` when the identity is new but its verified email belongs to
+ * another account — Apple on a device whose account was made with Google
+ * (1.1.0 build 24 showed "A user with this email address has already been
+ * registered" and stopped). In both cases the plain sign-in lands in that
+ * account: for a new identity Supabase's automatic linking attaches it to
+ * the user with the same verified email.
+ */
+export function accountElsewhere(code: string | undefined): boolean {
+  return code === "identity_already_exists" || code === "email_exists";
+}
+
 function pendingProvider(): AuthProvider | null {
   const value = recall(PENDING_KEY);
   return value === "apple" || value === "google" ? value : null;
@@ -113,7 +169,7 @@ export async function signInWith(provider: AuthProvider, opts: { returnTo?: stri
   const options = { redirectTo: window.location.origin + path };
   remember(RETURN_KEY, path);
   const { data } = await auth.getSession();
-  if (data.session?.user.is_anonymous) {
+  if (data.session?.user.is_anonymous && !isKnownProvider(provider)) {
     remember(PENDING_KEY, provider);
     const { error } = await auth.linkIdentity({ provider, options });
     if (!error) return "redirecting";
@@ -128,9 +184,10 @@ export async function signInWith(provider: AuthProvider, opts: { returnTo?: stri
 /**
  * The native path (docs/monetization-spec.md §3.5): the OS sheet's id token
  * is LINKED to the current anonymous user (`linkIdentity` with the token, so
- * the uid — and any Plus bought on it — stays); if that identity already has
- * an account (made on the web, say), the app signs in to it instead
- * (`signInWithIdToken`), and the uid changes. Needs "manual linking" on in
+ * the uid — and any Plus bought on it — stays); if that identity, or its
+ * email, already has an account (made on the web, or with the other
+ * provider), the app signs in to it instead (`signInWithIdToken`,
+ * accountElsewhere), and the uid changes. Needs "manual linking" on in
  * Supabase and the bundle id among the Apple client ids.
  */
 export async function signInNatively(provider: AuthProvider): Promise<SignInOutcome> {
@@ -144,10 +201,11 @@ export async function signInNatively(provider: AuthProvider): Promise<SignInOutc
     throw err;
   }
   const { data } = await auth.getSession();
-  if (data.session?.user.is_anonymous) {
+  if (data.session?.user.is_anonymous && !isKnownProvider(provider)) {
     const { error } = await auth.linkIdentity({ provider, token, nonce });
     if (!error) return "signed-in";
-    if (error.code !== "identity_already_exists") throw error;
+    if (!accountElsewhere(error.code)) throw error;
+    rememberKnownProvider(provider);
   }
   const { error } = await auth.signInWithIdToken({ provider, token, nonce });
   if (error) throw error;
@@ -179,7 +237,9 @@ async function finishSignIn(): Promise<SignInReturn> {
   remember(RETURN_KEY, null);
   if (!error) return { returned, error: null };
   window.history.replaceState(null, "", window.location.pathname);
-  if (error.code === "identity_already_exists" && provider) {
+  if (accountElsewhere(error.code) && provider) {
+    // Next time on this device: straight to sign-in, one round trip.
+    rememberKnownProvider(provider);
     const { error: signInError } = await client().auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin + window.location.pathname } });
     return { returned, error: signInError ? signInError.message : null };
   }
@@ -200,11 +260,21 @@ export function resumeSignIn(): Promise<SignInReturn> {
   return resumed;
 }
 
+/** Test hook: the next resumeSignIn reads the address bar again. */
+export function resetSignInForTests(): void {
+  resumed = null;
+}
+
 /**
  * Signs the account out. The app's anonymous session is gone with it; the
  * auth hook signs in anonymously again, so play continues with a fresh id.
  */
 export async function signOut(): Promise<void> {
+  // The account being left has a provider: a later sign-in with it on this
+  // device goes straight to sign-in instead of a doomed link attempt.
+  const { data } = await client().auth.getSession();
+  const provider = data.session?.user.app_metadata?.provider;
+  if (!data.session?.user.is_anonymous && (provider === "apple" || provider === "google")) rememberKnownProvider(provider);
   await client().auth.signOut();
 }
 

@@ -41,9 +41,21 @@ describe("studio state", () => {
     // By keyboard as well: walk onto a black and toggle it.
     s = run(s, { type: "TOGGLE_BLOCK", cell: 13 }, { type: "SELECT", cell: 11 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "MOVE", dRow: 0, dCol: 1 }, { type: "TOGGLE_BLOCK" });
     expect(s.grid.cells[13]).toBe("");
-    // Typing on a black does nothing.
+    // Typing on a black opens it, its mirror partner too, and lands the letter.
     s = run(s, { type: "TOGGLE_BLOCK" }, { type: "TYPE", letter: "a" });
-    expect(s.grid.cells[13]).toBe("#");
+    expect(s.grid.cells[13]).toBe("A");
+    expect(s.grid.locked[13]).toBe(true);
+    expect(s.grid.cells[11]).toBe("");
+    expect(s.grid.cells.every((c) => c !== "#")).toBe(true);
+  });
+
+  it("SET_DIR sets the writing direction without toggling", () => {
+    let s = run(initialStudioState(5), { type: "SET_DIR", dir: "down" });
+    expect(s.dir).toBe("down");
+    s = run(s, { type: "SET_DIR", dir: "down" });
+    expect(s.dir).toBe("down");
+    s = run(s, { type: "SET_DIR", dir: "across" });
+    expect(s.dir).toBe("across");
   });
 
   it("finds complete entries that repeat a word", () => {
@@ -116,6 +128,22 @@ describe("studio state", () => {
     s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "" }, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Claude's", speed: "Fast" } } });
     expect(s.clues["0:across:5"]).toBe("Claude's");
     expect(s.editedClues).toEqual([]);
+  });
+
+  it("clearing a clue hands the slot back to drafting even when a draft left a speed clue behind", () => {
+    // The clue panel has no speed-clue field any more, so the standard clue alone decides ownership.
+    let s = run(initialStudioState(5), { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Greeting", speed: "Hi there" } } });
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "Hello there" });
+    expect(s.editedClues).toEqual(["0:across:5"]);
+    expect(s.speedClues["0:across:5"]).toBe("Hi there");
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "" });
+    expect(s.editedClues).toEqual([]);
+    expect(s.speedClues["0:across:5"]).toBeUndefined();
+    s = run(s, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Hi", speed: "Hey" } } });
+    expect(s.clues["0:across:5"]).toBe("Hi");
+    // Picking an offered alternative is a SET_CLUE too: it is the constructor's from then on.
+    s = run(s, { type: "SET_CLUE", key: "0:across:5", clue: "Howdy" }, { type: "APPLY_CLUES", clues: { "0:across:5": { standard: "Hi", speed: "Hey" } } });
+    expect(s.clues["0:across:5"]).toBe("Howdy");
   });
 
   it("versions keep clues, and a new puzzle starts clean with its own id", () => {

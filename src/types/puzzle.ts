@@ -25,7 +25,7 @@ export interface PuzzleClue {
  * Where a puzzle came from, when it matters after import. The NYT bookmarklet
  * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
  * (docs/community-puzzles-spec.md) records its solves under its own source.
- * Absent for file uploads, classics, dailies and samples.
+ * Absent for file uploads, dailies and samples.
  */
 export type PuzzleOrigin = "nyt-bookmarklet" | "community";
 
@@ -53,6 +53,18 @@ export interface CellState {
    * reads the relative order and spread, never the absolute time.
    */
   at?: number;
+  /**
+   * Set by CHECK_CELLS on a letter that is not the solution (solo play with
+   * Autocheck off, see soloSettings.ts); dropped the moment the square is
+   * retyped or erased, since a changed cell is a new CellState.
+   */
+  checked?: "wrong";
+  /**
+   * Written by REVEAL_CELL: the solution, locked against typing and erasing.
+   * A finish with a revealed square counts as solved but "assisted" — no best
+   * time, no streak, no leaderboard time.
+   */
+  revealed?: boolean;
 }
 
 export interface CellCoord {

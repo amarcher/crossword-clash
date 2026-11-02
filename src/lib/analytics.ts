@@ -25,11 +25,16 @@ declare global {
 
 /** Funnel events. Keep names snake_case and stable — renaming orphans history. */
 export type AnalyticsEvent =
-  /** Param `import_source` (file | url | bookmarklet | classic) — never `source`: GA4 treats `source`/`medium`/`campaign` event params as traffic-source overrides, which relabelled Bing sessions as "classic". */
+  /** Param `import_source` (file | url | bookmarklet) — never `source`: GA4 treats `source`/`medium`/`campaign` event params as traffic-source overrides, which relabelled Bing sessions as "classic". */
   | "puzzle_imported"
   | "mode_selected"
   | "game_started"
+  /** Params include `autocheck` (the solo setting for this solve) and `assisted` (a revealed square). */
   | "puzzle_completed"
+  /** The solo Autocheck switch was flipped. Param `on`. */
+  | "autocheck_toggled"
+  /** Solo without autocheck: a check or a reveal was asked for. Param `scope` (puzzle | word | reveal). */
+  | "puzzle_checked"
   | "narrator_enabled"
   | "language_changed"
   | "result_shared"
@@ -69,7 +74,33 @@ export type AnalyticsEvent =
   /** A player reported a community puzzle. Param `reason`. */
   | "puzzle_reported"
   /** A player hid an author's puzzles on this device. */
-  | "author_hidden";
+  | "author_hidden"
+  /** The apps' "update available" banner was shown. Param `version` (the store's version name, or Play's version code). */
+  | "app_update_shown"
+  /** The player tapped Update on that banner. Param `version`. */
+  | "app_update_tapped"
+  /** The player tapped Later on that banner. Param `version`. */
+  | "app_update_dismissed"
+  /** Friends (docs/friends-spec.md §7): a request went out. Params `method` (username | raced), `outcome` (pending | accepted | sent). */
+  | "friend_request_sent"
+  /** Accept / Decline on a request. Param `accepted`. */
+  | "friend_request_responded"
+  | "friend_removed"
+  | "player_blocked"
+  /** An in-app invite was written. Params `channel` (inapp), `kind` (room | beat). */
+  | "room_invite_sent"
+  /** The invitee tapped Join. Params `via` (banner | inbox), `kind`. */
+  | "room_invite_opened"
+  /** A tap on the Race friends screen. Params `action` (invite-join | challenge | start | join-code | add-friend | sign-in), `signed_in`. */
+  | "race_action"
+  /** Push (docs/friends-spec.md §7): the OS prompt was shown. Param `placement` (account | completion). */
+  | "push_permission_prompted"
+  /** The answer to that prompt. Params `placement`, `granted`. */
+  | "push_permission_result"
+  /** A notification tap launched or foregrounded the app. */
+  | "push_opened"
+  /** The daily reminder switch. Params `on`, `hour`, `placement`. */
+  | "reminder_toggled";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 

@@ -17,6 +17,12 @@
  * Rows are the grid's rows: ⬛ a block, 🟩/🟨/🟧 a cell filled in the first /
  * middle / last third of the solve, 🟥 a cell that took a wrong letter first.
  * No letters, so nothing is spoiled; the shape plus the pace tells the story.
+ *
+ * What 🟥 means depends on how the puzzle was played (`wrongCells` is the
+ * caller's): with Autocheck on it is a square where a wrong letter was refused;
+ * with Autocheck off (soloSettings.ts) nothing is refused, so it is a square
+ * that was still wrong when the solver asked for a check, or that they had
+ * revealed. A wrong letter the solver fixed on their own never shows.
  * Grids wider than MAX_ROW_WIDTH get one 15-block pace bar instead of rows.
  * A live race colours cells by who claimed them, in the player-colour order.
  *
@@ -108,6 +114,16 @@ export function playerSquare(hex: string | undefined): string {
   if (!hex) return EMPTY;
   const index = (PLAYER_COLORS as readonly string[]).indexOf(hex.toLowerCase());
   return index === -1 ? EMPTY : PLAYER_SQUARES[index % PLAYER_SQUARES.length];
+}
+
+/**
+ * "🟦 Archer, 🟥 Alicia" — each player's square and name, for the legend under
+ * the preview of a race block. The squares follow the players' hex colours, so
+ * pass the frozen record's roster and the legend matches the rows whoever is
+ * still in the room.
+ */
+export function claimantLegend(players: readonly { displayName: string; color: string }[]): string {
+  return players.map((p) => `${playerSquare(p.color)} ${p.displayName}`).join(", ");
 }
 
 /** Which third of [start, end] `at` falls in: 0, 1 or 2. A degenerate span is all first-third. */

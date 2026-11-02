@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { CrosswordGrid, type NavigationActions } from "./CrosswordGrid";
 import type { Puzzle } from "../../types/puzzle";
@@ -132,5 +132,76 @@ describe("CrosswordGrid announcement", () => {
       />,
     );
     expect(screen.queryByLabelText("Crossword input", { selector: "input" })).toBeNull();
+  });
+});
+
+/**
+ * The phone play screen: the grid inside a scroller, the keyboard covering the
+ * bottom of the screen (a fake visualViewport) and the fixed clue bar above
+ * it. jsdom lays nothing out, so each element's box is scripted.
+ */
+describe("CrosswordGrid keeps the active cell in view", () => {
+  const boxes = new Map<string, { top: number; bottom: number }>();
+  let scroller: HTMLElement;
+
+  beforeEach(() => {
+    boxes.clear();
+    Object.defineProperty(window, "visualViewport", { value: { height: 500, offsetTop: 0, addEventListener: () => undefined, removeEventListener: () => undefined }, configurable: true });
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      const key = this.tagName === "MAIN" ? "scroller" : this.id;
+      const box = boxes.get(key) ?? { top: 0, bottom: 0 };
+      return { ...box, left: 0, right: 0, width: 0, height: box.bottom - box.top, x: 0, y: box.top, toJSON: () => ({}) } as DOMRect;
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Object.defineProperty(window, "visualViewport", { value: undefined, configurable: true });
+  });
+
+  function renderInScroller(selected: { row: number; col: number }) {
+    const nav = actions();
+    const grid = (sel: { row: number; col: number }) => (
+      <main style={{ overflowY: "auto" }}>
+        <CrosswordGrid puzzle={makePuzzle()} playerCells={{}} selectedCell={sel} highlightedCells={new Set()} onCellClick={vi.fn()} navigationActions={nav} />
+      </main>
+    );
+    const utils = render(grid(selected));
+    scroller = utils.container.querySelector("main")!;
+    // jsdom's scrollTop is inert; a plain writable property records the effect's scroll.
+    Object.defineProperty(scroller, "scrollTop", { value: 0, writable: true, configurable: true });
+    const shell = utils.container.querySelector(".grid-shell") as HTMLElement;
+    shell.style.setProperty("--clue-bar-height", "48px");
+    boxes.set("scroller", { top: 60, bottom: 900 });
+    return { ...utils, nav, rerender: (sel: { row: number; col: number }) => utils.rerender(grid(sel)) };
+  }
+
+  it("scrolls by exactly the overshoot when the selection moves to a row under the clue bar, and not at all for a visible cell", () => {
+    const { rerender } = renderInScroller({ row: 0, col: 0 });
+    const idOf = (name: string) => screen.getByRole("gridcell", { name }).id;
+    boxes.set(idOf("Row 1, Column 1, 1"), { top: 80, bottom: 120 });
+    boxes.set(idOf("Row 1, Column 2"), { top: 80, bottom: 120 });
+    boxes.set(idOf("Row 3, Column 2"), { top: 700, bottom: 740 });
+    // A visible cell: nothing moves.
+    rerender({ row: 0, col: 1 });
+    expect(scroller.scrollTop).toBe(0);
+    // Visible band ends at the keyboard (500) minus the clue bar (48) = 452; the cell's bottom is 740.
+    rerender({ row: 2, col: 1 });
+    expect(scroller.scrollTop).toBe(740 - 452 + 8);
+  });
+
+  it("does nothing without a scroller (the apps' grid slot)", () => {
+    const { rerender } = renderGrid({ row: 0, col: 0 });
+    boxes.set(screen.getByRole("gridcell", { name: "Row 3, Column 2" }).id, { top: 700, bottom: 740 });
+    expect(() =>
+      rerender(<CrosswordGrid puzzle={makePuzzle()} playerCells={{}} selectedCell={{ row: 2, col: 1 }} highlightedCells={new Set()} onCellClick={vi.fn()} navigationActions={actions()} />),
+    ).not.toThrow();
+  });
+
+  it("parks the hidden input on the active cell so the browser's own focus scroll agrees", () => {
+    const { input, rerender, nav } = renderGrid({ row: 2, col: 1 });
+    expect(parseFloat(input.style.top)).toBeCloseTo((2.5 / 3) * 100, 5);
+    expect(input.style.left).toBe("50%");
+    rerender(<CrosswordGrid puzzle={makePuzzle()} playerCells={{}} selectedCell={null} highlightedCells={new Set()} onCellClick={vi.fn()} navigationActions={nav} />);
+    expect(input.style.top).toBe("50%");
   });
 });

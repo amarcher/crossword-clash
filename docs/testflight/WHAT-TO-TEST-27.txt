@@ -1,0 +1,7 @@
+This build (1.1.0, build 27) fixes what the build 26 test pass turned up. Please check:
+
+1. Header: the back button now sits on the left and the logo in the centre on every page of the app.
+2. Finish screen: a close (×) control at the top right leaves the puzzle without scrolling to the foot.
+3. Streak: finishing a second puzzle on a day that already counted says "Today already counted — one day per day" under the flame instead of looking stuck.
+4. Typing: a letter is judged against the square the cursor is on when it arrives, however fast you type. Try rattling through a short answer; no square should shake unless the letter was wrong for it.
+5. Everything from build 26 still applies: friends, invites, notifications, Send to a friend.

@@ -1,6 +1,6 @@
 No Crossword Clash login, purchase, or subscription is required.
 
-Core review path: tap Play Today's Mini for a built-in playable crossword. Alternatively, open Classic library, choose a puzzle, and select Play Solo. Tap a cell to show the keyboard. Correct letters remain on the grid; incorrect letters are rejected. Close and reopen the app to test saved solo progress.
+Core review path: tap Play Today's Mini for a built-in playable crossword. Alternatively, open Past puzzles, choose a day, and tap Play. Tap a cell to show the keyboard. Correct letters remain on the grid; incorrect letters are rejected. Close and reopen the app to test saved solo progress.
 
 Multiplayer: on one device choose Start a game, select a built-in puzzle, enter a display name, and create a room. On another device choose Join with a code, enter the room code and a display name. The host starts once two players have joined. Internet access is required for multiplayer.
 

@@ -28,6 +28,12 @@ export interface DailyResultEntry {
   mode: DailyMode;
   /** Finish time, whole seconds. */
   seconds: number;
+  /**
+   * False when the time was made in solo play with Autocheck off (letters
+   * typed freely, judged at the end — soloSettings.ts); the board marks such
+   * rows. Absent means on: every row before 2026-10-28, and every race.
+   */
+  autocheck?: boolean;
 }
 
 export interface RankedDailyEntry extends DailyResultEntry {
@@ -130,6 +136,7 @@ export function mergeOwnResult(
     if (own.seconds < mine.seconds) {
       mine.seconds = own.seconds;
       mine.mode = own.mode;
+      mine.autocheck = own.autocheck;
     }
   } else {
     plain.push({ ...own });
@@ -185,6 +192,8 @@ export interface SubmitDailyResultInput {
   mode: DailyMode;
   seconds: number;
   gameId?: string | null;
+  /** Solo with Autocheck off → false; omitted (races, older callers) means on. */
+  autocheck?: boolean;
 }
 
 /**
@@ -216,6 +225,7 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
       mode: input.mode,
       seconds,
       game_id: input.gameId ?? null,
+      autocheck: input.autocheck ?? true,
     };
 
     const { error } = await supabase
@@ -305,7 +315,7 @@ export async function fetchDailyLeaderboard(
   try {
     const { data, error } = await supabase
       .from("daily_results")
-      .select("user_id, display_name, mode, seconds")
+      .select("user_id, display_name, mode, seconds, autocheck")
       .eq("day", day)
       .eq("slot", slot)
       .order("seconds", { ascending: true })
@@ -317,6 +327,8 @@ export async function fetchDailyLeaderboard(
         displayName: displayableName(r.display_name),
         mode: (r.mode === "race" ? "race" : "solo") as DailyMode,
         seconds: r.seconds,
+        // Null (a row older than the column) means on.
+        autocheck: r.autocheck !== false,
       })),
     );
   } catch {

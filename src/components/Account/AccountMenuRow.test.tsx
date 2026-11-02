@@ -7,6 +7,8 @@ import type { AccountContextValue } from "../../contexts/AccountContext";
 
 const context: { value: AccountContextValue } = { value: null as unknown as AccountContextValue };
 vi.mock("../../contexts/AccountContext", () => ({ useAccountContext: () => context.value }));
+const plus = { enabled: false };
+vi.mock("../../lib/plus", () => ({ plusEnabled: () => plus.enabled }));
 
 const user = { id: "u1", is_anonymous: false, user_metadata: { full_name: "Ada Lovelace" }, app_metadata: {}, aud: "authenticated", created_at: "" } as unknown as User;
 
@@ -32,6 +34,7 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
 
 beforeEach(() => {
   context.value = account({});
+  plus.enabled = false;
 });
 afterEach(cleanup);
 
@@ -54,11 +57,47 @@ describe("AccountMenuRow", () => {
     expect(openAccount).toHaveBeenCalledWith({ placement: "menu" });
   });
 
-  it("goes away once signed in: the header avatar covers the account", () => {
+  it("drops the sign-in row once signed in (the header avatar covers the account), and the group with it while Plus is off", () => {
     context.value = account({ user, profile: { user_id: "u1", username: "ada_l", display_name: null } });
     expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
     cleanup();
+    plus.enabled = true;
     context.value = account({ user });
-    expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Save your solve history/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Crossword Clash Plus/ })).toBeTruthy();
+  });
+
+  it("with Plus live, offers the subscription to anonymous visitors and opens the paywall", () => {
+    plus.enabled = true;
+    const openPaywall = vi.fn();
+    context.value = account({ openPaywall });
+    render(<AccountMenuRow />);
+    const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
+    expect(row.textContent).toContain("Every past daily");
+    fireEvent.click(row);
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
+  });
+
+  it("shows no Plus row while the switch is off or before entitlements are known", () => {
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
+    cleanup();
+    plus.enabled = true;
+    context.value = account({ plusReady: false });
+    render(<AccountMenuRow />);
+    expect(screen.queryByRole("button", { name: /Crossword Clash Plus/ })).toBeNull();
+  });
+
+  it("keeps the Plus row for a subscriber as the way back to Manage and Restore", () => {
+    plus.enabled = true;
+    const openPaywall = vi.fn();
+    context.value = account({ user, plus: true, openPaywall });
+    render(<AccountMenuRow />);
+    const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
+    expect(row.textContent).toContain("tap to manage");
+    expect(row.textContent).not.toContain("Every past daily");
+    fireEvent.click(row);
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });
 });

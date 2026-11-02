@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -15,9 +15,11 @@ import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { SaveImageButton } from "./SaveImageButton";
+import { SendToFriend } from "../Friends";
+import { ReminderSwitch } from "../Push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
-import { buildShareBlock, type ShareBlock } from "../../lib/shareBlock";
+import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
 import { buildDailyLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { compressPuzzleToHash } from "../../lib/puzzleUrl";
@@ -56,8 +58,19 @@ interface CompletionModalProps {
   isNewBest?: boolean;
   /** Best on record *before* this finish (null on the first-ever solve). */
   previousBest?: number | null;
+  /**
+   * The grid was finished with a revealed square (solo, Autocheck off): the
+   * time row says so instead of claiming a best, since none was recorded.
+   */
+  assisted?: boolean;
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
+  /**
+   * Whether this finish added today to the streak. `false` adds a note under
+   * the streak row — a second finish on a day that already counted looked like
+   * a streak that failed to move (Andrew, 2026-11-01); omit when unknown.
+   */
+  streakAdvanced?: boolean;
   /**
    * Present when the finished puzzle came from the NYT bookmarklet: shows the
    * "same time tomorrow" nudge and, when > 0, the NYT streak. This is the
@@ -126,8 +139,8 @@ interface CompletionModalProps {
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
   /**
-   * "Up next" rows (at most two): today's unsolved dailies, else one unplayed
-   * classic, else the library — from `nextUpSuggestions`. Solo/daily only.
+   * "Up next" rows (at most two): today's unsolved dailies, then yesterday's
+   * — from `nextUpSuggestions`. Solo/daily only.
    */
   nextUp?: NextUpItem[];
   onNextUp?: (item: NextUpItem) => void;
@@ -164,7 +177,9 @@ export function CompletionModal({
   bestSeconds,
   isNewBest,
   previousBest,
+  assisted,
   streakCount,
+  streakAdvanced,
   nytHook,
   raceSeconds,
   onViewLeaderboard,
@@ -281,6 +296,16 @@ export function CompletionModal({
         : shareIsTie
           ? t("completion.tie")
           : t("completion.wins", { name: shareWinnerName ?? "" });
+  // One line under the preview saying what the squares mean. A shared grid
+  // is coloured by claimant (named, in the standings order); everything else
+  // — solo, an async copy — by the pace of the solve, red for a wrong letter.
+  // Grids wider than MAX_ROW_WIDTH share a pace bar instead of rows.
+  const wideGrid = !!challengePuzzle && challengePuzzle.width > MAX_ROW_WIDTH;
+  const shareLegend = !challengePuzzle
+    ? undefined
+    : isMultiplayer && playerColors
+      ? t(wideGrid ? "completion.legendRaceBar" : "completion.legendRace", { players: claimantLegend(ranked) })
+      : t(wideGrid ? "completion.legendSoloBar" : "completion.legendSolo");
   const shareDaily = dailySlot ? t(SLOT_EYEBROW[dailySlot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
@@ -345,6 +370,23 @@ export function CompletionModal({
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
+        {/* The way out, where a dialog's close is expected. "Back to menu" at the
+            foot of the list stays for readers who scroll; on a phone the modal is
+            taller than the screen, so a reader who only wanted out had to find it
+            there or hit the sliver of backdrop. */}
+        {onBackToMenu && (
+          <button
+            type="button"
+            onClick={onBackToMenu}
+            aria-label={t('completion.close')}
+            className={`absolute right-3 top-3 grid size-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand-500 ${
+              darkMode ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted hover:bg-surface-sunken hover:text-ink"
+            }`}
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
+        )}
+
         {/* Trophy */}
         <div className="mb-4 flex justify-center">
           <span className={`trophy-pulse grid size-14 place-items-center rounded-full ${darkMode ? "bg-gold-500/15" : "bg-gold-50 ring-1 ring-gold-100"}`}>
@@ -360,7 +402,8 @@ export function CompletionModal({
         {isMultiplayer ? (
           <>
             {/* Outcome line: async → fastest finisher (or waiting), co-op →
-                team finish, versus → most cells claimed. */}
+                team finish, versus → most squares solved (the line says so:
+                players asked whether it was squares or clues — it is squares). */}
             <p className={`text-center mb-5 ${textSub}`}>
               {isAsync
                 ? asyncAllDone
@@ -371,8 +414,8 @@ export function CompletionModal({
                 : coop
                   ? t('completion.coopSolved')
                   : isTie
-                    ? t('completion.tie')
-                    : t('completion.wins', { name: winner.displayName })}
+                    ? t('completion.tieSquares', { count: winner.cellsClaimed })
+                    : t('completion.winsSquares', { name: winner.displayName, count: winner.cellsClaimed })}
             </p>
 
             {/* Headline time: your own finish (async) or the shared race time. */}
@@ -426,7 +469,7 @@ export function CompletionModal({
                     <tr className={`text-xs uppercase tracking-wider ${tableHeader}`}>
                       <th className="text-left py-2 px-3">#</th>
                       <th className="text-left py-2 px-3">{t('completion.player')}</th>
-                      <th className="text-right py-2 px-3">{t('completion.cells')}</th>
+                      <th className="text-right py-2 px-3">{t('completion.squares')}</th>
                       <th className="text-right py-2 px-3">{t('completion.clues')}</th>
                     </tr>
                   </thead>
@@ -476,7 +519,7 @@ export function CompletionModal({
               // Celebrate only a genuine record — beating a time that was
               // already on record. The first-ever solve is a best-of-one, not
               // an achievement, so it reads as a plain "your time".
-              const celebrateBest = isNewBest === true && previousBest != null;
+              const celebrateBest = !assisted && isNewBest === true && previousBest != null;
               return (
                 <div
                   className={`mb-4 rounded-xl px-4 py-3 text-center ${
@@ -499,7 +542,9 @@ export function CompletionModal({
                         : textSub
                     }`}
                   >
-                    {celebrateBest
+                    {assisted
+                      ? t('autocheck.solvedWithReveals')
+                      : celebrateBest
                       ? t('soloStats.newBestBeat', { time: formatDuration(previousBest as number) })
                       : isNewBest
                         ? t('soloStats.timerLabel')
@@ -512,10 +557,15 @@ export function CompletionModal({
             })()}
 
             {streakCount !== undefined && streakCount > 0 && (
-              <p className={`mb-5 flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
-                <Flame className="size-4 text-gold-500" aria-hidden="true" />
-                {t('soloStats.streakDays', { count: streakCount })}
-              </p>
+              <div className="mb-5 text-center">
+                <p className={`flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
+                  <Flame className="size-4 text-gold-500" aria-hidden="true" />
+                  {t('soloStats.streakDays', { count: streakCount })}
+                </p>
+                {streakAdvanced === false && !assisted && (
+                  <p className={`mt-0.5 text-xs ${textSub}`}>{t('completion.streakCountedToday')}</p>
+                )}
+              </div>
             )}
 
             {nytHook && (
@@ -619,7 +669,18 @@ export function CompletionModal({
               hasTime={shareSeconds !== undefined}
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
               daily={!!dailySlot && !isMultiplayer}
+              legend={shareLegend}
               onNameSigned={dailySign?.onSign}
+              darkMode={darkMode}
+            />
+          )}
+          {/* A daily finish with friends: the beat-my-time link delivered in-app
+              (docs/friends-spec.md §3.2). Renders nothing without friends. */}
+          {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
+          {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
+          {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
+            <SendToFriend
+              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName") })}
               darkMode={darkMode}
             />
           )}
@@ -661,15 +722,7 @@ export function CompletionModal({
                 {hasNextUp &&
                   nextUp.map((item) => (
                     <NextUpRow
-                      key={
-                        item.kind === "daily"
-                          ? `daily-${item.slot}`
-                          : item.kind === "archive"
-                            ? `archive-${item.entry.day}-${item.entry.slot}`
-                            : item.kind === "classic"
-                              ? `classic-${item.entry.file}`
-                              : "library"
-                      }
+                      key={item.kind === "daily" ? `daily-${item.slot}` : `archive-${item.entry.day}-${item.entry.slot}`}
                       item={item}
                       onSelect={() => onNextUp(item)}
                       darkMode={darkMode}
@@ -791,34 +844,16 @@ function NextUpRow({ item, onSelect, darkMode }: { item: NextUpItem; onSelect: (
       />
     );
   }
-  if (item.kind === "archive") {
-    const { entry } = item;
-    const size = `${entry.width}×${entry.height}`;
-    return (
-      <ModalRow
-        icon={CalendarDays}
-        tone="gold"
-        title={t("completion.nextYesterday", { daily: t(SLOT_EYEBROW[entry.slot]) })}
-        subtitle={entry.theme ? `${size} · ${entry.theme}` : `${size} · ${entry.title}`}
-        onClick={onSelect}
-        darkMode={darkMode}
-      />
-    );
-  }
-  if (item.kind === "classic") {
-    const { entry } = item;
-    return (
-      <ModalRow
-        icon={BookOpen}
-        tone="gold"
-        title={t("completion.nextClassic", { number: entry.number })}
-        subtitle={t("completion.nextClassicSubtitle", { title: entry.title, size: `${entry.width}×${entry.height}` })}
-        onClick={onSelect}
-        darkMode={darkMode}
-      />
-    );
-  }
+  const { entry } = item;
+  const size = `${entry.width}×${entry.height}`;
   return (
-    <ModalRow icon={BookOpen} tone="gold" title={t("completion.browseLibrary")} subtitle={t("completion.browseLibraryHint")} onClick={onSelect} darkMode={darkMode} />
+    <ModalRow
+      icon={CalendarDays}
+      tone="gold"
+      title={t("completion.nextYesterday", { daily: t(SLOT_EYEBROW[entry.slot]) })}
+      subtitle={entry.theme ? `${size} · ${entry.theme}` : `${size} · ${entry.title}`}
+      onClick={onSelect}
+      darkMode={darkMode}
+    />
   );
 }

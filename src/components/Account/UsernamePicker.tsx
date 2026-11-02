@@ -81,6 +81,7 @@ export function UsernamePicker({ userId, current, suggestFrom, onSaved, onCancel
   else if (availability === "checking") hint = { text: t("account.checking"), tone: "muted" };
   else if (availability === "taken") hint = { text: t("account.taken"), tone: "bad" };
   else if (availability === "available") hint = { text: t("account.available"), tone: "good" };
+  else if (unchanged && value.length > 0) hint = { text: t("account.currentName"), tone: "muted" };
   const toneClass = hint?.tone === "bad" ? "text-red-700" : hint?.tone === "good" ? "text-emerald-700" : "text-muted";
 
   return (

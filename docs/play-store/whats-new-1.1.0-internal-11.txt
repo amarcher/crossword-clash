@@ -1,0 +1,7 @@
+<en-US>
+Friends: add friends by username from the new Race friends screen, challenge them to a live race, and get room invites in the app.
+
+Notifications: a daily puzzle reminder at the hour you choose, room invites and friend requests. Turn them on from Your account → Notifications or "Remind me tomorrow" after a daily.
+
+Send a beat-my-time challenge straight to a friend from the finish screen.
+</en-US>

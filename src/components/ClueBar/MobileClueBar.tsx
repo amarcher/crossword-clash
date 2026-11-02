@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { PuzzleClue, Direction } from "../../types/puzzle";
 import { Capacitor } from "@capacitor/core";
+import { useKeyboardInset } from "../../hooks/useKeyboardInset";
 
 interface MobileClueBarProps {
   activeClue: PuzzleClue | null;
@@ -23,42 +23,14 @@ export function MobileClueBar({
   inputRef,
 }: MobileClueBarProps) {
   const { t } = useTranslation();
-  const barRef = useRef<HTMLDivElement>(null);
   const embedded = Capacitor.isNativePlatform();
-
-  // Keep the clue bar above the virtual keyboard using the VisualViewport API.
-  useEffect(() => {
-    if (embedded) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    let rafId = 0;
-
-    const update = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        if (!barRef.current) return;
-        // Use documentElement.clientHeight (layout viewport) instead of
-        // window.innerHeight which shrinks on iOS Safari when keyboard opens.
-        const layoutHeight = document.documentElement.clientHeight;
-        const offset = layoutHeight - vv.height - vv.offsetTop;
-        barRef.current.style.bottom = `${Math.max(0, offset)}px`;
-      });
-    };
-
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      cancelAnimationFrame(rafId);
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, [embedded]);
+  // Keep the clue bar above the virtual keyboard (0 in the apps and without visualViewport).
+  const keyboardInset = useKeyboardInset();
 
   return (
     <div
-      ref={barRef}
       className={embedded ? "native-clue-bar flex items-stretch" : "md:hidden fixed left-0 right-0 bottom-0 flex items-stretch h-12 bg-surface border-t border-line shadow-[0_-4px_16px_-8px_rgb(20_26_38/0.12)] z-50 transition-[bottom] duration-100 ease-out"}
+      style={embedded ? undefined : { bottom: `${keyboardInset}px` }}
     >
       <button
         onClick={() => { onPrevWord(); inputRef?.current?.focus(); }}

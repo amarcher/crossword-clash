@@ -4,6 +4,8 @@ Written 2026-10-27 on `main` (a0f34cf). Spec only: no application code
 changes. Every claim about the current code cites a file. Nothing here was
 run against production data.
 
+> **2026-10-28:** the classic library (`/classics`, the 1924 book) was removed at Andrew's decision ("the classics are antiquated"). Mentions of it below are historical; the daily feed and the archive are the only bundled puzzles now.
+
 Context: the construction studio (`/studio`, PR #79 and later) ends at a
 play-test link and an `.ipuz` download (`src/screens/StudioScreen.tsx:283-307`);
 there is no way for an author to put a puzzle in front of other players, and

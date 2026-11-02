@@ -1,0 +1,5 @@
+This update (1.1.0, build 17) is build 16 plus one fix: signing out and back in no longer asks an account that already has a username to choose one.
+
+1. Sign out from the avatar menu, then Continue with Apple or Google again. You should land back on the menu with your avatar and no username prompt. Your username, streaks and Plus should all be as before.
+2. Avatar menu → Change username: typing the name you already have says "That's your current name" and Save stays off; typing a taken name says "Already taken"; a free name says "Available".
+3. Everything from build 16 still applies: Create Room lands on Invite players, a locked phone stays in the lobby, the NYT date is centred in its field, the Plus sheet says "You have Plus." with Manage in the store.

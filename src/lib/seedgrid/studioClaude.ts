@@ -3,7 +3,7 @@
  * come from cluePrompt.ts (shared with the CLI), and drafts get the same
  * checks and one fix pass as `pnpm seedgrid`.
  */
-import { alternativesRequest, clueOk, clueProblems, cluesRequest, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
+import { alternativesRequest, clueProblems, cluesRequest, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
 import { slotsOf, slotText, type Grid } from "./grid";
 import { studioHeaders } from "../studioAuth";
 
@@ -46,11 +46,30 @@ export function edgeCaller(token: string): ClaudeCaller {
     });
     if (res.status === 401) throw new StudioClaudeError("token", "Sign in as a studio admin, or enter the studio token.");
     if (res.status === 402) throw studioRefusal(await res.json().catch(() => null));
-    if (res.status === 429) throw new StudioClaudeError("rate", "Too many Claude requests this hour. Try again later.");
+    if (res.status === 429) throw new StudioClaudeError("rate", "Too many AI requests this hour. Try again later.");
     const body = (await res.json().catch(() => ({}))) as { result?: T; error?: string };
-    if (!res.ok || body.result === undefined) throw new StudioClaudeError("failed", `Claude request failed (${body.error ?? res.status}).`);
+    if (!res.ok || body.result === undefined) throw new StudioClaudeError("failed", `The AI request failed (${body.error ?? res.status}).`);
     return body.result;
   };
+}
+
+/**
+ * What every studio request says about the puzzle before the grid: the title
+ * and theme note when there are any, and the locked long entries as the theme
+ * entries. An empty note adds no `Theme:` line, so the prompt's header says no
+ * theme is stated.
+ */
+export function puzzleContext(grid: Grid, title: string, theme: string): string {
+  const themeEntries = slotsOf(grid)
+    .filter((s) => s.cells.length >= 5 && s.cells.every((c) => grid.locked[c] && grid.cells[c] && grid.cells[c] !== "#"))
+    .map((s) => slotText(grid, s));
+  return [
+    title.trim() && `Title: ${title.trim()}`,
+    theme.trim() && `Theme: ${theme.trim()}`,
+    themeEntries.length ? `Theme entries: ${themeEntries.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** Answers of every complete entry, by slot id. */
@@ -87,7 +106,11 @@ export async function draftClues(
   return out;
 }
 
-/** A few alternative standard clues for one entry, keeping only ones that pass the checks. */
+/**
+ * A redraft of one entry: `ALTERNATIVES_COUNT` alternative standard clues in
+ * one call (one allowance unit however many come back), vetted by
+ * `vetAlternatives` so every one offered passes the checks.
+ */
 export async function suggestClues(
   call: ClaudeCaller,
   grid: Grid,
@@ -97,6 +120,23 @@ export async function suggestClues(
 ): Promise<string[]> {
   const answer = entryAnswers(grid)[slotId];
   if (!answer) return [];
-  const { clues } = await call<{ clues: string[] }>(alternativesRequest(grid, context, slotId, opts));
-  return [...new Set(clues.map((c) => c.trim()))].filter((c) => c && c !== opts.current && clueOk(answer, c));
+  const { clues } = await call<{ clues: unknown }>(alternativesRequest(grid, context, slotId, opts));
+  return vetAlternatives(answer, Array.isArray(clues) ? clues : [], opts.current);
+}
+
+/**
+ * Title suggestions for the puzzle: `TITLES_COUNT` in one call (one allowance
+ * unit), vetted by `vetTitles` so none is an entry of the grid, too long or
+ * the title already there. `clues` is by slot id.
+ */
+export async function suggestTitles(
+  call: ClaudeCaller,
+  grid: Grid,
+  context: string,
+  clues: Record<string, string | undefined>,
+  opts: { current?: string } = {},
+): Promise<string[]> {
+  const answers = entryAnswers(grid);
+  const { titles } = await call<{ titles: unknown }>(titlesRequest(grid, context, clues, opts));
+  return vetTitles(Object.values(answers), Array.isArray(titles) ? titles : [], opts.current);
 }

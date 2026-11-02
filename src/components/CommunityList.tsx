@@ -21,7 +21,7 @@ interface CommunityListProps {
 
 /**
  * The community library's card grid (docs/community-puzzles-spec.md §2.1):
- * the classics' anatomy with the community's facts — size · clues ·
+ * one card per puzzle with its facts — size · clues ·
  * difficulty, the solved chip with the best time, the title (a link to the
  * puzzle's page), the author (a link to theirs), the note, plays and solves,
  * and Play solo + Race friends.
