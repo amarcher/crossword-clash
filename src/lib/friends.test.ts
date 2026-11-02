@@ -147,12 +147,14 @@ describe("inviteState", () => {
 
 describe("raceBlocks (spec §3.6)", () => {
   it("orders the blocks by state: code first for a newcomer, friends first with friends, invites first with invites", () => {
-    expect(raceBlocks({ signedIn: false, friends: 0, invites: 0 })).toEqual(["code", "start", "signIn"]);
-    expect(raceBlocks({ signedIn: true, friends: 0, invites: 0 })).toEqual(["code", "start", "addFriends"]);
-    expect(raceBlocks({ signedIn: true, friends: 3, invites: 0 })).toEqual(["friends", "start", "code"]);
-    expect(raceBlocks({ signedIn: true, friends: 3, invites: 1 })).toEqual(["invites", "friends", "start", "code"]);
+    expect(raceBlocks({ signedIn: false, friends: 0, invites: 0, requests: 0 })).toEqual(["code", "start", "signIn"]);
+    expect(raceBlocks({ signedIn: true, friends: 0, invites: 0, requests: 0 })).toEqual(["code", "start", "addFriends"]);
+    expect(raceBlocks({ signedIn: true, friends: 3, invites: 0, requests: 0 })).toEqual(["friends", "start", "code"]);
+    expect(raceBlocks({ signedIn: true, friends: 3, invites: 1, requests: 0 })).toEqual(["invites", "friends", "start", "code"]);
+    // A first request with no friends yet: the friends block carries the "1 request" link.
+    expect(raceBlocks({ signedIn: true, friends: 0, invites: 0, requests: 1 })).toEqual(["friends", "start", "code"]);
     // An invite with no friends yet (the friend was removed since): still invites first.
-    expect(raceBlocks({ signedIn: true, friends: 0, invites: 1 })).toEqual(["invites", "friends", "start", "code"]);
+    expect(raceBlocks({ signedIn: true, friends: 0, invites: 1, requests: 0 })).toEqual(["invites", "friends", "start", "code"]);
   });
 });
 
@@ -195,12 +197,25 @@ describe("client", () => {
     expect(calls.find((c) => c.op === "neq")?.args).toEqual(["user_id", "me"]);
   });
 
-  it("sends a request by username through the RPC and surfaces each outcome and refusal", async () => {
-    results = [{ data: "pending", error: null }, { data: "accepted", error: null }, { data: null, error: { message: "friends:cooldown" } }];
+  it("sends a request by username through the RPC, nudges the recipient's channel, and surfaces each outcome and refusal", async () => {
+    // Each request is the RPC answer, then the public profile lookup that finds the channel to nudge.
+    results = [
+      { data: "pending", error: null },
+      { data: [{ user_id: "a" }], error: null },
+      { data: "accepted", error: null },
+      { data: [], error: null },
+      { data: null, error: { message: "friends:cooldown" } },
+    ];
     expect(await sendFriendRequest("@Alicia ")).toBe("pending");
     expect(rpcCalls[0]).toEqual({ fn: "send_friend_request", args: { p_username: "Alicia" } });
+    expect(calls.find((c) => c.table === "profiles" && c.op === "eq")?.args).toEqual(["username_lower", "alicia"]);
+    expect(channels.map((c) => c.name)).toEqual(["user:a"]);
+    expect(channels[0].sent).toHaveLength(1);
+    // No profile row (a race with a rename): the request went through, nobody is nudged.
     expect(await sendFriendRequest("milo")).toBe("accepted");
+    expect(channels).toHaveLength(1);
     await expect(sendFriendRequest("sam")).rejects.toMatchObject({ kind: "cooldown" });
+    expect(calls.filter((c) => c.table === "profiles" && c.op === "select")).toHaveLength(2);
   });
 
   it("reads recent opponents and maps the rows", async () => {

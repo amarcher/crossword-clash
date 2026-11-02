@@ -99,6 +99,14 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     expect(navigate).toHaveBeenCalledWith("/race/friends");
   });
 
+  it("a first friend request with no friends yet shows the friends block with the request link instead of the Add friends card", () => {
+    friends.value = friendsValue({ friendships: { friends: [], incoming: [{ userId: "d", username: "dana", createdAt: "2026-11-02T00:00:00Z" }], outgoing: [] } });
+    renderScreen();
+    expect(headings()).toEqual(["Friends", "Start a room", "Join with a code"]);
+    expect(screen.getByRole("link", { name: "1 request" }).getAttribute("href")).toBe("/race/friends");
+    expect(screen.queryByRole("button", { name: "Add friends" })).toBeNull();
+  });
+
   it("puts friends first once there are some; Challenge remembers the friend and starts the host flow through the picker", () => {
     friends.value = friendsValue({ friendships: { friends: [alicia], incoming: [], outgoing: [] } });
     renderScreen();

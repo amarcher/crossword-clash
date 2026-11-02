@@ -13,6 +13,9 @@ describe("appLinkTarget", () => {
     expect(appLinkTarget("https://crosswordclash.com/daily/2026-10-20/mini?beat=102&by=Archer")).toEqual({ kind: "navigate", to: "/daily/2026-10-20/mini?beat=102&by=Archer" });
     expect(appLinkTarget("https://crosswordclash.com/puzzles/a1b2c3d4")).toEqual({ kind: "navigate", to: "/puzzles/a1b2c3d4" });
     expect(appLinkTarget("https://crosswordclash.com/puzzles/by/archer?size=mini")).toEqual({ kind: "navigate", to: "/puzzles/by/archer?size=mini" });
+    // A friend-request push's url (pushRules.ts) and the Race screen.
+    expect(appLinkTarget("https://crosswordclash.com/race/friends")).toEqual({ kind: "navigate", to: "/race/friends" });
+    expect(appLinkTarget("https://crosswordclash.com/race")).toEqual({ kind: "navigate", to: "/race" });
   });
 
   it("hands a puzzle payload to the hash listener", () => {

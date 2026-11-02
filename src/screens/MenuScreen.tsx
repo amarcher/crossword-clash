@@ -197,8 +197,10 @@ export function MenuScreen() {
     },
     [setUrlPuzzle, navigate],
   );
-  // The menu row's badge: open invites the player has not seen.
-  const { unseenInvites } = useFriends();
+  // The menu row's badge: open invites the player has not seen, else friend
+  // requests waiting for an answer (a push for either lands on /race/friends).
+  const { unseenInvites, friendships } = useFriends();
+  const pendingRequests = friendships.incoming.length;
 
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
@@ -284,11 +286,15 @@ export function MenuScreen() {
                     title={
                       <span className="flex items-center gap-2">
                         {t("menu.raceHub")}
-                        {unseenInvites.length > 0 && (
+                        {unseenInvites.length > 0 ? (
                           <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">
                             {t("menu.raceHubInvites", { count: unseenInvites.length })}
                           </span>
-                        )}
+                        ) : pendingRequests > 0 ? (
+                          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">
+                            {t("menu.raceHubRequests", { count: pendingRequests })}
+                          </span>
+                        ) : null}
                       </span>
                     }
                     subtitle={t("menu.raceHubSubtitle")}

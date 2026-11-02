@@ -31,8 +31,8 @@ export function RaceScreen() {
   const friends = useFriends();
 
   const blocks = useMemo(
-    () => raceBlocks({ signedIn: friends.active, friends: friends.friendships.friends.length, invites: friends.openInvites.length }),
-    [friends.active, friends.friendships.friends.length, friends.openInvites.length],
+    () => raceBlocks({ signedIn: friends.active, friends: friends.friendships.friends.length, invites: friends.openInvites.length, requests: friends.friendships.incoming.length }),
+    [friends.active, friends.friendships.friends.length, friends.openInvites.length, friends.friendships.incoming.length],
   );
 
   // Start a room: the chip's puzzle goes to the host flow; otherwise the picker chooses one.

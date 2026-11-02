@@ -60,7 +60,9 @@
     "raceHub": "Compite con amigos",
     "raceHubSubtitle": "Reta a un amigo, únete a una sala o crea una",
     "raceHubInvites_one": "{{count}} invitación pendiente",
-    "raceHubInvites_other": "{{count}} invitaciones pendientes"
+    "raceHubInvites_other": "{{count}} invitaciones pendientes",
+    "raceHubRequests_one": "{{count}} solicitud de amistad",
+    "raceHubRequests_other": "{{count}} solicitudes de amistad"
   },
   "hostName": {
     "heading": "Crear una partida",
