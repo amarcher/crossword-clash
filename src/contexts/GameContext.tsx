@@ -12,7 +12,7 @@ import { clearProgress, filledCells, getProgress, recordProgressCells, whiteCell
 import { useSoloSettings } from "../lib/soloSettings";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
-import type { PuzzleAction } from "../hooks/usePuzzle";
+import type { PuzzleAction, Rejection } from "../hooks/usePuzzle";
 
 const STORAGE_KEY = "crossword-clash-solo";
 const LOCKOUT_STORAGE_KEY = "crossword-clash:lockedUntil";
@@ -55,6 +55,8 @@ interface GameContextValue {
    * screen owns the toggle; this is the effective value the grid plays by.
    */
   autocheck: boolean;
+  /** The reducer's last refused letter (autocheck on); see `PuzzleState.rejection`. */
+  rejection: Rejection | null;
   /** Mark the wrong letters among the given squares (solo, autocheck off). */
   checkCells: (cells: CellCoord[]) => void;
   /** Write and lock one square's solution; the finish then counts as assisted. */

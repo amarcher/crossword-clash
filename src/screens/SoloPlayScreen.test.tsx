@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 import { GameProvider, useGame } from "../contexts/GameContext";
-import { MultiplayerProvider } from "../contexts/MultiplayerContext";
+import { MultiplayerProvider, useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { SoloPlayScreen } from "./SoloPlayScreen";
 import { SOLO_SETTINGS_KEY, resetSoloSettingsForTests } from "../lib/soloSettings";
 import { loadSoloStats } from "../lib/soloStats";
@@ -64,8 +64,10 @@ const puzzle: Puzzle = {
 };
 
 let game: ReturnType<typeof useGame>;
+let mp: ReturnType<typeof useMultiplayerContext>;
 function Probe() {
   game = useGame();
+  mp = useMultiplayerContext();
   return null;
 }
 
@@ -109,6 +111,32 @@ afterEach(() => {
 });
 
 describe("SoloPlayScreen autocheck", () => {
+  it("judges every letter against the cursor as it actually stands, even two typed before a render", async () => {
+    // Andrew, 2026-11-01: typing T then Y into STY on the iPhone shook the grid
+    // at the Y. Two keystrokes inside one act() reach the input wrapper before
+    // React has re-rendered, so a judgment made from the last render's cursor
+    // would compare the second letter with the first letter's square.
+    await renderSolo();
+    act(() => {
+      fireEvent.keyDown(window, { key: "c" });
+      fireEvent.keyDown(window, { key: "a" });
+      fireEvent.keyDown(window, { key: "t" });
+    });
+    expect(cell(0, 0).getAttribute("aria-label")).toBe("Row 1, Column 1, 1, C");
+    expect(cell(0, 1).getAttribute("aria-label")).toBe("Row 1, Column 2, A");
+    expect(cell(0, 2).getAttribute("aria-label")).toBe("Row 1, Column 3, 2, T");
+    expect(mp.wrongLetters).toBe(0);
+    expect(mp.wrongCells).toEqual([]);
+
+    // A genuinely wrong letter still flashes the square it was typed into:
+    // CAT complete, the cursor has moved on to 3 Across.
+    act(() => {
+      fireEvent.keyDown(window, { key: "x" });
+    });
+    expect(mp.wrongLetters).toBe(1);
+    expect(mp.wrongCells).toEqual(["2,0"]);
+  });
+
   it("with autocheck on (the default) a wrong letter is refused and the switch says so", async () => {
     await renderSolo();
     type("x");

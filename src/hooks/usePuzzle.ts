@@ -37,6 +37,25 @@ export interface PuzzleState {
    * kept across LOAD_PUZZLE and RESET.
    */
   autocheck: boolean;
+  /**
+   * The last letter INPUT_LETTER refused under autocheck: the square it was
+   * typed into and a counter that grows with every refusal, so a consumer can
+   * tell a new refusal from the one it has already shown. The reducer is the
+   * only judge of a letter — it sees the cursor as it stands when the action
+   * is processed, where a wrapper reading `selectedCell` from its last render
+   * would judge a second letter typed before that render against the first
+   * letter's square (Andrew's T-then-Y into STY, 2026-11-01). Cleared by
+   * LOAD_PUZZLE and RESET; never set while autocheck is off.
+   */
+  rejection: Rejection | null;
+}
+
+export interface Rejection {
+  row: number;
+  col: number;
+  /** Upper-cased. */
+  letter: string;
+  seq: number;
 }
 
 export const initialState: PuzzleState = {
@@ -47,6 +66,7 @@ export const initialState: PuzzleState = {
   score: 0,
   totalWhiteCells: 0,
   autocheck: true,
+  rejection: null,
 };
 
 // --- Actions ---
@@ -200,6 +220,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
           : "across",
         score: 0,
         totalWhiteCells: countWhiteCells(puzzle),
+        rejection: null,
       };
     }
 
@@ -273,8 +294,12 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
 
       const correct = letter === cell.solution;
       if (!correct && state.autocheck) {
-        // Incorrect letter — silently reject (don't place it)
-        return state;
+        // Incorrect letter — refuse it (nothing is placed, the cursor stays)
+        // and record the refusal for the flash and the wrong-letter count.
+        return {
+          ...state,
+          rejection: { row, col, letter, seq: (state.rejection?.seq ?? 0) + 1 },
+        };
       }
 
       // Place the letter and advance. `at` records when, for the spoiler-free
