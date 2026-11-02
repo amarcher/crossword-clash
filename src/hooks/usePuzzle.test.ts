@@ -128,7 +128,7 @@ describe("puzzleReducer", () => {
       expect(state.selectedCell).toEqual({ row: 0, col: 1 });
     });
 
-    it("rejects incorrect letter silently", () => {
+    it("refuses an incorrect letter and records the refusal against the cursor square", () => {
       const before = loadedState();
       const state = puzzleReducer(before, {
         type: "INPUT_LETTER",
@@ -137,6 +137,38 @@ describe("puzzleReducer", () => {
       expect(state.playerCells["0,0"]).toBeUndefined();
       expect(state.score).toBe(0);
       expect(state.selectedCell).toEqual(before.selectedCell);
+      expect(state.rejection).toEqual({ row: 0, col: 0, letter: "Z", seq: 1 });
+    });
+
+    it("numbers refusals so a consumer can tell a new one from the last shown; the record is per puzzle", () => {
+      // The second refusal lands on the same square with the same letter: only
+      // `seq` tells it apart. A correct letter in between leaves the record be.
+      let state = puzzleReducer(loadedState(), { type: "INPUT_LETTER", letter: "z" });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c" });
+      expect(state.rejection?.seq).toBe(1);
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "z" });
+      expect(state.rejection).toEqual({ row: 0, col: 1, letter: "Z", seq: 2 });
+      expect(puzzleReducer(state, { type: "RESET" }).rejection).toBeNull();
+      expect(puzzleReducer(state, { type: "LOAD_PUZZLE", puzzle: state.puzzle! }).rejection).toBeNull();
+    });
+
+    it("judges a burst of letters against the cursor as it advances, each on its own square", () => {
+      // The race the record exists for: letters processed back to back, with no
+      // render in between, each compared with the square the previous one
+      // moved the cursor to — never with the square the previous one filled.
+      let state = loadedState();
+      for (const letter of "ca") state = puzzleReducer(state, { type: "INPUT_LETTER", letter });
+      expect(state.playerCells["0,0"]?.letter).toBe("C");
+      expect(state.playerCells["0,1"]?.letter).toBe("A");
+      expect(state.rejection).toBeNull();
+    });
+
+    it("a settled square only moves the cursor on — no refusal whatever the letter", () => {
+      let state = puzzleReducer(loadedState(), { type: "INPUT_LETTER", letter: "c" });
+      state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+      state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "z" });
+      expect(state.rejection).toBeNull();
+      expect(state.selectedCell).toEqual({ row: 0, col: 1 });
     });
 
     it("stores playerId when provided", () => {
@@ -586,6 +618,12 @@ describe("puzzleReducer without autocheck", () => {
   }
   const type = (state: PuzzleState, letters: string) =>
     [...letters].reduce((s, letter) => puzzleReducer(s, { type: "INPUT_LETTER", letter, at: 1 }), state);
+
+  it("records no refusal: a wrong letter is written, not judged", () => {
+    const state = puzzleReducer(freeState(), { type: "INPUT_LETTER", letter: "z" });
+    expect(state.playerCells["0,0"]?.letter).toBe("Z");
+    expect(state.rejection).toBeNull();
+  });
 
   it("writes a wrong letter as typed, advances past it, and does not count it", () => {
     const state = type(freeState(), "x");
