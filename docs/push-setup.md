@@ -173,6 +173,16 @@ npx supabase functions deploy send-push --no-verify-jwt --project-ref rdqdhawlxu
 npx supabase db query --linked -f docs/push-setup-friendships.sql
 ```
 
+Both ran on 2026-11-02 (`friendships_push` verified with the header in
+place). **Two CLI gotchas met that night:** a freshly fetched `npx supabase`
+binary is not trusted by the keychain item that holds the access token, so
+every command hangs silently on a keychain dialog in a headless shell; pass
+the token through `SUPABASE_ACCESS_TOKEN` instead (`security
+find-generic-password -s "Supabase CLI" -w`, a `go-keyring-base64:`-prefixed
+base64 value). And current CLIs refuse a production mutation from an agent
+shell without `--yes` (`HostedMutationConsentRequiredError`); `--remote=<ref>`
+replaces the deprecated `--project-ref`.
+
 The client side is `sendFriendRequest` nudging the recipient's Realtime
 channel (so an open Race friends screen refreshes at once) and the
 `appLinkTarget` route for `/race/friends`, so a tap on the notification
