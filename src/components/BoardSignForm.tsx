@@ -9,6 +9,12 @@ interface BoardSignFormProps {
   currentName: string;
   /** Once signed, the confirmed name — flips the form into a confirmation. */
   signedAs?: string | null;
+  /**
+   * The time is parked on this device and goes on the board only once
+   * signed (the rule for the anonymous default), so the prompt asks for a
+   * name to post rather than to claim a row that is already public.
+   */
+  unposted?: boolean;
   onSign: (name: string) => void;
   darkMode?: boolean;
   className?: string;
@@ -17,11 +23,12 @@ interface BoardSignFormProps {
 /**
  * "Sign the board" — the arcade high-score moment, in one place for the
  * completion modal and the leaderboard itself (navigation audit §3, item 11).
- * The time is already on the board (submission never waits for a name); this
- * only claims it, so the copy, the input rules and the confirmation stay in
- * step wherever the prompt appears.
+ * A finish under the default name waits here, on this device, until it is
+ * signed (`unposted`); a row that is already public under the default (an
+ * older client's) is renamed. Either way the copy, the input rules and the
+ * confirmation stay in step wherever the prompt appears.
  */
-export function BoardSignForm({ currentName, signedAs, onSign, darkMode, className = "" }: BoardSignFormProps) {
+export function BoardSignForm({ currentName, signedAs, unposted, onSign, darkMode, className = "" }: BoardSignFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
 
@@ -52,7 +59,7 @@ export function BoardSignForm({ currentName, signedAs, onSign, darkMode, classNa
     <div className={box} data-testid="board-sign">
       <p className={`${prompt} mb-2.5`}>
         <Trophy className="size-4 shrink-0" aria-hidden="true" />
-        {t("leaderboard.signPrompt", { name: currentName })}
+        {unposted ? t("leaderboard.signToPost") : t("leaderboard.signPrompt", { name: currentName })}
       </p>
       <div className="flex gap-2">
         <input
@@ -73,7 +80,7 @@ export function BoardSignForm({ currentName, signedAs, onSign, darkMode, classNa
           }`}
         />
         <button type="button" onClick={submit} disabled={!name.trim()} className={buttonClass("primary", "md", "shrink-0")}>
-          {t("leaderboard.signSave")}
+          {unposted ? t("leaderboard.signPost") : t("leaderboard.signSave")}
         </button>
       </div>
     </div>
