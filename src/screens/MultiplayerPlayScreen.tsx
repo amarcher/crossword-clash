@@ -23,7 +23,7 @@ import { clearMpSession } from "../lib/sessionPersistence";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { leaderboardPath, submitDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { leaderboardPath, postDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
 import { rankRaceStandings } from "../lib/raceResults";
@@ -171,10 +171,8 @@ export function MultiplayerPlayScreen() {
       dailySubmittedRef.current = true;
       recordDailyPlay();
       // Parked in context too, so the board awaits the post (audit §3, item 9).
-      const day = todayKey();
       const entry = { userId: user.id, displayName: game.displayName, mode: "race" as const, seconds: Math.max(0, Math.floor(myFinishSeconds)) };
-      const settled = submitDailyResult({ day, slot: dailySlot, ...entry, gameId: game.gameId });
-      setPendingDailyResult({ day, slot: dailySlot, entry, settled });
+      setPendingDailyResult(postDailyResult(todayKey(), dailySlot, entry, game.gameId));
       return;
     }
     if (gameStatus !== "completed") return;
