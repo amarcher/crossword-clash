@@ -8,6 +8,8 @@ import {
   deliveryDecision,
   DEFAULT_PUSH_PREFS,
   fcmMessage,
+  friendRequestFromWebhook,
+  friendRequestNotification,
   inviteNotification,
   pushLocale,
   reminderNotification,
@@ -26,6 +28,7 @@ import {
  *
  *   POST { kind: "daily_reminder" }                          → everyone whose local hour is their reminder hour
  *   POST { type: "INSERT", table: "room_invites", record }    → the invitee (the webhook's body)
+ *   POST { type: "INSERT", table: "friendships", record }     → the recipient of a pending friend request (the webhook's body)
  *   POST { kind: "test", userId }                             → one user's devices, for the runbook's smoke test
  *
  * iOS goes straight to APNs over HTTP/2 with an ES256 provider token signed
@@ -264,6 +267,18 @@ async function roomInvite(db: SupabaseClient, record: InviteRecord) {
   return json({ ok: true, ...counts });
 }
 
+/** A pending friend request: "@name wants to be friends", landing on the Race friends screen. */
+async function friendRequest(db: SupabaseClient, target: { requesterId: string; recipientId: string }) {
+  const { data: sender } = await db.from("profiles").select("username").eq("user_id", target.requesterId).maybeSingle();
+  if (!sender) return json({ error: "not_found" }, 404);
+  const prefs = await prefsFor(db, [target.recipientId]);
+  const tokens = await tokensFor(db, [target.recipientId]);
+  const counts = await notifyUser(db, target.recipientId, "friend_request", prefs.get(target.recipientId), tokens, (locale) =>
+    friendRequestNotification({ name: sender.username }, locale),
+  );
+  return json({ ok: true, ...counts });
+}
+
 async function smokeTest(db: SupabaseClient, userId: string) {
   const tokens = await tokensFor(db, [userId]);
   const note: Notification = { kind: "daily_reminder", title: "Crossword Clash", body: "Push is set up.", url: `${SITE_URL}/menu`, collapseId: "test", ttlSeconds: 600 };
@@ -277,7 +292,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!SECRET || !sameToken(req.headers.get("x-push-secret") ?? "", SECRET)) return json({ error: "unauthorized" }, 401);
 
-  let body: { kind?: string; userId?: string; type?: string; table?: string; record?: InviteRecord };
+  let body: { kind?: string; userId?: string; type?: string; table?: string; record?: Record<string, unknown> };
   try {
     body = await req.json();
   } catch {
@@ -286,7 +301,9 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   if (body.kind === "daily_reminder") return dailyReminder(db);
-  if (body.type === "INSERT" && body.table === "room_invites" && body.record?.to_user_id) return roomInvite(db, body.record);
+  if (body.type === "INSERT" && body.table === "room_invites" && body.record?.to_user_id) return roomInvite(db, body.record as unknown as InviteRecord);
+  const request = friendRequestFromWebhook(body as Parameters<typeof friendRequestFromWebhook>[0]);
+  if (request) return friendRequest(db, request);
   if (body.kind === "test" && body.userId) return smokeTest(db, body.userId);
   return json({ error: "invalid_request" }, 400);
 });

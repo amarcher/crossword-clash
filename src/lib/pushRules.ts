@@ -246,4 +246,18 @@ export function tokenUnregistered(platform: "ios" | "android", status: number, r
   return status === 404 || reason === "UNREGISTERED" || reason === "NOT_FOUND" || reason === "INVALID_ARGUMENT";
 }
 
+/** The `friendships` row a Database Webhook posts on INSERT; only a fresh pending request is a notification (an accept updates the row, never inserts). */
+export interface FriendshipRecord {
+  requester_id: string;
+  recipient_id: string;
+  status: string;
+}
+
+export function friendRequestFromWebhook(body: { type?: string; table?: string; record?: Partial<FriendshipRecord> | null }): { requesterId: string; recipientId: string } | null {
+  if (body.type !== "INSERT" || body.table !== "friendships") return null;
+  const r = body.record;
+  if (!r || r.status !== "pending" || typeof r.requester_id !== "string" || typeof r.recipient_id !== "string") return null;
+  return { requesterId: r.requester_id, recipientId: r.recipient_id };
+}
+
 // --- MIRROR END ---

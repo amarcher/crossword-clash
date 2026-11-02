@@ -9,6 +9,7 @@ import {
   deliveryDecision,
   fcmMessage,
   formatSeconds,
+  friendRequestFromWebhook,
   friendRequestNotification,
   hourInWindow,
   inQuietHours,
@@ -121,6 +122,21 @@ describe("notifications", () => {
 
   it("builds a friend request pointing at the friends list", () => {
     expect(friendRequestNotification({ name: "dana" }, "en")).toMatchObject({ title: "@dana wants to be friends", url: "https://crosswordclash.com/race/friends" });
+  });
+});
+
+describe("friendRequestFromWebhook", () => {
+  const record = { requester_id: "r", recipient_id: "t", status: "pending", created_at: "2026-11-02T00:00:00Z" };
+  it("names the recipient of a fresh pending request", () => {
+    expect(friendRequestFromWebhook({ type: "INSERT", table: "friendships", record })).toEqual({ requesterId: "r", recipientId: "t" });
+  });
+  it("ignores an accept (an update, or a row born accepted), other tables, other events and a malformed row", () => {
+    expect(friendRequestFromWebhook({ type: "UPDATE", table: "friendships", record })).toBeNull();
+    expect(friendRequestFromWebhook({ type: "INSERT", table: "friendships", record: { ...record, status: "accepted" } })).toBeNull();
+    expect(friendRequestFromWebhook({ type: "INSERT", table: "room_invites", record })).toBeNull();
+    expect(friendRequestFromWebhook({ type: "INSERT", table: "friendships", record: { status: "pending" } })).toBeNull();
+    expect(friendRequestFromWebhook({ type: "INSERT", table: "friendships", record: null })).toBeNull();
+    expect(friendRequestFromWebhook({ kind: "daily_reminder" } as never)).toBeNull();
   });
 });
 

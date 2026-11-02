@@ -152,6 +152,32 @@ The function reads the row, checks the room is still `waiting`, applies the
 invitee's switches and quiet hours, and stamps `pushed_at` when something
 was sent.
 
+**Friend requests** (added 2026-11-02; the same shape as room invites, by
+SQL so the trigger can carry the secret): `friendships_push()` is a copy of
+`room_invites_push()` for the `friendships` table that fires only for a row
+whose `status` is `pending` (an accept updates the row, so it never inserts;
+a request answered `accepted` on the spot, because the other side had asked
+first, is an update too). `send-push` notifies the `recipient_id` with
+"@name wants to be friends", landing on `/race/friends`, under their
+`friend_requests` switch and quiet hours. Install it with
+`docs/push-setup-friendships.sql`, which reads the `x-push-secret` header
+out of `room_invites_push`'s own definition inside one `DO` block, so the
+secret never leaves the database, then creates the function and the
+trigger (idempotent). Deploy the function first:
+
+```sh
+npx supabase functions deploy send-push --no-verify-jwt --project-ref rdqdhawlxuclfxpsvdgs
+```
+
+```sh
+npx supabase db query --linked -f docs/push-setup-friendships.sql
+```
+
+The client side is `sendFriendRequest` nudging the recipient's Realtime
+channel (so an open Race friends screen refreshes at once) and the
+`appLinkTarget` route for `/race/friends`, so a tap on the notification
+opens the requests.
+
 ## 6. Store forms
 
 - **App Store Connect → App Privacy**: *Identifiers → Device ID* (the push

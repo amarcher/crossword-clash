@@ -60,7 +60,9 @@
     "raceHub": "Race friends",
     "raceHubSubtitle": "Challenge a friend, join a room or start one",
     "raceHubInvites_one": "{{count}} invite waiting",
-    "raceHubInvites_other": "{{count}} invites waiting"
+    "raceHubInvites_other": "{{count}} invites waiting",
+    "raceHubRequests_one": "{{count}} friend request",
+    "raceHubRequests_other": "{{count}} friend requests"
   },
   "hostName": {
     "heading": "Host a game",

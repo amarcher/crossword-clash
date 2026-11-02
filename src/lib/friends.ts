@@ -115,9 +115,11 @@ export type RaceBlock = "invites" | "friends" | "addFriends" | "start" | "code" 
  * useful block first. A newcomer sees the code; a player with friends sees
  * them; one with invites sees those.
  */
-export function raceBlocks(state: { signedIn: boolean; friends: number; invites: number }): RaceBlock[] {
+export function raceBlocks(state: { signedIn: boolean; friends: number; invites: number; requests: number }): RaceBlock[] {
   if (!state.signedIn) return ["code", "start", "signIn"];
-  if (state.friends === 0 && state.invites === 0) return ["code", "start", "addFriends"];
+  // A pending request with no friends yet still needs the friends block: its
+  // "N requests" link is where the request is answered.
+  if (state.friends === 0 && state.invites === 0 && state.requests === 0) return ["code", "start", "addFriends"];
   if (state.invites > 0) return ["invites", "friends", "start", "code"];
   return ["friends", "start", "code"];
 }
@@ -283,8 +285,15 @@ export async function fetchInvites(viewerId: string): Promise<RoomInvite[]> {
 export type RequestOutcome = "pending" | "accepted" | "sent";
 
 export async function sendFriendRequest(username: string): Promise<RequestOutcome> {
-  const { data, error } = await client().rpc("send_friend_request", { p_username: username.trim().replace(/^@/, "") });
+  const name = username.trim().replace(/^@/, "");
+  const { data, error } = await client().rpc("send_friend_request", { p_username: name });
   if (error) throw refusal(error);
+  // Nudge the recipient's channel so a Race friends screen they have open
+  // shows the request at once (the row itself is read under RLS). Profiles are
+  // public, so the id lookup needs no new access; a miss just skips the nudge.
+  const { data: rows } = await client().from("profiles").select("user_id").eq("username_lower", name.toLowerCase()).limit(1);
+  const recipient = (rows as { user_id?: string }[] | null)?.[0]?.user_id;
+  if (recipient) notifyInvite(recipient);
   return data ?? "sent";
 }
 

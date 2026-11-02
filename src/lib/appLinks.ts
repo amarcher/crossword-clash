@@ -48,6 +48,8 @@ export function appLinkTarget(url: string): AppLinkTarget | null {
   if (path === "/join") return { kind: "navigate", to: path + parsed.search };
   if (DAILY_PATH.test(path)) return { kind: "navigate", to: path + parsed.search };
   if (path === "/puzzles" || path.startsWith("/puzzles/")) return { kind: "navigate", to: path + parsed.search };
+  // A friend-request push lands on the Race friends screen (pushRules.ts).
+  if (path === "/race" || path === "/race/friends") return { kind: "navigate", to: path };
   // The plain home link, or an invite with no code: the menu.
   if (path === "/" || path === "/share" || path === "/menu") return { kind: "navigate", to: "/menu" };
   return null;
