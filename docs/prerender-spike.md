@@ -1,6 +1,8 @@
 # Spike: crawlable HTML for the content routes
 
 **Date:** 2026-10-16
+
+> **2026-10-28:** the classic library (`/classics`, the 1924 book) was removed at Andrew's decision ("the classics are antiquated"). Mentions of it below are historical; the daily feed and the archive are the only bundled puzzles now.
 **Question:** Crawlers and the AdSense reviewer currently receive `index.html`
 with an empty `#root` and a JSON-LD block, because `vercel.json` rewrites every
 non-asset path to the SPA shell. Should the content routes be served as real

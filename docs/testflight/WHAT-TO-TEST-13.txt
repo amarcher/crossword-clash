@@ -1,0 +1,7 @@
+This update (1.1.0, build 13) fixes sign-in with Apple and Google in the app: build 12 answered every native sign-in with "Nonces mismatch".
+
+1. Signed out, open "Crossword Clash Plus" from the menu and tap Continue with Apple or Continue with Google. The OS sheet should come back to the same Plus sheet, now signed in: a subscriber sees "Renews on …" with Manage in the store and Restore purchases; anyone else sees the two plans.
+2. Your avatar should appear in the menu's top bar. Open it: Your account, Past puzzles, Choose a username (until you pick one), Manage subscription or About Plus, Sign out.
+3. If you bought Plus on build 11 or 12 while signed out, signing in on this build should keep it: the sheet should still say "You have Plus" afterwards with no Restore needed.
+4. Sign out and sign in again with the other provider as well, if you have both. Each should work.
+5. Everything else as in build 12: the Plus row on the menu stays for subscribers ("tap to manage"), the purchase confirmation sits first on the sheet, the studio benefit says it is on the web. Manage in the store shows nothing for a sandbox subscription; that is Apple's page, not the app.

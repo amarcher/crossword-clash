@@ -116,6 +116,20 @@ describe("DailyLeaderboardScreen", () => {
     await screen.findByText("1");
   });
 
+  it("marks a time made without autocheck with a chip", async () => {
+    fetchBoard.mockResolvedValue(
+      rankEntries([
+        { userId: "a", displayName: "Ada", mode: "solo", seconds: 60, autocheck: false },
+        { userId: "b", displayName: "Bo", mode: "solo", seconds: 70, autocheck: true },
+      ]),
+    );
+    renderBoard();
+    await screen.findByText("Ada");
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows[0].textContent).toContain("No autocheck");
+    expect(rows[1].textContent).not.toContain("No autocheck");
+  });
+
   it("refetches when the tab becomes visible again", async () => {
     renderBoard();
     await waitFor(() => expect(fetchBoard).toHaveBeenCalledTimes(1));

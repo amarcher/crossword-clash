@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Archive, Check, Mic, PencilRuler, RefreshCw } from "lucide-react";
 import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
+import { useStorePrices } from "../../hooks/useStorePrices";
 
 /**
  * What Plus is, in one card: the four benefits and the two prices (annual
@@ -13,6 +14,14 @@ import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } fro
  */
 export function PlusPitch({ children, prices = true }: { children?: React.ReactNode; prices?: boolean }) {
   const { t, i18n } = useTranslation();
+  // In the apps, show what the store will charge (local currency) rather than the USD list price.
+  const store = useStorePrices();
+  const annual = store.find((p) => p.plan === "annual");
+  const monthly = store.find((p) => p.plan === "monthly");
+  const fromStore = !!annual && !!monthly;
+  const annualLabel = fromStore ? annual.priceString : formatUsd(PLUS_ANNUAL_USD, i18n.language);
+  const monthlyLabel = fromStore ? monthly.priceString : formatUsd(PLUS_MONTHLY_USD, i18n.language);
+  const saving = fromStore && monthly.price > 0 ? annualSavingPercent(monthly.price, annual.price) : annualSavingPercent();
   const benefits = [
     { icon: Archive, text: t("plus.benefitArchive") },
     { icon: PencilRuler, text: t("plus.benefitStudio") },
@@ -36,14 +45,14 @@ export function PlusPitch({ children, prices = true }: { children?: React.ReactN
         <div className="rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100">
           <dt className="flex items-center gap-1.5 text-xs font-semibold text-brand-700">
             <Check className="size-3.5" aria-hidden="true" />
-            {t("plus.annualSave", { percent: annualSavingPercent() })}
+            {t("plus.annualSave", { percent: saving })}
           </dt>
-          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{formatUsd(PLUS_ANNUAL_USD, i18n.language)}</dd>
+          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{annualLabel}</dd>
           <dd className="mt-1 text-xs text-muted">{t("plus.perYear")}</dd>
         </div>
         <div className="rounded-xl bg-surface-sunken p-3 ring-1 ring-line">
           <dt className="text-xs font-semibold text-ink-soft">{t("plus.monthly")}</dt>
-          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{formatUsd(PLUS_MONTHLY_USD, i18n.language)}</dd>
+          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{monthlyLabel}</dd>
           <dd className="mt-1 text-xs text-muted">{t("plus.perMonth")}</dd>
         </div>
       </dl>

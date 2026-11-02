@@ -88,3 +88,10 @@ describe("play session tracker", () => {
     expect(t.hasActivity).toBe(true);
   });
 });
+
+describe("autocheck", () => {
+  it("is recorded as on unless the visit says otherwise", () => {
+    expect(new PlaySessionTracker(puzzle, {}, meta, T0, "a1").record(sec(1)).autocheck).toBe(true);
+    expect(new PlaySessionTracker(puzzle, {}, { ...meta, autocheck: false }, T0, "a2").record(sec(1)).autocheck).toBe(false);
+  });
+});

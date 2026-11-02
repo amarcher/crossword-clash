@@ -16,7 +16,6 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Plugin, PluginOption, ResolvedConfig } from "vite";
-import { CLASSIC_MANIFEST_SCRIPT_ID, parseManifest } from "../../src/lib/classicLibrary";
 import { PRERENDERED_ROUTES } from "../../src/lib/pageMeta";
 import { buildPage, outputPathFor } from "../../src/lib/prerender";
 
@@ -54,13 +53,11 @@ export function prerender({ plugins }: PrerenderOptions): Plugin {
       try {
         const entry = (await import(pathToFileURL(resolve(ssrDir, "entry-server.js")).href)) as ServerEntry;
         const template = await readFile(resolve(outDir, "index.html"), "utf8");
-        const classics = parseManifest(JSON.parse(await readFile(resolve(config.root, "public/classic-puzzles/manifest.json"), "utf8")));
         for (const route of PRERENDERED_ROUTES) {
-          const { html, meta } = await entry.render(route, { classics });
-          const data = route === "/classics" ? { [CLASSIC_MANIFEST_SCRIPT_ID]: classics } : undefined;
+          const { html, meta } = await entry.render(route);
           const file = resolve(outDir, outputPathFor(route));
           await mkdir(dirname(file), { recursive: true });
-          await writeFile(file, buildPage(template, { route, html, meta, data }));
+          await writeFile(file, buildPage(template, { route, html, meta }));
         }
       } finally {
         await rm(ssrDir, { recursive: true, force: true });

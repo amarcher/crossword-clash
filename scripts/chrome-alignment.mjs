@@ -15,7 +15,7 @@ if (!base || !outDir) {
 }
 mkdirSync(outDir, { recursive: true });
 
-const ROUTES = ["/privacy", "/daily/leaderboard", "/nyt-import", "/solo/import", "/classics", "/studio", "/join", "/host-game/name", "/host-game/import"];
+const ROUTES = ["/privacy", "/daily/leaderboard", "/nyt-import", "/solo/import", "/archive", "/studio", "/join", "/host-game/name", "/host-game/import"];
 const SEL = { column: "[data-page-column]", logo: "[data-site-bar] img", right: "[data-site-bar-right]" };
 
 const browser = await chromium.launch();

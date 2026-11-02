@@ -169,10 +169,34 @@
 .puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
 .puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }
 .puzzle-key:disabled { opacity: .45; }
+/* A physical keyboard is in use: the in-app keys give way to one button that brings them back. */
+.native-keyboard-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 6px 12px max(6px, env(safe-area-inset-bottom));
+}
+.native-keyboard-toggle > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 0 #a4aab3;
+  touch-action: manipulation;
+}
+.native-keyboard-toggle > button:active { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
+.native-keyboard-toggle > button:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: 2px; }
 .native-clue-sheet [role="dialog"] { max-height: 80dvh; padding-bottom: env(safe-area-inset-bottom); }
 .native-clue-sheet ul { overscroll-behavior: contain; }
 @media (min-width: 768px) {
   .native-game-clues { display: block; width: clamp(220px, 28vw, 380px); padding: 12px; min-height: 0; overflow: hidden; }
+  /* With the clue list on screen and a physical keyboard (Tab, Space, arrows), the clue bar only repeats the list. */
+  .native-game-layout[data-keyboard="hardware"] .native-clue-bar { display: none; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   .native-game-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); grid-template-rows: auto minmax(0, 1fr); }
@@ -180,6 +204,7 @@
   .native-game-main { padding-bottom: env(safe-area-inset-bottom); }
   .native-game-clues { display: none; }
   .native-game-controls { align-self: end; }
+  .native-game-layout[data-keyboard="hardware"] .native-clue-bar { display: flex; }
   .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
   .puzzle-key { height: 44px; }
 }
@@ -234,11 +259,15 @@
      room. Previous 7rem (112px) cut into the bar; 9rem (144px) keeps the
      full grid visible above MobileClueBar before the keyboard summons. */
   --grid-h-offset: 9rem;
+  /* The fixed MobileClueBar (h-12) covers the bottom of the scroller: the grid
+     keeps the active cell above it when it scrolls the cell into view. */
+  --clue-bar-height: 48px;
 }
 @media (min-width: 768px) {
   .grid-offset-mobile {
     /* Desktop: header ~72px + main py-4 32px = ~104px */
     --grid-h-offset: 6.5rem;
+    --clue-bar-height: 0px;
   }
 }
 
@@ -301,6 +330,26 @@ select,
   .cell-reject {
     animation: cell-reject-still 400ms ease-out;
   }
+}
+
+/* Solo without Autocheck (soloSettings.ts): a square Check judged wrong keeps
+   its letter in red under a thin diagonal slash, NYT-style; a revealed square
+   carries a small brand-coloured corner. Both sit under the letter. The rose
+   fallback is Tailwind's rose-600, since the variable is only emitted when a
+   utility uses it. */
+.cell-wrong-slash {
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.8px),
+    var(--color-rose-600, #e11d48) calc(50% - 0.8px),
+    var(--color-rose-600, #e11d48) calc(50% + 0.8px),
+    transparent calc(50% + 0.8px)
+  );
+}
+.cell-revealed-mark {
+  width: 24cqi;
+  height: 24cqi;
+  background: linear-gradient(to bottom left, var(--color-brand-500) 50%, transparent 50%);
 }
 
 /* Completion modal — scale-up + fade-in */
@@ -521,6 +570,8 @@ select,
   .tv-t-2xl { font-size: 30px; }
   .tv-stage { height: auto; min-height: 100dvh; overflow: visible; overflow-x: clip; }
   .tv-lobby { display: flex; flex-direction: column; height: auto; }
+  /* Stacked, the roster leads and the join column follows, as in the phone lobby. */
+  .tv-lobby-join { order: 1; }
   .tv-main { flex-direction: column; height: auto; }
   .tv-grid-slot { flex: none; height: 92vw; }
   .tv-side { width: 100%; }
@@ -591,4 +642,26 @@ select,
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-progress-sweep { width: 100%; animation: none; }
+}
+
+/* A date input on iOS WebKit is an inline pill that ignores min-height and
+   width and whose value box floats in the middle, so the NYT import's date
+   field came out tiny and spilled past its grid column (TestFlight feedback,
+   1.1.0). Drop the native appearance so the field's own classes apply, and
+   give the value box the line height of the other fields. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  /* flex, not block: WebKit lays the value box out as a block at the top of
+     the field, so with min-height the date sat on the top edge while the
+     Select beside it was centred (build 15 feedback). */
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  margin: 0;
+  min-height: 1.5rem;
+  line-height: 1.5rem;
+  text-align: start;
 }

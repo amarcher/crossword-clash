@@ -91,7 +91,7 @@ describe("AccountControl", () => {
   it("shows the username's initial and opens a menu of the account's actions", () => {
     const openAccount = vi.fn();
     context.value = account({ user, profile: { user_id: "u1", username: "ada_l", display_name: null }, openAccount });
-    renderControl("/classics");
+    renderControl("/archive");
     const avatar = screen.getByRole("button", { name: "Account menu for ada_l" });
     expect(avatar.textContent).toBe("A");
     expect(avatar.getAttribute("aria-expanded")).toBe("false");

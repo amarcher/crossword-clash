@@ -1,21 +1,20 @@
 /**
  * "Up next" after a finish — the retention loop the completion modal shows.
  *
- * Pure: the screen gathers today's dailies, the solver's best times and the
- * classic manifest; this decides what to offer, in order. Rules (navigation
- * audit §2, item 8):
+ * Pure: the screen gathers today's dailies and the solver's best times; this
+ * decides what to offer, in order. Rules (navigation audit §2, item 8):
  *
  *   1. today's dailies the solver hasn't finished, mini → midi → large;
- *   2. then yesterday's unfinished dailies (from the archive index), same order;
- *   3. else one classic they haven't played (first in book order);
- *   4. else "Browse the library".
+ *   2. then yesterday's unfinished dailies (from the archive index), same order.
+ *
+ * With nothing open the list is empty and the modal shows no "Up next"
+ * heading, only the live-race row.
  *
  * The same "which dailies are still open" question feeds the fresh-puzzle
  * picker, so it is exported on its own.
  */
 import { DAILY_SLOTS, type DailySlot } from "./dailyFeed";
 import type { DailyMini } from "./dailyMinis";
-import type { ClassicEntry } from "./classicLibrary";
 import type { DailyIndexEntry } from "./dailyIndex";
 import { puzzleIdentity } from "./soloStats";
 
@@ -32,8 +31,6 @@ export interface NextUpInput {
   finishedKey?: string | null;
   /** Yesterday's dailies from the archive index; null or absent while unknown (then none are offered). */
   yesterday?: readonly DailyIndexEntry[] | null;
-  /** The classic manifest; null while it hasn't loaded (then the library row is offered instead of a classic). */
-  classics?: readonly ClassicEntry[] | null;
   /** Row cap (default 2). */
   max?: number;
 }
@@ -41,9 +38,7 @@ export interface NextUpInput {
 export type NextUpItem =
   | { kind: "daily"; slot: DailySlot; daily: DailyMini }
   /** A past daily (yesterday's) from the index; the screen fetches it by day + slot. */
-  | { kind: "archive"; entry: DailyIndexEntry }
-  | { kind: "classic"; entry: ClassicEntry }
-  | { kind: "library" };
+  | { kind: "archive"; entry: DailyIndexEntry };
 
 export const NEXT_UP_MAX = 2;
 
@@ -64,15 +59,6 @@ export function unsolvedDailies(
   return out;
 }
 
-/** The first classic (book order) the solver has not played, or null. */
-export function firstUnplayedClassic(
-  classics: readonly ClassicEntry[],
-  bestTimes: Readonly<Record<string, number>>,
-  finishedKey?: string | null,
-): ClassicEntry | null {
-  return classics.find((e) => e.identity !== finishedKey && !(e.identity in bestTimes)) ?? null;
-}
-
 /** Yesterday's dailies the solver has not finished, in slot order (the index carries each one's identity). */
 export function unsolvedYesterday(
   yesterday: readonly DailyIndexEntry[] | null | undefined,
@@ -91,8 +77,5 @@ export function nextUpSuggestions(input: NextUpInput): NextUpItem[] {
     ...unsolvedDailies(input.dailies, input.bestTimes, input.finishedKey).map(({ slot, daily }): NextUpItem => ({ kind: "daily", slot, daily })),
     ...unsolvedYesterday(input.yesterday, input.bestTimes, input.finishedKey).map((entry): NextUpItem => ({ kind: "archive", entry })),
   ];
-  if (open.length > 0) return open.slice(0, max);
-  const classic = input.classics ? firstUnplayedClassic(input.classics, input.bestTimes, input.finishedKey) : null;
-  if (classic) return [{ kind: "classic", entry: classic }];
-  return [{ kind: "library" }];
+  return open.slice(0, max);
 }

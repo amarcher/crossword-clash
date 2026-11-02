@@ -306,6 +306,17 @@ describe("persistence (localStorage)", () => {
     expect(res.isNewBest).toBe(true);
     expect(res.bestSeconds).toBe(238);
     expect(res.streak.current).toBe(2); // consecutive day
+    expect(res.streakAdvanced).toBe(true);
+  });
+
+  it("says when a second finish on the same day did not advance the streak", () => {
+    const first = recordSoloCompletion("k", 272, new Date(2026, 5, 30, 9));
+    expect(first.streakAdvanced).toBe(true);
+    const second = recordSoloCompletion("j", 100, new Date(2026, 5, 30, 20));
+    expect(second.streakAdvanced).toBe(false);
+    expect(second.streak.current).toBe(1);
+    const assisted = recordSoloCompletion("m", 100, new Date(2026, 6, 1), { assisted: true });
+    expect(assisted.streakAdvanced).toBe(false);
   });
 
   it("exposes previousBest: null on first solve, the beaten time on a record", () => {
@@ -356,5 +367,30 @@ describe("persistence (localStorage)", () => {
     expect(loadSoloTimer()).toEqual({ key: "k", elapsedMs: 12000, completed: false });
     clearSoloTimer();
     expect(loadSoloTimer()).toBeNull();
+  });
+});
+
+describe("assisted completion (a revealed square)", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("reports the finish without recording a best time or rolling the streak", () => {
+    const first = recordSoloCompletion("k", 120, new Date(2026, 9, 27));
+    expect(first.streak.current).toBe(1);
+    const assisted = recordSoloCompletion("k", 90, new Date(2026, 9, 28), { assisted: true });
+    expect(assisted).toEqual({
+      finishSeconds: 90,
+      bestSeconds: 120,
+      isNewBest: false,
+      previousBest: 120,
+      streak: expect.objectContaining({ current: 1, lastPlayedDay: "2026-10-27" }),
+      streakAdvanced: false,
+      assisted: true,
+    });
+    expect(loadSoloStats().bestTimes).toEqual({ k: 120 });
+    expect(loadSoloStats().streak.lastPlayedDay).toBe("2026-10-27");
+    // A first-ever assisted finish shows its own time as the best but stores nothing.
+    const fresh = recordSoloCompletion("other", 50, new Date(2026, 9, 28), { assisted: true });
+    expect(fresh).toMatchObject({ bestSeconds: 50, previousBest: null, isNewBest: false });
+    expect(loadSoloStats().bestTimes.other).toBeUndefined();
   });
 });

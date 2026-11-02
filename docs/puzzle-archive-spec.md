@@ -6,6 +6,8 @@ what should the feature be? Code paths were read in full; nothing here was
 run against production data. Prototypes live on the branch
 `claude/puzzle-archive` at the dev route `/prototype/archive` (section 3).
 
+> **2026-10-28:** the classic library (`/classics`, the 1924 book) was removed at Andrew's decision ("the classics are antiquated"). Mentions of it below are historical; the daily feed and the archive are the only bundled puzzles now.
+
 ## Verdict
 
 **Partly possible.** Every past daily is already *playable* — by URL only —

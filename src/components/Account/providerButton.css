@@ -1,0 +1,16 @@
+/* Roboto Medium, latin only, for the "Continue with Google" label: Google's
+   sign-in branding guidelines ask for Roboto Medium 14 px. Only this face is
+   declared, and a browser fetches a font file only once text is set in it, so
+   the 22 KB woff2 downloads the first time a provider button renders, never on
+   a page without one. Nothing else in the app may use it. */
+@import "@fontsource/roboto/latin-500.css";
+
+.provider-button-google {
+  font-family: "Roboto", "Figtree Fallback Android", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Apple's HIG wants the system font; the first name on each platform's system
+   stack is what the OS draws its own buttons in. */
+.provider-button-apple {
+  font-family: -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, "Segoe UI", "Roboto", sans-serif;
+}

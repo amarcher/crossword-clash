@@ -1,7 +1,7 @@
 /**
  * The daily archive index: one small entry per published daily, generated
- * at build time from the feed files (scripts/build-daily-index.mts, the
- * same way the classics' manifest is built) and served as static files
+ * at build time from the feed files (scripts/build-daily-index.mts) and
+ * served as static files
  * under /daily-puzzles/ so the apps read it with the feed's CORS header.
  *
  *   /daily-puzzles/index.json            { first, last, months: ["2026-10", …] }
@@ -158,8 +158,8 @@ export async function fetchPublishedIndex(today: string): Promise<DailyIndexEntr
 }
 
 // The index without a network round trip on the screen's first frame: the
-// /archive route's lazy() warms it alongside the chunk (routeModules.ts),
-// the way /classics warms its manifest. A failed load is not cached.
+// /archive route's lazy() warms it alongside the chunk (routeModules.ts).
+// A failed load is not cached.
 let cached: { today: string; entries: DailyIndexEntry[] } | null = null;
 
 /** The published index if it has already been fetched for `today`, else null. */

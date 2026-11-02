@@ -7,6 +7,13 @@
  *
  * The tracker is pure (state in, record out); usePlayInsights wires it to the
  * play screens and sends the record.
+ *
+ * `autocheck` says which kind of solve it was: with Autocheck on (every row
+ * before 2026-10-28, and every race) a wrong letter was refused on the spot and
+ * `wrong_letters` counts those refusals; off, letters were written as typed
+ * and judged at the end, so `wrong_letters` stays 0 and a finish took however
+ * many checks the solver asked for. The hook latches it false for the visit
+ * once the setting was off at any point while the grid was unfinished.
  */
 import type { CellState, Direction, Puzzle, PuzzleClue } from "../types/puzzle";
 
@@ -44,6 +51,8 @@ export interface PlaySessionRecord {
   platform: string;
   /** Playing as an account, not the anonymous default. */
   signed_in: boolean;
+  /** False when the solo Autocheck setting was off at any point of the visit (see the header). */
+  autocheck: boolean;
   width: number;
   height: number;
   white_cells: number;
@@ -86,7 +95,7 @@ export class PlaySessionTracker {
   constructor(
     private readonly puzzle: Puzzle,
     initialCells: Record<string, CellState>,
-    private readonly meta: { puzzleKey: string; source: PlaySource; mode: PlayMode; client: PlaySessionRecord["client"]; platform?: string; signedIn?: boolean },
+    private readonly meta: { puzzleKey: string; source: PlaySource; mode: PlayMode; client: PlaySessionRecord["client"]; platform?: string; signedIn?: boolean; autocheck?: boolean },
     now: number,
     id: string = crypto.randomUUID(),
   ) {
@@ -176,6 +185,7 @@ export class PlaySessionTracker {
       client: this.meta.client,
       platform: (this.meta.platform ?? "").slice(0, 60),
       signed_in: this.meta.signedIn ?? false,
+      autocheck: this.meta.autocheck ?? true,
       width: this.puzzle.width,
       height: this.puzzle.height,
       white_cells: white,

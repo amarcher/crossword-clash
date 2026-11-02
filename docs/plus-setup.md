@@ -293,7 +293,14 @@ only once 3.1 is done in live mode; everything stays hidden before that.
    (EULA) and Privacy Policy URLs to the App Store metadata.
 6. **Sign in with Apple capability**: in Xcode, target App → Signing &
    Capabilities → + Capability → Sign in with Apple. Commit the resulting
-   `App.entitlements` and the project change. Then in Supabase →
+   `App.entitlements` and the project change. The **App ID itself** must have
+   the capability too, or the archive fails with "provisioning profile
+   doesn't include the Sign In with Apple capability": Certificates,
+   Identifiers & Profiles → Identifiers → the bundle id → Sign In with Apple,
+   or by API `POST /v1/bundleIdCapabilities` with `capabilityType:
+   APPLE_ID_AUTH` on bundleId `75MZZ652JR` (done 2026-10-28; automatic
+   signing with `-allowProvisioningUpdates` then regenerates the profile).
+   Then in Supabase →
    Authentication → Providers → Apple, add the bundle id
    `com.crosswordclash.app` to the client ids list (comma-separated next to
    the web Services ID); Supabase accepts any listed id as the token
@@ -321,6 +328,40 @@ only once 3.1 is done in live mode; everything stays hidden before that.
    (`com.googleusercontent.apps.<id>`); the Capgo plugin's README shows the
    exact plist snippet. Nothing is needed in the Android manifest.
 
+**State 2026-10-30 (done through the Play Developer API, not the console):**
+the merchant account exists (the organization's existing FABLE DESIGNER LLC
+payments profile 5459-1455-2708 attached to Play on 2026-10-30; public
+merchant name, website, support email and the `GOOGLE*` statement name are
+**per payments profile**, one per developer account, so they are shared by
+every app on the Fable Designer account; each app keeps its own store-listing
+contact). Service account `play-publisher@crossword-clash.iam.gserviceaccount.com`
+(Cloud project `crossword-clash`, Play Developer API enabled; key at
+`~/.config/crossword-clash/play-service-account.json`, mode 600, never in the
+repo) invited into Play Console with View app info, View financial data,
+Manage orders and subscriptions, Release to production, Release to testing
+tracks, Manage testing tracks and Manage store presence on Crossword Clash
+only; RevenueCat's Play app takes the same JSON. The Subscriptions page
+refuses to create products until a bundle with `com.android.vending.BILLING`
+exists on some track, so `5 (1.1.0)` (built with `VITE_PLUS` unset, so it
+cannot reach the web checkout) was uploaded as a **draft** on Internal testing
+through `edits` + `bundles` + `tracks/internal` (release notes are capped at
+500 characters). Subscriptions `plus_monthly` (base plan `monthly`, P1M) and
+`plus_annual` (base plan `annual`, P1Y) created with `regionsVersion.version=
+2026/01` (the API names the latest version in its error when given an old
+one), prices from `pricing:convertRegionPrices` for every one of the 174
+regions plus `otherRegionsConfig` in USD/EUR, en-US + es-ES listings (benefits
+are capped at 40 characters), base plans **activated**. RevenueCat product ids
+for Play subscriptions are `plus_monthly:monthly` / `plus_annual:annual`.
+RevenueCat (later that day): Play Store app `app731b4b8b90` with the
+service-account JSON (uploaded by Andrew), the two products imported through
+the Play Store "Import" button as `plus_monthly:monthly` / `plus_annual:annual`,
+attached to entitlement `plus` and added to offering `default`'s
+`$rc_monthly` / `$rc_annual` packages beside the App Store products; its
+public SDK key is `VITE_REVENUECAT_ANDROID_KEY` in `.env.local`. The Plus
+build `6 (1.1.0)` is rolled out on Internal testing. Still open: license
+testers (Setup → License testing, the Google account on the test device), a
+test purchase on Android, Play real-time developer notifications for
+RevenueCat (optional), the production rollout.
 ### 3.5 RevenueCat
 
 1. **Project** "Crossword Clash" with two apps: App Store (bundle id, the
@@ -358,6 +399,77 @@ subscriptions attached (Apple requires the first subscription to ride the
 version's submission). `VITE_PLUS=1` in the mobile env turns the paywall on
 in the apps.
 
+**State 2026-10-28 (1.1.0 in progress):** App Store Connect holds subscription
+group `22522501` "Crossword Clash Plus" with `plus_monthly` (`6827994521`,
+$3.99 / 1 month) and `plus_annual` (`6827994470`, $24.99 / 1 year), en-US +
+es-ES names and descriptions (Apple caps the description at 55 characters),
+availability in all 175 territories (it must exist before the API accepts a
+price), a review screenshot of the paywall each (taken from the simulator
+build, uploaded through `subscriptionAppStoreReviewScreenshots`) and a price
+in every territory: the API does **not** equalize from one territory, so the
+matching point for each of the other 174 comes from
+`GET /v1/subscriptionPricePoints/{usa}/equalizations` (the territory is the
+`t` field of the base64 id) and gets its own `subscriptionPrices` POST. Both
+reached `READY_TO_SUBMIT` on 2026-10-28. TestFlight: build 10 (Development
+group) froze on the paywall — every Capacitor plugin object is a Proxy that
+answers `then`, and `nativePurchase.ts` resolved a promise with it (see
+CLAUDE.md); build 11 carries the fix, verified in the simulator up to the
+sandbox Apple Account prompt, plus `facebook: false` for the sign-in plugin. Google Cloud project `crossword-clash`
+(number 947795730277) has the web client Supabase uses
+(`…-0skrplb0r6c6apr9lteai0a2uqo70uth`, = `VITE_GOOGLE_WEB_CLIENT_ID`), an iOS
+client (`…-bhbf4mkmo94i09jjsqj34hblt0prqtk3`, = `VITE_GOOGLE_IOS_CLIENT_ID`,
+reversed in `Info.plist`) and two Android clients for `com.crosswordclash.app`
+(Play app-signing SHA-1 `E7:48:68:26:…:FB:69:A1`, upload key `35:9E:…:A8:9A`; until 2026-10-30 the Play client held the first 20 bytes of the signing certificate's SHA-**256** `41:A9:CB:D8:…` pasted as its SHA-1, and every Google sign-in from a Play-signed build failed with `[16] Account reauth failed` — the plugin logs `signingSha1=` on failure, and `apksigner verify --print-certs` on the Play-signed APK from `generatedApks` is the authoritative value). Supabase
+→ Providers: Google lists the web + iOS ids, Apple lists
+`com.crosswordclash.signin` + `com.crosswordclash.app`. The repo branch has the
+1.1.0 version bump, `App.entitlements` with Sign in with Apple and the Google
+URL scheme. Still open: Paid Apps Agreement + Small Business Program (3.3.1–2,
+Account Holder), Play payments profile (3.4.1,
+blocks Play subscriptions), RevenueCat (3.5), the keys in the mobile env, the
+builds and both submissions.
+
+**RevenueCat state 2026-10-28:** project `04ca2f75` ("Crossword Clash: Play
+Together", its own account under Andrew's per-product address). App Store
+app `appd70cad4d62` (bundle `com.crosswordclash.app`) configured with the
+App Store Connect **In-App Purchase key** `6TF53X63A3` (issuer `69a6de96-d39f-47e3-e053-5b8c7c11a4d1`, the one ASC prints on
+the In-App Purchase keys tab — the first sandbox purchase on 2026-10-28 was
+never recorded because RevenueCat held a mistyped issuer id and could not
+validate the StoreKit 2 transaction, while the SDK still returned success
+and the app called reconcile against an empty subscriber; "Credentials need
+attention" on the app page is the tell, and "Restore purchases" re-presents
+the receipt once it is fixed — and that purchase was the last anonymous one: since the same afternoon the apps ask for an account before buying or restoring, spec §3.5; the one-time `.p8` download is backed up in
+`~/.appstoreconnect/private_keys/`); public SDK key in `.env.local` as
+`VITE_REVENUECAT_IOS_KEY`. Products `plus_monthly` / `plus_annual` (created
+by hand — import finds nothing while the App Store products are still
+"Missing Metadata"), entitlement `plus` attached to both, offering `default`
+with `$rc_monthly` / `$rc_annual`, webhook `whintgr09d39ef896` →
+`verify-purchase/revenuecat` for production + sandbox with a freshly
+generated `REVENUECAT_WEBHOOK_SECRET`. Secret API key "supabase
+verify-purchase" (V1) → `REVENUECAT_SECRET_KEY`. Both secrets were set on
+Supabase on 2026-10-28 (the classifier refuses secret writes from Claude, so
+Andrew ran the `secrets set` from `.env.local`) and RevenueCat's "Send test
+event" answered 200. The Play app waits for the Play payments profile
+(3.4.1).
+
+**Build 19: the studio in the apps (2026-10-28).** The next app build after
+the studio-on-phones PR merges carries the construction studio as a Plus
+feature (`/studio` is registered in every `VITE_PLUS=1` build; the word list
+is downloaded on demand, so the store download does not grow). Before
+submitting: `VITE_PLUS=1` in the mobile env as before, `pnpm mobile:sync`,
+raise `CURRENT_PROJECT_VERSION` to 19 in `ios/App/App.xcodeproj` (and the
+Android `versionCode`), `pnpm testflight`. In the simulator the gate cannot be
+passed by buying Plus; build with `VITE_STUDIO=1` to skip it, or sign in with
+a `studio_admins` account. Apple's reviewer may ask how AI-generated clues
+are moderated (the "AI" wording is on the screen): the answer is that the
+AI drafts only what a subscriber asks for and the subscriber edits it in
+place; nothing reaches other players until the author publishes, every
+published puzzle carries Report (Copied / Offensive / Nonsense / Something
+else, `ReportDialog`), each report is emailed through `report-alert`, three
+reporters in a week hold the puzzle automatically, and the Reports panel in
+`/studio` (`studio-moderate`: dismiss, remove, ban, restore) is the moderation
+desk — docs/community-puzzles-spec.md has the rules and the terms' "Community
+rules" section the policy.
+
 ### 3.7 Checklist before flipping the switches
 
 **Status 2026-10-27: both switches are on.** `PLUS_GATES=1` is set, `VITE_PLUS=1`
@@ -367,11 +479,15 @@ environments). What is still open is marked below.
 
 - [x] `entitlements` migration and `solo_progress` migration applied (§1.1, §2.1)
 - [x] All functions deployed: `verify-purchase --no-verify-jwt`, `delete-account`, `create-checkout`, `billing-portal`, `narrator-claude`, `tts`, `agent-auth`, `openai-agent-auth`, `studio-claude`, `studio-schedule`, `studio-insights`
-- [x] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `PLUS_GATES=1`. Still unset: `REVENUECAT_SECRET_KEY` (apps only, with §3.5)
+- [x] Secrets: `STRIPE_SECRET_KEY` (live), `STRIPE_WEBHOOK_SECRET` (live endpoint), `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_ANNUAL`, `STRIPE_PORTAL_CONFIG` (live, from `pnpm stripe:portal-config`), `SITE_URL`, `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_SECRET_KEY` (both RevenueCat values from 2026-10-28, §3.5), `PLUS_GATES=1`
 - [x] Vercel `VITE_PLUS=1` (production), then a production redeploy: an env change needs a new build
-- [ ] Stripe live account: a support email under Public details (receipts and the portal show it); Stripe Tax registration added and `STRIPE_AUTOMATIC_TAX=1` set, or tax deliberately left off (§3.1 step 5)
+- [x] Stripe live account: support email, support URL, privacy and terms URLs set under Public details (the API refuses `POST /v1/account` on the account's own key; use the dashboard). Stripe Tax: Massachusetts registration `taxreg_1UVKvBEDEl8cL8CiufTwj3Bs` (DOR account in tax-strategy) and `STRIPE_AUTOMATIC_TAX=1` set 2026-10-28; Plus stays in the streamed-game category (6.25% for Massachusetts buyers; the viewable-only periodical categories would be exempt — Andrew's call, flagged for the accountant)
 - [x] DMCA: registration DMCA-1084362, active 2026-10-27, renew by 2029-10-27 (service provider Fable Designer LLC; alternate names Crossword Clash, crosswordclash.com, Fable Designer, Fable Reader, fabledesigner.com); the same name, postal address and phone are in `DMCA_AGENT` in `src/screens/legal/legalContent.ts`, so `/copyright` names the agent. Plus opens the studio to subscribers and rooms already host players' puzzles, so the safe harbour had to be in place first.
 - [x] Community puzzles: migration `20261028000000_community_puzzles.sql` applied; `studio-moderate`, `report-alert --no-verify-jwt` and `delete-account` deployed; `REPORT_ALERT_SECRET`, `REPORT_ALERT_TO`, `REPORT_ALERT_FROM` set; the `puzzle_reports` INSERT hook is a pg_net trigger (`public.report_alert_webhook()`, created by hand with the secret in its header; re-create it if the secret rotates); `VITE_COMMUNITY=1` on Production and Preview
 - [x] `RESEND_API_KEY`: a send-only key from Crossword Clash's **own Resend account** (`andrew.m.archer+crosswordclash@gmail.com`, one account per product like Space Race and MTG), sender `alerts@crosswordclash.com`
 - [x] Resend domain `crosswordclash.com` verified 2026-10-27 (DKIM TXT `resend._domainkey` plus CNAMEs `rsend` and `send` → `*.forge.rmta.net`, added at Squarespace, which holds the zone since Google Domains closed); a test report fired the trigger → `report-alert` → Resend with `{"ok":true}`
-- [ ] One real test purchase on the web with a real card, refunded in Stripe afterwards
+- [x] One real purchase 2026-10-28 (yearly, $24.99 + $1.56 tax, invoice PAOCMNW5-0001): both webhooks delivered, row active, portal opened with the Plus configuration; cancelled and refunded in full, `customer.subscription.deleted` expired the row; the owner's row was then turned into a permanent `grant`. It also found the tax-mode bug fixed in PR #146 (`customer_update` sent for a first-time buyer)
+- [ ] App build 19 (after the studio-on-phones PR merges): `pnpm mobile:sync` with `VITE_PLUS=1`, bump the build numbers to 19, TestFlight, then both store submissions; the review notes should say where AI-drafted clues are moderated (§3.6, "Build 19")
+
+
+**Build 20 (2026-10-28):** the first app build with community puzzles and Publish — `VITE_COMMUNITY=1` had never been in `.env.local`, so builds 11–19 lacked them; `scripts/testflight.sh` now refuses to build without the production switches. The menu gains a "Build a crossword" row.

@@ -12,7 +12,6 @@ Real-time multiplayer crossword puzzles: solve solo, race friends, or put the gr
 - **TV / host view** (`/host`): a read-only spectator display with grid, clue list, scoreboard, room code and QR, plus spoken clue announcements (Web Speech API or ElevenLabs TTS).
 - **AI narrator** on the TV view: live gameshow commentary through ElevenLabs Agents, OpenAI Realtime, or Claude + ElevenLabs TTS, with a monthly spend cap.
 - **Daily mini puzzle** with a daily leaderboard, and one-tap "race friends" on the daily.
-- **Classic library** (`/classics`): 46 public-domain puzzles from the 1924 *Cross Word Puzzle Book*.
 - **Import** `.puz`, `.ipuz`, `.jpz` and `.xd` files, or pull a puzzle in with the NYT bookmarklet (`/install-bookmarklet`).
 - **Shareable result cards** with dynamic Open Graph images.
 - **English and Spanish** UI.
@@ -54,7 +53,6 @@ The app runs fully offline without Supabase: leave the `VITE_SUPABASE_*` variabl
 | `pnpm test` | Run unit tests once (Vitest) |
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm build:bookmarklet` | Generate `public/install-bookmarklet/index.html` from `bookmarklet/install-page.html` |
-| `pnpm build:classics` | Regenerate `public/classic-puzzles/manifest.json` (never edit it by hand) |
 
 Agent worktrees live under `.claude/`; run `pnpm exec vitest run --dir src` to test only the main tree.
 
@@ -71,7 +69,7 @@ src/
   types/        shared types
 api/            Vercel functions: OG images and share pages
 bookmarklet/    NYT bookmarklet source and install page
-public/         static assets, classic puzzles
+public/         static assets, the daily feed and its index
 scripts/        build scripts and the daily-mini generator
 supabase/       migrations and edge functions
 docs/           roadmap notes and design docs

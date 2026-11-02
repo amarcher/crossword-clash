@@ -114,6 +114,14 @@ describe("mergeOwnResult", () => {
     expect(merged[1].mode).toBe("race");
   });
 
+  it("carries the own finish's autocheck flag onto the row it replaces", () => {
+    const withMe = rankEntries([entry("a", 60), entry("me", 100)]);
+    const faster = mergeOwnResult(withMe, { ...entry("me", 80), autocheck: false });
+    expect(faster.find((e) => e.userId === "me")).toMatchObject({ seconds: 80, autocheck: false });
+    const added = mergeOwnResult(withMe, { ...entry("you", 70), autocheck: false });
+    expect(added.find((e) => e.userId === "you")?.autocheck).toBe(false);
+  });
+
   it("keeps a fetched own row but never a slower time than the finish just made", () => {
     const withMe = rankEntries([entry("a", 60), { ...entry("me", 100), displayName: "Signed" }]);
     const faster = mergeOwnResult(withMe, entry("me", 80));

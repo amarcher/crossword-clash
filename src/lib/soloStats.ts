@@ -51,6 +51,17 @@ export interface SoloCompletionResult {
   previousBest: number | null;
   /** Streak state after counting today's play. */
   streak: StreakState;
+  /**
+   * True when this finish added today to the streak; false when today had
+   * already counted (a second finish on the same day) or nothing was recorded.
+   * Absent for a restored finish, whose own day is long counted.
+   */
+  streakAdvanced?: boolean;
+  /**
+   * The grid was finished with a revealed square (solo, Autocheck off): it
+   * counts as solved, but the time set no record and the day rolled no streak.
+   */
+  assisted?: boolean;
 }
 
 export const EMPTY_STREAK: StreakState = {
@@ -288,18 +299,33 @@ export function recordSoloCompletion(
   key: string,
   durationSec: number,
   now: Date = new Date(),
+  options: { assisted?: boolean } = {},
 ): SoloCompletionResult {
   const finishSeconds = Math.max(0, Math.floor(durationSec));
   const stats = loadSoloStats();
   const previousBest = stats.bestTimes[key] ?? null;
+  if (options.assisted) {
+    // A finish that used Reveal: nothing on record changes.
+    return {
+      finishSeconds,
+      bestSeconds: previousBest ?? finishSeconds,
+      isNewBest: false,
+      previousBest,
+      streak: { ...stats.streak, current: effectiveStreak(stats.streak, dayKey(now)) },
+      streakAdvanced: false,
+      assisted: true,
+    };
+  }
   const { bestTimes, best, isNewBest: beat } = applyBestTime(
     stats.bestTimes,
     key,
     finishSeconds,
   );
-  const streak = rollStreak(stats.streak, dayKey(now));
+  const today = dayKey(now);
+  const streak = rollStreak(stats.streak, today);
   saveSoloStats({ version: 1, bestTimes, streak, nytStreak: stats.nytStreak });
-  return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak };
+  const streakAdvanced = streak.lastPlayedDay === today && stats.streak.lastPlayedDay !== today;
+  return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak, streakAdvanced };
 }
 
 /**

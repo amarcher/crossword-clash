@@ -66,7 +66,9 @@ export function firstEmptyCell(
   clue: PuzzleClue,
 ): CellCoord {
   const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
-  const empty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.correct);
+  // "Empty" is "no letter": under autocheck only correct letters exist, and a
+  // solver typing without it must not be steered to the squares that are wrong.
+  const empty = cells.find((c) => !playerCells[`${c.row},${c.col}`]?.letter);
   return empty ?? cells[0] ?? { row: clue.row, col: clue.col };
 }
 
@@ -257,22 +259,43 @@ export function getPrevWordStart(
   return { coord: { row: last.row, col: last.col }, direction };
 }
 
-/** Get the set of completed clue keys (e.g. "across-1", "down-3") */
-export function getCompletedClues(
+/** The clue keys (e.g. "across-1", "down-3") whose every square satisfies `done`. */
+function cluesWhere(
   puzzle: Puzzle,
   playerCells: Record<string, CellState>,
+  done: (cell: CellState | undefined) => boolean,
 ): Set<string> {
   const completed = new Set<string>();
   for (const clue of puzzle.clues) {
     const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
     if (
       cells.length > 0 &&
-      cells.every((c) => playerCells[`${c.row},${c.col}`]?.correct)
+      cells.every((c) => done(playerCells[`${c.row},${c.col}`]))
     ) {
       completed.add(`${clue.direction}-${clue.number}`);
     }
   }
   return completed;
+}
+
+/** Get the set of completed clue keys (e.g. "across-1", "down-3") */
+export function getCompletedClues(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+): Set<string> {
+  return cluesWhere(puzzle, playerCells, (c) => !!c?.correct);
+}
+
+/**
+ * The clue keys whose every square holds a letter, right or wrong — what
+ * "done" means to a solver typing without autocheck (soloSettings.ts), so the
+ * clue list and the word-to-word cursor never give the wrong squares away.
+ */
+export function getFilledClues(
+  puzzle: Puzzle,
+  playerCells: Record<string, CellState>,
+): Set<string> {
+  return cluesWhere(puzzle, playerCells, (c) => !!c?.letter);
 }
 
 /**

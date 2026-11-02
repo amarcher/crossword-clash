@@ -71,6 +71,13 @@ icon by `node scripts/build-app-art.mjs`.
 3. Listing, Data safety and other App content changes are staged in
    *Publishing overview* and go out with *Submit changes for review*. They can
    ride along with the production rollout or be sent on their own.
+4. **The in-app "update available" banner needs nothing here.** The apps ask
+   the store themselves (`src/lib/appUpdate.ts`, no server side). Play's
+   in-app update API only recognises a build that was installed from Play
+   under the same package name (`com.crosswordclash.app`) and the same
+   signing as the live release, so keep the upload key and never sideload a
+   build to test the banner; a device on an internal-testing track sees the
+   track's newer build as the update.
 
 ## Status on October 21, 2026 (1.0.2, versionCode 4)
 
@@ -160,6 +167,13 @@ Done by Claude, nothing submitted or rolled out:
     functionality.
   - *App activity → App interactions* (play statistics per puzzle and clue,
     platform label), Analytics. Added for 1.0.2.
+  - *Device or other IDs* (the FCM push token and the Firebase installation
+    id; Google is the service provider, so not "shared"), required for
+    notifications, App functionality. Submitted for review 2026-10-31 (the
+    Data safety page is `app-content/data-privacy-security` under the app;
+    the Save on its Preview step only stages the change, Publishing
+    overview's "Submit changes for review" sends it). The Android 13
+    notification permission itself needs no declaration.
   No data is used for advertising; the Android build has no ads SDK, no Google
   Analytics and no crash reporting.
 - **News app, COVID-19, government, financial, health:** No to each.

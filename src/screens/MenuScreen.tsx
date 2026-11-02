@@ -1,17 +1,21 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { BookOpen, CalendarDays, Flame, Hash, Newspaper, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
+import { CalendarDays, Flame, Hash, Newspaper, PencilRuler, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
+import { UpdateBanner } from "../components/UpdateBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
 import { track } from "../lib/analytics";
 import { communityEnabled } from "../lib/community";
+import { friendsEnabled } from "../lib/friends";
+import { useFriends } from "../contexts/FriendsContext";
+import { studioRouteEnabled } from "../lib/studioGate";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
@@ -108,7 +112,7 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
             className="flex-1"
             onClick={onRace}
             disabled={disabled || !daily}
-            {...prefetchOnIntent("/host-game/name")}
+            {...prefetchOnIntent(friendsEnabled() ? "/race" : "/host-game/name")}
           >
             <Swords className="size-4.5" aria-hidden="true" />
             {t("menu.raceFriends")}
@@ -187,10 +191,14 @@ export function MenuScreen() {
       // when the host starts. Same lobby mechanic as any imported puzzle.
       if (!daily) return;
       setUrlPuzzle(daily.puzzle);
-      navigate("/host-game/name");
+      // With friends on, the Race friends screen (docs/friends-spec.md §3.6)
+      // takes the daily as its chip: challenge a friend, or start the room.
+      navigate(friendsEnabled() ? "/race" : "/host-game/name");
     },
     [setUrlPuzzle, navigate],
   );
+  // The menu row's badge: open invites the player has not seen.
+  const { unseenInvites } = useFriends();
 
   const nativeNyt = nativeNytImportAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
@@ -204,16 +212,24 @@ export function MenuScreen() {
   );
 
   return (
-    <div className={`min-h-dvh crossword-bg pb-8 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-4 ${PAGE_GUTTER}`}>
-      {/* The header row: the account avatar (or "Sign in") at the right, the
-          one place the menu has for it. The row is always 44px tall so the
-          wordmark sits at the same height before and after the control appears. */}
+    <div className={`min-h-dvh crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
+      {/* The top bar: the account avatar (or "Sign in") at the right, the one
+          place the menu has for it. The row is always 44px tall so the wordmark
+          sits at the same height before and after the control appears. The
+          page pads no safe area of its own: on the web the browser keeps the
+          content clear of the notch (no viewport-fit), and in the apps
+          `.native-app #root` already pads every inset, so an inset here would
+          push the bar a whole status bar further down. Fixed overlays
+          (dialogs, toasts) do read the inset themselves, since they sit
+          outside #root's padding. */}
       <div className="mx-auto flex min-h-11 w-full max-w-md items-center justify-end lg:max-w-5xl">
         <AccountControl placement="menu" />
       </div>
       {/* The wordmark constructs via a one-shot Lottie on the first menu visit of
           the session; later visits show its final frame (see Title). */}
-      <Title animate className="mb-8 mt-2 sm:mb-10 sm:mt-3" />
+      <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
+      {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
+      <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Front door: today's dailies. Never gated on auth loading; the mini
@@ -259,22 +275,46 @@ export function MenuScreen() {
             <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>
               <ListGroup>
-                <ListRow
-                  icon={Users}
-                  to="/host-game/name"
-                  title={t("menu.startGame")}
-                  subtitle={t("menu.startGameSubtitle")}
-                  disabled={disabled}
-                  onClick={() => track("mode_selected", { mode: "host" })}
-                />
-                <ListRow
-                  icon={Hash}
-                  to="/join"
-                  title={t("menu.joinGame")}
-                  subtitle={t("menu.joinGameSubtitle")}
-                  disabled={disabled}
-                  onClick={() => track("mode_selected", { mode: "join" })}
-                />
+                {friendsEnabled() ? (
+                  // One row for the social entry points (docs/friends-spec.md §3.6): the
+                  // Race friends screen holds invites, friends, Start a room and the code.
+                  <ListRow
+                    icon={Swords}
+                    to="/race"
+                    title={
+                      <span className="flex items-center gap-2">
+                        {t("menu.raceHub")}
+                        {unseenInvites.length > 0 && (
+                          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">
+                            {t("menu.raceHubInvites", { count: unseenInvites.length })}
+                          </span>
+                        )}
+                      </span>
+                    }
+                    subtitle={t("menu.raceHubSubtitle")}
+                    disabled={disabled}
+                    onClick={() => track("mode_selected", { mode: "race" })}
+                  />
+                ) : (
+                  <>
+                    <ListRow
+                      icon={Users}
+                      to="/host-game/name"
+                      title={t("menu.startGame")}
+                      subtitle={t("menu.startGameSubtitle")}
+                      disabled={disabled}
+                      onClick={() => track("mode_selected", { mode: "host" })}
+                    />
+                    <ListRow
+                      icon={Hash}
+                      to="/join"
+                      title={t("menu.joinGame")}
+                      subtitle={t("menu.joinGameSubtitle")}
+                      disabled={disabled}
+                      onClick={() => track("mode_selected", { mode: "join" })}
+                    />
+                  </>
+                )}
                 <ListRow
                   icon={Tv}
                   to="/host"
@@ -314,14 +354,6 @@ export function MenuScreen() {
                 subtitle={t("menu.pastPuzzlesSubtitle")}
                 onClick={() => track("mode_selected", { mode: "archive" })}
               />
-              <ListRow
-                icon={BookOpen}
-                tone="gold"
-                to="/classics"
-                title={t("menu.classicLibrary")}
-                subtitle={t("menu.classicLibrarySubtitle")}
-                onClick={() => track("mode_selected", { mode: "classics" })}
-              />
               {communityEnabled() && (
                 <ListRow
                   icon={Users}
@@ -329,6 +361,18 @@ export function MenuScreen() {
                   title={t("menu.communityPuzzles")}
                   subtitle={t("menu.communityPuzzlesSubtitle")}
                   onClick={() => track("mode_selected", { mode: "community" })}
+                />
+              )}
+              {/* The studio on the home screen, not only behind the avatar menu
+                  (owner's note on build 19); the gate at /studio handles sign-in
+                  and the Plus pitch, so the row shows wherever the route exists. */}
+              {studioRouteEnabled() && (
+                <ListRow
+                  icon={PencilRuler}
+                  to="/studio"
+                  title={t("menu.buildPuzzle")}
+                  subtitle={t("menu.buildPuzzleSubtitle")}
+                  onClick={() => track("mode_selected", { mode: "studio" })}
                 />
               )}
               {nativeNyt && (

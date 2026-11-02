@@ -4,7 +4,7 @@
  * `uploadPuzzle` (puzzleService.ts) stores one `puzzles` row per distinct
  * puzzle by looking it up under this hash before inserting. The hash covers
  * exactly what the row stores — title, author, size, grid and clues — so the
- * same daily, classic or deep-linked puzzle maps to the same row however it
+ * same daily or deep-linked puzzle maps to the same row however it
  * arrived, and a different clue set is a different puzzle. It is a SHA-256 of
  * a canonical JSON form (object keys sorted, `undefined` dropped), so the key
  * order a parser or the transfer format happens to produce cannot split one

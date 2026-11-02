@@ -3,7 +3,9 @@
  *
  * - Native app: the OS share sheet through @capacitor/share (WKWebView has no
  *   usable Web Share API for files and reports `canShare` false; text shares
- *   through the plugin always open the sheet).
+ *   through the plugin always open the sheet). The link travels inside the
+ *   text, never as the plugin's `url`: iOS hands a URL item to most targets
+ *   in place of the text.
  * - Web: `navigator.share({ text })` with no file, so the text is never dropped
  *   (iOS drops the caption in most targets when a file is attached).
  * - Otherwise: the clipboard, and the caller tells the user what was copied.
@@ -34,7 +36,7 @@ export function selectTextShareMethod(caps: TextShareCapabilities): TextShareMet
 export interface SharePayload {
   /** The full block, link included (what the clipboard and the Web Share API get). */
   text: string;
-  /** The block without the link line, for sheets that take the URL as its own item. */
+  /** The block without the link line (kept for callers that render it; the sheets get `text`). */
   body: string;
   url: string;
   title?: string;
@@ -57,7 +59,7 @@ export interface ShareResult {
 
 export interface ShareDeps extends TextShareCapabilities {
   /** @capacitor/share's `Share.share`. */
-  nativeShare?: (data: { text: string; url: string; title?: string; dialogTitle?: string }) => Promise<unknown>;
+  nativeShare?: (data: { text: string; title?: string; dialogTitle?: string }) => Promise<unknown>;
   /** `navigator.share`. */
   webShare?: (data: { text: string; title?: string }) => Promise<void>;
   /** `navigator.clipboard.writeText`. */
@@ -84,9 +86,10 @@ export async function shareText(payload: SharePayload, deps: ShareDeps): Promise
 
   if (method === "native" && deps.nativeShare) {
     try {
-      // The URL rides as its own item: iOS shows it as a link bubble under the
-      // text, Android appends it. The body ends with the call to action.
-      await deps.nativeShare({ text: payload.body, url: payload.url, title: payload.title, dialogTitle: payload.title });
+      // One item only, the link inside the text. With the URL as its own item
+      // iOS takes it as the share's subject and Copy, Messages and WhatsApp
+      // received the link alone, never the result block (TestFlight build 22).
+      await deps.nativeShare({ text: payload.text, title: payload.title, dialogTitle: payload.title });
       return { method, outcome: "shared" };
     } catch (err) {
       if (isAbort(err) || /cancel/i.test(String((err as Error)?.message ?? ""))) return { method, outcome: "dismissed" };

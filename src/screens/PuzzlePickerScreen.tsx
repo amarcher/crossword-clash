@@ -2,17 +2,15 @@ import { useCallback, useMemo, useState } from "react";
 import { displayTheme } from "../lib/dailyFeed";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { PageShell } from "../components/PageShell";
-import { ClassicList } from "../components/ClassicList";
 import { Button, Card, Eyebrow, MiniGridThumb } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
-import { useClassicManifest, useTodaysDailies } from "../hooks/useNextUp";
+import { useTodaysDailies } from "../hooks/useNextUp";
 import { unsolvedDailies } from "../lib/nextUp";
-import { loadClassicPuzzle, type ClassicEntry } from "../lib/classicLibrary";
 import { createNextGame, uploadPuzzle } from "../lib/puzzleService";
 import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 import { clearSoloTimer, puzzleIdentity } from "../lib/soloStats";
@@ -33,9 +31,8 @@ export function pickerPath(intent: PickerIntent): string {
 
 /**
  * The fresh-puzzle picker (navigation audit §2): today's dailies the solver
- * hasn't finished, then the classic library. Reached from a finish, so it
- * never offers the puzzle just solved and never sends anyone to the file
- * importer.
+ * hasn't finished. Reached from a finish, so it never offers the puzzle just
+ * solved and never sends anyone to the file importer.
  *
  * - `intent=race` hands the choice to the existing host flow as `urlPuzzle`
  *   (HostNameScreen: name → room), after tearing down the finished solo or
@@ -61,7 +58,6 @@ export function PuzzlePickerScreen() {
   const bestTimes = useBestTimes();
   const openDailies = useMemo(() => unsolvedDailies(dailies, bestTimes, finishedKey), [dailies, bestTimes, finishedKey]);
   const dailiesSettled = dailies.mini !== undefined && dailies.midi !== undefined && dailies.large !== undefined;
-  const classics = useClassicManifest(true);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,21 +101,6 @@ export function PuzzlePickerScreen() {
       }
     },
     [intent, user, mp, game, navigate, t],
-  );
-
-  const chooseClassic = useCallback(
-    async (entry: ClassicEntry) => {
-      setError(null);
-      setBusy(entry.file);
-      try {
-        const puzzle = await loadClassicPuzzle(entry);
-        await choose(puzzle, entry.file);
-      } catch {
-        setError(t("picker.error"));
-        setBusy(null);
-      }
-    },
-    [choose, t],
   );
 
   return (
@@ -174,24 +155,9 @@ export function PuzzlePickerScreen() {
           </ul>
         ) : (
           <p className="rounded-2xl bg-surface-sunken px-4 py-5 text-center text-sm text-muted" aria-busy={!dailiesSettled}>
-            {dailiesSettled ? t("picker.allDailiesSolved") : t("classics.loading")}
+            {dailiesSettled ? t("picker.allDailiesSolved") : t("picker.loading")}
           </p>
         )}
-      </section>
-
-      <section aria-labelledby="picker-classics">
-        <div className="mb-3 flex items-center gap-2">
-          <BookOpen className="size-4 text-gold-700" aria-hidden="true" />
-          <Eyebrow as="h2" id="picker-classics">{t("picker.classics")}</Eyebrow>
-        </div>
-        {classics === null ? (
-          <p className="py-12 text-center text-sm text-subtle">{t("classics.loading")}</p>
-        ) : classics.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted">{t("classics.unavailable")}</p>
-        ) : (
-          <ClassicList entries={classics} bestTimes={bestTimes} busy={busy} intent="pick" onPrimary={(e) => void chooseClassic(e)} />
-        )}
-        <p className="mx-auto mt-10 max-w-2xl px-2 text-center text-xs leading-snug text-subtle">{t("classics.credit")}</p>
       </section>
     </PageShell>
   );

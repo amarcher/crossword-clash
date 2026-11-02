@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, KeyRound, Sparkles, WandSparkles, Zap } from "lucide-react";
+import { Download, KeyRound, Loader2, Sparkles, WandSparkles } from "lucide-react";
 import { Button, Card, Eyebrow, Select } from "../ui";
 import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText } from "../../lib/seedgrid/grid";
-import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
+import { ALTERNATIVES_COUNT, type Difficulty } from "../../lib/seedgrid/cluePrompt";
 import { slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
-import { draftClues, edgeCaller, entryAnswers, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
+import { draftClues, edgeCaller, entryAnswers, puzzleContext, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
 import { setStudioToken, useStudioToken } from "../../hooks/useStudioToken";
 import type { StudioAccess } from "../../lib/studioGate";
 import { allowanceLeft, fetchStudioAllowance, type StudioAllowance } from "../../lib/studioUsage";
@@ -15,42 +15,40 @@ interface CluePanelProps {
   state: StudioState;
   dispatch: Dispatch<StudioAction>;
   onExport: (format: "ipuz" | "puz") => void;
-  /** Who is drafting: an admin (no token needed, any model) or a Plus subscriber (metered Sonnet). */
+  /** Whether the Export buttons sit in this panel (the phone layout keeps them under More). */
+  showExport?: boolean;
+  /** Who is drafting: an admin (no token needed, any model) or a Plus subscriber (metered). */
   access: StudioAccess;
   /** The signed-in user, for the subscriber's allowance read. */
   userId: string | null;
 }
 
+/** How many rows may be redrafting at once; the rest of the panel stays live either way. */
+export const MAX_REDRAFTS_IN_FLIGHT = 3;
+
 const INPUT =
-  "min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500";
+  "min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500 disabled:opacity-60";
 const ICON_BUTTON =
   "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
 
-/** Set once the race-hint column has been revealed on this browser, so its explanation shows only the first time. */
-const HINTS_EXPLAINED_KEY = "crossword-clash:studio-race-hints-explained";
-
-function hintsExplained(): boolean {
-  try {
-    return localStorage.getItem(HINTS_EXPLAINED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+const without = <T,>(rec: Record<string, T>, key: string): Record<string, T> => {
+  const next = { ...rec };
+  delete next[key];
+  return next;
+};
 
 /**
- * Clue editor with Claude drafting: "Draft" writes standard + speed clues for
- * every entry still missing one (then "Redraft" replaces Claude's own), and the
- * wand on a row asks for alternatives to pick from. Anything typed or picked by
- * hand is the constructor's and is never overwritten. Calls go through the
- * studio-claude function as a signed-in admin or with the studio token (kept
- * in this browser only).
- *
- * Each entry reads as one clue. The second tier, the plain "speed" clue shown
- * as the hint in races, stays in the data (and in every draft and export) but
- * its inputs sit behind the "Race hints" switch, so the panel isn't two boxes
- * per entry.
+ * Clue editor with AI drafting: "Draft" writes a clue for every entry still
+ * missing one (then "Redraft AI clues" replaces the AI's own), and the wand on
+ * a row redrafts that one entry — `ALTERNATIVES_COUNT` alternatives in one
+ * call, offered as chips while the rest of the panel stays editable (up to
+ * `MAX_REDRAFTS_IN_FLIGHT` rows at once). Anything typed or picked by hand is
+ * the constructor's and is never overwritten. Calls go through the
+ * studio-claude function as a signed-in admin, a Plus subscriber or with the
+ * studio token (kept in this browser only). Speed clues are no longer edited
+ * here: no player-facing screen shows them (see `StudioState.speedClues`).
  */
-export function CluePanel({ state, dispatch, onExport, access, userId }: CluePanelProps) {
+export function CluePanel({ state, dispatch, onExport, showExport = true, access, userId }: CluePanelProps) {
   const { t } = useTranslation();
   const { grid } = state;
   const slots = slotsOf(grid);
@@ -66,76 +64,75 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
   useEffect(refreshAllowance, [refreshAllowance]);
   const [tokenDraft, setTokenDraft] = useState("");
   const [needToken, setNeedToken] = useState(false);
+  /** The whole-puzzle draft in progress, by its status line. */
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [alternatives, setAlternatives] = useState<{ key: string; clues: string[] } | null>(null);
-  const [showHints, setShowHints] = useState(false);
-  const [explainHints, setExplainHints] = useState(false);
-  const toggleHints = () => {
-    if (!showHints && !hintsExplained()) {
-      setExplainHints(true);
-      try {
-        localStorage.setItem(HINTS_EXPLAINED_KEY, "1");
-      } catch {
-        // Private mode: the line just shows again next time.
-      }
-    }
-    setShowHints((v) => !v);
-  };
-  const hintCount = slots.filter((s) => state.speedClues[slotKey(s)]?.trim()).length;
+  /** Rows (slot keys) whose redraft is still out. */
+  const [inFlight, setInFlight] = useState<Record<string, true>>({});
+  /** Per row: the alternatives offered by the last redraft, until the row is typed in or redrafted again. */
+  const [alternatives, setAlternatives] = useState<Record<string, string[]>>({});
+  /** Per row: what the last redraft had to say when it offered nothing. */
+  const [rowNotes, setRowNotes] = useState<Record<string, string>>({});
+  const inFlightCount = Object.keys(inFlight).length;
 
-  const context = useMemo(() => {
-    const themeEntries = slots
-      .filter((s) => s.cells.length >= 5 && s.cells.every((c) => grid.locked[c] && grid.cells[c] && grid.cells[c] !== "#"))
-      .map((s) => slotText(grid, s));
-    return [
-      state.title && `Title: ${state.title}`,
-      state.theme && `Theme: ${state.theme}`,
-      themeEntries.length ? `Theme entries: ${themeEntries.join(", ")}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  }, [grid, slots, state.title, state.theme]);
+  const context = useMemo(() => puzzleContext(grid, state.title, state.theme), [grid, state.title, state.theme]);
 
   const edited = new Set(state.editedClues ?? []);
   const missing = slots.filter((s) => !state.clues[slotKey(s)]?.trim());
-  // Redrafting replaces Claude's own clues only; hand-written ones stay.
+  // Redrafting replaces the AI's own clues only; hand-written ones stay.
   const redraftable = slots.filter((s) => !edited.has(slotKey(s)));
 
-  const run = async (label: string, work: (call: ReturnType<typeof edgeCaller>) => Promise<void>) => {
-    if (!admin && !access.plus) {
-      setNeedToken(true);
-      return;
-    }
-    setBusy(label);
-    setError(null);
-    try {
-      await work(edgeCaller(token));
-    } catch (err) {
-      if (err instanceof StudioClaudeError && err.kind === "token") setNeedToken(true);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(null);
-      refreshAllowance();
-    }
+  const allowed = () => {
+    if (admin || access.plus) return true;
+    setNeedToken(true);
+    return false;
+  };
+
+  const explain = (err: unknown) => {
+    if (err instanceof StudioClaudeError && err.kind === "token") setNeedToken(true);
+    return err instanceof Error ? err.message : String(err);
   };
 
   const draft = () => {
+    if (!allowed()) return;
     const targets = missing.length ? missing : redraftable;
-    void run(`Drafting ${targets.length} clues…`, async (call) => {
-      const drafted = await draftClues(call, grid, context, { slots: targets.map((s) => s.id), difficulty: state.difficulty });
-      const byKey = Object.fromEntries(slots.filter((s) => drafted[s.id]).map((s) => [slotKey(s), drafted[s.id]]));
-      dispatch({ type: "APPLY_CLUES", clues: byKey });
-      const skipped = targets.length - Object.keys(byKey).length;
-      if (skipped > 0) setError(`${skipped} clue${skipped === 1 ? "" : "s"} didn't pass the checks; write ${skipped === 1 ? "it" : "them"} or try the wand.`);
-    });
+    setBusy(`Drafting ${targets.length} clues…`);
+    setError(null);
+    void (async () => {
+      try {
+        const drafted = await draftClues(edgeCaller(token), grid, context, { slots: targets.map((s) => s.id), difficulty: state.difficulty });
+        const byKey = Object.fromEntries(slots.filter((s) => drafted[s.id]).map((s) => [slotKey(s), drafted[s.id]]));
+        dispatch({ type: "APPLY_CLUES", clues: byKey });
+        const skipped = targets.length - Object.keys(byKey).length;
+        if (skipped > 0) setError(`${skipped} clue${skipped === 1 ? "" : "s"} didn't pass the checks; write ${skipped === 1 ? "it" : "them"} or try the wand.`);
+      } catch (err) {
+        setError(explain(err));
+      } finally {
+        setBusy(null);
+        refreshAllowance();
+      }
+    })();
   };
 
-  const suggest = (slotId: string, key: string) =>
-    void run("Thinking…", async (call) => {
-      const clues = await suggestClues(call, grid, context, slotId, { difficulty: state.difficulty, current: state.clues[key] });
-      setAlternatives({ key, clues });
-    });
+  /** Redraft one row: only that row is busy; its alternatives arrive as chips. */
+  const redraft = (slotId: string, key: string) => {
+    if (!allowed() || inFlight[key] || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT) return;
+    setInFlight((prev) => ({ ...prev, [key]: true }));
+    setRowNotes((prev) => without(prev, key));
+    const current = state.clues[key];
+    void (async () => {
+      try {
+        const clues = await suggestClues(edgeCaller(token), grid, context, slotId, { difficulty: state.difficulty, current });
+        setAlternatives((prev) => ({ ...prev, [key]: clues }));
+        if (!clues.length) setRowNotes((prev) => ({ ...prev, [key]: "Nothing usable came back; try again." }));
+      } catch (err) {
+        setRowNotes((prev) => ({ ...prev, [key]: explain(err) }));
+      } finally {
+        setInFlight((prev) => without(prev, key));
+        refreshAllowance();
+      }
+    })();
+  };
 
   const saveToken = () => {
     setStudioToken(tokenDraft);
@@ -161,45 +158,49 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
             ]}
             onChange={(difficulty: Difficulty) => dispatch({ type: "SET_DIFFICULTY", difficulty })}
           />
-          <Button variant="soft" size="sm" onClick={draft} disabled={!complete || busy !== null || (!missing.length && !redraftable.length)}>
-            <Sparkles className="size-4" aria-hidden="true" />
-            {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft Claude's clues"}
-          </Button>
           <Button
-            variant="ghost"
+            variant="soft"
             size="sm"
-            aria-pressed={showHints}
-            className={showHints ? "bg-surface-sunken text-ink" : ""}
-            title="Show the plain clue used as the hint in races"
-            onClick={toggleHints}
+            onClick={draft}
+            disabled={!complete || busy !== null || (!missing.length && !redraftable.length)}
+            title={missing.length ? "Ask the AI for a clue for every entry without one" : "Replace every AI-written clue; yours stay"}
           >
-            <Zap className="size-4" aria-hidden="true" /> Race hints{slots.length > 0 && <span className="font-normal tabular-nums text-muted">{hintCount}/{slots.length}</span>}
+            <Sparkles className="size-4" aria-hidden="true" />
+            {missing.length ? `Draft ${missing.length === slots.length ? "all" : missing.length}` : "Redraft AI clues"}
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
-            <Download className="size-4" aria-hidden="true" /> Export .ipuz
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => onExport("puz")} disabled={!complete} title="Across Lite format, for other crossword apps and editors">
-            <Download className="size-4" aria-hidden="true" /> Export .puz
-          </Button>
+          {showExport && (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => onExport("ipuz")} disabled={!complete}>
+                <Download className="size-4" aria-hidden="true" /> Export .ipuz
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => onExport("puz")} disabled={!complete} title="Across Lite format, for other crossword apps and editors">
+                <Download className="size-4" aria-hidden="true" /> Export .puz
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      <input
-        className={`${INPUT} mt-3 h-10 w-full md:text-sm`}
-        placeholder="Theme note for Claude (optional): what ties the long entries together?"
-        aria-label="Theme note"
-        value={state.theme}
-        onChange={(e) => dispatch({ type: "SET_THEME", theme: e.target.value })}
-      />
+      <div className="mt-3">
+        <label className="text-sm font-semibold text-ink" htmlFor="studio-theme">Theme (optional)</label>
+        <input
+          id="studio-theme"
+          className={`${INPUT} mt-1 h-10 w-full md:text-sm`}
+          placeholder="Tell the AI the theme, if there is one — e.g. “Each long entry hides a planet”"
+          aria-describedby="studio-theme-help"
+          value={state.theme}
+          onChange={(e) => dispatch({ type: "SET_THEME", theme: e.target.value })}
+        />
+        <p id="studio-theme-help" className="mt-1 text-xs text-muted">
+          Only read when drafting, so theme entries can nod to it. Leave it blank for a themeless puzzle; the AI never invents one.
+        </p>
+      </div>
 
       {!complete && <p className="mt-2 text-sm text-muted">Fill the grid to draft clues.</p>}
-      {showHints && explainHints && (
-        <p className="mt-2 text-sm text-muted">
-          A race hint is a plain, direct clue players can reveal while racing; Draft writes one for every entry alongside its clue.
-        </p>
-      )}
       {metered && allowance && (
-        <p className="mt-2 text-sm text-muted tabular-nums">{t("studio.draftsLeft", { left: allowanceLeft(allowance), limit: allowance.limit })}</p>
+        <p className="mt-2 text-sm text-muted tabular-nums" title="Each AI call uses one draft, however many alternative clues it returns.">
+          {t("studio.draftsLeft", { left: allowanceLeft(allowance), limit: allowance.limit })}
+        </p>
       )}
       {busy && <p role="status" className="mt-2 text-sm text-ink-soft">{busy}</p>}
       {error && <p role="alert" className="mt-2 rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{error}</p>}
@@ -233,7 +234,10 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
               const k = slotKey(s);
               const clue = state.clues[k] ?? "";
               const answer = slotText(grid, s);
-              const alts = alternatives?.key === k ? alternatives.clues : null;
+              const rowBusy = !!inFlight[k];
+              const alts = alternatives[k];
+              const note = rowNotes[k];
+              const label = `${s.number} ${dir}`;
               return (
                 <li key={k} className="flex flex-col gap-1">
                   {/* Phones stack the entry over its input so the clue gets the full width; from sm up it is one line. */}
@@ -245,9 +249,14 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <input
                         className={`${INPUT} h-10 md:text-sm`}
-                        aria-label={`Clue for ${s.number} ${dir}`}
+                        aria-label={`Clue for ${label}`}
                         value={clue}
-                        onChange={(e) => dispatch({ type: "SET_CLUE", key: k, clue: e.target.value })}
+                        disabled={rowBusy}
+                        onChange={(e) => {
+                          dispatch({ type: "SET_CLUE", key: k, clue: e.target.value });
+                          // Typing by hand retires the offered alternatives.
+                          if (alts) setAlternatives((prev) => without(prev, k));
+                        }}
                       />
                       <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
                         {clue.length || ""}
@@ -255,44 +264,38 @@ export function CluePanel({ state, dispatch, onExport, access, userId }: CluePan
                       <button
                         type="button"
                         className={ICON_BUTTON}
-                        aria-label={`Suggest clues for ${s.number} ${dir}`}
-                        title="Suggest clues"
-                        disabled={!entryAnswers(grid)[s.id] || busy !== null}
-                        onClick={() => suggest(s.id, k)}
+                        aria-label={`Redraft ${label} with AI`}
+                        aria-busy={rowBusy || undefined}
+                        title={`Redraft with AI: ${ALTERNATIVES_COUNT} alternatives to pick from`}
+                        disabled={!entryAnswers(grid)[s.id] || rowBusy || busy !== null || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT}
+                        onClick={() => redraft(s.id, k)}
                       >
-                        <WandSparkles className="size-4" aria-hidden="true" />
+                        {rowBusy ? (
+                          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                        ) : (
+                          <WandSparkles className="size-4" aria-hidden="true" />
+                        )}
                       </button>
                     </div>
                   </div>
-                  {showHints && (
-                    <div className="flex items-center gap-2 sm:pl-26">
-                      <Zap className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-                      <input
-                        className={`${INPUT} h-10 md:text-sm`}
-                        placeholder="Race hint"
-                        aria-label={`Race hint for ${s.number} ${dir}`}
-                        value={state.speedClues[k] ?? ""}
-                        onChange={(e) => dispatch({ type: "SET_SPEED_CLUE", key: k, clue: e.target.value })}
-                      />
-                    </div>
-                  )}
-                  {alts && (
-                    <ul className="flex flex-wrap gap-1.5 sm:pl-26" aria-label={`Suggestions for ${s.number} ${dir}`}>
-                      {alts.length === 0 && <li className="text-xs text-muted">No usable suggestions; try again.</li>}
-                      {alts.map((alt) => (
-                        <li key={alt}>
-                          <button
-                            type="button"
-                            className="min-h-9 rounded-full bg-brand-50 px-3 text-left text-sm text-brand-700 hover:bg-brand-100 active:bg-brand-200"
-                            onClick={() => {
-                              dispatch({ type: "SET_CLUE", key: k, clue: alt });
-                              setAlternatives(null);
-                            }}
-                          >
-                            {alt}
-                          </button>
-                        </li>
-                      ))}
+                  {note && <p className="text-xs text-muted sm:pl-26">{note}</p>}
+                  {alts && alts.length > 0 && (
+                    <ul className="flex flex-wrap gap-1.5 sm:pl-26" aria-label={`Alternatives for ${label}`}>
+                      {alts.map((alt) => {
+                        const chosen = alt === clue;
+                        return (
+                          <li key={alt}>
+                            <button
+                              type="button"
+                              aria-pressed={chosen}
+                              className={`min-h-9 rounded-full px-3 text-left text-sm hover:bg-brand-100 active:bg-brand-200 ${chosen ? "bg-brand-100 font-semibold text-brand-800" : "bg-brand-50 text-brand-700"}`}
+                              onClick={() => dispatch({ type: "SET_CLUE", key: k, clue: alt })}
+                            >
+                              {alt}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </li>

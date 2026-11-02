@@ -1,0 +1,6 @@
+This update (1.1.0, build 19) brings the construction studio to the app for Plus subscribers.
+
+1. Signed in with Plus, open the avatar menu: "Build a crossword". The first open downloads the word list (about 7 MB, once per device) with a progress bar, then the editor appears. Closing and reopening should not download it again.
+2. The editor has four tabs at the bottom: Grid, Words, Clues, More. Type letters on the grid, tap Fill, pick a word under Words, write clues under Clues (Redraft gives three AI alternatives; the title field offers AI titles). Under More: My puzzles, Play test (opens the puzzle in the solver, in the app), Publish, Export .ipuz / .puz (share sheet).
+3. Everything from build 18 still applies: the update banner (not visible on TestFlight), no classics, no username prompt on re-sign-in, Create Room lands on Invite players.
+4. Tell us about anything that feels cramped or hard to reach on the phone.

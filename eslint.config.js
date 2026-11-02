@@ -11,7 +11,7 @@ export default tseslint.config(
       "artifacts",
       "android",
       // Static/generated assets: install-bookmarklet page, native bundles,
-      // classic-puzzle manifest, etc.
+      // daily feed and index, etc.
       "public",
       "node_modules",
       ".claude",

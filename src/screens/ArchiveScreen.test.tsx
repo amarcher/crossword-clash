@@ -6,7 +6,7 @@ import "../i18n/i18n";
 import { ArchiveScreen } from "./ArchiveScreen";
 import { indexEntryFor, resetDailyIndexMemory, type DailyIndexEntry } from "../lib/dailyIndex";
 import { parseDailyFeedEntry } from "../lib/dailyFeed";
-import { longDay, monthOf, toDate, fromDate } from "../lib/archive";
+import { longDay, monthOf, shiftMonth, toDate, fromDate } from "../lib/archive";
 import { dayKey, formatDuration } from "../lib/soloStats";
 import type { TransferPuzzle } from "../lib/puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
@@ -84,14 +84,30 @@ const months = [...new Set([monthOf(longAgo), monthOf(lastWeek), monthOf(yesterd
 let indexDown = false;
 const fetched: string[] = [];
 
-/** Pages the calendar back from today's month to the month of `day`. */
+/** The month the calendar is showing; every render opens on today's. */
+let shownMonth = monthOf(today);
+
+/** Pages the calendar to the month of `day`, in either direction. */
 function toMonthOf(day: string) {
-  const [ty, tm] = monthOf(today).split("-").map(Number);
-  const [dy, dm] = monthOf(day).split("-").map(Number);
-  for (let i = 0; i < (ty - dy) * 12 + (tm - dm); i++) fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+  const target = monthOf(day);
+  while (shownMonth !== target) {
+    const back = shownMonth > target;
+    fireEvent.click(screen.getByRole("button", { name: back ? "Previous month" : "Next month" }));
+    shownMonth = shiftMonth(shownMonth, back ? -1 : 1);
+  }
+}
+
+/**
+ * The calendar cell for `day`, paging to its month first: yesterday and last
+ * week sit on the previous month's page during the first days of a month.
+ */
+function dayCell(day: string) {
+  toMonthOf(day);
+  return screen.getByRole("button", { name: new RegExp(`^${longDay(day, "en")}:`) });
 }
 
 function renderScreen() {
+  shownMonth = monthOf(today);
   return render(
     <MemoryRouter initialEntries={["/archive"]}>
       <ArchiveScreen />
@@ -143,7 +159,7 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByText(formatDuration(102))).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play again" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
-    const cell = screen.getByRole("button", { name: new RegExp(`^${longDay(today, "en")}:`) });
+    const cell = dayCell(today);
     expect(cell.getAttribute("aria-current")).toBe("date");
     expect(cell.getAttribute("aria-label")).toContain(`Daily Mini solved in ${formatDuration(102)}`);
     expect(cell.getAttribute("aria-label")).toContain("Daily Midi unsolved");
@@ -152,7 +168,7 @@ describe("ArchiveScreen (/archive)", () => {
   it("picking another day lists it, and Play loads that day's puzzle straight into solo play", async () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(yesterday, "en")}:`) }));
+    fireEvent.click(dayCell(yesterday));
     expect(screen.getByText("Split Decision")).toBeTruthy();
     expect(screen.queryByText("Movie Night")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Play" }));
@@ -202,7 +218,7 @@ describe("ArchiveScreen (/archive)", () => {
     // Today's mini is in progress too: its row says Resume, and the count treats both as unsolved.
     expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
     expect(screen.getByText("0 of 5 solved · 5 to catch up on")).toBeTruthy();
-    const todayCell = screen.getByRole("button", { name: new RegExp(`^${longDay(today, "en")}:`) });
+    const todayCell = dayCell(today);
     expect(todayCell.getAttribute("aria-label")).toContain("Daily Mini in progress");
     localStorage.clear();
   });
@@ -213,7 +229,7 @@ describe("ArchiveScreen (/archive)", () => {
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
     // Today is open: Play is offered (for both of today's unsolved dailies).
     expect(screen.getAllByRole("button", { name: "Play" })).toHaveLength(2);
-    const oldCell = screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) });
+    const oldCell = dayCell(lastWeek);
     expect(oldCell.getAttribute("aria-label")).toContain("locked, sign in to play");
     fireEvent.click(oldCell);
     expect(screen.getByText("Old News")).toBeTruthy();
@@ -230,7 +246,7 @@ describe("ArchiveScreen (/archive)", () => {
     accountState = { available: true, ready: true, user: { id: "me" }, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    fireEvent.click(dayCell(lastWeek));
     expect(screen.getByText("Old News")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.queryByText(/Sign in to play/)).toBeNull();
@@ -239,7 +255,7 @@ describe("ArchiveScreen (/archive)", () => {
     accountState = { available: false, ready: true, user: null, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    fireEvent.click(dayCell(lastWeek));
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.queryByText(/Sign in to play/)).toBeNull();
   });
@@ -250,12 +266,11 @@ describe("ArchiveScreen (/archive)", () => {
     accountState = { available: true, ready: true, user: { id: "me" }, plus: false, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    fireEvent.click(dayCell(lastWeek));
     expect(screen.getByText("Old News")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
-    // 40 days ago is on an earlier month's page.
-    toMonthOf(longAgo);
-    const oldCell = screen.getByRole("button", { name: new RegExp(`^${longDay(longAgo, "en")}:`) });
+    // 40 days ago is on an earlier month's page; dayCell pages there.
+    const oldCell = dayCell(longAgo);
     expect(oldCell.getAttribute("aria-label")).toContain("locked, Plus plays every day");
     fireEvent.click(oldCell);
     expect(screen.getByText("Ancient History")).toBeTruthy();
@@ -270,8 +285,7 @@ describe("ArchiveScreen (/archive)", () => {
     accountState = { available: true, ready: true, user: { id: "me" }, plus: true, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    toMonthOf(longAgo);
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(longAgo, "en")}:`) }));
+    fireEvent.click(dayCell(longAgo));
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.queryByText(/Go Plus/)).toBeNull();
     cleanup();
@@ -280,7 +294,7 @@ describe("ArchiveScreen (/archive)", () => {
     accountState = { available: true, ready: true, user: null, plus: false, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${longDay(lastWeek, "en")}:`) }));
+    fireEvent.click(dayCell(lastWeek));
     expect(screen.getByText("Sign in to play puzzles older than 7 days")).toBeTruthy();
   });
 

@@ -51,6 +51,12 @@ export interface SolveInput {
   seconds: number | null;
   completedDay?: string;
   completedAt?: string;
+  /**
+   * The grid was finished with a revealed square (solo, Autocheck off). The
+   * finish is judged against the history but never written to it: no best
+   * time, no streak day, and `solves` gains no row.
+   */
+  assisted?: boolean;
 }
 
 export interface SolveSummary {
@@ -71,6 +77,12 @@ export interface SolveOutcome {
   isNewBest: boolean;
   /** The daily streak after this finish, `current` already effective for its day. */
   streak: StreakState;
+  /**
+   * True when this finish added its day to the daily streak. False for a second
+   * finish on a day that already counted (the streak stays where it was: one
+   * day per day) and for an assisted finish, which records nothing.
+   */
+  streakAdvanced: boolean;
   /** The NYT streak after this finish, `current` already effective for its day. */
   nytStreak: StreakState;
   summary: SolveSummary;
@@ -197,11 +209,25 @@ export function toSolveRow(input: SolveInput, now: Date = new Date()): SolveRow 
 
 /**
  * What a finish means against a history: the best it beat (or didn't), and
- * the streaks after it, already effective for the finish's own day.
+ * the streaks after it, already effective for the finish's own day. An
+ * `assisted` finish (a revealed square) is judged as if it were not recorded,
+ * because it won't be.
  */
-export function judgeSolve(rows: readonly SolveRow[], row: SolveRow): SolveOutcome {
+export function judgeSolve(rows: readonly SolveRow[], row: SolveRow, assisted = false): SolveOutcome {
   const before = summarizeSolves(rows);
   const previousBest = before.bestTimes[row.puzzle_key] ?? null;
+  if (assisted) {
+    // Nothing is recorded: the outcome is the history as it stands.
+    return {
+      previousBest,
+      bestSeconds: previousBest,
+      isNewBest: false,
+      streak: { ...before.streak, current: effectiveStreak(before.streak, row.completed_day) },
+      streakAdvanced: false,
+      nytStreak: { ...before.nytStreak, current: effectiveStreak(before.nytStreak, row.completed_day) },
+      summary: before,
+    };
+  }
   const summary = summarizeSolves(mergeRows(rows, [row]));
   const beat = row.seconds !== null && isNewBest(previousBest, row.seconds);
   return {
@@ -209,6 +235,7 @@ export function judgeSolve(rows: readonly SolveRow[], row: SolveRow): SolveOutco
     bestSeconds: summary.bestTimes[row.puzzle_key] ?? null,
     isNewBest: beat,
     streak: { ...summary.streak, current: effectiveStreak(summary.streak, row.completed_day) },
+    streakAdvanced: countsForDailyStreak(row) && before.streak.lastPlayedDay !== row.completed_day,
     nytStreak: { ...summary.nytStreak, current: effectiveStreak(summary.nytStreak, row.completed_day) },
     summary,
   };
@@ -410,7 +437,9 @@ export async function recordSolve(userId: string, input: SolveInput, now: Date =
   await ensureSolveHistory(userId);
   if (state?.userId !== userId || !state.rows) return null;
   const row = toSolveRow(input, now);
-  const outcome = judgeSolve(state.rows, row);
+  const outcome = judgeSolve(state.rows, row, !!input.assisted);
+  // An assisted finish leaves the history untouched: no row, no write.
+  if (input.assisted) return outcome;
   setRows(userId, mergeRows(state.rows, [row]), "ready");
   try {
     const stored = await callRecordSolves([row]);

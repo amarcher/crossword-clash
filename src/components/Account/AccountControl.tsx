@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import { CalendarDays, LogOut, Pencil, Sparkles, UserRound } from "lucide-react";
+import { CalendarDays, LogOut, Pencil, PencilRuler, Sparkles, UserRound } from "lucide-react";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { accountName, signOut } from "../../lib/account";
 import { useHydrated } from "../../lib/hydration";
 import { plusEnabled } from "../../lib/plus";
+import { studioRouteEnabled } from "../../lib/studioGate";
 import { prefetchRoute } from "../../routeModules";
 
 interface AccountControlProps {
@@ -97,6 +98,10 @@ export function AccountControl({ placement = "header", className = "" }: Account
       run: () => account.openAccount({ view: "username", placement }),
     },
   ];
+  // A subscriber's way into the studio from any header, in the apps as on the web (the editor itself is behind StudioGateScreen).
+  if (plusEnabled() && account.plus && studioRouteEnabled()) {
+    items.push({ key: "studio", icon: PencilRuler, label: t("account.menuStudio"), run: () => navigate("/studio"), warm: "/studio" });
+  }
   if (plusEnabled()) {
     items.push({
       key: "plus",

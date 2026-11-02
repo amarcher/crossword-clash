@@ -5,7 +5,6 @@ import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
-import type { ClassicEntry } from "../../lib/classicLibrary";
 import type { Puzzle } from "../../types/puzzle";
 import { buildPuzzle } from "../../lib/samplePuzzles";
 
@@ -26,7 +25,6 @@ const SOLO_PROPS = {
 function fakePuzzle(title: string, size: number): Puzzle {
   return { title, author: "", width: size, height: size, cells: [], clues: [] } as unknown as Puzzle;
 }
-const CLASSIC: ClassicEntry = { file: "cwpb7.puz", number: 7, title: "Seven", author: "A", width: 13, height: 13, clues: 60, identity: "c7", blurb: "" };
 const NEXT_DAILIES: NextUpItem[] = [
   { kind: "daily", slot: "midi", daily: { theme: "Jazz", puzzle: fakePuzzle("Blue Note", 9) } },
   { kind: "daily", slot: "large", daily: { theme: "Film", puzzle: fakePuzzle("Reel Deal", 15) } },
@@ -72,7 +70,8 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal open={true} totalCells={8} totalClues={4} players={makePlayers()} />,
     );
-    expect(getByText("Alice wins!")).toBeTruthy();
+    expect(getByText("Alice wins with 5 squares!")).toBeTruthy();
+    expect(getByText("Squares")).toBeTruthy();
     expect(getByText("Alice")).toBeTruthy();
     expect(getByText("Bob")).toBeTruthy();
   });
@@ -83,7 +82,53 @@ describe("CompletionModal", () => {
     const { getByText } = render(
       <CompletionModal open={true} totalCells={10} totalClues={4} players={players} />,
     );
-    expect(getByText("It's a tie!")).toBeTruthy();
+    expect(getByText("It's a tie at 5 squares!")).toBeTruthy();
+  });
+
+  describe("share-square legend under the preview", () => {
+    const puzzle = buildPuzzle({ title: "Deep Blue", grid: ["#whom", "trace", "holes", "atlas", "neon#"], clueTexts: {} });
+    // 11 wide: the block is the single 15-square pace bar, not grid rows.
+    const wide = buildPuzzle({ title: "Wide", grid: ["abcdefghijk", "abcdefghijk"], clueTexts: {} });
+    const cells = {
+      "0,1": { letter: "W", correct: true, playerId: "bob", at: 1 },
+      "1,0": { letter: "T", correct: true, playerId: "alice", at: 2 },
+    };
+    const colors = { alice: "#3b82f6", bob: "#ef4444" };
+
+    it("grid rows in a race: names each claimant after their square, in the standings order", () => {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" challengePuzzle={puzzle} playerCells={cells} playerColors={colors} challengerName="Alice" />,
+      );
+      expect(getByTestId("share-legend").textContent).toBe("Who solved each square: 🟦 Alice, 🟥 Bob");
+      expect(getByTestId("share-block-preview").textContent).toContain("⬛🟥⬜⬜⬜");
+    });
+
+    it("grid rows in solo: the pace thirds and the wrong-letter red", () => {
+      const { getByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} playerCells={cells} challengerName="Alice" />);
+      expect(getByTestId("share-legend").textContent).toBe("🟩 early · 🟨 mid · 🟧 late · 🟥 wrong letter");
+    });
+
+    it("pace bar in a race (wider than 9): a fifteenth of the race per square, by who solved most then", () => {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={colors} challengerName="Alice" />,
+      );
+      expect(getByTestId("share-legend").textContent).toBe(
+        "Each square is a fifteenth of the race, coloured by who solved most then: 🟦 Alice, 🟥 Bob",
+      );
+      expect([...getByTestId("share-block-preview").querySelectorAll("div[aria-hidden] > div")]).toHaveLength(1);
+    });
+
+    it("pace bar in solo: a fifteenth of the solve per square, fast / even / slow and a wrong letter in that stretch", () => {
+      const { getByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={wide} playerCells={{}} challengerName="Alice" />);
+      expect(getByTestId("share-legend").textContent).toBe(
+        "Each square is a fifteenth of your solve: 🟩 fast · 🟨 even · 🟧 slow · 🟥 a wrong letter then",
+      );
+    });
+
+    it("no legend without a puzzle to share", () => {
+      const { queryByTestId } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+      expect(queryByTestId("share-legend")).toBeNull();
+    });
   });
 
   it("shows player stats in table", () => {
@@ -149,6 +194,36 @@ describe("CompletionModal", () => {
     );
     fireEvent.click(getByText("Back to menu"));
     expect(onBackToMenu).toHaveBeenCalledOnce();
+  });
+
+  // The modal is taller than a phone screen, so "Back to menu" at its foot was the only way out
+  // for a reader who did not scroll (Andrew, 2026-11-01): a close control sits at the top too.
+  it("offers a close control at the top that leaves the same way as Back to menu", () => {
+    const onBackToMenu = vi.fn();
+    const { getByRole, container } = render(<CompletionModal {...SOLO_PROPS} onBackToMenu={onBackToMenu} />);
+    const close = getByRole("button", { name: "Close" });
+    const dialog = container.querySelector("[role='dialog']")!;
+    expect(dialog.firstElementChild).toBe(close);
+    expect(close.classList.contains("size-11")).toBe(true);
+    fireEvent.click(close);
+    expect(onBackToMenu).toHaveBeenCalledOnce();
+  });
+
+  it("has no close control without a way back", () => {
+    const { queryByRole } = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(queryByRole("button", { name: "Close" })).toBeNull();
+  });
+
+  it("says when the streak already counted today, and nothing when the finish advanced it", () => {
+    const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced={false} />);
+    expect(counted.getByText("6-day streak")).toBeTruthy();
+    expect(counted.getByText(/Today already counted/)).toBeTruthy();
+    counted.unmount();
+    const advanced = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced />);
+    expect(advanced.queryByText(/Today already counted/)).toBeNull();
+    advanced.unmount();
+    const unknown = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
+    expect(unknown.queryByText(/Today already counted/)).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {
@@ -255,17 +330,13 @@ describe("CompletionModal", () => {
     expect(onNextUp).toHaveBeenCalledWith(NEXT_DAILIES[1]);
   });
 
-  it("offers a classic, or the library, when the dailies are done", () => {
+  it("offers yesterday's daily by slot with its size and theme when today's are done", () => {
     const onNextUp = vi.fn();
-    const { getByRole, rerender } = render(
-      <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "classic", entry: CLASSIC }]} onNextUp={onNextUp} />,
-    );
-    fireEvent.click(getByRole("button", { name: /Next classic: No\. 7/ }));
-    expect(onNextUp).toHaveBeenCalledWith({ kind: "classic", entry: CLASSIC });
-
-    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "library" }]} onNextUp={onNextUp} />);
-    fireEvent.click(getByRole("button", { name: /Browse the library/ }));
-    expect(onNextUp).toHaveBeenLastCalledWith({ kind: "library" });
+    const entry = { day: "2026-10-19", slot: "midi" as const, title: "Blue Note", theme: "Jazz", author: "", width: 9, height: 9, clues: 20, identity: "y-midi", blocks: "" };
+    const { getByRole, getByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[{ kind: "archive", entry }]} onNextUp={onNextUp} />);
+    expect(getByText("9×9 · Jazz")).toBeTruthy();
+    fireEvent.click(getByRole("button", { name: /Yesterday's Daily Midi/ }));
+    expect(onNextUp).toHaveBeenCalledWith({ kind: "archive", entry });
   });
 
   it("shows no 'Up next' heading when there is nothing to suggest yet", () => {

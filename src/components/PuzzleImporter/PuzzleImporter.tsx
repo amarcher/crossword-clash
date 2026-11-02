@@ -1,17 +1,12 @@
-import { useState, useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
-import { ArrowRight, BookOpen, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
+import { ArrowRight, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
 import { PageShell } from "../PageShell";
 import { Eyebrow, MiniGridThumb } from "../ui";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
 import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
-import {
-  loadClassicManifest,
-  loadClassicPuzzle,
-  type ClassicEntry,
-} from "../../lib/classicLibrary";
 import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
@@ -23,9 +18,6 @@ interface PuzzleImporterProps {
   backTo?: string;
   backLabel?: string;
 }
-
-/** How many classics the hub previews before pointing at /classics. */
-const CLASSIC_PREVIEW_COUNT = 4;
 
 const SCRAPER_URL =
   "https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US";
@@ -82,45 +74,6 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [classics, setClassics] = useState<ClassicEntry[]>([]);
-  const [loadingClassic, setLoadingClassic] = useState<string | null>(null);
-
-  // Load the bundled 1924 public-domain classics list from the static asset.
-  // Best-effort: resolves to [] on failure, so the section simply stays hidden.
-  useEffect(() => {
-    let cancelled = false;
-    loadClassicManifest().then((list) => {
-      if (!cancelled) setClassics(list);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Preview the smallest puzzles first — the friendliest quick start from a
-  // hub whose visitor hasn't chosen a size. The full, filterable list is /classics.
-  const classicPreview = useMemo(
-    () =>
-      [...classics]
-        .sort((a, b) => Math.max(a.width, a.height) - Math.max(b.width, b.height) || a.number - b.number)
-        .slice(0, CLASSIC_PREVIEW_COUNT),
-    [classics],
-  );
-
-  const handleClassic = useCallback(
-    async (entry: ClassicEntry) => {
-      setError(null);
-      setLoadingClassic(entry.file);
-      try {
-        onPuzzleLoaded(await loadClassicPuzzle(entry));
-      } catch {
-        setError(t("importer.classicError"));
-      } finally {
-        setLoadingClassic(null);
-      }
-    },
-    [onPuzzleLoaded, t],
-  );
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -307,44 +260,6 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
             ))}
           </div>
         </section>
-
-        {/* Classic puzzles — bundled public-domain 1924 puzzles, one-click play. */}
-        {classics.length > 0 && (
-          <section className="mt-8">
-            <Eyebrow as="h2" className="px-1">{t("importer.classicTitle")}</Eyebrow>
-            <p className="mt-1 px-1 text-sm text-muted">{t("importer.classicSubtitle")}</p>
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {classicPreview.map((entry) => {
-                const isLoading = loadingClassic === entry.file;
-                return (
-                  <button
-                    key={entry.file}
-                    type="button"
-                    disabled={loadingClassic !== null}
-                    onClick={() => handleClassic(entry)}
-                    className={`${CARD} items-start disabled:pointer-events-none disabled:opacity-60`}
-                  >
-                    <span className="grid size-9 place-items-center rounded-xl bg-gold-50 text-gold-700">
-                      <BookOpen className="size-4.5" aria-hidden="true" />
-                    </span>
-                    <span className="block">
-                      <span className="block text-sm font-semibold leading-snug text-ink">{entry.title}</span>
-                      <span className="mt-0.5 block text-xs tabular-nums text-muted">
-                        {isLoading ? t("importer.parsing") : `${entry.width}×${entry.height}`}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <Link
-              to="/classics"
-              className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm font-semibold text-brand-700 hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
-            >
-              {t("importer.classicSeeAll", { count: classics.length })}
-            </Link>
-          </section>
-        )}
 
         <div className="mt-6 flex flex-col items-center gap-4">
           <NytRecommendation variant="card" />

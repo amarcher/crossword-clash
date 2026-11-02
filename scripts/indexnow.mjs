@@ -1,7 +1,7 @@
 // Tells Bing, Yandex, Seznam, Naver and the other IndexNow engines which URLs changed so they
 // recrawl within days instead of weeks. Google does not participate; use Search Console for it.
 // Bing is this site's main search engine (GA4, Apr–Oct 2026: bing 118 sessions vs google 32).
-// Run after a production deploy: `pnpm indexnow` (every sitemap URL) or `pnpm indexnow /classics /`.
+// Run after a production deploy: `pnpm indexnow` (every sitemap URL) or `pnpm indexnow /privacy /`.
 // The key lives in public/<32 hex>.txt and must be live at the origin before submitting.
 import { readdirSync, readFileSync } from "node:fs";
 

@@ -232,6 +232,11 @@ export function DailyLeaderboardScreen() {
                             >
                               {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
                             </span>
+                            {e.autocheck === false && (
+                              <span className="shrink-0 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
+                                {t("autocheck.noAutocheck")}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">{formatDuration(e.seconds)}</td>

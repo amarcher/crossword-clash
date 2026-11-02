@@ -81,6 +81,11 @@ export const Cell = memo(function Cell({
   const parts: string[] = [];
   if (cell.number != null) parts.push(`${cell.number}`);
   if (cellState?.letter) parts.push(cellState.letter);
+  // Solo without autocheck: a letter Check judged wrong, or a revealed one.
+  const wrong = cellState?.checked === "wrong";
+  const revealed = !!cellState?.revealed;
+  if (wrong) parts.push("incorrect");
+  else if (revealed) parts.push("revealed");
   const ariaLabel = `Row ${cell.row + 1}, Column ${cell.col + 1}${parts.length ? `, ${parts.join(", ")}` : ""}`;
 
   // A player's colour is pre-blended against white (18% reads as a pastel with
@@ -138,10 +143,12 @@ export const Cell = memo(function Cell({
           {cell.number}
         </span>
       )}
+      {wrong && <span aria-hidden="true" className="cell-wrong-slash pointer-events-none absolute inset-0" />}
+      {revealed && !wrong && <span aria-hidden="true" className="cell-revealed-mark pointer-events-none absolute top-0 right-0" />}
       {cellState?.letter && (
         <span
           aria-hidden="true"
-          className={`absolute inset-0 flex items-center justify-center font-bold leading-none text-ink${letterAnimClass}`}
+          className={`absolute inset-0 flex items-center justify-center font-bold leading-none ${wrong ? "text-rose-600" : "text-ink"}${letterAnimClass}`}
           style={{ fontSize: "55cqi" }}
         >
           {cellState.letter}

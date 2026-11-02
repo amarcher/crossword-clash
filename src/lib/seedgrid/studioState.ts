@@ -34,12 +34,16 @@ export interface StudioState {
   dir: "across" | "down";
   /** Slot key → clue (the standard tier players see). */
   clues: Record<string, string>;
-  /** Slot key → plain "speed" clue, used as a hint in races. */
+  /**
+   * Slot key → plain "speed" clue. Dormant: no player-facing screen shows it
+   * and the clue panel has no field for it, but drafts still fill it and the
+   * .ipuz extension key round-trips it, so stored puzzles and the CLI keep theirs.
+   */
   speedClues: Record<string, string>;
   /** Slot keys whose clues the constructor wrote or picked; drafting never overwrites them. */
   editedClues: string[];
   title: string;
-  /** What the puzzle is about, passed to Claude with clue requests. */
+  /** What the puzzle is about, if anything: an optional note passed to the AI with clue requests. */
   theme: string;
   difficulty: Difficulty;
   versions: StudioVersion[];
@@ -51,6 +55,7 @@ export type StudioAction =
   | { type: "SET_GRID"; grid: Grid }
   | { type: "SELECT"; cell: number }
   | { type: "TOGGLE_DIR" }
+  | { type: "SET_DIR"; dir: "across" | "down" }
   | { type: "MOVE"; dRow: number; dCol: number }
   | { type: "TYPE"; letter: string }
   | { type: "ERASE" }
@@ -113,7 +118,7 @@ export function rulesFor(state: Pick<StudioState, "grid" | "minScore" | "approve
   return { minScore: state.minScore, approved, rejected: state.rejected };
 }
 
-/** Typing a clue marks it edited; clearing both tiers hands the slot back to drafting. */
+/** Typing or picking a clue marks it edited; clearing it hands the slot back to drafting. */
 function markEdited(state: StudioState, key: string, text: string | undefined): string[] {
   const rest = (state.editedClues ?? []).filter((k) => k !== key);
   return text?.trim() ? [...rest, key] : rest;
@@ -165,6 +170,8 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return { ...state, cursor: action.cell };
     case "TOGGLE_DIR":
       return { ...state, dir: state.dir === "across" ? "down" : "across" };
+    case "SET_DIR":
+      return state.dir === action.dir ? state : { ...state, dir: action.dir };
     case "MOVE": {
       // One square at a time, blacks included, so the keyboard can reach them to toggle.
       const r = Math.floor(state.cursor / grid.width) + action.dRow;
@@ -174,11 +181,22 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       return { ...state, cursor: r * grid.width + c, dir };
     }
     case "TYPE": {
-      if (grid.cells[state.cursor] === "#") return state;
-      const next = cloneGrid(grid);
-      next.cells[state.cursor] = action.letter.toUpperCase();
-      next.locked[state.cursor] = true;
-      return { ...state, grid: next, cursor: step({ ...state, grid: next }, 1) };
+      // A letter typed on a black square opens it (and its symmetric
+      // partners, as Block would) and lands there: nobody guessed that "."
+      // was the way to take a block back.
+      let base = state;
+      if (grid.cells[state.cursor] === "#") {
+        const opened = cloneGrid(grid);
+        for (const i of partners(grid, state.cursor, state.symmetry)) {
+          opened.cells[i] = "";
+          opened.locked[i] = false;
+        }
+        base = prune(state, opened);
+      }
+      const next = cloneGrid(base.grid);
+      next.cells[base.cursor] = action.letter.toUpperCase();
+      next.locked[base.cursor] = true;
+      return { ...base, grid: next, cursor: step({ ...base, grid: next }, 1) };
     }
     case "ERASE": {
       const target = grid.cells[state.cursor] ? state.cursor : step(state, -1);
@@ -238,8 +256,14 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
       );
       return { ...state, approved, rejected: [...state.rejected, action.word] };
     }
-    case "SET_CLUE":
-      return { ...state, clues: { ...state.clues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.speedClues[action.key]) };
+    case "SET_CLUE": {
+      // The standard clue alone decides ownership: the speed tier has no form
+      // field any more, so clearing the clue drops it too and hands the slot
+      // back to drafting.
+      const speedClues = { ...state.speedClues };
+      if (!action.clue.trim()) delete speedClues[action.key];
+      return { ...state, clues: { ...state.clues, [action.key]: action.clue }, speedClues, editedClues: markEdited(state, action.key, action.clue) };
+    }
     case "SET_SPEED_CLUE":
       return { ...state, speedClues: { ...state.speedClues, [action.key]: action.clue }, editedClues: markEdited(state, action.key, action.clue || state.clues[action.key]) };
     case "APPLY_CLUES": {

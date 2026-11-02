@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AuthProvider } from "../contexts/AuthContext";
 import { AccountProvider } from "../contexts/AccountContext";
 import { GameProvider } from "../contexts/GameContext";
 import { MultiplayerProvider } from "../contexts/MultiplayerContext";
+import { FriendsProvider } from "../contexts/FriendsContext";
+import { InviteBanner } from "../components/Friends";
+import { PushEffects } from "../components/Push";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -13,6 +16,7 @@ import { loadMpSession, clearMpSession, saveMpSession, isRecentMpSession } from 
 import { rejoinGame } from "../lib/puzzleService";
 import { ToastViewport } from "../components/ToastViewport";
 import { usePageViews } from "../hooks/usePageViews";
+import { startAppLinks } from "../lib/appLinks";
 
 /**
  * Inner component that handles routing side effects:
@@ -23,7 +27,7 @@ import { usePageViews } from "../hooks/usePageViews";
  * - new_game broadcast redirect
  * - game_started transition
  */
-function RoutingEffects({ children }: { children: React.ReactNode }) {
+export function RoutingEffects({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
@@ -47,6 +51,18 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [navigate, game]);
+
+  // Links opened into the apps (universal links / App Links): a room's QR
+  // code or invite lands on the join screen, a challenge or community link
+  // on its page; a puzzle payload goes through the hash listener above.
+  useEffect(
+    () =>
+      startAppLinks((target) => {
+        if (target.kind === "hash") window.location.hash = target.hash;
+        else navigate(target.to);
+      }),
+    [navigate],
+  );
 
   // When host closes the room: show explanatory modal to non-hosts before
   // teleporting them to the menu. Hosts navigate themselves via their UI;
@@ -81,13 +97,21 @@ function RoutingEffects({ children }: { children: React.ReactNode }) {
     }
   }, [mp.isRoomClosed, mp.isHost, game, navigate]);
 
-  // Handle new_game broadcast for non-host players
+  // Handle new_game broadcast for non-host players: once per room. The
+  // rejoin screen inserts this player's row in the new game (under the name
+  // they typed, from the session) and only then switches the game id, so the
+  // room hook subscribes to a game whose row it can track presence from.
+  // Switching the id here first made the hook hydrate before the row existed,
+  // which left the player out of everyone's roster; and with the whole game
+  // context in the dependencies the effect re-ran on every render while the
+  // id stayed set, bouncing the player back to /rejoin.
+  const handledNewGame = useRef<string | null>(null);
   useEffect(() => {
-    if (!mp.newGameId || mp.isHost) return;
-    game.setGameId(mp.newGameId);
+    if (!mp.newGameId || mp.isHost || handledNewGame.current === mp.newGameId) return;
+    handledNewGame.current = mp.newGameId;
     saveMpSession({ gameId: mp.newGameId, shareCode: mp.shareCode, displayName: game.displayName });
     navigate("/rejoin");
-  }, [mp.newGameId, mp.isHost, mp.shareCode, game, navigate]);
+  }, [mp.newGameId, mp.isHost, mp.shareCode, game.displayName, navigate]);
 
   return (
     <>
@@ -184,10 +208,14 @@ export function RootLayout() {
       <AccountProvider>
         <GameProvider>
           <MultiplayerProvider>
-            <RoutingEffects>
-              <Outlet />
-            </RoutingEffects>
-            <ToastViewport />
+            <FriendsProvider>
+              <RoutingEffects>
+                <Outlet />
+              </RoutingEffects>
+              <InviteBanner />
+              <PushEffects />
+              <ToastViewport />
+            </FriendsProvider>
           </MultiplayerProvider>
         </GameProvider>
       </AccountProvider>

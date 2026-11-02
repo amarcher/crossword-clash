@@ -24,6 +24,7 @@ vi.mock("../contexts/MultiplayerContext", () => ({
 vi.mock("../components/ToastViewport", () => ({ ToastViewport: () => null }));
 vi.mock("../hooks/usePageViews", () => ({ usePageViews: () => {} }));
 vi.mock("../lib/puzzleService", () => ({ rejoinGame: vi.fn() }));
+vi.mock("../lib/appLinks", () => ({ startAppLinks: () => () => {} }));
 vi.mock("../lib/sessionPersistence", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/sessionPersistence")>();
   return {
@@ -34,17 +35,20 @@ vi.mock("../lib/sessionPersistence", async (importOriginal) => {
   };
 });
 
-import { useRejoinEffect } from "./RootLayout";
+import { RoutingEffects, useRejoinEffect } from "./RootLayout";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
+import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { rejoinGame } from "../lib/puzzleService";
-import { loadMpSession, clearMpSession } from "../lib/sessionPersistence";
+import { loadMpSession, clearMpSession, saveMpSession } from "../lib/sessionPersistence";
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseGame = vi.mocked(useGame);
 const mockRejoinGame = vi.mocked(rejoinGame);
 const mockLoadMpSession = vi.mocked(loadMpSession);
 const mockClearMpSession = vi.mocked(clearMpSession);
+const mockSaveMpSession = vi.mocked(saveMpSession);
+const mockUseMultiplayerContext = vi.mocked(useMultiplayerContext);
 
 const HOUR = 60 * 60 * 1000;
 
@@ -130,5 +134,42 @@ describe("useRejoinEffect", () => {
     renderRejoin();
     await waitFor(() => expect(screen.getByTestId("navigated-to").textContent).toBe("/"));
     expect(mockRejoinGame).not.toHaveBeenCalled();
+  });
+});
+
+describe("RoutingEffects on a new_game broadcast", () => {
+  const mp = { newGameId: "g2", isHost: false, isRoomClosed: false, shareCode: "ABCDEF" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseMultiplayerContext.mockReturnValue(mp as unknown as ReturnType<typeof useMultiplayerContext>);
+  });
+  afterEach(cleanup);
+
+  function renderEffects(displayName: string) {
+    // A fresh context object per render, as the real provider hands out.
+    mockUseGame.mockReturnValue({ displayName, setGameId: vi.fn(), setUrlPuzzle: vi.fn(), setImportFailed: vi.fn(), reset: vi.fn(), setIsMultiplayer: vi.fn() } as unknown as ReturnType<typeof useGame>);
+    return (
+      <MemoryRouter initialEntries={["/play/g1"]}>
+        <Routes>
+          <Route path="/play/:gameId" element={<RoutingEffects><div data-testid="at">/play</div></RoutingEffects>} />
+          <Route path="/rejoin" element={<RoutingEffects><div data-testid="at">/rejoin</div></RoutingEffects>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  }
+
+  it("saves the session under the typed name and sends the player to /rejoin once, leaving the game id to the rejoin", async () => {
+    const { rerender } = render(renderEffects("Arch"));
+    await waitFor(() => expect(screen.getByTestId("at").textContent).toBe("/rejoin"));
+    expect(mockSaveMpSession).toHaveBeenCalledTimes(1);
+    expect(mockSaveMpSession).toHaveBeenCalledWith({ gameId: "g2", shareCode: "ABCDEF", displayName: "Arch" });
+    // The room hook must not subscribe to the new game before the rejoin has
+    // inserted this player's row there: the id is not switched here.
+    expect(mockUseGame.mock.results.every((r) => (r.value as { setGameId: ReturnType<typeof vi.fn> }).setGameId.mock.calls.length === 0)).toBe(true);
+    // Later renders with a new game context object (and the id still set) do nothing more.
+    rerender(renderEffects("Arch"));
+    rerender(renderEffects("Arch"));
+    expect(mockSaveMpSession).toHaveBeenCalledTimes(1);
   });
 });

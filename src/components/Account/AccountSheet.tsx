@@ -8,6 +8,7 @@ import { PlusPurchaseControls } from "../Plus/PlusPurchaseControls";
 import { track } from "../../lib/analytics";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { Button } from "../ui";
+import { ProviderButton } from "./ProviderButton";
 import { UsernamePicker } from "./UsernamePicker";
 import { PlusPitch } from "../Plus/PlusPitch";
 import type { AccountContextValue } from "../../contexts/AccountContext";
@@ -71,7 +72,6 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   };
 
   const providers = availableProviders();
-  const [wantsSignIn, setWantsSignIn] = useState(false);
 
   const signIn = (provider: AuthProvider) =>
     void act(async () => {
@@ -91,9 +91,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   const providerButtons = (
     <>
       {providers.map((provider) => (
-        <Button key={provider} variant="secondary" size="lg" block disabled={busy || !enabled?.[provider]} aria-busy={busy || undefined} onClick={() => signIn(provider)}>
-          {provider === "apple" ? t("account.continueApple") : t("account.continueGoogle")}
-        </Button>
+        <ProviderButton key={provider} provider={provider} size="lg" disabled={!enabled?.[provider]} busy={busy} onClick={() => signIn(provider)} />
       ))}
       {enabled && !providers.some((p) => enabled[p]) && <p className="text-center text-xs text-muted">{t("account.noProviders")}</p>}
     </>
@@ -143,7 +141,13 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             ) : view === "username" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.usernameBody")}</p>
             ) : view === "delete" ? (
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
+              <>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.deleteBody")}</p>
+                {/* Deleting the account can't cancel a store subscription (Apple asks apps to say so). */}
+                {account.plus && account.plusRow?.source === "revenuecat" && (
+                  <p className="mt-1.5 text-sm font-medium leading-relaxed text-ink-soft">{t("account.deleteStoreSubscription")}</p>
+                )}
+              </>
             ) : user ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.signedInBody")}</p>
             ) : (
@@ -163,9 +167,11 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
         <div className="mt-5">
           {view === "plus" ? (
             <PlusPitch prices={!account.plus}>
-              {user || nativePurchaseAvailable() ? (
-                // Web: an account is required (Stripe needs an email, the sweep would orphan an anonymous payer).
-                // Apps: the store sells to the device's anonymous id too (Apple 5.1.1(v)); sign-in is offered after.
+              {user || (nativePurchaseAvailable() && account.plus) ? (
+                // Plus belongs to an account on every platform (spec §3.5, revised 2026-10-28: half the
+                // benefits need one and the studio is web-only), so an anonymous visitor signs in first.
+                // The one exception is a subscriber whose purchase predates that rule: still anonymous,
+                // still shown Manage / Restore, with the sign-in prompt underneath.
                 <PlusPurchaseControls
                   account={{ signedIn: !!user, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}
                   placement={placement}
@@ -181,21 +187,6 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
                 <div className="flex flex-col gap-2.5">
                   <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
                   {providerButtons}
-                </div>
-              )}
-              {!user && nativePurchaseAvailable() && !account.plus && (
-                <div className="flex flex-col gap-2.5">
-                  {wantsSignIn ? (
-                    providerButtons
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setWantsSignIn(true)}
-                      className="mx-auto min-h-11 rounded-lg px-3 text-sm text-ink-soft underline-offset-2 hover:underline active:underline focus-visible:outline-2 focus-visible:outline-brand-500"
-                    >
-                      {t("plus.alreadyPlusSignIn")}
-                    </button>
-                  )}
                 </div>
               )}
             </PlusPitch>

@@ -21,8 +21,8 @@ describe("pageMetaFor", () => {
   it("canonicalises /menu to the home page and gives other routes their own URL", () => {
     expect(pageMetaFor("/menu", t).canonical).toBe(`${SITE_ORIGIN}/`);
     expect(pageMetaFor("/", t).canonical).toBe(`${SITE_ORIGIN}/`);
-    expect(pageMetaFor("/classics", t).canonical).toBe(`${SITE_ORIGIN}/classics`);
-    expect(pageMetaFor("/classics/", t).canonical).toBe(`${SITE_ORIGIN}/classics`);
+    expect(pageMetaFor("/archive", t).canonical).toBe(`${SITE_ORIGIN}/archive`);
+    expect(pageMetaFor("/archive/", t).canonical).toBe(`${SITE_ORIGIN}/archive`);
     expect(pageMetaFor("/account", t)).toEqual({ title: "Your account — Crossword Clash", description: expect.stringContaining("streaks"), canonical: `${SITE_ORIGIN}/account` });
   });
 
@@ -59,7 +59,7 @@ describe("applyPageMeta", () => {
       <meta name="twitter:title" content="old" />
       <meta name="twitter:description" content="old" />
       <link rel="canonical" href="old" />`;
-    const meta = pageMetaFor("/classics", t);
+    const meta = pageMetaFor("/archive", t);
     applyPageMeta(meta, document);
     expect(document.title).toBe(meta.title);
     for (const [attr, name, content] of metaTags(meta)) {

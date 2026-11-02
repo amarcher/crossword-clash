@@ -1,0 +1,5 @@
+This update (1.1.0, build 23) is the release candidate for the App Store. It fixes two things from build 22.
+
+1. Finish a puzzle and tap Share. The share sheet now carries the whole result: the emoji grid, your time and the link. Build 22 sent only the link. Try Copy and Messages.
+2. On an iPhone Duo's outer screen, the menu's Crossword Clash wordmark no longer runs under the clock. It fits beside the status bar.
+3. Everything from build 22 still applies: built with Xcode 27.1 (full screen on iPhone Duo), public puzzle links after a publish, the profile menu above the studio grid, hardware keyboards, TV screens staying awake, Autocheck, community puzzles and the studio.

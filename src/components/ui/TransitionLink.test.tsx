@@ -21,18 +21,18 @@ function setup(props: Partial<React.ComponentProps<typeof TransitionLink>> = {})
   const onClick = vi.fn();
   render(
     <MemoryRouter>
-      <TransitionLink to="/classics" onClick={onClick} {...props}>
-        Classics
+      <TransitionLink to="/archive" onClick={onClick} {...props}>
+        Archive
       </TransitionLink>
     </MemoryRouter>,
   );
-  return { onClick, link: screen.getByRole("link", { name: "Classics" }) };
+  return { onClick, link: screen.getByRole("link", { name: "Archive" }) };
 }
 
 describe("TransitionLink", () => {
   it("renders a real link to the path", () => {
     const { link } = setup();
-    expect(link.getAttribute("href")).toBe("/classics");
+    expect(link.getAttribute("href")).toBe("/archive");
   });
 
   it("warms the route on pointer enter, focus and touch start", () => {
@@ -41,14 +41,14 @@ describe("TransitionLink", () => {
     fireEvent.focus(link);
     fireEvent.touchStart(link);
     expect(mockPrefetch).toHaveBeenCalledTimes(3);
-    expect(mockPrefetch).toHaveBeenCalledWith("/classics");
+    expect(mockPrefetch).toHaveBeenCalledWith("/archive");
   });
 
   it("navigates with the transition on a plain click, after the caller's onClick", () => {
     const { link, onClick } = setup({ replace: true });
     fireEvent.click(link, { button: 0 });
     expect(onClick).toHaveBeenCalledTimes(1);
-    expect(mockNavigate).toHaveBeenCalledWith(expect.any(Function), "/classics", { replace: true });
+    expect(mockNavigate).toHaveBeenCalledWith(expect.any(Function), "/archive", { replace: true });
   });
 
   it("leaves modified clicks and target links to the browser", () => {

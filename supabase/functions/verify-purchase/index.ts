@@ -195,7 +195,9 @@ async function handleReconcile(req: Request): Promise<Response> {
         sub = pickStripeSubscription(await searchStripeSubscriptions(user.id));
       }
       const row = sub ? stripeSubscriptionRow(sub, user.id) : null;
-      if (row) await upsertEntitlement(admin, row);
+      // A search (no Stripe row of ours) that only turns up a lapsed subscription writes nothing:
+      // there is no Stripe row to expire, and the user's row may be a grant or a store purchase.
+      if (row && (plan.kind === "fetch" || row.status !== "expired")) await upsertEntitlement(admin, row);
       else if (gone) await expireStale(admin, user.id, "stripe"); // Stripe no longer has the subscription we recorded
     }
   } else {
