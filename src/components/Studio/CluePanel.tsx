@@ -29,7 +29,7 @@ export const MAX_REDRAFTS_IN_FLIGHT = 3;
 const INPUT =
   "min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500 disabled:opacity-60";
 const ICON_BUTTON =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
 
 const without = <T,>(rec: Record<string, T>, key: string): Record<string, T> => {
   const next = { ...rec };
@@ -240,44 +240,47 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
               const label = `${s.number} ${dir}`;
               return (
                 <li key={k} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="flex w-24 shrink-0 flex-col font-mono text-xs text-muted">
-                      {s.number}. {answer}
+                  {/* Phones stack the entry over its input so the clue gets the full width; from sm up it is one line. */}
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                    <span className="flex shrink-0 items-center gap-2 font-mono text-xs text-muted sm:w-24 sm:flex-col sm:items-start sm:gap-0">
+                      <span>{s.number}. {answer}</span>
                       {edited.has(k) && <span className="font-sans text-[11px] font-semibold text-brand-700">yours</span>}
                     </span>
-                    <input
-                      className={`${INPUT} h-10 md:text-sm`}
-                      aria-label={`Clue for ${label}`}
-                      value={clue}
-                      disabled={rowBusy}
-                      onChange={(e) => {
-                        dispatch({ type: "SET_CLUE", key: k, clue: e.target.value });
-                        // Typing by hand retires the offered alternatives.
-                        if (alts) setAlternatives((prev) => without(prev, k));
-                      }}
-                    />
-                    <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
-                      {clue.length || ""}
-                    </span>
-                    <button
-                      type="button"
-                      className={ICON_BUTTON}
-                      aria-label={`Redraft ${label} with AI`}
-                      aria-busy={rowBusy || undefined}
-                      title={`Redraft with AI: ${ALTERNATIVES_COUNT} alternatives to pick from`}
-                      disabled={!entryAnswers(grid)[s.id] || rowBusy || busy !== null || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT}
-                      onClick={() => redraft(s.id, k)}
-                    >
-                      {rowBusy ? (
-                        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                      ) : (
-                        <WandSparkles className="size-4" aria-hidden="true" />
-                      )}
-                    </button>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <input
+                        className={`${INPUT} h-10 md:text-sm`}
+                        aria-label={`Clue for ${label}`}
+                        value={clue}
+                        disabled={rowBusy}
+                        onChange={(e) => {
+                          dispatch({ type: "SET_CLUE", key: k, clue: e.target.value });
+                          // Typing by hand retires the offered alternatives.
+                          if (alts) setAlternatives((prev) => without(prev, k));
+                        }}
+                      />
+                      <span className={`w-6 text-right text-xs tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "text-subtle"}`}>
+                        {clue.length || ""}
+                      </span>
+                      <button
+                        type="button"
+                        className={ICON_BUTTON}
+                        aria-label={`Redraft ${label} with AI`}
+                        aria-busy={rowBusy || undefined}
+                        title={`Redraft with AI: ${ALTERNATIVES_COUNT} alternatives to pick from`}
+                        disabled={!entryAnswers(grid)[s.id] || rowBusy || busy !== null || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT}
+                        onClick={() => redraft(s.id, k)}
+                      >
+                        {rowBusy ? (
+                          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                        ) : (
+                          <WandSparkles className="size-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  {note && <p className="pl-26 text-xs text-muted">{note}</p>}
+                  {note && <p className="text-xs text-muted sm:pl-26">{note}</p>}
                   {alts && alts.length > 0 && (
-                    <ul className="flex flex-wrap gap-1.5 pl-26" aria-label={`Alternatives for ${label}`}>
+                    <ul className="flex flex-wrap gap-1.5 sm:pl-26" aria-label={`Alternatives for ${label}`}>
                       {alts.map((alt) => {
                         const chosen = alt === clue;
                         return (

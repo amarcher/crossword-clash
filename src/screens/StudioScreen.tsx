@@ -35,6 +35,7 @@ import { duplicateState, isBlank, loadLibrary, removeEntry, saveLibrary, toEntry
 import { normalizeTransferPuzzle } from "../lib/puzzleNormalizer";
 import { compressPuzzleToHash } from "../lib/puzzleUrl";
 import type { Viability } from "../lib/seedgrid/ingrid";
+import { diagnoseFill, PROBE_MS } from "../lib/seedgrid/fillDiagnosis";
 import {
   activeSlot,
   cellHeat,
@@ -105,7 +106,9 @@ export function StudioScreen() {
   const adminPanels = (account.admin || !!studioToken || !account.plus) && studioAdminPanelsAllowed();
   const access = { admin: account.admin, plus: account.plus };
   const [engine, setEngine] = useState<EngineStatus>({ kind: "loading", progress: null });
-  const [busy, setBusy] = useState<"fill" | "layout" | null>(null);
+  const [busy, setBusy] = useState<"fill" | "layout" | "diagnose" | null>(null);
+  // Cells the last failed fill blamed (fillDiagnosis.ts); cleared by the next change to the grid or rules.
+  const [stuck, setStuck] = useState<number[]>([]);
   // The account's published puzzles by studio id (PublishDialog, the chips in My puzzles).
   const [published, setPublished] = useState<Record<string, CommunityPuzzle>>({});
   const [publishOpen, setPublishOpen] = useState(false);
@@ -219,6 +222,7 @@ export function StudioScreen() {
   const base = useMemo(() => committed(state.grid), [state.grid]);
   const rulesJson = JSON.stringify(rules);
   const dupes = useMemo(() => duplicateEntries(base), [base]);
+  useEffect(() => setStuck([]), [base, rulesJson]);
 
   // Heatmap, candidates for the selected entry, then background proofs for the top candidates.
   useEffect(() => {
@@ -265,20 +269,30 @@ export function StudioScreen() {
     setBusy("fill");
     setMessage(null);
     const started = state.grid;
+    let diagnosing = false;
     try {
       const res = await client.fill(base, rules, FILL_MS, fillSeed.current++);
       if (latestGrid.current !== started) setMessage("The grid changed while filling, so that fill was dropped. Fill again.");
       else if (res.ok) dispatch({ type: "SET_GRID", grid: res.grid });
-      else
-        setMessage(
-          res.reason === "timeout"
-            ? `No fill in ${FILL_MS / 1000} s. Try fewer approvals, a lower score, or another black square.`
-            : res.reason === "bad-request"
-              ? "The engine can't read this grid (an entry may be longer than 21 squares)."
-              : "This grid can't be filled with these rules. Turn on the heatmap: red squares have no word through them at all.",
-        );
+      else if (res.reason === "timeout") setMessage(`No fill in ${FILL_MS / 1000} s. Try fewer approvals, a lower score, or another black square.`);
+      else if (res.reason === "bad-request") setMessage("The engine can't read this grid (an entry may be longer than 21 squares).");
+      else {
+        // The engine only says "unfillable": find the entry or rule in the way
+        // (fillDiagnosis.ts) and paint it. Stop restarts the worker, which rejects
+        // the probes and lands in the catch below.
+        setBusy("diagnose");
+        diagnosing = true;
+        setMessage("This grid can't be filled with these rules. Looking for what's in the way…");
+        const verdict = await diagnoseFill(base, rules, {
+          options: (g, r) => client.options(g, r),
+          fill: (g, r) => client.fill(g, r, PROBE_MS, fillSeed.current++),
+        });
+        if (latestGrid.current !== started) return;
+        setStuck(verdict.cells);
+        setMessage(verdict.message);
+      }
     } catch {
-      setMessage("Fill stopped.");
+      setMessage(diagnosing ? "This grid can't be filled with these rules." : "Fill stopped.");
     } finally {
       setBusy(null);
     }
@@ -430,6 +444,7 @@ export function StudioScreen() {
           direction={state.dir}
           activeCells={slot?.cells ?? []}
           heat={heat}
+          stuck={stuck}
           onSelect={(cell) => dispatch({ type: "SELECT", cell })}
           onToggleBlock={(cell) => dispatch({ type: "TOGGLE_BLOCK", cell })}
           onToggleDirection={() => dispatch({ type: "TOGGLE_DIR" })}
@@ -550,6 +565,7 @@ export function StudioScreen() {
       {adminPanels && communityEnabled() && <Reports admin={account.admin} />}
       <Card className="p-4">
         <Eyebrow as="h2">Theme entries</Eyebrow>
+        <p className="mt-1 text-sm text-muted">The words to build around. Lay out places them in a fresh grid and adds the black squares.</p>
         <textarea
           className="mt-2 w-full rounded-xl border border-line-strong bg-surface px-3 py-2 text-base md:text-sm text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500"
           rows={3}

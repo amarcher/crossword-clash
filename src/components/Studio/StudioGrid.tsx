@@ -10,6 +10,8 @@ interface StudioGridProps {
   activeCells: number[];
   /** Per cell, the fewest options through it; undefined hides the heatmap. */
   heat?: (number | undefined)[];
+  /** Cells a failed fill blamed (fillDiagnosis.ts); painted red whether or not the heatmap is on. */
+  stuck?: number[];
   onSelect: (cell: number) => void;
   /** Right-click menu: make this square black, or white again (its symmetric partner follows). */
   onToggleBlock: (cell: number) => void;
@@ -48,7 +50,7 @@ const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle",
  * (black square on / off, across / down), because "." was the only way to
  * place a block and nobody found it.
  */
-export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, onSelect, onToggleBlock, onToggleDirection, onShowWords, input }: StudioGridProps) {
+export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, activeCells, heat, stuck, onSelect, onToggleBlock, onToggleDirection, onShowWords, input }: StudioGridProps) {
   const gridId = useId();
   // x / y are the press point inside the grid shell; `flip` opens the menu
   // leftwards when the press is in the right half, so a press near the right
@@ -139,6 +141,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
     return out;
   }, [grid]);
   const active = useMemo(() => new Set(activeCells), [activeCells]);
+  const blamed = useMemo(() => new Set(stuck ?? []), [stuck]);
   const w = grid.width;
   const place = (i: number) => `Row ${Math.floor(i / w) + 1}, Column ${(i % w) + 1}`;
 
@@ -190,7 +193,8 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
             );
           }
           const isActive = active.has(i);
-          const level = heat ? heatLevel(heat[i]) : "open";
+          // A cell the last fill blamed reads as dead even with the heatmap hidden.
+          const level = blamed.has(i) ? "dead" : heat ? heatLevel(heat[i]) : "open";
           const dot = isCursor || isActive ? HEAT_DOT[level] : null;
           // A plain open cell takes a faint sunken tint under a mouse (`hover:` is
           // gated on `@media (hover: hover)` by Tailwind); nothing transitions.
@@ -201,6 +205,7 @@ export const StudioGrid = memo(function StudioGrid({ grid, cursor, direction, ac
           const parts = [place(i)];
           if (numbers.has(i)) parts.push(String(numbers.get(i)));
           if (cell) parts.push(cell.toUpperCase());
+          if (blamed.has(i)) parts.push("stuck");
           return (
             <div
               key={i}

@@ -105,7 +105,7 @@ export function Insights({ admin }: { admin: boolean }) {
           <KeyRound className="size-4 text-muted" aria-hidden="true" />
           <label className="sr-only" htmlFor="insights-token">Studio token</label>
           <input id="insights-token" type="password" autoComplete="off" placeholder="Studio token" className={INPUT} value={tokenDraft} onChange={(e) => setTokenDraft(e.target.value)} />
-          <Button type="submit" size="sm" variant="secondary" disabled={!tokenDraft.trim()}>Use</Button>
+          <Button type="submit" size="sm" disabled={!tokenDraft.trim()}>Save</Button>
         </form>
       </Card>
     );

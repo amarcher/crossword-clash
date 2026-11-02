@@ -16,7 +16,7 @@ interface PuzzleListProps {
 }
 
 const ICON_BUTTON =
-  "inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500";
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500";
 
 function ago(at: number): string {
   const minutes = Math.round((Date.now() - at) / 60000);

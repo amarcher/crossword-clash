@@ -27,7 +27,7 @@ const DOT_LABEL: Record<Viability, string> = {
 };
 
 const ICON_BUTTON =
-  "inline-flex size-9 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500";
+  "inline-flex size-11 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500";
 
 /** Sort key: words a background fill has proven impossible sink below the rest. */
 const ORDER: Record<Viability, number> = { good: 0, unknown: 0, nogood: 1 };

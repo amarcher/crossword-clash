@@ -4,9 +4,16 @@
  * Supabase `daily_schedule` through the token-gated studio-schedule edge
  * function; players get them from /daily-puzzles/<day>.json and
  * /daily-puzzles/large/<day>.json.
+ *
+ * A day is served in this order (vercel.json: real files win over rewrites):
+ * a committed feed file under public/daily-puzzles/, else the schedule row,
+ * else the mini's bundled rotation (the midi and large have no fallback).
+ * The queue reads the daily index — which lists the committed files, future
+ * days included — so it can say which of the three each day will get.
  */
 import { dayKey } from "../soloStats";
 import type { DailyFeedEntry, DailySlot } from "../dailyFeed";
+import { fetchIndexMonth, monthOf, type DailyIndexEntry } from "../dailyIndex";
 import { clueOk } from "./cluePrompt";
 import { slotsOf, slotText } from "./grid";
 import { toTransferPuzzle, type ClueSet } from "./ipuz";
@@ -29,6 +36,44 @@ export const MIDI_MIN_SIZE = 8;
 export function defaultSlotFor(width: number, height: number): DailySlot {
   const size = Math.max(width, height);
   return size >= LARGE_MIN_SIZE ? "large" : size >= MIDI_MIN_SIZE ? "midi" : "mini";
+}
+
+/** A committed feed file the daily index lists: what the day will serve whatever the schedule says. */
+export type StockedDay = Pick<DailyIndexEntry, "day" | "slot" | "title">;
+
+export type DayServing =
+  | { kind: "file"; title: string; shadowed: ScheduledDay | null }
+  | { kind: "scheduled"; entry: ScheduledDay }
+  | { kind: "rotation" }
+  | { kind: "none" };
+
+export const servingKey = (day: string, slot: DailySlot) => `${day}:${slot}`;
+
+/** What a day's slot will serve: the file first, then the schedule, then the mini's rotation. */
+export function servingFor(slot: DailySlot, file: StockedDay | undefined, scheduled: ScheduledDay | undefined): DayServing {
+  if (file) return { kind: "file", title: file.title, shadowed: scheduled ?? null };
+  if (scheduled) return { kind: "scheduled", entry: scheduled };
+  return slot === "mini" ? { kind: "rotation" } : { kind: "none" };
+}
+
+/** "2026-10-30".."2026-11-02" → ["2026-10", "2026-11"]. */
+export function monthsBetween(from: string, to: string): string[] {
+  const months: string[] = [];
+  for (let m = monthOf(from); m <= monthOf(to); ) {
+    months.push(m);
+    const [y, mo] = m.split("-").map(Number);
+    m = `${mo === 12 ? y + 1 : y}-${String(mo === 12 ? 1 : mo + 1).padStart(2, "0")}`;
+  }
+  return months;
+}
+
+/** The committed feed files between two days, future days included (the index lists them). Never rejects. */
+export async function fetchStockedDays(from: string, to: string): Promise<StockedDay[]> {
+  const pages = await Promise.all(monthsBetween(from, to).map(fetchIndexMonth));
+  return pages
+    .flat()
+    .filter((e) => e.day >= from && e.day <= to)
+    .map(({ day, slot, title }) => ({ day, slot, title }));
 }
 
 /** The next `count` local calendar days, starting today. */
