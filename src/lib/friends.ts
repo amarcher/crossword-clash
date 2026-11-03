@@ -6,8 +6,9 @@
  *
  * Pure parts (tested): `splitFriendships` (rows → friends / incoming /
  * outgoing), `inviteState` (open, started, closed, expired), `raceBlocks` (the
- * screen's block order by state, spec §3.6), `friendsErrorKind`, the pending
- * challenge store. The client functions wrap the tables and RPCs and map a
+ * screen's block order by state, spec §3.6), `friendSuggestions` (the other
+ * players of a finished room worth an "Add friend"), `friendsErrorKind`, the
+ * pending challenge store. The client functions wrap the tables and RPCs and map a
  * refusal's `friends:<code>` message to a `FriendsError`.
  */
 import { supabase } from "./supabaseClient";
@@ -124,6 +125,34 @@ export function raceBlocks(state: { signedIn: boolean; friends: number; invites:
   return ["friends", "start", "code"];
 }
 
+/**
+ * The players of a finished room the viewer could add as friends (Andrew's
+ * direction of 2026-11-02: players who meet by code should be nudged to link
+ * up). `players` are the room's accounts with a username — anonymous players
+ * have no profile row and never reach this — in standings order, which the
+ * result keeps. Dropped: the viewer, anyone already a friend, anyone with a
+ * request pending in either direction, anyone the viewer blocked, and a user
+ * listed twice (a rejoin under another row).
+ */
+export function friendSuggestions(
+  players: readonly Person[],
+  friendships: Friendships,
+  blocked: readonly string[],
+  viewerId: string,
+): Person[] {
+  const skip = new Set<string>([viewerId, ...blocked]);
+  for (const list of [friendships.friends, friendships.incoming, friendships.outgoing]) {
+    for (const p of list) skip.add(p.userId);
+  }
+  const out: Person[] = [];
+  for (const p of players) {
+    if (skip.has(p.userId)) continue;
+    skip.add(p.userId);
+    out.push(p);
+  }
+  return out;
+}
+
 /** The daily challenge link an invite may carry (the only link the server accepts). */
 export const BEAT_LINK = /^\/daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)(\?[A-Za-z0-9=&%._+-]*)?$/;
 
@@ -229,6 +258,23 @@ export async function fetchRecentOpponents(): Promise<Opponent[]> {
   const { data, error } = await client().rpc("recent_opponents", {});
   if (error) throw refusal(error);
   return (data ?? []).map((row) => ({ userId: row.user_id, username: row.username, games: row.games, lastAt: row.last_at }));
+}
+
+/**
+ * The usernames behind a room's user ids (profiles are public). An anonymous
+ * player has no row and is simply absent; the answer keeps the ids' order so
+ * a list built from it follows the standings.
+ */
+export async function fetchPlayerProfiles(userIds: readonly string[]): Promise<Person[]> {
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return [];
+  const { data, error } = await client().from("profiles").select("user_id, username").in("user_id", ids);
+  if (error) throw refusal(error);
+  const byId = new Map((data ?? []).map((row) => [row.user_id, row.username] as const));
+  return ids.flatMap((id) => {
+    const username = byId.get(id);
+    return username ? [{ userId: id, username }] : [];
+  });
 }
 
 export async function fetchBlocks(viewerId: string): Promise<string[]> {

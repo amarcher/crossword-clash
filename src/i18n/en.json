@@ -909,7 +909,10 @@
     "sendToFriend": "Send to a friend",
     "sendToFriendHint": "They get your time to beat in the app, no share sheet needed.",
     "send": "Send",
-    "sent": "Sent"
+    "sent": "Sent",
+    "postRaceHeading": "Raced with you",
+    "postRaceHint": "Add them as friends to invite them into your next room in a tap.",
+    "addFriend": "Add friend"
   },
   "push": {
     "heading": "Notifications",

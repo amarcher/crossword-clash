@@ -81,7 +81,7 @@ export type AnalyticsEvent =
   | "app_update_tapped"
   /** The player tapped Later on that banner. Param `version`. */
   | "app_update_dismissed"
-  /** Friends (docs/friends-spec.md §7): a request went out. Params `method` (username | raced), `outcome` (pending | accepted | sent). */
+  /** Friends (docs/friends-spec.md §7): a request went out. Params `method` (username | raced | post-race, the completion modal's "Raced with you"), `outcome` (pending | accepted | sent). */
   | "friend_request_sent"
   /** Accept / Decline on a request. Param `accepted`. */
   | "friend_request_responded"
