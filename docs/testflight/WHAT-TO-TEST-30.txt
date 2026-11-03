@@ -1,0 +1,5 @@
+This build (1.1.0, build 30) adds friend suggestions after a race. Please check:
+
+1. Finish a race with someone who is signed in but not yet your friend: the finish screen shows "Raced with you" with an Add friend button beside their name, which turns to Requested (or Friends, if they had already asked you).
+2. The rows never appear for spectators, for players without an account, for someone already your friend, or with no other accounts in the room.
+3. Everything from build 29 still applies: the regrouped menu with one-line rows, the Plus cards on Past puzzles and Community puzzles, and friend requests answerable from the menu, the account menu and the account page.

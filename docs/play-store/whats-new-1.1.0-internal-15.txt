@@ -1,0 +1,5 @@
+<en-US>
+After a race, add the people you played with as friends straight from the finish screen.
+
+The tidier home screen and the friend-request fixes from the previous builds are unchanged.
+</en-US>
