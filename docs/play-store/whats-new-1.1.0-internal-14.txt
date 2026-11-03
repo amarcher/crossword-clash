@@ -1,0 +1,5 @@
+<en-US>
+A tidier home screen: Play with friends, More puzzles to solve, and More from Crossword Clash, every row the same height. Plus is explained where it helps, on Past puzzles and Community puzzles.
+
+Friend requests from the previous build are unchanged.
+</en-US>

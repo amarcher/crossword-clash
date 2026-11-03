@@ -1,0 +1,7 @@
+This build (1.1.0, build 29) reorganises the home screen. Please check:
+
+1. Menu: under the daily tiles the sections are now "Play with friends", "More puzzles to solve" (Past puzzles, Community puzzles, Bring your own puzzle) and "More from Crossword Clash" (sign in, Build a crossword, Plus). Every row is the same height with one line of subtext.
+2. The "How the dailies work" block is gone from the menu; it lives on the Support page.
+3. Past puzzles: a gold "Every daily since Oct 16, 2026, with Plus" card at the top, unless you have Plus.
+4. Community puzzles: "Want to make your own?" with About Plus under the intro, unless you have Plus.
+5. Everything from build 28 still applies: friend requests answerable from the menu, the account menu and the account page.
