@@ -517,14 +517,24 @@ switches:
    the player. The lobby dims an away row with an "Away" chip (a tinted chip,
    no left-border accent) and a joiner's status line reads "Waiting for
    <host> to come back" while the host is away.
-3. **Nudge.** `nudge_host(game_id)`: a SECURITY DEFINER RPC (`friends:`
-   refusals) for a player of a `waiting` room who is not its host, one
-   nudge per caller per room per 3 minutes (`room_nudges` rows, `friends:too_soon`
-   inside the window), nothing written for a blocked pair. A webhook trigger
-   on `room_nudges` INSERT (`room_nudges_push`, `docs/push-setup-nudges.sql`)
+3. **Nudge.** `nudge_host(game_id, spell_started_at)`: a SECURITY DEFINER
+   RPC (`friends:` refusals) for a player of a `waiting` room who is not its
+   host, nothing written for a blocked pair. **The wait backs off** (Andrew,
+   2026-11-02): the first nudge of an away spell is free, then 1, 2, 4, 8
+   minutes, capped at 15 (`NUDGE_BACKOFF_MS` / `nextNudgeAt` in
+   `src/lib/friends.ts`, `nudge_backoff` in the SQL), computed from the
+   caller's `room_nudges` rows of that spell; a spell is the joiner's own
+   observation of the host going away (presence never reaches the database),
+   so the host coming back and leaving again starts the ladder over, and a
+   one-minute floor between any two nudges by the same caller in the room
+   holds whatever spell a client claims. A refusal is
+   `friends:too_soon:<seconds>` and the answer carries `nextInSeconds`, so
+   the lobby counts down from the server's clock. A webhook trigger on
+   `room_nudges` INSERT (`room_nudges_push`, `docs/push-setup-nudges.sql`)
    turns the row into a `room_nudge` push ("@alicia is waiting in your room")
    under the same switch and collapse id. The joiner's lobby shows "Nudge
-   host" only while the host is away; it reads "Nudged" for the cooldown.
+   host" only while the host is away; while the ladder holds it reads "Nudge
+   again in 1:42", counting down, never a bare disabled state.
 4. **Decline.** `room_invites` gains `response` (`declined`, else null) and
    `respond_room_invite(invite_id, response)` (recipient only). The banner
    and the Race screen's invite row gain "Can't now" beside Join; a declined
@@ -637,6 +647,7 @@ CREATE TABLE room_nudges (
   game_id      UUID NOT NULL REFERENCES games (id) ON DELETE CASCADE,
   from_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,  -- any player of the room, anonymous included
   to_user_id   UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,  -- the host
+  spell_started_at TIMESTAMPTZ,  -- when the joiner saw the host go away; the ladder counts one spell's rows
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 -- RLS on, no client policies: written by nudge_host(), read by the webhook trigger; rows cascade with the game.
@@ -711,7 +722,7 @@ the shorter `room_invite_ttl` (§5.4) is the one that matters.
 | `respond_friend_request(p_requester uuid, p_accept boolean)` | the recipient | `accepted` + `responded_at`, or deletes the row and writes the cooldown |
 | `recent_opponents()` | any account | `SECURITY INVOKER`: the other `players` of the caller's games (and games they hosted), joined to `profiles`, with count and last game; window = what the sweep has kept |
 | `invite_to_room(p_game_id uuid, p_friend uuid)` / `send_beat(p_friend uuid, p_link text)` | an account that is host or player of a `waiting` room (`beat`: any account) | friendship `accepted`, no block either way, the recipient's `room_invites` preference on (else `muted`, inserted with `pushed_at` null so the inbox still gets it), ≤ 20 invites in 1 h and ≤ 50 in 24 h by the caller; inserts; a Database Webhook on INSERT calls `send-push` (phase d) |
-| `nudge_host(p_game_id uuid)` | any JWT that is a player (not the host) of a `waiting` room | one `room_nudges` row per caller per room per 3 minutes (`friends:too_soon` inside the window); a blocked pair answers NULL and writes nothing; a webhook trigger on INSERT calls `send-push` (phase f) |
+| `nudge_host(p_game_id uuid, p_spell timestamptz)` | any JWT that is a player (not the host) of a `waiting` room | a `room_nudges` row when the spell's ladder allows (free, then 1 / 2 / 4 / 8 / 15 minutes after the last nudge of the spell; a one-minute floor across spells); answers `{ id, nextInSeconds }`, refuses `friends:too_soon:<seconds>`; a blocked pair gets a null id and writes nothing; a webhook trigger on INSERT calls `send-push` (phase f) |
 | `respond_room_invite(p_invite uuid, p_response text)` | the recipient | sets `response` (only `declined`) and `seen_at` on an open room invite |
 | `register_device_token` (plain RLS upsert from the client) | any JWT | `ON CONFLICT (token) DO UPDATE SET user_id, last_seen_at` (a token that moves to a new anonymous user after storage was cleared follows the user) |
 | `send-push` (edge function, service role, `PUSH_SENDER_SECRET`) | cron, webhooks | §3.3; writes `push_log`; deletes unregistered tokens |

@@ -9,7 +9,7 @@ import { tStatic } from "../i18n/i18n";
 import { useConfirm } from "../components/ConfirmDialog";
 import { LobbyInvites } from "../components/Friends";
 import { useFriends } from "../contexts/FriendsContext";
-import { friendsEnabled } from "../lib/friends";
+import { friendsEnabled, NUDGE_BACKOFF_MS } from "../lib/friends";
 
 export function LobbyScreen() {
   const navigate = useNavigate();
@@ -65,9 +65,10 @@ export function LobbyScreen() {
   }, [mp, game, navigate]);
 
   const gameId = game.gameId;
-  const handleNudge = useCallback(async () => {
-    if (gameId) await friends.nudge(gameId);
-  }, [friends, gameId]);
+  const handleNudge = useCallback(
+    async (spellStartedAt: number) => (gameId ? friends.nudge(gameId, spellStartedAt) : NUDGE_BACKOFF_MS[0] / 1000),
+    [friends, gameId],
+  );
 
   if (!game.puzzle) return <Navigate to="/" replace />;
 

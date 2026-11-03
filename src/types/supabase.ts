@@ -524,8 +524,8 @@ export interface Database {
       mark_invites_seen: { Args: { p_ids: string[] }; Returns: undefined };
       /** The invitee's "Can't now" on an open room invite (phase f); the only response is 'declined'. */
       respond_room_invite: { Args: { p_invite: string; p_response: "declined" }; Returns: undefined };
-      /** A waiting joiner asks the host to come back; the nudge id, or null when a block swallowed it. */
-      nudge_host: { Args: { p_game_id: string }; Returns: string | null };
+      /** A waiting joiner asks the host to come back (the away spell as the joiner saw it begin); `{ id, nextInSeconds }`, the id null when a block swallowed it. */
+      nudge_host: { Args: { p_game_id: string; p_spell?: string | null }; Returns: { id: string | null; nextInSeconds: number } };
       /** Records the caller's agreement to the publishing terms (a real account with a username). */
       accept_publishing_terms: {
         Args: { p_version: string };

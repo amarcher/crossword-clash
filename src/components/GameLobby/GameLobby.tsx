@@ -8,7 +8,7 @@ import { RaceModeSelector } from "./RaceModeSelector";
 import { FlowPage } from "../Flow";
 import { Button, Card, Eyebrow } from "../ui";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
-import { NUDGE_COOLDOWN_MS } from "../../lib/friends";
+import { formatCountdown, FriendsError, nextNudgeAt } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
 
 interface GameLobbyProps {
@@ -24,17 +24,23 @@ interface GameLobbyProps {
   onRaceModeChange?: (value: RaceMode) => void;
   /** The friends invite list (docs/friends-spec.md §3.2), shown above the room code; null when the viewer has none. */
   invites?: ReactNode;
-  /** A joiner's "Nudge host" (spec §3.7); shown only while the host is away. Resolves when the nudge was written. */
-  onNudgeHost?: () => Promise<void>;
+  /**
+   * A joiner's "Nudge host" (spec §3.7); shown only while the host is away.
+   * Called with the ms timestamp the current away spell began; resolves to the
+   * server's next wait in seconds (a `too_soon` refusal carries the seconds left).
+   */
+  onNudgeHost?: (spellStartedAt: number) => Promise<number>;
 }
 
 export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  // "Nudged" until the RPC's cooldown has passed; a too-soon refusal counts as nudged too.
-  const [nudgedAt, setNudgedAt] = useState<number | null>(null);
+  // The nudge ladder for the current away spell: how many were sent, when the
+  // next is allowed (0 = now), and a once-a-second tick for the countdown.
+  const [spell, setSpell] = useState<{ startedAt: number; count: number; nextAt: number } | null>(null);
   const [nudging, setNudging] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -85,25 +91,33 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   // The host is the first row (DB order); away is what presence says about every tab of theirs.
   const host = players[0];
   const hostAway = !isHost && host !== undefined && host.away === true;
-  const nudged = nudgedAt !== null && Date.now() - nudgedAt < NUDGE_COOLDOWN_MS;
-
+  // A fresh away spell starts the ladder over; the host coming back ends it.
   useEffect(() => {
-    if (nudgedAt === null) return;
-    const remaining = NUDGE_COOLDOWN_MS - (Date.now() - nudgedAt);
-    const id = window.setTimeout(() => setNudgedAt(null), Math.max(0, remaining));
-    return () => window.clearTimeout(id);
-  }, [nudgedAt]);
+    if (hostAway) setSpell((prev) => prev ?? { startedAt: Date.now(), count: 0, nextAt: 0 });
+    else setSpell(null);
+  }, [hostAway]);
+
+  const waitMs = spell ? spell.nextAt - now : 0;
+  useEffect(() => {
+    if (!spell || spell.nextAt <= now) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [spell, now]);
 
   const handleNudge = async () => {
-    if (!onNudgeHost || nudging) return;
+    if (!onNudgeHost || nudging || !spell || waitMs > 0) return;
     setNudging(true);
+    const sentAt = Date.now();
+    let nextAt = nextNudgeAt(spell.count + 1, sentAt);
     try {
-      await onNudgeHost();
-    } catch {
-      // A refusal (too soon, a closed room) reads the same as a nudge sent: the button rests either way.
+      nextAt = sentAt + (await onNudgeHost(spell.startedAt)) * 1000;
+    } catch (err) {
+      // The server's own clock wins when it says how long is left; any other refusal keeps the local ladder.
+      if (err instanceof FriendsError && err.retryAfterSeconds !== null) nextAt = sentAt + err.retryAfterSeconds * 1000;
     } finally {
       setNudging(false);
-      setNudgedAt(Date.now());
+      setNow(Date.now());
+      setSpell((prev) => (prev ? { ...prev, count: prev.count + 1, nextAt } : prev));
     }
   };
 
@@ -152,9 +166,17 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                 <span className="min-w-0 truncate">{hostAway ? t("lobby.waitingForHostBack", { name: host.displayName }) : t("lobby.waitingForHost")}</span>
               </p>
               {hostAway && onNudgeHost && (
-                <Button variant="secondary" size="lg" block onClick={() => void handleNudge()} disabled={nudged || nudging} aria-busy={nudging || undefined}>
-                  {nudged ? <Check className="size-4.5" aria-hidden="true" /> : <BellRing className="size-4.5" aria-hidden="true" />}
-                  {nudged ? t("friends.nudged") : t("friends.nudgeHost")}
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  block
+                  onClick={() => void handleNudge()}
+                  disabled={waitMs > 0 || nudging}
+                  aria-busy={nudging || undefined}
+                  aria-live="off"
+                >
+                  <BellRing className="size-4.5" aria-hidden="true" />
+                  {waitMs > 0 ? t("friends.nudgeAgainIn", { time: formatCountdown(waitMs) }) : t("friends.nudgeHost")}
                 </Button>
               )}
             </div>

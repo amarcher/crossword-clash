@@ -219,8 +219,9 @@ npx supabase db query --linked -f docs/push-setup-nudges.sql
   host under their `room_invites` switch, collapsing with the room's invite
   (`room-<game>`), landing on `/?join=CODE`.
 - `room_nudges_push()` fires on every `room_nudges` INSERT (the row is
-  written only by `nudge_host()`, which already applied the 3-minute
-  cooldown and the block rule) and posts the webhook body shape;
+  written only by `nudge_host()`, which already applied the escalating
+  wait (1, 2, 4, 8, 15 minutes per away spell) and the block rule) and
+  posts the webhook body shape;
   `send-push` sends "@alicia is waiting in your room" the same way.
 
 Check both with `select tgname from pg_trigger where tgname in

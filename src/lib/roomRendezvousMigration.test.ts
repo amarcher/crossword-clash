@@ -6,8 +6,10 @@ import { describe, expect, it } from "vitest";
  * vitest cannot run, but its shape is a promise to the client and the push
  * sender: the invitee's answer is written only by the RPC and can only be
  * "declined", a nudge comes only from a waiting joiner who is not the host,
- * at most one every 3 minutes, never for a blocked pair, and the nudge table
- * has no client policy. These tests read the file and hold it to those
+ * with an escalating wait per away spell (1, 2, 4, 8, 15 minutes) under a
+ * one-minute floor whatever spell is claimed, the refusal says how long is
+ * left, nothing is written for a blocked pair, and the nudge table has no
+ * client policy. These tests read the file and hold it to those
  * promises (the friends migration test's pattern).
  */
 const here = (rel: string) => decodeURIComponent(new URL(rel, import.meta.url).pathname);
@@ -44,25 +46,37 @@ describe("room rendezvous migration: the nudge", () => {
     expect(table).not.toMatch(/\b(message|note|body|text)\b/i);
   });
 
-  it("nudge_host: a signed-in player (not the host) of a waiting room, one per 3 minutes, nothing for a blocked pair", () => {
+  it("nudge_host: a signed-in player (not the host) of a waiting room, nothing written for a blocked pair", () => {
     const body = fn("nudge_host");
     expect(body).toContain("SECURITY DEFINER");
     expect(body).toContain("SET search_path = public, pg_temp");
-    expect(body).toContain("nudge_cooldown CONSTANT INTERVAL := INTERVAL '3 minutes';");
     expect(body).toContain("RAISE EXCEPTION 'friends:not_signed_in'");
     expect(body).toContain("room.status <> 'waiting'");
     expect(body).toContain("RAISE EXCEPTION 'friends:room_not_open'");
     expect(body).toMatch(/IF room\.host_user_id IS NULL OR room\.host_user_id = uid THEN\s+RAISE EXCEPTION 'friends:not_found'/);
     expect(body).toMatch(/SELECT 1 FROM players pl WHERE pl\.game_id = p_game_id AND pl\.user_id = uid\)\s+THEN\s+RAISE EXCEPTION 'friends:not_in_room'/);
-    expect(body).toMatch(/IF friends_blocked\(uid, room\.host_user_id\) THEN\s+RETURN NULL;/);
-    expect(body).toMatch(/n\.created_at > now\(\) - nudge_cooldown\s+\) THEN\s+RAISE EXCEPTION 'friends:too_soon'/);
-    expect(body).toMatch(/INSERT INTO room_nudges \(game_id, from_user_id, to_user_id\)\s+VALUES \(p_game_id, uid, room\.host_user_id\)/);
-    // The cooldown is checked before the write and nothing else writes.
+    expect(body).toMatch(/IF NOT friends_blocked\(uid, room\.host_user_id\) THEN\s+INSERT INTO room_nudges \(game_id, from_user_id, to_user_id, spell_started_at\)\s+VALUES \(p_game_id, uid, room\.host_user_id, p_spell\)/);
+    expect(body.match(/INSERT INTO/g)).toHaveLength(1);
+  });
+
+  it("nudge_host: the ladder is 1, 2, 4, 8, 15 minutes per away spell under a one-minute floor, checked before the write, and the refusal carries the seconds left", () => {
+    const body = fn("nudge_host");
+    expect(body).toContain("nudge_backoff CONSTANT INTERVAL[] := ARRAY['1 minute', '2 minutes', '4 minutes', '8 minutes', '15 minutes']::INTERVAL[];");
+    expect(body).toContain("nudge_floor CONSTANT INTERVAL := INTERVAL '1 minute';");
+    // The spell's own rows set the step; any row of the caller in the room sets the floor.
+    expect(body).toContain("n.spell_started_at IS NOT DISTINCT FROM p_spell");
+    expect(body).toContain("last_in_spell + nudge_backoff[least(spell_count, array_length(nudge_backoff, 1))]");
+    expect(body).toContain("last_any + nudge_floor");
+    expect(body).toContain("RAISE EXCEPTION 'friends:too_soon:%', ceil(extract(epoch FROM (next_at - now())))::INTEGER;");
     expect(body.indexOf("friends:too_soon")).toBeLessThan(body.indexOf("INSERT INTO room_nudges"));
+    // The answer names the next wait so the lobby can count down from the server's ladder.
+    expect(body).toContain("RETURNS JSONB");
+    expect(body).toContain("'nextInSeconds', extract(epoch FROM nudge_backoff[least(spell_count + 1, array_length(nudge_backoff, 1))])::INTEGER");
+    expect(section("CREATE TABLE IF NOT EXISTS room_nudges (", "ALTER TABLE room_nudges")).toContain("spell_started_at TIMESTAMPTZ");
   });
 
   it("revokes both RPCs from PUBLIC and grants them to authenticated and the service role", () => {
-    for (const sig of ["respond_room_invite(UUID, TEXT)", "nudge_host(UUID)"]) {
+    for (const sig of ["respond_room_invite(UUID, TEXT)", "nudge_host(UUID, TIMESTAMPTZ)"]) {
       expect(sql).toContain(`REVOKE ALL ON FUNCTION public.${sig} FROM PUBLIC;`);
       expect(sql).toContain(`GRANT EXECUTE ON FUNCTION public.${sig} TO authenticated, service_role;`);
     }

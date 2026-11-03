@@ -55,8 +55,8 @@ export interface FriendsContextValue {
   markSeen: (ids: readonly string[]) => Promise<void>;
   /** "Can't now" on a room invite: the row leaves `openInvites` and the sender is nudged. Param `via` for analytics. */
   decline: (invite: RoomInvite, via: "banner" | "inbox") => Promise<void>;
-  /** "Nudge host" from a waiting joiner's lobby. */
-  nudge: (gameId: string) => Promise<void>;
+  /** "Nudge host" from a waiting joiner's lobby, for the away spell that began at `spellStartedAt` (ms); resolves to the ladder's next wait in seconds. */
+  nudge: (gameId: string, spellStartedAt: number) => Promise<number>;
   dismissRoomJoined: () => void;
 }
 
@@ -190,9 +190,10 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
     track("room_invite_declined", { via });
     await refreshRef.current();
   }, []);
-  const nudge = useCallback(async (gameId: string) => {
-    await nudgeHost(gameId);
-    track("room_nudge_sent");
+  const nudge = useCallback(async (gameId: string, spellStartedAt: number) => {
+    const outcome = await nudgeHost(gameId, spellStartedAt);
+    track("room_nudge_sent", { next_in_seconds: outcome.nextInSeconds });
+    return outcome.nextInSeconds;
   }, []);
   const dismissRoomJoined = useCallback(() => setRoomJoined(null), []);
   const markSeen = useCallback(async (ids: readonly string[]) => {
@@ -255,7 +256,7 @@ const INERT: FriendsContextValue = {
   beat: async () => {},
   markSeen: async () => {},
   decline: async () => {},
-  nudge: async () => {},
+  nudge: async () => 60,
   dismissRoomJoined: () => {},
 };
 

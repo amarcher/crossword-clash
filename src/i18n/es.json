@@ -922,7 +922,7 @@
     "joined": "Dentro",
     "cantRightNow": "Ahora no puede",
     "nudgeHost": "Avisar al anfitrión",
-    "nudged": "Avisado"
+    "nudgeAgainIn": "Avisar de nuevo en {{time}}"
   },
   "push": {
     "heading": "Notificaciones",

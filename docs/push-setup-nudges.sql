@@ -6,8 +6,9 @@
 -- `npx supabase db query --linked -f docs/push-setup-nudges.sql`.
 --
 -- nudge_host() (migration 20261103000000_room_rendezvous.sql) already checked
--- the caller is a waiting joiner, resolved the host and applied the 3-minute
--- cooldown, so the trigger posts every row as the webhook body shape.
+-- the caller is a waiting joiner, resolved the host and applied the escalating
+-- wait (1, 2, 4, 8, 15 minutes per away spell), so the trigger posts every row
+-- as the webhook body shape.
 do $$
 declare secret text;
 begin

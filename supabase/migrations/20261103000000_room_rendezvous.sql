@@ -9,13 +9,20 @@
 --      through the existing parties-read policy, so the lobby's invite list
 --      can say "Can't right now".
 --   2. `room_nudges`: one row per "Nudge host" from a waiting joiner, written
---      by `nudge_host()` (one per caller per room per 3 minutes, nothing for a
---      blocked pair) and turned into a push by a webhook trigger installed by
---      hand (`docs/push-setup-nudges.sql`, since the secret cannot sit here).
---      Both user columns reference auth.users: an anonymous joiner may nudge
---      (the push then says "A player"), and an anonymous host may hold a
---      device token. RLS on, no client policies; rows cascade with the game,
---      which the retention sweep deletes, so no sweep step is needed.
+--      by `nudge_host()` and turned into a push by a webhook trigger installed
+--      by hand (`docs/push-setup-nudges.sql`, since the secret cannot sit here).
+--      The wait between nudges escalates per caller per room per away spell
+--      (Andrew, 2026-11-02): the first is free, then 1, 2, 4, 8 minutes,
+--      capped at 15, and a refusal says how long is left. A spell is the
+--      joiner's observation of the host going away (`spell_started_at`, which
+--      only the client can know: presence never reaches the database), so a
+--      fresh spell starts the ladder over; a hard floor of one minute between
+--      any two nudges by the same caller in the same room holds whatever spell
+--      is claimed, so a client that invents spells gains nothing over the old
+--      flat rule. Both user columns reference auth.users: an anonymous joiner
+--      may nudge (the push then says "A player"), and an anonymous host may
+--      hold a device token. RLS on, no client policies; rows cascade with the
+--      game, which the retention sweep deletes, so no sweep step is needed.
 --   3. `push_log.kind` admits the two new kinds the sender logs
 --      (`room_joined`, the first join; `room_nudge`).
 --
@@ -62,6 +69,8 @@ CREATE TABLE IF NOT EXISTS room_nudges (
   game_id      UUID NOT NULL REFERENCES games (id) ON DELETE CASCADE,
   from_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   to_user_id   UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+  -- When the joiner saw the host go away this time; the ladder counts nudges of one spell.
+  spell_started_at TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (from_user_id <> to_user_id)
 );
@@ -71,17 +80,27 @@ ALTER TABLE room_nudges ENABLE ROW LEVEL SECURITY;
 -- No policies: nudge_host() writes, the webhook trigger reads the new row.
 
 -- A player of a `waiting` room who is not its host asks the host to come
--- back. Returns the nudge id, or NULL when nothing was written (a block in
--- either direction, spec §8).
-CREATE OR REPLACE FUNCTION public.nudge_host(p_game_id UUID) RETURNS UUID
+-- back. Answers { "id": <nudge id or null>, "nextInSeconds": <the ladder's
+-- next wait> }; the id is null when nothing was written (a block in either
+-- direction, spec §8). Inside the wait it raises 'friends:too_soon:<seconds>'
+-- so the lobby can count down. The ladder is mirrored by NUDGE_BACKOFF_MS /
+-- nextNudgeAt in src/lib/friends.ts.
+CREATE OR REPLACE FUNCTION public.nudge_host(p_game_id UUID, p_spell TIMESTAMPTZ DEFAULT NULL) RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  nudge_cooldown CONSTANT INTERVAL := INTERVAL '3 minutes';
+  -- The wait after the 1st, 2nd, 3rd, 4th and every later nudge of a spell.
+  nudge_backoff CONSTANT INTERVAL[] := ARRAY['1 minute', '2 minutes', '4 minutes', '8 minutes', '15 minutes']::INTERVAL[];
+  -- Between any two nudges by the same caller in the same room, whatever spell is claimed.
+  nudge_floor CONSTANT INTERVAL := INTERVAL '1 minute';
   uid UUID := auth.uid();
   room games%ROWTYPE;
+  spell_count INTEGER;
+  last_in_spell TIMESTAMPTZ;
+  last_any TIMESTAMPTZ;
+  next_at TIMESTAMPTZ;
   nudge_id UUID;
 BEGIN
   IF uid IS NULL THEN
@@ -97,26 +116,34 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM players pl WHERE pl.game_id = p_game_id AND pl.user_id = uid) THEN
     RAISE EXCEPTION 'friends:not_in_room';
   END IF;
-  IF friends_blocked(uid, room.host_user_id) THEN
-    RETURN NULL;
+  SELECT count(*), max(n.created_at) INTO spell_count, last_in_spell
+  FROM room_nudges n
+  WHERE n.game_id = p_game_id AND n.from_user_id = uid AND n.spell_started_at IS NOT DISTINCT FROM p_spell;
+  SELECT max(n.created_at) INTO last_any
+  FROM room_nudges n WHERE n.game_id = p_game_id AND n.from_user_id = uid;
+  next_at := greatest(
+    CASE WHEN spell_count = 0 THEN NULL ELSE last_in_spell + nudge_backoff[least(spell_count, array_length(nudge_backoff, 1))] END,
+    CASE WHEN last_any IS NULL THEN NULL ELSE last_any + nudge_floor END
+  );
+  IF next_at IS NOT NULL AND next_at > now() THEN
+    RAISE EXCEPTION 'friends:too_soon:%', ceil(extract(epoch FROM (next_at - now())))::INTEGER;
   END IF;
-  IF EXISTS (
-    SELECT 1 FROM room_nudges n
-    WHERE n.game_id = p_game_id AND n.from_user_id = uid AND n.created_at > now() - nudge_cooldown
-  ) THEN
-    RAISE EXCEPTION 'friends:too_soon';
+  IF NOT friends_blocked(uid, room.host_user_id) THEN
+    INSERT INTO room_nudges (game_id, from_user_id, to_user_id, spell_started_at)
+    VALUES (p_game_id, uid, room.host_user_id, p_spell)
+    RETURNING id INTO nudge_id;
   END IF;
-  INSERT INTO room_nudges (game_id, from_user_id, to_user_id)
-  VALUES (p_game_id, uid, room.host_user_id)
-  RETURNING id INTO nudge_id;
-  RETURN nudge_id;
+  RETURN jsonb_build_object(
+    'id', nudge_id,
+    'nextInSeconds', extract(epoch FROM nudge_backoff[least(spell_count + 1, array_length(nudge_backoff, 1))])::INTEGER
+  );
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.respond_room_invite(UUID, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.nudge_host(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.nudge_host(UUID, TIMESTAMPTZ) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.respond_room_invite(UUID, TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.nudge_host(UUID) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.nudge_host(UUID, TIMESTAMPTZ) TO authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- 3. push_log admits the two new kinds

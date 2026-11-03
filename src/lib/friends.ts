@@ -190,8 +190,24 @@ export function lobbyInviteStatus(friendId: string, gameId: string, sent: readon
   return row.response === "declined" ? "declined" : "invited";
 }
 
-/** One nudge per room per `NUDGE_COOLDOWN_MS` (the RPC's `nudge_cooldown`); the button reads "Nudged" meanwhile. */
-export const NUDGE_COOLDOWN_MS = 3 * 60 * 1000;
+/**
+ * The wait after the 1st, 2nd, 3rd, 4th and every later nudge of one away
+ * spell (Andrew, 2026-11-02: back off, don't stay flat); mirrored by
+ * `nudge_backoff` in `nudge_host()`. The first nudge of a spell is free.
+ */
+export const NUDGE_BACKOFF_MS: readonly number[] = [1, 2, 4, 8, 15].map((m) => m * 60 * 1000);
+
+/** When the next nudge becomes available: now for a fresh spell, else the last nudge plus the ladder's step for that count. */
+export function nextNudgeAt(count: number, lastAt: number | null): number {
+  if (count <= 0 || lastAt === null) return 0;
+  return lastAt + NUDGE_BACKOFF_MS[Math.min(count, NUDGE_BACKOFF_MS.length) - 1];
+}
+
+/** m:ss for the countdown ("Nudge again in 1:42"). */
+export function formatCountdown(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
 
 /** The daily challenge link an invite may carry (the only link the server accepts). */
 export const BEAT_LINK = /^\/daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)(\?[A-Za-z0-9=&%._+-]*)?$/;
@@ -248,16 +264,25 @@ const KINDS: readonly FriendsErrorKind[] = [
 
 export class FriendsError extends Error {
   readonly kind: FriendsErrorKind;
+  /** `too_soon` only: how long the server says is left, from `friends:too_soon:<seconds>`. */
+  readonly retryAfterSeconds: number | null;
   constructor(kind: FriendsErrorKind, message: string = kind) {
     super(message);
     this.name = "FriendsError";
     this.kind = kind;
+    this.retryAfterSeconds = retryAfterSeconds(message);
   }
 }
 
 export function friendsErrorKind(message: string | null | undefined): FriendsErrorKind {
   const code = /friends:([a-z_]+)/.exec(message ?? "")?.[1];
   return (KINDS as readonly string[]).includes(code ?? "") ? (code as FriendsErrorKind) : "failed";
+}
+
+/** The seconds a `friends:too_soon:<n>` refusal carries; null for any other message. */
+export function retryAfterSeconds(message: string | null | undefined): number | null {
+  const m = /friends:too_soon:(\d+)/.exec(message ?? "");
+  return m ? Number(m[1]) : null;
 }
 
 function client() {
@@ -467,11 +492,19 @@ export async function declineRoomInvite(invite: Pick<RoomInvite, "id" | "from">)
   notifyInvite(invite.from.userId);
 }
 
-/** "Nudge host": returns the nudge id, or null when a block swallowed it (the caller still shows "Nudged"). */
-export async function nudgeHost(gameId: string): Promise<string | null> {
-  const { data, error } = await client().rpc("nudge_host", { p_game_id: gameId });
+export interface NudgeOutcome {
+  /** The nudge id, or null when a block swallowed it (the caller still counts down). */
+  id: string | null;
+  /** The ladder's next wait, as the server computed it. */
+  nextInSeconds: number;
+}
+
+/** "Nudge host" for the away spell that began at `spellStartedAt` (ms); a `too_soon` refusal carries `retryAfterSeconds`. */
+export async function nudgeHost(gameId: string, spellStartedAt: number): Promise<NudgeOutcome> {
+  const { data, error } = await client().rpc("nudge_host", { p_game_id: gameId, p_spell: new Date(spellStartedAt).toISOString() });
   if (error) throw refusal(error);
-  return data ?? null;
+  const row = (data ?? {}) as { id?: string | null; nextInSeconds?: number };
+  return { id: row.id ?? null, nextInSeconds: typeof row.nextInSeconds === "number" ? row.nextInSeconds : NUDGE_BACKOFF_MS[0] / 1000 };
 }
 
 export async function markInvitesSeen(ids: readonly string[]): Promise<void> {

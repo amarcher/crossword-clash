@@ -103,7 +103,7 @@ export type AnalyticsEvent =
   | "reminder_toggled"
   /** Room rendezvous (docs/friends-spec.md §3.7): the host's "joined your room" banner was shown. Param `via` (banner). */
   | "room_joined_notified"
-  /** A waiting joiner's Nudge host went through. */
+  /** A waiting joiner's Nudge host went through. Param `next_in_seconds` (the ladder's next wait). */
   | "room_nudge_sent"
   /** The invitee tapped Can't now. Param `via` (banner | inbox). */
   | "room_invite_declined";

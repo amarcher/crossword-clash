@@ -34,7 +34,7 @@ function value(over: Partial<FriendsContextValue> = {}): FriendsContextValue {
     beat: vi.fn(async () => {}),
     markSeen: vi.fn(async () => {}),
     decline: vi.fn(async () => {}),
-    nudge: vi.fn(async () => {}),
+    nudge: vi.fn(async () => 60),
     dismissRoomJoined: vi.fn(),
     ...over,
   };

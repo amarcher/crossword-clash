@@ -922,7 +922,7 @@
     "joined": "Joined",
     "cantRightNow": "Can't right now",
     "nudgeHost": "Nudge host",
-    "nudged": "Nudged"
+    "nudgeAgainIn": "Nudge again in {{time}}"
   },
   "push": {
     "heading": "Notifications",

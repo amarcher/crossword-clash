@@ -61,9 +61,13 @@ const {
   fetchPlayerProfiles,
   fetchRoomJoined,
   fetchSentInvites,
+  formatCountdown,
   lobbyInviteStatus,
+  nextNudgeAt,
   notifyRoomJoined,
   nudgeHost,
+  retryAfterSeconds,
+  NUDGE_BACKOFF_MS,
   fetchRecentOpponents,
   friendsEnabled,
   friendSuggestions,
@@ -378,17 +382,42 @@ describe("room rendezvous (phase f)", () => {
     expect(await fetchRoomJoined("g1", "me")).toBeNull();
   });
 
-  it("declineRoomInvite calls the RPC with 'declined' and nudges the sender; nudgeHost returns the id or null", async () => {
+  it("declineRoomInvite calls the RPC with 'declined' and nudges the sender", async () => {
     results = [{ data: null, error: null }];
     await declineRoomInvite({ id: "i1", from: { userId: "a", username: "alicia" } });
     expect(rpcCalls[0]).toEqual({ fn: "respond_room_invite", args: { p_invite: "i1", p_response: "declined" } });
     expect(channels[0].name).toBe("user:a");
     results = [{ data: null, error: { message: "friends:not_found" } }];
     await expect(declineRoomInvite({ id: "i2", from: { userId: "a", username: "alicia" } })).rejects.toMatchObject({ kind: "not_found" });
-    results = [{ data: "n1", error: null }, { data: null, error: null }, { data: null, error: { message: "friends:too_soon" } }];
-    expect(await nudgeHost("g1")).toBe("n1");
-    expect(rpcCalls[rpcCalls.length - 1]).toEqual({ fn: "nudge_host", args: { p_game_id: "g1" } });
-    expect(await nudgeHost("g1")).toBeNull();
-    await expect(nudgeHost("g1")).rejects.toMatchObject({ kind: "too_soon" });
+  });
+
+  it("the nudge ladder: the first nudge of a spell is free, then 1, 2, 4, 8 minutes capped at 15, counted from the last one", () => {
+    expect(NUDGE_BACKOFF_MS).toEqual([60_000, 120_000, 240_000, 480_000, 900_000]);
+    expect(nextNudgeAt(0, null)).toBe(0);
+    expect(nextNudgeAt(0, 1_000)).toBe(0);
+    expect(nextNudgeAt(1, null)).toBe(0);
+    expect(nextNudgeAt(1, 1_000)).toBe(61_000);
+    expect(nextNudgeAt(2, 1_000)).toBe(121_000);
+    expect(nextNudgeAt(3, 1_000)).toBe(241_000);
+    expect(nextNudgeAt(4, 1_000)).toBe(481_000);
+    expect(nextNudgeAt(5, 1_000)).toBe(901_000);
+    expect(nextNudgeAt(12, 1_000)).toBe(901_000);
+    expect(formatCountdown(102_000)).toBe("1:42");
+    expect(formatCountdown(100)).toBe("0:01");
+    expect(formatCountdown(-5)).toBe("0:00");
+  });
+
+  it("nudgeHost sends the spell's start, answers the next wait, and a too-soon refusal carries the seconds left", async () => {
+    results = [{ data: { id: "n1", nextInSeconds: 120 }, error: null }];
+    expect(await nudgeHost("g1", Date.UTC(2026, 10, 2, 12, 0, 0))).toEqual({ id: "n1", nextInSeconds: 120 });
+    expect(rpcCalls[rpcCalls.length - 1]).toEqual({ fn: "nudge_host", args: { p_game_id: "g1", p_spell: "2026-11-02T12:00:00.000Z" } });
+    // A block: no id, still a wait.
+    results = [{ data: { id: null, nextInSeconds: 60 }, error: null }];
+    expect(await nudgeHost("g1", 0)).toEqual({ id: null, nextInSeconds: 60 });
+    results = [{ data: null, error: { message: "friends:too_soon:102" } }];
+    await expect(nudgeHost("g1", 0)).rejects.toMatchObject({ kind: "too_soon", retryAfterSeconds: 102 });
+    expect(retryAfterSeconds("friends:too_soon:7")).toBe(7);
+    expect(retryAfterSeconds("friends:too_soon")).toBeNull();
+    expect(retryAfterSeconds("friends:rate_limited")).toBeNull();
   });
 });
