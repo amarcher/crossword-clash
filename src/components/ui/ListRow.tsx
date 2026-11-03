@@ -35,7 +35,8 @@ export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabl
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold leading-snug text-ink">{title}</span>
-        {subtitle && <span className="mt-0.5 block text-sm leading-snug text-muted">{subtitle}</span>}
+        {/* One line, always: rows in a group stay the same height, so the copy must fit a 375px phone (about 32 characters). */}
+        {subtitle && <span className="mt-0.5 block truncate text-sm leading-snug text-muted">{subtitle}</span>}
       </span>
       <ChevronRight className="size-4 shrink-0 text-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </>

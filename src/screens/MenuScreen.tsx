@@ -8,6 +8,7 @@ import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { UpdateBanner } from "../components/UpdateBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
+import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
@@ -204,6 +205,7 @@ export function MenuScreen() {
   const pendingRequests = friendships.incoming.length;
 
   const nativeNyt = nativeNytImportAvailable();
+  const accountsOnMenu = accountsAvailable();
   // Website visitors on an iPhone or iPad get pointed at the app, once it is live.
   const iosAppUrl = useMemo(
     () => (hydrated && import.meta.env.MODE !== "mobile" && isIosBrowser() ? IOS_APP_STORE_URL : null),
@@ -347,20 +349,10 @@ export function MenuScreen() {
             </section>
           )}
 
+          {/* More puzzles to solve: the backlog, other players' puzzles, your own files. */}
           <section className="grid gap-3">
-            <Eyebrow as="h2" className="px-1">{t("menu.soloHeading")}</Eyebrow>
+            <Eyebrow as="h2" className="px-1">{t("menu.moreHeading")}</Eyebrow>
             <ListGroup>
-              {/* NYT bookmarklet — the stickiest thing the app does for
-                  subscribers. Plain <a>: /install-bookmarklet is a static page. */}
-              {desktop && (
-                <ListRow
-                  icon={Newspaper}
-                  href="/install-bookmarklet"
-                  title={nytStreak > 0 ? t("menu.nytTileStreak", { count: nytStreak }) : t("menu.nytTile")}
-                  subtitle={t("menu.nytTileSubtitle")}
-                  onClick={() => track("mode_selected", { mode: "nyt" })}
-                />
-              )}
               <ListRow
                 icon={CalendarDays}
                 to="/archive"
@@ -377,16 +369,15 @@ export function MenuScreen() {
                   onClick={() => track("mode_selected", { mode: "community" })}
                 />
               )}
-              {/* The studio on the home screen, not only behind the avatar menu
-                  (owner's note on build 19); the gate at /studio handles sign-in
-                  and the Plus pitch, so the row shows wherever the route exists. */}
-              {studioRouteEnabled() && (
+              {/* NYT bookmarklet — the stickiest thing the app does for
+                  subscribers. Plain <a>: /install-bookmarklet is a static page. */}
+              {desktop && (
                 <ListRow
-                  icon={PencilRuler}
-                  to="/studio"
-                  title={t("menu.buildPuzzle")}
-                  subtitle={t("menu.buildPuzzleSubtitle")}
-                  onClick={() => track("mode_selected", { mode: "studio" })}
+                  icon={Newspaper}
+                  href="/install-bookmarklet"
+                  title={nytStreak > 0 ? t("menu.nytTileStreak", { count: nytStreak }) : t("menu.nytTile")}
+                  subtitle={t("menu.nytTileSubtitle")}
+                  onClick={() => track("mode_selected", { mode: "nyt" })}
                 />
               )}
               {nativeNyt && (
@@ -395,6 +386,7 @@ export function MenuScreen() {
                   tone="neutral"
                   to="/nyt-import"
                   title={t("nytImport.title")}
+                  subtitle={t("menu.nytImportSubtitle")}
                   onClick={() => track("mode_selected", { mode: "import" })}
                 />
               )}
@@ -406,49 +398,52 @@ export function MenuScreen() {
                 subtitle={t("menu.ownPuzzleSubtitle")}
                 onClick={() => track("mode_selected", { mode: "solo" })}
               />
-              {iosAppUrl && (
-                <ListRow
-                  icon={Smartphone}
-                  href={iosAppUrl}
-                  title={t("menu.iosApp")}
-                  subtitle={t("menu.iosAppSubtitle")}
-                  onClick={() => track("app_store_click", { placement: "menu" })}
-                />
-              )}
-              {androidAppUrl && (
-                <ListRow
-                  icon={Smartphone}
-                  href={androidAppUrl}
-                  title={t("menu.androidApp")}
-                  subtitle={t("menu.androidAppSubtitle")}
-                  onClick={() => track("play_store_click", { placement: "menu" })}
-                />
-              )}
             </ListGroup>
           </section>
 
-          {/* Optional account: a benefit for anonymous visitors, the username
-              once signed in. Renders nothing where accounts aren't offered. */}
-          <AccountMenuRow />
+          {/* More from Crossword Clash: the optional account (a benefit for
+              anonymous visitors), the app for phone-browser visitors, the
+              studio, and Plus — one card, AccountMenuRow owning the group so
+              the sign-in row comes first and Plus last whatever the state. */}
+          {(accountsOnMenu || iosAppUrl || androidAppUrl || studioRouteEnabled()) && (
+            <section className="grid gap-3">
+              <Eyebrow as="h2" className="px-1">{t("menu.extrasHeading")}</Eyebrow>
+              <AccountMenuRow>
+                {iosAppUrl && (
+                  <ListRow
+                    icon={Smartphone}
+                    href={iosAppUrl}
+                    title={t("menu.iosApp")}
+                    subtitle={t("menu.iosAppSubtitle")}
+                    onClick={() => track("app_store_click", { placement: "menu" })}
+                  />
+                )}
+                {androidAppUrl && (
+                  <ListRow
+                    icon={Smartphone}
+                    href={androidAppUrl}
+                    title={t("menu.androidApp")}
+                    subtitle={t("menu.androidAppSubtitle")}
+                    onClick={() => track("play_store_click", { placement: "menu" })}
+                  />
+                )}
+                {/* The studio on the home screen, not only behind the avatar menu
+                    (owner's note on build 19); the gate at /studio handles sign-in
+                    and the Plus pitch, so the row shows wherever the route exists. */}
+                {studioRouteEnabled() && (
+                  <ListRow
+                    icon={PencilRuler}
+                    to="/studio"
+                    title={t("menu.buildPuzzle")}
+                    subtitle={t("menu.buildPuzzleSubtitle")}
+                    onClick={() => track("mode_selected", { mode: "studio" })}
+                  />
+                )}
+              </AccountMenuRow>
+            </section>
+          )}
         </div>
       </div>
-
-      {/* Static explainer: the one block of real text on the home page, so
-          crawlers (search and AI) and reviewers get the product in words. No
-          browser reads here, so it prerenders and hydrates as-is. */}
-      <section className="mx-auto mt-10 grid w-full max-w-md gap-3 lg:max-w-5xl" aria-labelledby="how-dailies-heading">
-        <Eyebrow as="h2" id="how-dailies-heading" className="px-1">{t("menu.how.heading")}</Eyebrow>
-        <Card className="p-5 sm:p-6">
-          <dl className="grid gap-5 sm:grid-cols-3 sm:gap-6">
-            {(["puzzles", "modes", "progress"] as const).map((item) => (
-              <div key={item}>
-                <dt className="font-display text-base font-bold leading-snug text-ink">{t(`menu.how.${item}Title`)}</dt>
-                <dd className="mt-1.5 text-sm leading-relaxed text-muted">{t(`menu.how.${item}Body`)}</dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
-      </section>
 
       <div className="mx-auto mt-10 flex w-full max-w-md flex-col items-center gap-3 lg:max-w-5xl">
         <AdSlot placement="menu-bottom" />
