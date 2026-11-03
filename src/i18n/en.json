@@ -600,7 +600,14 @@
       "unpublished": "Unpublished",
       "removed": "Removed"
     },
-    "openStudio": "Open the studio"
+    "openStudio": "Open the studio",
+    "menuFriends": "Friends",
+    "menuFriendsRequests_one": "{{count}} request waiting",
+    "menuFriendsRequests_other": "{{count}} requests waiting",
+    "friendsHeading": "Friends",
+    "friendsHint": "Challenge them from Race friends; they can invite you straight into a room.",
+    "friendsNoneHint": "Add people by username to race them in a tap.",
+    "manageFriends": "Manage"
   },
   "meta": {
     "home": {

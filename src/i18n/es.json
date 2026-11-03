@@ -600,7 +600,14 @@
       "unpublished": "Retirado",
       "removed": "Eliminado"
     },
-    "openStudio": "Abrir el estudio"
+    "openStudio": "Abrir el estudio",
+    "menuFriends": "Amigos",
+    "menuFriendsRequests_one": "{{count}} solicitud pendiente",
+    "menuFriendsRequests_other": "{{count}} solicitudes pendientes",
+    "friendsHeading": "Amigos",
+    "friendsHint": "Rétalos desde Compite con amigos; ellos pueden invitarte directamente a una sala.",
+    "friendsNoneHint": "Añade personas por su nombre de usuario para competir con ellas en un toque.",
+    "manageFriends": "Gestionar"
   },
   "meta": {
     "home": {

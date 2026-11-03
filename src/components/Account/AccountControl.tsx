@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import { CalendarDays, LogOut, Pencil, PencilRuler, Sparkles, UserRound } from "lucide-react";
+import { CalendarDays, LogOut, Pencil, PencilRuler, Sparkles, UserRound, Users } from "lucide-react";
 import { useMaybeAccount } from "../../contexts/AccountContext";
+import { useFriends } from "../../contexts/FriendsContext";
+import { friendsEnabled } from "../../lib/friends";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { accountName, signOut } from "../../lib/account";
 import { useHydrated } from "../../lib/hydration";
@@ -42,6 +44,7 @@ export function AccountControl({ placement = "header", className = "" }: Account
   const hydrated = useHydrated();
   const navigate = useTransitionNavigate();
   const { pathname } = useLocation();
+  const pendingRequests = useFriends().friendships.incoming.length;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -88,16 +91,30 @@ export function AccountControl({ placement = "header", className = "" }: Account
 
   const username = profile?.username ?? null;
   const name = username ?? accountName(user);
-  const items: { key: string; icon: typeof UserRound; label: string; run: () => void; warm?: string }[] = [
+  const items: { key: string; icon: typeof UserRound; label: string; run: () => void; warm?: string; badge?: number; badgeLabel?: string }[] = [
     { key: "account", icon: UserRound, label: t("account.menuAccount"), run: () => navigate("/account"), warm: "/account" },
     { key: "archive", icon: CalendarDays, label: t("account.menuPastPuzzles"), run: () => navigate("/archive"), warm: "/archive" },
+  ];
+  // The friends list from any header, with the requests waiting for an answer (docs/friends-spec.md §3.1).
+  if (friendsEnabled()) {
+    items.push({
+      key: "friends",
+      icon: Users,
+      label: t("account.menuFriends"),
+      run: () => navigate("/race/friends"),
+      warm: "/race/friends",
+      badge: pendingRequests || undefined,
+      badgeLabel: pendingRequests > 0 ? t("account.menuFriendsRequests", { count: pendingRequests }) : undefined,
+    });
+  }
+  items.push(
     {
       key: "username",
       icon: Pencil,
       label: username ? t("account.changeUsername") : t("account.chooseUsername"),
       run: () => account.openAccount({ view: "username", placement }),
     },
-  ];
+  );
   // A subscriber's way into the studio from any header, in the apps as on the web (the editor itself is behind StudioGateScreen).
   if (plusEnabled() && account.plus && studioRouteEnabled()) {
     items.push({ key: "studio", icon: PencilRuler, label: t("account.menuStudio"), run: () => navigate("/studio"), warm: "/studio" });
@@ -178,11 +195,12 @@ export function AccountControl({ placement = "header", className = "" }: Account
             </span>
           </div>
           <div className="mb-1.5 border-t border-line" />
-          {items.map(({ key, icon: Icon, label, run, warm }) => (
+          {items.map(({ key, icon: Icon, label, run, warm, badge, badgeLabel }) => (
             <button
               key={key}
               type="button"
               role="menuitem"
+              aria-label={badgeLabel ? `${label} · ${badgeLabel}` : undefined}
               className={ITEM}
               onPointerEnter={warm ? () => void prefetchRoute(warm) : undefined}
               onFocus={warm ? () => void prefetchRoute(warm) : undefined}
@@ -192,7 +210,12 @@ export function AccountControl({ placement = "header", className = "" }: Account
               }}
             >
               <Icon className={`size-4 shrink-0 ${key === "plus" ? "text-brand-600" : "text-muted"}`} aria-hidden="true" />
-              {label}
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {badge !== undefined && (
+                <span aria-hidden="true" className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold tabular-nums text-white">
+                  {badge}
+                </span>
+              )}
             </button>
           ))}
         </div>

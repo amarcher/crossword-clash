@@ -8,6 +8,7 @@ import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { UpdateBanner } from "../components/UpdateBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
+import { PendingRequests } from "../components/Friends";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
@@ -276,6 +277,13 @@ export function MenuScreen() {
           {multiplayer && (
             <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>
+              {pendingRequests > 0 && (
+                // A request is answered where the player lands (a push tap, a cold
+                // start), not only behind Race friends → Manage.
+                <Card className="p-4" aria-label={t("friends.requestsHeading", { count: pendingRequests })}>
+                  <PendingRequests />
+                </Card>
+              )}
               <ListGroup>
                 {friendsEnabled() ? (
                   // One row for the social entry points (docs/friends-spec.md §3.6): the
