@@ -1,0 +1,5 @@
+This build (1.1.0, build 32) corrects two lines of copy about notifications. Please check:
+
+1. In a room's lobby, the hint under "Invite friends" now says that a friend whose app is closed gets a notification (if they allow them), and that otherwise the invite waits on their Race friends screen.
+2. On your account page under Notifications, the "Room invites" switch now says it also covers a friend joining your room or waiting for you there.
+3. Everything from build 31 still applies, and most of you never saw it, so please try it now: host a room, invite a friend, then lock your phone — their join arrives as "@name joined your room". Join a room whose host is away: their row shows Away, and "Nudge host" sends them "@name is waiting in your room" with a countdown before the next nudge. "Can't now" on an invite shows the host "Can't right now" in their lobby.
