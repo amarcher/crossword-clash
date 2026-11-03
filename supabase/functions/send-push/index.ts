@@ -13,6 +13,10 @@ import {
   inviteNotification,
   pushLocale,
   reminderNotification,
+  roomJoinedFromBody,
+  roomJoinedNotification,
+  roomNudgeFromWebhook,
+  roomNudgeNotification,
   tokenUnregistered,
   type Notification,
   type PushKind,
@@ -29,6 +33,8 @@ import {
  *   POST { kind: "daily_reminder" }                          → everyone whose local hour is their reminder hour
  *   POST { type: "INSERT", table: "room_invites", record }    → the invitee (the webhook's body)
  *   POST { type: "INSERT", table: "friendships", record }     → the recipient of a pending friend request (the webhook's body)
+ *   POST { kind: "room_joined", gameId, joinerUserId }        → the host of a waiting room, on the first join (the players trigger's body)
+ *   POST { type: "INSERT", table: "room_nudges", record }     → the host, nudged by a waiting joiner (the webhook's body)
  *   POST { kind: "test", userId }                             → one user's devices, for the runbook's smoke test
  *
  * iOS goes straight to APNs over HTTP/2 with an ES256 provider token signed
@@ -279,6 +285,48 @@ async function friendRequest(db: SupabaseClient, target: { requesterId: string; 
   return json({ ok: true, ...counts });
 }
 
+/** The room a host-side notification names: its code, title and host; null when it is no longer waiting. */
+async function waitingRoom(db: SupabaseClient, gameId: string): Promise<{ code: string; title: string; hostUserId: string } | null> {
+  const { data: game } = await db.from("games").select("short_code, status, host_user_id, puzzle:puzzles(title)").eq("id", gameId).maybeSingle();
+  const row = game as { short_code: string | null; status: string; host_user_id: string | null; puzzle?: { title: string } | null } | null;
+  if (!row || row.status !== "waiting" || !row.short_code || !row.host_user_id) return null;
+  return { code: row.short_code, title: row.puzzle?.title ?? "", hostUserId: row.host_user_id };
+}
+
+/** The username behind a user id, or null for an anonymous player (never the typed display name). */
+async function usernameOf(db: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await db.from("profiles").select("username").eq("user_id", userId).maybeSingle();
+  return (data as { username?: string } | null)?.username ?? null;
+}
+
+/** "@alicia joined your room" to the host (docs/friends-spec.md §3.7): only while the room waits, never for the host's own row. */
+async function roomJoined(db: SupabaseClient, target: { gameId: string; joinerUserId: string }) {
+  const room = await waitingRoom(db, target.gameId);
+  if (!room) return json({ ok: true, skipped: "room_not_open" });
+  if (room.hostUserId === target.joinerUserId) return json({ ok: true, skipped: "host" });
+  const name = await usernameOf(db, target.joinerUserId);
+  const prefs = await prefsFor(db, [room.hostUserId]);
+  const tokens = await tokensFor(db, [room.hostUserId]);
+  const counts = await notifyUser(db, room.hostUserId, "room_joined", prefs.get(room.hostUserId), tokens, (locale) =>
+    roomJoinedNotification({ name, title: room.title, code: room.code, gameId: target.gameId }, locale),
+  );
+  return json({ ok: true, ...counts });
+}
+
+/** "@alicia is waiting in your room": the nudge row's recipient is the host the RPC resolved. */
+async function roomNudge(db: SupabaseClient, target: { gameId: string; fromUserId: string; toUserId: string }) {
+  const room = await waitingRoom(db, target.gameId);
+  if (!room) return json({ ok: true, skipped: "room_not_open" });
+  if (room.hostUserId !== target.toUserId) return json({ ok: true, skipped: "not_host" });
+  const name = await usernameOf(db, target.fromUserId);
+  const prefs = await prefsFor(db, [target.toUserId]);
+  const tokens = await tokensFor(db, [target.toUserId]);
+  const counts = await notifyUser(db, target.toUserId, "room_nudge", prefs.get(target.toUserId), tokens, (locale) =>
+    roomNudgeNotification({ name, title: room.title, code: room.code, gameId: target.gameId }, locale),
+  );
+  return json({ ok: true, ...counts });
+}
+
 async function smokeTest(db: SupabaseClient, userId: string) {
   const tokens = await tokensFor(db, [userId]);
   const note: Notification = { kind: "daily_reminder", title: "Crossword Clash", body: "Push is set up.", url: `${SITE_URL}/menu`, collapseId: "test", ttlSeconds: 600 };
@@ -292,7 +340,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!SECRET || !sameToken(req.headers.get("x-push-secret") ?? "", SECRET)) return json({ error: "unauthorized" }, 401);
 
-  let body: { kind?: string; userId?: string; type?: string; table?: string; record?: Record<string, unknown> };
+  let body: { kind?: string; userId?: string; gameId?: unknown; joinerUserId?: unknown; type?: string; table?: string; record?: Record<string, unknown> };
   try {
     body = await req.json();
   } catch {
@@ -304,6 +352,10 @@ Deno.serve(async (req) => {
   if (body.type === "INSERT" && body.table === "room_invites" && body.record?.to_user_id) return roomInvite(db, body.record as unknown as InviteRecord);
   const request = friendRequestFromWebhook(body as Parameters<typeof friendRequestFromWebhook>[0]);
   if (request) return friendRequest(db, request);
+  const joined = roomJoinedFromBody(body);
+  if (joined) return roomJoined(db, joined);
+  const nudge = roomNudgeFromWebhook(body as Parameters<typeof roomNudgeFromWebhook>[0]);
+  if (nudge) return roomNudge(db, nudge);
   if (body.kind === "test" && body.userId) return smokeTest(db, body.userId);
   return json({ error: "invalid_request" }, 400);
 });

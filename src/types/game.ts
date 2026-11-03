@@ -25,6 +25,8 @@ export interface Player {
   score: number;
   /** Async race: finish time in whole seconds, once this player finished. */
   raceSeconds?: number | null;
+  /** Presence says every tab of theirs is hidden (a locked phone, another app); absent from a DB row. */
+  away?: boolean;
 }
 
 export interface Game {

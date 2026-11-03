@@ -12,7 +12,10 @@
 
 // --- MIRROR START ---
 
-export type PushKind = "daily_reminder" | "room_invite" | "beat" | "friend_request";
+export type PushKind = "daily_reminder" | "room_invite" | "beat" | "friend_request" | "room_joined" | "room_nudge";
+
+/** The kinds that ride on the `room_invites` switch: an invite, a beat challenge, and the host's side of a room (a join, a nudge). */
+export const ROOM_KINDS: readonly PushKind[] = ["room_invite", "beat", "room_joined", "room_nudge"];
 export type PushLocale = "en" | "es";
 
 /** The `notification_preferences` row as the sender reads it. */
@@ -76,10 +79,10 @@ export type Delivery = "send" | "opted_out" | "quiet";
 /** The per-kind switch, then quiet hours (room invites cross them when the player allows it). */
 export function deliveryDecision(prefs: PushPrefs, kind: PushKind, now: Date = new Date()): Delivery {
   if (kind === "daily_reminder" && !prefs.daily_reminder) return "opted_out";
-  if ((kind === "room_invite" || kind === "beat") && !prefs.room_invites) return "opted_out";
+  if (ROOM_KINDS.includes(kind) && !prefs.room_invites) return "opted_out";
   if (kind === "friend_request" && !prefs.friend_requests) return "opted_out";
   if (!inQuietHours(prefs, now)) return "send";
-  if ((kind === "room_invite" || kind === "beat") && prefs.quiet_allow_invites) return "send";
+  if (ROOM_KINDS.includes(kind) && prefs.quiet_allow_invites) return "send";
   return "quiet";
 }
 
@@ -113,6 +116,14 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     beatBody: "Beat it",
     requestTitle: "@{{name}} wants to be friends",
     requestBody: "Accept or decline on your Race friends screen",
+    joinedTitle: "@{{name}} joined your room",
+    joinedTitleAnon: "A player joined your room",
+    joinedBody: "{{title}} · Go to room",
+    joinedBodyPlain: "Go to room",
+    nudgeTitle: "@{{name}} is waiting in your room",
+    nudgeTitleAnon: "A player is waiting in your room",
+    nudgeBody: "{{title}} · Go to room",
+    nudgeBodyPlain: "Go to room",
     mini: "mini",
     midi: "midi",
     large: "large",
@@ -127,6 +138,14 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     beatBody: "Supéralo",
     requestTitle: "@{{name}} quiere ser tu amigo",
     requestBody: "Acepta o rechaza en tu pantalla Compite con amigos",
+    joinedTitle: "@{{name}} entró en tu sala",
+    joinedTitleAnon: "Alguien entró en tu sala",
+    joinedBody: "{{title}} · Ir a la sala",
+    joinedBodyPlain: "Ir a la sala",
+    nudgeTitle: "@{{name}} te espera en tu sala",
+    nudgeTitleAnon: "Alguien te espera en tu sala",
+    nudgeBody: "{{title}} · Ir a la sala",
+    nudgeBodyPlain: "Ir a la sala",
     mini: "mini",
     midi: "midi",
     large: "grande",
@@ -203,6 +222,43 @@ export function friendRequestNotification(input: { name: string }, locale: PushL
   };
 }
 
+/** What the host's side of a room needs: the joiner's or nudger's username (null for an anonymous player), the room. */
+export interface RoomSideInput {
+  /** The `profiles.username`, never the typed `players.display_name` (unfiltered on the server); null → "A player". */
+  name: string | null;
+  title: string;
+  code: string;
+  gameId: string;
+}
+
+/** "@alicia joined your room": to the host on the first join, collapsing with the room's invite (phase f). */
+export function roomJoinedNotification(input: RoomSideInput, locale: PushLocale): Notification {
+  const t = STRINGS[locale];
+  const title = input.title.trim();
+  return {
+    kind: "room_joined",
+    title: input.name ? fill(t.joinedTitle, { name: input.name }) : t.joinedTitleAnon,
+    body: title ? fill(t.joinedBody, { title }) : t.joinedBodyPlain,
+    url: `${SITE}/?join=${encodeURIComponent(input.code)}`,
+    collapseId: `room-${input.gameId}`,
+    ttlSeconds: INVITE_TTL_SECONDS,
+  };
+}
+
+/** "@alicia is waiting in your room": a joiner's nudge to an away host (phase f). */
+export function roomNudgeNotification(input: RoomSideInput, locale: PushLocale): Notification {
+  const t = STRINGS[locale];
+  const title = input.title.trim();
+  return {
+    kind: "room_nudge",
+    title: input.name ? fill(t.nudgeTitle, { name: input.name }) : t.nudgeTitleAnon,
+    body: title ? fill(t.nudgeBody, { title }) : t.nudgeBodyPlain,
+    url: `${SITE}/?join=${encodeURIComponent(input.code)}`,
+    collapseId: `room-${input.gameId}`,
+    ttlSeconds: INVITE_TTL_SECONDS,
+  };
+}
+
 /** The APNs request: headers and the JSON body for a token. */
 export function apnsRequest(note: Notification, bundleId: string, now: Date = new Date()): { headers: Record<string, string>; body: unknown } {
   return {
@@ -258,6 +314,27 @@ export function friendRequestFromWebhook(body: { type?: string; table?: string; 
   const r = body.record;
   if (!r || r.status !== "pending" || typeof r.requester_id !== "string" || typeof r.recipient_id !== "string") return null;
   return { requesterId: r.requester_id, recipientId: r.recipient_id };
+}
+
+/** The `room_nudges` row a Database Webhook posts on INSERT. */
+export interface RoomNudgeRecord {
+  id: string;
+  game_id: string;
+  from_user_id: string;
+  to_user_id: string;
+}
+
+export function roomNudgeFromWebhook(body: { type?: string; table?: string; record?: Partial<RoomNudgeRecord> | null }): { gameId: string; fromUserId: string; toUserId: string } | null {
+  if (body.type !== "INSERT" || body.table !== "room_nudges") return null;
+  const r = body.record;
+  if (!r || typeof r.game_id !== "string" || typeof r.from_user_id !== "string" || typeof r.to_user_id !== "string") return null;
+  return { gameId: r.game_id, fromUserId: r.from_user_id, toUserId: r.to_user_id };
+}
+
+/** The players trigger's own body (`docs/push-setup-players.sql`): the SQL already checked the room is waiting and the joiner is not the host. */
+export function roomJoinedFromBody(body: { kind?: string; gameId?: unknown; joinerUserId?: unknown }): { gameId: string; joinerUserId: string } | null {
+  if (body.kind !== "room_joined" || typeof body.gameId !== "string" || typeof body.joinerUserId !== "string") return null;
+  return { gameId: body.gameId, joinerUserId: body.joinerUserId };
 }
 
 // --- MIRROR END ---

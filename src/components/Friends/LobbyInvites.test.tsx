@@ -21,6 +21,8 @@ function value(over: Partial<FriendsContextValue> = {}): FriendsContextValue {
     invites: [],
     openInvites: [],
     unseenInvites: [],
+    sentInvites: [],
+    roomJoined: null,
     blocked: [],
     refresh: vi.fn(async () => {}),
     request: vi.fn(async () => "pending" as const),
@@ -31,6 +33,9 @@ function value(over: Partial<FriendsContextValue> = {}): FriendsContextValue {
     invite: vi.fn(async () => {}),
     beat: vi.fn(async () => {}),
     markSeen: vi.fn(async () => {}),
+    decline: vi.fn(async () => {}),
+    nudge: vi.fn(async () => {}),
+    dismissRoomJoined: vi.fn(),
     ...over,
   };
 }
@@ -71,6 +76,27 @@ describe("LobbyInvites", () => {
     expect(await screen.findByText("Invited")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Invite" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "That's a lot of requests for one day. Try again tomorrow.");
+  });
+
+  it("says where each friend stands: Invited from the sender's own rows, Joined once they are in the roster, Can't right now when declined", () => {
+    friends.value = value({
+      sentInvites: [
+        { id: "i1", gameId: "g1", toUserId: "a", createdAt: "2026-11-02T00:00:00Z", response: null },
+        { id: "i2", gameId: "g1", toUserId: "m", createdAt: "2026-11-02T00:00:00Z", response: "declined" },
+      ],
+    });
+    const { rerender } = render(<LobbyInvites gameId="g1" players={[{ userId: "host" }]} />);
+    expect(screen.getByText("Invited")).toBeTruthy();
+    expect(screen.getByText("Can't right now")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Invite" })).toBeNull();
+    // alicia arrives: her row says Joined whatever the invite row says; a declined friend who turns up anyway is Joined too.
+    rerender(<LobbyInvites gameId="g1" players={[{ userId: "host" }, { userId: "a" }, { userId: "m" }]} />);
+    expect(screen.getAllByText("Joined")).toHaveLength(2);
+    expect(screen.queryByText("Can't right now")).toBeNull();
+    // Rows from another room do not count here.
+    friends.value = value({ sentInvites: [{ id: "i3", gameId: "other", toUserId: "a", createdAt: "x", response: null }] });
+    rerender(<LobbyInvites gameId="g1" players={[]} />);
+    expect(screen.getAllByRole("button", { name: "Invite" })).toHaveLength(2);
   });
 
   it("invites the friend that Challenge was tapped for as soon as the room exists, once", async () => {

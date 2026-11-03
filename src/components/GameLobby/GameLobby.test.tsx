@@ -406,6 +406,40 @@ describe("GameLobby", () => {
     });
   });
 
+  describe("an away host (phase f)", () => {
+    const awayPlayers: Player[] = [{ ...mockPlayers[0], away: true }, mockPlayers[1]];
+
+    it("dims the away row with an Away chip and keeps the Host chip, and the waiting line names the host", () => {
+      render(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} />);
+      const row = screen.getByText("Host Player").closest("li")!;
+      expect(row.dataset.away).toBe("true");
+      expect(row.className).not.toMatch(/border-l|border-left/);
+      expect(row.textContent).toContain("Away");
+      expect(row.textContent).toContain("Host");
+      expect(screen.getByText("Guest Player").closest("li")!.dataset.away).toBeUndefined();
+      expect(screen.getByRole("status").textContent).toContain("Waiting for Host Player to come back");
+    });
+
+    it("shows Nudge host only to a joiner while the host is away, and it reads Nudged once sent", async () => {
+      const onNudgeHost = vi.fn(async () => {});
+      const { rerender } = render(
+        <GameLobby shareCode="ABC123" players={mockPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />,
+      );
+      expect(screen.queryByRole("button", { name: /Nudge host/ })).toBeNull();
+      expect(screen.getByRole("status").textContent).toContain("Waiting for host to start the game");
+      rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+      fireEvent.click(screen.getByRole("button", { name: /Nudge host/ }));
+      expect(onNudgeHost).toHaveBeenCalledOnce();
+      const nudged = await screen.findByRole("button", { name: /Nudged/ });
+      expect((nudged as HTMLButtonElement).disabled).toBe(true);
+      // The host, and a joiner with no nudge handler (friends off), never see the button.
+      rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={true} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+      expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+      rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} />);
+      expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+    });
+  });
+
   describe("share code", () => {
     it("displays the share code", () => {
       render(

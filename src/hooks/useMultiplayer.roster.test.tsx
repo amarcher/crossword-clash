@@ -173,7 +173,7 @@ describe("the lobby roster and the name the player typed", () => {
 
     // Presence carries the typed name, not the row's old one.
     expect(fake.track).toHaveBeenCalledTimes(1);
-    expect(fake.track).toHaveBeenCalledWith({ user_id: "me", display_name: "Arch", color: "#3b82f6" });
+    expect(fake.track).toHaveBeenCalledWith({ user_id: "me", display_name: "Arch", color: "#3b82f6", visible: true });
     // The DB bootstrap already shows it, host first.
     expect(lobbyRows()).toEqual(["AliciaHost", "Arch"]);
 
@@ -202,7 +202,7 @@ describe("the lobby roster and the name the player typed", () => {
 
     services.fetchGameState.mockResolvedValue({ cells: {}, players: [host, myStaleRow], status: "waiting", settings: null, startedAt: null, completedAt: null });
     await tabComesBack();
-    expect(fake.track).toHaveBeenCalledWith({ user_id: "me", display_name: "Arch", color: "#3b82f6" });
+    expect(fake.track).toHaveBeenCalledWith({ user_id: "me", display_name: "Arch", color: "#3b82f6", visible: true });
     expect(lobbyRows()).toEqual(["AliciaHost", "Arch"]);
   });
 });

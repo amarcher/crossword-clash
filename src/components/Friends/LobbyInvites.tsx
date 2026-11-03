@@ -1,22 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check } from "lucide-react";
+import { Check, UserRoundCheck, UserRoundX } from "lucide-react";
 import { useFriends } from "../../contexts/FriendsContext";
-import { FriendsError, takePendingChallenge } from "../../lib/friends";
+import { FriendsError, lobbyInviteStatus, takePendingChallenge } from "../../lib/friends";
 import { Button, Card, Eyebrow } from "../ui";
 import { PersonList, PersonRow } from "./PersonRow";
+
+const CHIP = "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold";
 
 /**
  * The lobby's "Invite friends" list (spec §3.2): the viewer's friends, each
  * with Invite; a friend tapped on the Race friends screen's Challenge is
  * invited the moment the room exists. Renders nothing for a viewer with no
- * friends. In the apps a friend who is away gets a push once phase (d) ships;
- * until then the invite waits in their inbox and shows as a banner if their
- * app is open.
+ * friends. Each row then says where the friend stands (spec §3.7): Invited
+ * (an open invite, this session's or one read back from the sender's own
+ * rows), Joined (they are in `players`), or "Can't right now" (declined).
+ * In the apps the invite is a push; on the web it waits in their inbox and
+ * shows as a banner if the site is open.
  */
-export function LobbyInvites({ gameId }: { gameId: string }) {
+export function LobbyInvites({ gameId, players = [] }: { gameId: string; players?: readonly { userId: string }[] }) {
   const { t } = useTranslation();
-  const { active, friendships, invite } = useFriends();
+  const { active, friendships, invite, sentInvites } = useFriends();
   const [invited, setInvited] = useState<Record<string, true>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,20 +56,34 @@ export function LobbyInvites({ gameId }: { gameId: string }) {
     <Card className="p-5">
       <Eyebrow as="h2">{t("friends.inviteHeading")}</Eyebrow>
       <PersonList className="mt-3">
-        {friendships.friends.map((f) => (
-          <PersonRow key={f.userId} username={f.username}>
-            {invited[f.userId] ? (
-              <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 text-sm font-semibold text-brand-700">
-                <Check className="size-4" aria-hidden="true" />
-                {t("friends.invited")}
-              </span>
-            ) : (
-              <Button size="sm" onClick={() => void send(f.userId)} disabled={busy !== null} aria-busy={busy === f.userId || undefined}>
-                {t("friends.invite")}
-              </Button>
-            )}
-          </PersonRow>
-        ))}
+        {friendships.friends.map((f) => {
+          const status = lobbyInviteStatus(f.userId, gameId, sentInvites, players);
+          const state = status === "none" && invited[f.userId] ? "invited" : status;
+          return (
+            <PersonRow key={f.userId} username={f.username}>
+              {state === "joined" ? (
+                <span className={`${CHIP} bg-emerald-50 text-emerald-800`}>
+                  <UserRoundCheck className="size-4" aria-hidden="true" />
+                  {t("friends.joined")}
+                </span>
+              ) : state === "declined" ? (
+                <span className={`${CHIP} bg-surface-sunken text-muted`}>
+                  <UserRoundX className="size-4" aria-hidden="true" />
+                  {t("friends.cantRightNow")}
+                </span>
+              ) : state === "invited" ? (
+                <span className={`${CHIP} bg-brand-50 text-brand-700`}>
+                  <Check className="size-4" aria-hidden="true" />
+                  {t("friends.invited")}
+                </span>
+              ) : (
+                <Button size="sm" onClick={() => void send(f.userId)} disabled={busy !== null} aria-busy={busy === f.userId || undefined}>
+                  {t("friends.invite")}
+                </Button>
+              )}
+            </PersonRow>
+          );
+        })}
       </PersonList>
       {error && (
         <p role="alert" className="mt-3 text-sm font-medium text-red-700">

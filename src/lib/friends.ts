@@ -1,5 +1,5 @@
 /**
- * Friends and room invites (docs/friends-spec.md, phases a and b): the launch
+ * Friends and room invites (docs/friends-spec.md, phases a, b and f): the launch
  * switch, the pure helpers the Race friends screen and the lobby build on, the
  * client wrappers for migration 20261101000000's RPCs, and the per-user
  * Realtime channel an invite's sender nudges so the recipient refetches.
@@ -8,8 +8,9 @@
  * outgoing), `inviteState` (open, started, closed, expired), `raceBlocks` (the
  * screen's block order by state, spec §3.6), `friendSuggestions` (the other
  * players of a finished room worth an "Add friend"), `friendsErrorKind`, the
- * pending challenge store. The client functions wrap the tables and RPCs and map a
- * refusal's `friends:<code>` message to a `FriendsError`.
+ * pending challenge store, `lobbyInviteStatus` (Invited → Joined → Can't right
+ * now). The client functions wrap the tables and RPCs and map a refusal's
+ * `friends:<code>` message to a `FriendsError`.
  */
 import { supabase } from "./supabaseClient";
 import type { Database } from "../types/supabase";
@@ -65,14 +66,36 @@ export interface RoomInvite {
   room: { gameId: string; code: string; status: string; title: string; width: number; height: number } | null;
   /** kind = beat: the /daily/:day/:slot?beat=… path. */
   link: string | null;
+  /** The invitee's "Can't now" (phase f); null until answered. */
+  response: "declined" | null;
 }
 
-export type InviteState = "open" | "started" | "closed" | "expired";
+/** A room invite the viewer sent, as the lobby's invite list reads it back. */
+export interface SentInvite {
+  id: string;
+  gameId: string;
+  toUserId: string;
+  createdAt: string;
+  response: "declined" | null;
+}
+
+/** The host's "someone joined" notice (phase f), read back under RLS after a nudge on the host's channel. */
+export interface RoomJoined {
+  gameId: string;
+  code: string;
+  title: string;
+  /** The joiner's username, or null for an anonymous player (never the typed display name). */
+  joinerName: string | null;
+  at: number;
+}
+
+export type InviteState = "open" | "started" | "closed" | "expired" | "declined";
 
 /** A room invite is stale once the room is gone or an hour has passed (a lobby older than that is dead to the invitee, spec §3.4). */
 export const INVITE_OPEN_MS = 60 * 60 * 1000;
 
-export function inviteState(invite: Pick<RoomInvite, "kind" | "room" | "createdAt">, now = Date.now()): InviteState {
+export function inviteState(invite: Pick<RoomInvite, "kind" | "room" | "createdAt"> & Partial<Pick<RoomInvite, "response">>, now = Date.now()): InviteState {
+  if (invite.response === "declined") return "declined";
   if (invite.kind === "beat") return "open";
   if (!invite.room) return "closed";
   if (invite.room.status === "active" || invite.room.status === "completed") return "started";
@@ -153,6 +176,23 @@ export function friendSuggestions(
   return out;
 }
 
+export type LobbyInviteStatus = "none" | "invited" | "joined" | "declined";
+
+/**
+ * What the lobby's invite list says beside a friend (spec §3.7): Joined once
+ * they are in the roster (whatever the invite row says), "Can't right now" on
+ * a declined invite, Invited while one is open, else the Invite button.
+ */
+export function lobbyInviteStatus(friendId: string, gameId: string, sent: readonly SentInvite[], roster: readonly { userId: string }[]): LobbyInviteStatus {
+  if (roster.some((p) => p.userId === friendId)) return "joined";
+  const row = sent.find((i) => i.gameId === gameId && i.toUserId === friendId);
+  if (!row) return "none";
+  return row.response === "declined" ? "declined" : "invited";
+}
+
+/** One nudge per room per `NUDGE_COOLDOWN_MS` (the RPC's `nudge_cooldown`); the button reads "Nudged" meanwhile. */
+export const NUDGE_COOLDOWN_MS = 3 * 60 * 1000;
+
 /** The daily challenge link an invite may carry (the only link the server accepts). */
 export const BEAT_LINK = /^\/daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)(\?[A-Za-z0-9=&%._+-]*)?$/;
 
@@ -196,13 +236,14 @@ export type FriendsErrorKind =
   | "not_in_room"
   | "not_friends"
   | "already_invited"
+  | "too_soon"
   | "invalid"
   | "unconfigured"
   | "failed";
 
 const KINDS: readonly FriendsErrorKind[] = [
   "not_signed_in", "no_username", "not_found", "self", "cooldown", "already_friends", "already_requested",
-  "rate_limited", "too_many", "room_not_open", "not_in_room", "not_friends", "already_invited", "invalid",
+  "rate_limited", "too_many", "room_not_open", "not_in_room", "not_friends", "already_invited", "too_soon", "invalid",
 ];
 
 export class FriendsError extends Error {
@@ -284,7 +325,7 @@ export async function fetchBlocks(viewerId: string): Promise<string[]> {
 }
 
 const INVITE_COLUMNS =
-  "id, kind, game_id, link, from_user_id, to_user_id, created_at, pushed_at, seen_at, sender:profiles!room_invites_from_user_id_fkey(username), game:games(short_code, status, puzzle:puzzles(title, width, height))";
+  "id, kind, game_id, link, from_user_id, to_user_id, created_at, pushed_at, seen_at, response, sender:profiles!room_invites_from_user_id_fkey(username), game:games(short_code, status, puzzle:puzzles(title, width, height))";
 
 interface InviteJoined extends RoomInviteRow {
   sender: { username: string } | null;
@@ -311,6 +352,7 @@ export function toRoomInvite(row: InviteJoined): RoomInvite | null {
           }
         : null,
     link: row.kind === "beat" ? row.link : null,
+    response: row.response === "declined" ? "declined" : null,
   };
 }
 
@@ -324,6 +366,39 @@ export async function fetchInvites(viewerId: string): Promise<RoomInvite[]> {
     .limit(50);
   if (error) throw refusal(error);
   return ((data ?? []) as unknown as InviteJoined[]).map(toRoomInvite).filter((i): i is RoomInvite => i !== null);
+}
+
+/** The room invites the viewer sent in the last week (the sender side of the parties-read policy), newest first. */
+export async function fetchSentInvites(viewerId: string): Promise<SentInvite[]> {
+  const { data, error } = await client()
+    .from("room_invites")
+    .select("id, game_id, to_user_id, created_at, response")
+    .eq("from_user_id", viewerId)
+    .eq("kind", "room")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw refusal(error);
+  return (data ?? []).flatMap((row) =>
+    row.game_id ? [{ id: row.id, gameId: row.game_id, toUserId: row.to_user_id, createdAt: row.created_at, response: row.response === "declined" ? ("declined" as const) : null }] : [],
+  );
+}
+
+/**
+ * Reads a room back after a `room_joined` nudge (phase f). The nudge's game id
+ * is only a hint: the game must be the viewer's own waiting room (RLS lets
+ * anyone read games, so the host id is checked here), the joiner is its newest
+ * player row that is not the host, and the name is their public username.
+ */
+export async function fetchRoomJoined(gameId: string, hostId: string, now = Date.now()): Promise<RoomJoined | null> {
+  const sb = client();
+  const { data: game } = await sb.from("games").select("id, short_code, status, host_user_id, puzzle:puzzles(title)").eq("id", gameId).maybeSingle();
+  const room = game as { id: string; short_code: string | null; status: string; host_user_id: string | null; puzzle: { title: string } | null } | null;
+  if (!room || room.host_user_id !== hostId || room.status !== "waiting" || !room.short_code) return null;
+  const { data: rows } = await sb.from("players").select("user_id").eq("game_id", gameId).neq("user_id", hostId).order("created_at", { ascending: false }).limit(1);
+  const joiner = (rows as { user_id: string }[] | null)?.[0]?.user_id;
+  if (!joiner) return null;
+  const [profile] = await fetchPlayerProfiles([joiner]);
+  return { gameId, code: room.short_code, title: room.puzzle?.title ?? "", joinerName: profile?.username ?? null, at: now };
 }
 
 // --- Writes -----------------------------------------------------------------
@@ -385,6 +460,20 @@ export async function sendBeat(friendId: string, link: string): Promise<string |
   return data ?? null;
 }
 
+/** "Can't now": the invitee declines an open room invite; the sender's channel is nudged so their lobby list updates. */
+export async function declineRoomInvite(invite: Pick<RoomInvite, "id" | "from">): Promise<void> {
+  const { error } = await client().rpc("respond_room_invite", { p_invite: invite.id, p_response: "declined" });
+  if (error) throw refusal(error);
+  notifyInvite(invite.from.userId);
+}
+
+/** "Nudge host": returns the nudge id, or null when a block swallowed it (the caller still shows "Nudged"). */
+export async function nudgeHost(gameId: string): Promise<string | null> {
+  const { data, error } = await client().rpc("nudge_host", { p_game_id: gameId });
+  if (error) throw refusal(error);
+  return data ?? null;
+}
+
 export async function markInvitesSeen(ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
   const { error } = await client().rpc("mark_invites_seen", { p_ids: [...ids] });
@@ -400,28 +489,44 @@ export async function markInvitesSeen(ids: readonly string[]): Promise<void> {
  * broadcast can at most cause one extra read.
  */
 export const USER_CHANNEL_EVENT = "invites_changed";
+/** The join path's nudge to the host (phase f): `{ gameId }`, a hint the host reads back with `fetchRoomJoined`. */
+export const ROOM_JOINED_EVENT = "room_joined";
 
 export function userChannelName(userId: string): string {
   return `user:${userId}`;
 }
 
-export function notifyInvite(toUserId: string): void {
+function nudgeChannel(toUserId: string, event: string, payload: Record<string, unknown>): void {
   if (!supabase) return;
   const channel = supabase.channel(userChannelName(toUserId));
   channel.subscribe((status) => {
     if (status !== "SUBSCRIBED") return;
-    void channel.send({ type: "broadcast", event: USER_CHANNEL_EVENT, payload: {} }).finally(() => {
+    void channel.send({ type: "broadcast", event, payload }).finally(() => {
       void supabase?.removeChannel(channel);
     });
   });
 }
 
-/** Listen on the viewer's channel; `onChange` runs on every nudge. Returns a stop function. */
-export function subscribeInvites(userId: string, onChange: () => void): () => void {
+export function notifyInvite(toUserId: string): void {
+  nudgeChannel(toUserId, USER_CHANNEL_EVENT, {});
+}
+
+/** The join path tells the host someone arrived (the web's stand-in for the players push). */
+export function notifyRoomJoined(hostUserId: string, gameId: string): void {
+  nudgeChannel(hostUserId, ROOM_JOINED_EVENT, { gameId });
+}
+
+/** Listen on the viewer's channel; `onChange` runs on every nudge, `onRoomJoined` with the game id a joiner names. Returns a stop function. */
+export function subscribeInvites(userId: string, onChange: () => void, onRoomJoined?: (gameId: string) => void): () => void {
   if (!supabase) return () => {};
   const sb = supabase;
   const channel = sb.channel(userChannelName(userId));
-  channel.on("broadcast", { event: USER_CHANNEL_EVENT }, () => onChange()).subscribe();
+  channel.on("broadcast", { event: USER_CHANNEL_EVENT }, () => onChange());
+  channel.on("broadcast", { event: ROOM_JOINED_EVENT }, (msg) => {
+    const gameId = (msg as { payload?: { gameId?: unknown } } | undefined)?.payload?.gameId;
+    if (typeof gameId === "string" && onRoomJoined) onRoomJoined(gameId);
+  });
+  channel.subscribe();
   return () => {
     void sb.removeChannel(channel);
   };

@@ -26,6 +26,8 @@ function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextVa
     invites: [],
     openInvites: [],
     unseenInvites: [],
+    sentInvites: [],
+    roomJoined: null,
     blocked: [],
     refresh: vi.fn(async () => {}),
     request: vi.fn(async () => "pending" as const),
@@ -36,6 +38,9 @@ function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextVa
     invite: vi.fn(async () => {}),
     beat: vi.fn(async () => {}),
     markSeen: vi.fn(async () => {}),
+    decline: vi.fn(async () => {}),
+    nudge: vi.fn(async () => {}),
+    dismissRoomJoined: vi.fn(),
     ...over,
   };
 }
@@ -49,6 +54,7 @@ const invite: RoomInvite = {
   seenAt: null,
   room: { gameId: "g1", code: "KQ7MXB", status: "waiting", title: "Birds of a feather", width: 15, height: 15 },
   link: null,
+  response: null,
 };
 
 /** The screen's block headings in page order. */

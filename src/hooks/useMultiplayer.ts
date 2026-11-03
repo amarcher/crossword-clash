@@ -19,26 +19,36 @@ interface TrackedPresence {
   user_id: string;
   display_name: string;
   color: string;
+  /** False while this tab is hidden (re-tracked on visibilitychange, never untracked); absent from a client older than phase f. */
+  visible?: boolean;
 }
 
-function presenceStateToPlayers(
+/** A player is away only when every presence of theirs (two tabs, say) is hidden. */
+export function presenceStateToPlayers(
   state: RealtimePresenceState<TrackedPresence>,
   gameId: string,
 ): Player[] {
   const out: Player[] = [];
-  const seen = new Set<string>();
+  const byUser = new Map<string, Player>();
   for (const presences of Object.values(state)) {
     for (const p of presences) {
-      if (seen.has(p.user_id)) continue;
-      seen.add(p.user_id);
-      out.push({
+      const visible = p.visible !== false;
+      const existing = byUser.get(p.user_id);
+      if (existing) {
+        if (visible && existing.away) existing.away = false;
+        continue;
+      }
+      const player: Player = {
         id: p.user_id,
         gameId,
         userId: p.user_id,
         displayName: displayableName(p.display_name),
         color: p.color,
         score: 0,
-      });
+        away: !visible,
+      };
+      byUser.set(p.user_id, player);
+      out.push(player);
     }
   }
   return out;
@@ -206,7 +216,12 @@ export function useMultiplayer({
     const self = rows.find((p) => p.userId === userId);
     if (!self) return;
     const typed = displayNameRef.current?.trim() ? displayNameRef.current : self.displayName;
-    const payload = { user_id: userId, display_name: displayableName(typed), color: self.color } satisfies TrackedPresence;
+    const payload = {
+      user_id: userId,
+      display_name: displayableName(typed),
+      color: self.color,
+      visible: typeof document === "undefined" || document.visibilityState !== "hidden",
+    } satisfies TrackedPresence;
     trackedRef.current = payload;
     void channelRef.current?.track(payload);
   }, [userId]);
@@ -396,12 +411,24 @@ export function useMultiplayer({
 
   // Tab wake: re-hydrate from the DB and make sure we are still in presence
   // (a socket that died while the page was hidden took our entry with it).
+  // A hidden tab re-tracks with `visible: false` instead of untracking (phase
+  // f): the lobby then shows this player as away rather than gone, which is
+  // what a locked phone means.
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.visibilityState !== "visible") return;
-      void hydrate();
       const tracked = trackedRef.current;
-      if (tracked) void channelRef.current?.track(tracked);
+      if (document.visibilityState !== "visible") {
+        if (tracked) {
+          trackedRef.current = { ...tracked, visible: false };
+          void channelRef.current?.track(trackedRef.current);
+        }
+        return;
+      }
+      void hydrate();
+      if (tracked) {
+        trackedRef.current = { ...tracked, visible: true };
+        void channelRef.current?.track(trackedRef.current);
+      }
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);

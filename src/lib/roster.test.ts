@@ -34,6 +34,18 @@ describe("liveRoster", () => {
     expect(names(liveRoster(null, [me], { userId: "me", displayName: "shithead" }))).toEqual(["Player"]);
   });
 
+  it("carries presence's away flag through the DB-order sort and the local rename; a DB row is never away", () => {
+    const awayHost = { ...host, away: true };
+    const roster = liveRoster([me, awayHost], [host, me], { userId: "me", displayName: "Arch" });
+    expect(roster.map((r) => [r.displayName, r.away ?? false])).toEqual([
+      ["Alicia", true],
+      ["Arch", false],
+    ]);
+    expect(liveRoster(null, [host, me]).every((r) => r.away === undefined)).toBe(true);
+    // The local player's own flag survives the rename.
+    expect(liveRoster([{ ...me, away: true }], [me], { userId: "me", displayName: "Arch" })[0]).toMatchObject({ displayName: "Arch", away: true });
+  });
+
   it("returns the same player objects when nothing changes", () => {
     const roster = liveRoster([host, me], [host, me], { userId: "me", displayName: "Archer" });
     expect(roster[0]).toBe(host);

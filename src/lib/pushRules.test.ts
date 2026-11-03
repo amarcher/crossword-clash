@@ -19,6 +19,10 @@ import {
   parseBeatLink,
   pushLocale,
   reminderNotification,
+  roomJoinedFromBody,
+  roomJoinedNotification,
+  roomNudgeFromWebhook,
+  roomNudgeNotification,
   tokenUnregistered,
   type PushPrefs,
 } from "./pushRules";
@@ -67,6 +71,10 @@ describe("deliveryDecision", () => {
     expect(deliveryDecision(prefs({ room_invites: false }), "room_invite", new Date("2026-10-31T12:00:00Z"))).toBe("opted_out");
     expect(deliveryDecision(prefs({ room_invites: false }), "beat", new Date("2026-10-31T12:00:00Z"))).toBe("opted_out");
     expect(deliveryDecision(prefs({ friend_requests: false }), "friend_request", new Date("2026-10-31T12:00:00Z"))).toBe("opted_out");
+    // The host's side of a room rides on the same switch as an invite (phase f).
+    expect(deliveryDecision(prefs({ room_invites: false }), "room_joined", new Date("2026-10-31T12:00:00Z"))).toBe("opted_out");
+    expect(deliveryDecision(prefs({ room_invites: false }), "room_nudge", new Date("2026-10-31T12:00:00Z"))).toBe("opted_out");
+    expect(deliveryDecision(prefs({ room_invites: true }), "room_nudge", new Date("2026-10-31T12:00:00Z"))).toBe("send");
   });
 
   it("holds everything but allowed room invites during quiet hours, in the player's own zone", () => {
@@ -76,7 +84,10 @@ describe("deliveryDecision", () => {
     expect(deliveryDecision(la, "friend_request", NOW)).toBe("quiet");
     expect(deliveryDecision(la, "room_invite", NOW)).toBe("send");
     expect(deliveryDecision(la, "beat", NOW)).toBe("send");
+    expect(deliveryDecision(la, "room_joined", NOW)).toBe("send");
+    expect(deliveryDecision(la, "room_nudge", NOW)).toBe("send");
     expect(deliveryDecision({ ...la, quiet_allow_invites: false }, "room_invite", NOW)).toBe("quiet");
+    expect(deliveryDecision({ ...la, quiet_allow_invites: false }, "room_joined", NOW)).toBe("quiet");
     expect(deliveryDecision({ ...la, quiet_hours: false }, "daily_reminder", NOW)).toBe("send");
     const tokyo = prefs({ timezone: "Asia/Tokyo", daily_reminder: true }); // 15:30 local: not quiet
     expect(deliveryDecision(tokyo, "daily_reminder", NOW)).toBe("send");
@@ -122,6 +133,51 @@ describe("notifications", () => {
 
   it("builds a friend request pointing at the friends list", () => {
     expect(friendRequestNotification({ name: "dana" }, "en")).toMatchObject({ title: "@dana wants to be friends", url: "https://crosswordclash.com/race/friends" });
+  });
+
+  it("tells the host who joined by username, 'A player' for an anonymous joiner, collapsing with the room's invite (phase f)", () => {
+    const note = roomJoinedNotification({ name: "alicia", title: "Birds of a feather", code: "KQ7MXB", gameId: "g1" }, "en");
+    expect(note).toEqual({
+      kind: "room_joined",
+      title: "@alicia joined your room",
+      body: "Birds of a feather · Go to room",
+      url: "https://crosswordclash.com/?join=KQ7MXB",
+      collapseId: "room-g1",
+      ttlSeconds: 3600,
+    });
+    expect(roomJoinedNotification({ name: null, title: "", code: "KQ7MXB", gameId: "g1" }, "en")).toMatchObject({ title: "A player joined your room", body: "Go to room" });
+    expect(roomJoinedNotification({ name: "alicia", title: "Aves", code: "KQ7MXB", gameId: "g1" }, "es")).toMatchObject({ title: "@alicia entró en tu sala", body: "Aves · Ir a la sala" });
+  });
+
+  it("builds the nudge the same way: 'is waiting in your room', the join link, the room's collapse id", () => {
+    const note = roomNudgeNotification({ name: "alicia", title: "Birds of a feather", code: "KQ7MXB", gameId: "g1" }, "en");
+    expect(note).toEqual({
+      kind: "room_nudge",
+      title: "@alicia is waiting in your room",
+      body: "Birds of a feather · Go to room",
+      url: "https://crosswordclash.com/?join=KQ7MXB",
+      collapseId: "room-g1",
+      ttlSeconds: 3600,
+    });
+    expect(roomNudgeNotification({ name: null, title: " ", code: "K", gameId: "g1" }, "es")).toMatchObject({ title: "Alguien te espera en tu sala", body: "Ir a la sala" });
+  });
+});
+
+describe("the room-side bodies", () => {
+  it("reads the players trigger's own body and nothing else", () => {
+    expect(roomJoinedFromBody({ kind: "room_joined", gameId: "g1", joinerUserId: "u2" })).toEqual({ gameId: "g1", joinerUserId: "u2" });
+    expect(roomJoinedFromBody({ kind: "room_joined", gameId: "g1" })).toBeNull();
+    expect(roomJoinedFromBody({ kind: "room_joined", gameId: 7, joinerUserId: "u2" })).toBeNull();
+    expect(roomJoinedFromBody({ kind: "daily_reminder" })).toBeNull();
+  });
+
+  it("reads a room_nudges INSERT webhook and refuses an update, another table or a malformed row", () => {
+    const record = { id: "n1", game_id: "g1", from_user_id: "u2", to_user_id: "u1" };
+    expect(roomNudgeFromWebhook({ type: "INSERT", table: "room_nudges", record })).toEqual({ gameId: "g1", fromUserId: "u2", toUserId: "u1" });
+    expect(roomNudgeFromWebhook({ type: "UPDATE", table: "room_nudges", record })).toBeNull();
+    expect(roomNudgeFromWebhook({ type: "INSERT", table: "room_invites", record })).toBeNull();
+    expect(roomNudgeFromWebhook({ type: "INSERT", table: "room_nudges", record: { game_id: "g1" } })).toBeNull();
+    expect(roomNudgeFromWebhook({ type: "INSERT", table: "room_nudges", record: null })).toBeNull();
   });
 });
 
@@ -170,6 +226,14 @@ describe("the store requests", () => {
     expect(apnsTokenClaims("TEAM123456", "KEY1234567", NOW)).toEqual({ header: { alg: "ES256", kid: "KEY1234567" }, payload: { iss: "TEAM123456", iat: Math.floor(NOW.getTime() / 1000) } });
     expect(apnsTokenStale(NOW.getTime() - 49 * 60 * 1000, NOW)).toBe(false);
     expect(apnsTokenStale(NOW.getTime() - 51 * 60 * 1000, NOW)).toBe(true);
+  });
+
+  it("carries a room-side kind through both stores with the room's collapse id", () => {
+    const joined = roomJoinedNotification({ name: "alicia", title: "T", code: "KQ7MXB", gameId: "g1" }, "en");
+    const req = apnsRequest(joined, "com.crosswordclash.app", NOW);
+    expect(req.headers["apns-collapse-id"]).toBe("room-g1");
+    expect(req.body).toMatchObject({ aps: { alert: { title: "@alicia joined your room" } }, url: "https://crosswordclash.com/?join=KQ7MXB", kind: "room_joined" });
+    expect(fcmMessage(joined, "tok")).toMatchObject({ message: { data: { kind: "room_joined", url: joined.url }, android: { collapse_key: "room-g1", ttl: "3600s" } } });
   });
 
   it("knows which store answers mean the token is gone", () => {

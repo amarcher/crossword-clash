@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { joinGame } from "../lib/puzzleService";
+import { friendsEnabled, notifyRoomJoined } from "../lib/friends";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
@@ -53,6 +54,11 @@ export function JoinScreen() {
       game.setDisplayName(displayName);
       savePlayerName(displayName);
       setJoinLoading(false);
+      // Tell the host someone arrived (phase f): the web's stand-in for the
+      // players push, only on the first join into a room still waiting.
+      if (friendsEnabled() && result.firstJoin && result.status === "waiting" && result.hostUserId && result.hostUserId !== userId) {
+        notifyRoomJoined(result.hostUserId, result.gameId);
+      }
 
       if (result.status === "waiting") {
         navigate(`/lobby/${result.gameId}`);

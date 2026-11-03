@@ -155,7 +155,9 @@
     "tapToCopy": "Toca para copiar",
     "shareInviteAction": "Compartir invitación",
     "gameSettings": "Ajustes de partida",
-    "qrHint": "O pide a tus amigos que escaneen este código"
+    "qrHint": "O pide a tus amigos que escaneen este código",
+    "away": "Ausente",
+    "waitingForHostBack": "Esperando a que {{name}} vuelva…"
   },
   "join": {
     "subtitle": "Ingresa el código de 6 caracteres",
@@ -912,7 +914,15 @@
     "sent": "Enviado",
     "postRaceHeading": "Han jugado contigo",
     "postRaceHint": "Añádelos como amigos para invitarlos a tu próxima sala con un toque.",
-    "addFriend": "Añadir amigo"
+    "addFriend": "Añadir amigo",
+    "bannerJoined": "@{{name}} entró en tu sala",
+    "bannerJoinedAnon": "Alguien entró en tu sala",
+    "goToRoom": "Ir a la sala",
+    "cantNow": "Ahora no",
+    "joined": "Dentro",
+    "cantRightNow": "Ahora no puede",
+    "nudgeHost": "Avisar al anfitrión",
+    "nudged": "Avisado"
   },
   "push": {
     "heading": "Notificaciones",

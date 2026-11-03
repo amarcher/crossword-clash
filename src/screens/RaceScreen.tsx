@@ -79,6 +79,11 @@ export function RaceScreen() {
                       : t("race.inviteBeat")
                   }
                 >
+                  {invite.kind === "room" && (
+                    <Button size="sm" variant="secondary" onClick={() => void friends.decline(invite, "inbox")}>
+                      {t("friends.cantNow")}
+                    </Button>
+                  )}
                   <Button size="sm" onClick={() => openInvite(invite)} {...prefetchOnIntent(invite.kind === "room" ? "/join" : "/daily")}>
                     {invite.kind === "room" ? t("friends.join") : t("friends.beatIt")}
                   </Button>

@@ -2,12 +2,13 @@ import { shareOrigin } from "../../lib/shareOrigin";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
-import { Check, Link2, Loader2, Share2, Users } from "lucide-react";
+import { BellRing, Check, Link2, Loader2, Share2, Users } from "lucide-react";
 import { TimeoutSelector } from "./TimeoutSelector";
 import { RaceModeSelector } from "./RaceModeSelector";
 import { FlowPage } from "../Flow";
 import { Button, Card, Eyebrow } from "../ui";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
+import { NUDGE_COOLDOWN_MS } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
 
 interface GameLobbyProps {
@@ -23,12 +24,17 @@ interface GameLobbyProps {
   onRaceModeChange?: (value: RaceMode) => void;
   /** The friends invite list (docs/friends-spec.md §3.2), shown above the room code; null when the viewer has none. */
   invites?: ReactNode;
+  /** A joiner's "Nudge host" (spec §3.7); shown only while the host is away. Resolves when the nudge was written. */
+  onNudgeHost?: () => Promise<void>;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  // "Nudged" until the RPC's cooldown has passed; a too-soon refusal counts as nudged too.
+  const [nudgedAt, setNudgedAt] = useState<number | null>(null);
+  const [nudging, setNudging] = useState(false);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -76,6 +82,31 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   };
 
   const needMore = players.length < 2;
+  // The host is the first row (DB order); away is what presence says about every tab of theirs.
+  const host = players[0];
+  const hostAway = !isHost && host !== undefined && host.away === true;
+  const nudged = nudgedAt !== null && Date.now() - nudgedAt < NUDGE_COOLDOWN_MS;
+
+  useEffect(() => {
+    if (nudgedAt === null) return;
+    const remaining = NUDGE_COOLDOWN_MS - (Date.now() - nudgedAt);
+    const id = window.setTimeout(() => setNudgedAt(null), Math.max(0, remaining));
+    return () => window.clearTimeout(id);
+  }, [nudgedAt]);
+
+  const handleNudge = async () => {
+    if (!onNudgeHost || nudging) return;
+    setNudging(true);
+    try {
+      await onNudgeHost();
+    } catch {
+      // A refusal (too soon, a closed room) reads the same as a nudge sent: the button rests either way.
+    } finally {
+      setNudging(false);
+      setNudgedAt(Date.now());
+    }
+  };
+
   const showSettings =
     isHost &&
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
@@ -112,13 +143,21 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
             </Button>
           ) : (
-            <p
-              role="status"
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 text-[15px] font-semibold text-brand-700"
-            >
-              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t("lobby.waitingForHost")}
-            </p>
+            <div className="grid gap-2">
+              <p
+                role="status"
+                className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold ${hostAway ? "bg-amber-50 text-amber-800" : "bg-brand-50 text-brand-700"}`}
+              >
+                <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <span className="min-w-0 truncate">{hostAway ? t("lobby.waitingForHostBack", { name: host.displayName }) : t("lobby.waitingForHost")}</span>
+              </p>
+              {hostAway && onNudgeHost && (
+                <Button variant="secondary" size="lg" block onClick={() => void handleNudge()} disabled={nudged || nudging} aria-busy={nudging || undefined}>
+                  {nudged ? <Check className="size-4.5" aria-hidden="true" /> : <BellRing className="size-4.5" aria-hidden="true" />}
+                  {nudged ? t("friends.nudged") : t("friends.nudgeHost")}
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -128,13 +167,20 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             <Eyebrow as="h2">{t("lobby.players", { count: players.length })}</Eyebrow>
             <ul className="mt-3 grid gap-2">
               {players.map((player, i) => (
-                <li key={player.userId} className="flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5">
+                <li
+                  key={player.userId}
+                  data-away={player.away ? "true" : undefined}
+                  className={`flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5 ${player.away ? "text-muted" : ""}`}
+                >
                   <span
-                    className="size-3.5 shrink-0 rounded-full ring-2 ring-white"
+                    className={`size-3.5 shrink-0 rounded-full ring-2 ring-white ${player.away ? "opacity-40" : ""}`}
                     style={{ backgroundColor: player.color }}
                     aria-hidden="true"
                   />
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">{player.displayName}</span>
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>{player.displayName}</span>
+                  {player.away && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{t("lobby.away")}</span>
+                  )}
                   {i === 0 && (
                     <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{t("lobby.host")}</span>
                   )}

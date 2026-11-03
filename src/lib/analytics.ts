@@ -100,7 +100,13 @@ export type AnalyticsEvent =
   /** A notification tap launched or foregrounded the app. */
   | "push_opened"
   /** The daily reminder switch. Params `on`, `hour`, `placement`. */
-  | "reminder_toggled";
+  | "reminder_toggled"
+  /** Room rendezvous (docs/friends-spec.md §3.7): the host's "joined your room" banner was shown. Param `via` (banner). */
+  | "room_joined_notified"
+  /** A waiting joiner's Nudge host went through. */
+  | "room_nudge_sent"
+  /** The invitee tapped Can't now. Param `via` (banner | inbox). */
+  | "room_invite_declined";
 
 type EventParams = Record<string, string | number | boolean | undefined>;
 
