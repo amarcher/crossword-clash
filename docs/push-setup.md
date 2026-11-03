@@ -188,6 +188,46 @@ channel (so an open Race friends screen refreshes at once) and the
 `appLinkTarget` route for `/race/friends`, so a tap on the notification
 opens the requests.
 
+**Room rendezvous** (phase f, docs/friends-spec.md §3.7; the same trigger
+shape, two more files). First apply the migration
+(`20261103000000_room_rendezvous.sql`: `room_invites.response`,
+`room_nudges`, the two RPCs, the two new `push_log` kinds) and deploy the
+function, then install the triggers:
+
+```sh
+npx supabase db push --linked </dev/null
+```
+
+```sh
+npx supabase functions deploy send-push --no-verify-jwt --project-ref rdqdhawlxuclfxpsvdgs
+```
+
+```sh
+npx supabase db query --linked -f docs/push-setup-players.sql
+```
+
+```sh
+npx supabase db query --linked -f docs/push-setup-nudges.sql
+```
+
+- `players_push()` fires on a `players` INSERT (a first join; a rejoin
+  updates the row) when the game is still `waiting`, the host is not the
+  joiner and the host has a profile, and posts
+  `{ kind: "room_joined", gameId, joinerUserId }`. `send-push` re-reads the
+  room and the joiner's **username** (never the typed display name) and
+  sends "@alicia joined your room" (or "A player joined your room") to the
+  host under their `room_invites` switch, collapsing with the room's invite
+  (`room-<game>`), landing on `/?join=CODE`.
+- `room_nudges_push()` fires on every `room_nudges` INSERT (the row is
+  written only by `nudge_host()`, which already applied the escalating
+  wait (1, 2, 4, 8, 15 minutes per away spell) and the block rule) and
+  posts the webhook body shape;
+  `send-push` sends "@alicia is waiting in your room" the same way.
+
+Check both with `select tgname from pg_trigger where tgname in
+('players_push', 'room_nudges_push');` and, after a test join, the
+`room_joined` / `room_nudge` rows in `push_log` (§8).
+
 ## 6. Store forms
 
 - **App Store Connect → App Privacy**: *Identifiers → Device ID* (the push

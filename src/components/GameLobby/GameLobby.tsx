@@ -2,12 +2,13 @@ import { shareOrigin } from "../../lib/shareOrigin";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import QRCode from "react-qr-code";
-import { Check, Link2, Loader2, Share2, Users } from "lucide-react";
+import { BellRing, Check, Link2, Loader2, Share2, Users } from "lucide-react";
 import { TimeoutSelector } from "./TimeoutSelector";
 import { RaceModeSelector } from "./RaceModeSelector";
 import { FlowPage } from "../Flow";
 import { Button, Card, Eyebrow } from "../ui";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
+import { formatCountdown, FriendsError, nextNudgeAt } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
 
 interface GameLobbyProps {
@@ -23,12 +24,23 @@ interface GameLobbyProps {
   onRaceModeChange?: (value: RaceMode) => void;
   /** The friends invite list (docs/friends-spec.md §3.2), shown above the room code; null when the viewer has none. */
   invites?: ReactNode;
+  /**
+   * A joiner's "Nudge host" (spec §3.7); shown only while the host is away.
+   * Called with the ms timestamp the current away spell began; resolves to the
+   * server's next wait in seconds (a `too_soon` refusal carries the seconds left).
+   */
+  onNudgeHost?: (spellStartedAt: number) => Promise<number>;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  // The nudge ladder for the current away spell: how many were sent, when the
+  // next is allowed (0 = now), and a once-a-second tick for the countdown.
+  const [spell, setSpell] = useState<{ startedAt: number; count: number; nextAt: number } | null>(null);
+  const [nudging, setNudging] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -76,6 +88,39 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   };
 
   const needMore = players.length < 2;
+  // The host is the first row (DB order); away is what presence says about every tab of theirs.
+  const host = players[0];
+  const hostAway = !isHost && host !== undefined && host.away === true;
+  // A fresh away spell starts the ladder over; the host coming back ends it.
+  useEffect(() => {
+    if (hostAway) setSpell((prev) => prev ?? { startedAt: Date.now(), count: 0, nextAt: 0 });
+    else setSpell(null);
+  }, [hostAway]);
+
+  const waitMs = spell ? spell.nextAt - now : 0;
+  useEffect(() => {
+    if (!spell || spell.nextAt <= now) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [spell, now]);
+
+  const handleNudge = async () => {
+    if (!onNudgeHost || nudging || !spell || waitMs > 0) return;
+    setNudging(true);
+    const sentAt = Date.now();
+    let nextAt = nextNudgeAt(spell.count + 1, sentAt);
+    try {
+      nextAt = sentAt + (await onNudgeHost(spell.startedAt)) * 1000;
+    } catch (err) {
+      // The server's own clock wins when it says how long is left; any other refusal keeps the local ladder.
+      if (err instanceof FriendsError && err.retryAfterSeconds !== null) nextAt = sentAt + err.retryAfterSeconds * 1000;
+    } finally {
+      setNudging(false);
+      setNow(Date.now());
+      setSpell((prev) => (prev ? { ...prev, count: prev.count + 1, nextAt } : prev));
+    }
+  };
+
   const showSettings =
     isHost &&
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
@@ -112,13 +157,29 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
             </Button>
           ) : (
-            <p
-              role="status"
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 text-[15px] font-semibold text-brand-700"
-            >
-              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t("lobby.waitingForHost")}
-            </p>
+            <div className="grid gap-2">
+              <p
+                role="status"
+                className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold ${hostAway ? "bg-amber-50 text-amber-800" : "bg-brand-50 text-brand-700"}`}
+              >
+                <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <span className="min-w-0 truncate">{hostAway ? t("lobby.waitingForHostBack", { name: host.displayName }) : t("lobby.waitingForHost")}</span>
+              </p>
+              {hostAway && onNudgeHost && (
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  block
+                  onClick={() => void handleNudge()}
+                  disabled={waitMs > 0 || nudging}
+                  aria-busy={nudging || undefined}
+                  aria-live="off"
+                >
+                  <BellRing className="size-4.5" aria-hidden="true" />
+                  {waitMs > 0 ? t("friends.nudgeAgainIn", { time: formatCountdown(waitMs) }) : t("friends.nudgeHost")}
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -128,13 +189,20 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             <Eyebrow as="h2">{t("lobby.players", { count: players.length })}</Eyebrow>
             <ul className="mt-3 grid gap-2">
               {players.map((player, i) => (
-                <li key={player.userId} className="flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5">
+                <li
+                  key={player.userId}
+                  data-away={player.away ? "true" : undefined}
+                  className={`flex min-h-12 items-center gap-3 rounded-xl bg-surface-sunken px-3.5 ${player.away ? "text-muted" : ""}`}
+                >
                   <span
-                    className="size-3.5 shrink-0 rounded-full ring-2 ring-white"
+                    className={`size-3.5 shrink-0 rounded-full ring-2 ring-white ${player.away ? "opacity-40" : ""}`}
                     style={{ backgroundColor: player.color }}
                     aria-hidden="true"
                   />
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">{player.displayName}</span>
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>{player.displayName}</span>
+                  {player.away && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{t("lobby.away")}</span>
+                  )}
                   {i === 0 && (
                     <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{t("lobby.host")}</span>
                   )}

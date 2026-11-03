@@ -2,13 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useMaybeAccount } from "./AccountContext";
 import {
   blockUser,
+  declineRoomInvite,
   fetchBlocks,
   fetchFriendships,
   fetchInvites,
+  fetchRoomJoined,
+  fetchSentInvites,
   friendsEnabled,
   inviteState,
   inviteToRoom,
   markInvitesSeen,
+  nudgeHost,
   removeFriend,
   respondFriendRequest,
   sendBeat,
@@ -18,6 +22,8 @@ import {
   type Friendships,
   type RequestOutcome,
   type RoomInvite,
+  type RoomJoined,
+  type SentInvite,
 } from "../lib/friends";
 import { track } from "../lib/analytics";
 
@@ -33,6 +39,10 @@ export interface FriendsContextValue {
   openInvites: RoomInvite[];
   /** Open invites the viewer has not dismissed or acted on. */
   unseenInvites: RoomInvite[];
+  /** Room invites the viewer sent (the lobby's Invited / Joined / Can't right now), newest first. */
+  sentInvites: SentInvite[];
+  /** The newest "someone joined your room" since the viewer last dismissed one (phase f); null otherwise. */
+  roomJoined: RoomJoined | null;
   blocked: string[];
   refresh: () => Promise<void>;
   request: (username: string) => Promise<RequestOutcome>;
@@ -43,6 +53,11 @@ export interface FriendsContextValue {
   invite: (gameId: string, friendId: string) => Promise<void>;
   beat: (friendId: string, link: string) => Promise<void>;
   markSeen: (ids: readonly string[]) => Promise<void>;
+  /** "Can't now" on a room invite: the row leaves `openInvites` and the sender is nudged. Param `via` for analytics. */
+  decline: (invite: RoomInvite, via: "banner" | "inbox") => Promise<void>;
+  /** "Nudge host" from a waiting joiner's lobby, for the away spell that began at `spellStartedAt` (ms); resolves to the ladder's next wait in seconds. */
+  nudge: (gameId: string, spellStartedAt: number) => Promise<number>;
+  dismissRoomJoined: () => void;
 }
 
 const EMPTY: Friendships = { friends: [], incoming: [], outgoing: [] };
@@ -51,7 +66,7 @@ const FriendsContext = createContext<FriendsContextValue | null>(null);
 
 /**
  * Friends, requests and invites for the signed-in account (docs/friends-spec.md
- * phases a and b). Loads once the account has a username, again on every nudge
+ * phases a, b and f). Loads once the account has a username, again on every nudge
  * of the viewer's Realtime channel and whenever the tab comes back, and keeps
  * the lists in one place so the menu badge, the Race friends screen, the lobby
  * and the banner agree. Inert while the switch is off or the viewer is
@@ -65,6 +80,8 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
 
   const [friendships, setFriendships] = useState<Friendships>(EMPTY);
   const [invites, setInvites] = useState<RoomInvite[]>([]);
+  const [sentInvites, setSentInvites] = useState<SentInvite[]>([]);
+  const [roomJoined, setRoomJoined] = useState<RoomJoined | null>(null);
   const [blocked, setBlocked] = useState<string[]>([]);
   const [readyFor, setReadyFor] = useState<string | null>(null);
   // Re-renders once a minute while an open invite could expire, so the lists age without a reload.
@@ -73,13 +90,15 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
   const activeUser = active ? userId : null;
   const refresh = useCallback(async () => {
     if (!activeUser) return;
-    const [f, i, b] = await Promise.all([
+    const [f, i, sent, b] = await Promise.all([
       fetchFriendships(activeUser).catch(() => EMPTY),
       fetchInvites(activeUser).catch(() => [] as RoomInvite[]),
+      fetchSentInvites(activeUser).catch(() => [] as SentInvite[]),
       fetchBlocks(activeUser).catch(() => [] as string[]),
     ]);
     setFriendships(f);
     setInvites(i);
+    setSentInvites(sent);
     setBlocked(b);
     setReadyFor(activeUser);
   }, [activeUser]);
@@ -91,12 +110,22 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
     if (!activeUser) {
       setFriendships(EMPTY);
       setInvites([]);
+      setSentInvites([]);
+      setRoomJoined(null);
       setBlocked([]);
       setReadyFor(null);
       return;
     }
     void refreshRef.current();
-    const stop = subscribeInvites(activeUser, () => void refreshRef.current());
+    // A joiner names a game id; nothing in it is trusted until the room reads
+    // back as this viewer's own waiting room (fetchRoomJoined checks the host).
+    const stop = subscribeInvites(activeUser, () => void refreshRef.current(), (gameId) => {
+      void fetchRoomJoined(gameId, activeUser)
+        .then((joined) => {
+          if (joined) setRoomJoined(joined);
+        })
+        .catch(() => undefined);
+    });
     const onVisible = () => {
       if (document.visibilityState === "visible") void refreshRef.current();
     };
@@ -155,6 +184,18 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
     await sendBeat(friendId, link);
     track("room_invite_sent", { channel: "inapp", kind: "beat" });
   }, []);
+  const decline = useCallback(async (invite: RoomInvite, via: "banner" | "inbox") => {
+    setInvites((prev) => prev.map((i) => (i.id === invite.id ? { ...i, response: "declined", seenAt: i.seenAt ?? new Date().toISOString() } : i)));
+    await declineRoomInvite(invite);
+    track("room_invite_declined", { via });
+    await refreshRef.current();
+  }, []);
+  const nudge = useCallback(async (gameId: string, spellStartedAt: number) => {
+    const outcome = await nudgeHost(gameId, spellStartedAt);
+    track("room_nudge_sent", { next_in_seconds: outcome.nextInSeconds });
+    return outcome.nextInSeconds;
+  }, []);
+  const dismissRoomJoined = useCallback(() => setRoomJoined(null), []);
   const markSeen = useCallback(async (ids: readonly string[]) => {
     if (ids.length === 0) return;
     const now = new Date().toISOString();
@@ -173,6 +214,8 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
       invites,
       openInvites,
       unseenInvites,
+      sentInvites,
+      roomJoined,
       blocked,
       refresh,
       request,
@@ -183,8 +226,11 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
       invite,
       beat,
       markSeen,
+      decline,
+      nudge,
+      dismissRoomJoined,
     }),
-    [active, readyFor, userId, friendships, invites, openInvites, unseenInvites, blocked, refresh, request, respond, remove, block, unblock, invite, beat, markSeen],
+    [active, readyFor, userId, friendships, invites, openInvites, unseenInvites, sentInvites, roomJoined, blocked, refresh, request, respond, remove, block, unblock, invite, beat, markSeen, decline, nudge, dismissRoomJoined],
   );
 
   return <FriendsContext.Provider value={value}>{children}</FriendsContext.Provider>;
@@ -197,6 +243,8 @@ const INERT: FriendsContextValue = {
   invites: [],
   openInvites: [],
   unseenInvites: [],
+  sentInvites: [],
+  roomJoined: null,
   blocked: [],
   refresh: async () => {},
   request: async () => "sent",
@@ -207,6 +255,9 @@ const INERT: FriendsContextValue = {
   invite: async () => {},
   beat: async () => {},
   markSeen: async () => {},
+  decline: async () => {},
+  nudge: async () => 60,
+  dismissRoomJoined: () => {},
 };
 
 /** The friends context; inert (never active) outside the provider, so screens need no guard. */

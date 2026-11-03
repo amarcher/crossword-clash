@@ -184,13 +184,17 @@ export async function joinGame(
   players: Player[];
   cells: Record<string, CellState>;
   status: string;
+  /** The host's user id (null for a room whose host row predates host_user_id). */
+  hostUserId: string | null;
+  /** True when this call inserted the player's row; a rejoin under the same user only renames it. */
+  firstJoin: boolean;
 } | null> {
   if (!supabase) return null;
 
   // Look up the game
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, puzzle_id, status, cells")
+    .select("id, puzzle_id, status, cells, host_user_id")
     .eq("short_code", shortCode.toUpperCase())
     .single();
 
@@ -284,6 +288,8 @@ export async function joinGame(
     players: mappedPlayers,
     cells: (game.cells as Record<string, CellState>) ?? {},
     status: game.status,
+    hostUserId: game.host_user_id ?? null,
+    firstJoin: alreadyJoined < 0,
   };
 }
 

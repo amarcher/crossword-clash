@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render as rtlRender, screen, fireEvent, cleanup, type RenderOptions } from "@testing-library/react";
+import { act, render as rtlRender, screen, fireEvent, cleanup, type RenderOptions } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router";
 import { GameLobby } from "./GameLobby";
+import { FriendsError } from "../../lib/friends";
 import type { Player } from "../../types/game";
 
 // The shared site bar's logo is a router Link, so the screen needs a router around it.
@@ -403,6 +404,88 @@ describe("GameLobby", () => {
       );
       fireEvent.click(screen.getByText("Leave"));
       expect(onLeave).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("an away host (phase f)", () => {
+    const awayPlayers: Player[] = [{ ...mockPlayers[0], away: true }, mockPlayers[1]];
+
+    it("dims the away row with an Away chip and keeps the Host chip, and the waiting line names the host", () => {
+      render(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} />);
+      const row = screen.getByText("Host Player").closest("li")!;
+      expect(row.dataset.away).toBe("true");
+      expect(row.className).not.toMatch(/border-l|border-left/);
+      expect(row.textContent).toContain("Away");
+      expect(row.textContent).toContain("Host");
+      expect(screen.getByText("Guest Player").closest("li")!.dataset.away).toBeUndefined();
+      expect(screen.getByRole("status").textContent).toContain("Waiting for Host Player to come back");
+    });
+
+    it("shows Nudge host only to a joiner while the host is away; once sent it counts down the server's wait and comes back", async () => {
+      vi.useFakeTimers();
+      try {
+        const onNudgeHost = vi.fn<(spell: number) => Promise<number>>(async () => 120);
+        const { rerender } = render(
+          <GameLobby shareCode="ABC123" players={mockPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />,
+        );
+        expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+        expect(screen.getByRole("status").textContent).toContain("Waiting for host to start the game");
+        rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+        await act(async () => {
+          fireEvent.click(screen.getByRole("button", { name: "Nudge host" }));
+        });
+        expect(onNudgeHost).toHaveBeenCalledOnce();
+        expect(typeof onNudgeHost.mock.calls[0][0]).toBe("number");
+        const counting = screen.getByRole("button", { name: /Nudge again in 2:00/ }) as HTMLButtonElement;
+        expect(counting.disabled).toBe(true);
+        await act(async () => {
+          vi.advanceTimersByTime(18_000);
+        });
+        expect(screen.getByRole("button", { name: /Nudge again in 1:42/ })).toBeTruthy();
+        await act(async () => {
+          vi.advanceTimersByTime(102_000);
+        });
+        expect((screen.getByRole("button", { name: "Nudge host" }) as HTMLButtonElement).disabled).toBe(false);
+        // The host, and a joiner with no nudge handler (friends off), never see the button.
+        rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={true} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+        expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+        rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} />);
+        expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("a too-soon refusal counts down the seconds the server named, and a fresh away spell starts the ladder over", async () => {
+      vi.useFakeTimers();
+      try {
+        const onNudgeHost = vi.fn<(spell: number) => Promise<number>>().mockRejectedValueOnce(new FriendsError("too_soon", "friends:too_soon:45")).mockResolvedValue(60);
+        const { rerender } = render(
+          <GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />,
+        );
+        await act(async () => {
+          fireEvent.click(screen.getByRole("button", { name: "Nudge host" }));
+        });
+        expect(screen.getByRole("button", { name: /Nudge again in 0:45/ })).toBeTruthy();
+        const firstSpell = onNudgeHost.mock.calls[0][0];
+        // The host comes back: the button goes, the line returns to plain waiting.
+        rerender(<GameLobby shareCode="ABC123" players={mockPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+        expect(screen.queryByRole("button", { name: /Nudge/ })).toBeNull();
+        expect(screen.getByRole("status").textContent).toContain("Waiting for host to start the game");
+        // ...and goes away again: a new spell, nudge available at once, with a later start.
+        await act(async () => {
+          vi.advanceTimersByTime(5_000);
+        });
+        rerender(<GameLobby shareCode="ABC123" players={awayPlayers} isHost={false} onStartGame={() => {}} onCloseRoom={() => {}} onNudgeHost={onNudgeHost} />);
+        expect((screen.getByRole("button", { name: "Nudge host" }) as HTMLButtonElement).disabled).toBe(false);
+        await act(async () => {
+          fireEvent.click(screen.getByRole("button", { name: "Nudge host" }));
+        });
+        expect(onNudgeHost.mock.calls[1][0]).toBeGreaterThan(firstSpell);
+        expect(screen.getByRole("button", { name: /Nudge again in 1:00/ })).toBeTruthy();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

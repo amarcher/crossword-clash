@@ -19,6 +19,8 @@ function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextVa
     invites: [],
     openInvites: [],
     unseenInvites: [],
+    sentInvites: [],
+    roomJoined: null,
     blocked: [],
     refresh: vi.fn(async () => {}),
     request: vi.fn(async () => "pending" as const),
@@ -29,6 +31,9 @@ function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextVa
     invite: vi.fn(async () => {}),
     beat: vi.fn(async () => {}),
     markSeen: vi.fn(async () => {}),
+    decline: vi.fn(async () => {}),
+    nudge: vi.fn(async () => 60),
+    dismissRoomJoined: vi.fn(),
     ...over,
   };
 }

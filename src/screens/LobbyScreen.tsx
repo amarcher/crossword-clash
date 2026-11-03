@@ -8,11 +8,14 @@ import { clearMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
 import { useConfirm } from "../components/ConfirmDialog";
 import { LobbyInvites } from "../components/Friends";
+import { useFriends } from "../contexts/FriendsContext";
+import { friendsEnabled, NUDGE_BACKOFF_MS } from "../lib/friends";
 
 export function LobbyScreen() {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+  const friends = useFriends();
 
   const confirm = useConfirm();
 
@@ -61,6 +64,12 @@ export function LobbyScreen() {
     navigate("/menu");
   }, [mp, game, navigate]);
 
+  const gameId = game.gameId;
+  const handleNudge = useCallback(
+    async (spellStartedAt: number) => (gameId ? friends.nudge(gameId, spellStartedAt) : NUDGE_BACKOFF_MS[0] / 1000),
+    [friends, gameId],
+  );
+
   if (!game.puzzle) return <Navigate to="/" replace />;
 
   return (
@@ -75,7 +84,8 @@ export function LobbyScreen() {
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
       raceMode={game.raceMode}
       onRaceModeChange={game.setRaceMode}
-      invites={game.gameId ? <LobbyInvites gameId={game.gameId} /> : null}
+      invites={game.gameId ? <LobbyInvites gameId={game.gameId} players={mp.players} /> : null}
+      onNudgeHost={friendsEnabled() && game.gameId && !mp.isHost ? handleNudge : undefined}
     />
   );
 }

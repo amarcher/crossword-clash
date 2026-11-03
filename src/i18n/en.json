@@ -155,7 +155,9 @@
     "tapToCopy": "Tap to copy",
     "shareInviteAction": "Share invite",
     "gameSettings": "Game settings",
-    "qrHint": "Or have friends scan this code"
+    "qrHint": "Or have friends scan this code",
+    "away": "Away",
+    "waitingForHostBack": "Waiting for {{name}} to come back…"
   },
   "join": {
     "subtitle": "Enter the 6-character game code",
@@ -912,7 +914,15 @@
     "sent": "Sent",
     "postRaceHeading": "Raced with you",
     "postRaceHint": "Add them as friends to invite them into your next room in a tap.",
-    "addFriend": "Add friend"
+    "addFriend": "Add friend",
+    "bannerJoined": "@{{name}} joined your room",
+    "bannerJoinedAnon": "A player joined your room",
+    "goToRoom": "Go to room",
+    "cantNow": "Can't now",
+    "joined": "Joined",
+    "cantRightNow": "Can't right now",
+    "nudgeHost": "Nudge host",
+    "nudgeAgainIn": "Nudge again in {{time}}"
   },
   "push": {
     "heading": "Notifications",

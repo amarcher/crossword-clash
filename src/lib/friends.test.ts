@@ -9,7 +9,7 @@ const rpcCalls: { fn: string; args: unknown }[] = [];
 const channels: { name: string; sent: unknown[]; removed: boolean; handlers: Array<() => void> }[] = [];
 function chain(table: string) {
   const api: Record<string, unknown> = {};
-  for (const op of ["select", "eq", "neq", "in", "or", "ilike", "order", "limit", "delete", "insert"]) {
+  for (const op of ["select", "eq", "neq", "in", "or", "ilike", "order", "limit", "delete", "insert", "maybeSingle"]) {
     api[op] = (...args: unknown[]) => {
       calls.push({ table, op, args });
       return api;
@@ -55,9 +55,19 @@ vi.mock("./supabaseClient", () => ({
 const friends = await import("./friends");
 const {
   blockUser,
+  declineRoomInvite,
   fetchFriendships,
   fetchInvites,
   fetchPlayerProfiles,
+  fetchRoomJoined,
+  fetchSentInvites,
+  formatCountdown,
+  lobbyInviteStatus,
+  nextNudgeAt,
+  notifyRoomJoined,
+  nudgeHost,
+  retryAfterSeconds,
+  NUDGE_BACKOFF_MS,
   fetchRecentOpponents,
   friendsEnabled,
   friendSuggestions,
@@ -283,7 +293,7 @@ describe("client", () => {
 
   it("maps an invite row with its room and sender, and derives the join path", async () => {
     const row = {
-      id: "i1", kind: "room" as const, game_id: "g1", link: null, from_user_id: "a", to_user_id: "me", created_at: "2026-10-31T00:00:00Z", pushed_at: null, seen_at: null,
+      id: "i1", kind: "room" as const, game_id: "g1", link: null, from_user_id: "a", to_user_id: "me", created_at: "2026-10-31T00:00:00Z", pushed_at: null, seen_at: null, response: null,
       sender: { username: "alicia" }, game: { short_code: "KQ7MXB", status: "waiting", puzzle: { title: "Birds", width: 15, height: 15 } },
     };
     const invite = toRoomInvite(row)!;
@@ -305,5 +315,109 @@ describe("client", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     stop();
     expect(channels[0].removed).toBe(true);
+  });
+
+  it("hands a room_joined nudge's game id to its own handler, ignoring a payload without one", () => {
+    const onChange = vi.fn();
+    const onRoomJoined = vi.fn();
+    subscribeInvites("me", onChange, onRoomJoined);
+    const [invites, joined] = channels[0].handlers as unknown as Array<(msg?: unknown) => void>;
+    joined({ payload: { gameId: "g1" } });
+    joined({ payload: {} });
+    joined();
+    expect(onRoomJoined).toHaveBeenCalledTimes(1);
+    expect(onRoomJoined).toHaveBeenCalledWith("g1");
+    invites();
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("room rendezvous (phase f)", () => {
+  const sent = (toUserId: string, response: "declined" | null = null, gameId = "g1") => ({ id: `i-${toUserId}`, gameId, toUserId, createdAt: "2026-11-02T00:00:00Z", response });
+
+  it("lobbyInviteStatus: Joined beats everything, then declined, then invited, else nothing", () => {
+    const roster = [{ userId: "host" }, { userId: "a" }];
+    expect(lobbyInviteStatus("a", "g1", [sent("a", "declined")], roster)).toBe("joined");
+    expect(lobbyInviteStatus("b", "g1", [sent("b", "declined")], roster)).toBe("declined");
+    expect(lobbyInviteStatus("b", "g1", [sent("b")], roster)).toBe("invited");
+    expect(lobbyInviteStatus("b", "g1", [sent("b", null, "other-room")], roster)).toBe("none");
+    expect(lobbyInviteStatus("b", "g1", [], roster)).toBe("none");
+  });
+
+  it("a declined invite is no longer open", () => {
+    const base = { kind: "room" as const, room: { gameId: "g1", code: "K", status: "waiting", title: "", width: 5, height: 5 }, createdAt: new Date().toISOString() };
+    expect(inviteState(base)).toBe("open");
+    expect(inviteState({ ...base, response: "declined" })).toBe("declined");
+  });
+
+  it("notifyRoomJoined nudges the host's channel with the game id", () => {
+    notifyRoomJoined("host", "g1");
+    expect(channels[0].name).toBe("user:host");
+    expect(channels[0].sent).toEqual([{ type: "broadcast", event: "room_joined", payload: { gameId: "g1" } }]);
+  });
+
+  it("fetchSentInvites reads the viewer's own room invites with their response", async () => {
+    results = [{ data: [{ id: "i1", game_id: "g1", to_user_id: "a", created_at: "2026-11-02T00:00:00Z", response: "declined" }, { id: "i2", game_id: null, to_user_id: "b", created_at: "x", response: null }], error: null }];
+    expect(await fetchSentInvites("me")).toEqual([{ id: "i1", gameId: "g1", toUserId: "a", createdAt: "2026-11-02T00:00:00Z", response: "declined" }]);
+    expect(calls.filter((c) => c.op === "eq").map((c) => c.args)).toEqual([["from_user_id", "me"], ["kind", "room"]]);
+  });
+
+  it("fetchRoomJoined reads the room back and refuses one the viewer does not host or that is no longer waiting", async () => {
+    results = [
+      { data: { id: "g1", short_code: "KQ7MXB", status: "waiting", host_user_id: "me", puzzle: { title: "Birds" } }, error: null },
+      { data: [{ user_id: "a" }], error: null },
+      { data: [{ user_id: "a", username: "alicia" }], error: null },
+    ];
+    expect(await fetchRoomJoined("g1", "me", 5)).toEqual({ gameId: "g1", code: "KQ7MXB", title: "Birds", joinerName: "alicia", at: 5 });
+    // An anonymous joiner has no profile: the notice still fires, nameless.
+    results = [
+      { data: { id: "g1", short_code: "KQ7MXB", status: "waiting", host_user_id: "me", puzzle: null }, error: null },
+      { data: [{ user_id: "anon" }], error: null },
+      { data: [], error: null },
+    ];
+    expect(await fetchRoomJoined("g1", "me", 5)).toEqual({ gameId: "g1", code: "KQ7MXB", title: "", joinerName: null, at: 5 });
+    results = [{ data: { id: "g1", short_code: "KQ7MXB", status: "waiting", host_user_id: "someone-else", puzzle: null }, error: null }];
+    expect(await fetchRoomJoined("g1", "me")).toBeNull();
+    results = [{ data: { id: "g1", short_code: "KQ7MXB", status: "active", host_user_id: "me", puzzle: null }, error: null }];
+    expect(await fetchRoomJoined("g1", "me")).toBeNull();
+  });
+
+  it("declineRoomInvite calls the RPC with 'declined' and nudges the sender", async () => {
+    results = [{ data: null, error: null }];
+    await declineRoomInvite({ id: "i1", from: { userId: "a", username: "alicia" } });
+    expect(rpcCalls[0]).toEqual({ fn: "respond_room_invite", args: { p_invite: "i1", p_response: "declined" } });
+    expect(channels[0].name).toBe("user:a");
+    results = [{ data: null, error: { message: "friends:not_found" } }];
+    await expect(declineRoomInvite({ id: "i2", from: { userId: "a", username: "alicia" } })).rejects.toMatchObject({ kind: "not_found" });
+  });
+
+  it("the nudge ladder: the first nudge of a spell is free, then 1, 2, 4, 8 minutes capped at 15, counted from the last one", () => {
+    expect(NUDGE_BACKOFF_MS).toEqual([60_000, 120_000, 240_000, 480_000, 900_000]);
+    expect(nextNudgeAt(0, null)).toBe(0);
+    expect(nextNudgeAt(0, 1_000)).toBe(0);
+    expect(nextNudgeAt(1, null)).toBe(0);
+    expect(nextNudgeAt(1, 1_000)).toBe(61_000);
+    expect(nextNudgeAt(2, 1_000)).toBe(121_000);
+    expect(nextNudgeAt(3, 1_000)).toBe(241_000);
+    expect(nextNudgeAt(4, 1_000)).toBe(481_000);
+    expect(nextNudgeAt(5, 1_000)).toBe(901_000);
+    expect(nextNudgeAt(12, 1_000)).toBe(901_000);
+    expect(formatCountdown(102_000)).toBe("1:42");
+    expect(formatCountdown(100)).toBe("0:01");
+    expect(formatCountdown(-5)).toBe("0:00");
+  });
+
+  it("nudgeHost sends the spell's start, answers the next wait, and a too-soon refusal carries the seconds left", async () => {
+    results = [{ data: { id: "n1", nextInSeconds: 120 }, error: null }];
+    expect(await nudgeHost("g1", Date.UTC(2026, 10, 2, 12, 0, 0))).toEqual({ id: "n1", nextInSeconds: 120 });
+    expect(rpcCalls[rpcCalls.length - 1]).toEqual({ fn: "nudge_host", args: { p_game_id: "g1", p_spell: "2026-11-02T12:00:00.000Z" } });
+    // A block: no id, still a wait.
+    results = [{ data: { id: null, nextInSeconds: 60 }, error: null }];
+    expect(await nudgeHost("g1", 0)).toEqual({ id: null, nextInSeconds: 60 });
+    results = [{ data: null, error: { message: "friends:too_soon:102" } }];
+    await expect(nudgeHost("g1", 0)).rejects.toMatchObject({ kind: "too_soon", retryAfterSeconds: 102 });
+    expect(retryAfterSeconds("friends:too_soon:7")).toBe(7);
+    expect(retryAfterSeconds("friends:too_soon")).toBeNull();
+    expect(retryAfterSeconds("friends:rate_limited")).toBeNull();
   });
 });

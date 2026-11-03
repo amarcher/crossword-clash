@@ -24,6 +24,10 @@ export interface SelfName {
  * Names: each player's presence payload (their own typed name), the DB row
  * while presence warms — and the local player's row always carries the name
  * they typed, whatever an older row of theirs said.
+ *
+ * Away: only presence knows it (`Player.away`, phase f); a DB row never says
+ * away, and a presence player keeps the flag through the DB-order sort and the
+ * local rename.
  */
 export function liveRoster(presence: readonly Player[] | null, db: readonly Player[], self?: SelfName): Player[] {
   const order = new Map(db.map((p, i) => [p.userId, i]));
