@@ -33,7 +33,7 @@ function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextVa
   };
 }
 
-const alicia = { userId: "a", username: "alicia" };
+const alicia = { userId: "a", username: "alicia", createdAt: "2026-11-02T00:00:00Z" };
 const renderRows = (props: { showBlock?: boolean } = {}) =>
   render(
     <ConfirmProvider>
