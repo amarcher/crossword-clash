@@ -1,0 +1,8 @@
+This build (1.1.0, build 28) is about friend requests. Please check:
+
+1. Notification: a friend request's push now opens the Friends screen, where Accept / Decline / Block sit under "1 request".
+2. Menu: while a request is waiting, a card above "Race friends" shows "@name wants to be friends" with Accept and Decline, and the Race friends row wears a "1 friend request" chip.
+3. Account menu (the avatar at the top right): a new "Friends" row with the number of requests waiting as a chip; it opens the Friends screen.
+4. Your account page: a "Friends" section at the top with the requests waiting, your friend count and Manage (or Add friends).
+5. Accepting from any of those places updates the others at once; declining removes the request everywhere.
+6. Everything from build 27 still applies: the header layout, the finish screen's close control, typing judged square by square, room invites and notifications.

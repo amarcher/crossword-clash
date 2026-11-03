@@ -1,0 +1,5 @@
+<en-US>
+Friend requests can now be answered wherever you are: from the notification, from a card on the menu, from the new Friends row in the account menu, and from the Friends section of your account page.
+
+Everything from the previous build is unchanged.
+</en-US>
