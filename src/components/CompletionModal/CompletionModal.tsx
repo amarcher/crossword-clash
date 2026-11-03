@@ -15,7 +15,7 @@ import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { SaveImageButton } from "./SaveImageButton";
-import { SendToFriend } from "../Friends";
+import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
@@ -757,6 +757,11 @@ export function CompletionModal({
               />
             </RowGroup>
           )}
+          {/* After a race: the room's other accounts as "Add friend" rows
+              (Raced with you), below the next-puzzle row and above the quiet
+              exit. Nothing for a spectator (no viewer id), an anonymous
+              viewer or with the switch off. */}
+          {isMultiplayer && players && currentUserId && <RaceFriendSuggestions players={players} viewerId={currentUserId} darkMode={darkMode} />}
 
           {onBackToMenu && (
             <button onClick={onBackToMenu} className={buttonClass("ghost", "md", `w-full ${darkMode ? "text-white/60 hover:text-white hover:bg-white/10" : ""}`)}>

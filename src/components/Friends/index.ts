@@ -4,3 +4,4 @@ export { SendToFriend } from "./SendToFriend";
 export { CodeJoinCard, sanitizeCode } from "./CodeJoinCard";
 export { Avatar, PersonList, PersonRow, personColor } from "./PersonRow";
 export { PendingRequests } from "./PendingRequests";
+export { RaceFriendSuggestions } from "./RaceFriendSuggestions";

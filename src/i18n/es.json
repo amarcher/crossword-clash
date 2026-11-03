@@ -909,7 +909,10 @@
     "sendToFriend": "Enviar a un amigo",
     "sendToFriendHint": "Recibe tu tiempo a superar en la app, sin hoja de compartir.",
     "send": "Enviar",
-    "sent": "Enviado"
+    "sent": "Enviado",
+    "postRaceHeading": "Han jugado contigo",
+    "postRaceHint": "Añádelos como amigos para invitarlos a tu próxima sala con un toque.",
+    "addFriend": "Añadir amigo"
   },
   "push": {
     "heading": "Notificaciones",

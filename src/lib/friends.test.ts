@@ -9,7 +9,7 @@ const rpcCalls: { fn: string; args: unknown }[] = [];
 const channels: { name: string; sent: unknown[]; removed: boolean; handlers: Array<() => void> }[] = [];
 function chain(table: string) {
   const api: Record<string, unknown> = {};
-  for (const op of ["select", "eq", "neq", "or", "ilike", "order", "limit", "delete", "insert"]) {
+  for (const op of ["select", "eq", "neq", "in", "or", "ilike", "order", "limit", "delete", "insert"]) {
     api[op] = (...args: unknown[]) => {
       calls.push({ table, op, args });
       return api;
@@ -57,8 +57,10 @@ const {
   blockUser,
   fetchFriendships,
   fetchInvites,
+  fetchPlayerProfiles,
   fetchRecentOpponents,
   friendsEnabled,
+  friendSuggestions,
   friendsErrorKind,
   inviteJoinPath,
   inviteState,
@@ -158,6 +160,25 @@ describe("raceBlocks (spec §3.6)", () => {
   });
 });
 
+describe("friendSuggestions", () => {
+  const person = (id: string) => ({ userId: id, username: id });
+  const friendships = {
+    friends: [{ ...person("alicia"), since: "2026-10-01T00:00:00Z" }],
+    incoming: [{ ...person("sam"), createdAt: "2026-10-30T00:00:00Z" }],
+    outgoing: [{ ...person("dana"), createdAt: "2026-10-30T00:00:00Z" }],
+  };
+
+  it("keeps the room's other accounts in standings order, dropping the viewer, friends, pending requests either way and blocked players", () => {
+    const players = [person("zed"), person("me"), person("alicia"), person("sam"), person("dana"), person("kai"), person("milo")];
+    expect(friendSuggestions(players, friendships, ["kai"], "me").map((p) => p.username)).toEqual(["zed", "milo"]);
+  });
+
+  it("lists a player once however many rows they held, and nobody when everyone is known", () => {
+    expect(friendSuggestions([person("zed"), person("zed")], friendships, [], "me")).toEqual([person("zed")]);
+    expect(friendSuggestions([person("me"), person("alicia")], friendships, [], "me")).toEqual([]);
+  });
+});
+
 describe("friendsErrorKind and the pending challenge", () => {
   it("maps a refusal code and falls back to failed", () => {
     expect(friendsErrorKind("friends:cooldown")).toBe("cooldown");
@@ -216,6 +237,18 @@ describe("client", () => {
     expect(channels).toHaveLength(1);
     await expect(sendFriendRequest("sam")).rejects.toMatchObject({ kind: "cooldown" });
     expect(calls.filter((c) => c.table === "profiles" && c.op === "select")).toHaveLength(2);
+  });
+
+  it("reads the usernames behind a room's ids in the ids' order, skipping anonymous players and asking nothing for an empty room", async () => {
+    results = [{ data: [{ user_id: "b", username: "bea" }, { user_id: "a", username: "al" }], error: null }];
+    expect(await fetchPlayerProfiles(["a", "anon", "b", "a"])).toEqual([
+      { userId: "a", username: "al" },
+      { userId: "b", username: "bea" },
+    ]);
+    expect(calls.find((c) => c.op === "in")?.args).toEqual(["user_id", ["a", "anon", "b"]]);
+    calls.length = 0;
+    expect(await fetchPlayerProfiles([])).toEqual([]);
+    expect(calls).toEqual([]);
   });
 
   it("reads recent opponents and maps the rows", async () => {

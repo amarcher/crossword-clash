@@ -9,10 +9,37 @@ import type { Puzzle } from "../../types/puzzle";
 import { buildPuzzle } from "../../lib/samplePuzzles";
 
 vi.mock("../../lib/analytics", () => ({ track: vi.fn() }));
+// The friends context is inert (as outside its provider) unless a test switches it on.
+const friends = vi.hoisted(() => ({ active: false }));
+vi.mock("../../contexts/FriendsContext", () => ({
+  useFriends: () => ({
+    active: friends.active,
+    ready: true,
+    friendships: { friends: [], incoming: [], outgoing: [] },
+    invites: [],
+    openInvites: [],
+    unseenInvites: [],
+    blocked: [],
+    refresh: async () => {},
+    request: async () => "pending",
+    respond: async () => {},
+    remove: async () => {},
+    block: async () => {},
+    unblock: async () => {},
+    invite: async () => {},
+    beat: async () => {},
+    markSeen: async () => {},
+  }),
+}));
+vi.mock("../../lib/friends", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/friends")>()),
+  fetchPlayerProfiles: async (ids: readonly string[]) => ids.map((id) => ({ userId: id, username: id })),
+}));
 
 afterEach(() => {
   cleanup();
   vi.mocked(track).mockClear();
+  friends.active = false;
 });
 
 const SOLO_PROPS = {
@@ -281,6 +308,31 @@ describe("CompletionModal", () => {
     expect(onNextPuzzle).toHaveBeenCalledOnce();
     expect(queryByText("Play again")).toBeNull();
     expect(queryByText("Up next")).toBeNull();
+  });
+
+  it("after a race, a signed-in viewer sees the other players as Add friend rows below the next-puzzle row and above Back to menu; a spectator and a solo finisher see none", async () => {
+    friends.active = true;
+    const { findByTestId, getByTestId, getByRole, queryByTestId, rerender } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" onNextPuzzle={() => {}} onBackToMenu={() => {}} />,
+    );
+    const section = await findByTestId("raced-with");
+    expect(section.textContent).toContain("@bob");
+    expect(section.textContent).not.toContain("@alice");
+    expect(getByRole("button", { name: "Add friend" })).toBeTruthy();
+    const nextPuzzle = getByRole("button", { name: /Next puzzle, same room/ });
+    const back = getByRole("button", { name: "Back to menu" });
+    expect(nextPuzzle.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(section.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // A spectator (no viewer id) is never suggested anyone.
+    rerender(<CompletionModal {...SOLO_PROPS} players={makePlayers()} onNextPuzzle={() => {}} />);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(queryByTestId("raced-with")).toBeNull();
+    // Neither is a solo finisher.
+    rerender(<CompletionModal {...SOLO_PROPS} currentUserId="alice" />);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(queryByTestId("raced-with")).toBeNull();
+    expect(getByTestId).toBeTruthy();
   });
 
   it("multiplayer guest: no next-puzzle row without onNextPuzzle", () => {
