@@ -5,6 +5,9 @@ import { EyeOff, Search, Users } from "lucide-react";
 import { PageShell, pageColumnClass } from "../components/PageShell";
 import { CommunityList } from "../components/CommunityList";
 import { Button, Select, TransitionLink } from "../components/ui";
+import { PlusNudge } from "../components/Plus/PlusNudge";
+import { useMaybeAccount } from "../contexts/AccountContext";
+import { plusEnabled } from "../lib/plus";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
@@ -50,6 +53,9 @@ export function CommunityBrowseScreen() {
   const [params, setParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
+  // "Make your own" is a studio link for a subscriber and the Plus pitch for everyone else (PlusNudge decides the rest).
+  const account = useMaybeAccount();
+  const pitchPlus = plusEnabled() && !!account?.available && account.ready && !account.plus;
   const uiLang: CommunityLang = i18n.language?.startsWith("es") ? "es" : "en";
 
   const filters = useMemo<BrowseFilters>(() => {
@@ -302,7 +308,10 @@ export function CommunityBrowseScreen() {
             {t("community.hideAuthor", { author: username })}
           </button>
         )}
-        {!username && (
+        {!username && pitchPlus && (
+          <PlusNudge className="mt-4" title={t("community.plusNudgeTitle")} body={t("community.plusNudgeBody")} placement="community" feature="studio" returnTo="/puzzles" />
+        )}
+        {!username && !pitchPlus && (
           <TransitionLink to="/studio" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500">
             {t("community.makeYourOwn")}
           </TransitionLink>

@@ -30,7 +30,7 @@ vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
 // null = no AccountProvider (nothing locked); set per test to gate.
 const openAccount = vi.fn();
 const openPaywall = vi.fn();
-let accountState: { available: boolean; ready: boolean; user: { id: string } | null; plus?: boolean; openAccount: typeof openAccount; openPaywall: typeof openPaywall } | null = null;
+let accountState: { available: boolean; ready: boolean; user: { id: string } | null; plus?: boolean; plusReady?: boolean; openAccount: typeof openAccount; openPaywall: typeof openPaywall } | null = null;
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => accountState }));
 // The Plus launch switch, off by default (today's behaviour).
 const plusFlag = { on: false };
@@ -263,9 +263,14 @@ describe("ArchiveScreen (/archive)", () => {
   it("with Plus live: a free account plays 30 days and sees the Plus card beyond, Plus plays everything, anonymous keeps the 7-day sign-in rule", async () => {
     plusFlag.on = true;
     // A free account: 8 days ago is open, 40 days ago asks for Plus.
-    accountState = { available: true, ready: true, user: { id: "me" }, plus: false, openAccount, openPaywall };
+    accountState = { available: true, ready: true, user: { id: "me" }, plus: false, plusReady: true, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    // The backlog pitch sits up top, dated from the first published day, before any locked day is picked.
+    expect(screen.getByText(/^Every daily since .+, with Plus$/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "About Plus" }));
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "archive", feature: "archive", returnTo: "/archive" });
+    openPaywall.mockClear();
     fireEvent.click(dayCell(lastWeek));
     expect(screen.getByText("Old News")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
@@ -276,15 +281,16 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByText("Ancient History")).toBeTruthy();
     expect(screen.getByText("Go Plus to play puzzles older than 30 days")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "About Plus" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "About Plus" })[1]);
     expect(openPaywall).toHaveBeenCalledWith({ placement: "archive", feature: "archive" });
     expect(openAccount).not.toHaveBeenCalled();
     cleanup();
 
-    // Plus: nothing locked.
-    accountState = { available: true, ready: true, user: { id: "me" }, plus: true, openAccount, openPaywall };
+    // Plus: nothing locked, and no pitch.
+    accountState = { available: true, ready: true, user: { id: "me" }, plus: true, plusReady: true, openAccount, openPaywall };
     renderScreen();
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    expect(screen.queryByText(/with Plus$/)).toBeNull();
     fireEvent.click(dayCell(longAgo));
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.queryByText(/Go Plus/)).toBeNull();

@@ -39,6 +39,28 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("AccountMenuRow", () => {
+  it("places rows passed to it between the sign-in row and the Plus row, and keeps them where accounts aren't offered", () => {
+    plus.enabled = true;
+    render(
+      <AccountMenuRow>
+        <button type="button">Get the app</button>
+      </AccountMenuRow>,
+    );
+    const names = screen.getAllByRole("button").map((b) => b.textContent);
+    expect(names[0]).toContain("Save your solve history");
+    expect(names[1]).toBe("Get the app");
+    expect(names[2]).toContain("Crossword Clash Plus");
+    cleanup();
+
+    context.value = account({ available: false });
+    render(
+      <AccountMenuRow>
+        <button type="button">Get the app</button>
+      </AccountMenuRow>,
+    );
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual(["Get the app"]);
+  });
+
   it("renders nothing where accounts aren't offered, or before the session is known", () => {
     context.value = account({ available: false });
     expect(render(<AccountMenuRow />).container.innerHTML).toBe("");
@@ -52,7 +74,7 @@ describe("AccountMenuRow", () => {
     context.value = account({ openAccount });
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Save your solve history/ });
-    expect(row.textContent).toContain("Optional");
+    expect(row.textContent).toContain("Free, with Apple or Google");
     fireEvent.click(row);
     expect(openAccount).toHaveBeenCalledWith({ placement: "menu" });
   });
@@ -74,7 +96,7 @@ describe("AccountMenuRow", () => {
     context.value = account({ openPaywall });
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
-    expect(row.textContent).toContain("Every past daily");
+    expect(row.textContent).toContain("Past dailies, studio, AI host");
     fireEvent.click(row);
     expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });
@@ -96,7 +118,7 @@ describe("AccountMenuRow", () => {
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
     expect(row.textContent).toContain("tap to manage");
-    expect(row.textContent).not.toContain("Every past daily");
+    expect(row.textContent).not.toContain("Past dailies, studio, AI host");
     fireEvent.click(row);
     expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow } from "../components/ui";
+import { PlusNudge } from "../components/Plus/PlusNudge";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -269,6 +270,18 @@ export function ArchiveScreen() {
           <p className="py-16 text-center text-sm text-muted">{t("archive.empty")}</p>
         ) : (
           <>
+            {/* The backlog is the Plus benefit this page sells (spec §5.1): one pitch
+                up top for everyone without Plus, not only on a locked day. */}
+            {entries && (
+              <PlusNudge
+                className="mt-4"
+                title={t("archive.plusNudgeTitle", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(`${entries[0].day}T12:00:00`)) })}
+                body={t("archive.plusNudgeBody")}
+                placement="archive"
+                feature="archive"
+                returnTo="/archive"
+              />
+            )}
             {resume && (
               <section className="mt-4 flex items-center gap-3 rounded-2xl bg-gold-50 p-3 ring-1 ring-gold-100" aria-label={t("archive.resumeEyebrow")}>
                 <ShapeThumb blocks={resume.blocks} className="w-12 shrink-0" />

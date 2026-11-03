@@ -11,6 +11,10 @@ const navigate = vi.fn();
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
+const acct = vi.hoisted(() => ({ value: null as null | { available: boolean; ready: boolean; plus: boolean; plusReady: boolean; openPaywall: ReturnType<typeof vi.fn> } }));
+vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => acct.value }));
+const plusFlag = vi.hoisted(() => ({ on: false }));
+vi.mock("../lib/plus", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/plus")>()), plusEnabled: () => plusFlag.on }));
 const game = { handleSoloPuzzleLoaded: vi.fn(async () => {}), setSoloTheme: vi.fn(), setUrlPuzzle: vi.fn() };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 let bestTimes: Record<string, number> = {};
@@ -53,6 +57,8 @@ beforeEach(() => {
   localStorage.clear();
   resetHiddenAuthorsMemory();
   bestTimes = {};
+  acct.value = null;
+  plusFlag.on = false;
   navigate.mockClear();
   game.handleSoloPuzzleLoaded.mockClear();
   game.setUrlPuzzle.mockClear();
@@ -139,6 +145,32 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
     expect(screen.getByText("You hid this author's puzzles on this device.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Show again" }));
     expect(await screen.findByText("Puzzle 1")).toBeTruthy();
+  });
+
+  it("pitches Plus under the intro to a free account, and keeps the studio link for a subscriber or with Plus off", async () => {
+    plusFlag.on = true;
+    const openPaywall = vi.fn();
+    acct.value = { available: true, ready: true, plus: false, plusReady: true, openPaywall };
+    renderAt("/puzzles");
+    await waitFor(() => expect(screen.getByText("Puzzle 1")).toBeTruthy());
+    expect(screen.getByText("Want to make your own?")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Make your own" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "About Plus" }));
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "community", feature: "studio", returnTo: "/puzzles" });
+    cleanup();
+
+    acct.value = { available: true, ready: true, plus: true, plusReady: true, openPaywall };
+    renderAt("/puzzles");
+    await waitFor(() => expect(screen.getByText("Puzzle 1")).toBeTruthy());
+    expect(screen.getByRole("link", { name: "Make your own" }).getAttribute("href")).toBe("/studio");
+    expect(screen.queryByText("Want to make your own?")).toBeNull();
+    cleanup();
+
+    plusFlag.on = false;
+    acct.value = { available: true, ready: true, plus: false, plusReady: true, openPaywall };
+    renderAt("/puzzles");
+    await waitFor(() => expect(screen.getByText("Puzzle 1")).toBeTruthy());
+    expect(screen.getByRole("link", { name: "Make your own" })).toBeTruthy();
   });
 
   it("explains an empty library and a failed load", async () => {

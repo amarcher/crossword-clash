@@ -355,6 +355,14 @@ const en: LegalContent = {
         ],
       },
       {
+        heading: "How the dailies work",
+        paragraphs: [
+          "Three new puzzles every day. Each day brings a quick mini, a 9×9 midi and a full 15×15 large — original crosswords, free, with no account needed. New puzzles arrive at midnight.",
+          "Solve solo or race live. Play against the clock on your own, or start a room, share the code and fill the same grid together. Correct letters lock in as they're claimed, so the fastest solver wins.",
+          "Times, streaks and catching up. Every finish goes on that puzzle's board for the day, and solving on consecutive days builds a streak. Past puzzles keeps recent days open; sign in to reach further back, and Plus opens every daily since the archive began.",
+        ],
+      },
+      {
         heading: "Common questions",
         items: [
           "Joining a game: choose Join with a code and enter the six-character room code your host shared, or scan the QR code on their screen.",
@@ -686,6 +694,14 @@ const es: LegalContent = {
         heading: "Contáctanos",
         paragraphs: [
           "Escribe a " + C + " con preguntas, errores o comentarios. Indica tu dispositivo, qué estabas haciendo y, si era una partida multijugador, el código de sala. Solemos responder en unos días.",
+        ],
+      },
+      {
+        heading: "Cómo funcionan los diarios",
+        paragraphs: [
+          "Tres crucigramas nuevos cada día. Cada día trae un mini rápido, un midi de 9×9 y un grande de 15×15: crucigramas originales, gratis y sin necesidad de cuenta. Los nuevos llegan a medianoche.",
+          "En solitario o en carrera. Juega contra el reloj por tu cuenta, o crea una sala, comparte el código y rellenad la misma cuadrícula a la vez. Las letras correctas se fijan al reclamarlas, así que gana quien resuelve más rápido.",
+          "Tiempos, rachas y días pendientes. Cada partida terminada entra en la tabla del día de ese crucigrama, y resolver en días seguidos crea una racha. Los crucigramas anteriores mantienen abiertos los días recientes; inicia sesión para ir más atrás, y Plus abre todos los diarios desde el inicio del archivo.",
         ],
       },
       {

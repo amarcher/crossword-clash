@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles, UserRound } from "lucide-react";
 import { useAccountContext } from "../../contexts/AccountContext";
@@ -13,15 +14,17 @@ import { ListGroup, ListRow } from "../ui";
  * "tap to manage" for a subscriber, so Manage subscription and Restore
  * purchases are always one tap from the menu, not only behind the avatar's
  * menu. Renders nothing where accounts aren't on offer, so offline builds
- * show no new row at all.
+ * show no new row at all. `children` are rows that share the group — the
+ * menu's app-store and studio rows sit between the sign-in row and the Plus
+ * row, so the section is one card whatever the account state.
  */
-export function AccountMenuRow() {
+export function AccountMenuRow({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   const account = useAccountContext();
-  if (!account.available || !account.ready) return null;
-  const showSignIn = !account.user;
-  const showPlus = plusEnabled() && account.plusReady;
-  if (!showSignIn && !showPlus) return null;
+  const ownRows = account.available && account.ready;
+  const showSignIn = ownRows && !account.user;
+  const showPlus = ownRows && plusEnabled() && account.plusReady;
+  if (!showSignIn && !showPlus && !children) return null;
 
   return (
     <ListGroup>
@@ -34,6 +37,7 @@ export function AccountMenuRow() {
           onClick={() => account.openAccount({ placement: "menu" })}
         />
       )}
+      {children}
       {showPlus && (
         <ListRow
           icon={Sparkles}
