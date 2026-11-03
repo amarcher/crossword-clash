@@ -1,0 +1,5 @@
+<en-US>
+Hosts are told when a friend joins their room, an away host shows as away in the lobby with a Nudge button, and a room invite can be answered "Can't now".
+
+Friend suggestions after a race and the tidier home screen from the previous builds are unchanged.
+</en-US>

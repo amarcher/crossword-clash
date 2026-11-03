@@ -1,0 +1,6 @@
+This build (1.1.0, build 31) makes meeting a friend in a room easier. Please check:
+
+1. Host a room, invite a friend, then lock your phone or switch apps: when they join you get "@name joined your room", and tapping it lands you back in the lobby. On the website the same arrives as a banner when you are elsewhere in the app.
+2. Join a room whose host is away (phone locked, app in the background): their row shows an Away chip and the status line reads "Waiting for <host> to come back…". "Nudge host" sends them "@name is waiting in your room"; after a nudge the button counts down ("Nudge again in 1:42") and the wait grows with each nudge.
+3. Receive a room invite and tap "Can't now" on the banner or on the Race friends screen: the invite leaves your list and the host's lobby row for you reads "Can't right now" (Joined once you join).
+4. Everything from build 30 still applies: "Raced with you" after a race, the regrouped menu, and friend requests answerable from the menu, the account menu and the account page.
