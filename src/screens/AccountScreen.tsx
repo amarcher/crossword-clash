@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { NotificationSettings } from "../components/Push";
+import { PendingRequests } from "../components/Friends";
+import { useFriends } from "../contexts/FriendsContext";
+import { friendsEnabled } from "../lib/friends";
 import { avatarInitial } from "../components/Account/AccountControl";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -65,6 +68,7 @@ export function AccountScreen() {
   const history = useSolveHistory();
   const streaks = useStreaks();
   const bestTimes = useBestTimes();
+  const friends = useFriends();
   const today = dayKey(new Date());
 
   // Not for anonymous visitors: back to the menu, sign-in sheet open — unless
@@ -244,6 +248,43 @@ export function AccountScreen() {
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+          {/* Friends (docs/friends-spec.md §3.1): the requests waiting, the count, and the way to the list. */}
+          {friendsEnabled() && (
+            <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-friends">
+              <Eyebrow as="h2" id="account-friends" className="px-1">
+                {t("account.friendsHeading")}
+              </Eyebrow>
+              {!friends.active ? (
+                <Card className="p-5">
+                  <p className="font-semibold text-ink">{t("race.usernameTitle")}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{t("race.usernameBody")}</p>
+                  <Button variant="secondary" size="md" className="mt-4" onClick={() => account.openAccount({ view: "username", placement: "account-page" })}>
+                    {t("race.chooseUsername")}
+                  </Button>
+                </Card>
+              ) : (
+                <>
+                  <PendingRequests />
+                  <Card className="flex items-center gap-3.5 px-4 py-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                      <Users className="size-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold leading-snug text-ink tabular-nums">{t("friends.listHeading", { count: friends.friendships.friends.length })}</p>
+                      <p className="mt-0.5 text-sm leading-snug text-muted">
+                        {friends.friendships.friends.length === 0 ? t("account.friendsNoneHint") : t("account.friendsHint")}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => navigate("/race/friends")} {...prefetchOnIntent("/race/friends")}>
+                      {friends.friendships.friends.length === 0 ? <UserPlus className="size-4" aria-hidden="true" /> : null}
+                      {friends.friendships.friends.length === 0 ? t("race.addFriends") : t("account.manageFriends")}
+                    </Button>
+                  </Card>
+                </>
+              )}
+            </section>
+          )}
+
           {/* In progress */}
           <section className="grid grid-cols-[minmax(0,1fr)] gap-3" aria-labelledby="account-inprogress">
             <Eyebrow as="h2" id="account-inprogress" className="px-1">

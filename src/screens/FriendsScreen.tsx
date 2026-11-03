@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { inputClass } from "../components/Flow/TextField";
-import { PersonList, PersonRow } from "../components/Friends";
+import { PendingRequests, PersonList, PersonRow } from "../components/Friends";
 import { useConfirm } from "../components/ConfirmDialog";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useFriends } from "../contexts/FriendsContext";
@@ -205,21 +205,7 @@ export function FriendsScreen() {
       {incoming.length > 0 && (
         <Card className="p-5">
           <Eyebrow as="h2">{t("friends.requestsHeading", { count: incoming.length })}</Eyebrow>
-          <PersonList className="mt-3">
-            {incoming.map((p) => (
-              <PersonRow key={p.userId} username={p.username} detail={t("friends.wantsToBeFriends")}>
-                <Button size="sm" onClick={() => void respond(p, true)} disabled={busy !== null}>
-                  {t("friends.accept")}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => void respond(p, false)} disabled={busy !== null}>
-                  {t("friends.decline")}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => void block(p)} disabled={busy !== null} aria-label={t("friends.blockName", { name: p.username })}>
-                  {t("friends.block")}
-                </Button>
-              </PersonRow>
-            ))}
-          </PersonList>
+          <PendingRequests showBlock className="mt-3" />
         </Card>
       )}
 

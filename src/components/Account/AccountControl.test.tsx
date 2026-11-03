@@ -19,6 +19,12 @@ vi.mock("../../lib/account", async (importOriginal) => ({
 const plusFlag = { on: false };
 vi.mock("../../lib/plus", async (importOriginal) => ({ ...(await importOriginal<typeof import("../../lib/plus")>()), plusEnabled: () => plusFlag.on }));
 vi.mock("../../routeModules", () => ({ prefetchRoute: vi.fn() }));
+const friendsFlag = { on: true };
+vi.mock("../../lib/friends", async (importOriginal) => ({ ...(await importOriginal<typeof import("../../lib/friends")>()), friendsEnabled: () => friendsFlag.on }));
+const pending = { count: 0 };
+vi.mock("../../contexts/FriendsContext", () => ({
+  useFriends: () => ({ friendships: { friends: [], incoming: Array.from({ length: pending.count }, (_, i) => ({ userId: `r${i}`, username: `r${i}` })), outgoing: [] } }),
+}));
 
 const user = { id: "u1", is_anonymous: false, user_metadata: { full_name: "Ada Lovelace" }, app_metadata: { provider: "google" }, aud: "authenticated", created_at: "" } as unknown as User;
 
@@ -52,6 +58,8 @@ const renderControl = (path = "/menu") =>
 beforeEach(() => {
   context.value = account({});
   plusFlag.on = false;
+  friendsFlag.on = true;
+  pending.count = 0;
 });
 afterEach(() => {
   cleanup();
@@ -101,7 +109,7 @@ describe("AccountControl", () => {
     expect(menu.textContent).toContain("ada_l");
     expect(menu.textContent).toContain("Ada Lovelace");
     const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
-    expect(items).toEqual(["Your account", "Past puzzles", "Change username", "Sign out"]);
+    expect(items).toEqual(["Your account", "Past puzzles", "Friends", "Change username", "Sign out"]);
 
     fireEvent.click(screen.getByRole("menuitem", { name: "Your account" }));
     expect(navigate).toHaveBeenCalledWith("/account");
@@ -118,6 +126,29 @@ describe("AccountControl", () => {
     fireEvent.click(avatar);
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign out" }));
     expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("has a Friends row that counts the requests waiting and lands on the friends screen, and none with the switch off", () => {
+    context.value = account({ user, profile: { user_id: "u1", username: "ada_l", display_name: null } });
+    pending.count = 2;
+    renderControl();
+    fireEvent.click(screen.getByRole("button", { name: "Account menu for ada_l" }));
+    const row = screen.getByRole("menuitem", { name: "Friends · 2 requests waiting" });
+    expect(row.textContent).toBe("Friends2");
+    fireEvent.click(row);
+    expect(navigate).toHaveBeenCalledWith("/race/friends");
+    cleanup();
+
+    pending.count = 0;
+    renderControl();
+    fireEvent.click(screen.getByRole("button", { name: "Account menu for ada_l" }));
+    expect(screen.getByRole("menuitem", { name: "Friends" }).textContent).toBe("Friends");
+    cleanup();
+
+    friendsFlag.on = false;
+    renderControl();
+    fireEvent.click(screen.getByRole("button", { name: "Account menu for ada_l" }));
+    expect(screen.queryByRole("menuitem", { name: /Friends/ })).toBeNull();
   });
 
   it("falls back to the provider name's initial and offers to choose a username", () => {

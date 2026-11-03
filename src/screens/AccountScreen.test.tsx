@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router";
 import type { User } from "@supabase/supabase-js";
 import "../i18n/i18n";
 import { AccountScreen } from "./AccountScreen";
+import { ConfirmProvider } from "../components/ConfirmDialog";
 import type { AccountContextValue } from "../contexts/AccountContext";
 import type { SolveRow } from "../lib/solveHistory";
 import type { SoloProgressStore } from "../lib/soloProgress";
@@ -15,6 +16,12 @@ const navigate = vi.fn();
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("../routeModules", () => ({ prefetchOnIntent: () => ({}), prefetchRoute: vi.fn() }));
+const friendsFlag = { on: false };
+vi.mock("../lib/friends", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/friends")>()), friendsEnabled: () => friendsFlag.on }));
+const friends = vi.hoisted(() => ({
+  value: { active: true, friendships: { friends: [] as { userId: string; username: string; since: string }[], incoming: [] as { userId: string; username: string }[], outgoing: [] }, respond: vi.fn(async () => {}) },
+}));
+vi.mock("../contexts/FriendsContext", () => ({ useFriends: () => friends.value }));
 
 const context: { value: AccountContextValue } = { value: null as unknown as AccountContextValue };
 vi.mock("../contexts/AccountContext", () => ({ useAccountContext: () => context.value, useMaybeAccount: () => context.value }));
@@ -81,7 +88,9 @@ const solve = (over: Partial<SolveRow>): SolveRow => ({
 const renderScreen = () =>
   render(
     <MemoryRouter initialEntries={["/account"]}>
-      <AccountScreen />
+      <ConfirmProvider>
+        <AccountScreen />
+      </ConfirmProvider>
     </MemoryRouter>,
   );
 
@@ -92,6 +101,8 @@ beforeEach(() => {
   bestTimes = {};
   store = {};
   plusFlag.on = false;
+  friendsFlag.on = false;
+  friends.value = { active: true, friendships: { friends: [], incoming: [], outgoing: [] }, respond: vi.fn(async () => {}) };
 });
 afterEach(() => {
   cleanup();
@@ -218,6 +229,43 @@ describe("AccountScreen (/account)", () => {
     expect(screen.queryByRole("button", { name: "About Plus" })).toBeNull();
   });
 
+  it("shows the Friends section only with the switch on: the requests waiting with Accept, the friend count and Manage, or the username prompt", async () => {
+    renderScreen();
+    expect(screen.queryByRole("heading", { name: "Friends" })).toBeNull();
+    cleanup();
+
+    friendsFlag.on = true;
+    friends.value = {
+      active: true,
+      friendships: { friends: [{ userId: "b", username: "bob", since: "2026-10-01T00:00:00Z" }], incoming: [{ userId: "a", username: "alicia" }], outgoing: [] },
+      respond: vi.fn(async () => {}),
+    };
+    renderScreen();
+    const section = screen.getByRole("heading", { name: "Friends" }).closest("section")!;
+    expect(within(section).getByText("@alicia")).toBeTruthy();
+    fireEvent.click(within(section).getByRole("button", { name: "Accept" }));
+    await waitFor(() => expect(friends.value.respond).toHaveBeenCalledWith("a", true));
+    expect(within(section).getByText("1 friend")).toBeTruthy();
+    fireEvent.click(within(section).getByRole("button", { name: "Manage" }));
+    expect(navigate).toHaveBeenCalledWith("/race/friends");
+    cleanup();
+
+    friends.value = { active: true, friendships: { friends: [], incoming: [], outgoing: [] }, respond: vi.fn(async () => {}) };
+    renderScreen();
+    expect(screen.getByText("0 friends")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add friends" })).toBeTruthy();
+    cleanup();
+
+    const openAccount = vi.fn();
+    context.value = account({ profile: null, openAccount });
+    friends.value = { active: false, friendships: { friends: [], incoming: [], outgoing: [] }, respond: vi.fn(async () => {}) };
+    renderScreen();
+    const prompt = screen.getByRole("heading", { name: "Friends" }).closest("section")!;
+    expect(within(prompt).getByText("Pick a username to add friends")).toBeTruthy();
+    fireEvent.click(within(prompt).getByRole("button", { name: "Choose a username" }));
+    expect(openAccount).toHaveBeenCalledWith({ view: "username", placement: "account-page" });
+  });
+
   it("signs out without reopening the sheet, and Delete account opens the confirm", () => {
     const openAccount = vi.fn();
     context.value = account({ openAccount });
@@ -231,7 +279,9 @@ describe("AccountScreen (/account)", () => {
     context.value = account({ user: null, profile: null, openAccount });
     view.rerender(
       <MemoryRouter initialEntries={["/account"]}>
-        <AccountScreen />
+        <ConfirmProvider>
+          <AccountScreen />
+        </ConfirmProvider>
       </MemoryRouter>,
     );
     expect(navigate).toHaveBeenCalledWith("/menu", { replace: true });
