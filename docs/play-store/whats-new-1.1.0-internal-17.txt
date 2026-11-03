@@ -1,0 +1,5 @@
+<en-US>
+Two lines of copy about notifications now say what happens: a closed app gets a notification for a room invite, and the Room invites switch also covers a friend joining or waiting in your room.
+
+Everything from the previous build still applies: hosts are told of a join, an away host shows as away with a Nudge button, and an invite can be answered "Can't now".
+</en-US>
