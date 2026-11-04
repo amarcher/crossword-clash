@@ -1,7 +1,7 @@
-import { Navigate } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-import { TVScreen } from "../../components/Layout/TVScreen";
+import { TVScreen, TV_QUIET_LINK } from "../../components/Layout/TVScreen";
 import { buttonClass } from "../../components/ui";
 import { useHostContext } from "../../layouts/HostLayout";
 
@@ -18,7 +18,18 @@ export function HostPuzzleReadyScreen() {
   const downCount = urlPuzzle.clues.filter((c) => c.direction === "down").length;
 
   return (
-    <TVScreen>
+    <TVScreen
+      footer={
+        <>
+          <Link to="/host/import" className={TV_QUIET_LINK}>
+            {t("puzzleReady.chooseAnother")}
+          </Link>
+          <Link to="/menu" className={TV_QUIET_LINK}>
+            {t("completion.backToMenu")}
+          </Link>
+        </>
+      }
+    >
       <div className="max-w-[40em]">
         <h1 className="tv-t-2xl font-display font-bold text-white">{urlPuzzle.title}</h1>
         {urlPuzzle.author && <p className="tv-t-lg mt-2 text-slate-300">{t('puzzleReady.by', { author: urlPuzzle.author })}</p>}

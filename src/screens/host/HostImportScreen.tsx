@@ -11,6 +11,8 @@ export function HostImportScreen() {
   return (
     <PuzzleImporter
       onPuzzleLoaded={handlePuzzleLoaded}
+      backTo="/menu"
+      backLabel={t("completion.backToMenu")}
       title={t("importer.tvTitle")}
       subtitle={t("importer.tvSubtitle")}
       sources={<TVPuzzleSources onPick={handlePuzzleLoaded} />}

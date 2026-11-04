@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-import { TVScreen } from "../../components/Layout/TVScreen";
+import { TVScreen, TV_QUIET_LINK } from "../../components/Layout/TVScreen";
 import { buttonClass } from "../../components/ui";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { useHostContext } from "../../layouts/HostLayout";
@@ -18,7 +18,13 @@ export function HostMenuScreen() {
   }, [user, navigate]);
 
   return (
-    <TVScreen>
+    <TVScreen
+      footer={
+        <Link to="/menu" className={TV_QUIET_LINK}>
+          {t("completion.backToMenu")}
+        </Link>
+      }
+    >
       <div className="max-w-[40em]">
         <h1 className="tv-t-2xl font-display font-bold text-white">{t('hostView.tvHostView')}</h1>
         <p className="tv-t-lg mt-3 text-slate-300">{t('hostView.tvHostViewHint')}</p>
