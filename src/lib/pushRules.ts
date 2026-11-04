@@ -181,7 +181,11 @@ export function inviteNotification(input: { name: string; title: string; width: 
     title: fill(t.inviteTitle, { name: input.name }),
     body: fill(t.inviteBody, { title: input.title, size: `${input.width}×${input.height}` }),
     url: `${SITE}/?join=${encodeURIComponent(input.code)}`,
-    collapseId: `room-${input.gameId}`,
+    // Per sender, not per room: the invite's recipient is never the one the
+    // room's own pushes (a join, a nudge) go to, and a second invite from the
+    // same friend must replace the first in Notification Center, or the older
+    // one, pointing at a finished room, is the one that gets tapped.
+    collapseId: `invite-${input.name}`,
     ttlSeconds: INVITE_TTL_SECONDS,
   };
 }

@@ -196,6 +196,9 @@ export function useRejoinEffect() {
         const cellScore = Object.values(result.cells).filter((c: { correct: boolean }) => c.correct).length;
         game.dispatch({ type: "HYDRATE_CELLS", cells: result.cells, score: cellScore });
       }
+      // A room reached through a `new_game` broadcast is a fresh race: the
+      // last finish's dismissed modal must not hide this one.
+      game.setCompletionModalDismissed(false);
 
       game.setGameId(result.gameId);
       game.setIsMultiplayer(true);

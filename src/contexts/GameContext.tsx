@@ -12,7 +12,7 @@ import { clearProgress, filledCells, getProgress, recordProgressCells, whiteCell
 import { useSoloSettings } from "../lib/soloSettings";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
-import type { PuzzleAction, Rejection } from "../hooks/usePuzzle";
+import type { Claim, PuzzleAction, Rejection } from "../hooks/usePuzzle";
 
 const STORAGE_KEY = "crossword-clash-solo";
 const LOCKOUT_STORAGE_KEY = "crossword-clash:lockedUntil";
@@ -57,6 +57,8 @@ interface GameContextValue {
   autocheck: boolean;
   /** The reducer's last refused letter (autocheck on); see `PuzzleState.rejection`. */
   rejection: Rejection | null;
+  /** The letters the reducer accepted under a player's id, with their squares; see `PuzzleState.claims`. */
+  claims: Claim[];
   /** Mark the wrong letters among the given squares (solo, autocheck off). */
   checkCells: (cells: CellCoord[]) => void;
   /** Write and lock one square's solution; the finish then counts as assisted. */
@@ -111,7 +113,10 @@ interface GameContextValue {
   initialUrlPuzzle: Puzzle | null;
   hasSavedSoloSession: boolean;
   hasJoinCode: boolean;
+  /** The `?join=` code the page was opened with, until the join screen consumes it. */
   initialJoinCode: string | null;
+  /** The join screen took the code: a later visit to Join must not offer it again. */
+  consumeInitialJoinCode: () => void;
 
   // Solo puzzle handlers
   handleSoloPuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer) => Promise<void>;
@@ -200,7 +205,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);
 
-  const initialJoinCode = useMemo(() => {
+  // Read once from the page's URL and handed to the join screen once: kept
+  // for the page's life, it prefilled every later visit to Join with the
+  // first invite's code (a finished room, on the second race of the night).
+  const [initialJoinCode, setInitialJoinCode] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
@@ -208,7 +216,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return code.toUpperCase();
     }
     return null;
-  }, []);
+  });
+  const consumeInitialJoinCode = useCallback(() => setInitialJoinCode(null), []);
 
   const hasSavedSoloSession = !!initialSavedSession?.puzzle;
   const hasJoinCode = !!initialJoinCode;
@@ -324,6 +333,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     hasSavedSoloSession,
     hasJoinCode,
     initialJoinCode,
+    consumeInitialJoinCode,
     handleSoloPuzzleLoaded,
   };
 

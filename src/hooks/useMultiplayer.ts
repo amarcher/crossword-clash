@@ -558,23 +558,20 @@ export function useMultiplayer({
     return seconds;
   }, [startedAtMs, userId, gameId]);
 
+  // Confirms with the server a letter the reducer has already placed under
+  // this player's id (PuzzleState.claims; MultiplayerContext sends each one):
+  // the optimistic write happened in the reducer, where the square is known
+  // for sure. A square another player already holds is not claimed again.
   const claimCell = useCallback(
     async (row: number, col: number, letter: string) => {
       const key = `${row},${col}`;
 
-      // Local check: already filled
-      if (playerCellsRef.current[key]?.correct) return;
+      const existing = playerCellsRef.current[key];
+      if (existing?.correct && existing.playerId !== userId) return;
 
       // Check correctness
       const solution = puzzle.cells[row]?.[col]?.solution;
       if (!solution || letter.toUpperCase() !== solution) return;
-
-      // Optimistic local dispatch
-      dispatch({
-        type: "INPUT_LETTER",
-        letter: letter.toUpperCase(),
-        playerId: userId,
-      });
 
       // Server claim
       pendingClaimsRef.current += 1;

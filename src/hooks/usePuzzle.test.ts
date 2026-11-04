@@ -757,3 +757,35 @@ describe("puzzleReducer without autocheck", () => {
     expect(state.score).toBe(1);
   });
 });
+
+describe("claims (the shared grid's server claims come from the reducer)", () => {
+  it("records each letter accepted under a player's id with the square it landed on, in order", () => {
+    let state = loadedState();
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c", playerId: "me" });
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a", playerId: "me" });
+    expect(state.claims).toEqual([
+      { row: 0, col: 0, letter: "C", playerId: "me", seq: 1 },
+      { row: 0, col: 1, letter: "A", playerId: "me", seq: 2 },
+    ]);
+    // A burst judged square by square: the second letter landed on its own square.
+    expect(state.rejection).toBeNull();
+  });
+
+  it("records nothing for a refused letter, a settled square or a letter without a player, and restarts with the puzzle", () => {
+    let state = loadedState();
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "x", playerId: "me" });
+    expect(state.rejection).toMatchObject({ row: 0, col: 0, letter: "X" });
+    expect(state.claims).toEqual([]);
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c", playerId: "me" });
+    state = puzzleReducer(state, { type: "SELECT_CELL", row: 0, col: 0 });
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "c", playerId: "me" });
+    expect(state.claims).toHaveLength(1);
+    state = puzzleReducer(state, { type: "INPUT_LETTER", letter: "a" });
+    expect(state.claims).toHaveLength(1);
+    expect(state.playerCells["0,1"]?.letter).toBe("A");
+    state = puzzleReducer(state, { type: "RESET" });
+    expect(state.claims).toEqual([]);
+    state = puzzleReducer(loadedState(), { type: "INPUT_LETTER", letter: "c", playerId: "me" });
+    expect(state.claims[0]?.seq).toBe(1);
+  });
+});

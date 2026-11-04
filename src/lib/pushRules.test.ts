@@ -105,14 +105,14 @@ describe("notifications", () => {
     expect(pushLocale(null)).toBe("en");
   });
 
-  it("builds a room invite that opens the join link, collapsing per room, good for an hour", () => {
+  it("builds a room invite that opens the join link, collapsing per sender (a newer invite replaces the friend's older one), good for an hour", () => {
     const note = inviteNotification({ name: "alicia", title: "Birds of a feather", width: 15, height: 15, code: "KQ7MXB", gameId: "g1" }, "en");
     expect(note).toEqual({
       kind: "room_invite",
       title: "@alicia opened a room",
       body: "Birds of a feather · 15×15 · Join",
       url: "https://crosswordclash.com/?join=KQ7MXB",
-      collapseId: "room-g1",
+      collapseId: "invite-alicia",
       ttlSeconds: 3600,
     });
     expect(inviteNotification({ name: "alicia", title: "T", width: 5, height: 5, code: "KQ7MXB", gameId: "g1" }, "es").body).toBe("T · 5×5 · Unirse");
@@ -205,7 +205,7 @@ describe("the store requests", () => {
       "apns-topic": "com.crosswordclash.app",
       "apns-push-type": "alert",
       "apns-priority": "10",
-      "apns-collapse-id": "room-g1",
+      "apns-collapse-id": "invite-alicia",
       "apns-expiration": String(Math.floor(NOW.getTime() / 1000) + 3600),
     });
     expect(req.body).toEqual({ aps: { alert: { title: note.title, body: note.body }, sound: "default" }, url: note.url, kind: "room_invite" });
@@ -217,7 +217,7 @@ describe("the store requests", () => {
         token: "tok",
         notification: { title: note.title, body: note.body },
         data: { url: note.url, kind: "room_invite" },
-        android: { collapse_key: "room-g1", ttl: "3600s", priority: "high", notification: { channel_id: "crossword-clash" } },
+        android: { collapse_key: "invite-alicia", ttl: "3600s", priority: "high", notification: { channel_id: "crossword-clash" } },
       },
     });
   });
