@@ -243,7 +243,12 @@ themselves with your app"). So: **the prompt is only ever shown after the
 player turns a notification switch on** (the daily reminder in Settings or
 on the completion modal after a daily, "Remind me tomorrow"; a room-invite
 switch in phase d), preceded by one in-app sentence saying what will arrive.
-Never on launch, never from the menu. Provisional authorization (iOS's
+Never on launch, never from the menu. **Revised 2026-11-03 (Andrew):** the
+app now asks once on the first open, 1.5 s after the session user exists
+(`PushEffects`, placement `first_open`), because nobody found the switches
+and invites and friend requests reached no one; a device that already
+answered is never asked again, and the switches keep asking a device that
+was never asked. Provisional authorization (iOS's
 quiet trial delivery) is **not** used: a room invite that lands silently in
 Notification Center is a missed race, and the reminder is explicitly
 requested anyway (§9 Q6).
