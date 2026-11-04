@@ -112,6 +112,7 @@
     "backToMenu": "Back to menu"
   },
   "puzzleReady": {
+    "chooseAnother": "Choose another puzzle",
     "importedBadge": "Puzzle imported",
     "by": "by {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} across, {{downCount}} down",

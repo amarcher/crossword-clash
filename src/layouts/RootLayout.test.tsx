@@ -127,6 +127,19 @@ describe("useRejoinEffect", () => {
     expect(game.setCompletionModalDismissed).toHaveBeenCalledWith(false);
   });
 
+  it("never lands in the room once the player left the rejoin screen (the lookup answers after Back to menu)", async () => {
+    mockLoadMpSession.mockReturnValue({ gameId: "g1", shareCode: "ABCDEF", displayName: "Arch", savedAt: Date.now() });
+    let answer: (r: ReturnType<typeof roomResult>) => void = () => {};
+    mockRejoinGame.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const { unmount } = renderRejoin();
+    await waitFor(() => expect(mockRejoinGame).toHaveBeenCalled());
+    unmount();
+    answer(roomResult("waiting"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(game.setGameId).not.toHaveBeenCalled();
+    expect(game.loadPuzzle).not.toHaveBeenCalled();
+  });
+
   it("still rejoins an active game from an older session", async () => {
     mockLoadMpSession.mockReturnValue({ gameId: "g1", shareCode: "ABCDEF", displayName: "Alice", savedAt: Date.now() - 2 * HOUR });
     mockRejoinGame.mockResolvedValue(roomResult("active"));

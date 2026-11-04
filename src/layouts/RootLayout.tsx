@@ -173,7 +173,11 @@ export function useRejoinEffect() {
       return;
     }
 
+    // The rejoin screen's "Back to menu" unmounts this: an answer that lands
+    // afterwards must not drag the player back into the room.
+    let live = true;
     rejoinGame(session.gameId, user.id, session.displayName).then((result) => {
+      if (!live) return;
       if (!result) {
         clearMpSession();
         navigate("/", { replace: true });
@@ -209,6 +213,9 @@ export function useRejoinEffect() {
         navigate(`/play/${result.gameId}`, { replace: true });
       }
     });
+    return () => {
+      live = false;
+    };
   }, [user, game, navigate]);
 }
 

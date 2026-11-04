@@ -112,6 +112,7 @@
     "backToMenu": "Volver al menú"
   },
   "puzzleReady": {
+    "chooseAnother": "Elegir otro crucigrama",
     "importedBadge": "Crucigrama importado",
     "by": "por {{author}}",
     "dimensions": "{{width}}×{{height}} · {{acrossCount}} →, {{downCount}} ↓",

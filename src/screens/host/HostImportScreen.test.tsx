@@ -62,6 +62,8 @@ describe("HostImportScreen (the TV's puzzle chooser)", () => {
     expect(screen.getByRole("link", { name: /Past puzzles/ }).getAttribute("href")).toBe("/archive?intent=tv");
     expect(screen.getByRole("link", { name: /Community puzzles/ }).getAttribute("href")).toBe("/puzzles?intent=tv");
     expect(screen.getByText("Drop a file")).toBeTruthy();
+    // A way out: the site bar's back control (the bar draws none without a label).
+    expect(screen.getByRole("link", { name: "Back to menu" }).getAttribute("href")).toBe("/menu");
     expect(screen.queryByText("Try a sample")).toBeNull();
     expect(screen.queryByText("Ice Cold")).toBeNull();
   });

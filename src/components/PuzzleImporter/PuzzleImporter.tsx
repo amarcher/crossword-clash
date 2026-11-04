@@ -134,8 +134,10 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel, title, subti
   // The store apps have no drag-and-drop, bookmarklet or browser extensions.
   const nativeApp = import.meta.env.MODE === "mobile";
 
+  // Every hub has a way out: the site bar draws no back control without a
+  // label, and the solo hub and the TV chooser used to pass none (2026-11-03).
   return (
-    <PageShell width="3xl" bar={{ backTo, backLabel }}>
+    <PageShell width="3xl" bar={{ backTo: backTo ?? "/menu", backLabel: backLabel ?? t("completion.backToMenu") }}>
       <div>
         <div className="pb-6 pt-4 text-center sm:pt-6">
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">

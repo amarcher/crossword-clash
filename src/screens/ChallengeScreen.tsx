@@ -50,6 +50,8 @@ export function ChallengeScreen() {
       }
       title={t("challenge.heading", { name: challenge.name })}
       subtitle={t("challenge.subtitle", { title: puzzle.title })}
+      onBack={() => navigate("/menu")}
+      backLabel={t("completion.backToMenu")}
     >
       <Card className="grid gap-5 p-5">
         <div className="flex items-center gap-4">
