@@ -18,7 +18,12 @@ notes, every fill and clue decision) are in `artifacts/large/` on the
 constructor's machine (the 16–29 November set under `2026-10-17-*` and
 `retry-*/`, one folder per build attempt; the 30 November – 13 December set
 under `2026-11-04-*`, with `2026-11-04-batch-notes.md` listing what each build
-needed). **The 30 Nov – 13 Dec larges were built after their midis** (the
+needed; the 14–26 Dec set in the same batch, see the notes file's second
+table). **The 13–26 Dec days were built large first, then the mini, then a
+midi bridging the two** (`pnpm seedgrid --size 9 --reject "<large + mini
+answers>"`), so the midi's seeds sit between the mini's subject and the large's
+mashup (First Flight → Piggy Bank → Naughty or Invoice; Caroling → Ghost
+Story → Counting House). **The 30 Nov – 13 Dec larges were built after their midis** (the
 midis had anticipated them, e.g. Tracking Number → Porch Pirates, Trophy Case →
 Victory Feast, Lab Coats → Mutual Attraction), so each day's mini and midi
 answers of 4+ letters went in as `--reject`; three stacked sets (two 14s over
@@ -88,6 +93,19 @@ WEK/APOLLOI) were cleared with `pnpm seedgrid:refix … --apply` + `reclue
 | Fri | 2026-12-11 | Purls of Wisdom | Knitting × idioms | DYED IN THE WOOL, HANG BY A THREAD, CLOSE-KNIT, SPIN A YARN | easy |
 | Sat | 2026-12-12 | Kitchen Brigade | Military ranks × food | COLONEL SANDERS, SERGEANT PEPPER, CAPTAIN COOK, GENERAL TSO'S | easy |
 | Sun | 2026-12-13 | Who Let the Dogs Out | Dogs × music | BARK STREET BOYS, PUPPY LOVE SHACK, THE BEAGLES, COLLIE KING | medium |
+| Mon | 2026-12-14 | Shelf Help | Elves × self-help | ELF-EMPLOYED, ELF-CHECKOUT, ELF SERVICE, ELF-MADE MAN | easy |
+| Tue | 2026-12-15 | Reindeer Games | Reindeer × hidden words | DASHERBOARD, PRANCERCISE, CUPIDITY, COMETRUE | easy |
+| Wed | 2026-12-16 | Tree Trimming | Christmas trees × pop culture | SPRUCE WILLIS, EVERGREEN DAY, FIR ELISE, BOUGH WOW | easy |
+| Thu | 2026-12-17 | Naughty or Invoice | Santa × finance | LUMP SUM OF COAL, NICE LIST PRICE, SANTA CLAUSE, SLEIGH BILLS | easy |
+| Fri | 2026-12-18 | Office Caroling | Christmas carols × office life | AWAY IN A MANAGER, SILENT NIGHT OWL, JINGLE BELL CURVE | easy |
+| Sat | 2026-12-19 | Working Holiday | Holiday movies × work life | HOME ALONE OFFICE, DIE HARD DRIVE, FROZEN ASSETS | easy |
+| Sun | 2026-12-20 | Counting House | 'A Christmas Carol' × office tech | BAH HUMBUG REPORT, TINY TIMELINE, CRATCHIT CHAT | medium |
+| Mon | 2026-12-21 | One Across | Crossword terms × idioms | ACROSS THE POND, DOWN TO THE WIRE, CLUELESS, GRIDLOCK | easy |
+| Tue | 2026-12-22 | Winter Games | Winter sports × everyday phrases | SLIPPERY SLOPE, GOING DOWNHILL, BREAK THE ICE, TAKE A POWDER | easy |
+| Wed | 2026-12-23 | Open House | Gingerbread houses × real estate | SQUARE FROSTAGE, GUMDROP CEILING, SPRINKLER SYSTEM | easy |
+| Thu | 2026-12-24 | Holiday Marquee | Holiday decorations × movies | THE WREATH OF KHAN, BAUBLE FICTION, HOLLYWOODLAND | easy |
+| Fri | 2026-12-25 | Tech the Halls | Christmas × tech | WINTER WONDER LAN, YULE LOG FILE, HO HO HOTSPOT | easy |
+| Sat | 2026-12-26 | Ring It Up | Boxing × shopping | SPARRING SPREE, UPPERCUT PRICE, BOUTIQUE, KNOCKOFF | easy |
 
 ## Keeping the queue filled
 
@@ -172,3 +190,17 @@ lists the midi's two seed entries. Built with `pnpm seedgrid --size 9 --difficul
 | Thu | 2026-12-10 | Lab Coats | MOLECULE, PRIMECUT |
 | Fri | 2026-12-11 | Tacky Knits | REINDEER, SWEATERS |
 | Sat | 2026-12-12 | Make a Wish | STARGAZER, TELESCOPE |
+| Sun | 2026-12-13 | Mixtape | SINGSONG, LOVESONG, THEMESONG |
+| Mon | 2026-12-14 | Toy Workshop | TOYMAKER, GIFTWRAP |
+| Tue | 2026-12-15 | Red Nose | FOGLIGHTS, HEADLIGHT |
+| Wed | 2026-12-16 | Pine Needles | BALSAMFIR, FRASERFIR |
+| Thu | 2026-12-17 | Piggy Bank | DIMESTORE, PENNYLANE |
+| Fri | 2026-12-18 | Water Cooler | TRAFFIC, WEATHER |
+| Sat | 2026-12-19 | Double Feature | LOVESEAT, HOTCOCOA |
+| Sun | 2026-12-20 | Ghost Story | GHOSTTOWN, GHOSTSHIP |
+| Mon | 2026-12-21 | Word Play | DORMITORY, DIRTYROOM |
+| Tue | 2026-12-22 | Ice Rink | ICEBUCKET, SPINCYCLE |
+| Wed | 2026-12-23 | Sweet Tooth | FROSTING, LOLLIPOP |
+| Thu | 2026-12-24 | Red Carpet | PAPARAZZI, USHER, LIMOUSINE |
+| Fri | 2026-12-25 | Plugged In | UNBOXING, WARRANTY |
+| Sat | 2026-12-26 | Return Line | BOXINGDAY, NEXTINLINE |
