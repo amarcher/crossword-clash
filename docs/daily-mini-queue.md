@@ -68,6 +68,20 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 | Thu | 2026-12-10 | Nobel Prize | 7×7 | ADDEDIN, GRINDER, MANDELA |
 | Fri | 2026-12-11 | Office Party | 5×5 | ELLEN, CHEER, HALVE |
 | Sat | 2026-12-12 | Deck the Halls | 7×7 | TOENAIL, LETPASS, TINSEL |
+| Sun | 2026-12-13 | Dog Park | 7×7 | BEHOLDS, BISCUIT, CULTHIT |
+| Mon | 2026-12-14 | Me Time | 5×5 | ICEAX, OUNCE, QUIET |
+| Tue | 2026-12-15 | Sleigh Bells | 5×5 | AGAIN, AVAIL, BELLS |
+| Wed | 2026-12-16 | Ode to Joy | 5×5 | AREAS, ERNIE, METAL |
+| Thu | 2026-12-17 | First Flight | 7×7 | BIPLANE, ONESPOT, ORVILLE |
+| Fri | 2026-12-18 | Playoff Night | 5×5 | BOWLS, DELTA, LOTUS |
+| Sat | 2026-12-19 | Super Saturday | 7×7 | BABOONS, GIFTBOX, GIFTTAG |
+| Sun | 2026-12-20 | Caroling | 7×7 | LANTERN, MITTENS, AENEID |
+| Mon | 2026-12-21 | Longest Night | 5×5 | ALOHA, ARLEN, CESAR |
+| Tue | 2026-12-22 | Last Minute | 5×5 | AISLE, BLINI, GIFTS |
+| Wed | 2026-12-23 | Festivus | 5×5 | ARISE, AVAIL, BYLAW |
+| Thu | 2026-12-24 | Christmas Eve | 7×7 | BOLSHOI, CHIMNEY, CHURNED |
+| Fri | 2026-12-25 | Christmas Day | 5×5 | ALERT, ALEVE, ARENA |
+| Sat | 2026-12-26 | Kwanzaa | 7×7 | AREAMAP, ONASTAR, RAPPORT |
 
 ## What we learned building these
 
@@ -75,7 +89,15 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 - 7×7s on the production list need `--min-score 60` or the review refuses the fill for junk.
 - Hand-picked `--seeds` beat a free brainstorm when a theme keeps failing (BLITZ/PUNT, SCARF/WOOL).
 - A title never repeats an entry; the midi of the same day must not reuse the mini's or the large's entries.
-- Keep two weeks ahead: stock runs to 2026-12-12; the next batch should start by 2026-11-28.
+- Keep two weeks ahead: stock runs to 2026-12-26 (all three slots); the next batch should start by 2026-12-12.
+- The 13–26 Dec minis (built 2026-11-04, after each day's large) rejected the large's answers of
+  4+ letters through the new `--reject` flag. A free `--theme` brainstorm proposed three seeds for
+  most 5×5s and found no skeleton (Longest Night, Last Minute, Christmas Day, Me Time, Ode to Joy,
+  Playoff Night all failed three seeds), and two 7×7s shipped junk (SUHWEET, HOUSENO; TOLUST, UYS):
+  every one of those was rebuilt with a hand-picked `--seeds` pair plus the junk in `--reject`
+  (FROST/STARS, HASTE/GIFTS, CAROL/FEAST, RELAX/QUIET, PIANO/TEMPO, SNAPS/BOWLS, LANTERN/MITTENS,
+  ORVILLE/BIPLANE, COOKIES/CHIMNEY, KINARA/KARAMU). Some pairs are simply unfillable in a 5×5
+  (FIELD/PUNTS, RALLY/KICKS with names barred): try a third pair before lowering the score.
 - The 29 Nov – 12 Dec minis (built 2026-10-17) took their dated hooks through `--context`
   (Cyber Monday, Giving Tuesday, the Rockefeller tree lighting, Hanukkah's first candle on
   4 Dec, championship Saturday, St. Nicholas Day, Nobel Day, the Army–Navy game) and a
