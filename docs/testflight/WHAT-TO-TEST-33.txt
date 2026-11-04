@@ -1,0 +1,6 @@
+This build (1.1.0, build 33) asks for notifications on the first open and fixes a closed room coming back. Please check:
+
+1. On the first open of this build, the phone asks whether Crossword Clash may send notifications, a moment after the menu appears. Allow it: room invites and friend requests then arrive as notifications with nothing else to turn on. The daily reminder is still its own switch (account page, or "Remind me tomorrow" after a daily). If you had already answered on an earlier build, it does not ask again.
+2. Get booted from a room (the host closes it), then from the menu go Race friends → Start a room for the same puzzle. You get a fresh room with a new code, not the closed room's code, and you are its host.
+3. After a room closes, the Race friends screen no longer offers Join / Can't now on that room's invite.
+4. Everything from builds 31 and 32 still applies: a host is told of a join, an away host shows Away with Nudge host, "Can't now" shows the host "Can't right now".

@@ -1,0 +1,5 @@
+<en-US>
+The app asks for notifications once, on the first open: allow it and room invites and friend requests arrive as notifications with nothing else to turn on. The daily reminder keeps its own switch.
+
+A closed room no longer comes back: starting a room after being booted from one makes a fresh room under a new code, and the closed room's invite stops offering Join.
+</en-US>
