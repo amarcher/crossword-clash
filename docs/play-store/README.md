@@ -191,6 +191,15 @@ Done by Claude, nothing submitted or rolled out:
 - **October 22, 2026:** tester list created, 4 (1.0.2) rolled out to internal
   testing, listing + Data safety changes submitted for review, then 4 (1.0.2)
   promoted to production in the same review.
+- **October 23, 2026:** Google approved; 4 (1.0.2) live in 178 countries.
+- **October 31 – November 3, 2026:** 1.1.0 internal builds 10–20 uploaded and
+  rolled out on the internal track through the Play Developer API
+  (`play-upload.mjs` with the play-publisher service account); 10 (1.1.0)
+  reached production in between.
+- **November 4, 2026:** 20 (1.1.0) rolled out to production (100%) through the
+  API (`edits` → `tracks/production` PUT with `whats-new-1.1.0.txt` → commit).
+  Release notes are capped at 500 characters; the first two drafts were
+  refused at the commit for 868 and 524.
 
 ## Known gaps
 

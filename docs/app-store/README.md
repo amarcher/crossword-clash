@@ -82,3 +82,18 @@ M5) of live games on the production backend, with the alpha channel removed.
   submission.
 - The privacy policy and terms are still marked as unreviewed drafts in
   `src/screens/legal/legalContent.ts`.
+
+## 1.1.0 (November 4, 2026): swapping build 25 for build 35
+
+Version 1.1.0 sat WAITING_FOR_REVIEW with build 25 (submitted October 31 with
+the Plus subscription group and both plans) while builds 26–35 shipped to
+TestFlight. Build 35 carries friends, push notifications, room rendezvous, the
+race fixes and the TV chooser, and `review-notes.txt` gained paragraphs on
+friends and notifications. The swap: Andrew removes the submission from review
+in App Store Connect (the API's `canceled: true` PATCH is refused by the
+session's permission layer), then the scratchpad script points the version at
+build 35, pushes the review notes and creates the draft submission with the
+version item; the subscriptions are added in the UI ("Add for Review" on the
+group and each plan, the group alone is refused) and Submit for Review goes
+from the App Review page. `whatsNew` still cannot be set before the first
+release ships (409).

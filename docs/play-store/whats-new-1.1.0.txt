@@ -1,9 +1,11 @@
 <en-US>
-Sign in with Google or Apple to keep your username, solve history and streaks on every device.
+Friends: add friends, challenge one to a race, invite them into a room or send a daily "beat my time" link. Hosts hear when a friend joins; a waiting player can nudge an away host.
 
-Community puzzles: play crosswords made by other solvers, from the Community puzzles row on the menu.
+Notifications: a daily reminder, room invites and friend requests, with quiet hours.
 
-Autocheck setting: leave it on to have wrong letters refused, or turn it off to type freely and check when the grid is full.
+Plus: the full daily archive, the construction studio, community puzzles and progress on every device.
 
-Also: hardware keyboard support, the TV view keeps the screen awake, an update notice when a new version is out, and the share sheet carries your emoji grid and time.
+TV mode picks from today's dailies, past and community puzzles.
+
+Fixes: fast typing in a race, a way back on every page.
 </en-US>
