@@ -433,15 +433,15 @@
           "B-52's hangout for a smitten pooch?"
         ],
         [
-          "GOODBOYGEORGE",
-          "Culture Club frontman who sits on command?"
+          "THREEDOGNIGHT",
+          "'Joy to the World' band, or a very cold evening"
         ],
         [
           "DOGHOUSEMUSIC",
           "Four-on-the-floor beats from the kennel?"
         ]
       ],
-      "notes": "FETCHSHOPBOYS (13) shared BOYS with BARKSTREETBOYS; DOGHOUSEMUSIC replaces it. THEBEAGLES (10) is a spare."
+      "notes": "Dec 13 2026, Sunday. GOOD BOY GEORGE went to Supermarket Sweep's BAG BOY GEORGE, so THREE DOG NIGHT replaces it. Medium."
     },
     {
       "slug": "coffee-x-crime",
@@ -1319,6 +1319,680 @@
         ]
       ],
       "notes": "Nov 29 2026, Sunday after Thanksgiving, medium."
+    },
+    {
+      "slug": "shipping-x-life-advice",
+      "title": "Porch Pirates",
+      "concepts": [
+        "shipping labels",
+        "life advice"
+      ],
+      "entries": [
+        [
+          "OUTFORDELIVERY",
+          "Package status, or where a midwife is at 3 a.m.?"
+        ],
+        [
+          "HANDLEWITHCARE",
+          "Sticker on a fragile box, or advice about a sensitive friend"
+        ],
+        [
+          "THISSIDEUP",
+          "Arrow on a carton, or an optimist's outlook?"
+        ],
+        [
+          "DOORTODOOR",
+          "How a salesman works, and how a parcel travels"
+        ]
+      ],
+      "notes": "Nov 30 2026, Cyber Monday; bridges the day's package-tracking midi. Easy."
+    },
+    {
+      "slug": "charity-x-movies",
+      "title": "Benefit Screening",
+      "concepts": [
+        "charity",
+        "movies"
+      ],
+      "entries": [
+        [
+          "FOODDRIVEIN",
+          "Outdoor movie where the ticket is a can of soup?"
+        ],
+        [
+          "GRANTTORINO",
+          "Eastwood film funded by a foundation?"
+        ],
+        [
+          "DONORDARKO",
+          "Cult film about a very generous rabbit?"
+        ],
+        [
+          "TIPJARHEAD",
+          "Marine movie with a gratuity cup?"
+        ]
+      ],
+      "notes": "Dec 1 2026, Giving Tuesday. Easy."
+    },
+    {
+      "slug": "holiday-lights-x-science",
+      "title": "Current Events",
+      "concepts": [
+        "holiday lights",
+        "science"
+      ],
+      "entries": [
+        [
+          "NORTHERNLIGHTS",
+          "Aurora borealis, or a Minnesota porch display?"
+        ],
+        [
+          "CIRCUITBREAKER",
+          "It trips when the porch display overloads"
+        ],
+        [
+          "STRINGTHEORY",
+          "Physics framework, or how to untangle the lights?"
+        ],
+        [
+          "GLOWWORMHOLE",
+          "Shortcut through spacetime for a luminous larva?"
+        ]
+      ],
+      "notes": "Dec 2 2026, Rockefeller tree lighting. Easy."
+    },
+    {
+      "slug": "winter-wear-x-food",
+      "title": "Dressed for Dinner",
+      "concepts": [
+        "winter wear",
+        "food"
+      ],
+      "entries": [
+        [
+          "PUFFERFISH",
+          "Catch that inflates, like a December jacket?"
+        ],
+        [
+          "EARMUFFINS",
+          "Breakfast pastries that keep the lobes warm?"
+        ],
+        [
+          "LAYERCAKE",
+          "Dessert dressed for a cold snap?"
+        ],
+        [
+          "SCARFDOWN",
+          "Eat fast, or wrap up for the walk?"
+        ]
+      ],
+      "notes": "Dec 3 2026, cold snap; bridges the Bundle Up midi. Easy."
+    },
+    {
+      "slug": "hanukkah-x-songs",
+      "title": "Latke Playlist",
+      "concepts": [
+        "Hanukkah",
+        "songs"
+      ],
+      "entries": [
+        [
+          "EIGHTDAYSAWEEK",
+          "Beatles hit that's almost a Hanukkah schedule?"
+        ],
+        [
+          "YOUSPINMEROUND",
+          "Dead or Alive hit for a dreidel?"
+        ],
+        [
+          "HEARTOFGOLD",
+          "Neil Young song about a stack of gelt?"
+        ],
+        [
+          "BURNINGLOVE",
+          "Elvis hit for eight nights of candles?"
+        ]
+      ],
+      "notes": "Dec 4 2026, first night of Hanukkah. Easy."
+    },
+    {
+      "slug": "winners-x-food",
+      "title": "Victory Feast",
+      "concepts": [
+        "winners",
+        "food"
+      ],
+      "entries": [
+        [
+          "BREADWINNER",
+          "Family earner, or a champion loaf?"
+        ],
+        [
+          "TAKETHECAKE",
+          "Win it all, or clear the dessert table"
+        ],
+        [
+          "TOPBANANA",
+          "Head honcho, or the best of the bunch?"
+        ],
+        [
+          "BIGCHEESE",
+          "Boss, or the wheel that won the county fair?"
+        ]
+      ],
+      "notes": "Dec 5 2026, Championship Saturday; bridges the Trophy Case midi. Easy."
+    },
+    {
+      "slug": "candy-x-music",
+      "title": "Ear Candy",
+      "concepts": [
+        "candy",
+        "music"
+      ],
+      "entries": [
+        [
+          "KITKATSTEVENS",
+          "'Peace Train' singer with a wafer break?"
+        ],
+        [
+          "MINTCONDITION",
+          "R&B group, or how a collector wants the Altoids tin"
+        ],
+        [
+          "LEMONHEADS",
+          "'Mrs. Robinson' cover band named for a sour candy"
+        ],
+        [
+          "SUGARCUBES",
+          "Björk's first band, or what goes in the tea"
+        ]
+      ],
+      "notes": "Dec 6 2026, St. Nicholas Day Sunday; bridges the Candy Counter midi. Medium."
+    },
+    {
+      "slug": "snow-x-office",
+      "title": "Snow Business",
+      "concepts": [
+        "snow",
+        "the office"
+      ],
+      "entries": [
+        [
+          "SNOWEDUNDER",
+          "Buried in work, or in a blizzard"
+        ],
+        [
+          "POWDERPOINT",
+          "Slide deck for a ski resort?"
+        ],
+        [
+          "SLUSHFUND",
+          "Secret money, or a budget for the melt?"
+        ],
+        [
+          "COLDCALLS",
+          "Sales pitches to strangers, or the weather app's forecast?"
+        ]
+      ],
+      "notes": "Dec 7 2026; bridges the Sled Hill midi. Easy."
+    },
+    {
+      "slug": "gift-wrapping-x-showbiz",
+      "title": "Wrap Party",
+      "concepts": [
+        "gift wrapping",
+        "showbiz"
+      ],
+      "entries": [
+        [
+          "THATSAWRAP",
+          "Director's sign-off, or the last present done"
+        ],
+        [
+          "OPENINGACT",
+          "Warm-up performer, or Christmas morning's first job?"
+        ],
+        [
+          "TAKEABOW",
+          "Accept applause, or steal a ribbon from the gift pile"
+        ],
+        [
+          "BOXSEATS",
+          "Premium theater spots, or where the cat sits on Dec 26"
+        ]
+      ],
+      "notes": "Dec 8 2026, Secret Santa week. Easy."
+    },
+    {
+      "slug": "pastry-x-office",
+      "title": "Sweet Talk",
+      "concepts": [
+        "pastry",
+        "office jargon"
+      ],
+      "entries": [
+        [
+          "HALFBAKED",
+          "Not fully thought through, or pulled from the oven early"
+        ],
+        [
+          "PUFFPIECE",
+          "Flattering article, or a croissant?"
+        ],
+        [
+          "ROLLOVER",
+          "401(k) move, or a cinnamon bun's shape"
+        ],
+        [
+          "CAKEWALK",
+          "Easy task, or a stroll past the bakery case"
+        ]
+      ],
+      "notes": "Dec 9 2026; bridges the Flaky Layers midi. Easy."
+    },
+    {
+      "slug": "science-x-romance",
+      "title": "Mutual Attraction",
+      "concepts": [
+        "science",
+        "romance"
+      ],
+      "entries": [
+        [
+          "ANIMALMAGNETISM",
+          "Charisma, or what a lab's compass needle feels?"
+        ],
+        [
+          "NUCLEARFAMILY",
+          "Household of two parents and kids, or a reactor crew?"
+        ],
+        [
+          "GOODCHEMISTRY",
+          "Rapport between a couple, or a passing grade in the lab"
+        ]
+      ],
+      "notes": "Dec 10 2026, Nobel Day; bridges the Lab Coats midi. Easy."
+    },
+    {
+      "slug": "knitting-x-idioms",
+      "title": "Purls of Wisdom",
+      "concepts": [
+        "knitting",
+        "idioms"
+      ],
+      "entries": [
+        [
+          "DYEDINTHEWOOL",
+          "Through and through, like a committed knitter"
+        ],
+        [
+          "HANGBYATHREAD",
+          "Be in a precarious spot, or dangle from the needle"
+        ],
+        [
+          "CLOSEKNIT",
+          "Tight, as a family or a sweater"
+        ],
+        [
+          "SPINAYARN",
+          "Tell a tall tale, or make your own wool"
+        ]
+      ],
+      "notes": "Dec 11 2026; bridges the Tacky Knits midi. Easy."
+    },
+    {
+      "slug": "military-ranks-x-food",
+      "title": "Kitchen Brigade",
+      "concepts": [
+        "military ranks",
+        "food"
+      ],
+      "entries": [
+        [
+          "COLONELSANDERS",
+          "Fried-chicken founder with a rank"
+        ],
+        [
+          "SERGEANTPEPPER",
+          "Beatles bandleader, or a seasoning with stripes?"
+        ],
+        [
+          "CAPTAINCOOK",
+          "Explorer of the Pacific, or the mess hall's chef?"
+        ],
+        [
+          "GENERALTSOS",
+          "Chicken dish named for a Qing commander"
+        ]
+      ],
+      "notes": "Dec 12 2026, Army–Navy Game. Easy."
+    },
+    {
+      "slug": "elves-x-self-help",
+      "title": "Shelf Help",
+      "concepts": [
+        "elves",
+        "self-help"
+      ],
+      "entries": [
+        [
+          "ELFEMPLOYED",
+          "Santa's helper who works freelance?"
+        ],
+        [
+          "ELFCHECKOUT",
+          "Scan your own toys at the North Pole register?"
+        ],
+        [
+          "ELFSERVICE",
+          "Help-yourself buffet in the workshop?"
+        ],
+        [
+          "ELFMADEMAN",
+          "Workshop success story who started from nothing?"
+        ]
+      ],
+      "notes": "Dec 14 2026. Easy."
+    },
+    {
+      "slug": "reindeer-hidden",
+      "title": "Reindeer Games",
+      "concepts": [
+        "reindeer",
+        "hidden words"
+      ],
+      "entries": [
+        [
+          "DASHERBOARD",
+          "Car panel for the sleigh's lead-off reindeer?"
+        ],
+        [
+          "PRANCERCISE",
+          "Viral workout, with a reindeer in the lead?"
+        ],
+        [
+          "CUPIDITY",
+          "Greed, with Santa's matchmaking reindeer inside"
+        ],
+        [
+          "COMETRUE",
+          "What dreams do, with a reindeer streaking through"
+        ]
+      ],
+      "notes": "Dec 15 2026. Easy."
+    },
+    {
+      "slug": "christmas-tree-x-pop-culture",
+      "title": "Tree Trimming",
+      "concepts": [
+        "Christmas trees",
+        "pop culture"
+      ],
+      "entries": [
+        [
+          "SPRUCEWILLIS",
+          "'Die Hard' star, as a conifer?"
+        ],
+        [
+          "EVERGREENDAY",
+          "'Basket Case' band that never loses its needles?"
+        ],
+        [
+          "FIRELISE",
+          "Beethoven bagatelle for a conifer?"
+        ],
+        [
+          "BOUGHWOW",
+          "Rapper up in the branches?"
+        ]
+      ],
+      "notes": "Dec 16 2026, Beethoven's birthday. Easy."
+    },
+    {
+      "slug": "santa-x-finance",
+      "title": "Naughty or Invoice",
+      "concepts": [
+        "Santa",
+        "finance"
+      ],
+      "entries": [
+        [
+          "LUMPSUMOFCOAL",
+          "One-time payout for the naughty list?"
+        ],
+        [
+          "NICELISTPRICE",
+          "Sticker amount for the well-behaved?"
+        ],
+        [
+          "SANTACLAUSE",
+          "Contract provision about the chimney?"
+        ],
+        [
+          "SLEIGHBILLS",
+          "What the reindeer invoice for?"
+        ]
+      ],
+      "notes": "Dec 17 2026. Easy."
+    },
+    {
+      "slug": "carols-x-office",
+      "title": "Office Caroling",
+      "concepts": [
+        "Christmas carols",
+        "office life"
+      ],
+      "entries": [
+        [
+          "AWAYINAMANAGER",
+          "Carol about a boss who's out of the office?"
+        ],
+        [
+          "SILENTNIGHTOWL",
+          "Coworker who works late without a peep?"
+        ],
+        [
+          "JINGLEBELLCURVE",
+          "Grading scale for the holiday choir?"
+        ]
+      ],
+      "notes": "Dec 18 2026, Ugly Sweater Day. Easy."
+    },
+    {
+      "slug": "holiday-movies-x-work",
+      "title": "Working Holiday",
+      "concepts": [
+        "holiday movies",
+        "work life"
+      ],
+      "entries": [
+        [
+          "HOMEALONEOFFICE",
+          "Where Kevin McCallister works remotely?"
+        ],
+        [
+          "DIEHARDDRIVE",
+          "Storage that survives Nakatomi Plaza?"
+        ],
+        [
+          "FROZENASSETS",
+          "Elsa's net worth, or funds you can't touch"
+        ]
+      ],
+      "notes": "Dec 19 2026, Super Saturday. Easy."
+    },
+    {
+      "slug": "christmas-carol-x-tech",
+      "title": "Counting House",
+      "concepts": [
+        "'A Christmas Carol'",
+        "office tech"
+      ],
+      "entries": [
+        [
+          "BAHHUMBUGREPORT",
+          "Scrooge's ticket to the IT desk?"
+        ],
+        [
+          "TINYTIMELINE",
+          "Very short project schedule for Bob Cratchit's son?"
+        ],
+        [
+          "CRATCHITCHAT",
+          "Small talk at Scrooge's counting house?"
+        ]
+      ],
+      "notes": "Dec 20 2026, Sunday. Medium."
+    },
+    {
+      "slug": "crosswords-x-idioms",
+      "title": "One Across",
+      "concepts": [
+        "crossword terms",
+        "idioms"
+      ],
+      "entries": [
+        [
+          "ACROSSTHEPOND",
+          "Over in Europe, or the Down clues' neighbor?"
+        ],
+        [
+          "DOWNTOTHEWIRE",
+          "Decided at the last second, like a race to fill the grid"
+        ],
+        [
+          "CLUELESS",
+          "Alicia Silverstone comedy, or a blank-faced solver"
+        ],
+        [
+          "GRIDLOCK",
+          "Traffic jam, or a puzzle you can't crack"
+        ]
+      ],
+      "notes": "Dec 21 2026, Crossword Puzzle Day (1913). Easy."
+    },
+    {
+      "slug": "winter-sports-x-phrases",
+      "title": "Winter Games",
+      "concepts": [
+        "winter sports",
+        "everyday phrases"
+      ],
+      "entries": [
+        [
+          "SLIPPERYSLOPE",
+          "Risky path, or a skier's run"
+        ],
+        [
+          "GOINGDOWNHILL",
+          "Getting worse, or what a skier does"
+        ],
+        [
+          "BREAKTHEICE",
+          "Start a conversation, or ruin the rink"
+        ],
+        [
+          "TAKEAPOWDER",
+          "Leave suddenly, or hit the fresh snow"
+        ]
+      ],
+      "notes": "Dec 22 2026. Easy."
+    },
+    {
+      "slug": "gingerbread-x-real-estate",
+      "title": "Open House",
+      "concepts": [
+        "gingerbread houses",
+        "real estate"
+      ],
+      "entries": [
+        [
+          "SQUAREFROSTAGE",
+          "Icing-covered area of a cookie home?"
+        ],
+        [
+          "GUMDROPCEILING",
+          "Overhead feature in a gingerbread remodel?"
+        ],
+        [
+          "SPRINKLERSYSTEM",
+          "Fire safety for a gingerbread house, by the shaker?"
+        ]
+      ],
+      "notes": "Dec 23 2026, Festivus. Easy."
+    },
+    {
+      "slug": "decorations-x-movies",
+      "title": "Holiday Marquee",
+      "concepts": [
+        "holiday decorations",
+        "movies"
+      ],
+      "entries": [
+        [
+          "THEWREATHOFKHAN",
+          "Star Trek sequel hung on the front door?"
+        ],
+        [
+          "BAUBLEFICTION",
+          "Tarantino film about ornaments?"
+        ],
+        [
+          "HOLLYWOODLAND",
+          "2006 film, or a forest of the festive shrub"
+        ]
+      ],
+      "notes": "Dec 24 2026, Christmas Eve. Easy."
+    },
+    {
+      "slug": "christmas-x-tech",
+      "title": "Tech the Halls",
+      "concepts": [
+        "Christmas",
+        "tech"
+      ],
+      "entries": [
+        [
+          "WINTERWONDERLAN",
+          "Snowy network for a holiday gaming party?"
+        ],
+        [
+          "YULELOGFILE",
+          "Where the fireplace channel records its errors?"
+        ],
+        [
+          "HOHOHOTSPOT",
+          "Santa's Wi-Fi?"
+        ]
+      ],
+      "notes": "Dec 25 2026, Christmas Day. Easy."
+    },
+    {
+      "slug": "boxing-x-shopping",
+      "title": "Ring It Up",
+      "concepts": [
+        "boxing",
+        "shopping"
+      ],
+      "entries": [
+        [
+          "SPARRINGSPREE",
+          "Practice-round binge, or a Dec 26 shopping session?"
+        ],
+        [
+          "UPPERCUTPRICE",
+          "Haymaker of a discount?"
+        ],
+        [
+          "BOUTIQUE",
+          "Small shop with a fight inside"
+        ],
+        [
+          "KNOCKOFF",
+          "Counterfeit bag, or a punch that ends the round?"
+        ]
+      ],
+      "notes": "Dec 26 2026, Boxing Day. Easy."
     }
   ]
 }
