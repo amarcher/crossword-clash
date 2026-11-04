@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.archer.clash-agent</string>
+
+    <!-- The pyenv python on purpose: daemon.py needs slack_sdk (Socket Mode
+         WebSocket — push events, no inbound port). The sweep engine it
+         drives (poller.py) stays stdlib-only and runs on any python. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/archer/.pyenv/versions/3.13.13/bin/python</string>
+        <string>/Users/archer/.crossword-clash/clash-agent/checkout/clash-agent/daemon.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/archer/.crossword-clash/clash-agent/checkout</string>
+
+    <!-- A persistent Socket Mode daemon: launchd restarts it if it dies
+         (network flap, Slack disconnect, bug). Every (re)start begins with
+         a catch-up sweep, so restarts can't lose messages — the watermark
+         in ~/.crossword-clash/clash-agent/state.json is the source of truth. -->
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- Don't hot-loop if the daemon crashes at startup (bad token etc.). -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- Logs and state live OUTSIDE the repo (~/.crossword-clash/clash-agent/) so
+         nothing run-generated — including agent run transcripts — can ever
+         land in a commit. -->
+    <key>StandardOutPath</key>
+    <string>/Users/archer/.crossword-clash/clash-agent/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/archer/.crossword-clash/clash-agent/launchd.err.log</string>
+</dict>
+</plist>

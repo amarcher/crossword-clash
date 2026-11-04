@@ -37,3 +37,8 @@ artifacts/mobile/
 # SeedGrid studio word list (built by pnpm seedgrid:studio-dict) and Rust build output
 public/seedgrid/
 engine/target/
+
+# clash-agent (the Slack bot): tokens live outside the repo, never in it
+**/token*.json
+**/*token*.txt
+__pycache__/
