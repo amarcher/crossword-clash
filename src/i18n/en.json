@@ -704,6 +704,14 @@
   },
   "studio": {
     "loading": "Loading the studio…",
+    "gateFeatureLayoutTitle": "Lay out a grid around your entries",
+    "gateFeatureLayoutBody": "Type the theme entries; the engine places them, shapes the blocks and fills the rest from a 100,000-word list.",
+    "gateFeatureCluesTitle": "Clues drafted by AI, kept by you",
+    "gateFeatureCluesBody": "40 AI clue drafts a month, redrafted a row at a time; the clues you write or pick are never overwritten.",
+    "gateFeaturePublishTitle": "Play-test, publish, export",
+    "gateFeaturePublishBody": "Try the puzzle in the solver, publish it to the community under your username, or export .puz and .ipuz.",
+    "gateFeatureAnywhereTitle": "On the web and in the app",
+    "gateFeatureAnywhereBody": "Your drafts are saved as you go and filed under My puzzles, with versions that keep their clues.",
     "gateTitle": "Build your own crossword",
     "gateBody": "The studio lays out your theme entries, fills the grid with a real construction engine, shows where it's tight, and drafts clues with AI. It's part of Crossword Clash Plus.",
     "draftsLeft": "{{left}} of {{limit}} AI drafts left this month"

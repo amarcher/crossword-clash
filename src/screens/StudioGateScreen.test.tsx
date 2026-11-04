@@ -53,6 +53,10 @@ describe("StudioGateScreen", () => {
     state.account = account({});
     renderGate();
     expect(screen.getByRole("heading", { name: "Build your own crossword" })).toBeTruthy();
+    // What the studio does, beside the pitch from lg up (CSS hides the list below; it is always rendered).
+    for (const title of ["Lay out a grid around your entries", "Clues drafted by AI, kept by you", "Play-test, publish, export", "On the web and in the app"]) {
+      expect(screen.getByText(title)).toBeTruthy();
+    }
     expect(screen.getByText(/Sign in first/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Continue with Apple" })).toBeTruthy();
     expect(screen.getByText("$24.99")).toBeTruthy();
