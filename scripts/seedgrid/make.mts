@@ -12,7 +12,8 @@
  * Flags: --size N, --symmetry rotational|mirror|diagonal|none, --min-score 49|50,
  * --max-shared 3, --difficulty easy|medium|hard (clue register, default medium),
  * --context "…" (dated hooks — holidays, anniversaries, events — the clue writer may use where an entry fits),
- * --title, --author, --dict extra.dict (repeatable), --out DIR,
+ * --title, --author, --dict extra.dict (repeatable), --reject "nest, nemo" (entries the
+ * engine may never use, e.g. the same day's other dailies' answers), --out DIR,
  * --model ID, --seed N (repeatable randomness).
  *
  * Writes <out>/<slug>/puzzle.ipuz (publish with `pnpm daily:add`) and
@@ -70,12 +71,17 @@ if (!fs.existsSync(listFile(baseList))) {
   process.exit(1);
 }
 const loadDict = (file: string) => (fs.existsSync(file) ? parseDict(fs.readFileSync(file, "utf8")) : []);
+// `--reject` drops entries from the list before the skeleton search, so neither
+// the skeleton's own fill nor a refill after review can reach for them (the
+// same day's mini, midi and large must share no entry of 4+ letters).
+const cliRejects = new Set((flag("reject") ?? "").split(/[,\n]/).map((w) => normalizeEntry(w)).filter(Boolean));
 const entries: DictEntry[] = mergeDicts(
   liftDicts(loadDict(listFile(baseList)), loadDict(listFile("lively.dict"))),
   ...(flags.dict ?? []).map(loadDict),
   loadDict(listFile("rescore.dict")),
   loadDict(listFile("blocked.dict")),
-);
+).filter((e) => !cliRejects.has(e.word));
+if (cliRejects.size) console.log(`Rejecting ${cliRejects.size} entries for this day: ${[...cliRejects].sort().join(", ")}`);
 
 // ---- Claude steps ----
 

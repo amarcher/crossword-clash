@@ -21,7 +21,7 @@ Build one with `pnpm seedgrid:large --theme "<title>" --seeds "<entries>"` (see 
 | 13 | **Theater of Operations**<br>theater × the military | 12/12 + 15 | THEATEROFWAR (12)<br>SCENESTEALTH (12)<br>CASTINGCALLSIGN (15) | Where a campaign plays out<br>Quietly upstaging the lead?<br>Radio handle for an audition? |
 | 14 | **Body Shop**<br>cars × anatomy | 14/14 + 12/12 | LEGROOMSERVICE (14)<br>HEADSUPDISPLAY (14)<br>BODYSHOPTALK (12)<br>SPARERIBCAGE (12) | Perk of a chauffeured stretch?<br>Windshield readout, or a warning for a tall driver<br>Jargon at the repair garage?<br>Backup skeleton in the trunk? |
 | 15 | **Dinner and a Show**<br>bands × food | 14/14 + 11/11 + 15 | CRANBERRYSAUCE (14)<br>BREADANDBUTTER (14)<br>PEARLJAMJAR (11)<br>HOTCHIPOTLE (11)<br>VANILLAICECREAM (15) | Thanksgiving side from a Limerick band?<br>Main income, or a '70s soft-rock band's spread<br>Where Eddie Vedder keeps the preserves?<br>British synth-pop band's smoky pepper?<br>'Ice Ice Baby' rapper's dessert? |
-| 16 | **Who Let the Dogs Out**<br>dogs × music | 14/14 + 13/13 | BARKSTREETBOYS (14)<br>PUPPYLOVESHACK (14)<br>GOODBOYGEORGE (13)<br>DOGHOUSEMUSIC (13) | '90s boy band that wants it that way, loudly?<br>B-52's hangout for a smitten pooch?<br>Culture Club frontman who sits on command?<br>Four-on-the-floor beats from the kennel? |
+| 16 | **Who Let the Dogs Out**<br>dogs × music | 14/14 + 13/13 | BARKSTREETBOYS (14)<br>PUPPYLOVESHACK (14)<br>THREEDOGNIGHT (13)<br>DOGHOUSEMUSIC (13) | '90s boy band that wants it that way, loudly?<br>B-52's hangout for a smitten pooch?<br>'Joy to the World' band, or a very cold evening<br>Four-on-the-floor beats from the kennel? |
 | 17 | **Grounds for Arrest**<br>coffee × crime | 13/13 + 12/12 | SPILLTHEBEANS (13)<br>CAFFEINEFIEND (13)<br>AFFOGATOAWAY (12)<br>PRESSCHARGES (12) | Confess, or make a mess at the roaster<br>Addict who knocks over the espresso bar?<br>Dessert coffee that escaped?<br>Take the barista to court over a French roast? |
 | 18 | **Sweat Equity**<br>fitness × finance | 14/14 + 12/12 + 15 | BENCHMARKPRESS (14)<br>RUNNINGBALANCE (14)<br>FLEXSPENDING (12)<br>SPOTTERPRICE (12)<br>SPINCLASSACTION (15) | Lift everyone else is measured against?<br>Ledger total, or what a treadmill demands<br>Health account, or showing off a new watch at the gym?<br>What the person behind the bar charges today?<br>Lawsuit filed by the Peloton crowd? |
 | 19 | **Yarr Protocol**<br>pirates × tech | 14/14 + 13/13 + 15 | EYEPATCHUPDATE (14)<br>PARLEYPROTOCOL (14)<br>HOOKHANDSHAKE (13)<br>SCUTTLEBUTTON (13)<br>RUMRUNTIMEERROR (15) | Fix for a one-eyed captain's software?<br>Rules for a pirate negotiation?<br>Captain Hook's TCP greeting?<br>Pirate gossip control?<br>Crash during a smuggling job? |
@@ -41,6 +41,46 @@ Build one with `pnpm seedgrid:large --theme "<title>" --seeds "<entries>"` (see 
 | 33 | **Forecast: Hits**<br>weather × music | 12/12 + 8/8 | NOVEMBER RAIN (12)<br>WIND OF CHANGE (12)<br>HEAT WAVE (8)<br>COLDPLAY (8) | Guns N' Roses epic for this month<br>Scorpions ballad with a whistled intro<br>Martha and the Vandellas hit<br>"Yellow" band |
 | 34 | **Fur and Games**<br>cats × sports | 12/12 + 15 | PURRFECT GAME (12)<br>FELINEBACKER (12)<br>LITTER BOX SCORES (15) | 27 up, 27 down, for a contented pitcher?<br>Defender who pounces on the ball carrier?<br>Stats page for the cat's bathroom league? |
 | 35 | **Icing Call**<br>hockey × food | 14/14 + 13 | STANLEY CUPCAKE (14)<br>FACE OFF THE BONE (14)<br>SLAPSHOT GLASS (13) | Champion's frosted treat?<br>Ribs so tender they drop the puck?<br>Tiny tumbler for a hard shot? |
+| 36 | **Garage Band**<br>home improvement × rock bands | 12/12 + 11/11 | SHEDZEPPELIN (12)<br>RADIATORHEAD (12)<br>FOOFIXTURES (11)<br>DECKLEPPARD (11) | Stairway to the backyard tool storage?<br>'Creep' band that keeps the house warm?<br>Dave Grohl's band, installed by a plumber?<br>'Pour Some Sugar on Me' band that plays the patio? |
+| 37 | **Breakfast Blotter**<br>breakfast × crime | 12/12 + 11/11 | CEREALKILLER (12)<br>SUNNYSIDEJOB (12)<br>POACHEDEGGS (11)<br>OMELETYOUGO (11) | Repeat offender in the Cheerios aisle?<br>Heist pulled off by an egg?<br>Brunch order, or a farm theft?<br>'You're free, but first a Denver scramble'? |
+| 38 | **Looney Spoons**<br>cartoon characters × food | 11/11 + 15 | DAFFYDUCKCONFIT (15)<br>SCOOBYDOUGH (11)<br>TOMANDJERRY (11) | Looney Tunes star, slow-cooked the French way?<br>Mystery Machine pizza base?<br>Cat-and-mouse duo, or a hot holiday cocktail |
+| 39 | **Sound Investment**<br>money × musicians | 11/11 + 10/10 | COMMONCENTS (11)<br>BILLWITHERS (11)<br>NICKELBACK (10)<br>JOHNNYCASH (10) | Good judgment, in pennies?<br>'Lean on Me' singer whose name is paper money?<br>Canadian rockers you'd get as change?<br>Man in Black whose surname is legal tender? |
+| 40 | **Instant Replay**<br>football × tech | 12/12 + 15 | TOUCHDOWNSCREEN (15)<br>WIFIRECEIVER (12)<br>TIGHTENDUSER (12) | Six points on a phone display?<br>Wideout who catches a wireless signal?<br>Blocker who reads the software manual? |
+| 41 | **Special Delivery**<br>the post office × idioms | 14/14 + 15 | RETURNTOSENDER (14)<br>LETTEROFTHELAW (14)<br>PUSHTHEENVELOPE (15) | Elvis hit, or a stamp on an undeliverable letter<br>Strict reading of a statute, with postal help?<br>Test the limits, or shove some mail? |
+| 42 | **Rare Groove**<br>steak cuts × musicians | 12/12 + 10/10 | FLANKSINATRA (12)<br>BONEINTHEUSA (12)<br>CHUCKBERRY (10)<br>RUMPSHAKER (10) | Ol' Blue Eyes, as a cut from the belly?<br>Springsteen anthem about a porterhouse?<br>'Johnny B. Goode' legend, or a shoulder cut with fruit?<br>1992 Wreckx-n-Effect hit, or a roast on a vibrating plate? |
+| 43 | **Show Your Work**<br>math × pop culture | 14/14 + 9/9 | ALGEBRACADABRA (14)<br>SINEOFTHETIMES (14)<br>MEANGIRLS (9)<br>ODDCOUPLE (9) | Magic word for solving for x?<br>Harry Styles hit, in trigonometry class?<br>Teen comedy about averages?<br>Neil Simon play, or 3 and 5? |
+| 44 | **Supermarket Sweep**<br>the supermarket × musicians | 12/12 + 10/10 | BAGBOYGEORGE (12)<br>LOYALTYCARDI (12)<br>DAIRYQUEEN (10)<br>SPICEGIRLS (10) | Culture Club singer who packs your groceries?<br>Rapper who racks up rewards points?<br>Fast-food chain, or a monarch of the milk aisle?<br>Girl group found in aisle 7? |
+| 45 | **In-Flight Entertainment**<br>air travel × music | 11/11 + 9/9 | LAYOVERTURE (11)<br>COCKPITBULL (11)<br>COACHELLA (9)<br>STANDBYME (9) | Orchestral piece between connecting flights?<br>Mr. Worldwide, flying the plane?<br>Music festival for economy fliers?<br>Ben E. King classic for a passenger without a seat? |
+| 46 | **Turkey Bowl**<br>Thanksgiving dinner × football | 13/13 + 11/11 | CRANBERRYSACK (13)<br>APPLETURNOVER (13)<br>HAILMARYPIE (11)<br>SPIKEDCIDER (11) | Quarterback takedown with a side of sauce?<br>Fumbled dessert?<br>Last-second dessert thrown up from midfield?<br>Hot drink celebrated in the end zone? |
+| 47 | **Opening Weekend**<br>Black Friday × movies | 12/12 + 9/9 | BIGBOXOFFICE (12)<br>REBATESMOTEL (12)<br>STOREWARS (9)<br>SALEMSLOT (9) | Ticket sales at the warehouse store?<br>Hitchcock lodging with mail-in savings?<br>Sci-fi saga about rival retailers?<br>Stephen King town with a markdown? |
+| 48 | **Open for Business**<br>small businesses × showbiz | 11/11 + 10/10 | FLORISTGUMP (11)<br>TAILORSWIFT (11)<br>LOCKSMITHS (10)<br>THRIFTSHOP (10) | Tom Hanks character arranging bouquets?<br>Pop superstar who hems your pants?<br>Morrissey's band, cutting keys?<br>Macklemore hit set among secondhand racks |
+| 49 | **Second Helpings**<br>Thanksgiving leftovers × idioms | 13/13 + 10/10 | BUTTERFINGERS (13)<br>SMALLPOTATOES (13)<br>COLDTURKEY (10)<br>GRAVYTRAIN (10) | Clumsy sort, or the state of your hands after the rolls?<br>Trivial matters, or the last of the mash?<br>Abruptly, or Friday's sandwich filling?<br>Easy money, or what keeps the leftovers coming? |
+| 50 | **Porch Pirates**<br>shipping labels × life advice | 14/14 + 10/10 | OUTFORDELIVERY (14)<br>HANDLEWITHCARE (14)<br>THISSIDEUP (10)<br>DOORTODOOR (10) | Package status, or where a midwife is at 3 a.m.?<br>Sticker on a fragile box, or advice about a sensitive friend<br>Arrow on a carton, or an optimist's outlook?<br>How a salesman works, and how a parcel travels |
+| 51 | **Benefit Screening**<br>charity × movies | 11/11 + 10/10 | FOODDRIVEIN (11)<br>GRANTTORINO (11)<br>DONORDARKO (10)<br>TIPJARHEAD (10) | Outdoor movie where the ticket is a can of soup?<br>Eastwood film funded by a foundation?<br>Cult film about a very generous rabbit?<br>Marine movie with a gratuity cup? |
+| 52 | **Current Events**<br>holiday lights × science | 14/14 + 12/12 | NORTHERNLIGHTS (14)<br>CIRCUITBREAKER (14)<br>STRINGTHEORY (12)<br>GLOWWORMHOLE (12) | Aurora borealis, or a Minnesota porch display?<br>It trips when the porch display overloads<br>Physics framework, or how to untangle the lights?<br>Shortcut through spacetime for a luminous larva? |
+| 53 | **Dressed for Dinner**<br>winter wear × food | 10/10 + 9/9 | PUFFERFISH (10)<br>EARMUFFINS (10)<br>LAYERCAKE (9)<br>SCARFDOWN (9) | Catch that inflates, like a December jacket?<br>Breakfast pastries that keep the lobes warm?<br>Dessert dressed for a cold snap?<br>Eat fast, or wrap up for the walk? |
+| 54 | **Latke Playlist**<br>Hanukkah × songs | 14/14 + 11/11 | EIGHTDAYSAWEEK (14)<br>YOUSPINMEROUND (14)<br>HEARTOFGOLD (11)<br>BURNINGLOVE (11) | Beatles hit that's almost a Hanukkah schedule?<br>Dead or Alive hit for a dreidel?<br>Neil Young song about a stack of gelt?<br>Elvis hit for eight nights of candles? |
+| 55 | **Victory Feast**<br>winners × food | 11/11 + 9/9 | BREADWINNER (11)<br>TAKETHECAKE (11)<br>TOPBANANA (9)<br>BIGCHEESE (9) | Family earner, or a champion loaf?<br>Win it all, or clear the dessert table<br>Head honcho, or the best of the bunch?<br>Boss, or the wheel that won the county fair? |
+| 56 | **Ear Candy**<br>candy × music | 13/13 + 10/10 | KITKATSTEVENS (13)<br>MINTCONDITION (13)<br>LEMONHEADS (10)<br>SUGARCUBES (10) | 'Peace Train' singer with a wafer break?<br>R&B group, or how a collector wants the Altoids tin<br>'Mrs. Robinson' cover band named for a sour candy<br>Björk's first band, or what goes in the tea |
+| 57 | **Snow Business**<br>snow × the office | 11/11 + 9/9 | SNOWEDUNDER (11)<br>POWDERPOINT (11)<br>SLUSHFUND (9)<br>COLDCALLS (9) | Buried in work, or in a blizzard<br>Slide deck for a ski resort?<br>Secret money, or a budget for the melt?<br>Sales pitches to strangers, or the weather app's forecast? |
+| 58 | **Wrap Party**<br>gift wrapping × showbiz | 10/10 + 8/8 | THATSAWRAP (10)<br>OPENINGACT (10)<br>TAKEABOW (8)<br>BOXSEATS (8) | Director's sign-off, or the last present done<br>Warm-up performer, or Christmas morning's first job?<br>Accept applause, or steal a ribbon from the gift pile<br>Premium theater spots, or where the cat sits on Dec 26 |
+| 59 | **Sweet Talk**<br>pastry × office jargon | 9/9 + 8/8 | HALFBAKED (9)<br>PUFFPIECE (9)<br>ROLLOVER (8)<br>CAKEWALK (8) | Not fully thought through, or pulled from the oven early<br>Flattering article, or a croissant?<br>401(k) move, or a cinnamon bun's shape<br>Easy task, or a stroll past the bakery case |
+| 60 | **Mutual Attraction**<br>science × romance | 13/13 + 15 | ANIMALMAGNETISM (15)<br>NUCLEARFAMILY (13)<br>GOODCHEMISTRY (13) | Charisma, or what a lab's compass needle feels?<br>Household of two parents and kids, or a reactor crew?<br>Rapport between a couple, or a passing grade in the lab |
+| 61 | **Purls of Wisdom**<br>knitting × idioms | 13/13 + 9/9 | DYEDINTHEWOOL (13)<br>HANGBYATHREAD (13)<br>CLOSEKNIT (9)<br>SPINAYARN (9) | Through and through, like a committed knitter<br>Be in a precarious spot, or dangle from the needle<br>Tight, as a family or a sweater<br>Tell a tall tale, or make your own wool |
+| 62 | **Kitchen Brigade**<br>military ranks × food | 14/14 + 11/11 | COLONELSANDERS (14)<br>SERGEANTPEPPER (14)<br>CAPTAINCOOK (11)<br>GENERALTSOS (11) | Fried-chicken founder with a rank<br>Beatles bandleader, or a seasoning with stripes?<br>Explorer of the Pacific, or the mess hall's chef?<br>Chicken dish named for a Qing commander |
+| 63 | **Shelf Help**<br>elves × self-help | 11/11 + 10/10 | ELFEMPLOYED (11)<br>ELFCHECKOUT (11)<br>ELFSERVICE (10)<br>ELFMADEMAN (10) | Santa's helper who works freelance?<br>Scan your own toys at the North Pole register?<br>Help-yourself buffet in the workshop?<br>Workshop success story who started from nothing? |
+| 64 | **Reindeer Games**<br>reindeer × hidden words | 11/11 + 8/8 | DASHERBOARD (11)<br>PRANCERCISE (11)<br>CUPIDITY (8)<br>COMETRUE (8) | Car panel for the sleigh's lead-off reindeer?<br>Viral workout, with a reindeer in the lead?<br>Greed, with Santa's matchmaking reindeer inside<br>What dreams do, with a reindeer streaking through |
+| 65 | **Tree Trimming**<br>Christmas trees × pop culture | 12/12 + 8/8 | SPRUCEWILLIS (12)<br>EVERGREENDAY (12)<br>FIRELISE (8)<br>BOUGHWOW (8) | 'Die Hard' star, as a conifer?<br>'Basket Case' band that never loses its needles?<br>Beethoven bagatelle for a conifer?<br>Rapper up in the branches? |
+| 66 | **Naughty or Invoice**<br>Santa × finance | 13/13 + 11/11 | LUMPSUMOFCOAL (13)<br>NICELISTPRICE (13)<br>SANTACLAUSE (11)<br>SLEIGHBILLS (11) | One-time payout for the naughty list?<br>Sticker amount for the well-behaved?<br>Contract provision about the chimney?<br>What the reindeer invoice for? |
+| 67 | **Office Caroling**<br>Christmas carols × office life | 14/14 + 15 | AWAYINAMANAGER (14)<br>SILENTNIGHTOWL (14)<br>JINGLEBELLCURVE (15) | Carol about a boss who's out of the office?<br>Coworker who works late without a peep?<br>Grading scale for the holiday choir? |
+| 68 | **Working Holiday**<br>holiday movies × work life | 12/12 + 15 | HOMEALONEOFFICE (15)<br>DIEHARDDRIVE (12)<br>FROZENASSETS (12) | Where Kevin McCallister works remotely?<br>Storage that survives Nakatomi Plaza?<br>Elsa's net worth, or funds you can't touch |
+| 69 | **Counting House**<br>'A Christmas Carol' × office tech | 12/12 + 15 | BAHHUMBUGREPORT (15)<br>TINYTIMELINE (12)<br>CRATCHITCHAT (12) | Scrooge's ticket to the IT desk?<br>Very short project schedule for Bob Cratchit's son?<br>Small talk at Scrooge's counting house? |
+| 70 | **One Across**<br>crossword terms × idioms | 13/13 + 8/8 | ACROSSTHEPOND (13)<br>DOWNTOTHEWIRE (13)<br>CLUELESS (8)<br>GRIDLOCK (8) | Over in Europe, or the Down clues' neighbor?<br>Decided at the last second, like a race to fill the grid<br>Alicia Silverstone comedy, or a blank-faced solver<br>Traffic jam, or a puzzle you can't crack |
+| 71 | **Winter Games**<br>winter sports × everyday phrases | 13/13 + 11/11 | SLIPPERYSLOPE (13)<br>GOINGDOWNHILL (13)<br>BREAKTHEICE (11)<br>TAKEAPOWDER (11) | Risky path, or a skier's run<br>Getting worse, or what a skier does<br>Start a conversation, or ruin the rink<br>Leave suddenly, or hit the fresh snow |
+| 72 | **Open House**<br>gingerbread houses × real estate | 14/14 + 15 | SQUAREFROSTAGE (14)<br>GUMDROPCEILING (14)<br>SPRINKLERSYSTEM (15) | Icing-covered area of a cookie home?<br>Overhead feature in a gingerbread remodel?<br>Fire safety for a gingerbread house, by the shaker? |
+| 73 | **Holiday Marquee**<br>holiday decorations × movies | 13/13 + 15 | THEWREATHOFKHAN (15)<br>BAUBLEFICTION (13)<br>HOLLYWOODLAND (13) | Star Trek sequel hung on the front door?<br>Tarantino film about ornaments?<br>2006 film, or a forest of the festive shrub |
+| 74 | **Tech the Halls**<br>Christmas × tech | 11/11 + 15 | WINTERWONDERLAN (15)<br>YULELOGFILE (11)<br>HOHOHOTSPOT (11) | Snowy network for a holiday gaming party?<br>Where the fireplace channel records its errors?<br>Santa's Wi-Fi? |
+| 75 | **Ring It Up**<br>boxing × shopping | 13/13 + 8/8 | SPARRINGSPREE (13)<br>UPPERCUTPRICE (13)<br>BOUTIQUE (8)<br>KNOCKOFF (8) | Practice-round binge, or a Dec 26 shopping session?<br>Haymaker of a discount?<br>Small shop with a fight inside<br>Counterfeit bag, or a punch that ends the round? |
 
 ## Notes
 
@@ -53,9 +93,49 @@ Build one with `pnpm seedgrid:large --theme "<title>" --seeds "<entries>"` (see 
 - **Split Decision**: SUCKERPUNCHLINE (15) shares LINE with ONTHEROPELINE; left out.
 - **Theater of Operations**: Three themers. ENGAGEMENT is a bonus double-definition for the fill.
 - **Body Shop**: TAILLIGHTHEADED (15) shares HEAD with HEADSUPDISPLAY; do not add it.
-- **Who Let the Dogs Out**: FETCHSHOPBOYS (13) shared BOYS with BARKSTREETBOYS; DOGHOUSEMUSIC replaces it. THEBEAGLES (10) is a spare.
+- **Who Let the Dogs Out**: Dec 13 2026, Sunday. GOOD BOY GEORGE went to Supermarket Sweep's BAG BOY GEORGE, so THREE DOG NIGHT replaces it. Medium.
 - **Grounds for Arrest**: BEANCOUNTERFEIT (15) shares BEAN with SPILLTHEBEANS; skip it.
 - **Yarr Protocol**: SHIVERMETIMEOUT (15) is an alternate center.
 - **Hive Mindshare**: Three themers. BEELINEITEM (11) and STINGOPERATION (14) are bonus doubles if partners appear.
 - **Much Ado About Nothing Burger**: ETTUBRUTEFORCE (14) is great but shares BRUT with nothing here; it needs a 14 partner.
 - **Deep Dish Network**: Three themers. DEEPDISHNETWORK (15) is an alternate center.
+- **Garage Band**: Nov 16 2026 (bridges the Cozy Night mini and Hearth and Home midi). The first draw forced NODDLES above FOOFIXTURES; --seed 2 gave a clean grid at 50.
+- **Breakfast Blotter**: Nov 17 2026 (Rise and Shine midi).
+- **Looney Spoons**: Nov 18 2026, Mickey's birthday (Mouse House mini, Cartoon Classics midi; the mini has GOOFY and PLUTO). The four-set YOGIBEARNAISE/PORKYPIGROAST + SCOOBYDOUGH/TOMANDJERRY found no skeleton at 48 and filled only with junk at 45 (GELER, EHD, STITEST); the centered 15 + 11/11 shape filled at 50 with nothing flagged.
+- **Sound Investment**: Nov 19 2026 (Honest Abe mini, Penny Wise midi — the midi has PENNYANTE and DIMESTORE, so no penny or dime entries here).
+- **Instant Replay**: Nov 20 2026 (Rivalry Week mini, Parking Lot Party midi). FIRSTDOWNLOAD/QUARTERBACKUP + the 12s found no skeleton even at 45 (the 13s' letters); TOUCHDOWNSCREEN centered + 12/12 filled at 50.
+- **Special Delivery**: Nov 21 2026, World Hello Day (Hello There mini, Pen Pals midi — the midi has POSTCARD and STAMPS).
+- **Rare Groove**: Nov 22 2026, Sunday, medium (Sunday Roast mini has SIRLOIN and BRISKET; Carving Station midi has DRUMSTICK — none of them here). The first run (free placement) put three themers down and an unthemed CLYTEMNESTRA mirroring FLANKSINATRA; --paired rebuilt it with all four across at floor 50.
+- **Show Your Work**: Nov 23 2026, Fibonacci Day (By the Numbers mini, Math Class midi).
+- **Supermarket Sweep**: Nov 24 2026 (Grocery Run mini has AISLE and CARTS; Checkout Line midi has COUPONS and RECEIPTS). SHOPPINGLISZT/COUPONCLAPTON + BAGBOYGEORGE/DELIMEATLOAF found no skeleton at 48 (SZT and F endings) and only junk at 45; DELIMEATLOAF/CHECKOUTKAST + DAIRYQUEEN/SPICEGIRLS found no paired skeleton either; this 12/12 + 10/10 set filled at 50 with nothing flagged.
+- **In-Flight Entertainment**: Nov 25 2026, Thanksgiving Eve (Travel Day mini, Airport Dash midi has BOARDING and CARRYON). Spare center if a layout is needed: CHECKEDBAGPIPES (15).
+- **Turkey Bowl**: Nov 26 2026, Thanksgiving (Turkey Day mini has TURKEY and GRAVY; Giving Thanks midi — none repeated).
+- **Opening Weekend**: Nov 27 2026, Black Friday (Doorbusters mini has SALES; Shopping Spree midi has BARGAINS and SHOPPING). Alternate 12: EARLYBIRDMAN.
+- **Open for Business**: Nov 28 2026, Small Business Saturday (Main Street mini has BAKERY and BARBER, so no baker or barber entries; Corner Store midi has REGULARS and REGISTER).
+- **Second Helpings**: Nov 29 2026, Sunday after Thanksgiving, medium.
+- **Porch Pirates**: Nov 30 2026, Cyber Monday; bridges the day's package-tracking midi. Easy.
+- **Benefit Screening**: Dec 1 2026, Giving Tuesday. Easy.
+- **Current Events**: Dec 2 2026, Rockefeller tree lighting. Easy.
+- **Dressed for Dinner**: Dec 3 2026, cold snap; bridges the Bundle Up midi. Easy.
+- **Latke Playlist**: Dec 4 2026, first night of Hanukkah. Easy.
+- **Victory Feast**: Dec 5 2026, Championship Saturday; bridges the Trophy Case midi. Easy.
+- **Ear Candy**: Dec 6 2026, St. Nicholas Day Sunday; bridges the Candy Counter midi. Medium.
+- **Snow Business**: Dec 7 2026; bridges the Sled Hill midi. Easy.
+- **Wrap Party**: Dec 8 2026, Secret Santa week. Easy.
+- **Sweet Talk**: Dec 9 2026; bridges the Flaky Layers midi. Easy.
+- **Mutual Attraction**: Dec 10 2026, Nobel Day; bridges the Lab Coats midi. Easy.
+- **Purls of Wisdom**: Dec 11 2026; bridges the Tacky Knits midi. Easy.
+- **Kitchen Brigade**: Dec 12 2026, Army–Navy Game. Easy.
+- **Shelf Help**: Dec 14 2026. Easy.
+- **Reindeer Games**: Dec 15 2026. Easy.
+- **Tree Trimming**: Dec 16 2026, Beethoven's birthday. Easy.
+- **Naughty or Invoice**: Dec 17 2026. Easy.
+- **Office Caroling**: Dec 18 2026, Ugly Sweater Day. Easy.
+- **Working Holiday**: Dec 19 2026, Super Saturday. Easy.
+- **Counting House**: Dec 20 2026, Sunday. Medium.
+- **One Across**: Dec 21 2026, Crossword Puzzle Day (1913). Easy.
+- **Winter Games**: Dec 22 2026. Easy.
+- **Open House**: Dec 23 2026, Festivus. Easy.
+- **Holiday Marquee**: Dec 24 2026, Christmas Eve. Easy.
+- **Tech the Halls**: Dec 25 2026, Christmas Day. Easy.
+- **Ring It Up**: Dec 26 2026, Boxing Day. Easy.

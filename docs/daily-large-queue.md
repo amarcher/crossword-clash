@@ -16,7 +16,16 @@ clues. Monday–Saturday clues were written at the **easy** register, Sunday at
 tell us where a steeper weekday gradient belongs. Source folders (grid, review
 notes, every fill and clue decision) are in `artifacts/large/` on the
 constructor's machine (the 16–29 November set under `2026-10-17-*` and
-`retry-*/`, one folder per build attempt).
+`retry-*/`, one folder per build attempt; the 30 November – 13 December set
+under `2026-11-04-*`, with `2026-11-04-batch-notes.md` listing what each build
+needed). **The 30 Nov – 13 Dec larges were built after their midis** (the
+midis had anticipated them, e.g. Tracking Number → Porch Pirates, Trophy Case →
+Victory Feast, Lab Coats → Mutual Attraction), so each day's mini and midi
+answers of 4+ letters went in as `--reject`; three stacked sets (two 14s over
+two 12s or 13s) found no skeleton at 50 and were rebuilt with a 10/10 pair in
+place of the longer one, and four forced entries (DRAGU, ESPNU, STAPH,
+WEK/APOLLOI) were cleared with `pnpm seedgrid:refix … --apply` + `reclue
+--only-missing` rather than in the studio.
 
 | Day | Date | Title | Theme | Themers | Clues |
 |---|---|---|---|---|---|
@@ -65,6 +74,20 @@ constructor's machine (the 16–29 November set under `2026-10-17-*` and
 | Fri | 2026-11-27 | Opening Weekend | Black Friday × movies | BIG BOX OFFICE, REBATES MOTEL, STORE WARS, SALEM'S LOT | easy |
 | Sat | 2026-11-28 | Open for Business | Small businesses × showbiz | FLORIST GUMP, TAILOR SWIFT, LOCKSMITHS, THRIFT SHOP | easy |
 | Sun | 2026-11-29 | Second Helpings | Thanksgiving leftovers × idioms | BUTTERFINGERS, SMALL POTATOES, COLD TURKEY, GRAVY TRAIN | medium |
+| Mon | 2026-11-30 | Porch Pirates | Shipping labels × life advice | OUT FOR DELIVERY, HANDLE WITH CARE, THIS SIDE UP, DOOR TO DOOR | easy |
+| Tue | 2026-12-01 | Benefit Screening | Charity × movies | FOOD DRIVE-IN, GRANT TORINO, DONOR DARKO, TIP JARHEAD | easy |
+| Wed | 2026-12-02 | Current Events | Holiday lights × science | STRING THEORY, GLOW WORMHOLE, POWER SURGE, SOLAR FLARE | easy |
+| Thu | 2026-12-03 | Dressed for Dinner | Winter wear × food | PUFFER FISH, EARMUFFINS, LAYER CAKE, SCARF DOWN | easy |
+| Fri | 2026-12-04 | Latke Playlist | Hanukkah × songs | EIGHT DAYS A WEEK, YOU SPIN ME ROUND, HEART OF GOLD, BURNING LOVE | easy |
+| Sat | 2026-12-05 | Victory Feast | Winners × food | BREADWINNER, TAKE THE CAKE, TOP BANANA, BIG CHEESE | easy |
+| Sun | 2026-12-06 | Ear Candy | Candy × music | KIT KAT STEVENS, MINT CONDITION, LEMONHEADS, SUGARCUBES | medium |
+| Mon | 2026-12-07 | Snow Business | Snow × the office | SNOWED UNDER, POWDERPOINT, SLUSH FUND, COLD CALLS | easy |
+| Tue | 2026-12-08 | Wrap Party | Gift wrapping × showbiz | THAT'S A WRAP, OPENING ACT, TAKE A BOW, BOX SEATS | easy |
+| Wed | 2026-12-09 | Sweet Talk | Pastry × office jargon | HALF-BAKED, PUFF PIECE, ROLLOVER, CAKEWALK | easy |
+| Thu | 2026-12-10 | Mutual Attraction | Science × romance | ANIMAL MAGNETISM, NUCLEAR FAMILY, GOOD CHEMISTRY | easy |
+| Fri | 2026-12-11 | Purls of Wisdom | Knitting × idioms | DYED IN THE WOOL, HANG BY A THREAD, CLOSE-KNIT, SPIN A YARN | easy |
+| Sat | 2026-12-12 | Kitchen Brigade | Military ranks × food | COLONEL SANDERS, SERGEANT PEPPER, CAPTAIN COOK, GENERAL TSO'S | easy |
+| Sun | 2026-12-13 | Who Let the Dogs Out | Dogs × music | BARK STREET BOYS, PUPPY LOVE SHACK, THE BEAGLES, COLLIE KING | medium |
 
 ## Keeping the queue filled
 
@@ -80,7 +103,11 @@ constructor's machine (the 16–29 November set under `2026-10-17-*` and
    (without it, steak × music put three themers down and left an unthemed 12
    mirroring FLANK SINATRA), and `--reject "nest, nemo"` keeps the same day's
    mini and midi answers out of the fill from the start (a 4-letter collision
-   that the local refill cannot clear usually needs a fresh skeleton). Stacked
+   that the local refill cannot clear usually needs a fresh skeleton; since
+   2026-11-04 `pnpm seedgrid` takes the same `--reject`, so a midi built after
+   its large can keep the large's entries out too). A `--seeds-floor 45` run
+   "succeeds" with junk (Current Events at 45: INRARE, USONCE, ATOMTOM); when
+   a set finds no skeleton at 48, swap the longer pair for a 10/10 instead. Stacked
    13/13 + 12/12 sets with awkward endings (SHOPPING LISZT, QUARTERBACKUP)
    found no skeleton at 48 and only junk at 45; a centered 15 or a 12/12 +
    10/10 shape filled at 50 every time.
