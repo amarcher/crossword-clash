@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
+import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
 import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow } from "../components/ui";
@@ -231,6 +233,19 @@ export function ArchiveScreen() {
     },
     [load, setUrlPuzzle, navigate],
   );
+  // Reached from the TV's chooser (`?intent=tv`): the one action hands the
+  // puzzle back to the TV layout as the deep link it reads (tvHandoff.ts).
+  const [params] = useSearchParams();
+  const tv = isTvIntent(params);
+  const hostOnTv = useCallback(
+    async (item: ArchiveItem) => {
+      const daily = await load(item);
+      if (!daily) return;
+      track("mode_selected", { mode: "archive-tv", slot: item.slot });
+      navigate(tvHostPath(daily.puzzle));
+    },
+    [load, navigate],
+  );
 
   const canRace = Boolean(user) || authLoading;
   const dayItems = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
@@ -247,7 +262,7 @@ export function ArchiveScreen() {
         : t("archive.unsolved").toLowerCase();
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthLg="4xl" bar={tv ? { backLabel: t("importer.tvBack"), backTo: TV_CHOOSER_PATH } : { backLabel: t("completion.backToMenu") }}>
       <div className="pb-10 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("archive.title")}</h1>
         <p className="mt-1 min-h-5 text-sm text-muted tabular-nums" aria-live="polite">
@@ -462,6 +477,16 @@ export function ArchiveScreen() {
                           </div>
                           {locked ? (
                             <Lock className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+                          ) : tv ? (
+                            <Button
+                              size="sm"
+                              onClick={() => void hostOnTv(it)}
+                              disabled={busy !== null}
+                              aria-label={t("importer.hostOnTvLabel", { title: it.title })}
+                              {...prefetchOnIntent("/host")}
+                            >
+                              {busy === it.identity ? t("archive.loadingPuzzle") : t("importer.hostOnTv")}
+                            </Button>
                           ) : (
                           <div className="flex shrink-0 flex-col gap-1.5">
                             <Button

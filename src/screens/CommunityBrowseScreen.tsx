@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
+import { isTvIntent, TV_CHOOSER_PATH, TV_INTENT, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
 import { EyeOff, Search, Users } from "lucide-react";
 import { PageShell, pageColumnClass } from "../components/PageShell";
@@ -63,13 +64,17 @@ export function CommunityBrowseScreen() {
     // The author page: every language, the author from the route.
     return username ? { ...parsed, author: username, lang: params.get("lang") ? parsed.lang : "all" } : parsed;
   }, [params, uiLang, username]);
+  // Reached from the TV's chooser: every card offers "Host on TV" and the
+  // intent rides along through filters and links (tvHandoff.ts).
+  const tv = isTvIntent(params);
   const setFilters = useCallback(
     (next: BrowseFilters) => {
       const out = browseParams({ ...next, author: username ? null : next.author }, uiLang);
       if (username && next.lang === "all") out.delete("lang");
+      if (tv) out.set("intent", TV_INTENT);
       setParams(out, { replace: true });
     },
-    [setParams, uiLang, username],
+    [setParams, uiLang, username, tv],
   );
 
   // The search box types freely; the URL (and the query) follow after a pause.
@@ -139,7 +144,7 @@ export function CommunityBrowseScreen() {
   const authorHidden = !!authorId && hidden.includes(authorId);
 
   const load = useCallback(
-    async (entry: CommunityPuzzle, what: "play" | "race") => {
+    async (entry: CommunityPuzzle, what: "play" | "race" | "tv") => {
       setError(null);
       setBusy(entry.short_id);
       try {
@@ -151,6 +156,9 @@ export function CommunityBrowseScreen() {
           await handleSoloPuzzleLoaded(puzzle);
           setSoloTheme(null);
           navigate("/solo/play");
+        } else if (what === "tv") {
+          track("mode_selected", { mode: "community-tv" });
+          navigate(tvHostPath(puzzle));
         } else {
           track("mode_selected", { mode: "community-race" });
           setUrlPuzzle(puzzle);
@@ -173,7 +181,7 @@ export function CommunityBrowseScreen() {
   return (
     <PageShell
       width="5xl"
-      bar={{ backLabel: t("legal.back"), backTo: username ? "/puzzles" : "/menu" }}
+      bar={tv ? { backLabel: username ? t("legal.back") : t("importer.tvBack"), backTo: username ? withTvIntent("/puzzles") : TV_CHOOSER_PATH } : { backLabel: t("legal.back"), backTo: username ? "/puzzles" : "/menu" }}
       below={
         <>
           <div className="sticky top-0 z-20 border-y border-line bg-canvas/90 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-canvas/75">
@@ -267,10 +275,11 @@ export function CommunityBrowseScreen() {
                 bestTimes={bestTimes}
                 inProgress={inProgress}
                 busy={busy}
-                onPlay={(entry) => void load(entry, "play")}
-                onRace={canRace ? (entry) => void load(entry, "race") : undefined}
+                onPlay={(entry) => void load(entry, tv ? "tv" : "play")}
+                onRace={canRace && !tv ? (entry) => void load(entry, "race") : undefined}
                 raceDisabled={authLoading}
                 showAuthor={!username}
+                tv={tv}
               />
             )}
             <p role="status" aria-live="polite" className="mt-4 text-center text-xs text-subtle">

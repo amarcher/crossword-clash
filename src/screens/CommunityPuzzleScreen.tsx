@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
+import { isTvIntent, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
 import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
@@ -37,7 +38,7 @@ export function CommunityPuzzleScreen() {
   const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   const [state, setState] = useState<State>({ kind: "loading" });
-  const [busy, setBusy] = useState<"play" | "race" | null>(null);
+  const [busy, setBusy] = useState<"play" | "race" | "tv" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,7 +110,7 @@ export function CommunityPuzzleScreen() {
   };
 
   const load = useCallback(
-    async (what: "play" | "race") => {
+    async (what: "play" | "race" | "tv") => {
       if (!puzzle) return;
       setError(null);
       setBusy(what);
@@ -119,6 +120,9 @@ export function CommunityPuzzleScreen() {
           await handleSoloPuzzleLoaded(puzzle);
           setSoloTheme(null);
           navigate("/solo/play");
+        } else if (what === "tv") {
+          track("mode_selected", { mode: "community-tv" });
+          navigate(tvHostPath(puzzle));
         } else {
           track("mode_selected", { mode: "community-race" });
           setUrlPuzzle(puzzle);
@@ -141,7 +145,10 @@ export function CommunityPuzzleScreen() {
   };
 
   const date = row ? new Date(row.published_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" }) : "";
-  const canRace = Boolean(user) || authLoading;
+  // Reached from the TV's chooser: the one action hands the puzzle to the TV (tvHandoff.ts).
+  const [params] = useSearchParams();
+  const tv = isTvIntent(params);
+  const canRace = (Boolean(user) || authLoading) && !tv;
 
   let body: React.ReactNode;
   if (state.kind === "loading") {
@@ -209,8 +216,8 @@ export function CommunityPuzzleScreen() {
           </p>
         )}
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button size="lg" onClick={() => void load("play")} disabled={!puzzle || busy !== null} className="sm:flex-1" aria-busy={busy === "play" || undefined}>
-            {busy === "play" ? t("community.loadingPuzzle") : typeof best === "number" ? t("community.playAgain") : progress ? t("community.resume") : t("community.playSolo")}
+          <Button size="lg" onClick={() => void load(tv ? "tv" : "play")} disabled={!puzzle || busy !== null} className="sm:flex-1" aria-busy={busy === "play" || busy === "tv" || undefined}>
+            {busy === "play" || busy === "tv" ? t("community.loadingPuzzle") : tv ? t("importer.hostOnTv") : typeof best === "number" ? t("community.playAgain") : progress ? t("community.resume") : t("community.playSolo")}
           </Button>
           {canRace && (
             <Button variant="secondary" size="lg" onClick={() => void load("race")} disabled={!puzzle || busy !== null || authLoading} className="sm:flex-1">
@@ -304,7 +311,7 @@ export function CommunityPuzzleScreen() {
   }
 
   return (
-    <PageShell as="main" width="2xl" bar={{ backLabel: t("community.title"), backTo: "/puzzles" }}>
+    <PageShell as="main" width="2xl" bar={{ backLabel: t("community.title"), backTo: tv ? withTvIntent("/puzzles") : "/puzzles" }}>
       {body}
       {reporting && row && <ReportDialog puzzleId={row.id} onClose={() => setReporting(false)} />}
     </PageShell>
