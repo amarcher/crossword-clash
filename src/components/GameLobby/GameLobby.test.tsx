@@ -23,6 +23,15 @@ const mockPlayers: Player[] = [
   { id: "2", gameId: "g1", userId: "u2", displayName: "Guest Player", color: "#00ff00", score: 0 },
 ];
 
+
+describe("GameLobby prior solves", () => {
+  it("marks a player who finished this puzzle before, Solved before on their own or Raced before in a room, and nobody else", () => {
+    render(<GameLobby shareCode="ABC123" players={mockPlayers} isHost={true} onStartGame={vi.fn()} onCloseRoom={vi.fn()} solves={{ "u1": { mode: "solo" }, "u2": { mode: "versus" } }} />);
+    expect(screen.getByText("Solved before")).toBeTruthy();
+    expect(screen.getByText("Raced before")).toBeTruthy();
+  });
+});
+
 describe("GameLobby", () => {
   describe("QR code", () => {
     it("renders QR code when shareCode is provided", () => {

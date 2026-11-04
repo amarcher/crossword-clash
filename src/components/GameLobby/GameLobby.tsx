@@ -1,3 +1,4 @@
+import { priorSolveChip, type PriorSolve } from "../../lib/roomSolves";
 import { shareOrigin } from "../../lib/shareOrigin";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,9 +31,11 @@ interface GameLobbyProps {
    * server's next wait in seconds (a `too_soon` refusal carries the seconds left).
    */
   onNudgeHost?: (spellStartedAt: number) => Promise<number>;
+  /** Players who have finished this room's puzzle before, by user id (`useRoomSolves`): a "Solved before" / "Raced before" chip. */
+  solves?: Record<string, PriorSolve>;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost, solves = {} }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -200,6 +203,12 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                     aria-hidden="true"
                   />
                   <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>{player.displayName}</span>
+                  {priorSolveChip(solves[player.userId]) === "solved" && (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">{t("lobby.solvedBefore")}</span>
+                  )}
+                  {priorSolveChip(solves[player.userId]) === "raced" && (
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{t("lobby.racedBefore")}</span>
+                  )}
                   {player.away && (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{t("lobby.away")}</span>
                   )}

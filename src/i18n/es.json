@@ -160,6 +160,9 @@
     "shareInviteAction": "Compartir invitación",
     "gameSettings": "Ajustes de partida",
     "qrHint": "O pide a tus amigos que escaneen este código",
+    "solvedBefore": "Ya resuelto",
+    "racedBefore": "Ya jugado",
+    "puzzleHeading": "Crucigrama",
     "away": "Ausente",
     "waitingForHostBack": "Esperando a que {{name}} vuelva…"
   },

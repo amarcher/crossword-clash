@@ -1,10 +1,14 @@
+import { useMemo } from "react";
 import { Play, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
 import { TVBrand } from "../../components/Layout/TVBrand";
 import { TVSegmented } from "../../components/Layout/TVSegmented";
-import { buttonClass } from "../../components/ui";
+import { buttonClass, MiniGridThumb } from "../../components/ui";
+import { useRoomSolves } from "../../hooks/useRoomSolves";
+import { priorSolveChip } from "../../lib/roomSolves";
+import { puzzleIdentity } from "../../lib/soloStats";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useKeepAwake } from "../../lib/keepAwake";
 import { useHostContext } from "../../layouts/HostLayout";
@@ -19,10 +23,16 @@ export function HostLobbyScreen() {
   // A shared screen nobody touches: keep it from dimming while players join.
   useKeepAwake(true);
 
+  // Who in the room has finished this puzzle before (room_solves): a chip on their row (Andrew, 2026-11-03).
+  const playerIds = useMemo(() => multiplayer.players.map((p) => p.userId), [multiplayer.players]);
+  const solves = useRoomSolves(host.user?.id, host.gameId, host.puzzle ? puzzleIdentity(host.puzzle) : null, playerIds);
+
   if (!host.puzzle) return <Navigate to="/host" replace />;
 
   const playerCount = multiplayer.players.length;
   const canStart = playerCount >= 2;
+  const acrossCount = host.puzzle.clues.filter((c) => c.direction === "across").length;
+  const downCount = host.puzzle.clues.filter((c) => c.direction === "down").length;
 
   return (
     <div className="tv-stage">
@@ -58,8 +68,22 @@ export function HostLobbyScreen() {
         <section className="flex min-h-0 flex-col" style={{ gap: "calc(var(--u) * 1.4)" }}>
           <header>
             <h1 className="tv-t-2xl font-display font-bold leading-tight text-white">{t("lobby.waitingForPlayersTitle")}</h1>
-            <p className="tv-t-md mt-1 truncate text-slate-400">{host.puzzle.title}</p>
           </header>
+
+          {/* The puzzle about to be solved, featured (Andrew, 2026-11-03: the lobby showed only its name in small type). */}
+          <section aria-label={t("lobby.puzzleHeading")} className="tv-card flex shrink-0 items-center" style={{ gap: "calc(var(--u) * 1.2)", padding: "calc(var(--u) * 1.2)" }}>
+            <span className="shrink-0 rounded-xl bg-white p-1.5 shadow-raised">
+              <MiniGridThumb puzzle={host.puzzle} style={{ width: "calc(var(--u) * 7)" }} />
+            </span>
+            <span className="min-w-0">
+              <span className="tv-t-sm block font-semibold uppercase tracking-[0.12em] text-slate-400">{t("lobby.puzzleHeading")}</span>
+              <span className="tv-t-xl block truncate font-display font-bold leading-tight text-white">{host.puzzle.title}</span>
+              <span className="tv-t-md mt-1 block truncate text-slate-300">
+                {t("puzzleReady.dimensions", { width: host.puzzle.width, height: host.puzzle.height, acrossCount, downCount })}
+                {host.puzzle.author ? ` · ${t("puzzleReady.by", { author: host.puzzle.author })}` : ""}
+              </span>
+            </span>
+          </section>
 
           <div className="tv-card flex min-h-0 flex-1 flex-col" style={{ padding: "calc(var(--u) * 1.4)" }}>
             <h2 className="tv-t-sm mb-3 font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -82,7 +106,13 @@ export function HostLobbyScreen() {
                     className="tv-pop flex items-center gap-4 rounded-xl border border-stage-line bg-stage px-5 py-3"
                   >
                     <span className="size-5 shrink-0 rounded-full" style={{ backgroundColor: player.color }} aria-hidden />
-                    <span className="tv-t-xl min-w-0 truncate font-display font-semibold text-white">{player.displayName}</span>
+                    <span className="tv-t-xl min-w-0 flex-1 truncate font-display font-semibold text-white">{player.displayName}</span>
+                    {priorSolveChip(solves[player.userId]) === "solved" && (
+                      <span className="tv-t-sm shrink-0 rounded-full bg-emerald-500/20 px-3 py-1 font-semibold text-emerald-200">{t("lobby.solvedBefore")}</span>
+                    )}
+                    {priorSolveChip(solves[player.userId]) === "raced" && (
+                      <span className="tv-t-sm shrink-0 rounded-full bg-brand-500/25 px-3 py-1 font-semibold text-brand-100">{t("lobby.racedBefore")}</span>
+                    )}
                   </li>
                 ))}
               </ul>
