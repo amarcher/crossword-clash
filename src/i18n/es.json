@@ -704,6 +704,14 @@
   },
   "studio": {
     "loading": "Cargando el estudio…",
+    "gateFeatureLayoutTitle": "Monta una cuadrícula alrededor de tus entradas",
+    "gateFeatureLayoutBody": "Escribe las entradas temáticas; el motor las coloca, da forma a los bloques y rellena el resto con una lista de 100.000 palabras.",
+    "gateFeatureCluesTitle": "Pistas redactadas por IA, decididas por ti",
+    "gateFeatureCluesBody": "40 borradores de pistas con IA al mes, fila por fila; las pistas que escribes o eliges nunca se sobrescriben.",
+    "gateFeaturePublishTitle": "Prueba, publica, exporta",
+    "gateFeaturePublishBody": "Prueba el crucigrama en el juego, publícalo en la comunidad con tu nombre de usuario o expórtalo en .puz e .ipuz.",
+    "gateFeatureAnywhereTitle": "En la web y en la app",
+    "gateFeatureAnywhereBody": "Tus borradores se guardan sobre la marcha en Mis crucigramas, con versiones que conservan sus pistas.",
     "gateTitle": "Construye tu propio crucigrama",
     "gateBody": "El estudio coloca tus entradas temáticas, rellena la cuadrícula con un motor de construcción real, muestra dónde aprieta y redacta pistas con IA. Forma parte de Crossword Clash Plus.",
     "draftsLeft": "Te quedan {{left}} de {{limit}} borradores con IA este mes"

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PencilRuler } from "lucide-react";
+import { Grid3x3, PencilRuler, Share2, Sparkles, WandSparkles } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { ProviderButton } from "../components/Account/ProviderButton";
 import { PlusPitch } from "../components/Plus/PlusPitch";
@@ -53,17 +53,37 @@ export function StudioGateScreen() {
           {t("studio.loading")}
         </p>
       ) : (
-        <section className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
-          <div className="flex items-start gap-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-              <PencilRuler className="size-5" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h1 className="font-display text-xl font-bold leading-snug tracking-tight text-ink">{t("studio.gateTitle")}</h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("studio.gateBody")}</p>
+        // One card on a phone; from lg up the pitch sits beside what the studio
+        // does, so a wide screen is not a 28rem card in a sea of canvas (Andrew,
+        // 2026-11-03). The Plus card is the fixed-width column and stays in view.
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-10">
+          <section aria-labelledby="studio-gate-title" className="lg:pt-2">
+            <div className="flex items-start gap-3.5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600 lg:size-12">
+                <PencilRuler className="size-5 lg:size-6" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h1 id="studio-gate-title" className="font-display text-xl font-bold leading-snug tracking-tight text-ink lg:text-3xl">
+                  {t("studio.gateTitle")}
+                </h1>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted lg:text-base">{t("studio.gateBody")}</p>
+              </div>
             </div>
-          </div>
-          <div className="mt-5">
+            <ul className="mt-6 hidden gap-4 lg:grid lg:grid-cols-2">
+              {FEATURES.map(({ icon: Icon, title, body }) => (
+                <li key={title} className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                    <Icon className="size-4.5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold leading-snug text-ink">{t(title)}</span>
+                    <span className="mt-1 block text-sm leading-relaxed text-muted">{t(body)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section aria-label={t("plus.title")} className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6 lg:sticky lg:top-6">
             <PlusPitch>
               {verdict === "sign-in" ? (
                 <SignInButtons />
@@ -75,16 +95,24 @@ export function StudioGateScreen() {
                 />
               )}
             </PlusPitch>
-          </div>
-        </section>
+          </section>
+        </div>
       )}
     </GateShell>
   );
 }
 
+/** What the studio does, told beside the pitch where there is room for it (lg up). */
+const FEATURES = [
+  { icon: Grid3x3, title: "studio.gateFeatureLayoutTitle", body: "studio.gateFeatureLayoutBody" },
+  { icon: WandSparkles, title: "studio.gateFeatureCluesTitle", body: "studio.gateFeatureCluesBody" },
+  { icon: Share2, title: "studio.gateFeaturePublishTitle", body: "studio.gateFeaturePublishBody" },
+  { icon: Sparkles, title: "studio.gateFeatureAnywhereTitle", body: "studio.gateFeatureAnywhereBody" },
+] as const;
+
 function GateShell({ children }: { children: React.ReactNode }) {
   return (
-    <PageShell width="md" background="canvas" bar={{ backLabel: "Menu", backTo: "/menu" }}>
+    <PageShell width="md" widthLg="5xl" background="canvas" bar={{ backLabel: "Menu", backTo: "/menu" }}>
       <main className="mt-6 pb-8">{children}</main>
     </PageShell>
   );
