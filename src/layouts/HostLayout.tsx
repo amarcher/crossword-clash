@@ -454,7 +454,8 @@ export function HostLayout() {
       const puzzleId = await uploadPuzzle(p);
       if (!puzzleId) return;
 
-      if (multiplayer.shareCode) {
+      // The TV host has no player row (never `isHost`), so a live room id is the check.
+      if (multiplayer.shareCode && gameId) {
         const result = await createNextGame(puzzleId, user.id, multiplayer.shareCode, {
           spectator: true,
         });
@@ -477,7 +478,7 @@ export function HostLayout() {
         navigate(`/host/lobby/${result.gameId}`);
       }
     },
-    [loadPuzzle, user, multiplayer, navigate],
+    [loadPuzzle, user, multiplayer, gameId, navigate],
   );
 
   const handleStartGame = useCallback(async () => {

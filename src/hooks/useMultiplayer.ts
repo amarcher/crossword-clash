@@ -409,6 +409,25 @@ export function useMultiplayer({
     };
   }, [gameId, userId, dispatch, hydrate, setGameStatus, refreshRoster]);
 
+  // A room that ended (the host closed it, "Back to menu", a fresh race from
+  // the picker) sets the id to null, which the effect above skips, so the
+  // per-room state used to outlive the room. The share code is the one that
+  // bit: the host flow read it as "I still host a room" and took the dead
+  // room's code over for a new game of its own (ayang329, 2026-11-03).
+  useEffect(() => {
+    if (gameId) return;
+    setPlayers([]);
+    dbPlayersRef.current = [];
+    setShareCode(null);
+    setStartedAtMs(null);
+    setCompletedAtMs(null);
+    setRaceFinishTimes({});
+    setGameSettings(DEFAULT_GAME_SETTINGS);
+    setIsHost(false);
+    setIsRoomClosed(false);
+    setNewGameId(null);
+  }, [gameId]);
+
   // Tab wake: re-hydrate from the DB and make sure we are still in presence
   // (a socket that died while the page was hidden took our entry with it).
   // A hidden tab re-tracks with `visible: false` instead of untracking (phase

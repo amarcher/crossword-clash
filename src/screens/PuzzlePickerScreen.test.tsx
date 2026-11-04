@@ -27,6 +27,7 @@ vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
 const game = {
   puzzle: null as Puzzle | null,
   isComplete: false,
+  gameId: null as string | null,
   displayName: "Andy",
   reset: vi.fn(),
   loadPuzzle: vi.fn(),
@@ -37,7 +38,7 @@ const game = {
 };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game, STORAGE_KEY: "crossword-clash-solo" }));
 
-const mp = { shareCode: null as string | null, broadcastNewGame: vi.fn() };
+const mp = { shareCode: null as string | null, isHost: false, broadcastNewGame: vi.fn() };
 vi.mock("../contexts/MultiplayerContext", () => ({ useMultiplayerContext: () => mp }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
 
@@ -75,7 +76,9 @@ beforeEach(() => {
   dailies = { mini, midi, large: null };
   game.puzzle = null;
   game.isComplete = false;
+  game.gameId = null;
   mp.shareCode = null;
+  mp.isHost = false;
 });
 afterEach(() => {
   cleanup();
@@ -115,7 +118,9 @@ describe("PuzzlePickerScreen", () => {
   });
 
   it("next: uploads the chosen puzzle and starts the room's next game with ITS id (the solved puzzle_id is never reused)", async () => {
+    game.gameId = "game-1";
     mp.shareCode = "ABCDEF";
+    mp.isHost = true;
     renderPicker("next");
     pickMidi();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/lobby/game-2", { replace: true }));
@@ -135,8 +140,20 @@ describe("PuzzlePickerScreen", () => {
     expect(createNextGame).not.toHaveBeenCalled();
   });
 
-  it("shows an error and re-enables the buttons when setting up fails", async () => {
+  it("next with a code left over from a room this player does not host falls back too", async () => {
+    // The code of a room someone else closed, or of a room this player merely joined.
     mp.shareCode = "ABCDEF";
+    renderPicker("next");
+    pickMidi();
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/host-game/name", { replace: true }));
+    expect(createNextGame).not.toHaveBeenCalled();
+    expect(clearMpSession).toHaveBeenCalled();
+  });
+
+  it("shows an error and re-enables the buttons when setting up fails", async () => {
+    game.gameId = "game-1";
+    mp.shareCode = "ABCDEF";
+    mp.isHost = true;
     uploadPuzzle.mockResolvedValueOnce(null as unknown as string);
     renderPicker("next");
     pickMidi();

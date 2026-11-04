@@ -11,6 +11,7 @@ import { PushEffects } from "../components/Push";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
+import { useFriends } from "../contexts/FriendsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { loadMpSession, clearMpSession, saveMpSession, isRecentMpSession } from "../lib/sessionPersistence";
 import { rejoinGame } from "../lib/puzzleService";
@@ -31,6 +32,10 @@ export function RoutingEffects({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
+  // A closed room's invite must not keep its Join / Can't now: the lists
+  // only refetch on a nudge or a tab wake otherwise (the invite row answers
+  // the room's status, so a refetch is what turns it "closed").
+  const refreshFriends = useFriends().refresh;
   const [showRoomClosedModal, setShowRoomClosedModal] = useState(false);
   usePageViews();
 
@@ -82,8 +87,9 @@ export function RoutingEffects({ children }: { children: React.ReactNode }) {
     game.setIsMultiplayer(false);
     localStorage.removeItem("crossword-clash-solo");
     clearMpSession();
+    void refreshFriends();
     navigate("/menu");
-  }, [game, navigate]);
+  }, [game, navigate, refreshFriends]);
 
   // Host's own room close still navigates immediately (host owns the action).
   useEffect(() => {
@@ -93,9 +99,10 @@ export function RoutingEffects({ children }: { children: React.ReactNode }) {
       game.setIsMultiplayer(false);
       localStorage.removeItem("crossword-clash-solo");
       clearMpSession();
+      void refreshFriends();
       navigate("/menu");
     }
-  }, [mp.isRoomClosed, mp.isHost, game, navigate]);
+  }, [mp.isRoomClosed, mp.isHost, game, navigate, refreshFriends]);
 
   // Handle new_game broadcast for non-host players: once per room. The
   // rejoin screen inserts this player's row in the new game (under the name
