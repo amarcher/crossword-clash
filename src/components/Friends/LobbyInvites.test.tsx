@@ -7,6 +7,13 @@ import { FriendsError, setPendingChallenge } from "../../lib/friends";
 
 const friends = vi.hoisted(() => ({ value: {} as FriendsContextValue }));
 vi.mock("../../contexts/FriendsContext", () => ({ useFriends: () => friends.value }));
+const solves = vi.hoisted(() => ({ byKey: {} as Record<string, Record<string, { mode: string; day: string }>>, asked: [] as (string | null | undefined)[] }));
+vi.mock("../../hooks/useFriendSolves", () => ({
+  useFriendSolves: (key: string | null | undefined) => {
+    solves.asked.push(key);
+    return (key && solves.byKey[key]) || {};
+  },
+}));
 
 const { LobbyInvites } = await import("./LobbyInvites");
 
@@ -43,6 +50,8 @@ function value(over: Partial<FriendsContextValue> = {}): FriendsContextValue {
 beforeEach(() => {
   sessionStorage.clear();
   friends.value = value();
+  solves.byKey = {};
+  solves.asked = [];
 });
 afterEach(cleanup);
 
@@ -63,6 +72,20 @@ describe("LobbyInvites", () => {
     await waitFor(() => expect(friends.value.invite).toHaveBeenCalledWith("g1", "a"));
     expect(await screen.findByText("Invited")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "Invite" })).toHaveLength(1);
+  });
+
+  it("marks a friend who already finished this room's puzzle, Solved on their own or Raced it in a room, and still offers Invite (spec §3.8)", () => {
+    solves.byKey["civics|9x9|k"] = { a: { mode: "solo", day: "2026-11-03" }, m: { mode: "versus", day: "2026-11-02" } };
+    render(<LobbyInvites gameId="g1" puzzleKey="civics|9x9|k" />);
+    expect(solves.asked).toContain("civics|9x9|k");
+    expect(screen.getByText("Solved")).toBeTruthy();
+    expect(screen.getByText("Raced it")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Invite" })).toHaveLength(2);
+    cleanup();
+    // Nothing on record: no chip, and no puzzle means nothing is asked.
+    render(<LobbyInvites gameId="g1" />);
+    expect(screen.queryByText("Solved")).toBeNull();
+    expect(screen.queryByText("Raced it")).toBeNull();
   });
 
   it("treats 'already invited' as done and shows other refusals", async () => {

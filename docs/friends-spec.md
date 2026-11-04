@@ -485,6 +485,23 @@ joins by invite, code, QR and link is visible for the first time.
 
 ---
 
+### 3.8 Friends' solves: "Solved" / "Raced it" beside an invite
+
+Inviting a friend to a room was awkward without knowing whether they had
+already solved its puzzle (Andrew, 2026-11-03). `solves` rows are owner-only,
+so `friend_solves(p_puzzle_key)` (migration `20261104000000`) is the one read
+across accounts: for the caller's accepted friends, neither side blocked, the
+mode and day of their latest finish of the puzzle, never a time, never the
+letters, never an `import` row, nothing for an anonymous player (their finishes
+stay on the device, so the answer is "unknown", shown as nothing). The client
+(`fetchFriendSolves`, `useFriendSolves(puzzleKey)`, `SolveChip`) puts a tinted
+chip beside the friend in the lobby's invite list, on the Race screen's
+Challenge rows when a daily is the chip's puzzle, and on "Send to a friend":
+"Solved" for a solo finish, "Raced it" for a room finish (a group solve is its
+own kind of finish, recorded with the race mode). The friend stays invitable.
+The privacy policy's Friends paragraph names the read. Leagues, which this
+edges toward, are tabled (Andrew, 2026-11-03).
+
 ### 3.7 Phase (f): room rendezvous
 
 **The problem** (Andrew, 2026-11-02). Inviting a friend into a room is

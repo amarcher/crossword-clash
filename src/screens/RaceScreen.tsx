@@ -4,7 +4,9 @@ import { Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
-import { CodeJoinCard, PersonList, PersonRow } from "../components/Friends";
+import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
+import { useFriendSolves } from "../hooks/useFriendSolves";
+import { puzzleIdentity } from "../lib/soloStats";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame } from "../contexts/GameContext";
 import { useFriends } from "../contexts/FriendsContext";
@@ -36,6 +38,9 @@ export function RaceScreen() {
   );
 
   // Start a room: the chip's puzzle goes to the host flow; otherwise the picker chooses one.
+  // The daily chip's puzzle: friends who already finished it wear a chip on their Challenge row (spec §3.8).
+  const friendSolves = useFriendSolves(game.urlPuzzle ? puzzleIdentity(game.urlPuzzle) : null);
+
   const startRoom = useCallback(
     (friendId: string | null) => {
       setPendingChallenge(friendId);
@@ -107,6 +112,7 @@ export function RaceScreen() {
               <PersonList className="mt-3">
                 {friends.friendships.friends.map((f) => (
                   <PersonRow key={f.userId} username={f.username}>
+                    <SolveChip solve={friendSolves[f.userId]} />
                     <Button size="sm" onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
                       <Swords className="size-4" aria-hidden="true" />
                       {t("race.challenge")}

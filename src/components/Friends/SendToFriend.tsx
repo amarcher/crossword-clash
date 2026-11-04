@@ -5,10 +5,14 @@ import { useFriends } from "../../contexts/FriendsContext";
 import { FriendsError } from "../../lib/friends";
 import { Button, buttonClass } from "../ui";
 import { PersonList, PersonRow } from "./PersonRow";
+import { SolveChip } from "./SolveChip";
+import { useFriendSolves } from "../../hooks/useFriendSolves";
 
 interface SendToFriendProps {
   /** The daily challenge path (`/daily/:day/:slot?beat=…&by=…`), the only link the server accepts. */
   link: string;
+  /** The daily's `puzzleIdentity()`: friends who already finished it wear a chip (spec §3.8). */
+  puzzleKey?: string | null;
   darkMode?: boolean;
 }
 
@@ -19,7 +23,8 @@ interface SendToFriendProps {
  * invite the friend sees as a banner or in their Race friends inbox. Renders
  * nothing for a viewer without friends (or with the switch off).
  */
-export function SendToFriend({ link, darkMode }: SendToFriendProps) {
+export function SendToFriend({ link, darkMode, puzzleKey = null }: SendToFriendProps) {
+  const solves = useFriendSolves(puzzleKey);
   const { t } = useTranslation();
   const { active, friendships, beat } = useFriends();
   const [open, setOpen] = useState(false);
@@ -52,6 +57,7 @@ export function SendToFriend({ link, darkMode }: SendToFriendProps) {
           <PersonList>
             {friendships.friends.map((f) => (
               <PersonRow key={f.userId} username={f.username}>
+                <SolveChip solve={solves[f.userId]} />
                 {sent[f.userId] ? (
                   <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-brand-50 px-3 text-sm font-semibold text-brand-700">
                     <Check className="size-4" aria-hidden="true" />

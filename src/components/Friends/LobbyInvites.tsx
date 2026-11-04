@@ -4,7 +4,9 @@ import { Check, UserRoundCheck, UserRoundX } from "lucide-react";
 import { useFriends } from "../../contexts/FriendsContext";
 import { FriendsError, lobbyInviteStatus, takePendingChallenge } from "../../lib/friends";
 import { Button, Card, Eyebrow } from "../ui";
+import { useFriendSolves } from "../../hooks/useFriendSolves";
 import { PersonList, PersonRow } from "./PersonRow";
+import { SolveChip } from "./SolveChip";
 
 const CHIP = "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold";
 
@@ -18,9 +20,11 @@ const CHIP = "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-
  * In the apps the invite is a push; on the web it waits in their inbox and
  * shows as a banner if the site is open.
  */
-export function LobbyInvites({ gameId, players = [] }: { gameId: string; players?: readonly { userId: string }[] }) {
+export function LobbyInvites({ gameId, players = [], puzzleKey = null }: { gameId: string; players?: readonly { userId: string }[]; puzzleKey?: string | null }) {
   const { t } = useTranslation();
   const { active, friendships, invite, sentInvites } = useFriends();
+  // Friends who already finished this room's puzzle (spec §3.8) wear a chip; they are still invitable.
+  const solves = useFriendSolves(puzzleKey);
   const [invited, setInvited] = useState<Record<string, true>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +65,7 @@ export function LobbyInvites({ gameId, players = [] }: { gameId: string; players
           const state = status === "none" && invited[f.userId] ? "invited" : status;
           return (
             <PersonRow key={f.userId} username={f.username}>
+              <SolveChip solve={solves[f.userId]} />
               {state === "joined" ? (
                 <span className={`${CHIP} bg-emerald-50 text-emerald-800`}>
                   <UserRoundCheck className="size-4" aria-hidden="true" />

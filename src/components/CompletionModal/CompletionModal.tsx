@@ -1,3 +1,4 @@
+import { puzzleIdentity } from "../../lib/soloStats";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
@@ -681,6 +682,7 @@ export function CompletionModal({
           {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
               link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName") })}
+              puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}
               darkMode={darkMode}
             />
           )}

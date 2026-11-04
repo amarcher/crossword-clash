@@ -320,6 +320,32 @@ export async function searchUsernames(query: string, viewerId: string, limit = 1
   return (data ?? []).map((row) => ({ userId: row.user_id, username: row.username }));
 }
 
+/** A friend's finish of a puzzle (spec §3.8): the mode it was solved in and the day; never a time. */
+export interface FriendSolve {
+  mode: string;
+  day: string;
+}
+
+/**
+ * Which of the caller's friends have already finished the puzzle, by user id
+ * (the `friend_solves` RPC: accepted friends only, never a time). Empty for a
+ * viewer with no account.
+ */
+export async function fetchFriendSolves(puzzleKey: string): Promise<Record<string, FriendSolve>> {
+  const { data, error } = await client().rpc("friend_solves", { p_puzzle_key: puzzleKey });
+  if (error) throw refusal(error);
+  const out: Record<string, FriendSolve> = {};
+  for (const row of (data ?? []) as { user_id: string; mode: string; completed_day: string }[]) out[row.user_id] = { mode: row.mode, day: row.completed_day };
+  return out;
+}
+
+/** The chip a friend's finish earns beside an invite: solved on their own, or raced in a room. */
+export function solveChip(solve: FriendSolve | undefined): "solved" | "raced" | null {
+  if (!solve) return null;
+  if (solve.mode === "import") return null;
+  return solve.mode === "solo" ? "solved" : "raced";
+}
+
 export async function fetchRecentOpponents(): Promise<Opponent[]> {
   const { data, error } = await client().rpc("recent_opponents", {});
   if (error) throw refusal(error);

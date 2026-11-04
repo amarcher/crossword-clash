@@ -1,3 +1,4 @@
+import { puzzleIdentity } from "../lib/soloStats";
 import { useCallback, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { GameLobby } from "../components/GameLobby";
@@ -84,7 +85,7 @@ export function LobbyScreen() {
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
       raceMode={game.raceMode}
       onRaceModeChange={game.setRaceMode}
-      invites={game.gameId ? <LobbyInvites gameId={game.gameId} players={mp.players} /> : null}
+      invites={game.gameId ? <LobbyInvites gameId={game.gameId} players={mp.players} puzzleKey={game.puzzle ? puzzleIdentity(game.puzzle) : null} /> : null}
       onNudgeHost={friendsEnabled() && game.gameId && !mp.isHost ? handleNudge : undefined}
     />
   );

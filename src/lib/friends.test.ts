@@ -69,6 +69,8 @@ const {
   retryAfterSeconds,
   NUDGE_BACKOFF_MS,
   fetchRecentOpponents,
+  fetchFriendSolves,
+  solveChip,
   friendsEnabled,
   friendSuggestions,
   friendsErrorKind,
@@ -260,6 +262,20 @@ describe("client", () => {
     calls.length = 0;
     expect(await fetchPlayerProfiles([])).toEqual([]);
     expect(calls).toEqual([]);
+  });
+
+  it("reads which friends finished a puzzle through the RPC, keyed by user id, and names each finish's chip", async () => {
+    results = [{ data: [{ user_id: "a", mode: "solo", completed_day: "2026-11-03" }, { user_id: "m", mode: "versus", completed_day: "2026-11-02" }], error: null }];
+    const solves = await fetchFriendSolves("civics class|9x9|abc");
+    expect(rpcCalls[0]).toEqual({ fn: "friend_solves", args: { p_puzzle_key: "civics class|9x9|abc" } });
+    expect(solves).toEqual({ a: { mode: "solo", day: "2026-11-03" }, m: { mode: "versus", day: "2026-11-02" } });
+    expect(solveChip(solves.a)).toBe("solved");
+    expect(solveChip(solves.m)).toBe("raced");
+    expect(solveChip({ mode: "coop", day: "2026-11-01" })).toBe("raced");
+    expect(solveChip({ mode: "import", day: "2026-11-01" })).toBeNull();
+    expect(solveChip(undefined)).toBeNull();
+    results = [{ data: null, error: { message: "friends:not_signed_in" } }];
+    await expect(fetchFriendSolves("x")).rejects.toMatchObject({ kind: "not_signed_in" });
   });
 
   it("reads recent opponents and maps the rows", async () => {
