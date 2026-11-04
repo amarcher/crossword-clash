@@ -4,9 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { ArrowRight, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
 import { PageShell } from "../PageShell";
-import { Eyebrow, MiniGridThumb } from "../ui";
 import { normalizePuzzle } from "../../lib/puzzleNormalizer";
-import { SAMPLE_PUZZLES } from "../../lib/samplePuzzles";
 import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
@@ -14,6 +12,11 @@ import { nativeNytImportAvailable } from "../../lib/nativeNytImport";
 
 interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
+  /** The TV chooser's heading and lead; the hub's own by default. */
+  title?: string;
+  subtitle?: string;
+  /** Sources rendered above the file dropzone (the TV's dailies, archive and community links). */
+  sources?: ReactNode;
   /** Back control in the bar's right slot (the host flow returns to the name step); the logo is always the home link. */
   backTo?: string;
   backLabel?: string;
@@ -22,7 +25,8 @@ interface PuzzleImporterProps {
 const SCRAPER_URL =
   "https://chromewebstore.google.com/detail/crossword-scraper/lmneijnoafbpnfdjabialjehgohpmcpo?hl=en-US";
 
-const CARD =
+/** The hub's source card, shared with the TV chooser's tiles. */
+export const IMPORTER_CARD =
   "group flex h-full flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-card transition-[box-shadow,border-color,background-color] duration-150 hover:border-line-strong hover:shadow-raised active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
 
 /** One consistent "source" card: icon tile, title, description, call to action. */
@@ -60,16 +64,16 @@ function SourceCard({
     </>
   );
   if (link.to) {
-    return <Link to={link.to} className={CARD}>{body}</Link>;
+    return <Link to={link.to} className={IMPORTER_CARD}>{body}</Link>;
   }
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer" className={CARD}>
+    <a href={link.href} target="_blank" rel="noopener noreferrer" className={IMPORTER_CARD}>
       {body}
     </a>
   );
 }
 
-export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImporterProps) {
+export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel, title, subtitle, sources }: PuzzleImporterProps) {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -135,9 +139,9 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
       <div>
         <div className="pb-6 pt-4 text-center sm:pt-6">
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            {t("importer.hubTitle")}
+            {title ?? t("importer.hubTitle")}
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{t(nativeApp ? "importer.hubSubtitleNative" : "importer.hubSubtitle")}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted sm:text-base">{subtitle ?? t(nativeApp ? "importer.hubSubtitleNative" : "importer.hubSubtitle")}</p>
           <p className="mx-auto mt-2 max-w-md text-xs text-subtle sm:text-sm">
             <Trans
               i18nKey="importer.rightsNote"
@@ -152,6 +156,8 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
             />
           </p>
         </div>
+
+        {sources}
 
         {/* Dropzone: a real <label> around a visually-hidden file input, so it is
             keyboard-focusable, tappable on phones, and accepts drag-and-drop. */}
@@ -235,31 +241,6 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel }: PuzzleImpo
             />
           )}
         </div>
-
-        {/* Samples */}
-        <section className="mt-8">
-          <Eyebrow as="h2" className="px-1">{t("importer.tileSampleTitle")}</Eyebrow>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {SAMPLE_PUZZLES.map((sp) => (
-              <button
-                key={sp.id}
-                type="button"
-                onClick={() => onPuzzleLoaded(sp.puzzle)}
-                className={`${CARD} items-start`}
-              >
-                <MiniGridThumb puzzle={sp.puzzle} className="w-14" />
-                <span className="block">
-                  <span className="block text-sm font-semibold leading-snug text-ink">{sp.puzzle.title}</span>
-                  <span className="mt-0.5 block text-xs tabular-nums text-muted">
-                    {sp.puzzle.width}&times;{sp.puzzle.height}
-                    {" · "}
-                    {sp.puzzle.clues.length} {t("importer.sampleClues")}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
 
         <div className="mt-6 flex flex-col items-center gap-4">
           <NytRecommendation variant="card" />

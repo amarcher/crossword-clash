@@ -106,10 +106,10 @@ function dayCell(day: string) {
   return screen.getByRole("button", { name: new RegExp(`^${longDay(day, "en")}:`) });
 }
 
-function renderScreen() {
+function renderScreen(path = "/archive") {
   shownMonth = monthOf(today);
   return render(
-    <MemoryRouter initialEntries={["/archive"]}>
+    <MemoryRouter initialEntries={[path]}>
       <ArchiveScreen />
     </MemoryRouter>,
   );
@@ -177,6 +177,16 @@ describe("ArchiveScreen (/archive)", () => {
     expect(game.handleSoloPuzzleLoaded).toHaveBeenCalledTimes(1);
     expect((game.handleSoloPuzzleLoaded.mock.calls[0] as unknown[])[0]).toMatchObject({ title: "Split Decision" });
     expect(game.setSoloTheme).toHaveBeenCalledWith("Ocean");
+  });
+
+  it("with the TV intent, a day's one action hands its puzzle to the TV layout as a deep link, and the back control returns to the chooser", async () => {
+    renderScreen("/archive?intent=tv");
+    await screen.findAllByRole("button", { name: /^Host .* on TV$/ });
+    expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Race a friend/ })).toBeNull();
+    expect(screen.getByRole("link", { name: "Back to the TV" }).getAttribute("href")).toBe("/host/import");
+    fireEvent.click(screen.getByRole("button", { name: "Host Bard on Screen on TV" }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
   });
 
   it("Race hands the day's puzzle to the host flow", async () => {

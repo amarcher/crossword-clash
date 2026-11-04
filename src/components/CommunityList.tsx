@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Check, Swords } from "lucide-react";
 import { Button, TransitionLink } from "./ui";
+import { withTvIntent } from "../lib/tvHandoff";
 import { authorPath, puzzlePath, sizeBucketOf, type CommunityPuzzle } from "../lib/communityPuzzles";
 import { formatDuration } from "../lib/soloStats";
 
@@ -14,6 +15,8 @@ interface CommunityListProps {
   busy: string | null;
   onPlay: (entry: CommunityPuzzle) => void;
   onRace?: (entry: CommunityPuzzle) => void;
+  /** Serving the TV's chooser: the card's action is "Host on TV" and its links keep `?intent=tv`. */
+  tv?: boolean;
   raceDisabled?: boolean;
   /** On an author's own page the credit line is redundant. */
   showAuthor?: boolean;
@@ -26,7 +29,8 @@ interface CommunityListProps {
  * puzzle's page), the author (a link to theirs), the note, plays and solves,
  * and Play solo + Race friends.
  */
-export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, onRace, raceDisabled, showAuthor = true }: CommunityListProps) {
+export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, onRace, raceDisabled, showAuthor = true, tv = false }: CommunityListProps) {
+  const link = (path: string) => (tv ? withTvIntent(path) : path);
   const { t } = useTranslation();
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,13 +65,13 @@ export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, on
               ) : null}
             </div>
             <h2 className="mt-1.5 font-display text-lg font-semibold leading-snug tracking-tight text-ink">
-              <TransitionLink to={puzzlePath(entry.short_id)} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
+              <TransitionLink to={link(puzzlePath(entry.short_id))} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
                 {entry.title}
               </TransitionLink>
             </h2>
             {showAuthor && (
               <p className="text-sm text-muted">
-                <TransitionLink to={authorPath(entry.author)} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
+                <TransitionLink to={link(authorPath(entry.author))} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
                   {t("community.by", { author: entry.author })}
                 </TransitionLink>
               </p>
@@ -76,7 +80,7 @@ export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, on
             <p className="mt-2 text-xs text-subtle tabular-nums">{t("community.stats", { plays: entry.plays, solves: entry.solves })}</p>
             <div className="mt-auto flex gap-2 pt-4">
               <Button variant={isSolved ? "secondary" : "soft"} onClick={() => onPlay(entry)} disabled={busy !== null} className="flex-1">
-                {isBusy ? t("community.loadingPuzzle") : isSolved ? t("community.playAgain") : resumable ? t("community.resume") : t("community.playSolo")}
+                {isBusy ? t("community.loadingPuzzle") : tv ? t("importer.hostOnTv") : isSolved ? t("community.playAgain") : resumable ? t("community.resume") : t("community.playSolo")}
               </Button>
               {onRace && (
                 <Button variant="ghost" onClick={() => onRace(entry)} disabled={busy !== null || raceDisabled}>

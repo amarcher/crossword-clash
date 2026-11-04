@@ -106,6 +106,19 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
     expect(game.setSoloTheme).toHaveBeenCalledWith(null);
   });
 
+  it("with the TV intent, every card offers Host on TV, no race, its links keep the intent, and the pick becomes the TV's deep link", async () => {
+    const { container } = renderAt("/puzzles?intent=tv");
+    const hosts = await screen.findAllByRole("button", { name: "Host on TV" });
+    expect(hosts.length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
+    const links = [...container.querySelectorAll('a[href^="/puzzles/"]')].map((a) => a.getAttribute("href"));
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((h) => h?.includes("intent=tv"))).toBe(true);
+    expect(screen.getByRole("link", { name: "Back to the TV" }).getAttribute("href")).toBe("/host/import");
+    fireEvent.click(hosts[0]);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
+  });
+
   it("races through the host flow", async () => {
     renderAt("/puzzles");
     await screen.findByText("Puzzle 1");

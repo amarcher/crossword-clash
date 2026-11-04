@@ -75,6 +75,14 @@ describe("CommunityPuzzleScreen (/puzzles/:shortId)", () => {
     expect((game.handleSoloPuzzleLoaded.mock.calls as unknown[][])[0][0]).toMatchObject({ origin: "community", author: "ada" });
   });
 
+  it("with the TV intent, the one action hands the puzzle to the TV layout and the back control keeps the intent", async () => {
+    renderAt("abcdefgh?intent=tv");
+    fireEvent.click(await screen.findByRole("button", { name: "Host on TV" }));
+    expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Community puzzles" }).getAttribute("href")).toBe("/puzzles?intent=tv");
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
+  });
+
   it("shows the viewer's best time and offers Play again", async () => {
     bestTimes = { "key-1": 61 };
     renderAt();
