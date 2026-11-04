@@ -9,7 +9,8 @@ import type { RoomInvite } from "../lib/friends";
 const navigate = vi.fn();
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
-const game = { urlPuzzle: null as { title: string } | null, setUrlPuzzle: vi.fn() };
+type Stub = { title: string; width: number; height: number; cells: { row: number; col: number; solution: string | null }[][] };
+const game = { urlPuzzle: null as Stub | null, setUrlPuzzle: vi.fn() };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 const account = { user: null as { id: string } | null, profile: null as { username: string } | null, available: true, openAccount: vi.fn() };
 vi.mock("../contexts/AccountContext", () => ({ useAccountContext: () => account, useMaybeAccount: () => null }));
@@ -124,7 +125,7 @@ describe("RaceScreen (/race, spec §3.6)", () => {
   });
 
   it("with the daily tile's puzzle as the chip, Challenge and Start go straight to the host name screen", () => {
-    game.urlPuzzle = { title: "Shapes and shadows" };
+    game.urlPuzzle = { title: "Shapes and shadows", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
     friends.value = friendsValue({ friendships: { friends: [alicia], incoming: [], outgoing: [] } });
     renderScreen();
     expect(screen.getByText("Racing: Shapes and shadows")).toBeTruthy();

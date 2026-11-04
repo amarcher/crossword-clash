@@ -517,6 +517,8 @@ export interface Database {
       respond_friend_request: { Args: { p_requester: string; p_accept: boolean }; Returns: undefined };
       /** Accounts the caller shared a room with, from the game rows the sweep keeps. */
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
+      /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
+      friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */
       invite_to_room: { Args: { p_game_id: string; p_friend: string }; Returns: string | null };
       /** Sends a friend a daily "beat my time" link (the /daily/:day/:slot path only). */
