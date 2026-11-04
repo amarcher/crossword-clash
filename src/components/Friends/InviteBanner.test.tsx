@@ -107,6 +107,20 @@ describe("InviteBanner", () => {
     expect(friends.value.dismissRoomJoined).toHaveBeenCalledOnce();
   });
 
+  it("stays quiet about an invite on the Race screen, which lists it with its own Join and Can't now, while a joined notice still shows there", () => {
+    friends.value = value({ openInvites: [invite], unseenInvites: [invite] });
+    const { container } = at("/race");
+    expect(container.querySelector("[role=status]")).toBeNull();
+    cleanup();
+    friends.value = value({ openInvites: [invite], unseenInvites: [invite] });
+    at("/race/friends");
+    expect(screen.getByRole("button", { name: "Join" })).toBeTruthy();
+    cleanup();
+    friends.value = value({ roomJoined: { gameId: "g9", code: "ABCDEF", title: "T", joinerName: "alicia", at: 1 } });
+    at("/race");
+    expect(screen.getByRole("button", { name: "Go to room" })).toBeTruthy();
+  });
+
   it("stays quiet on that room's lobby, on any lobby and in a game, and reports nothing there", () => {
     friends.value = value({ unseenInvites: [invite], roomJoined: { gameId: "g1", code: "KQ7MXB", title: "", joinerName: "alicia", at: 1 } });
     for (const path of ["/lobby/g1", "/lobby/other", "/play/g1", "/host"]) {

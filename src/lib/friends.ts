@@ -446,6 +446,10 @@ export async function sendFriendRequest(username: string): Promise<RequestOutcom
 export async function respondFriendRequest(requesterId: string, accept: boolean): Promise<void> {
   const { error } = await client().rpc("respond_friend_request", { p_requester: requesterId, p_accept: accept });
   if (error) throw refusal(error);
+  // The requester's lists only refetch on a nudge or a tab wake: without this
+  // an accept showed up for them on the next relaunch (Andrew, 2026-11-03).
+  // A decline tells them nothing, as the spec has it.
+  if (accept) notifyInvite(requesterId);
 }
 
 /** Unfriend, or cancel the viewer's own pending request (either party may delete the pair's row). */

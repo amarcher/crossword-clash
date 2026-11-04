@@ -871,6 +871,7 @@
     "searchEmpty": "No one by that name.",
     "add": "Add",
     "requested": "Requested",
+    "acceptedToast": "@{{name}} accepted your friend request",
     "alreadyFriend": "Friends",
     "racedHeading": "People you have raced",
     "racedHint": "From rooms you shared in the last 90 days. Anonymous players have no username and aren't listed.",

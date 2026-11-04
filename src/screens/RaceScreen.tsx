@@ -184,7 +184,7 @@ export function RaceScreen() {
           </p>
         )}
       </header>
-      <div className="grid gap-4" aria-busy={!friends.ready || undefined}>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4" aria-busy={!friends.ready || undefined}>
         {blocks.map(render)}
       </div>
     </PageShell>

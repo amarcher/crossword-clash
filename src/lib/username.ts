@@ -36,7 +36,12 @@ export function validateUsername(username: string): UsernameProblem | null {
  * and digits only, capped, and empty when nothing usable is left.
  */
 export function suggestUsername(displayName: string | null | undefined): string {
-  const base = (displayName ?? "")
+  // A provider may hand over the email where a name is missing: the local
+  // part is the suggestion, never "aarcher520gmailcom" (Andrew, 2026-11-03).
+  const raw = (displayName ?? "").trim();
+  const at = raw.indexOf("@");
+  const source = at > 0 ? raw.slice(0, at) : raw;
+  const base = source
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^A-Za-z0-9_]+/g, "")
