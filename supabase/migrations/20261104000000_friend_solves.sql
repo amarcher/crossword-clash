@@ -33,5 +33,9 @@ BEGIN
 END;
 $$;
 
+-- Supabase's default privileges grant EXECUTE on a new public function to
+-- anon as well; the revoke from PUBLIC does not touch that explicit grant, so
+-- anon is revoked by name (friends_account_id() refuses it anyway).
 REVOKE ALL ON FUNCTION public.friend_solves(TEXT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.friend_solves(TEXT) FROM anon;
 GRANT EXECUTE ON FUNCTION public.friend_solves(TEXT) TO authenticated, service_role;

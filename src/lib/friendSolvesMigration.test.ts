@@ -18,6 +18,7 @@ describe("friend_solves migration", () => {
     expect(sql).toContain("SET search_path = public, pg_temp");
     expect(sql).toContain("uid UUID := friends_account_id();");
     expect(sql).toContain("REVOKE ALL ON FUNCTION public.friend_solves(TEXT) FROM PUBLIC;");
+    expect(sql).toContain("REVOKE EXECUTE ON FUNCTION public.friend_solves(TEXT) FROM anon;");
     expect(sql).toContain("GRANT EXECUTE ON FUNCTION public.friend_solves(TEXT) TO authenticated, service_role;");
     expect(sql).not.toMatch(/TO anon/);
   });
