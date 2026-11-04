@@ -1,0 +1,7 @@
+<en-US>
+Race night fixes: a correct letter is never refused when you type fast, a second race in a row shows its winner screen, and an invite that arrives while the app is open shows as a notification.
+
+Friends: the Race friends and Friends cards fit the screen, an accepted request is announced at once, and a friend who already finished the puzzle you invite them to wears a Solved or Raced it chip.
+
+TV mode leads with today's dailies, past puzzles and community puzzles; the sample puzzles are gone.
+</en-US>
