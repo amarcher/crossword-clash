@@ -194,6 +194,25 @@ describe("the lobby roster and the name the player typed", () => {
     expect(lobbyRows()).toEqual(["ArchHost"]);
   });
 
+  it("drops the room's share code, roster and host flag once the room id goes null (a closed room)", async () => {
+    services.fetchGameState.mockResolvedValue({ cells: {}, players: [myStaleRow, host], status: "waiting", settings: null, startedAt: null, completedAt: null });
+    await renderLobby("Arch");
+    expect(mp.shareCode).toBe("ABC123");
+    expect(mp.isHost).toBe(true);
+    expect(mp.players).toHaveLength(2);
+
+    // The host closed the room (or "Back to menu"): the routing layer clears
+    // the id. Nothing of the room may survive for the next host flow to read
+    // as "I still host a room" — the share code above all.
+    await act(async () => {
+      game.setGameId(null);
+    });
+    expect(mp.shareCode).toBeNull();
+    expect(mp.isHost).toBe(false);
+    expect(mp.players).toEqual([]);
+    expect(mp.isRoomClosed).toBe(false);
+  });
+
   it("tracks presence once the player's own row lands after the first hydrate (a next puzzle in the same room)", async () => {
     services.fetchGameState.mockResolvedValueOnce({ cells: {}, players: [host], status: "waiting", settings: null, startedAt: null, completedAt: null });
     await renderLobby("Arch");

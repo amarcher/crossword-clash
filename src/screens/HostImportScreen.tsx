@@ -29,8 +29,9 @@ export function HostImportScreen() {
       const puzzleId = await uploadPuzzle(p);
       if (!puzzleId) return;
 
-      // If we have an existing share code, reuse it for the next game
-      if (mp.shareCode) {
+      // The host of a live room keeps its code for the next game; a code
+      // alone may be a leftover from a room someone else closed.
+      if (mp.shareCode && game.gameId && mp.isHost) {
         const result = await createNextGame(puzzleId, user.id, mp.shareCode, {
           displayName: game.displayName.trim() || tStatic('common.defaultPlayerName'),
         });

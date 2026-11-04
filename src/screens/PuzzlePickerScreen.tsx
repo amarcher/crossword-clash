@@ -67,7 +67,9 @@ export function PuzzlePickerScreen() {
       setError(null);
       setBusy(key);
       try {
-        const keepRoom = intent === "next" && !!user && !!mp.shareCode;
+        // Only the host of a live room has a room to keep; a code alone may
+        // be a leftover from a room someone else closed.
+        const keepRoom = intent === "next" && !!user && !!mp.shareCode && !!game.gameId && mp.isHost;
         track("mode_selected", { mode: keepRoom ? "next-puzzle" : "picker-race", slot });
         if (keepRoom) {
           const puzzleId = await uploadPuzzle(puzzle);

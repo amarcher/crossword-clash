@@ -21,6 +21,11 @@ vi.mock("../contexts/MultiplayerContext", () => ({
   MultiplayerProvider: ({ children }: { children: React.ReactNode }) => children,
   useMultiplayerContext: vi.fn(),
 }));
+const friends = vi.hoisted(() => ({ refresh: vi.fn(async () => {}) }));
+vi.mock("../contexts/FriendsContext", () => ({
+  FriendsProvider: ({ children }: { children: React.ReactNode }) => children,
+  useFriends: () => friends,
+}));
 vi.mock("../components/ToastViewport", () => ({ ToastViewport: () => null }));
 vi.mock("../hooks/usePageViews", () => ({ usePageViews: () => {} }));
 vi.mock("../lib/puzzleService", () => ({ rejoinGame: vi.fn() }));
@@ -171,5 +176,46 @@ describe("RoutingEffects on a new_game broadcast", () => {
     rerender(renderEffects("Arch"));
     rerender(renderEffects("Arch"));
     expect(mockSaveMpSession).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("RoutingEffects when a room closes", () => {
+  beforeEach(() => vi.clearAllMocks());
+  afterEach(cleanup);
+
+  function renderClosed(mp: { isHost: boolean }) {
+    mockUseMultiplayerContext.mockReturnValue({ newGameId: null, isRoomClosed: true, shareCode: "ABCDEF", ...mp } as unknown as ReturnType<typeof useMultiplayerContext>);
+    const game = { displayName: "Arch", setGameId: vi.fn(), setUrlPuzzle: vi.fn(), setImportFailed: vi.fn(), reset: vi.fn(), setIsMultiplayer: vi.fn() };
+    mockUseGame.mockReturnValue(game as unknown as ReturnType<typeof useGame>);
+    render(
+      <MemoryRouter initialEntries={["/lobby/g1"]}>
+        <Routes>
+          <Route path="/lobby/:gameId" element={<RoutingEffects><div data-testid="at">/lobby</div></RoutingEffects>} />
+          <Route path="/menu" element={<RoutingEffects><div data-testid="at">/menu</div></RoutingEffects>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    return game;
+  }
+
+  it("the host's own close clears the room, refetches the friends lists and lands on the menu", async () => {
+    const game = renderClosed({ isHost: true });
+    await waitFor(() => expect(screen.getByTestId("at").textContent).toBe("/menu"));
+    expect(game.setGameId).toHaveBeenCalledWith(null);
+    expect(mockClearMpSession).toHaveBeenCalled();
+    // The sent invites' rows answer the room's status: a refetch is what turns them "closed".
+    expect(friends.refresh).toHaveBeenCalled();
+  });
+
+  it("a booted player sees the notice first, then the same teardown and refetch on Back to menu", async () => {
+    const game = renderClosed({ isHost: false });
+    const ok = await screen.findByRole("button", { name: "Back to menu" });
+    expect(screen.getByTestId("at").textContent).toBe("/lobby");
+    expect(friends.refresh).not.toHaveBeenCalled();
+    ok.click();
+    await waitFor(() => expect(screen.getByTestId("at").textContent).toBe("/menu"));
+    expect(game.setGameId).toHaveBeenCalledWith(null);
+    expect(mockClearMpSession).toHaveBeenCalled();
+    expect(friends.refresh).toHaveBeenCalledTimes(1);
   });
 });

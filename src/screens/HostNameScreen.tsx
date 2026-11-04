@@ -66,7 +66,9 @@ export function HostNameScreen() {
         const puzzleId = await uploadPuzzle(game.urlPuzzle);
         if (!puzzleId) return;
 
-        if (mp.shareCode) {
+        // "Next puzzle, same room" only for the host of a live room: a code
+        // alone may be a leftover from a room someone else closed.
+        if (mp.shareCode && game.gameId && mp.isHost) {
           const result = await createNextGame(puzzleId, user.id, mp.shareCode, {
             displayName: game.displayName.trim() || tStatic('common.defaultPlayerName'),
           });
