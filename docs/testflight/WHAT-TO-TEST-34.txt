@@ -1,0 +1,8 @@
+This build (1.1.0, build 34) fixes race night's bugs and adds a few things. Please check:
+
+1. In a race, type fast: a correct letter is never refused. Before, two quick letters could shake the grid at a right one and count it as wrong.
+2. Join a friend's room, finish it, then join a second room and finish that too: the winner screen appears both times.
+3. Get invited while the app is open: the invite shows as a notification now. A second invite from the same friend replaces the first in Notification Center.
+4. Race friends and Friends: the cards fit the screen. Accept a friend request on one phone: the other phone says "@name accepted your friend request" without a relaunch.
+5. In a lobby's Invite friends list, a friend who already finished this puzzle wears "Solved" or "Raced it" and can still be invited.
+6. TV mode (Host as TV): the puzzle page now leads with today's dailies, Past puzzles and Community puzzles; the sample puzzles are gone.
