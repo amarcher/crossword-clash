@@ -1,0 +1,7 @@
+<en-US>
+TV mode: the lobby features the puzzle about to be solved and marks players who already solved it; pages no longer scroll by the height of the status bar.
+
+Every page has a way out: the TV's puzzle page, the puzzle hub, the challenge page and the reconnecting spinner all carry a way back to the menu.
+
+The studio's page for a visitor without Plus uses a wide screen.
+</en-US>

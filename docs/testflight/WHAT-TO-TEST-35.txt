@@ -1,0 +1,8 @@
+This build (1.1.0, build 35) is about the TV and the pages around it. Please check:
+
+1. TV mode (Host as TV) on an iPad: the lobby no longer scrolls by the height of the status bar. The same goes for every page in the app.
+2. The TV lobby features the puzzle about to be solved: a card with its grid, title, size and author under "Waiting for Players".
+3. Players who already solved that puzzle wear "Solved before" or "Raced before" on the TV roster and in the phone lobby (accounts only; anonymous players show nothing).
+4. Every page has a way out: the TV's "Choose a puzzle" page and the "Bring your own puzzle" hub have Back to menu, a challenge page has Back, the reconnecting spinner has Back to menu, and the TV's landing and puzzle-ready screens link back to the menu (the latter also to "Choose another puzzle").
+5. The studio's page for a visitor without Plus lays its pitch out in two columns on a wide screen.
+6. Everything from build 34 still applies.
