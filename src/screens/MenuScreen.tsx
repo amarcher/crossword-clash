@@ -217,7 +217,7 @@ export function MenuScreen() {
   );
 
   return (
-    <div className={`min-h-dvh crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
+    <div className={`min-h-app crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
       {/* The top bar: the account avatar (or "Sign in") at the right, the one
           place the menu has for it. The row is always 44px tall so the wordmark
           sits at the same height before and after the control appears. The

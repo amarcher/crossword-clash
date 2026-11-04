@@ -60,7 +60,7 @@ export function PageShell({ width, widthLg, bar, background = "crossword", grow,
   const Root = as;
   return (
     <Root
-      className={`min-h-dvh pb-10 pt-2 ${
+      className={`min-h-app pb-10 pt-2 ${
         background === "canvas" ? "bg-canvas" : "crossword-bg"
       } ${grow ? "flex flex-col" : ""}`}
     >

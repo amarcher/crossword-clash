@@ -519,6 +519,8 @@ export interface Database {
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
       /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
+      /** Which of a room's players have finished its puzzle before (the host or a player may ask): the mode, never a time. */
+      room_solves: { Args: { p_game_id: string; p_puzzle_key: string }; Returns: { user_id: string; mode: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */
       invite_to_room: { Args: { p_game_id: string; p_friend: string }; Returns: string | null };
       /** Sends a friend a daily "beat my time" link (the /daily/:day/:slot path only). */

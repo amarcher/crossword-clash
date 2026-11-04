@@ -160,6 +160,9 @@
     "shareInviteAction": "Share invite",
     "gameSettings": "Game settings",
     "qrHint": "Or have friends scan this code",
+    "solvedBefore": "Solved before",
+    "racedBefore": "Raced before",
+    "puzzleHeading": "Puzzle",
     "away": "Away",
     "waitingForHostBack": "Waiting for {{name}} to come back…"
   },

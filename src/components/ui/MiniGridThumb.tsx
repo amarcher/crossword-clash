@@ -20,12 +20,12 @@ function cornerClass(row: number, col: number, width: number, height: number): s
 }
 
 /** A small, non-interactive rendering of a puzzle's grid shape (blocks + numbers). */
-export function MiniGridThumb({ puzzle, className = "" }: { puzzle: Puzzle; className?: string }) {
+export function MiniGridThumb({ puzzle, className = "", style }: { puzzle: Puzzle; className?: string; style?: React.CSSProperties }) {
   return (
     <div
       aria-hidden="true"
       className={`grid gap-px rounded-md bg-ink p-px ${className}`}
-      style={{ gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`, aspectRatio: `${puzzle.width} / ${puzzle.height}` }}
+      style={{ ...style, gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`, aspectRatio: `${puzzle.width} / ${puzzle.height}` }}
     >
       {puzzle.cells.flat().map((cell) => (
         <div

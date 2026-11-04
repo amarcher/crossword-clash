@@ -98,11 +98,17 @@
 
 /* Native screens own the safe areas instead of stacking WebView content insets
    on top of a full-height document. Non-game pages can still scroll normally. */
-.native-app { background: #fff; overscroll-behavior: none; }
+/* The height a page may fill: the viewport on the web; in the apps the viewport
+   minus the insets `#root` already pads (border-box), so a page sized to 100dvh
+   there overflowed by the status bar and the whole screen scrolled by exactly
+   that much — the TV lobby on an iPad, every PageShell page (2026-11-03). */
+:root { --app-height: 100dvh; }
+.native-app { background: #fff; overscroll-behavior: none; --app-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 .native-app #root {
   min-height: 100dvh;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+@utility min-h-app { min-height: var(--app-height); }
 .native-game-layout {
   position: fixed;
   inset: 0;
@@ -477,11 +483,11 @@ select,
   --u: min(1vw, 1.7778vh);
   background: var(--color-stage);
   color: #fff;
-  height: 100dvh;
+  height: var(--app-height);
   overflow: hidden;
   font-size: max(16px, calc(var(--u) * 1.1));
 }
-.tv-stage-scroll { min-height: 100dvh; height: auto; overflow: auto; }
+.tv-stage-scroll { min-height: var(--app-height); height: auto; overflow: auto; }
 .tv-t-sm { font-size: max(14px, calc(var(--u) * 0.9)); }
 .tv-t-md { font-size: max(17px, calc(var(--u) * 1.15)); }
 .tv-t-lg { font-size: max(22px, calc(var(--u) * 1.6)); }
@@ -511,7 +517,7 @@ select,
 }
 .tv-main {
   display: flex;
-  height: 100dvh;
+  height: var(--app-height);
   gap: calc(var(--u) * 1.6);
   padding: calc(var(--u) * 1.6);
 }
@@ -568,7 +574,7 @@ select,
   .tv-stage { --u: 3.2vw; overflow-x: hidden; }
   .tv-t-xl { font-size: 22px; }
   .tv-t-2xl { font-size: 30px; }
-  .tv-stage { height: auto; min-height: 100dvh; overflow: visible; overflow-x: clip; }
+  .tv-stage { height: auto; min-height: var(--app-height); overflow: visible; overflow-x: clip; }
   .tv-lobby { display: flex; flex-direction: column; height: auto; }
   /* Stacked, the roster leads and the join column follows, as in the phone lobby. */
   .tv-lobby-join { order: 1; }
