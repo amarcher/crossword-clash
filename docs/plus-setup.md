@@ -491,3 +491,74 @@ environments). What is still open is marked below.
 
 
 **Build 20 (2026-10-28):** the first app build with community puzzles and Publish — `VITE_COMMUNITY=1` had never been in `.env.local`, so builds 11–19 lacked them; `scripts/testflight.sh` now refuses to build without the production switches. The menu gains a "Build a crossword" row.
+
+## 4. Slack purchase alerts (#crossword-clash)
+
+Every purchase lifecycle event that reaches `verify-purchase` is announced
+as one line in **#crossword-clash** of The Archers Slack workspace: a new
+subscriber, a renewal, a billing issue, a cancellation, an expiry, a refund,
+a plan change; with the plan, the store (App Store / Google Play / Stripe
+(web)), the next date, the price where the event carries one, "(sandbox)"
+or "(test mode)" when it is not a real purchase, the first eight characters
+of the uid for support, and a trailing count of Plus rows in force. The
+wording is `src/lib/purchaseAlert.ts` (pure, tested, mirrored for Deno);
+the sender is the `purchase-alert` edge function, called by a pg_net
+trigger on `purchase_events` INSERT, the same shape as `report-alert`.
+Nothing here is the space-race bot: it is a Slack app of its own with its
+own token.
+
+1. **Slack app.** At api.slack.com/apps → Create New App → From scratch,
+   name **Crossword Clash Alerts**, workspace The Archers. Under OAuth &
+   Permissions add the bot scope **`chat:write`** (and `chat:write.public`
+   if you would rather not invite the bot to the channel), then Install to
+   Workspace and copy the **Bot User OAuth Token** (`xoxb-…`). In
+   #crossword-clash, `/invite @Crossword Clash Alerts`. The channel id
+   (`C…`) is in the channel's details sheet; the name `#crossword-clash`
+   works too with `chat:write.public`.
+
+2. **Secrets** (the bot token, the channel, and a secret you invent for
+   the trigger header):
+
+   ```bash
+   openssl rand -hex 32
+   ```
+
+   ```bash
+   npx supabase secrets set SLACK_BOT_TOKEN=xoxb-… SLACK_PURCHASE_CHANNEL=C… PURCHASE_ALERT_SECRET=<the hex> --project-ref rdqdhawlxuclfxpsvdgs </dev/null
+   ```
+
+3. **Deploy the function** (no JWT check: the trigger carries none):
+
+   ```bash
+   npx supabase functions deploy purchase-alert --no-verify-jwt --use-api --yes --remote=rdqdhawlxuclfxpsvdgs
+   ```
+
+4. **Install the trigger.** Open `docs/purchase-alert-setup.sql`, replace
+   `<PURCHASE_ALERT_SECRET>` with the same hex, and run it in the SQL
+   editor (it refuses to run with the placeholder still in place; never
+   commit the filled-in copy). It creates `public.purchase_alert_webhook()`
+   with the secret in its header and the `purchase_alert` trigger on
+   `purchase_events`. Re-run it to rotate the secret. Check:
+
+   ```sql
+   select tgname, tgenabled from pg_trigger where tgname = 'purchase_alert';
+   ```
+
+5. **Test it** without inserting anything by hand: RevenueCat → Project →
+   Integrations → Webhooks → the `verify-purchase/revenuecat` webhook →
+   **Send test event**. The function records the `TEST` row, the trigger
+   fires, and `purchase-alert` answers `skipped` for it (a TEST event earns
+   no line), which shows in the function's logs (Dashboard → Edge
+   Functions → purchase-alert → Logs). The first real line comes from a
+   sandbox purchase on a TestFlight build or a license tester on Play
+   (production allows sandbox webhooks, `REVENUECAT_ALLOW_SANDBOX=1`, so
+   App Review's purchases post too, marked "(sandbox)"), or from a Stripe
+   test-mode event replayed from the Stripe dashboard, marked "(test
+   mode)". A `send_failed` with `not_in_channel` means step 1's invite is
+   missing; `channel_not_found` means the channel id is wrong.
+
+The function answers 200 `skipped` for events that earn no line (`TEST`,
+`checkout.session.completed`, a Stripe update that changed only metadata),
+401 for a wrong header, 500 `not_configured` without the Slack secrets and
+502 `send_failed` when Slack refuses; pg_net does not retry, so a failed
+post is lost (the row is still in `purchase_events`).
