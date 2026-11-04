@@ -26,6 +26,14 @@ import {
   type SentInvite,
 } from "../lib/friends";
 import { track } from "../lib/analytics";
+import { emitToast } from "../lib/toastBus";
+import { tStatic } from "../i18n/i18n";
+
+/** The requests of `before` that `after` lists as friends: the accepts since the last load. */
+export function newlyAccepted(before: Friendships, after: Friendships): Friendships["friends"] {
+  const asked = new Set(before.outgoing.map((p) => p.userId));
+  return after.friends.filter((f) => asked.has(f.userId));
+}
 
 export interface FriendsContextValue {
   /** The switch is on and the viewer is a signed-in account with a username. */
@@ -88,6 +96,10 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
   const [, setTick] = useState(0);
 
   const activeUser = active ? userId : null;
+  // The last load, for the accept notice: a request listed as outgoing then
+  // and as a friend now was accepted meanwhile, and the requester is told in
+  // the app (the recipient's accept nudges this channel, so it lands at once).
+  const lastLoadRef = useRef<{ userId: string; friendships: Friendships } | null>(null);
   const refresh = useCallback(async () => {
     if (!activeUser) return;
     const [f, i, sent, b] = await Promise.all([
@@ -96,6 +108,13 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
       fetchSentInvites(activeUser).catch(() => [] as SentInvite[]),
       fetchBlocks(activeUser).catch(() => [] as string[]),
     ]);
+    const last = lastLoadRef.current;
+    if (last && last.userId === activeUser) {
+      for (const friend of newlyAccepted(last.friendships, f)) {
+        emitToast({ message: tStatic("friends.acceptedToast", { name: friend.username }) });
+      }
+    }
+    lastLoadRef.current = { userId: activeUser, friendships: f };
     setFriendships(f);
     setInvites(i);
     setSentInvites(sent);

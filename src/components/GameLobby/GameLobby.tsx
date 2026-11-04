@@ -148,7 +148,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
       title={isHost ? t("lobby.title") : t("lobby.guestTitle")}
       subtitle={isHost ? t("lobby.shareInvite") : t("lobby.guestSubtitle")}
     >
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-x-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2 lg:items-start lg:gap-x-6">
         {/* The most important line on the page leads (Andrew, 2026-10-30): the host's Start,
             or a joiner's "waiting for the host" status. Right above the roster, never a bottom bar. */}
         <div className={column}>
@@ -157,7 +157,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
             </Button>
           ) : (
-            <div className="grid gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
               <p
                 role="status"
                 className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold ${hostAway ? "bg-amber-50 text-amber-800" : "bg-brand-50 text-brand-700"}`}
@@ -220,7 +220,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
 
         {/* How people get in: below the roster on phones, the right column on desktop. */}
         {shareCode && (
-          <section className={`grid gap-4 lg:col-start-2 lg:row-start-1 ${joinRows}`}>
+          <section className={`grid grid-cols-[minmax(0,1fr)] gap-4 lg:col-start-2 lg:row-start-1 ${joinRows}`}>
             {invites}
             <Card className="p-5">
               <Eyebrow>{t("lobby.roomCode")}</Eyebrow>

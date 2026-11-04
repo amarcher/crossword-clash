@@ -871,6 +871,7 @@
     "searchEmpty": "Nadie con ese nombre.",
     "add": "Añadir",
     "requested": "Solicitado",
+    "acceptedToast": "@{{name}} aceptó tu solicitud de amistad",
     "alreadyFriend": "Amigos",
     "racedHeading": "Personas con las que has competido",
     "racedHint": "De salas compartidas en los últimos 90 días. Los jugadores anónimos no tienen nombre de usuario y no aparecen.",

@@ -42,7 +42,7 @@ export function SendToFriend({ link, darkMode }: SendToFriendProps) {
   };
 
   return (
-    <div className="grid gap-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
         <Send className="size-4" aria-hidden="true" />
         {t("friends.sendToFriend")}

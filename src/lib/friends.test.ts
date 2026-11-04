@@ -79,6 +79,7 @@ const {
   searchUsernames,
   sendBeat,
   sendFriendRequest,
+  respondFriendRequest,
   setPendingChallenge,
   splitFriendships,
   subscribeInvites,
@@ -272,6 +273,16 @@ describe("client", () => {
     await blockUser("me", "a");
     expect(calls.find((c) => c.op === "insert")?.args[0]).toEqual({ blocker_id: "me", blocked_id: "a" });
     expect(calls.find((c) => c.table === "friendships" && c.op === "delete")).toBeTruthy();
+  });
+
+  it("answers a request through the RPC and nudges the requester's channel on an accept, not on a decline", async () => {
+    results = [{ data: null, error: null }, { data: null, error: null }];
+    await respondFriendRequest("a", true);
+    expect(rpcCalls[0]).toEqual({ fn: "respond_friend_request", args: { p_requester: "a", p_accept: true } });
+    expect(channels.map((c) => c.name)).toEqual(["user:a"]);
+    expect(channels[0].sent).toEqual([{ type: "broadcast", event: "invites_changed", payload: {} }]);
+    await respondFriendRequest("b", false);
+    expect(channels).toHaveLength(1);
   });
 
   it("invites through the RPC and nudges the friend's channel only when something was written", async () => {

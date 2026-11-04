@@ -60,4 +60,10 @@ describe("suggestUsername", () => {
   it("caps at the maximum length", () => {
     expect(suggestUsername("Abcdefghijklmnopqrstuvwxyz")).toHaveLength(USERNAME_MAX);
   });
+
+  it("takes an email's local part, never its domain (a provider may hand the email over as the name)", () => {
+    expect(suggestUsername("aaarcher@gmail.com")).toBe("aaarcher");
+    expect(suggestUsername(" aarcher520@gmail.com ")).toBe("aarcher520");
+    expect(suggestUsername("@archer")).toBe("archer");
+  });
 });

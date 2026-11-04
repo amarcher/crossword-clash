@@ -195,7 +195,9 @@ export function FriendsScreen() {
   const { incoming, friends: list } = friends.friendships;
 
   return shell(
-    <div className="grid gap-4">
+    // minmax(0,1fr): a row's non-wrapping text (a truncated name beside two
+    // buttons) must shrink, not widen every card past the screen (2026-11-03).
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       {notice && (
         <p role={notice.error ? "alert" : "status"} className={`rounded-xl px-4 py-3 text-sm font-medium ${notice.error ? "bg-red-50 text-red-700" : "bg-brand-50 text-brand-700"}`}>
           {notice.text}
