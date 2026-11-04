@@ -87,6 +87,7 @@ describe("useRejoinEffect", () => {
     dispatch: vi.fn(),
     setGameId: vi.fn(),
     setIsMultiplayer: vi.fn(),
+    setCompletionModalDismissed: vi.fn(),
   };
 
   beforeEach(() => {
@@ -116,6 +117,14 @@ describe("useRejoinEffect", () => {
     expect(game.setGameId).toHaveBeenCalledWith(null);
     expect(game.setIsMultiplayer).toHaveBeenCalledWith(false);
     expect(game.loadPuzzle).not.toHaveBeenCalled();
+  });
+
+  it("gives the rejoined room a fresh finish (the last race's dismissed modal must not hide this one)", async () => {
+    mockLoadMpSession.mockReturnValue({ gameId: "g1", shareCode: "ABCDEF", displayName: "Arch", savedAt: Date.now() });
+    mockRejoinGame.mockResolvedValue(roomResult("waiting"));
+    renderRejoin();
+    await waitFor(() => expect(screen.getByTestId("navigated-to").textContent).toBe("/lobby"));
+    expect(game.setCompletionModalDismissed).toHaveBeenCalledWith(false);
   });
 
   it("still rejoins an active game from an older session", async () => {

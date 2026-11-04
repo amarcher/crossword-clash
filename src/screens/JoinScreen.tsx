@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { JoinGame } from "../components/GameLobby";
 import { useAuth } from "../contexts/AuthContext";
@@ -23,7 +23,11 @@ export function JoinScreen() {
   const [waitingForAuth, setWaitingForAuth] = useState(false);
   const pendingJoin = useRef<{ code: string; displayName: string } | null>(null);
 
-  const initialCode = useMemo(() => {
+  // The link's code, else the one the page was opened with — read once, and
+  // the page's copy consumed, so a later visit to Join starts blank instead
+  // of offering the first invite's code again (Andrew, 2026-11-03: the join
+  // screen kept offering a finished room's code during the second race).
+  const [initialCode] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("join");
     if (code && code.length === 6) {
@@ -31,7 +35,11 @@ export function JoinScreen() {
       return code.toUpperCase();
     }
     return game.initialJoinCode ?? undefined;
-  }, [game.initialJoinCode]);
+  });
+  const { consumeInitialJoinCode } = game;
+  useEffect(() => {
+    consumeInitialJoinCode();
+  }, [consumeInitialJoinCode]);
 
   const runJoin = useCallback(
     async (code: string, displayName: string, userId: string) => {
@@ -48,6 +56,10 @@ export function JoinScreen() {
       game.loadPuzzle(result.puzzle);
       game.setGameId(result.gameId);
       game.setIsMultiplayer(true);
+      // This room's finish gets its own modal: the previous race's dismissal
+      // must not hide it (the host paths reset this too; the joiner's never
+      // did, and a second race as a joiner ended without a winner screen).
+      game.setCompletionModalDismissed(false);
       // Adopt the joiner's typed name into game state (it previously stayed
       // the anonymous default, so daily-race results posted as "Player") and
       // persist it for future sessions.

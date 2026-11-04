@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
@@ -215,7 +215,7 @@ describe("MultiplayerPlayScreen after the finish", () => {
         game.selectCell(row, col);
       });
       await act(async () => {
-        mp.claimCell(row, col, letterAt(key));
+        mp.multiplayerInputLetter(letterAt(key));
       });
     }
     await waitFor(() => expect(mp.gameStatus).toBe("completed"));
@@ -279,5 +279,62 @@ describe("MultiplayerPlayScreen after the finish", () => {
     await syncPresence([me]);
     await syncPresence([]);
     expect(record()).toEqual(frozen);
+  });
+});
+
+/**
+ * Typing on the shared grid: the reducer judges every letter against the
+ * square the cursor is on when the keystroke runs, and the server claim is
+ * sent for that square afterwards. A wrapper that judged against the last
+ * render's cursor called a fast second letter wrong (Andrew, 2026-11-03).
+ */
+describe("MultiplayerPlayScreen typing", () => {
+  const type = (letters: string) =>
+    act(() => {
+      for (const key of letters) fireEvent.keyDown(window, { key });
+    });
+
+  it("judges a burst of letters square by square, claims each on the server, and broadcasts a real wrong letter", async () => {
+    services.claimCellOnServer.mockClear();
+    const send = vi.fn(async () => "ok");
+    fake.channel.send = send;
+    services.fetchGameState.mockResolvedValue({
+      cells: {},
+      players: [me, partner],
+      status: "active",
+      settings: { wrongAnswerTimeoutSeconds: 0, raceMode: "versus" },
+      startedAt: 1_000,
+      completedAt: null,
+    });
+    await renderRoom();
+    await waitFor(() => expect(mp.gameStatus).toBe("active"));
+    // The cursor starts on 1 Across (a select of the same square would toggle it to Down).
+    expect(game.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(game.direction).toBe("across");
+
+    // C, A, T in one tick: no render between them, each lands on its own square.
+    type("cat");
+    expect(game.playerCells["0,0"]).toMatchObject({ letter: "C", correct: true, playerId: "me" });
+    expect(game.playerCells["0,1"]).toMatchObject({ letter: "A", correct: true, playerId: "me" });
+    expect(game.playerCells["0,2"]).toMatchObject({ letter: "T", correct: true, playerId: "me" });
+    expect(mp.wrongLetters).toBe(0);
+    await waitFor(() => expect(services.claimCellOnServer).toHaveBeenCalledTimes(3));
+    expect(services.claimCellOnServer.mock.calls.map((c) => (c as unknown as string[]).slice(1, 3))).toEqual([
+      ["0,0", "C"],
+      ["0,1", "A"],
+      ["0,2", "T"],
+    ]);
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ event: "wrong_letter" }));
+
+    // The cursor moved on to 3 Across (BET): a wrong letter there is refused,
+    // counted, flashed and told to the room; nothing is claimed for it.
+    await act(async () => {
+      game.selectCell(2, 0);
+    });
+    type("x");
+    expect(game.playerCells["2,0"]).toBeUndefined();
+    expect(mp.wrongLetters).toBe(1);
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ event: "wrong_letter", payload: expect.objectContaining({ row: 2, col: 0, expected: "B", attempted: "X", playerId: "me" }) }));
+    expect(services.claimCellOnServer).toHaveBeenCalledTimes(3);
   });
 });

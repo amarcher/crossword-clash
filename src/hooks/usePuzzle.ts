@@ -48,6 +48,8 @@ export interface PuzzleState {
    * LOAD_PUZZLE and RESET; never set while autocheck is off.
    */
   rejection: Rejection | null;
+  /** Letters accepted with a `playerId`, oldest first; see `Claim`. */
+  claims: Claim[];
 }
 
 export interface Rejection {
@@ -55,6 +57,22 @@ export interface Rejection {
   col: number;
   /** Upper-cased. */
   letter: string;
+  seq: number;
+}
+
+/**
+ * A letter the reducer accepted under a player's id, with the square it
+ * landed on: the shared-grid room sends these to the server (MultiplayerContext)
+ * instead of judging the square before dispatch, so a burst of letters is
+ * judged square by square. Append-only for the puzzle's life; `seq` restarts
+ * with LOAD_PUZZLE / RESET.
+ */
+export interface Claim {
+  row: number;
+  col: number;
+  /** Upper-cased. */
+  letter: string;
+  playerId: string;
   seq: number;
 }
 
@@ -67,6 +85,7 @@ export const initialState: PuzzleState = {
   totalWhiteCells: 0,
   autocheck: true,
   rejection: null,
+  claims: [],
 };
 
 // --- Actions ---
@@ -221,6 +240,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         score: 0,
         totalWhiteCells: countWhiteCells(puzzle),
         rejection: null,
+        claims: [],
       };
     }
 
@@ -311,12 +331,18 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       };
       const newScore = state.score - (existing?.correct ? 1 : 0) + (correct ? 1 : 0);
       const next = advanceCursor(state.puzzle, newCells, row, col, state.direction, state.autocheck);
+      // A letter tagged with a player is a claim the room may send on, with
+      // the square it landed on — the one place that square is known for sure.
+      const claims = action.playerId
+        ? [...state.claims, { row, col, letter, playerId: action.playerId, seq: (state.claims[state.claims.length - 1]?.seq ?? 0) + 1 }]
+        : state.claims;
       return {
         ...state,
         playerCells: newCells,
         score: newScore,
         selectedCell: next?.coord ?? state.selectedCell,
         direction: next?.direction ?? state.direction,
+        claims,
       };
     }
 

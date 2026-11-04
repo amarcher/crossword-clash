@@ -1,3 +1,4 @@
+import type { Puzzle } from "../types/puzzle";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useGame } from "./GameContext";
@@ -83,7 +84,6 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   const {
     puzzle,
     playerCells,
-    selectedCell,
     direction,
     totalWhiteCells,
     isComplete,
@@ -95,6 +95,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     setLockedUntil,
     inputLetter,
     rejection,
+    claims,
   } = game;
 
   const [rejectedCell, setRejectedCell] = useState<string | null>(null);
@@ -257,24 +258,48 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   // wrapper that compared the letter with `selectedCell` from its own render
   // judged a second letter typed before that render against the first
   // letter's square — T then Y into STY shook the grid at the Y (Andrew,
-  // 2026-11-01). The reducer sees the cursor as it stands when each action is
-  // processed, so every letter is judged against its own square; this effect
-  // turns each refusal it records into the flash, the wrong-letter count and,
-  // in an async race, the host's lockout penalty.
+  // 2026-11-01), and the shared grid kept that pre-check for its server
+  // claim's coordinates until it shook at correct letters in a race
+  // (2026-11-03). The reducer sees the cursor as it stands when each action
+  // is processed, so every letter is judged against its own square; this
+  // effect turns each refusal it records into the flash, the wrong-letter
+  // count, the host's lockout penalty in any room, and on the shared grid
+  // the wrong-letter broadcast the TV narrates.
   const seenRejectionRef = useRef(rejection?.seq ?? 0);
-  const asyncLockout = multiplayerActive && resolveRaceMode(multiplayer.gameSettings) === "async";
+  const sharedGrid = multiplayerActive && resolveRaceMode(multiplayer.gameSettings) !== "async";
   useEffect(() => {
     if (!rejection || rejection.seq === seenRejectionRef.current) return;
     seenRejectionRef.current = rejection.seq;
     triggerReject(rejection.row, rejection.col);
-    if (asyncLockout) {
-      const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
-      if (timeoutMs > 0) {
-        // Math.max so a second wrong letter cannot shorten an active lockout.
-        setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
-      }
+    if (!multiplayerActive) return;
+    if (sharedGrid) {
+      const solution = puzzle?.cells[rejection.row]?.[rejection.col]?.solution;
+      if (solution) multiplayer.broadcastWrongLetter(rejection.row, rejection.col, solution, rejection.letter, direction);
     }
-  }, [rejection, triggerReject, asyncLockout, multiplayer.gameSettings, lockedUntil, setLockedUntil]);
+    const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
+    if (timeoutMs > 0) {
+      // Math.max so a second wrong letter cannot shorten an active lockout.
+      setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
+    }
+  }, [rejection, triggerReject, multiplayerActive, sharedGrid, puzzle, direction, multiplayer, lockedUntil, setLockedUntil]);
+
+  // The shared grid's server claims: every letter the reducer accepted under
+  // this player's id (PuzzleState.claims, with the square it landed on) is
+  // sent once, in order. The reducer already placed the letter optimistically;
+  // the hook's claimCell confirms it with the server, broadcasts it, and rolls
+  // it back if another player got there first. `seq` restarts with the
+  // puzzle, so the cursor over the list restarts with it.
+  const sentClaimsRef = useRef<{ puzzle: Puzzle | null; seq: number }>({ puzzle: null, seq: 0 });
+  useEffect(() => {
+    if (!sharedGrid) return;
+    if (sentClaimsRef.current.puzzle !== puzzle) sentClaimsRef.current = { puzzle, seq: 0 };
+    for (const claim of claims) {
+      if (claim.seq <= sentClaimsRef.current.seq) continue;
+      sentClaimsRef.current.seq = claim.seq;
+      if (claim.playerId !== user?.id) continue;
+      void multiplayer.claimCell(claim.row, claim.col, claim.letter);
+    }
+  }, [claims, sharedGrid, puzzle, multiplayer, user]);
 
   // Solo input: straight to the reducer. With Autocheck on (soloSettings.ts)
   // it refuses a wrong letter and records the refusal (flashed above); off,
@@ -284,35 +309,19 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     [inputLetter],
   );
 
-  // Multiplayer input wrapper
+  // Shared-grid input: straight to the reducer, tagged with the local user
+  // id. The reducer judges the letter against the square the cursor is on
+  // when the action runs (a settled square only advances; a wrong letter is
+  // refused and recorded; a right one is placed and recorded as a claim), and
+  // the effects above do the rest: the refusal's flash, penalty and broadcast,
+  // and the claim's server confirmation.
   const multiplayerInputLetter = useCallback(
     (letter: string) => {
-      if (!multiplayerActive || !selectedCell || !puzzle) return;
+      if (!multiplayerActive) return;
       if (Date.now() < lockedUntil) return;
-
-      const { row, col } = selectedCell;
-      const cell = puzzle.cells[row]?.[col];
-      if (!cell || cell.solution === null) return;
-
-      if (playerCells[`${row},${col}`]?.correct) {
-        // Cell already claimed (e.g. by another player) — just advance cursor
-        inputLetter(letter);
-        return;
-      }
-
-      if (letter.toUpperCase() !== cell.solution) {
-        triggerReject(row, col);
-        multiplayer.broadcastWrongLetter(row, col, cell.solution, letter, direction);
-        const timeoutMs = multiplayer.gameSettings.wrongAnswerTimeoutSeconds * 1000;
-        if (timeoutMs > 0) {
-          // Math.max so a second wrong letter cannot shorten an active lockout.
-          setLockedUntil(Math.max(lockedUntil, Date.now() + timeoutMs));
-        }
-        return;
-      }
-      multiplayer.claimCell(row, col, letter);
+      inputLetter(letter, user?.id);
     },
-    [multiplayerActive, selectedCell, puzzle, playerCells, direction, multiplayer, triggerReject, lockedUntil, setLockedUntil, inputLetter],
+    [multiplayerActive, lockedUntil, inputLetter, user],
   );
 
   // Async ("time trial") input: the shared-grid flow minus the server
