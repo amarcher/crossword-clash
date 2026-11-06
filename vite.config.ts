@@ -88,6 +88,7 @@ export default defineConfig(({ mode }) => ({
       order: "pre" as const,
       handler(html: string) {
         return html.replace(/\s*<!-- Google Analytics 4 -->[\s\S]*?(?=\s*<\/head>)/, "")
+          .replace(/\s*<!-- Apple's Smart App Banner[\s\S]*?<meta name="apple-itunes-app"[^>]*>/, "")
           .replace('content="width=device-width, initial-scale=1.0"', 'content="width=device-width, initial-scale=1.0, viewport-fit=cover"');
       },
     },

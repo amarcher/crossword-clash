@@ -25,13 +25,16 @@ export function isDesktopBrowser(
   }
 }
 
+/** The App Store's Apple ID for the app (docs/testflight/README.md). */
+export const IOS_APP_ID = "6811111993";
+
 /**
- * The iOS app's App Store page, or null while the app is not yet released.
- * Set this once Apple approves the app; until then the website shows no app
- * promotion. (Then also add the Smart App Banner meta tag to index.html:
- * `<meta name="apple-itunes-app" content="app-id=6811111993">`.)
+ * The iOS app's App Store page (live since 2026-11-06, version 1.1.0). The
+ * id-only form redirects to the visitor's own storefront. Safari also shows
+ * Apple's Smart App Banner on every page (`apple-itunes-app` in index.html,
+ * kept pointing at the current page by `syncSmartAppBanner`).
  */
-export const IOS_APP_STORE_URL: string | null = null;
+export const IOS_APP_STORE_URL: string | null = `https://apps.apple.com/app/id${IOS_APP_ID}`;
 
 /**
  * True in a browser on an iPhone or iPad — the audience for the "get the app"
