@@ -698,6 +698,15 @@
     "privacy": "Política de privacidad",
     "keepOnEveryDevice": "Conserva Plus en todos tus dispositivos: inicia sesión y te acompaña."
   },
+  "appBanner": {
+    "label": "Descarga la app",
+    "title": "Crossword Clash",
+    "subtitle": "Compite con amigos en un crucigrama",
+    "get": "Obtener",
+    "install": "Instalar",
+    "dismiss": "Cerrar",
+    "inAppPurchases": "Compras dentro de la app"
+  },
   "update": {
     "label": "Actualización de la app",
     "available": "Crossword Clash {{version}} ya está disponible",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isAndroidBrowser, isDesktopBrowser, isIosBrowser } from "./platform";
+import { isAndroidBrowser, isDesktopBrowser, isIosBrowser, isIosSafari } from "./platform";
 
 describe("isDesktopBrowser", () => {
   it("is true for a hover-capable fine pointer", () => {
@@ -55,5 +55,27 @@ describe("isAndroidBrowser", () => {
     expect(isAndroidBrowser({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)" })).toBe(false);
     expect(isAndroidBrowser({ userAgent: "Mozilla/5.0 (X11; Linux x86_64) Chrome/141.0 Safari/537.36" })).toBe(false);
     expect(isAndroidBrowser(undefined)).toBe(false);
+  });
+});
+
+describe("isIosSafari", () => {
+  const iphone = (tail: string) => ({ userAgent: `Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ${tail}` });
+  it("is true for Safari on iPhone and iPad (desktop-mode iPad included)", () => {
+    expect(isIosSafari(iphone("Version/18.1 Mobile/15E148 Safari/604.1"))).toBe(true);
+    expect(isIosSafari({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15", maxTouchPoints: 5 })).toBe(true);
+  });
+  it("is false for other iOS browsers and in-app web views, which ignore the Smart App Banner", () => {
+    expect(isIosSafari(iphone("CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1"))).toBe(false);
+    expect(isIosSafari(iphone("FxiOS/133.0 Mobile/15E148 Safari/605.1.15"))).toBe(false);
+    expect(isIosSafari(iphone("Version/18.0 EdgiOS/131.0 Mobile/15E148 Safari/605.1.15"))).toBe(false);
+    expect(isIosSafari(iphone("GSA/345.0 Mobile/15E148 Safari/604.1"))).toBe(false);
+    expect(isIosSafari(iphone("Mobile/15E148 Instagram 357.0.0"))).toBe(false);
+    expect(isIosSafari(iphone("Mobile/22B83 [FBAN/FBIOS;FBAV/490.0]"))).toBe(false);
+    expect(isIosSafari(iphone("Mobile/15E148"))).toBe(false);
+  });
+  it("is false off iOS", () => {
+    expect(isIosSafari({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15", maxTouchPoints: 0 })).toBe(false);
+    expect(isIosSafari({ userAgent: "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/131.0 Mobile Safari/537.36" })).toBe(false);
+    expect(isIosSafari(undefined)).toBe(false);
   });
 });

@@ -44,6 +44,8 @@ export type AnalyticsEvent =
   | "leaderboard_viewed"
   /** A website visitor on iOS followed the App Store link. Param `placement`. */
   | "app_store_click"
+  /** A phone visitor closed our own get-the-app banner (AppStoreBanner). Params `placement`, `store` (ios | android). */
+  | "app_banner_dismissed"
   /** A website visitor on Android followed the Google Play link. Param `placement`. */
   | "play_store_click"
   /**
