@@ -23,12 +23,13 @@
  * promises carry; `.AppUpdate` is read off it synchronously.
  */
 import { Capacitor } from "@capacitor/core";
+import { IOS_APP_ID } from "./platform";
 
 type AppUpdateModule = typeof import("@capawesome/capacitor-app-update");
 export type AppUpdateInfo = import("@capawesome/capacitor-app-update").AppUpdateInfo;
 
-/** The App Store's Apple ID for the app (docs/testflight/README.md); `openAppStore` needs it on iOS. */
-export const IOS_APP_ID = "6811111993";
+/** The App Store's Apple ID for the app; `openAppStore` needs it on iOS. */
+export { IOS_APP_ID };
 
 /** localStorage: the version key the player dismissed with "Later". */
 export const UPDATE_DISMISSED_KEY = "crossword-clash:update-dismissed";

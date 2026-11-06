@@ -8,6 +8,7 @@ import { AppShell } from "./AppShell";
 import "./index.css";
 import { reloadOnceForChunkError } from "./lib/chunkReload";
 import { initErrorReporting, reportError } from "./lib/errorReporting";
+import { syncSmartAppBanner } from "./lib/smartAppBanner";
 import { applyPageMeta, pageMetaFor } from "./lib/pageMeta";
 import { normalizePathname } from "./lib/prerender";
 import { router } from "./router";
@@ -34,7 +35,10 @@ initErrorReporting();
 
 // <title>, description and canonical per route — the same table the
 // build-time prerender writes into each static page's <head>.
-const syncPageMeta = () => applyPageMeta(pageMetaFor(router.state.location.pathname, (key) => i18n.t(key)));
+const syncPageMeta = () => {
+  applyPageMeta(pageMetaFor(router.state.location.pathname, (key) => i18n.t(key)));
+  syncSmartAppBanner();
+};
 router.subscribe(syncPageMeta);
 i18n.on("languageChanged", syncPageMeta);
 syncPageMeta();

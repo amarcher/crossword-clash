@@ -29,6 +29,11 @@
     <!-- The canvas colour (--color-canvas in src/index.css): tints the browser
          chrome on Android Chrome and iOS Safari to match the page. -->
     <meta name="theme-color" content="#f4f6fa" />
+    <!-- Apple's Smart App Banner: Safari on iPhone and iPad offers the app
+         ("Get", or "Open" once installed). src/lib/smartAppBanner.ts adds the
+         current page as app-argument on every navigation; the apps' build
+         (vite.config.ts, mobile-html) strips the tag. -->
+    <meta name="apple-itunes-app" content="app-id=6811111993" />
     <!-- The two latin web fonts, so they arrive with the first paint instead of
          ~90ms after it. Vite rewrites these to the same hashed asset URLs the
          bundled Fontsource CSS uses. Each face needs `crossorigin` (fonts are
