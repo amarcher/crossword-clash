@@ -51,6 +51,25 @@ export function isIosBrowser(
 }
 
 /**
+ * True only in Safari itself on an iPhone or iPad — the one browser that shows
+ * Apple's Smart App Banner (the `apple-itunes-app` meta). Chrome, Firefox,
+ * Edge, Opera, the Google app and in-app browsers (Instagram, Facebook, Gmail…)
+ * ignore that tag, so `AppStoreBanner` draws our own there. Safari's user
+ * agent carries `Version/` and `Safari/` and none of the other browsers'
+ * tokens; an in-app web view usually lacks `Safari/` altogether.
+ */
+export function isIosSafari(
+  nav: { userAgent: string; maxTouchPoints?: number } | undefined = typeof navigator !== "undefined"
+    ? navigator
+    : undefined,
+): boolean {
+  if (!nav || !isIosBrowser(nav)) return false;
+  const ua = nav.userAgent;
+  if (/CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|GSA\/|YaBrowser|DuckDuckGo|FBAN|FBAV|FB_IAB|Instagram|LinkedInApp|Snapchat|Line\//.test(ua)) return false;
+  return /Version\/[\d.]+/.test(ua) && /Safari\//.test(ua);
+}
+
+/**
  * The Android app's Google Play page (live since Oct 2026). The `referrer`
  * shows up in Play Console's acquisition report, so website-driven installs
  * can be told apart from store search.

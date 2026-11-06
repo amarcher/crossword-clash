@@ -7,6 +7,7 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { UpdateBanner } from "../components/UpdateBanner";
+import { AppStoreBanner } from "../components/AppStoreBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
@@ -227,6 +228,8 @@ export function MenuScreen() {
           push the bar a whole status bar further down. Fixed overlays
           (dialogs, toasts) do read the inset themselves, since they sit
           outside #root's padding. */}
+      {/* Phone browsers with no app banner of their own: Android, and iOS outside Safari. */}
+      <AppStoreBanner className="-mx-4 -mt-3 mb-1 sm:-mt-4 md:-mx-6" />
       <div className="mx-auto flex min-h-11 w-full max-w-md items-center justify-end lg:max-w-5xl">
         <AccountControl placement="menu" />
       </div>

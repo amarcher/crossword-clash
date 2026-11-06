@@ -698,6 +698,15 @@
     "privacy": "Privacy Policy",
     "keepOnEveryDevice": "Keep Plus on every device: sign in, and it follows you."
   },
+  "appBanner": {
+    "label": "Get the app",
+    "title": "Crossword Clash",
+    "subtitle": "Race friends on one crossword",
+    "get": "Get",
+    "install": "Install",
+    "dismiss": "Close",
+    "inAppPurchases": "In-App Purchases"
+  },
   "update": {
     "label": "App update",
     "available": "Crossword Clash {{version}} is available",
