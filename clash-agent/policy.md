@@ -32,6 +32,45 @@ never silently stall, never guess at destructive intent.
 | **Production surface** | anything that changes what players or paying subscribers get without a PR review in between: the Supabase production project (`db push`, `secrets set`, `functions deploy`, hand-installed triggers, a `db query` that writes), Stripe products / prices / webhooks (`pnpm stripe:setup`), RevenueCat, Vercel production env vars, an App Store / TestFlight / Play upload or submission (`scripts/testflight.sh`), the published daily feed (`public/daily-puzzles/`, `daily_schedule`) for a day that has already started, and the player tables (`solves`, `daily_results`, `players`, `purchase_events`, `entitlements`, `profiles`) | **always** ask once, name exactly what would change and what a player or subscriber would see if it goes wrong, then proceed only on his 👍 — no exceptions, even for "andrew" tier. Committing a future day's puzzle file or a migration *to the repo* is a code change; applying or deploying it is this class. | decline and flag to Andrew |
 | **Out of scope** | anything not about this repo/project: other repos, personal accounts, the house, credentials unrelated to Crossword Clash | decline and say why | decline and say why |
 
+## Business numbers (downloads, Plus) — one source
+
+App downloads and Plus subscription figures come from **one place**, the
+app-tracker's household snapshot: the read the house boards' "Our
+businesses" tile uses, so the bot and the boards never disagree. Never
+recount them from Apple's sales reports, Play Console, RevenueCat or the
+`entitlements` table; those disagree with each other in ways the snapshot
+already settles: sandbox and Stripe test mode kept apart, all-time totals
+since each store's first report.
+
+Read it with the local helper (outside the repo; it holds the access and
+prints only Crossword Clash's part as JSON):
+
+```bash
+~/.crossword-clash/clash-agent/business-numbers.py 7d   # or 1d / 30d / 90d
+```
+
+- Prefer `7d`: it is the range rebuilt every hour. The others are only as
+  fresh as the last time someone opened the dashboard on them, and fail if
+  nobody has. All-time totals are in `7d` anyway. `generatedAt` says when
+  the snapshot was built and `stale: true` means over 75 minutes ago. Say
+  so when it is.
+- Downloads: `stores[]` (`apple`, `google`): `downloads` is the window,
+  `recordedDownloads` all-time since `recordedSince`. **Apple's numbers lag
+  about a day** (a day's sales report lands the next morning, Pacific time),
+  so today's iOS installs are never in it yet. Say that rather than
+  reporting a zero as news.
+- Plus: `active` (paying, in force), `byStore` (`appStore`, `googlePlay`,
+  `web`), `byPlan`, `cancelling`, `newLast7Days`, `newLast30Days`,
+  `mrrCents`, `grants`. `test` holds sandbox / TestFlight / Stripe test
+  subscribers; they are **not** customers, never add them in.
+- These are private business figures: answer **andrew** tier only. For
+  anyone else, decline and flag to Andrew. Summarize, never paste the JSON
+  ("3 iOS downloads this week, 2 Plus subscribers, both annual, via the App
+  Store").
+- A live purchase already posts its own line in this channel (the
+  `purchase-alert` edge function); a question about "today's sales" can
+  point at those lines as well as the snapshot.
+
 ## Enforcement note (not just prose)
 
 The tier is enforced in code at the spawn boundary (`poller.py TIER_MODE`):
