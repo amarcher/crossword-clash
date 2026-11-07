@@ -3,12 +3,13 @@ import { usePuzzle } from "../hooks/usePuzzle";
 import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
-import { decodeChallengeParams, type ChallengePayload } from "../lib/challenge";
+import { decodeChallengeParams, loadChallenge, saveChallenge, clearChallenge, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
 import { loadPlayerName } from "../lib/playerName";
 import type { PendingDailyResult } from "../lib/dailyLeaderboard";
 import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
-import { clearProgress, filledCells, getProgress, recordProgressCells, whiteCellCount } from "../lib/soloProgress";
+import { clearProgress, filledCells, getProgress, saveAttempt, whiteCellCount, type SaveAttemptResult } from "../lib/soloProgress";
+import { requestSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { useSoloSettings } from "../lib/soloSettings";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
@@ -112,14 +113,17 @@ interface GameContextValue {
   initialMpSession: ReturnType<typeof loadMpSession>;
   initialUrlPuzzle: Puzzle | null;
   hasSavedSoloSession: boolean;
+  restoringSolo: boolean;
   hasJoinCode: boolean;
   /** The `?join=` code the page was opened with, until the join screen consumes it. */
   initialJoinCode: string | null;
   /** The join screen took the code: a later visit to Join must not offer it again. */
   consumeInitialJoinCode: () => void;
 
+  checkpointSolo: () => SaveAttemptResult;
+  soloSaveError: Exclude<SaveAttemptResult, "saved"> | null;
   // Solo puzzle handlers
-  handleSoloPuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer) => Promise<void>;
+  handleSoloPuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer) => Promise<boolean>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -152,6 +156,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [soloTheme, setSoloTheme] = useState<string | null>(null);
 
   const initialSavedSession = useMemo(() => loadSavedSession(), []);
+
+  const [restoringSolo, setRestoringSolo] = useState(!!initialSavedSession?.puzzle);
 
   const [gameId, setGameId] = useState<string | null>(() => {
     if (mpSession) return mpSession.gameId;
@@ -202,6 +208,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const [soloSaveError, setSoloSaveError] = useState<Exclude<SaveAttemptResult, "saved"> | null>(null);
   const fileBufferRef = useRef<ArrayBuffer | null>(null);
   const restoredRef = useRef(false);
 
@@ -227,36 +234,61 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
+    setRestoringSolo(false);
 
     // Only restore if no URL params redirect us
     if (initialJoinCode) return;
 
     const saved = loadSavedSession();
     if (saved?.puzzle) {
+      const progress = getProgress(puzzleIdentity(saved.puzzle));
       loadPuzzle(saved.puzzle);
-      if (saved.playerCells && Object.keys(saved.playerCells).length > 0) {
-        const cellScore = Object.values(saved.playerCells).filter((c) => c.correct).length;
-        dispatch({ type: "HYDRATE_CELLS", cells: saved.playerCells, score: cellScore });
+      setSoloTheme(progress?.theme ?? null);
+      if (progress?.challenge) saveChallenge(progress.challenge);
+      if (progress?.selectedCell) dispatch({ type: "SELECT_CELL", ...progress.selectedCell });
+      if (progress?.direction) dispatch({ type: "SET_DIRECTION", direction: progress.direction });
+      const restoredCells = progress?.cells ?? saved.playerCells;
+      if (restoredCells && Object.keys(restoredCells).length > 0) {
+        const cellScore = Object.values(restoredCells).filter((c) => c.correct).length;
+        dispatch({ type: "HYDRATE_CELLS", cells: restoredCells, score: cellScore });
       }
     }
   }, [loadPuzzle, dispatch, initialJoinCode]);
 
-  // Save solo session to localStorage when state changes. This is the whole
-  // of solo persistence: a solo game has no server rows (no puzzles, games or
-  // players insert, nothing mirrored per keystroke); `play_sessions` is its
-  // only server-side trace (usePlayInsights). The `gameId` kept here is null
-  // for solo games since then and only meaningful for a room.
-  useEffect(() => {
-    if (isMultiplayer || !puzzle) return;
-    const data = { puzzle, playerCells, gameId };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    // Per-puzzle progress (soloProgress.ts), so any started puzzle resumes and
-    // the archive marks it: the letters while playing, gone once finished. No
-    // debounce — the save above already rewrites the whole puzzle per keystroke.
+  const lastCheckpoint = useRef<unknown[]>([]);
+  const checkpointSolo = useCallback((): SaveAttemptResult => {
+    if (isMultiplayer || !puzzle) return "saved";
+    const snapshot = [puzzle, playerCells, isComplete, puzzleHook.selectedCell, puzzleHook.direction, soloTheme, autocheck];
+    if (snapshot.every((value, i) => value === lastCheckpoint.current[i])) return "saved";
     const key = puzzleIdentity(puzzle);
-    if (isComplete) clearProgress(key);
-    else recordProgressCells(key, playerCells, whiteCellCount(puzzle));
-  }, [puzzle, playerCells, gameId, isMultiplayer, isComplete]);
+    const prev = getProgress(key);
+    const challenge = loadChallenge();
+    const timer = loadSoloTimer();
+    let result: SaveAttemptResult = "saved";
+    if (!isComplete) {
+      result = saveAttempt({
+        ...prev, key, puzzle, cells: filledCells(playerCells),
+        elapsedMs: prev?.elapsedMs ?? (timer?.key === key ? timer.elapsedMs : 0),
+        updatedAt: Date.now(), filled: Object.keys(filledCells(playerCells)).length,
+        total: whiteCellCount(puzzle), selectedCell: puzzleHook.selectedCell,
+        direction: puzzleHook.direction, theme: soloTheme,
+        challenge: challenge?.key === key ? challenge : prev?.challenge,
+        usedFreeTyping: prev?.usedFreeTyping || !autocheck || Object.values(playerCells).some(c => !!c.letter && !c.correct),
+        assisted: prev?.assisted || Object.values(playerCells).some(c => c.revealed),
+      });
+    } else if (!clearProgress(key)) result = "storage";
+    // Compatibility pointer for cold launch; unfinished letters live in the
+    // per-puzzle store, which is written first and remains recoverable alone.
+    if (result === "saved") {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ puzzle, playerCells, gameId })); }
+      catch { result = "storage"; }
+    }
+    if (result === "saved") lastCheckpoint.current = snapshot;
+    setSoloSaveError(result === "saved" ? null : result);
+    return result;
+  }, [isMultiplayer, puzzle, playerCells, isComplete, gameId, puzzleHook.selectedCell, puzzleHook.direction, soloTheme, autocheck]);
+
+  useEffect(() => { checkpointSolo(); }, [checkpointSolo]);
 
   // Solo puzzle loaded
   const handleSoloPuzzleLoaded = useCallback(
@@ -264,7 +296,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Resume an unfinished attempt at this puzzle (soloProgress.ts): read it
       // before loading, hydrate right after, in the same tick, so the save
       // effect never sees the empty grid in between.
-      const progress = getProgress(puzzleIdentity(p));
+      if (checkpointSolo() !== "saved") return false;
+      const key = puzzleIdentity(p);
+      const progress = getProgress(key);
+      const result = saveAttempt({
+        ...progress, key, puzzle: p, cells: progress?.cells ?? {},
+        elapsedMs: progress?.elapsedMs ?? 0, updatedAt: Date.now(),
+        filled: progress?.filled ?? 0, total: whiteCellCount(p),
+      });
+      if (result !== "saved") { setSoloSaveError(result); return false; }
+      setSoloSaveError(null);
+      requestSoloStart(key);
+      rememberSoloLanding("play");
       loadPuzzle(p);
       if (progress) {
         const cells = filledCells(progress.cells);
@@ -282,7 +325,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       fileBufferRef.current = fileBuffer ?? null;
       // Imported / sample puzzles carry no theme — clear any prior daily theme
       // so a stale "Today's theme" banner never bleeds onto a new puzzle.
-      setSoloTheme(null);
+      setSoloTheme(progress?.theme ?? null);
+      if (progress?.selectedCell) dispatch({ type: "SELECT_CELL", ...progress.selectedCell });
+      if (progress?.direction) dispatch({ type: "SET_DIRECTION", direction: progress.direction });
+      const incomingChallenge = loadChallenge();
+      if (incomingChallenge?.key !== key) {
+        if (progress?.challenge) saveChallenge(progress.challenge);
+        else clearChallenge();
+      }
 
       // fileBuffer present ⇒ came from a real file upload (SoloImportScreen).
       // The URL/deep-link path passes no buffer and is reported in
@@ -294,12 +344,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           size: `${p.width}x${p.height}`,
         });
       }
+      return true;
     },
-    [loadPuzzle, dispatch],
+    [loadPuzzle, dispatch, checkpointSolo],
   );
 
   const value: GameContextValue = {
     ...puzzleHook,
+    checkpointSolo,
+    soloSaveError,
     autocheck: puzzleHook.autocheck,
     gameId,
     setGameId,
@@ -331,6 +384,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initialMpSession: mpSession,
     initialUrlPuzzle: urlPuzzle,
     hasSavedSoloSession,
+    restoringSolo,
     hasJoinCode,
     initialJoinCode,
     consumeInitialJoinCode,

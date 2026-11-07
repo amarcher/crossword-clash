@@ -117,7 +117,7 @@ export function CommunityPuzzleScreen() {
       try {
         track("puzzle_imported", { import_source: "community", title: puzzle.title, size: `${puzzle.width}x${puzzle.height}` });
         if (what === "play") {
-          await handleSoloPuzzleLoaded(puzzle);
+          if (await handleSoloPuzzleLoaded(puzzle) === false) return;
           setSoloTheme(null);
           navigate("/solo/play");
         } else if (what === "tv") {

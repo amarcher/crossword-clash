@@ -257,3 +257,51 @@ describe("SoloPlayScreen autocheck", () => {
     expect(cell(0, 1).getAttribute("aria-label")).toBe("Row 1, Column 2, A");
   });
 });
+
+describe("pause and resume", () => {
+  it("hides every clue and blocks physical input until Resume", async () => {
+    await renderSolo();
+    type("c");
+    const cells = game.playerCells;
+    const selected = game.selectedCell;
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(screen.getByRole("dialog", { name: "Paused" })).toBeTruthy();
+    expect(screen.queryAllByRole("gridcell")).toHaveLength(0);
+    expect(screen.queryAllByRole("grid")).toHaveLength(0);
+    type("at");
+    fireEvent.keyDown(window, { key: "Backspace" });
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    expect(game.playerCells).toBe(cells);
+    expect(game.selectedCell).toEqual(selected);
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    expect(screen.queryByRole("dialog", { name: "Paused" })).toBeNull();
+    type("a");
+    expect(game.playerCells["0,1"].letter).toBe("A");
+  });
+
+  it("preserves the attempt on Save & exit and restores paused after a reload", async () => {
+    const view = await renderSolo();
+    type("c");
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save & exit" }));
+    expect(localStorage.getItem("crossword-clash:solo-landing")).toBe("menu");
+    expect(JSON.parse(localStorage.getItem("crossword-clash-solo")!).playerCells["0,0"].letter).toBe("C");
+    view.unmount();
+    render(<MemoryRouter><GameProvider><MultiplayerProvider><Probe /><SoloPlayScreen /></MultiplayerProvider></GameProvider></MemoryRouter>);
+    expect(screen.getByRole("dialog", { name: "Paused" })).toBeTruthy();
+    expect(game.playerCells["0,0"].letter).toBe("C");
+  });
+
+  it("keeps the puzzle open and offers retry if saving fails", async () => {
+    await renderSolo();
+    type("c");
+    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(screen.getByRole("alert").textContent).toContain("couldn’t save");
+    expect(screen.queryByRole("button", { name: "Save & exit" })).toBeNull();
+    expect(game.playerCells["0,0"].letter).toBe("C");
+    write.mockRestore();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByRole("button", { name: "Save & exit" })).toBeTruthy();
+  });
+});

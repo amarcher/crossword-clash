@@ -54,3 +54,66 @@ describe("useSoloTimer + per-puzzle progress", () => {
     expect(result.current.getElapsedSeconds()).toBe(0);
   });
 });
+
+describe("solo pause clock", () => {
+  beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); vi.setSystemTime(100_000); });
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+
+  it("excludes a ten-minute break and survives repeated pause events", () => {
+    const { result, unmount } = renderHook(() => useSoloTimer(one, false));
+    act(() => vi.advanceTimersByTime(651_000));
+    act(() => { result.current.pause(); result.current.pause(); });
+    expect(result.current.getElapsedSeconds()).toBe(651);
+    act(() => vi.advanceTimersByTime(600_000));
+    expect(result.current.getElapsedSeconds()).toBe(651);
+    act(() => { result.current.resume(); result.current.resume(); });
+    act(() => vi.advanceTimersByTime(2000));
+    expect(result.current.getElapsedSeconds()).toBe(653);
+    unmount();
+  });
+
+  it("returns from hidden paused, and does not add time away after remount", () => {
+    const view = renderHook(() => useSoloTimer(one, false));
+    act(() => vi.advanceTimersByTime(7000));
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    expect(view.result.current.running).toBe(false);
+    act(() => vi.advanceTimersByTime(30_000));
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    expect(view.result.current.getElapsedSeconds()).toBe(7);
+    expect(view.result.current.running).toBe(false);
+    view.unmount();
+    const restored = renderHook(() => useSoloTimer(one, false, false, () => false));
+    expect(restored.result.current.getElapsedSeconds()).toBe(7);
+    expect(restored.result.current.running).toBe(false);
+    restored.unmount();
+  });
+
+  it("checkpoints the outgoing puzzle under its own key before initializing the next", () => {
+    recordProgressCells(puzzleIdentity(one), typed, 2);
+    recordProgressCells(puzzleIdentity(two), typed, 2);
+    const view = renderHook(({ p }) => useSoloTimer(p, false), { initialProps: { p: one } });
+    act(() => vi.advanceTimersByTime(7200));
+    view.rerender({ p: two });
+    expect(getProgress(puzzleIdentity(one))?.elapsedMs).toBe(7200);
+    expect(view.result.current.getElapsedSeconds()).toBe(0);
+    act(() => vi.advanceTimersByTime(2000));
+    view.rerender({ p: one });
+    expect(getProgress(puzzleIdentity(two))?.elapsedMs).toBe(2000);
+    expect(view.result.current.getElapsedSeconds()).toBe(7);
+    view.unmount();
+  });
+
+  it("never overwrites a finish with an unfinished timer during cleanup", () => {
+    const view = renderHook(({ done }) => useSoloTimer(one, done), { initialProps: { done: false } });
+    act(() => vi.advanceTimersByTime(1234));
+    view.rerender({ done: true });
+    view.unmount();
+    const restored = renderHook(() => useSoloTimer(one, true));
+    expect(restored.result.current.result?.finishSeconds).toBe(1);
+    expect(restored.result.current.fresh).toBe(false);
+    expect(restored.result.current.running).toBe(false);
+    restored.unmount();
+  });
+});

@@ -36,8 +36,8 @@ describe("per-puzzle solo progress (GameContext)", () => {
     await act(async () => {
       await game.handleSoloPuzzleLoaded(first);
     });
-    // An untouched grid creates no record.
-    expect(loadProgressStore()).toEqual({});
+    // Even an untouched grid can be paused and resumed.
+    expect(loadProgressStore()[puzzleIdentity(first)]).toMatchObject({ filled: 0, puzzle: first });
 
     await act(async () => {
       game.selectCell(firstLetter.row, firstLetter.col);
@@ -88,5 +88,41 @@ describe("per-puzzle solo progress (GameContext)", () => {
     expect(game.isComplete).toBe(true);
     expect(getProgress(puzzleIdentity(first))).toBeNull();
     expect(localStorage.getItem(PROGRESS_KEY)).toBeNull();
+  });
+});
+
+describe("resumable attempts", () => {
+  it("persists selection, direction, wrong letters, theme, and free-typing history across reload", async () => {
+    const view = render(<GameProvider><Probe /></GameProvider>);
+    await act(async () => { await game.handleSoloPuzzleLoaded(first); });
+    act(() => {
+      game.dispatch({ type: "SET_AUTOCHECK", autocheck: false });
+      game.selectCell(firstLetter.row, firstLetter.col);
+      game.inputLetter("Z");
+      game.setDirection("down");
+      game.setSoloTheme("Test theme");
+    });
+    const selection = game.selectedCell;
+    expect(getProgress(puzzleIdentity(first))?.usedFreeTyping).toBe(true);
+    view.unmount();
+    render(<GameProvider><Probe /></GameProvider>);
+    expect(game.playerCells[`${firstLetter.row},${firstLetter.col}`]?.letter).toBe("Z");
+    expect(game.selectedCell).toEqual(selection);
+    expect(game.direction).toBe("down");
+    expect(game.soloTheme).toBe("Test theme");
+  });
+
+  it("refuses to switch if the outgoing attempt cannot be saved", async () => {
+    render(<GameProvider><Probe /></GameProvider>);
+    await act(async () => { await game.handleSoloPuzzleLoaded(first); });
+    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    act(() => { game.selectCell(firstLetter.row, firstLetter.col); game.inputLetter(firstLetter.solution!); });
+    await act(async () => { expect(await game.handleSoloPuzzleLoaded(second)).toBe(false); });
+    expect(game.puzzle).toEqual(first);
+    expect(game.playerCells[`${firstLetter.row},${firstLetter.col}`]?.letter).toBe(firstLetter.solution);
+    expect(game.soloSaveError).toBe("storage");
+    write.mockRestore();
+    act(() => { expect(game.checkpointSolo()).toBe("saved"); });
+    expect(game.soloSaveError).toBeNull();
   });
 });

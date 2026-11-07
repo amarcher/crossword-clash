@@ -10,7 +10,7 @@ export function SoloImportScreen() {
 
   const onPuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
-      await handleSoloPuzzleLoaded(p, fileBuffer);
+      if (await handleSoloPuzzleLoaded(p, fileBuffer) === false) return;
       navigate("/solo/play");
     },
     [handleSoloPuzzleLoaded, navigate],

@@ -31,7 +31,7 @@ export function PuzzleReadyScreen() {
 
   const handlePlaySolo = useCallback(async () => {
     if (!game.urlPuzzle) return;
-    await game.handleSoloPuzzleLoaded(game.urlPuzzle);
+    if (await game.handleSoloPuzzleLoaded(game.urlPuzzle) === false) return;
     navigate("/solo/play");
   }, [game, navigate]);
 
