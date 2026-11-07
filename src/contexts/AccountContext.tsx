@@ -37,6 +37,7 @@ export interface OpenPaywallOptions {
 }
 
 export interface AccountContextValue extends Account {
+  sheetOpen: boolean;
   /** False in builds that cannot offer an account (no Supabase, or the native apps). */
   available: boolean;
   /** Opens the account sheet: sign-in when anonymous, the account page (or the named view) when signed in. */
@@ -159,7 +160,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const close = useCallback(() => setSheet(null), []);
 
-  const value = useMemo<AccountContextValue>(() => ({ ...account, available, openAccount, openPaywall }), [account, available, openAccount, openPaywall]);
+  const value = useMemo<AccountContextValue>(() => ({ ...account, available, openAccount, openPaywall, sheetOpen: sheet !== null }), [account, available, openAccount, openPaywall, sheet]);
 
   return (
     <AccountContext.Provider value={value}>

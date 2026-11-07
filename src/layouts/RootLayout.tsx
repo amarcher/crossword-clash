@@ -1,3 +1,4 @@
+import { SoloSaveNotice } from "../components/SoloSaveNotice";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -228,6 +229,7 @@ export function RootLayout() {
             <FriendsProvider>
               <RoutingEffects>
                 <Outlet />
+                  <SoloSaveNotice />
               </RoutingEffects>
               <InviteBanner />
               <PushEffects />

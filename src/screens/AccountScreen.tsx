@@ -120,7 +120,7 @@ export function AccountScreen() {
         const daily = await fetchDailyForDay(row.entry.day, row.entry.slot);
         if (!daily) throw new Error("not published");
         track("mode_selected", { mode: "account-resume", slot: row.entry.slot });
-        await handleSoloPuzzleLoaded(daily.puzzle);
+        if (await handleSoloPuzzleLoaded(daily.puzzle) === false) return;
         setSoloTheme(daily.theme || null);
         navigate("/solo/play");
       } catch {

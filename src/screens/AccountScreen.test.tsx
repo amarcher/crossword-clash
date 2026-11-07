@@ -60,6 +60,7 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
     profile: { user_id: "u1", username: "ada_l", display_name: null },
     ready: true,
     profileReady: true,
+    sheetOpen: false,
     available: true,
     setProfile: vi.fn(),
     plus: false,

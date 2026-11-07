@@ -246,11 +246,12 @@ function readJSON<T>(key: string): T | null {
   }
 }
 
-function writeJSON(key: string, value: unknown): void {
+function writeJSON(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
-    // Storage unavailable / quota — stats are best-effort, never fatal.
+    return false;
   }
 }
 
@@ -383,8 +384,8 @@ export function loadSoloTimer(): SoloTimerRecord | null {
   return { key: raw.key, elapsedMs: raw.elapsedMs, completed: !!raw.completed };
 }
 
-export function saveSoloTimer(record: SoloTimerRecord): void {
-  writeJSON(TIMER_KEY, record);
+export function saveSoloTimer(record: SoloTimerRecord): boolean {
+  return writeJSON(TIMER_KEY, record);
 }
 
 export function clearSoloTimer(): void {

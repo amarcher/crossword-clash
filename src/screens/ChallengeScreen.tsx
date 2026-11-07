@@ -33,7 +33,7 @@ export function ChallengeScreen() {
       size: `${puzzle.width}x${puzzle.height}`,
       target_seconds: challenge.seconds,
     });
-    await game.handleSoloPuzzleLoaded(puzzle);
+    if (await game.handleSoloPuzzleLoaded(puzzle) === false) return;
     navigate("/solo/play");
   }, [puzzle, challenge, game, navigate]);
 

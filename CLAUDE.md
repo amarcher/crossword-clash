@@ -62,6 +62,26 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - **Cookie consent (EEA/UK/CH)**: Google Consent Mode v2 defaults are set in `index.html` (and the static bookmarklet page) *before* GA4 configures — `denied` for `CONSENT_REGIONS`, `granted` elsewhere — and a stored choice (`crossword-clash:consent`) is replayed there. `ConsentBanner` (mounted in `main.tsx`) asks only visitors in those regions (`/api/geo` reads Vercel's `x-vercel-ip-country`; timezone fallback in dev). `AdSlot` loads AdSense only once ads are allowed (`adsAllowed()` in `src/lib/consentStore.ts`). The region list lives in `src/lib/consent.ts`; `consent.test.ts` fails if the HTML copies drift. Off in mobile mode (the apps have no GA/ads).
 - **`/install-bookmarklet` is static HTML, not a React route.** Source: `bookmarklet/install-page.html`. Built by `scripts/build-bookmarklet.mjs` into `public/install-bookmarklet/index.html`, which Vite/Vercel serve directly (taking precedence over the SPA). Reason: PR #36 — runtime-assembled `javascript:` URLs in the React bundle were tripping Google Safe Browsing's deceptive-page heuristic. Edit the HTML template, re-run `pnpm build:bookmarklet`. Do not reintroduce a React version.
 
+## Solo pause and resume
+
+Solo play uses **Pause**, never a destructive New Puzzle button. Pause hides the
+puzzle and stops active-play time; Resume starts it and Save & exit preserves it
+on the menu. `soloProgress.ts` v2 records retain the local puzzle definition,
+cells, clock, selection, theme, challenge, and assistance/free-typing flags.
+The 30-attempt limit refuses new entries rather than evicting unfinished work.
+`handleSoloPuzzleLoaded` returns false on failed saves; callers must not navigate
+or replace the puzzle then. `checkpointSolo` avoids rewriting unchanged in-memory
+state over a newer synced record. The timer owns a separate clock per puzzle and
+checkpoints its captured outgoing clock on cleanup; completion must stay marked
+completed. `soloSession.ts` carries one-use explicit Play/Resume intent; reloads
+and passive returns start paused, and Save & exit remembers the menu. The play
+screen waits for initial session restoration before redirecting an empty state.
+The menu's Continue playing list works signed out and resumes local imports offline.
+Native background/Back events are in `soloLifecycle.ts`; browser visibility and
+navigation are handled by the timer and `SoloNavigationGuard`. Multiplayer clocks
+are unchanged. See [the spec](docs/solo-pause-and-resume-spec.md) and
+[verification](docs/solo-pause/verification.md).
+
 ## Game Modes
 
 - **Solo**: Import puzzle → play locally → progress saved to localStorage only (per-puzzle in `soloProgress.ts`, plus the one resumable session); the server sees a `play_sessions` row, never a game.

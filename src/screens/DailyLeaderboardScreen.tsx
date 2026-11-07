@@ -236,7 +236,7 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
   const playToday = useCallback(async () => {
     track("mode_selected", { mode: "daily", slot });
     if (!daily) return;
-    await game.handleSoloPuzzleLoaded(daily.puzzle);
+    if (await game.handleSoloPuzzleLoaded(daily.puzzle) === false) return;
     game.setSoloTheme(daily.theme);
     navigate("/solo/play");
   }, [game, daily, slot, navigate]);

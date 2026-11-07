@@ -34,6 +34,7 @@ function account(overrides: Partial<AccountContextValue>): AccountContextValue {
     profile: null,
     ready: true,
     profileReady: true,
+    sheetOpen: false,
     available: true,
     setProfile: vi.fn(),
     plus: false,
