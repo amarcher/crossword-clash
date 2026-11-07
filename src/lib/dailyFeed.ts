@@ -31,6 +31,16 @@ import { normalizeTransferPuzzle, type TransferPuzzle } from "./puzzleNormalizer
 export const DAILY_SLOTS = ["mini", "midi", "large"] as const;
 export type DailySlot = (typeof DAILY_SLOTS)[number];
 
+/** Grids this wide or taller go to the large slot by default; from MIDI_MIN_SIZE up to it, the midi. */
+export const LARGE_MIN_SIZE = 11;
+export const MIDI_MIN_SIZE = 8;
+
+/** The slot a puzzle of this size belongs in: 15×15s are larges, 9×9s midis, 5×5s and 7×7s minis. */
+export function defaultSlotFor(width: number, height: number): DailySlot {
+  const size = Math.max(width, height);
+  return size >= LARGE_MIN_SIZE ? "large" : size >= MIDI_MIN_SIZE ? "midi" : "mini";
+}
+
 export function isDailySlot(value: unknown): value is DailySlot {
   return (DAILY_SLOTS as readonly unknown[]).includes(value);
 }

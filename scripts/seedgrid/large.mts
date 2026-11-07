@@ -17,7 +17,9 @@
  * the one whose best quick fill scores highest wins), --allow-shared (themers may
  * share a run longer than the engine's limit), --paired (refuse crossing placements, so no unthemed
  * slot ever mirrors a themer; the layout fails instead), --reject "nest, nemo" (entries the engine may
- * never use, e.g. the same day's mini and midi answers), --difficulty easy|medium|hard, --context "…" (dated
+ * never use, e.g. the same day's mini and midi answers), --day YYYY-MM-DD (the publish day: the clue
+ * writer sees the feed's clues for each answer around it and may not repeat one; a batch theme may
+ * carry its own `day`), --difficulty easy|medium|hard, --context "…" (dated
  * hooks — holidays, anniversaries, events — the clue writer may use where an entry fits), --bonus FILE (theme-bonus words; default
  * wordlists/theme-bonus/<slug>.dict), --dict FILE (word list; default the studio's
  * production list), --out DIR (default artifacts/seedgrid), --model ID, --seed N.
@@ -36,7 +38,8 @@ import { normalizeEntry, parseDict, WordIndex } from "../../src/lib/seedgrid/dic
 import { blackBlocks, blackCorners, cloneGrid, gridStats, gridToRows, MAX_SHARED, meetsGridStandards, slotsOf, slotText, type Grid, type Slot } from "../../src/lib/seedgrid/grid";
 import { findSkeleton } from "../../src/lib/seedgrid/skeletonFinder";
 import { auditClues, auditGrid, clueBudget } from "../../src/lib/seedgrid/audit";
-import { clueProblems, cluesRequest, CONSTRUCTOR, CONTENT_RULE, contentReviewRequest, timelyContext, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
+import { clueProblems, cluesRequest, CONSTRUCTOR, CONTENT_RULE, contentReviewRequest, timelyContext, type ClueRow, type Difficulty, type RecentClues } from "../../src/lib/seedgrid/cluePrompt";
+import { feedUses, loadFeed, recentForGrid } from "./feedHistory.mts";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { newPuzzleId, slotKey, type StudioState } from "../../src/lib/seedgrid/studioState";
 import { mulberry32 } from "../../src/lib/seedgrid/random";
@@ -101,6 +104,8 @@ interface ThemeSpec {
   slug?: string;
   /** Themer → clue sketch from the backlog, handed to the clue writer as a starting point. */
   clueSketches?: Record<string, string>;
+  /** Publish day: the clue writer sees what the feed clued each answer around it and may not repeat one. */
+  day?: string;
 }
 
 function specsFromFlags(): ThemeSpec[] {
@@ -121,6 +126,7 @@ function specsFromFlags(): ThemeSpec[] {
       allowShared: Boolean(flags["allow-shared"]),
       paired: Boolean(flags.paired),
       reject: flag("reject")?.split(/[,\n]/).map((w) => normalizeEntry(w)).filter(Boolean),
+      day: flag("day"),
     },
   ];
 }
@@ -156,6 +162,7 @@ function specsFromFile(file: string): ThemeSpec[] {
         reject: [...(Array.isArray(t.reject) ? (t.reject as unknown[]).map((w) => normalizeEntry(String(w))) : []), ...(flag("reject")?.split(/[,\n]/).map((w) => normalizeEntry(w)).filter(Boolean) ?? [])],
         slug: t.slug ? String(t.slug) : undefined,
         clueSketches: Object.fromEntries(entries.filter(([, c]) => c).map(([a, c]) => [normalizeEntry(a), c])),
+        day: t.day ? String(t.day) : flag("day"),
       } satisfies ThemeSpec;
     })
     .filter((t) => !only || only.has(t.slug ?? "") || only.has(themeSlug(t.title ?? "")) || only.has(themeSlug(t.theme)));
@@ -299,8 +306,8 @@ async function reviewClues(grid: Grid, context: string, answers: Record<string, 
   return problems.filter((p) => answers[p.slot]);
 }
 
-async function writeClues(grid: Grid, context: string, difficulty: Difficulty, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
-  const req = cluesRequest(grid, context, { difficulty, fix });
+async function writeClues(grid: Grid, context: string, difficulty: Difficulty, fix?: { slot: string; problem: string }[], recent?: RecentClues): Promise<ClueRow[]> {
+  const req = cluesRequest(grid, context, { difficulty, fix, recent });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
 }
@@ -834,14 +841,15 @@ async function buildTheme(spec: ThemeSpec): Promise<ThemeOutcome> {
     const clueContext = `${context}
 Clue every theme entry (${seeds.join(", ")}) as a question-mark pun that plays on the mashup, e.g. TOUCHDOWNUNDER → "Six points scored in Australia?". The speed clue for a theme entry may be plainer.
 ${CONTENT_RULE}${spec.context ? `\n${timelyContext(spec.context)}` : ""}${sketches.length ? `\nClue sketches from the constructor (polish them, keep the idea): ${sketches.map(([a, c]) => `${a}: ${c}`).join("; ")}` : ""}`;
-    let rows = await writeClues(grid, clueContext, difficulty);
+    const recent = spec.day ? recentForGrid(feedUses(loadFeed()), grid, spec.day, "large") : undefined;
+    let rows = await writeClues(grid, clueContext, difficulty, undefined, recent);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
-      const problems = clueProblems(answers, clues);
+      const problems = clueProblems(answers, clues, recent);
       if (!problems.length) break;
       if (pass === 0) {
         log(`  fixing ${problems.length} clue(s)`);
-        rows = await writeClues(grid, clueContext, difficulty, problems);
+        rows = await writeClues(grid, clueContext, difficulty, problems, recent);
       } else notes.push(`Clue problems left after the fix pass: ${problems.map((p) => `${p.slot} (${p.problem})`).join("; ")}`, "");
     }
     // A second look at content and fairness, not mechanics: the fix pass rewrites what it flags.
@@ -850,9 +858,9 @@ ${CONTENT_RULE}${spec.context ? `\n${timelyContext(spec.context)}` : ""}${sketch
     notes.push("## Clue review", ...(content.length ? content.map((p) => `- ${p.slot} ${answers[p.slot]}: ${p.problem}`) : ["- nothing flagged"]), "");
     if (content.length) {
       log(`  rewriting ${content.length} clue(s) for content`);
-      const rows = await writeClues(grid, clueContext, difficulty, content);
+      const rows = await writeClues(grid, clueContext, difficulty, content, recent);
       for (const r of rows) if (answers[r.slot] && content.some((p) => p.slot === r.slot)) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
-      const left = clueProblems(answers, clues);
+      const left = clueProblems(answers, clues, recent);
       if (left.length) notes.push(`Mechanical problems after the content rewrite: ${left.map((p) => `${p.slot} (${p.problem})`).join("; ")}`, "");
     }
     const list = Object.entries(clues).map(([id, c]) => ({ slotId: id, answer: answers[id], clue: c.standard }));
