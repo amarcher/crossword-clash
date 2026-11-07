@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { TransferPuzzle } from "../puzzleNormalizer";
-import { clueIssues, crosscheckDay, dayRange, entriesFromRows, entriesFromTransfer, rowsFromTransfer, sharedEntries, stripClueNumber, titleAsEntry } from "./crosscheck";
+import {
+  CLUE_REPEAT_DAYS,
+  clueIssues,
+  clueKey,
+  clueUses,
+  crosscheckDay,
+  dayRange,
+  daysBetween,
+  entriesFromRows,
+  entriesFromTransfer,
+  recentCluesFor,
+  repeatedClues,
+  repeatProblem,
+  rowsFromTransfer,
+  sharedEntries,
+  stripClueNumber,
+  titleAsEntry,
+  type ClueUse,
+} from "./crosscheck";
 
 /** A 5×5 with a black corner pair, as the feed stores it (flat grid, "." black). */
 function transfer(overrides: Partial<TransferPuzzle> = {}): TransferPuzzle {
@@ -135,5 +153,67 @@ describe("dayRange", () => {
 
   it("rejects a bad date", () => {
     expect(() => dayRange("nope", "2026-11-02")).toThrow();
+  });
+});
+
+describe("clue repeats across days", () => {
+  const use = (day: string, slot: ClueUse["slot"], answer: string, clue: string, number = 1, dir: ClueUse["dir"] = "across"): ClueUse => ({ day, slot, dir, index: 0, number, answer, clue });
+
+  it("compares clues without number, case, punctuation or extra spaces, and nothing more", () => {
+    expect(clueKey("12. Pub pint.")).toBe("pub pint");
+    expect(clueKey("“Pub  pint!”")).toBe("pub pint");
+    expect(clueKey("Rainbow's shape")).not.toBe(clueKey("Rainbow shape"));
+  });
+
+  it("reads a feed puzzle's clues with their numbers and answers", () => {
+    const uses = clueUses("2026-11-08", "mini", transfer());
+    expect(uses).toHaveLength(10);
+    expect(uses[0]).toEqual({ day: "2026-11-08", slot: "mini", dir: "across", index: 0, number: 1, answer: "TAPE", clue: "Sticky roll" });
+    expect(uses[9]).toMatchObject({ dir: "down", number: 5, answer: "EST", clue: "Little rascal" });
+  });
+
+  it("flags the later use of the same clue for the same answer within the window, in any slot", () => {
+    const uses = [
+      use("2026-11-01", "large", "ERE", "Before, poetically"),
+      use("2026-11-08", "mini", "ERE", "Before, poetically."),
+      use("2026-11-08", "midi", "ERE", "Prior to, in verse"),
+      use("2026-11-09", "midi", "TSA", "Airport screening org."),
+      use("2026-11-09", "large", "TSA", "Airport screening org.", 23),
+    ];
+    const repeats = repeatedClues(uses);
+    expect(repeats.map((r) => [r.use.day, r.use.slot, r.earlier.day, r.earlier.slot])).toEqual([
+      ["2026-11-08", "mini", "2026-11-01", "large"],
+      ["2026-11-09", "large", "2026-11-09", "midi"],
+    ]);
+    expect(repeatProblem(repeats[1])).toBe('large: 23A TSA repeats "Airport screening org." from the midi the same day');
+    expect(repeatProblem(repeats[0])).toBe('mini: 1A ERE repeats "Before, poetically." from the large of 2026-11-01');
+  });
+
+  it("lets a clue come back once the window has passed, and never mixes answers", () => {
+    const later = new Date(Date.parse("2026-11-01T00:00:00Z") + (CLUE_REPEAT_DAYS + 1) * 86_400_000).toISOString().slice(0, 10);
+    expect(repeatedClues([use("2026-11-01", "mini", "EEL", "Slippery swimmer"), use(later, "mini", "EEL", "Slippery swimmer")])).toEqual([]);
+    expect(repeatedClues([use("2026-11-01", "mini", "EEL", "Slippery swimmer"), use("2026-11-01", "midi", "EELS", "Slippery swimmer")])).toEqual([]);
+    expect(daysBetween("2026-11-30", "2026-12-14")).toBe(14);
+    expect(repeatedClues([use("2026-11-30", "mini", "EEL", "Slippery swimmer"), use("2026-12-14", "mini", "EEL", "Slippery swimmer")])).toHaveLength(1);
+  });
+
+  it("chains: each repeat is measured from the use just before it", () => {
+    const repeats = repeatedClues([use("2026-11-01", "mini", "ALE", "Pub pint"), use("2026-11-10", "mini", "ALE", "Pub pint"), use("2026-11-20", "mini", "ALE", "Pub pint")]);
+    expect(repeats.map((r) => [r.use.day, r.earlier.day])).toEqual([
+      ["2026-11-10", "2026-11-01"],
+      ["2026-11-20", "2026-11-10"],
+    ]);
+  });
+
+  it("lists an answer's recent clues either side of a day, once each, leaving out the puzzle itself", () => {
+    const uses = [
+      use("2026-10-01", "mini", "ERE", "Long ago"),
+      use("2026-11-01", "large", "ERE", "Before, poetically"),
+      use("2026-11-08", "mini", "ERE", "Before, poetically."),
+      use("2026-11-08", "midi", "ERE", "Own clue"),
+      use("2026-11-12", "large", "ERE", "Prior to, in verse"),
+      use("2026-11-12", "large", "TSA", "Not this answer"),
+    ];
+    expect(recentCluesFor(uses, "ere", "2026-11-08", "midi")).toEqual(["Before, poetically", "Prior to, in verse"]);
   });
 });

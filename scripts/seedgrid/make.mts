@@ -13,7 +13,9 @@
  * --max-shared 3, --difficulty easy|medium|hard (clue register, default medium),
  * --context "…" (dated hooks — holidays, anniversaries, events — the clue writer may use where an entry fits),
  * --title, --author, --dict extra.dict (repeatable), --reject "nest, nemo" (entries the
- * engine may never use, e.g. the same day's other dailies' answers), --out DIR,
+ * engine may never use, e.g. the same day's other dailies' answers), --day YYYY-MM-DD (the
+ * publish day: the clue writer sees the feed's clues for each answer around it and may not
+ * repeat one), --out DIR,
  * --model ID, --seed N (repeatable randomness).
  *
  * Writes <out>/<slug>/puzzle.ipuz (publish with `pnpm daily:add`) and
@@ -29,7 +31,9 @@ import { gridStats, gridToRows, slotsOf, slotText, type Grid, type Symmetry } fr
 import { FillEngine } from "../../src/lib/seedgrid/solver";
 import { buildSkeleton, placeSeeds, shapeSkeleton, tryBlock, type Skeleton } from "../../src/lib/seedgrid/layout";
 import { auditClues, auditGrid, clueBudget, type AuditReport } from "../../src/lib/seedgrid/audit";
-import { clueProblems, cluesRequest, CONSTRUCTOR, timelyContext, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
+import { clueProblems, cluesRequest, CONSTRUCTOR, timelyContext, type ClueRow, type Difficulty, type RecentClues } from "../../src/lib/seedgrid/cluePrompt";
+import { defaultSlotFor } from "../../src/lib/dailyFeed";
+import { feedUses, loadFeed, parseDay, recentForGrid } from "./feedHistory.mts";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
 
@@ -52,6 +56,8 @@ const maxShared = Number(flag("max-shared") ?? 3);
 const model = flag("model") ?? DEFAULT_MODEL;
 const difficulty = (flag("difficulty") ?? "medium") as Difficulty;
 const extraContext = flag("context") ?? "";
+// `--day` is the publish day: the clue writer sees what the feed clued each answer around it.
+const publishDay = parseDay(flag("day"), "pnpm seedgrid … --day YYYY-MM-DD");
 let seedState = Number(flag("seed") ?? Date.now() % 2 ** 31);
 const random = () => {
   seedState = (seedState + 0x6d2b79f5) | 0;
@@ -215,9 +221,9 @@ For a pile-up, name the single entry whose removal helps most. Never list LOCKED
 }
 
 
-async function writeClues(grid: Grid, context: string, fix?: { slot: string; problem: string }[]): Promise<ClueRow[]> {
+async function writeClues(grid: Grid, context: string, fix?: { slot: string; problem: string }[], recent?: RecentClues): Promise<ClueRow[]> {
   const timely = extraContext ? `${context}\n${timelyContext(extraContext)}` : context;
-  const req = cluesRequest(grid, timely, { fix, difficulty });
+  const req = cluesRequest(grid, timely, { fix, difficulty, recent });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
 }
@@ -438,13 +444,14 @@ async function main() {
   if (useLlm && !unresolved.length) {
     log("Writing clues…");
     const answers = Object.fromEntries(slotsOf(grid).map((s) => [s.id, slotText(grid!, s)]));
-    let rows = await writeClues(grid, context);
+    const recent = publishDay ? recentForGrid(feedUses(loadFeed()), grid, publishDay, defaultSlotFor(grid.width, grid.height)) : undefined;
+    let rows = await writeClues(grid, context, undefined, recent);
     for (let pass = 0; pass < 2; pass++) {
       for (const r of rows) if (answers[r.slot]) clues[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
-      const problems = clueProblems(answers, clues);
+      const problems = clueProblems(answers, clues, recent);
       if (!problems.length) break;
       log(`  fixing ${problems.length} clue(s)`);
-      rows = await writeClues(grid, context, problems);
+      rows = await writeClues(grid, context, problems, recent);
     }
     const list = Object.entries(clues).map(([id, c]) => ({ slotId: id, answer: answers[id], clue: c.standard }));
     const budget = auditClues(list, "standard clue").filter((i) => i.kind !== "clue-budget" || true);

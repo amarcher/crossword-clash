@@ -3,20 +3,24 @@
  * fix pass and content review. Works on `pnpm seedgrid` output (puzzle.ipuz +
  * session.json) and `pnpm seedgrid:large` output (puzzle.ipuz + studio.json).
  *
- *   pnpm seedgrid:reclue <puzzleDir> easy|medium|hard [--only-missing] [--context "…"] [--model …]
+ *   pnpm seedgrid:reclue <puzzleDir> easy|medium|hard [--only-missing] [--context "…"] [--day YYYY-MM-DD [--slot mini|midi|large]] [--model …]
  *
  * `--only-missing` writes clues only for slots without one (after a refix);
  * the rest keep theirs. `--context` passes dated hooks the writer may use
- * where an entry fits. The previous clues stay in review.md for reference.
+ * where an entry fits. `--day` names the publish day: the writer is shown the
+ * clues each answer had in the feed around it and may not repeat one (the
+ * slot defaults by grid size). The previous clues stay in review.md for reference.
  */
 import path from "node:path";
 import { auditClues, clueBudget } from "../../src/lib/seedgrid/audit";
 import { clueProblems, cluesRequest, CONTENT_RULE, contentReviewRequest, timelyContext, type ClueRow, type Difficulty } from "../../src/lib/seedgrid/cluePrompt";
 import type { ClueSet } from "../../src/lib/seedgrid/ipuz";
+import { defaultSlotFor, isDailySlot } from "../../src/lib/dailyFeed";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
+import { feedUses, loadFeed, parseDay, recentForGrid } from "./feedHistory.mts";
 import { appendReview, loadPuzzleDir, parseArgs, savePuzzleDir, today } from "./puzzleDir.mts";
 
-const USAGE = 'Usage: pnpm seedgrid:reclue <puzzleDir> easy|medium|hard [--only-missing] [--context "…"]';
+const USAGE = 'Usage: pnpm seedgrid:reclue <puzzleDir> easy|medium|hard [--only-missing] [--context "…"] [--day YYYY-MM-DD [--slot mini|midi|large]]';
 const { flags, positional } = parseArgs(process.argv.slice(2));
 const [dir, difficultyRaw] = positional;
 if (!dir || !["easy", "medium", "hard"].includes(difficultyRaw ?? "")) {
@@ -32,6 +36,10 @@ const log = (m: string) => console.log(m);
 const puzzle = loadPuzzleDir(dir);
 const { grid, slots, answers, seeds } = puzzle;
 const existing = puzzle.clues;
+const day = parseDay(flags.day, USAGE);
+const slot = isDailySlot(flags.slot) ? flags.slot : defaultSlotFor(grid.width, grid.height);
+const recent = day ? recentForGrid(feedUses(loadFeed()), grid, day, slot) : undefined;
+if (recent) log(`Recent clues from the feed around ${day}: ${Object.keys(recent).length} entr${Object.keys(recent).length === 1 ? "y" : "ies"} to keep fresh`);
 const wanted = (onlyMissing ? slots.filter((s) => !existing[s.id]?.standard) : slots).map((s) => s.id);
 if (!wanted.length) {
   log("nothing to clue: every slot already has one");
@@ -44,7 +52,7 @@ const context = [puzzle.theme && `Theme idea: ${puzzle.theme}`, puzzle.title && 
   .join("\n") + `${themers}\n${CONTENT_RULE}${extraContext ? `\n${timelyContext(extraContext)}` : ""}`;
 
 async function write(fix?: { slot: string; problem: string }[], only?: string[]): Promise<ClueRow[]> {
-  const req = cluesRequest(grid, context, { difficulty, fix, slots: fix ? undefined : only });
+  const req = cluesRequest(grid, context, { difficulty, fix, slots: fix ? undefined : only, recent });
   const { clues } = await callJson<{ clues: ClueRow[] }>({ model, ...req, maxTokens: Math.max(req.maxTokens, 12000) });
   return clues;
 }
@@ -59,7 +67,7 @@ let leftover: { slot: string; problem: string }[] = [];
 for (let pass = 0; pass < 3; pass++) {
   take(rows, clues, (slot) => wanted.includes(slot));
   const missing = wanted.filter((id) => !clues[id]).map((slot) => ({ slot, problem: "no clue returned" }));
-  const problems = [...clueProblems(answers, clues).filter((p) => wanted.includes(p.slot)), ...missing];
+  const problems = [...clueProblems(answers, clues, recent).filter((p) => wanted.includes(p.slot)), ...missing];
   if (!problems.length) break;
   if (pass < 2) {
     log(`  fixing ${problems.length}: ${problems.map((p) => `${p.slot} (${p.problem})`).join("; ")}`);
@@ -78,7 +86,7 @@ let afterContent: { slot: string; problem: string }[] = [];
 if (flagged.length) {
   log(`  rewriting ${flagged.length} for content: ${flagged.map((p) => `${p.slot} ${answers[p.slot]}: ${p.problem}`).join("; ")}`);
   take(await write(flagged), clues, (slot) => flagged.some((p) => p.slot === slot));
-  afterContent = clueProblems(answers, clues);
+  afterContent = clueProblems(answers, clues, recent);
   if (afterContent.length) log(`  mechanical problems after the content rewrite: ${afterContent.map((p) => `${p.slot} (${p.problem})`).join("; ")}`);
 }
 

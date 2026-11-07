@@ -2,7 +2,9 @@
  * Checks the published daily feed, day by day, against the same-day rules:
  * no title that is an entry of its puzzle, no clue that is empty, over
  * CLUE_MAX characters or gives its answer away, and no entry of 4+ letters
- * shared between the day's mini, midi and large.
+ * shared between the day's mini, midi and large. Across days: no clue that
+ * repeats, word for word, a clue its answer had in any slot within the
+ * previous CLUE_REPEAT_DAYS days (`pnpm seedgrid:unrepeat` rewrites them).
  *
  *   pnpm seedgrid:crosscheck <date-from> [<date-to>] [--strict]
  *
@@ -10,11 +12,9 @@
  * is simply absent that day). Prints one line per day plus every problem, and
  * a total; `--strict` exits 1 when there is any.
  */
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { DAILY_SLOTS, dailyFeedPath, type DailyFeedEntry } from "../../src/lib/dailyFeed";
-import { crosscheckDay, dayRange, type DayPuzzle } from "../../src/lib/seedgrid/crosscheck";
+import { DAILY_SLOTS, type DailySlot } from "../../src/lib/dailyFeed";
+import { crosscheckDay, dayRange, repeatedClues, repeatProblem, type DayPuzzle } from "../../src/lib/seedgrid/crosscheck";
+import { feedUses, loadFeed } from "./feedHistory.mts";
 import { parseArgs } from "./puzzleDir.mts";
 
 const USAGE = "Usage: pnpm seedgrid:crosscheck <YYYY-MM-DD> [<YYYY-MM-DD>] [--strict]";
@@ -24,24 +24,33 @@ if (!from || ![from, to].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))) {
   console.error(USAGE);
   process.exit(1);
 }
-const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../public");
+
+const feed = loadFeed();
+const byDay = new Map<string, DayPuzzle[]>();
+for (const f of feed) {
+  const list = byDay.get(f.day) ?? [];
+  list.push({ slot: f.slot as DailySlot, puzzle: f.entry.puzzle });
+  byDay.set(f.day, list);
+}
+// The whole feed is history for the repeat rule; only the asked range is reported.
+const repeats = new Map<string, string[]>();
+for (const r of repeatedClues(feedUses(feed))) {
+  const list = repeats.get(r.use.day) ?? [];
+  list.push(repeatProblem(r));
+  repeats.set(r.use.day, list);
+}
 
 let total = 0;
 let days = 0;
 for (const day of dayRange(from, to)) {
-  const puzzles: DayPuzzle[] = [];
-  for (const slot of DAILY_SLOTS) {
-    const file = path.join(publicDir, dailyFeedPath(slot, day).slice(1));
-    if (!fs.existsSync(file)) continue;
-    const entry = JSON.parse(fs.readFileSync(file, "utf8")) as DailyFeedEntry;
-    puzzles.push({ slot, puzzle: entry.puzzle });
-  }
+  const puzzles = (byDay.get(day) ?? []).sort((a, b) => DAILY_SLOTS.indexOf(a.slot) - DAILY_SLOTS.indexOf(b.slot));
   if (!puzzles.length) continue;
   days++;
   const report = crosscheckDay(day, puzzles);
+  const problems = [...report.problems, ...(repeats.get(day) ?? [])];
   console.log(`${day}  ${report.present.map((p) => `${p.slot}: ${p.title} ${p.size} ${p.entries}w`).join(" | ")}`);
-  for (const problem of report.problems) console.log(`  !! ${problem}`);
-  total += report.problems.length;
+  for (const problem of problems) console.log(`  !! ${problem}`);
+  total += problems.length;
 }
 console.log(`${days} day(s) checked, ${total} problem(s)`);
 if (flags.strict === "true" && total) process.exit(1);

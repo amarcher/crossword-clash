@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows } from "./grid";
 import { draftClues, entryAnswers, puzzleContext, suggestClues, suggestTitles, type ClaudeCaller } from "./studioClaude";
-import { ALTERNATIVES_COUNT, alternativesRequest, cluesRequest, NO_THEME, TITLE_MAX, TITLES_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest } from "./cluePrompt";
+import { ALTERNATIVES_COUNT, alternativesRequest, clueProblems, cluesRequest, NO_THEME, repeatsRecent, TITLE_MAX, TITLES_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest } from "./cluePrompt";
 
 const grid = gridFromRows(["BAT", "ORE", "WED"]);
 
@@ -46,6 +46,25 @@ describe("clue prompts", () => {
     const themed = cluesRequest(grid, "Theme: cave dwellers");
     expect(themed.prompt).not.toContain(NO_THEME);
     expect(themed.prompt).toContain("when one is stated above");
+  });
+});
+
+describe("recent clues from other dailies", () => {
+  it("shows the writer each wanted entry's recent clues, and only when there are some", () => {
+    const req = cluesRequest(grid, "", { slots: ["1A", "2D"], recent: { "1A": ["Cave flier", "Bit of baseball gear"], "1D": ["Bend at the waist"] } });
+    expect(req.prompt).toContain('1A BAT: "Cave flier" | "Bit of baseball gear"');
+    expect(req.prompt).not.toContain("Bend at the waist");
+    expect(cluesRequest(grid, "", { slots: ["1A"] }).prompt).not.toContain("ran in other dailies");
+    expect(cluesRequest(grid, "", { slots: ["1A"], recent: { "2D": ["Mineral source"] } }).prompt).not.toContain("ran in other dailies");
+  });
+
+  it("sends a clue that repeats a recent one, word for word, back for a fix", () => {
+    expect(repeatsRecent("Cave flier.", ["Cave flier"])).toBe("Cave flier");
+    expect(repeatsRecent("Cave dweller", ["Cave flier"])).toBeUndefined();
+    const answers = { "1A": "BAT", "1D": "BOW" };
+    const clues = { "1A": { standard: "Cave flier", speed: "Night flier" }, "1D": { standard: "Bend at the waist", speed: "Archer's gear" } };
+    expect(clueProblems(answers, clues)).toEqual([]);
+    expect(clueProblems(answers, clues, { "1A": ["cave flier"] })).toEqual([{ slot: "1A", problem: expect.stringContaining('repeats "cave flier"') }]);
   });
 });
 

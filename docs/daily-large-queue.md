@@ -138,6 +138,11 @@ WEK/APOLLOI) were cleared with `pnpm seedgrid:refix … --apply` + `reclue
    days are worth avoiding; the review notes list every entry. Before
    publishing, compare the day's three puzzles: no entry of 4+ letters may
    appear in two of them, and no title may be one of their entries.
+6. Pass `--day <publish date>` (or a `day` on the batch theme) so the clue
+   writer sees what the feed clued each answer lately: no clue may repeat, word
+   for word, a clue its answer had in any daily within 14 days.
+   `pnpm seedgrid:crosscheck` reports repeats, `pnpm seedgrid:unrepeat <from> <to>`
+   rewrites them, and `feedRepeats.test.ts` fails CI on any left.
 
 ## Daily Midi queue
 

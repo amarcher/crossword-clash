@@ -4,7 +4,7 @@
  * (scripts/seedgrid/claude.mts, or the studio-claude edge function).
  */
 import { auditClues, CLUE_MAX } from "./audit";
-import { titleAsEntry } from "./crosscheck";
+import { clueKey, titleAsEntry } from "./crosscheck";
 import { gridToRows, slotsOf, slotText, type Grid } from "./grid";
 
 export const CONSTRUCTOR = `You are a veteran American crossword constructor and editor in the style of William Eisenberg working in Ingrid.
@@ -45,15 +45,27 @@ function header(grid: Grid, context: string): string {
   return `${context.trim() ? `${context.trim()}\n` : ""}${stated ? "" : `${NO_THEME}\n`}Grid:\n${gridToRows(grid).join("\n")}`;
 }
 
-/** Two clues (standard + speed) for each listed slot; `fix` names earlier problems to correct. */
+/** Clues an entry already had in other recent dailies, per slot id: the writer must not hand one back. */
+export type RecentClues = Record<string, readonly string[] | undefined>;
+
+/** The prompt section that lists recent clues; empty when no wanted slot has any. */
+export function recentCluesSection(grid: Grid, slotIds: readonly string[], recent: RecentClues | undefined): string {
+  const slots = slotsOf(grid).filter((s) => slotIds.includes(s.id) && recent?.[s.id]?.length);
+  if (!slots.length) return "";
+  return `\nThese entries ran in other dailies lately. Each standard clue must be new: never one of the clues below, word for word, and preferably a different angle. Solvers play every day and notice a repeat.
+${slots.map((s) => `${s.id} ${slotText(grid, s)}: ${recent![s.id]!.map((c) => `"${c}"`).join(" | ")}`).join("\n")}\n`;
+}
+
+/** Two clues (standard + speed) for each listed slot; `fix` names earlier problems to correct, `recent` the clues other dailies used. */
 export function cluesRequest(
   grid: Grid,
   context: string,
-  opts: { slots?: string[]; difficulty?: Difficulty; fix?: { slot: string; problem: string }[] } = {},
+  opts: { slots?: string[]; difficulty?: Difficulty; fix?: { slot: string; problem: string }[]; recent?: RecentClues } = {},
 ): ClaudeJsonRequest {
   const wanted = new Set(opts.slots ?? opts.fix?.map((f) => f.slot) ?? slotsOf(grid).map((s) => s.id));
   const slots = slotsOf(grid).filter((s) => wanted.has(s.id));
   const fix = opts.fix?.length ? `\nThese clues were rejected; fix the problems:\n${opts.fix.map((f) => `${f.slot}: ${f.problem}`).join("\n")}\n` : "";
+  const recent = recentCluesSection(grid, [...wanted], opts.recent);
   return {
     system: CONSTRUCTOR,
     prompt: `${header(grid, context)}
@@ -62,7 +74,7 @@ Write two clues for every entry below.
 - standard: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}. Theme entries may nod to the theme when one is stated above.
 - speed: plain and instantly gettable; used as a hint in a race.
 ${RULES}
-${fix}
+${fix}${recent}
 ${slots.map((s) => `${s.id} ${slotText(grid, s)}`).join("\n")}`,
     schema: {
       type: "object",
@@ -149,16 +161,26 @@ export function vetTitles(entries: readonly string[], titles: readonly unknown[]
   return out;
 }
 
-/** Blocking problems (too long, gives away the answer, missing) per slot, for a fix pass. */
-export function clueProblems(answers: Record<string, string>, clues: Record<string, { standard: string; speed?: string }>): { slot: string; problem: string }[] {
+/** The recent clue a standard clue repeats word for word (`clueKey`), if any. */
+export function repeatsRecent(clue: string, recent: readonly string[] | undefined): string | undefined {
+  const key = clueKey(clue);
+  return key ? recent?.find((r) => clueKey(r) === key) : undefined;
+}
+
+/** Blocking problems (too long, gives away the answer, missing, repeats a recent daily's clue) per slot, for a fix pass. */
+export function clueProblems(answers: Record<string, string>, clues: Record<string, { standard: string; speed?: string }>, recent?: RecentClues): { slot: string; problem: string }[] {
   return Object.keys(answers).flatMap((id) => {
     const c = clues[id];
     if (!c?.standard) return [{ slot: id, problem: "missing" }];
     const issues = [
       ...auditClues([{ slotId: id, answer: answers[id], clue: c.standard }], "standard clue"),
       ...auditClues([{ slotId: id, answer: answers[id], clue: c.speed ?? "" }], "speed clue"),
-    ].filter((i) => i.severity === "block");
-    return issues.length ? [{ slot: id, problem: issues.map((i) => i.message).join("; ") }] : [];
+    ]
+      .filter((i) => i.severity === "block")
+      .map((i) => i.message);
+    const repeat = repeatsRecent(c.standard, recent?.[id]);
+    if (repeat) issues.push(`standard clue repeats "${repeat}", which another daily used lately; write a new one`);
+    return issues.length ? [{ slot: id, problem: issues.join("; ") }] : [];
   });
 }
 

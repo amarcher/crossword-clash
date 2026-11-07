@@ -89,6 +89,11 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
 - 7×7s on the production list need `--min-score 60` or the review refuses the fill for junk.
 - Hand-picked `--seeds` beat a free brainstorm when a theme keeps failing (BLITZ/PUNT, SCARF/WOOL).
 - A title never repeats an entry; the midi of the same day must not reuse the mini's or the large's entries.
+- No clue may repeat, word for word, a clue its answer had in any daily within 14 days (player
+  feedback, 2026-11-07: ERE was "Before, poetically" 17 times). Build with `--day <publish day>` so the
+  clue writer sees the feed's recent clues, and run `pnpm seedgrid:crosscheck` (it reports repeats) and
+  `pnpm seedgrid:unrepeat <from> <to>` before the PR; `feedRepeats.test.ts` fails CI otherwise. The
+  first run rewrote the repeats on 8 Nov – 26 Dec (table in `artifacts/unrepeat/`).
 - Keep two weeks ahead: stock runs to 2026-12-26 (all three slots); the next batch should start by 2026-12-12.
 - The 13–26 Dec minis (built 2026-11-04, after each day's large) rejected the large's answers of
   4+ letters through the new `--reject` flag. A free `--theme` brainstorm proposed three seeds for
