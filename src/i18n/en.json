@@ -300,6 +300,19 @@
     "nextPuzzleSameRoom": "Next puzzle, same room",
     "nextPuzzleSameRoomHint": "Pick a fresh puzzle — the room code stays"
   },
+  "leaderboardSettings": {
+    "retry": "Try again",
+    "title": "Leaderboards",
+    "label": "Leaderboard eligible",
+    "hint": "Automatically post eligible daily solo times under your name.",
+    "existing": "Changes apply to future finishes. Times already posted stay on the leaderboard.",
+    "loading": "Loading your setting…",
+    "saving": "Saving…",
+    "error": "We couldn’t save or load your setting. Please try again.",
+    "checking": "Checking your leaderboard preference…",
+    "disabled": "Your time wasn’t posted. Solo leaderboard posting is off in your account settings.",
+    "unavailable": "Your time wasn’t posted because we couldn’t check your account setting. Your solve is still saved."
+  },
   "leaderboard": {
     "title": "Daily Leaderboard",
     "titleLarge": "Daily Large Leaderboard",

@@ -10,6 +10,8 @@
  * offline solo path is untouched.
  */
 
+import type { User } from "@supabase/supabase-js";
+import { fetchSoloLeaderboardPreference } from "./leaderboardPreference";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
@@ -59,6 +61,8 @@ export interface PendingDailyResult {
   gameId: string | null;
   /** Whether the finish was sent to the board (or is on its way). */
   posted: boolean;
+  /** A held solo finish cannot be posted by the name form or sharing. */
+  postingHold?: "checking" | "disabled" | "unavailable";
   /** Resolves once the submission has finished (it never rejects). */
   settled: Promise<void>;
 }
@@ -285,6 +289,29 @@ export function postDailyResult(
   return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, ...entry }) };
 }
 
+/** Prepare a solo finish without treating a remembered guest name as permission to post. */
+export async function prepareSoloDailyResult(
+  day: string,
+  slot: DailySlot,
+  entry: DailyResultEntry,
+  user: Pick<User, "id" | "is_anonymous">,
+): Promise<PendingDailyResult> {
+  const parked: PendingDailyResult = { day, slot, entry, gameId: null, posted: false, settled: Promise.resolve() };
+  if (user.is_anonymous) return parked;
+  try {
+    if (!await fetchSoloLeaderboardPreference(user.id)) return { ...parked, postingHold: "disabled" };
+    return postDailyResult(day, slot, entry);
+  } catch {
+    return { ...parked, postingHold: "unavailable" };
+  }
+}
+
+/** Copy used on both the finish and the board while a solo result remains private. */
+export function dailyPostingNotice(pending: PendingDailyResult | null | undefined): string | null {
+  if (!pending?.postingHold) return null;
+  return `leaderboardSettings.${pending.postingHold}`;
+}
+
 /**
  * Sign a parked finish: an unposted one is posted now under the name (the
  * board awaits the new `settled`); a posted one is renamed in place through
@@ -292,7 +319,7 @@ export function postDailyResult(
  */
 export function signDailyResult(pending: PendingDailyResult, name: string): PendingDailyResult {
   const displayName = name.trim();
-  if (!displayName) return pending;
+  if (!displayName || pending.postingHold) return pending;
   const entry = { ...pending.entry, displayName };
   if (pending.posted) {
     void updateDailyDisplayName(pending.day, pending.entry.userId, displayName, pending.slot);

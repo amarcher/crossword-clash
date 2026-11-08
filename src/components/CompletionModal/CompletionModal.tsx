@@ -91,11 +91,9 @@ interface CompletionModalProps {
   /** Which daily this was ("mini" | "midi" | "large"), so the share text can say so. */
   dailySlot?: DailySlot;
   /**
-   * "Sign the board": present only when a daily finish was made under the
-   * anonymous default name. `onSign` posts (or renames) the entry under the
-   * name (also fired when the finisher signs a challenge link, so one name
-   * covers both); `signedAs` flips the form into a confirmation once a name
-   * lands; `unposted` says the time is not on the board until it is signed.
+   * Explicitly post a private daily finish, or rename an older default-name
+   * entry. Sharing may rename an already posted entry, but cannot post one.
+   * `signedAs` shows confirmation; `unposted` requires a separate Post action.
    */
   dailySign?: { signedAs?: string | null; onSign: (name: string) => void; unposted?: boolean };
   /**
@@ -104,6 +102,7 @@ interface CompletionModalProps {
    * note in place of the sign form.
    */
   boardNotPosted?: boolean;
+  dailyPostingNotice?: string;
   /**
    * Async ("time trial") mode: per-player standings ranked by finish time.
    * When present the player table shows times instead of cells/clues, and
@@ -187,6 +186,7 @@ export function CompletionModal({
   dailySlot,
   dailySign,
   boardNotPosted,
+  dailyPostingNotice,
   raceStandings,
   coop,
   players,
@@ -598,6 +598,8 @@ export function CompletionModal({
                 className="mb-5"
               />
             )}
+            {dailyPostingNotice && <p role="status" className={`mb-5 text-center text-sm ${darkMode ? "text-white/70" : "text-muted"}`}>{dailyPostingNotice}</p>}
+
             {boardNotPosted && (
               <p data-testid="board-not-posted" className={`mb-5 text-center text-xs ${darkMode ? "text-white/50" : "text-muted"}`}>
                 {t("leaderboard.notPosted")}
@@ -671,7 +673,7 @@ export function CompletionModal({
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
               daily={!!dailySlot && !isMultiplayer}
               legend={shareLegend}
-              onNameSigned={dailySign?.onSign}
+              onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}
             />
           )}

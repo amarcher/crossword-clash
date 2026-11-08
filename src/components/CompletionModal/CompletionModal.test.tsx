@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/react";
+import { render, fireEvent, cleanup, within, waitFor } from "@testing-library/react";
 import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
 import { track } from "../../lib/analytics";
@@ -449,6 +449,29 @@ describe("CompletionModal", () => {
     expect(onSign).toHaveBeenCalledWith("Andy");
   });
 
+  it("keeps signing a solo share separate from posting the guest time", async () => {
+    const onSign = vi.fn();
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySlot="mini"
+          challengePuzzle={fakePuzzle("Deep Blue", 5)} challengerName="Player"
+          dailySign={{ onSign, unposted: true }} />,
+      );
+      const sharing = within(getByTestId("share-result"));
+      fireEvent.click(sharing.getByRole("button", { name: "Share your time" }));
+      const name = sharing.getByPlaceholderText("Your name");
+      fireEvent.change(name, { target: { value: "Sam" } });
+      fireEvent.keyDown(name, { key: "Enter" });
+      await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+      expect(share.mock.calls[0][0].text).toContain("by=Sam");
+      expect(onSign).not.toHaveBeenCalled();
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
   it("says quietly that a preview's finish was not posted, instead of offering a signature", () => {
     const { getByTestId, queryByPlaceholderText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} boardNotPosted />,
@@ -481,3 +504,5 @@ describe("CompletionModal", () => {
     expect(onSignIn).toHaveBeenCalledTimes(1);
   });
 });
+
+vi.mock("../Push", () => ({ ReminderSwitch: () => null }));

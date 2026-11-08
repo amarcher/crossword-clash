@@ -1,3 +1,4 @@
+import { LeaderboardSettings } from "../components/Account/LeaderboardSettings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
@@ -176,6 +177,8 @@ export function AccountScreen() {
               {username ? t("account.changeUsername") : t("account.chooseUsername")}
             </Button>
           </Card>
+
+          <LeaderboardSettings key={user.id} userId={user.id} />
 
           {/* The apps only: notification switches (docs/friends-spec.md §3.3). */}
           <NotificationSettings placement="account" />

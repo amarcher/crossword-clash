@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
@@ -8,6 +9,7 @@ import { MultiplayerProvider, useMultiplayerContext } from "../contexts/Multipla
 import { SoloPlayScreen } from "./SoloPlayScreen";
 import { SOLO_SETTINGS_KEY, resetSoloSettingsForTests } from "../lib/soloSettings";
 import { loadSoloStats } from "../lib/soloStats";
+import type { User } from "@supabase/supabase-js";
 import type { Puzzle } from "../types/puzzle";
 
 /**
@@ -17,12 +19,15 @@ import type { Puzzle } from "../types/puzzle";
  * stubbed. Keystrokes go through the window handler the grid listens to.
  */
 vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
-vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: null, loading: false }) }));
+const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn() }));
+vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: posting.user, loading: false }) }));
+vi.mock("../lib/leaderboardPreference", () => ({ fetchSoloLeaderboardPreference: posting.preference }));
+vi.mock("../lib/dailyLeaderboard", async original => ({ ...await original<typeof import("../lib/dailyLeaderboard")>(), boardPostsHere: () => true }));
 vi.mock("../contexts/AccountContext", () => ({
   useAccountContext: () => ({ user: null, available: false, ready: true, openAccount: vi.fn() }),
   useMaybeAccount: () => null,
 }));
-vi.mock("../hooks/useDailyMini", () => ({ useTodaysDailySlot: () => null }));
+vi.mock("../hooks/useDailyMini", () => ({ useTodaysDailySlot: () => posting.daily ? "mini" : null }));
 vi.mock("../hooks/useNextUp", () => ({ useNextUp: () => [] }));
 vi.mock("../hooks/useSolveHistory", () => ({
   useSolveHistory: () => ({ status: "ready", rows: null, summary: null }),
@@ -104,6 +109,9 @@ beforeEach(() => {
   sessionStorage.clear();
   resetSoloSettingsForTests();
   track.mockClear();
+  posting.user = null;
+  posting.daily = false;
+  posting.preference.mockReset().mockResolvedValue(true);
 });
 afterEach(() => {
   cleanup();
@@ -304,4 +312,46 @@ describe("pause and resume", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(screen.getByRole("button", { name: "Save & exit" })).toBeTruthy();
   });
+});
+
+vi.mock("../components/Push", () => ({ ReminderSwitch: () => null, NotificationSettings: () => null }));
+
+
+async function finishDaily(anonymous: boolean) {
+  posting.user = { id: "me", is_anonymous: anonymous } as User;
+  posting.daily = true;
+  await renderSolo();
+  act(() => game.setDisplayName("Remembered name"));
+  type("catbetao");
+  await screen.findByRole("dialog", { name: "Puzzle complete" });
+}
+
+it("a guest who already has a name must explicitly post each solo finish", async () => {
+  await finishDaily(true);
+  await screen.findByText("Add your name to post your time to today's board");
+  expect(game.pendingDailyResult?.posted).toBe(false);
+  expect(screen.getByPlaceholderText("Your name")).toHaveProperty("value", "");
+  fireEvent.change(screen.getByPlaceholderText("Your name"), { target: { value: "Guest entry" } });
+  fireEvent.click(screen.getByRole("button", { name: "Post" }));
+  await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
+  expect(game.pendingDailyResult?.entry.displayName).toBe("Guest entry");
+});
+
+it("a signed-in solver who opted out sees a private finish without a posting form", async () => {
+  posting.preference.mockResolvedValue(false);
+  await finishDaily(false);
+  await screen.findByText(/Solo leaderboard posting is off/);
+  expect(game.pendingDailyResult).toMatchObject({ posted: false, postingHold: "disabled" });
+  expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
+  expect(screen.getByTestId("share-block-preview")).toBeTruthy();
+});
+
+it("a signed-in solver with the default setting posts after the preference resolves", async () => {
+  let resolve!:(enabled: boolean) => void;
+  posting.preference.mockReturnValue(new Promise<boolean>(r => { resolve = r; }));
+  await finishDaily(false);
+  expect(game.pendingDailyResult).toMatchObject({ posted: false, postingHold: "checking" });
+  expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
+  await act(async () => { resolve(true); });
+  await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
 });
