@@ -24,6 +24,7 @@
     "seedgrid:lively": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/lively.mts",
     "seedgrid:timely": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/timely.mts",
     "seedgrid:reclue": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/reclue.mts",
+    "seedgrid:feed-dir": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/feedToDir.mts",
     "seedgrid:refix": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/refix.mts",
     "seedgrid:crosscheck": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/crosscheck.mts",
     "seedgrid:unrepeat": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/unrepeat.mts",
