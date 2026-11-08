@@ -27,6 +27,7 @@ const account: AccountContextValue = {
   profile: { user_id: "u1", username: "ada", display_name: null },
   ready: true,
   profileReady: true,
+  sheetOpen: false,
   available: true,
   setProfile: vi.fn(),
   plus: false,

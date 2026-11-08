@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, useNavigate, UNSAFE_DataRouterContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
-import { Flag, X } from "lucide-react";
+import { Flag, Pause, X } from "lucide-react";
 import { ActiveClueCard, CluePanel } from "../components/CluePanel";
 import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
@@ -15,19 +15,23 @@ import { FinishedBar } from "../components/FinishedBar";
 import { AccountControl } from "../components/Account/AccountControl";
 import { AutocheckSwitch, SoloOptions } from "../components/SoloOptions";
 import { useSoloSettings } from "../lib/soloSettings";
-import { useGame, STORAGE_KEY } from "../contexts/GameContext";
+import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
-import { clearMpSession } from "../lib/sessionPersistence";
-import { clearSoloTimer, dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
+
+import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
 import { recordSolve, type SolveOutcome } from "../lib/solveHistory";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { fetchDailyForDay } from "../lib/dailyFeed";
-import { clearProgress } from "../lib/soloProgress";
+import { getProgress, saveAttempt } from "../lib/soloProgress";
+import { consumeSoloStart, rememberSoloLanding } from "../lib/soloSession";
+import { watchSoloLifecycle } from "../lib/soloLifecycle";
+import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
+import { SoloPause } from "../components/SoloPause";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { boardPostsHere, leaderboardPath, postDailyResult, signDailyResult, todayKey } from "../lib/dailyLeaderboard";
@@ -41,6 +45,7 @@ import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 export function SoloPlayScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
   const mp = useMultiplayerContext();
   const { user } = useAuth();
@@ -63,7 +68,6 @@ export function SoloPlayScreen() {
     moveSelection,
     nextWord,
     prevWord,
-    reset,
     clueSheetOpen,
     setClueSheetOpen,
     completionModalDismissed,
@@ -84,7 +88,7 @@ export function SoloPlayScreen() {
     () => (autocheck || !puzzle ? correctClues : getFilledClues(puzzle, playerCells)),
     [autocheck, puzzle, playerCells, correctClues],
   );
-  const { filled, wrong, assisted } = useMemo(() => {
+  const { filled, wrong, assisted: revealedNow } = useMemo(() => {
     let filled = 0;
     let wrong = 0;
     let assisted = false;
@@ -97,6 +101,9 @@ export function SoloPlayScreen() {
     return { filled, wrong, assisted };
   }, [playerCells]);
 
+  const key = puzzle ? puzzleIdentity(puzzle) : null;
+  const restoredAttempt = key ? getProgress(key) : null;
+  const assisted = revealedNow || !!restoredAttempt?.assisted;
   const gridInputRef = useRef<HTMLInputElement>(null);
 
   const navActions = useMemo(
@@ -111,15 +118,53 @@ export function SoloPlayScreen() {
     [soloInputLetter, deleteLetter, moveSelection, nextWord, prevWord, toggleDirection],
   );
 
-  useGridNavigation(navActions);
-
   // Elapsed timer + personal-best / streak tracking (solo only). A finish with
   // a revealed square is "assisted": solved, but no record and no streak.
-  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult } = useSoloTimer(
+  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
+    consumeSoloStart,
   );
+  const paused = !!puzzle && !isComplete && !timerRunning;
+  const inputAllowed = useRef(false);
+  inputAllowed.current = timerRunning && !isComplete;
+  const guardedActions = useMemo(() => ({
+    inputLetter: (letter: string) => { if (inputAllowed.current) navActions.inputLetter(letter); },
+    deleteLetter: () => { if (inputAllowed.current) navActions.deleteLetter(); },
+    moveSelection: (dr: number, dc: number) => { if (inputAllowed.current) navActions.moveSelection(dr, dc); },
+    nextWord: () => { if (inputAllowed.current) navActions.nextWord(); },
+    prevWord: () => { if (inputAllowed.current) navActions.prevWord(); },
+    toggleDirection: () => { if (inputAllowed.current) navActions.toggleDirection(); },
+  }), [navActions]);
+  useGridNavigation(guardedActions);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const checkpointSolo = game.checkpointSolo;
+  const checkpoint = useCallback(() => {
+    const cellsSaved = checkpointSolo() === "saved";
+    const clockSaved = saveTimer();
+    setSaveFailed(!cellsSaved || !clockSaved);
+    return cellsSaved && clockSaved;
+  }, [checkpointSolo, saveTimer]);
+  const handlePause = useCallback(() => {
+    inputAllowed.current = false;
+    pause();
+    checkpoint();
+    setClueSheetOpen(false);
+    gridInputRef.current?.blur();
+  }, [pause, checkpoint, setClueSheetOpen]);
+  const handleResume = useCallback(() => {
+    resume();
+    requestAnimationFrame(() => gridInputRef.current?.focus());
+  }, [resume]);
+  useEffect(() => {
+    if (account.sheetOpen && !isComplete) handlePause();
+  }, [account.sheetOpen, isComplete, handlePause]);
+  useEffect(() => {
+    if (!paused) return;
+    setClueSheetOpen(false);
+    gridInputRef.current?.blur();
+  }, [paused, setClueSheetOpen]);
   const fromNyt = puzzle?.origin === "nyt-bookmarklet";
 
   // An accepted friend challenge for THIS puzzle — the ghost time to race.
@@ -159,6 +204,7 @@ export function SoloPlayScreen() {
     wrongLetters,
     isComplete,
     mode: "solo",
+    active: timerRunning || isComplete,
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
     signedIn: !!user && !user.is_anonymous,
     autocheck: !usedFreeTyping,
@@ -192,8 +238,9 @@ export function SoloPlayScreen() {
     setServerOutcome(null);
     setBoardSignedAs(null);
     setNytStreak(null);
-    setUsedFreeTyping(false);
-    setFlaggedCells([]);
+    const saved = puzzleKey ? getProgress(puzzleKey) : null;
+    setUsedFreeTyping(!!saved?.usedFreeTyping);
+    setFlaggedCells(saved?.flaggedCells ?? []);
   }, [puzzleKey]);
   // Declared after the reset above so a puzzle change re-latches in order.
   useEffect(() => {
@@ -210,6 +257,11 @@ export function SoloPlayScreen() {
       return add.length ? [...prev, ...add] : prev;
     });
   }, [playerCells]);
+  useEffect(() => {
+    if (!puzzleKey || isComplete) return;
+    const saved = getProgress(puzzleKey);
+    if (saved && (usedFreeTyping || flaggedCells.length)) saveAttempt({ ...saved, usedFreeTyping: saved.usedFreeTyping || usedFreeTyping, flaggedCells: [...new Set([...(saved.flaggedCells ?? []), ...flaggedCells])] });
+  }, [puzzleKey, isComplete, usedFreeTyping, flaggedCells]);
   const shareWrongCells = useMemo(
     () => (flaggedCells.length ? [...new Set([...wrongCells, ...flaggedCells])] : wrongCells),
     [wrongCells, flaggedCells],
@@ -361,23 +413,25 @@ export function SoloPlayScreen() {
     setNytStreak(recordNytPlay().current);
   }, [isComplete, fromNyt, nytStreak]);
 
-  const handleReset = useCallback(() => {
-    reset();
-    game.setGameId(null);
-    game.setIsMultiplayer(false);
-    localStorage.removeItem(STORAGE_KEY);
-    clearMpSession();
-    clearSoloTimer();
-    // A reset puzzle is no longer "in progress" in the archive.
-    if (puzzleKey) clearProgress(puzzleKey);
-    clearChallenge();
+  const handleExit = useCallback(() => {
+    pause();
+    if (!checkpoint() || !rememberSoloLanding("menu")) { setSaveFailed(true); return; }
     navigate("/menu");
-  }, [reset, game, navigate, puzzleKey]);
+  }, [pause, checkpoint, navigate]);
+
+  const saveBeforeLeave = useCallback(() => {
+    inputAllowed.current = false;
+    pause();
+    return checkpoint();
+  }, [pause, checkpoint]);
+  const lifecycle = useRef({ handlePause, handleExit });
+  lifecycle.current = { handlePause, handleExit };
+  useEffect(() => watchSoloLifecycle(() => lifecycle.current.handlePause(), () => lifecycle.current.handleExit()), []);
 
   const handleBackToMenu = useCallback(() => {
     setCompletionModalDismissed(true);
-    handleReset();
-  }, [setCompletionModalDismissed, handleReset]);
+    handleExit();
+  }, [setCompletionModalDismissed, handleExit]);
 
   // Leaving the finished grid for the board (or the sign-in sheet) dismisses
   // the celebration: coming back shows the solved grid with the slim finished
@@ -407,12 +461,12 @@ export function SoloPlayScreen() {
         track("mode_selected", { mode: "archive", slot: item.entry.slot, from: "completion" });
         const daily = await fetchDailyForDay(item.entry.day, item.entry.slot);
         if (!daily) return;
-        await game.handleSoloPuzzleLoaded(daily.puzzle);
+        if (await game.handleSoloPuzzleLoaded(daily.puzzle) === false) return;
         game.setSoloTheme(daily.theme || null);
         return;
       }
       track("mode_selected", { mode: "daily", slot: item.slot, from: "completion" });
-      await game.handleSoloPuzzleLoaded(item.daily.puzzle);
+      if (await game.handleSoloPuzzleLoaded(item.daily.puzzle) === false) return;
       game.setSoloTheme(item.daily.theme);
     },
     [game],
@@ -437,6 +491,7 @@ export function SoloPlayScreen() {
 
   // Guard: nothing to play — back to the menu (the importer is the wrong
   // fallback in the native apps, and the menu offers every way to start).
+  if (!puzzle && game.restoringSolo) return null;
   if (!puzzle) {
     return <Navigate to="/menu" replace />;
   }
@@ -445,8 +500,10 @@ export function SoloPlayScreen() {
 
   return (
     <>
+      {dataRouter && <SoloNavigationGuard saveBeforeLeave={saveBeforeLeave} />}
+      <div inert={paused} aria-hidden={paused || undefined} className={paused ? "hidden" : undefined}>
       <GameLayout
-        keyboard={<PuzzleKeyboard actions={navActions} disabled={isComplete || clueSheetOpen} />}
+        keyboard={<PuzzleKeyboard actions={guardedActions} disabled={isComplete || clueSheetOpen} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">
@@ -483,11 +540,11 @@ export function SoloPlayScreen() {
                 {/* The gear needs header room a phone doesn't have: there the switch sits in the clue sheet. */}
                 <SoloOptions autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="hidden md:block" />
                 <button
-                  onClick={handleReset}
-                  className={buttonClass("secondary", "sm")}
+                  onClick={isComplete ? handleExit : handlePause}
+                  className={buttonClass("secondary", "md")}
                 >
-                  <span className="md:hidden">{t('playing.newPuzzle')}</span>
-                  <span className="hidden md:inline">{t('playing.loadDifferent')}</span>
+                  {!isComplete && <Pause className="size-4" aria-hidden="true" />}
+                  {t(isComplete ? "soloPause.choose" : "soloPause.pause")}
                 </button>
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
@@ -503,7 +560,7 @@ export function SoloPlayScreen() {
               highlightedCells={highlightedCells}
               onCellClick={selectCell}
               completedClues={completedClues}
-              navigationActions={navActions}
+              navigationActions={guardedActions}
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
             />
@@ -594,6 +651,9 @@ export function SoloPlayScreen() {
           </div>
         }
       />
+      </div>
+      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError}
+        onResume={handleResume} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
         open={showCompletionModal}
         puzzleTitle={puzzle.title}

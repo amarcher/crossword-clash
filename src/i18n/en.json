@@ -1,4 +1,28 @@
 {
+  "soloPause": {
+    "loadError": "This saved puzzle couldn’t be loaded. Your progress is still here; try again when you’re online.",
+    "pause": "Pause",
+    "paused": "Paused",
+    "resume": "Resume",
+    "exit": "Save & exit",
+    "saved": "Your progress is saved on this device.",
+    "saveError": "We couldn’t save this puzzle on your device. Keep it open and try again.",
+    "retry": "Try again",
+    "clockHint": "Solo time counts active play. Your clock stops while paused.",
+    "choose": "Choose another puzzle",
+    "continue": "Continue playing",
+    "inProgress": "In progress ({{count}})",
+    "collapse": "Show less",
+    "progress": "{{filled}} of {{total}} squares filled · {{time}}",
+    "capacity": "You have 30 unfinished puzzles saved. Resume one or remove a saved puzzle before starting another.",
+    "legacy": "Saved puzzle",
+    "find": "Find in archive",
+    "removeTitle": "Remove saved puzzle?",
+    "removeHint": "This deletes its saved letters and time. Completed results stay.",
+    "keep": "Keep puzzle",
+    "remove": "Remove",
+    "removeNamed": "Remove {{title}}"
+  },
   "common": {
     "defaultPlayerName": "Player",
     "back": "Back",

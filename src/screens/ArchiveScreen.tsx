@@ -216,7 +216,7 @@ export function ArchiveScreen() {
       if (!daily) return;
       track("mode_selected", { mode: "archive", slot: item.slot, status: item.status });
       // The daily path: straight into solo play, no import step.
-      await handleSoloPuzzleLoaded(daily.puzzle);
+      if (await handleSoloPuzzleLoaded(daily.puzzle) === false) return;
       setSoloTheme(daily.theme || null);
       navigate("/solo/play");
     },

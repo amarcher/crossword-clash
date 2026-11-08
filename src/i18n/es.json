@@ -1,4 +1,28 @@
 {
+  "soloPause": {
+    "loadError": "No se pudo cargar este crucigrama. Tu progreso sigue aquí; inténtalo de nuevo cuando tengas conexión.",
+    "pause": "Pausar",
+    "paused": "En pausa",
+    "resume": "Continuar",
+    "exit": "Guardar y salir",
+    "saved": "Tu progreso está guardado en este dispositivo.",
+    "saveError": "No pudimos guardar este crucigrama en tu dispositivo. Déjalo abierto e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "clockHint": "El tiempo individual cuenta solo mientras juegas. El reloj se detiene al pausar.",
+    "choose": "Elegir otro crucigrama",
+    "continue": "Seguir jugando",
+    "inProgress": "En curso ({{count}})",
+    "collapse": "Mostrar menos",
+    "progress": "{{filled}} de {{total}} casillas llenas · {{time}}",
+    "capacity": "Tienes 30 crucigramas sin terminar guardados. Continúa uno o elimina uno guardado antes de empezar otro.",
+    "legacy": "Crucigrama guardado",
+    "find": "Buscar en el archivo",
+    "removeTitle": "¿Eliminar el crucigrama guardado?",
+    "removeHint": "Se borrarán sus letras y tiempo guardados. Los resultados completados se conservarán.",
+    "keep": "Conservar",
+    "remove": "Eliminar",
+    "removeNamed": "Eliminar {{title}}"
+  },
   "common": {
     "defaultPlayerName": "Jugador",
     "back": "Volver",

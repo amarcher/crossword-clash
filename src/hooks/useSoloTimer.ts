@@ -1,155 +1,122 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Puzzle } from "../types/puzzle";
-import {
-  puzzleIdentity,
-  loadSoloTimer,
-  saveSoloTimer,
-  recordSoloCompletion,
-  describeRecordedCompletion,
-  type SoloCompletionResult,
-} from "../lib/soloStats";
-import { clearProgress, getProgress, recordProgressElapsed } from "../lib/soloProgress";
+import { puzzleIdentity, loadSoloTimer, saveSoloTimer, recordSoloCompletion, describeRecordedCompletion, type SoloCompletionResult } from "../lib/soloStats";
+import { clearProgress, getProgress, saveAttempt } from "../lib/soloProgress";
 
-/** How often the running elapsed time is checkpointed to localStorage. */
 const PERSIST_INTERVAL_MS = 5_000;
-
 export interface SoloTimerApi {
-  /**
-   * Reads the current elapsed time in whole seconds. Cheap and side-effect
-   * free, so the display component can poll it once a second WITHOUT this hook
-   * (and therefore the grid) re-rendering.
-   */
   getElapsedSeconds: () => number;
-  /** True while the clock is actively ticking. */
   running: boolean;
-  /** Populated once the puzzle is completed; drives the completion modal. */
   result: SoloCompletionResult | null;
-  /**
-   * True when `result` was recorded by this mount (the player just finished),
-   * false when it describes a finish restored from a reload.
-   */
   fresh: boolean;
+  saveFailed: boolean;
+  pause: () => boolean;
+  resume: () => void;
+  save: () => boolean;
+}
+interface Clock {
+  key: string;
+  ms: number;
+  anchor: number | null;
+  completed: boolean;
+}
+const elapsed = (clock: Clock) => clock.ms + (clock.anchor === null ? 0 : Math.max(0, Date.now() - clock.anchor));
+function checkpoint(clock: Clock): boolean {
+  const ms = elapsed(clock);
+  const progress = getProgress(clock.key);
+  if (!clock.completed && progress && saveAttempt({ ...progress, elapsedMs: ms, updatedAt: Date.now() }) !== "saved") return false;
+  return saveSoloTimer({ key: clock.key, elapsedMs: ms, completed: clock.completed });
+}
+function stop(clock: Clock): boolean {
+  clock.ms = elapsed(clock);
+  clock.anchor = null;
+  return checkpoint(clock);
 }
 
-/**
- * Drives the solo elapsed timer and records personal-best / streak on finish.
- * `assisted` (a revealed square, solo with Autocheck off) makes the finish
- * count as solved without touching either record.
- *
- * The time source is wall-clock based and resumes across reloads: accumulated
- * milliseconds live in localStorage and the live segment is `now - anchor`.
- * Crucially this hook never re-renders on each tick — the visible
- * `<SoloTimer>` owns its own per-second state and pulls from `getElapsedSeconds`.
- */
-export function useSoloTimer(puzzle: Puzzle | null, isComplete: boolean, assisted = false): SoloTimerApi {
-  const key = useMemo(() => (puzzle ? puzzleIdentity(puzzle) : null), [puzzle]);
-  // Read at the moment of completion, never a reason to re-run it.
+/** Each segment belongs to its puzzle, even when React cleans it up after a switch. */
+export function useSoloTimer(
+  puzzle: Puzzle | null,
+  isComplete: boolean,
+  assisted = false,
+  startOnLoad: (key: string) => boolean = () => true,
+): SoloTimerApi {
+  const key = useMemo(() => puzzle ? puzzleIdentity(puzzle) : null, [puzzle]);
+  const explicitStart = useRef<string | null>(null);
+  const clockRef = useRef<Clock | null>(null);
+  const initRef = useRef(startOnLoad);
+  initRef.current = startOnLoad;
   const assistedRef = useRef(assisted);
   assistedRef.current = assisted;
-
-  // Accumulated ms from earlier segments/reloads, plus the wall-clock anchor of
-  // the segment currently running (null when paused/stopped).
-  const baseMsRef = useRef(0);
-  const anchorRef = useRef<number | null>(null);
-  // Whether the active puzzle's completion has already been folded into stats —
-  // prevents a reload of a finished puzzle from re-counting the streak.
-  const recordedRef = useRef(false);
-
+  const [saveFailed, setSaveFailed] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SoloCompletionResult | null>(null);
   const [fresh, setFresh] = useState(false);
-
-  const getElapsedSeconds = useCallback(() => {
-    const live = anchorRef.current != null ? Date.now() - anchorRef.current : 0;
-    return Math.floor((baseMsRef.current + live) / 1000);
+  const getElapsedSeconds = useCallback(() => clockRef.current ? Math.floor(elapsed(clockRef.current) / 1000) : 0, []);
+  const save = useCallback(() => {
+    const saved = !clockRef.current || checkpoint(clockRef.current);
+    setSaveFailed(!saved);
+    return saved;
+  }, []);
+  const pause = useCallback(() => {
+    const saved = !clockRef.current || stop(clockRef.current);
+    setRunning(false);
+    setSaveFailed(!saved);
+    return saved;
+  }, []);
+  const resume = useCallback(() => {
+    const clock = clockRef.current;
+    if (!clock || clock.completed || clock.anchor !== null || document.visibilityState === "hidden") return;
+    clock.anchor = Date.now();
+    setRunning(true);
   }, []);
 
-  const persist = useCallback(
-    (completed: boolean) => {
-      if (!key) return;
-      const live = anchorRef.current != null ? Date.now() - anchorRef.current : 0;
-      const elapsedMs = baseMsRef.current + live;
-      saveSoloTimer({ key, elapsedMs, completed });
-      // The per-puzzle record keeps the clock too, so another started puzzle
-      // resumes with its own time (a no-op until a letter has been typed).
-      if (!completed) recordProgressElapsed(key, elapsedMs);
-    },
-    [key],
-  );
-
-  // (Re)initialise when the puzzle identity changes: resume a saved run for the
-  // same puzzle, or start a fresh clock.
   useEffect(() => {
-    if (!key) {
-      baseMsRef.current = 0;
-      anchorRef.current = null;
-      recordedRef.current = false;
-      setRunning(false);
-      setResult(null);
-      return;
-    }
+    if (!key) { clockRef.current = null; setRunning(false); setResult(null); return; }
+    const progress = getProgress(key);
     const saved = loadSoloTimer();
-    const resume = saved && saved.key === key;
-    // The timer record is the last puzzle played; any other started puzzle
-    // resumes its clock from its per-puzzle progress record.
-    baseMsRef.current = resume ? saved.elapsedMs : (getProgress(key)?.elapsedMs ?? 0);
-    recordedRef.current = resume ? saved.completed : false;
+    const previous = clockRef.current;
+    const same = previous?.key === key;
+    const completed = same ? previous.completed : !progress && saved?.key === key && saved.completed;
+    // Preserve the initial explicit start through React StrictMode's effect replay.
+    const start = same ? previous.anchor !== null || explicitStart.current === key : initRef.current(key);
+    explicitStart.current = start ? key : null;
+    const clock: Clock = {
+      key, ms: same ? elapsed(previous) : progress?.elapsedMs ?? (saved?.key === key ? saved.elapsedMs : 0),
+      anchor: !completed && start && document.visibilityState !== "hidden" ? Date.now() : null,
+      completed: !!completed,
+    };
+    clockRef.current = clock;
+    setRunning(clock.anchor !== null);
     setResult(null);
+    setFresh(false);
+    setSaveFailed(false);
+    const hide = () => { if (document.visibilityState === "hidden") { explicitStart.current = null; pause(); } };
+    const pagehide = () => { explicitStart.current = null; pause(); };
+    const interval = window.setInterval(() => { if (clock.anchor !== null) setSaveFailed(!checkpoint(clock)); }, PERSIST_INTERVAL_MS);
+    document.addEventListener("visibilitychange", hide);
+    window.addEventListener("pagehide", pagehide);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", hide);
+      window.removeEventListener("pagehide", pagehide);
+      stop(clock);
+    };
+  }, [key, pause]);
 
-    if (recordedRef.current) {
-      // Restored an already-finished puzzle: keep the clock frozen.
-      anchorRef.current = null;
-      setRunning(false);
-    } else {
-      anchorRef.current = Date.now();
-      saveSoloTimer({ key, elapsedMs: baseMsRef.current, completed: false });
-      setRunning(true);
-    }
-  }, [key]);
-
-  // Handle completion: freeze the clock and record best time + streak (once).
   useEffect(() => {
-    if (!key || !isComplete) return;
-
-    // Freeze the running segment into the accumulated base.
-    if (anchorRef.current != null) {
-      baseMsRef.current += Date.now() - anchorRef.current;
-      anchorRef.current = null;
-    }
+    const clock = clockRef.current;
+    if (!key || !isComplete || !clock || clock.key !== key) return;
+    const wasCompleted = clock.completed;
+    clock.ms = elapsed(clock);
+    clock.anchor = null;
+    clock.completed = true;
     setRunning(false);
-
-    const finishSeconds = Math.floor(baseMsRef.current / 1000);
-
-    if (recordedRef.current) {
-      // Reload of a finished puzzle — surface stored result, do not re-record.
-      setFresh(false);
-      setResult(describeRecordedCompletion(key, finishSeconds));
-      return;
-    }
-    recordedRef.current = true;
-    saveSoloTimer({ key, elapsedMs: baseMsRef.current, completed: true });
+    checkpoint(clock);
     clearProgress(key);
-    setFresh(true);
-    setResult(recordSoloCompletion(key, finishSeconds, new Date(), { assisted: assistedRef.current }));
+    const seconds = Math.floor(clock.ms / 1000);
+    setFresh(!wasCompleted);
+    setResult(wasCompleted ? describeRecordedCompletion(key, seconds) : recordSoloCompletion(key, seconds, new Date(), { assisted: assistedRef.current }));
   }, [key, isComplete]);
 
-  // Checkpoint the running clock so a reload resumes accurately.
-  useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => persist(false), PERSIST_INTERVAL_MS);
-    const onHide = () => {
-      if (document.visibilityState === "hidden") persist(false);
-    };
-    const onPageHide = () => persist(false);
-    document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("pagehide", onPageHide);
-    return () => {
-      window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("pagehide", onPageHide);
-      persist(false);
-    };
-  }, [running, persist]);
-
-  return { getElapsedSeconds, running, result, fresh };
+  return { getElapsedSeconds, running, result, fresh, pause, resume, save, saveFailed };
 }

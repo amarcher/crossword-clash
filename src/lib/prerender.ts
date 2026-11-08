@@ -51,7 +51,7 @@ export function scriptJson(value: unknown): string {
 export function guardScript(route: string): string {
   const redirectChecks =
     route === "/"
-      ? `||location.hash.indexOf("#puzzle=")===0||location.hash==="#import"||/[?&]join=/.test(location.search)||localStorage.getItem("crossword-clash-mp")||localStorage.getItem("crossword-clash-solo")`
+      ? `||location.hash.indexOf("#puzzle=")===0||location.hash==="#import"||/[?&]join=/.test(location.search)||localStorage.getItem("crossword-clash-mp")||(localStorage.getItem("crossword-clash-solo")&&localStorage.getItem("crossword-clash:solo-landing")!=="menu")`
       : "";
   return (
     `(function(){try{var p=location.pathname.replace(/\\/+$/,"")||"/",l=localStorage.getItem("crossword-clash:language")||(navigator.language||"").slice(0,2);` +

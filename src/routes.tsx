@@ -1,3 +1,4 @@
+import { soloLandingIsMenu } from "./lib/soloSession";
 import { useState } from "react";
 import { Navigate, type RouteObject } from "react-router";
 import { SiteFrame } from "./layouts/SiteFrame";
@@ -71,7 +72,7 @@ function IndexRedirect() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
-      if (saved?.puzzle) {
+      if (saved?.puzzle && !soloLandingIsMenu()) {
         return <Navigate to="/solo/play" replace />;
       }
     }

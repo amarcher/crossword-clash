@@ -1,3 +1,6 @@
+import { SoloContinue } from "../components/SoloContinue";
+import { useSoloProgress } from "../hooks/useSoloProgress";
+import { puzzleIdentity } from "../lib/soloStats";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
@@ -57,6 +60,8 @@ const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebr
 function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(SLOT_EYEBROW[slot]);
+  const progress = useSoloProgress();
+  const resumable = daily && !!progress[puzzleIdentity(daily.puzzle)];
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
@@ -106,7 +111,7 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
         <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
-          {t("menu.dailyPlay")}
+          {t(resumable ? "soloPause.resume" : "menu.dailyPlay")}
         </Button>
         {multiplayer && (
           <Button
@@ -179,7 +184,7 @@ export function MenuScreen() {
       // No import step: load the daily straight into solo play. It carries no
       // file buffer, so handleSoloPuzzleLoaded won't count it as an import.
       if (!daily) return;
-      await handleSoloPuzzleLoaded(daily.puzzle);
+      if (await handleSoloPuzzleLoaded(daily.puzzle) === false) return;
       setSoloTheme(daily.theme);
       navigate("/solo/play");
     },
@@ -238,6 +243,7 @@ export function MenuScreen() {
       <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
       {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
       <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
+      <SoloContinue />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Front door: today's dailies. Never gated on auth loading; the mini

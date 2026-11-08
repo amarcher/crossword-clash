@@ -1,28 +1,16 @@
-/**
- * Per-puzzle solo progress: the letters and clock of every solo puzzle the
- * player has started and not finished, so any of them can be resumed where
- * it was and the archive can mark them "in progress" — not only the one
- * game the home route resumes (`crossword-clash-solo`, which stays as that
- * pointer). Plus accounts mirror these records to the `solo_progress` table
- * through soloProgressSync.ts, which listens to the change notifications
- * below; this store stays the source of truth on the device.
- *
- * One localStorage key holds a map of records keyed by `puzzleIdentity()`.
- * It is BOUNDED: at most MAX_PROGRESS_RECORDS, the oldest (`updatedAt`)
- * evicted first; a record only exists once a letter has been typed; it is
- * deleted the moment the puzzle is finished or reset. Cells are stored
- * without empty entries, so a 15×15 is at most 225 small objects.
- *
- * Local-only, for anonymous players and accounts alike: the `solves` table
- * stores finishes, not grids, and its conflict rule means nothing for a
- * half-filled puzzle, so syncing progress would be its own table and sync
- * story (docs/puzzle-archive-spec.md §5.3). Everything that decides a value
- * is pure and unit-tested; the localStorage wrapper is fenced off at the
- * bottom, like soloStats.ts.
- */
-import type { CellState, Puzzle } from "../types/puzzle";
+import type { CellState, Puzzle, CellCoord, Direction } from "../types/puzzle";
 
 export interface SoloProgressRecord {
+  /** v2 adds a local puzzle definition; legacy/server records remain readable. */
+  version?: 2;
+  puzzle?: Puzzle;
+  selectedCell?: CellCoord | null;
+  direction?: Direction;
+  theme?: string | null;
+  challenge?: import("./challenge").StoredChallenge | null;
+  usedFreeTyping?: boolean;
+  assisted?: boolean;
+  flaggedCells?: string[];
   /** `puzzleIdentity()` of the puzzle. */
   key: string;
   /** The player's cells with a letter, "row,col" → state. */
@@ -83,9 +71,10 @@ export function withCells(
   const kept = filledCells(cells);
   const filled = Object.keys(kept).length;
   if (filled === 0) return store;
+  if (!store[key] && Object.keys(store).length >= MAX_PROGRESS_RECORDS) return store;
   const prev = store[key];
-  const record: SoloProgressRecord = { key, cells: kept, elapsedMs: prev?.elapsedMs ?? 0, updatedAt: now, filled, total };
-  return evictOldest({ ...store, [key]: record });
+  const record: SoloProgressRecord = { ...prev, key, cells: kept, elapsedMs: prev?.elapsedMs ?? 0, updatedAt: now, filled, total };
+  return { ...store, [key]: record };
 }
 
 /** Checkpoint the clock of a puzzle that already has a record; a no-op otherwise. */
@@ -129,14 +118,14 @@ function isRecord(value: unknown): value is SoloProgressRecord {
   );
 }
 
-/** Keep only well-formed records whose map key matches their own; cap the size. */
+/** Keep well-formed legacy records; do not evict existing work during migration. */
 export function sanitizeStore(raw: unknown): SoloProgressStore {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
   const out: SoloProgressStore = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     if (isRecord(value) && value.key === key) out[key] = value;
   }
-  return evictOldest(out);
+  return out;
 }
 
 /**
@@ -150,11 +139,12 @@ export function mergeProgress(store: SoloProgressStore, remote: readonly SoloPro
     if (!isRecord(r) || Object.keys(r.cells).length === 0) continue;
     const local = store[r.key];
     if (local && local.updatedAt >= r.updatedAt) continue;
+    if (!local && Object.keys(next).length >= MAX_PROGRESS_RECORDS) continue;
     if (next === store) next = { ...store };
-    next[r.key] = r;
+    next[r.key] = { ...local, ...r, usedFreeTyping: local?.usedFreeTyping || r.usedFreeTyping, assisted: local?.assisted || r.assisted };
     changed.push(r.key);
   }
-  return { next: changed.length ? evictOldest(next) : store, changed };
+  return { next: changed.length ? next : store, changed };
 }
 
 // --- Change notifications (the Plus sync in soloProgressSync.ts listens) ---
@@ -185,12 +175,13 @@ export function loadProgressStore(): SoloProgressStore {
   }
 }
 
-export function saveProgressStore(store: SoloProgressStore): void {
+export function saveProgressStore(store: SoloProgressStore): boolean {
   try {
     if (Object.keys(store).length === 0) localStorage.removeItem(PROGRESS_KEY);
     else localStorage.setItem(PROGRESS_KEY, JSON.stringify(store));
+    return true;
   } catch {
-    // Storage unavailable / quota — progress is best-effort, never fatal.
+    return false;
   }
 }
 
@@ -202,7 +193,7 @@ export function recordProgressCells(key: string, cells: Readonly<Record<string, 
   const store = loadProgressStore();
   const next = withCells(store, key, cells, total, now);
   if (next !== store) {
-    saveProgressStore(next);
+    if (!saveProgressStore(next)) return;
     emitProgress(key, next[key] ?? null);
   }
 }
@@ -211,18 +202,19 @@ export function recordProgressElapsed(key: string, elapsedMs: number, now: numbe
   const store = loadProgressStore();
   const next = withElapsed(store, key, elapsedMs, now);
   if (next !== store) {
-    saveProgressStore(next);
+    if (!saveProgressStore(next)) return;
     emitProgress(key, next[key] ?? null);
   }
 }
 
-export function clearProgress(key: string): void {
+export function clearProgress(key: string): boolean {
   const store = loadProgressStore();
   const next = withoutProgress(store, key);
   if (next !== store) {
-    saveProgressStore(next);
+    if (!saveProgressStore(next)) return false;
     emitProgress(key, null);
   }
+  return true;
 }
 
 /**
@@ -233,6 +225,21 @@ export function clearProgress(key: string): void {
 export function mergeRemoteProgress(remote: readonly SoloProgressRecord[]): string[] {
   const store = loadProgressStore();
   const { next, changed } = mergeProgress(store, remote);
-  if (changed.length > 0) saveProgressStore(next);
+  if (changed.length > 0) {
+    if (!saveProgressStore(next)) return [];
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("solo-progress-updated"));
+  }
   return changed;
+}
+
+export type SaveAttemptResult = "saved" | "capacity" | "storage";
+
+/** Save the entire attempt before replacing it. Never evict unfinished work. */
+export function saveAttempt(record: SoloProgressRecord): SaveAttemptResult {
+  const store = loadProgressStore();
+  if (!store[record.key] && Object.keys(store).length >= MAX_PROGRESS_RECORDS) return "capacity";
+  const next = { ...store, [record.key]: { ...record, version: 2 as const } };
+  if (!saveProgressStore(next)) return "storage";
+  emitProgress(record.key, next[record.key]);
+  return "saved";
 }

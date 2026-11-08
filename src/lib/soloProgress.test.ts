@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   loadProgressStore,
+  saveAttempt,
   recordProgressCells,
   clearProgress,
   recordProgressElapsed,
@@ -60,14 +61,14 @@ describe("withCells", () => {
     expect(withCells(existing, "p", { "0,0": { letter: "", correct: false } }, 9)).toBe(existing);
   });
 
-  it("evicts the oldest records beyond the cap", () => {
+  it("refuses additional records at capacity without evicting unfinished work", () => {
     let store: SoloProgressStore = {};
     for (let i = 0; i < MAX_PROGRESS_RECORDS + 3; i++) store = withCells(store, `k${i}`, cells, 9, i);
     expect(Object.keys(store)).toHaveLength(MAX_PROGRESS_RECORDS);
-    expect(store.k0).toBeUndefined();
-    expect(store.k2).toBeUndefined();
+    expect(store.k0).toBeDefined();
+    expect(store.k2).toBeDefined();
     expect(store.k3).toBeDefined();
-    expect(store[`k${MAX_PROGRESS_RECORDS + 2}`]).toBeDefined();
+    expect(store[`k${MAX_PROGRESS_RECORDS + 2}`]).toBeUndefined();
   });
 });
 
@@ -176,5 +177,33 @@ describe("change notifications", () => {
       ["p", 4000],
       ["p", null],
     ]);
+  });
+});
+
+
+describe("complete attempt storage", () => {
+  beforeEach(() => localStorage.clear());
+  it("reports capacity without dropping a saved attempt", () => {
+    for (let i = 0; i < MAX_PROGRESS_RECORDS; i++) expect(saveAttempt(rec(`p${i}`, i))).toBe("saved");
+    expect(saveAttempt(rec("extra", 100))).toBe("capacity");
+    expect(getProgress("p0")).not.toBeNull();
+    expect(saveAttempt(rec("p0", 101, { elapsedMs: 12000 }))).toBe("saved");
+    expect(getProgress("p0")?.elapsedMs).toBe(12000);
+  });
+  it("never announces a write or deletion that failed", () => {
+    saveAttempt(rec("a", 1));
+    const listener = vi.fn();
+    const unsubscribe = subscribeProgressChanges(listener);
+    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    expect(saveAttempt(rec("a", 2))).toBe("storage");
+    expect(listener).not.toHaveBeenCalled();
+    expect(getProgress("a")?.updatedAt).toBe(1);
+    write.mockRestore();
+    unsubscribe();
+  });
+  it("keeps local context and assistance flags when newer server cells arrive", () => {
+    const local = rec("a", 1, { theme: "Theme", usedFreeTyping: true, assisted: true, selectedCell: { row: 1, col: 2 } });
+    const { next } = mergeProgress({ a: local }, [rec("a", 2)]);
+    expect(next.a).toMatchObject({ theme: "Theme", usedFreeTyping: true, assisted: true, selectedCell: { row: 1, col: 2 } });
   });
 });
