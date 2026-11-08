@@ -34,7 +34,7 @@ import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { boardPostsHere, leaderboardPath, postDailyResult, signDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
@@ -188,8 +188,8 @@ export function SoloPlayScreen() {
 
   // Post a finished daily (mini, midi or large) to its cross-day leaderboard
   // (best-effort, no-op offline and off the production origin). Keyed by
-  // puzzle identity so imported puzzles never post; a finish under the
-  // default name is parked unposted until the finisher signs it.
+  // puzzle identity so imported puzzles never post. Guests explicitly sign;
+  // accounts honor their saved leaderboard preference.
   const dailySlot = useTodaysDailySlot(puzzle);
   const isDaily = dailySlot !== null;
   // Whether this solve was ever typed freely: Autocheck off while the grid was
@@ -220,7 +220,13 @@ export function SoloPlayScreen() {
     // A finish that used Reveal posts no time: the board is for solves.
     if (soloResult.assisted) return;
     const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
-    setPendingDailyResult(postDailyResult(todayKey(), dailySlot, entry, game.gameId));
+    const day = todayKey();
+    const pending: PendingDailyResult = { day, slot: dailySlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
+    pending.settled = prepareSoloDailyResult(day, dailySlot, entry, user).then(result => {
+      setPendingDailyResult(current => current === pending ? result : current);
+      return result.settled;
+    });
+    setPendingDailyResult(pending);
   }, [soloResult, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
   // The share block's red squares (shareBlock.ts): with Autocheck on, the
@@ -361,18 +367,15 @@ export function SoloPlayScreen() {
     };
   }, [soloResult, serverOutcome, freshResult, history.summary, puzzle]);
 
-  // "Sign the board": a daily finish under the anonymous default is parked
-  // unposted, and the modal offers a one-field sign form that posts it.
-  // `boardSignedAs` latches the signed name so the form flips to a
-  // confirmation instead of vanishing the moment displayName stops being
-  // the default. Off the production origin nothing is posted, so the modal
-  // says so instead of offering a signature.
+  // Guests explicitly sign each finish, even with a remembered name. Account
+  // opt-outs stay private. The confirmation latches after a successful sign;
+  // previews show a notice instead of offering to post.
   const [boardSignedAs, setBoardSignedAs] = useState<string | null>(null);
-  const pendingDaily = game.pendingDailyResult;
+  const pendingDaily = dailySlot ? pendingResultFor(game.pendingDailyResult, todayKey(), dailySlot) : null;
   const handleSignBoard = useCallback(
     (name: string) => {
       const trimmed = name.trim();
-      if (!trimmed) return;
+      if (!trimmed || !pendingDaily || pendingDaily.postingHold) return;
       setBoardSignedAs(trimmed);
       game.setDisplayName(trimmed);
       savePlayerName(trimmed);
@@ -384,7 +387,7 @@ export function SoloPlayScreen() {
   );
   const boardNotPosted = isDaily && !!user && !!soloResult && !boardPostsHere();
   const dailySign =
-    isDaily && user && soloResult && !boardNotPosted && (boardSignedAs || !isRealPlayerName(game.displayName))
+    isDaily && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
       ? { signedAs: boardSignedAs, onSign: handleSignBoard, unposted: !pendingDaily?.posted }
       : undefined;
 
@@ -672,6 +675,7 @@ export function SoloPlayScreen() {
         dailySlot={dailySlot ?? undefined}
         dailySign={dailySign}
         boardNotPosted={boardNotPosted}
+        dailyPostingNotice={!boardNotPosted && dailyPostingNotice(pendingDaily) ? t(dailyPostingNotice(pendingDaily)!) : undefined}
         challengePuzzle={puzzle}
         playerCells={playerCells}
         wrongCells={shareWrongCells}

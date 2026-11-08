@@ -300,6 +300,19 @@
     "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
     "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene"
   },
+  "leaderboardSettings": {
+    "retry": "Intentar de nuevo",
+    "title": "Clasificaciones",
+    "label": "Participar en la clasificación",
+    "hint": "Publica automáticamente tus tiempos válidos de los crucigramas diarios en solitario con tu nombre.",
+    "existing": "Los cambios se aplican a las próximas partidas. Los tiempos ya publicados permanecen en la clasificación.",
+    "loading": "Cargando tu preferencia…",
+    "saving": "Guardando…",
+    "error": "No pudimos guardar o cargar tu preferencia. Inténtalo de nuevo.",
+    "checking": "Comprobando tu preferencia de clasificación…",
+    "disabled": "Tu tiempo no se publicó. Las publicaciones en solitario están desactivadas en los ajustes de tu cuenta.",
+    "unavailable": "Tu tiempo no se publicó porque no pudimos comprobar los ajustes de tu cuenta. Tu partida sigue guardada."
+  },
   "leaderboard": {
     "title": "Clasificación diaria",
     "titleLarge": "Clasificación del Grande del día",

@@ -17,6 +17,7 @@ import {
   mergeOwnResult,
   pendingResultFor,
   signDailyResult,
+  dailyPostingNotice,
   todayKey,
   updateDailyDisplayName,
   type RankedDailyEntry,
@@ -166,7 +167,9 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
   const day = todayKey();
   const postsHere = boardPostsHere();
   const pending = pendingResultFor(game.pendingDailyResult, day, slot);
-  const own = pending?.entry ?? null;
+  const own = pending?.posted ? pending.entry : null;
+  const privateFinish = pending && !pending.posted ? pending.entry : null;
+  const postingNotice = dailyPostingNotice(pending);
 
   // null = loading; [] = loaded empty.
   const [entries, setEntries] = useState<RankedDailyEntry[] | null>(
@@ -180,7 +183,7 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
       // A finish posted from this tab lands before the board is read.
       if (pending) await pending.settled;
       const rows = await fetchDailyLeaderboard(day, slot);
-      if (alive) setEntries(mergeOwnResult(rows, pending?.entry));
+      if (alive) setEntries(mergeOwnResult(rows, pending?.posted ? pending.entry : null));
     };
     void load();
     const onVisible = () => {
@@ -194,7 +197,7 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
     // `pending` is replaced by a new finish and by signing one (which posts it).
   }, [slot, day, pending]);
 
-  // While the server answers, the viewer's own finish is already a row
+  // While the server answers, the viewer's posted finish is already a row
   // (rank unknown yet, drawn as "–").
   const shown = useMemo<RankedDailyEntry[] | null>(() => {
     if (entries !== null) return own ? mergeOwnResult(entries, own) : entries;
@@ -202,17 +205,16 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
   }, [entries, own]);
   const loading = supabase !== null && entries === null;
 
-  // The viewer's own row still carrying the anonymous default → the sign
-  // form under the table: it posts a parked finish, or renames a row an
-  // older client already posted under the default. Nothing to sign where
-  // nothing is posted (a preview).
+  // Guests sign private finishes explicitly. The same form can rename a
+  // default-name row from an older client; held results cannot be posted.
   const myEntry = shown?.find((e) => e.userId === user?.id);
-  const needsName = !!myEntry && !isRealPlayerName(myEntry.displayName) && postsHere;
+  const signEntry = privateFinish ?? myEntry;
+  const needsName = !!signEntry && !pending?.postingHold && (privateFinish || !isRealPlayerName(signEntry.displayName)) && postsHere;
   const unposted = !!pending && !pending.posted;
   const [signedAs, setSignedAs] = useState<string | null>(null);
   const saveName = useCallback(
     (trimmed: string) => {
-      if (!trimmed || !user) return;
+      if (!trimmed || !user || pending?.postingHold) return;
       game.setDisplayName(trimmed);
       savePlayerName(trimmed);
       if (pending) game.setPendingDailyResult(signDailyResult(pending, trimmed));
@@ -229,9 +231,9 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
   // Solved today's slot: the finish just made, the board's own row, or a best
   // time on record for this puzzle (local stats or the account's history).
   const identity = daily ? puzzleIdentity(daily.puzzle) : null;
-  const solvedSeconds = myEntry?.seconds ?? own?.seconds ?? (identity ? bestTimes[identity] : undefined);
+  const solvedSeconds = pending?.entry.seconds ?? myEntry?.seconds ?? (identity ? bestTimes[identity] : undefined);
   const solved = typeof solvedSeconds === "number";
-  const myRank = myEntry && myEntry.rank > 0 ? myEntry.rank : null;
+  const myRank = !privateFinish && myEntry && myEntry.rank > 0 ? myEntry.rank : null;
 
   const playToday = useCallback(async () => {
     track("mode_selected", { mode: "daily", slot });
@@ -344,14 +346,16 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
         )}
       </Card>
 
-      {own && !postsHere && (
+      {pending && !postsHere && (
         <p data-testid="board-not-posted" className="text-center text-xs text-muted">
           {t("leaderboard.notPosted")}
         </p>
       )}
 
-      {(needsName || signedAs) && myEntry && (
-        <BoardSignForm currentName={myEntry.displayName} signedAs={signedAs} unposted={unposted} onSign={saveName} />
+      {postingNotice && postsHere && <p role="status" className="text-center text-sm text-muted">{t(postingNotice)}</p>}
+
+      {(needsName || signedAs) && signEntry && !pending?.postingHold && (
+        <BoardSignForm currentName={signEntry.displayName} signedAs={signedAs} unposted={unposted} onSign={saveName} />
       )}
 
       {daily !== null && (

@@ -206,8 +206,8 @@ describe("DailyLeaderboardScreen", () => {
     game.pendingDailyResult = p;
     renderBoard();
     await screen.findByText("Ada");
-    // The viewer sees where the time would place, and is asked to post it.
-    expect(screen.getAllByRole("row").map((r) => r.textContent)).toContainEqual(expect.stringContaining("2PlayerYou"));
+    // A private finish has no public row or rank until the guest chooses to post it.
+    expect(screen.getAllByRole("row").some(r => r.textContent?.includes("PlayerYou"))).toBe(false);
     expect(screen.getByText("Add your name to post your time to today's board")).toBeTruthy();
     expect(screen.queryByText(/on today's board as/)).toBeNull();
     fireEvent.change(screen.getByPlaceholderText("Your name"), { target: { value: "Andy" } });
@@ -246,10 +246,10 @@ describe("DailyLeaderboardScreen", () => {
     game.pendingDailyResult = p;
     renderBoard();
     await screen.findByText("Ada");
-    expect(screen.getAllByRole("row").map((r) => r.textContent)).toContainEqual(expect.stringContaining("2PlayerYou"));
+    expect(screen.getAllByRole("row").some(r => r.textContent?.includes("PlayerYou"))).toBe(false);
     expect(screen.getByTestId("board-not-posted").textContent).toBe("Preview: not posted to the board");
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
-    expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:20 · #2 today");
+    expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:20");
   });
 
   it("on a phone shows the route's one board", async () => {
@@ -297,4 +297,23 @@ describe("DailyLeaderboardScreen", () => {
     expect(screen.queryByText("Daily Large")).toBeNull();
     expect(fetchBoard).not.toHaveBeenCalledWith(todayKey(), "large");
   });
+});
+
+
+it("asks even a previously named guest to sign and keeps that finish out of the ranking", async () => {
+  const p = pending(80, "Remembered name", false);
+  p.resolve(); game.pendingDailyResult = p; renderBoard();
+  await screen.findByText("Ada");
+  expect(screen.getByPlaceholderText("Your name")).toHaveProperty("value", "");
+  expect(screen.getAllByRole("row").some(r => r.textContent?.includes("Remembered name"))).toBe(false);
+});
+
+it("does not offer signing or add a private row when account posting is disabled", async () => {
+  const p = pending(80, "Private result", false);
+  p.postingHold = "disabled";
+  p.resolve(); game.pendingDailyResult = p; renderBoard();
+  await screen.findByText("Ada");
+  expect(screen.getByText(/Solo leaderboard posting is off/)).toBeTruthy();
+  expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+  expect(screen.getAllByRole("row").some(r => r.textContent?.includes("Private result"))).toBe(false);
 });
