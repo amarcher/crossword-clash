@@ -50,6 +50,20 @@ export interface PuzzleState {
   rejection: Rejection | null;
   /** Letters accepted with a `playerId`, oldest first; see `Claim`. */
   claims: Claim[];
+  /**
+   * The letters of the settled squares the cursor passed over on its way to
+   * where it stands, in typing order: the rest of the word after the last
+   * letter typed, then, when the cursor moved on to another word, that word's
+   * squares before the first empty one. A solver who types a word straight
+   * through types those letters too, and under autocheck each one used to be
+   * judged against the square the cursor had skipped *to* — C-A-T with the A
+   * already on the grid refused the A at the T (Andrew, 2026-11-10: "it
+   * rejects a valid character typed quickly after a correct one"; it was also
+   * the T-then-Y into STY of 2026-11-01). INPUT_LETTER consumes a wrong letter
+   * that is on this list instead of refusing it; any deliberate cursor move
+   * empties the list (see `puzzleReducer`). Empty while autocheck is off.
+   */
+  typedThrough: string[];
 }
 
 export interface Rejection {
@@ -86,6 +100,7 @@ export const initialState: PuzzleState = {
   autocheck: true,
   rejection: null,
   claims: [],
+  typedThrough: [],
 };
 
 // --- Actions ---
@@ -160,15 +175,23 @@ function advanceCursor(
   col: number,
   direction: Direction,
   autocheck: boolean,
-): { coord: CellCoord; direction: Direction } | null {
+): { coord: CellCoord; direction: Direction; skipped: string[] } | null {
+  // The letters of the settled squares passed over (see PuzzleState.typedThrough).
+  const skipped: string[] = [];
+  const pass = (c: CellCoord) => {
+    const letter = playerCells[`${c.row},${c.col}`]?.letter;
+    if (letter) skipped.push(letter);
+  };
+
   // Walk forward through the current word, skipping filled cells
   const wordCells = getWordCells(puzzle, row, col, direction);
   const currentIdx = wordCells.findIndex((c) => c.row === row && c.col === col);
   for (let i = currentIdx + 1; i < wordCells.length; i++) {
     const c = wordCells[i];
     if (!occupied(playerCells, `${c.row},${c.col}`, autocheck)) {
-      return { coord: c, direction };
+      return { coord: c, direction, skipped };
     }
+    pass(c);
   }
 
   // Current word is complete — find next word with empty cells
@@ -188,9 +211,15 @@ function advanceCursor(
     const cells = getWordCells(puzzle, clue.row, clue.col, clue.direction);
     const firstEmpty = cells.find((c) => !occupied(playerCells, `${c.row},${c.col}`, autocheck));
     if (firstEmpty) {
+      // The new word's squares before the landing square are settled too.
+      for (const c of cells) {
+        if (c === firstEmpty) break;
+        pass(c);
+      }
       return {
         coord: firstEmpty,
         direction: settleDirection(puzzle, firstEmpty.row, firstEmpty.col, clue.direction),
+        skipped,
       };
     }
   }
@@ -198,7 +227,7 @@ function advanceCursor(
   // Without autocheck a full grid is still being edited (the solver may be
   // retyping an entry they doubt), so step along the word instead of freezing.
   if (!autocheck && currentIdx >= 0 && currentIdx + 1 < wordCells.length) {
-    return { coord: wordCells[currentIdx + 1], direction };
+    return { coord: wordCells[currentIdx + 1], direction, skipped: [] };
   }
 
   return null;
@@ -216,7 +245,28 @@ function countWhiteCells(puzzle: Puzzle): number {
   return count;
 }
 
+/**
+ * Actions that leave `typedThrough` standing: a typed letter (which maintains
+ * it) and the room's writes to the grid, which are not the solver's doing.
+ * Everything else is a deliberate move or a new grid, after which a letter
+ * can no longer be one the solver was typing through.
+ */
+const KEEPS_TYPED_THROUGH: ReadonlySet<PuzzleAction["type"]> = new Set([
+  "INPUT_LETTER",
+  "REMOTE_CELL_CLAIM",
+  "HYDRATE_CELLS",
+  "ROLLBACK_CELL",
+]);
+
 export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleState {
+  const next = reduce(state, action);
+  if (next.typedThrough.length > 0 && !KEEPS_TYPED_THROUGH.has(action.type)) {
+    return { ...next, typedThrough: [] };
+  }
+  return next;
+}
+
+function reduce(state: PuzzleState, action: PuzzleAction): PuzzleState {
   switch (action.type) {
     case "LOAD_PUZZLE": {
       const puzzle = action.puzzle;
@@ -308,12 +358,20 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       if (existing?.correct && (state.autocheck || existing.revealed)) {
         const next = advanceCursor(state.puzzle, state.playerCells, row, col, state.direction, state.autocheck);
         return next
-          ? { ...state, selectedCell: next.coord, direction: next.direction }
+          ? { ...state, selectedCell: next.coord, direction: next.direction, typedThrough: state.autocheck ? next.skipped : [] }
           : state;
       }
 
       const correct = letter === cell.solution;
       if (!correct && state.autocheck) {
+        // A letter of a settled square the cursor just passed over: the solver
+        // is typing the word straight through. It is already on the grid, so
+        // it is taken as typed (with any skipped letters before it) and
+        // nothing is refused.
+        const through = state.typedThrough.indexOf(letter);
+        if (through >= 0) {
+          return { ...state, typedThrough: state.typedThrough.slice(through + 1) };
+        }
         // Incorrect letter — refuse it (nothing is placed, the cursor stays)
         // and record the refusal for the flash and the wrong-letter count.
         return {
@@ -336,6 +394,10 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
       const claims = action.playerId
         ? [...state.claims, { row, col, letter, playerId: action.playerId, seq: (state.claims[state.claims.length - 1]?.seq ?? 0) + 1 }]
         : state.claims;
+      // A letter that fits the cursor's square and also heads the list may be
+      // either (the middle L of ALL was skipped, the L typed lands on the
+      // third square), so the list stands and the next L is still taken.
+      const carried = state.autocheck && state.typedThrough[0] === letter ? state.typedThrough : [];
       return {
         ...state,
         playerCells: newCells,
@@ -343,6 +405,7 @@ export function puzzleReducer(state: PuzzleState, action: PuzzleAction): PuzzleS
         selectedCell: next?.coord ?? state.selectedCell,
         direction: next?.direction ?? state.direction,
         claims,
+        typedThrough: state.autocheck ? [...carried, ...(next?.skipped ?? [])] : [],
       };
     }
 

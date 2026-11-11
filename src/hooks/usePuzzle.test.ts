@@ -788,4 +788,153 @@ describe("claims (the shared grid's server claims come from the reducer)", () =>
     state = puzzleReducer(loadedState(), { type: "INPUT_LETTER", letter: "c", playerId: "me" });
     expect(state.claims[0]?.seq).toBe(1);
   });
+  // The cursor skips settled squares; a solver typing the word straight
+  // through types their letters too (PuzzleState.typedThrough).
+  describe("typed-through letters", () => {
+    const type = (s: PuzzleState, letter: string, playerId?: string) =>
+      puzzleReducer(s, { type: "INPUT_LETTER", letter, playerId });
+    const fill = (s: PuzzleState, row: number, col: number, letter: string) =>
+      puzzleReducer(s, { type: "REMOTE_CELL_CLAIM", row, col, letter, playerId: "other" });
+
+    it("takes the letter of a square the cursor skipped instead of refusing it at the next one", () => {
+      // CAT with the A already on the grid: C, then A (typed through), then T.
+      let s = fill(loadedState(), 0, 1, "A");
+      s = type(s, "C");
+      expect(s.selectedCell).toEqual({ row: 0, col: 2 });
+      expect(s.typedThrough).toEqual(["A"]);
+      s = type(s, "A");
+      expect(s.rejection).toBeNull();
+      expect(s.selectedCell).toEqual({ row: 0, col: 2 });
+      expect(s.playerCells["0,2"]).toBeUndefined();
+      expect(s.typedThrough).toEqual([]);
+      s = type(s, "T");
+      expect(s.rejection).toBeNull();
+      expect(s.playerCells["0,2"]).toMatchObject({ letter: "T", correct: true });
+    });
+
+    it("takes it once: the same letter typed again is judged against the cursor's square", () => {
+      let s = fill(loadedState(), 0, 1, "A");
+      s = type(type(s, "C"), "A");
+      s = type(s, "A");
+      expect(s.rejection).toMatchObject({ row: 0, col: 2, letter: "A", seq: 1 });
+    });
+
+    it("still refuses a letter that is neither the square's nor a skipped one", () => {
+      let s = fill(loadedState(), 0, 1, "A");
+      s = type(type(s, "C"), "X");
+      expect(s.rejection).toMatchObject({ row: 0, col: 2, letter: "X" });
+      // The list stands: the A the solver meant next is still taken.
+      s = type(s, "A");
+      expect(s.rejection?.seq).toBe(1);
+      expect(s.typedThrough).toEqual([]);
+    });
+
+    it("covers the end of the word when the cursor moves on to the next one", () => {
+      // CAT with the T on the grid: after C and A the cursor leaves for the next word.
+      let s = fill(loadedState(), 0, 2, "T");
+      s = type(type(s, "C"), "A");
+      expect(s.selectedCell).toEqual({ row: 2, col: 0 });
+      expect(s.typedThrough).toEqual(["T"]);
+      s = type(s, "T");
+      expect(s.rejection).toBeNull();
+      expect(s.selectedCell).toEqual({ row: 2, col: 0 });
+      s = type(s, "B");
+      expect(s.playerCells["2,0"]).toMatchObject({ letter: "B", correct: true });
+    });
+
+    it("covers the settled start of the word the cursor lands in", () => {
+      // CAT complete but for its T; BET has its B. After the T the cursor lands on BET's E.
+      let s = fill(fill(fill(loadedState(), 0, 0, "C"), 0, 1, "A"), 2, 0, "B");
+      s = puzzleReducer(s, { type: "SELECT_CELL", row: 0, col: 2 });
+      s = type(s, "T");
+      expect(s.selectedCell).toEqual({ row: 2, col: 1 });
+      expect(s.typedThrough).toEqual(["B"]);
+      s = type(type(type(s, "B"), "E"), "T");
+      expect(s.rejection).toBeNull();
+      expect(s.playerCells["2,1"]).toMatchObject({ letter: "E" });
+      expect(s.playerCells["2,2"]).toMatchObject({ letter: "T" });
+    });
+
+    it("takes several skipped letters in order, and a later one takes the earlier ones with it", () => {
+      // TOT down with O and the last T on the grid, then BET across: T typed, O and T skipped.
+      let s = fill(fill(loadedState(), 1, 2, "O"), 2, 2, "T");
+      s = puzzleReducer(s, { type: "SELECT_CELL", row: 0, col: 2 });
+      s = puzzleReducer(s, { type: "SET_DIRECTION", direction: "down" });
+      s = type(s, "T");
+      expect(s.typedThrough.slice(0, 2)).toEqual(["O", "T"]);
+      const afterBoth = type(type(s, "O"), "T");
+      expect(afterBoth.rejection).toBeNull();
+      // Skipping straight to the second: the O before it goes with it.
+      const afterSecond = type(s, "T");
+      expect(afterSecond.rejection).toBeNull();
+      expect(afterSecond.typedThrough).not.toContain("O");
+    });
+
+    it("keeps a letter that fits the cursor's square and was also skipped (a doubled letter)", () => {
+      const puzzle = makeTestPuzzle();
+      // Row 0 becomes ALL: the middle L is on the grid, the last one is not.
+      puzzle.cells[0][0].solution = "A";
+      puzzle.cells[0][1].solution = "L";
+      puzzle.cells[0][2].solution = "L";
+      let s = puzzleReducer(initialState, { type: "LOAD_PUZZLE", puzzle });
+      s = fill(s, 0, 1, "L");
+      s = type(s, "A");
+      expect(s.typedThrough).toEqual(["L"]);
+      s = type(s, "L"); // lands on the third square
+      expect(s.playerCells["0,2"]).toMatchObject({ letter: "L", correct: true });
+      const before = s.selectedCell;
+      s = type(s, "L"); // the second L of a solver who typed A-L-L
+      expect(s.rejection).toBeNull();
+      expect(s.selectedCell).toEqual(before);
+    });
+
+    it("forgets the skipped letters at any deliberate move", () => {
+      const skippedA = type(fill(loadedState(), 0, 1, "A"), "C");
+      expect(skippedA.typedThrough).toEqual(["A"]);
+      const moves: Parameters<typeof puzzleReducer>[1][] = [
+        { type: "SELECT_CELL", row: 0, col: 2 },
+        { type: "TOGGLE_DIRECTION" },
+        { type: "MOVE_SELECTION", dr: 1, dc: 0 },
+        { type: "NEXT_WORD" },
+        { type: "PREV_WORD" },
+        { type: "DELETE_LETTER" },
+      ];
+      for (const move of moves) {
+        expect(puzzleReducer(skippedA, move).typedThrough).toEqual([]);
+      }
+      // A tap back onto the same square, then the A: judged like any letter.
+      const tapped = puzzleReducer(skippedA, { type: "SELECT_CELL", row: 0, col: 2 });
+      expect(type(tapped, "A").rejection).toMatchObject({ row: 0, col: 2, letter: "A" });
+    });
+
+    it("survives the room's own writes and starts empty with a new grid", () => {
+      const skippedA = type(fill(loadedState(), 0, 1, "A"), "C", "me");
+      const remote = fill(skippedA, 2, 2, "T");
+      expect(remote.typedThrough).toEqual(["A"]);
+      const hydrated = puzzleReducer(skippedA, { type: "HYDRATE_CELLS", cells: skippedA.playerCells, score: skippedA.score });
+      expect(hydrated.typedThrough).toEqual(["A"]);
+      expect(puzzleReducer(skippedA, { type: "LOAD_PUZZLE", puzzle: makeTestPuzzle() }).typedThrough).toEqual([]);
+      expect(puzzleReducer(skippedA, { type: "RESET" }).typedThrough).toEqual([]);
+    });
+
+    it("a typed-through letter is no claim and no score", () => {
+      let s = fill(loadedState(), 0, 1, "A");
+      s = type(s, "C", "me");
+      const claims = s.claims.length;
+      const score = s.score;
+      s = type(s, "A", "me");
+      expect(s.claims).toHaveLength(claims);
+      expect(s.score).toBe(score);
+    });
+
+    it("keeps no list while autocheck is off", () => {
+      let s = puzzleReducer(loadedState(), { type: "SET_AUTOCHECK", autocheck: false });
+      s = puzzleReducer(s, { type: "SELECT_CELL", row: 0, col: 1 });
+      s = type(s, "A");
+      s = puzzleReducer(s, { type: "SELECT_CELL", row: 0, col: 0 });
+      s = type(s, "C");
+      expect(s.selectedCell).toEqual({ row: 0, col: 2 });
+      expect(s.typedThrough).toEqual([]);
+    });
+  });
 });
