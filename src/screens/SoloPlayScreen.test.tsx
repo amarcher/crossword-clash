@@ -145,6 +145,28 @@ describe("SoloPlayScreen autocheck", () => {
     expect(mp.wrongCells).toEqual(["2,0"]);
   });
 
+  it("typing whole words through squares the crossings already filled refuses nothing", async () => {
+    // Andrew, 2026-11-10: "it rejects a valid character typed quickly after a
+    // correct one", in solo games. The cursor skips a square that is already
+    // filled, so a solver typing the word from memory typed the skipped
+    // letter onto the next square, where it was refused.
+    await renderSolo();
+    act(() => {
+      fireEvent.keyDown(window, { key: " " }); // 1 Down
+    });
+    type("cab"); // fills the first letters of CAT and BET
+    type("tot"); // 2 Down: their last letters
+    // The cursor is now on CAT's A, the only empty square of the word. The
+    // solver types the words they see: C-A-T, then B-E-T.
+    type("cat");
+    type("bet");
+    expect(mp.wrongLetters).toBe(0);
+    expect(mp.wrongCells).toEqual([]);
+    expect(cell(0, 1).getAttribute("aria-label")).toBe("Row 1, Column 2, A");
+    expect(cell(2, 1).getAttribute("aria-label")).toBe("Row 3, Column 2, E");
+    expect(game.isComplete).toBe(true);
+  });
+
   it("with autocheck on (the default) a wrong letter is refused and the switch says so", async () => {
     await renderSolo();
     type("x");
