@@ -44,16 +44,22 @@ function envLocal(name: string): string | undefined {
   }
 }
 
+// A ready-made token (ASC_API_TOKEN) skips the key: for a run on a machine that does not hold the
+// .p8, with a short-lived token minted where it does. Any non-empty value works when a proxy
+// replaces the Authorization header.
+const presetToken = envLocal("ASC_API_TOKEN");
 const keyId = envLocal("ASC_API_KEY_ID");
 const issuer = envLocal("ASC_API_ISSUER_ID");
-if (!keyId || !issuer) {
-  console.error("Set ASC_API_KEY_ID and ASC_API_ISSUER_ID (environment or .env.local), as for scripts/testflight.sh.");
-  process.exit(1);
-}
 const keyPath = path.join(os.homedir(), ".appstoreconnect", "private_keys", `AuthKey_${keyId}.p8`);
-if (!fs.existsSync(keyPath)) {
-  console.error(`${keyPath} is missing.`);
-  process.exit(1);
+if (!presetToken) {
+  if (!keyId || !issuer) {
+    console.error("Set ASC_API_KEY_ID and ASC_API_ISSUER_ID (environment or .env.local), as for scripts/testflight.sh.");
+    process.exit(1);
+  }
+  if (!fs.existsSync(keyPath)) {
+    console.error(`${keyPath} is missing.`);
+    process.exit(1);
+  }
 }
 
 /** App Store Connect tokens live at most 20 minutes; a run takes well under that. */
@@ -64,7 +70,7 @@ function token(): string {
   const signature = crypto.sign("sha256", Buffer.from(unsigned), { key: fs.readFileSync(keyPath, "utf8"), dsaEncoding: "ieee-p1363" }).toString("base64url");
   return `${unsigned}.${signature}`;
 }
-const bearer = token();
+const bearer = presetToken ?? token();
 
 interface Resource {
   id: string;
