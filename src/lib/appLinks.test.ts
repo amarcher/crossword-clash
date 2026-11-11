@@ -16,6 +16,10 @@ describe("appLinkTarget", () => {
     // A friend-request push's url (pushRules.ts) and the Race screen.
     expect(appLinkTarget("https://crosswordclash.com/race/friends")).toEqual({ kind: "navigate", to: "/race/friends" });
     expect(appLinkTarget("https://crosswordclash.com/race")).toEqual({ kind: "navigate", to: "/race" });
+    // A player's "add me" link, and nothing deeper under /add.
+    expect(appLinkTarget("https://crosswordclash.com/add/archer_1")).toEqual({ kind: "navigate", to: "/add/archer_1" });
+    expect(appLinkTarget("https://crosswordclash.com/add/archer/more")).toBeNull();
+    expect(appLinkTarget("https://crosswordclash.com/add")).toBeNull();
   });
 
   it("hands a puzzle payload to the hash listener", () => {

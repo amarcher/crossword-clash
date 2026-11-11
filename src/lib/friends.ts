@@ -13,6 +13,7 @@
  * `friends:<code>` message to a `FriendsError`.
  */
 import { supabase } from "./supabaseClient";
+import { shareOrigin } from "./shareOrigin";
 import type { Database } from "../types/supabase";
 
 // --- Switch -----------------------------------------------------------------
@@ -318,6 +319,40 @@ export async function searchUsernames(query: string, viewerId: string, limit = 1
     .limit(limit);
   if (error) throw refusal(error);
   return (data ?? []).map((row) => ({ userId: row.user_id, username: row.username }));
+}
+
+/**
+ * The "add me" link (Andrew, 2026-11-11): a player sends their own link
+ * through the share sheet, or shows it as a QR code, and whoever opens it
+ * lands on a page with one Add button. The share sheet is the contact picker,
+ * so the app never reads an address book; the request it leads to is the
+ * ordinary `send_friend_request`, which the link's owner still accepts, so a
+ * forwarded link befriends nobody on its own.
+ */
+export function friendLinkPath(username: string): string {
+  return `/add/${encodeURIComponent(username)}`;
+}
+
+/** The link as sent to someone else (the public site's origin in the apps). */
+export function friendLink(username: string): string {
+  return `${shareOrigin()}${friendLinkPath(username)}`;
+}
+
+/** The username a link's path names, or null when it could not be one (3–20 of A–Z a–z 0–9 _). */
+export function friendLinkUsername(param: string | null | undefined): string | null {
+  const name = (param ?? "").trim().replace(/^@/, "");
+  return /^[A-Za-z0-9_]{3,20}$/.test(name) ? name : null;
+}
+
+/** The account a username belongs to (usernames are public), or null when there is none. */
+export async function fetchProfileByUsername(username: string): Promise<Person | null> {
+  const { data, error } = await client()
+    .from("profiles")
+    .select("user_id, username")
+    .eq("username_lower", username.toLowerCase())
+    .maybeSingle();
+  if (error) throw refusal(error);
+  return data ? { userId: data.user_id, username: data.username } : null;
 }
 
 /** A friend's finish of a puzzle (spec §3.8): the mode it was solved in and the day; never a time. */

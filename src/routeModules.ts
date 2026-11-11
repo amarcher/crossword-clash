@@ -42,6 +42,7 @@ export const screenModules = {
   communityPuzzle: () => import("./screens/CommunityPuzzleScreen"),
   race: () => import("./screens/RaceScreen"),
   friends: () => import("./screens/FriendsScreen"),
+  addFriend: () => import("./screens/AddFriendScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
