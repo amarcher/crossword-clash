@@ -43,6 +43,8 @@ export type AnalyticsEvent =
   | "challenge_accepted"
   | "live_bridge"
   | "leaderboard_viewed"
+  | "friend_link_shared"
+  | "friend_link_opened"
   | "leaderboard_filter"
   /** A website visitor on iOS followed the App Store link. Param `placement`. */
   | "app_store_click"

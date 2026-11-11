@@ -42,7 +42,7 @@ export function displayLink(url: string): string {
 }
 
 /** The share deps for this runtime: the Capacitor plugin in the app, the browser APIs on the web. */
-async function runtimeDeps(): Promise<ShareDeps> {
+export async function runtimeDeps(): Promise<ShareDeps> {
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
   const nativePlatform = Capacitor.isNativePlatform();
   const deps: ShareDeps = {

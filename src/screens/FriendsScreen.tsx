@@ -5,6 +5,7 @@ import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { inputClass } from "../components/Flow/TextField";
 import { PendingRequests, PersonList, PersonRow } from "../components/Friends";
+import { InviteFriendCard } from "../components/Friends/InviteFriendCard";
 import { useConfirm } from "../components/ConfirmDialog";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useFriends } from "../contexts/FriendsContext";
@@ -210,6 +211,9 @@ export function FriendsScreen() {
           <PendingRequests showBlock className="mt-3" />
         </Card>
       )}
+
+      {/* The viewer's own add-me link: no username to know or type, and no contacts read. */}
+      {account.profile && <InviteFriendCard username={account.profile.username} />}
 
       <Card className="p-5">
         <label htmlFor="friend-search" className="block">
