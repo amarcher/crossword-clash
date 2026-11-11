@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSoloTimer } from "./useSoloTimer";
-import { puzzleIdentity, saveSoloTimer } from "../lib/soloStats";
+import { loadSoloStats, loadSoloTimer, puzzleIdentity, saveSoloTimer } from "../lib/soloStats";
 import { getProgress, recordProgressCells } from "../lib/soloProgress";
 import type { Puzzle } from "../types/puzzle";
 
@@ -115,5 +115,46 @@ describe("solo pause clock", () => {
     expect(restored.result.current.fresh).toBe(false);
     expect(restored.result.current.running).toBe(false);
     restored.unmount();
+  });
+});
+
+describe("a puzzle opened already solved", () => {
+  beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 10, 10, 12, 0, 0)); });
+  afterEach(() => { vi.useRealTimers(); });
+  const keyTwo = puzzleIdentity(two);
+  type Props = { p: Puzzle; done: boolean; solved: { key: string; seconds: number } | null };
+  const mount = (initial: Props) =>
+    renderHook(({ p, done, solved }: Props) => useSoloTimer(p, done, false, () => true, solved), { initialProps: initial });
+
+  it("shows its recorded time, is no new finish, and owns the stored record even after the previous puzzle's cleanup wrote it", () => {
+    // "one" is being played; the solver opens "two", solved before in 61 s, inside the mounted screen.
+    const { result, rerender } = mount({ p: one, done: false, solved: null });
+    act(() => vi.advanceTimersByTime(3000));
+    rerender({ p: two, done: true, solved: { key: keyTwo, seconds: 61 } });
+    expect(result.current.getElapsedSeconds()).toBe(61);
+    expect(result.current.running).toBe(false);
+    expect(result.current.fresh).toBe(false);
+    expect(result.current.result?.finishSeconds).toBe(61);
+    expect(result.current.result?.isNewBest).toBe(false);
+    // The cleanup of "one" checkpointed its own clock first; the record that stands is "two", finished.
+    expect(loadSoloTimer()).toEqual({ key: keyTwo, elapsedMs: 61_000, completed: true });
+    // Looking at it recorded nothing.
+    expect(loadSoloStats().bestTimes[keyTwo]).toBeUndefined();
+  });
+
+  it("restart() begins a new attempt: the clock at zero and running, and its finish is a fresh one", () => {
+    const { result, rerender } = mount({ p: two, done: true, solved: { key: keyTwo, seconds: 61 } });
+    expect(result.current.getElapsedSeconds()).toBe(61);
+    act(() => result.current.restart());
+    rerender({ p: two, done: false, solved: null });
+    expect(result.current.getElapsedSeconds()).toBe(0);
+    expect(result.current.running).toBe(true);
+    expect(result.current.result).toBeNull();
+    expect(loadSoloTimer()).toMatchObject({ key: keyTwo, completed: false });
+    act(() => vi.advanceTimersByTime(7000));
+    rerender({ p: two, done: true, solved: null });
+    expect(result.current.fresh).toBe(true);
+    expect(result.current.result?.finishSeconds).toBe(7);
+    expect(loadSoloStats().bestTimes[keyTwo]).toBe(7);
   });
 });

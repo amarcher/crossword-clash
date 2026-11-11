@@ -33,7 +33,8 @@ export function ChallengeScreen() {
       size: `${puzzle.width}x${puzzle.height}`,
       target_seconds: challenge.seconds,
     });
-    if (await game.handleSoloPuzzleLoaded(puzzle) === false) return;
+    // Accepting a challenge is asking to solve it (again): never the solved grid.
+    if (await game.handleSoloPuzzleLoaded(puzzle, undefined, { replay: true }) === false) return;
     navigate("/solo/play");
   }, [puzzle, challenge, game, navigate]);
 

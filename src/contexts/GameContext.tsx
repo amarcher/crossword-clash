@@ -11,6 +11,7 @@ import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import { clearProgress, filledCells, getProgress, saveAttempt, whiteCellCount, type SaveAttemptResult } from "../lib/soloProgress";
 import { requestSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { useSoloSettings } from "../lib/soloSettings";
+import { solutionCells, solvedSeconds } from "../lib/solvedPuzzles";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { Claim, PuzzleAction, Rejection } from "../hooks/usePuzzle";
@@ -123,7 +124,25 @@ interface GameContextValue {
   checkpointSolo: () => SaveAttemptResult;
   soloSaveError: Exclude<SaveAttemptResult, "saved"> | null;
   // Solo puzzle handlers
-  handleSoloPuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer) => Promise<boolean>;
+  /**
+   * Opens a puzzle in solo play. One the solver has already finished, with no
+   * new attempt under way, opens on its solved grid (see `reopenedSolved`);
+   * `replay` asks for a fresh attempt regardless (a challenge link is an
+   * invitation to solve it again).
+   */
+  handleSoloPuzzleLoaded: (p: Puzzle, fileBuffer?: ArrayBuffer, options?: { replay?: boolean }) => Promise<boolean>;
+  /**
+   * Set while the puzzle on screen was opened already solved: its identity
+   * and the recorded best time. The grid is its solution, nothing about the
+   * visit is a finish (no record, no board post, no analytics), and the play
+   * screen offers "Clear and solve again". Null for every other puzzle.
+   */
+  reopenedSolved: { key: string; seconds: number } | null;
+  /**
+   * The explicit clear: empties the solved grid on screen and starts a new
+   * attempt at the same puzzle. False when the attempt could not be saved.
+   */
+  restartSolo: () => boolean;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -184,6 +203,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return !!timer?.completed && timer.key === puzzleIdentity(saved);
   });
   const [pendingDailyResult, setPendingDailyResult] = useState<PendingDailyResult | null>(null);
+  const [reopenedSolved, setReopenedSolved] = useState<{ key: string; seconds: number } | null>(null);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
   const [raceMode, setRaceMode] = useState<RaceMode>("versus");
@@ -292,13 +312,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Solo puzzle loaded
   const handleSoloPuzzleLoaded = useCallback(
-    async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
+    async (p: Puzzle, fileBuffer?: ArrayBuffer, options?: { replay?: boolean }) => {
       // Resume an unfinished attempt at this puzzle (soloProgress.ts): read it
       // before loading, hydrate right after, in the same tick, so the save
       // effect never sees the empty grid in between.
       if (checkpointSolo() !== "saved") return false;
       const key = puzzleIdentity(p);
       const progress = getProgress(key);
+
+      // A puzzle already solved, with no new attempt under way, opens on its
+      // solved grid (Andrew, 2026-11-10: an empty grid on the way back in
+      // read as "not solved yet"). The finish deleted the attempt's cells, so
+      // the grid is the solution; an attempt record with no letter in it (the
+      // one "Clear and solve again" writes, left before a letter was typed)
+      // is not an attempt. Solving it again is the play screen's explicit
+      // action (`restartSolo`), never a side effect of opening it.
+      const best = options?.replay ? null : solvedSeconds(key);
+      const attempted = !!progress && Object.keys(filledCells(progress.cells)).length > 0;
+      if (best !== null && !attempted) {
+        if (progress && !clearProgress(key)) { setSoloSaveError("storage"); return false; }
+        setSoloSaveError(null);
+        rememberSoloLanding("play");
+        loadPuzzle(p);
+        const cells = solutionCells(p);
+        dispatch({ type: "HYDRATE_CELLS", cells, score: Object.keys(cells).length });
+        setGameId(null);
+        setIsMultiplayer(false);
+        // The celebration was had when it was solved: the screen opens on the
+        // grid with the finished header, whose Share can re-open the modal.
+        setCompletionModalDismissed(true);
+        setReopenedSolved({ key, seconds: best });
+        fileBufferRef.current = null;
+        setSoloTheme(progress?.theme ?? null);
+        if (loadChallenge()?.key !== key) clearChallenge();
+        return true;
+      }
+      setReopenedSolved(null);
       const result = saveAttempt({
         ...progress, key, puzzle: p, cells: progress?.cells ?? {},
         elapsedMs: progress?.elapsedMs ?? 0, updatedAt: Date.now(),
@@ -349,6 +398,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [loadPuzzle, dispatch, checkpointSolo],
   );
 
+  const restartSolo = useCallback((): boolean => {
+    if (isMultiplayer || !puzzle) return false;
+    const key = puzzleIdentity(puzzle);
+    // The new attempt exists before the grid empties, so the timer has a
+    // record to checkpoint into and a reload resumes the attempt.
+    const result = saveAttempt({
+      key, puzzle, cells: {}, elapsedMs: 0, updatedAt: Date.now(),
+      filled: 0, total: whiteCellCount(puzzle), theme: soloTheme,
+    });
+    if (result !== "saved") { setSoloSaveError(result); return false; }
+    setSoloSaveError(null);
+    requestSoloStart(key);
+    setReopenedSolved(null);
+    setCompletionModalDismissed(false);
+    // A new object, so everything latched to "this puzzle" by identity (the
+    // wrong-cell list, the grid's fill animations) starts over with it.
+    loadPuzzle({ ...puzzle });
+    return true;
+  }, [isMultiplayer, puzzle, soloTheme, loadPuzzle]);
+
   const value: GameContextValue = {
     ...puzzleHook,
     checkpointSolo,
@@ -389,6 +458,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initialJoinCode,
     consumeInitialJoinCode,
     handleSoloPuzzleLoaded,
+    reopenedSolved,
+    restartSolo,
   };
 
   // Suppress unused var warnings: these values are used through the contexts

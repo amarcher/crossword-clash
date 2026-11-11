@@ -49,6 +49,9 @@
     "pastPuzzles": "Crucigramas anteriores",
     "pastPuzzlesSubtitle": "Los diarios que te perdiste",
     "dailyPlay": "Jugar",
+    "dailyView": "Ver",
+    "dailySolved": "Resuelto",
+    "dailySolvedIn": "Resuelto en {{time}}",
     "dailyMeta": "{{width}}×{{height}} · {{count}} pistas",
     "tvMode": "Modo TV",
     "watchLink": "¿Tienes un código? Muestra esa partida en una TV",
@@ -218,7 +221,12 @@
     "solvedIn": "Resuelto en {{time}}",
     "solved": "Resuelto",
     "share": "Compartir",
-    "leaderboard": "Clasificación"
+    "leaderboard": "Clasificación",
+    "solvedNotice": "Ya lo resolviste",
+    "solveAgain": "Borrar y repetir",
+    "solveAgainTitle": "¿Borrar la cuadrícula y resolverlo otra vez?",
+    "solveAgainBody": "Se borran tus letras y el reloj vuelve a cero. El crucigrama sigue contando como resuelto, y una segunda resolución no se publica en la clasificación.",
+    "solveAgainConfirm": "Borrar la cuadrícula"
   },
   "cluePanel": {
     "across": "→",

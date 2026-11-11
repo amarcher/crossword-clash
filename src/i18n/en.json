@@ -49,6 +49,9 @@
     "pastPuzzles": "Past puzzles",
     "pastPuzzlesSubtitle": "Catch up on dailies you missed",
     "dailyPlay": "Play",
+    "dailyView": "View",
+    "dailySolved": "Solved",
+    "dailySolvedIn": "Solved in {{time}}",
     "dailyMeta": "{{width}}×{{height}} · {{count}} clues",
     "tvMode": "TV mode",
     "watchLink": "Have a room code? Show that game on a TV",
@@ -218,7 +221,12 @@
     "solvedIn": "Solved in {{time}}",
     "solved": "Solved",
     "share": "Share",
-    "leaderboard": "Leaderboard"
+    "leaderboard": "Leaderboard",
+    "solvedNotice": "You solved this",
+    "solveAgain": "Clear & redo",
+    "solveAgainTitle": "Clear the grid and solve it again?",
+    "solveAgainBody": "Your letters are cleared and the clock starts over. The puzzle still counts as solved, and a second solve is not posted to the leaderboard.",
+    "solveAgainConfirm": "Clear the grid"
   },
   "cluePanel": {
     "across": "Across",

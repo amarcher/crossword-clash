@@ -1,10 +1,10 @@
 import { SoloContinue } from "../components/SoloContinue";
 import { useSoloProgress } from "../hooks/useSoloProgress";
-import { puzzleIdentity } from "../lib/soloStats";
+import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { CalendarDays, Flame, Hash, Newspaper, PencilRuler, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
+import { CalendarDays, CircleCheck, Flame, Hash, Newspaper, PencilRuler, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
@@ -27,7 +27,7 @@ import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
-import { useStreaks } from "../hooks/useSolveHistory";
+import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
 import {
   ANDROID_PLAY_STORE_URL,
   IOS_APP_STORE_URL,
@@ -57,15 +57,24 @@ interface DailyHeroProps {
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
 
 /** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
-function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
+export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(SLOT_EYEBROW[slot]);
   const progress = useSoloProgress();
-  const resumable = daily && !!progress[puzzleIdentity(daily.puzzle)];
+  const bestTimes = useBestTimes();
+  const key = daily ? puzzleIdentity(daily.puzzle) : null;
+  const best = key ? bestTimes[key] : undefined;
+  // Solved (a recorded finish): the tile says so in the meta line, the
+  // thumbnail and its own fill, and Play becomes View — the puzzle opens on
+  // its solved grid, where "Clear & redo" is the explicit way to do it again.
+  const solved = typeof best === "number";
+  const attempt = key ? progress[key] : undefined;
+  // A solved puzzle is "in progress" again only once its new attempt has a letter.
+  const resumable = !!attempt && (!solved || attempt.filled > 0);
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
-    <Card role="region" aria-label={label} className="overflow-hidden" aria-busy={!daily}>
+    <Card role="region" aria-label={label} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
           {/* One 20px row whatever the feed says: the theme chip is 20px and the
@@ -87,13 +96,20 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
               <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
                 {daily.puzzle.title}
               </h1>
-              <p className="mt-1 text-sm text-muted tabular-nums">
-                {t("menu.dailyMeta", {
-                  width: daily.puzzle.width,
-                  height: daily.puzzle.height,
-                  count: daily.puzzle.clues.length,
-                })}
-              </p>
+              {solved ? (
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
+                  <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
+                  {t("menu.dailySolvedIn", { time: formatDuration(best) })}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-muted tabular-nums">
+                  {t("menu.dailyMeta", {
+                    width: daily.puzzle.width,
+                    height: daily.puzzle.height,
+                    count: daily.puzzle.clues.length,
+                  })}
+                </p>
+              )}
             </>
           ) : (
             <div className="animate-pulse" aria-hidden="true">
@@ -103,15 +119,15 @@ function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onR
           )}
         </div>
         {daily ? (
-          <MiniGridThumb puzzle={daily.puzzle} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+          <MiniGridThumb puzzle={daily.puzzle} solved={solved} className="w-24 shrink-0 sm:w-28 lg:w-36" />
         ) : (
           <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
         )}
       </div>
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
-        <Button size="lg" className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
-          {t(resumable ? "soloPause.resume" : "menu.dailyPlay")}
+        <Button size="lg" variant={solved && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
+          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : "menu.dailyPlay")}
         </Button>
         {multiplayer && (
           <Button
