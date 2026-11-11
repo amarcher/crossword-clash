@@ -78,7 +78,7 @@ describe("AccountSheet Plus view", () => {
   it("shows the plan tiles to a non-subscriber and only the benefits + renewal line to a subscriber", () => {
     renderSheet("plus");
     expect(screen.getByText(/Save \d+%/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Get Plus yearly/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Yearly · 1 month free/ })).toBeTruthy();
     cleanup();
     const plusRow = {
       user_id: "u1",

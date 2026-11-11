@@ -492,6 +492,46 @@ environments). What is still open is marked below.
 
 **Build 20 (2026-10-28):** the first app build with community puzzles and Publish — `VITE_COMMUNITY=1` had never been in `.env.local`, so builds 11–19 lacked them; `scripts/testflight.sh` now refuses to build without the production switches. The menu gains a "Build a crossword" row.
 
+### 3.8 The free first month (2026-11-11)
+
+Both plans start with a month at no charge (spec decision 10, revised).
+The price ids and the prices do not change.
+
+1. **Web (Stripe): deploy only.** `supabase functions deploy create-checkout`.
+   The function adds a 30-day trial to the Checkout session of an account
+   that has never had an entitlement row and whose email Stripe has never held
+   a subscription for; Checkout still takes the card and
+   Stripe charges the plan when the trial ends. Nothing changes in the
+   Stripe dashboard. To change the length or turn it off without touching
+   the client: `supabase secrets set STRIPE_TRIAL_DAYS=0` (or another whole
+   number of days) and redeploy the function. Test on a preview with a test
+   card: the Checkout page reads "30 days free", the Slack line is
+   "🆓 Free trial started", and the account page says "Renews on" the day
+   the trial ends.
+2. **App Store Connect.** Subscriptions → Crossword Clash Plus → each of
+   `plus_monthly` and `plus_annual` → Subscription Prices → + →
+   **Create Introductory Offer** → all territories, no end date → type
+   **Free** → duration **1 month**. Apple gives it once per subscription
+   group per Apple ID. An introductory offer takes effect without an app
+   review, but the app's metadata must not promise it before it exists.
+3. **Google Play.** Monetize → Subscriptions → each product → its base plan
+   → **Add offer** → eligibility **New customer acquisition** ("never had
+   this subscription") → one phase, **Free trial**, **1 month** → activate.
+   RevenueCat picks the offer up as the default option on its own.
+4. **RevenueCat.** Nothing to configure: the offering's packages carry the
+   stores' offers. Its webhook sends `INITIAL_PURCHASE` with
+   `period_type: TRIAL`, which the writer already treats as an active row
+   and the Slack alert as a trial.
+5. **The apps' wording follows the stores.** An app build that has this
+   change says "1 month free, then …" for a plan only when the store
+   reports a free one-month introductory offer for it and (on iOS) the
+   Apple ID is still eligible; older builds keep the plain price on the
+   button while the store's own sheet shows the trial. So steps 2 and 3 can
+   be done before or after the next app release.
+6. **Store listing.** `docs/app-store/description.txt` now mentions the free
+   month; paste it into the listing once step 2 is live (the Play
+   description names no price).
+
 ## 4. Slack purchase alerts (#crossword-clash)
 
 Every purchase lifecycle event that reaches `verify-purchase` is announced

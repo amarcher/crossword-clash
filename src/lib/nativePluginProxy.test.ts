@@ -58,7 +58,7 @@ describe("RevenueCat plugin loading", () => {
     expect(calls).not.toContain("then");
 
     await expect(settles(mod.purchaseNativePlan("annual"))).resolves.toBe("purchased");
-    await expect(settles(mod.fetchNativePrices())).resolves.toEqual([{ plan: "annual", priceString: "$24.99" }]);
+    await expect(settles(mod.fetchNativePrices())).resolves.toEqual([{ plan: "annual", priceString: "$24.99", freeMonth: false }]);
     expect(calls).not.toContain("then");
   });
 
@@ -149,5 +149,40 @@ describe("native sign-in plugin loading", () => {
     expect(seen[0]).toMatchObject({ apple: { clientId: "com.crosswordclash.app" }, google: { webClientId: "web-client" } });
     expect(seen[1]).not.toHaveProperty("apple");
     expect(seen[1]).toMatchObject({ google: { webClientId: "web-client" } });
+  });
+});
+
+describe("the stores' free first month", () => {
+  it("reads a one-month free introductory offer however the store spells it, and nothing else", async () => {
+    const { isFreeMonth } = await import("./nativePurchase");
+    expect(isFreeMonth({ price: 0, periodUnit: "MONTH", periodNumberOfUnits: 1, cycles: 1 })).toBe(true);
+    expect(isFreeMonth({ price: 0, periodUnit: "DAY", periodNumberOfUnits: 30 })).toBe(true);
+    expect(isFreeMonth({ price: 0, periodUnit: "WEEK", periodNumberOfUnits: 4 })).toBe(true);
+    expect(isFreeMonth({ price: 0, periodUnit: "WEEK", periodNumberOfUnits: 1 })).toBe(false);
+    expect(isFreeMonth({ price: 0, periodUnit: "MONTH", periodNumberOfUnits: 3 })).toBe(false);
+    expect(isFreeMonth({ price: 1.99, periodUnit: "MONTH", periodNumberOfUnits: 1 })).toBe(false);
+    expect(isFreeMonth(null)).toBe(false);
+  });
+
+  it("marks a plan free only while the store account can still have the offer", async () => {
+    const mod = await import("./nativePurchase");
+    mod.resetNativePurchasesForTests();
+    const intro = { price: 0, periodUnit: "MONTH", periodNumberOfUnits: 1, cycles: 1 };
+    purchasesImpl.configure = () => "-1";
+    purchasesImpl.getOfferings = async () => ({
+      current: {
+        availablePackages: [
+          { identifier: "$rc_annual", product: { identifier: "plus_annual", priceString: "$24.99", price: 24.99, introPrice: intro } },
+          { identifier: "$rc_monthly", product: { identifier: "plus_monthly", priceString: "$3.99", price: 3.99, introPrice: intro } },
+        ],
+      },
+    });
+    purchasesImpl.checkTrialOrIntroductoryPriceEligibility = async () => ({ plus_annual: { status: 2 }, plus_monthly: { status: 1 } });
+    await settles(mod.syncNativePurchaseUser("user-1"));
+    await expect(settles(mod.fetchNativePrices())).resolves.toEqual([
+      { plan: "annual", priceString: "$24.99", price: 24.99, freeMonth: true },
+      { plan: "monthly", priceString: "$3.99", price: 3.99, freeMonth: false },
+    ]);
+    expect(calls).not.toContain("then");
   });
 });

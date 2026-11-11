@@ -70,7 +70,7 @@ describe("StudioGateScreen", () => {
     renderGate();
     expect(screen.getByText("Build your own crossword")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Continue with/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /Get Plus yearly/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Yearly · 1 month free/ })).toBeTruthy();
     expect(track).toHaveBeenCalledWith("paywall_viewed", { placement: "studio", feature: "studio", state: "plus" });
   });
 

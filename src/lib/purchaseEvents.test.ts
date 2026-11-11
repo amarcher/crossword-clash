@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   STRIPE_API_VERSION,
   checkoutOrigin,
+  checkoutTrialDays,
+  PLUS_TRIAL_DAYS,
   isSupabaseUid,
   parseStripeSignature,
   pickStripeSubscription,
@@ -326,6 +328,27 @@ describe("stripeReconcilePlan", () => {
     expect(stripeReconcilePlan([])).toEqual({ kind: "search" });
     expect(stripeReconcilePlan([row("active", null)])).toEqual({ kind: "search" });
     expect(stripeReconcilePlan([row("active", "rc_user", "revenuecat")])).toEqual({ kind: "search" });
+  });
+});
+
+describe("checkoutTrialDays", () => {
+  it("gives the free month to an account with no entitlement row and to nobody else", () => {
+    expect(PLUS_TRIAL_DAYS).toBe(30);
+    expect(checkoutTrialDays(0)).toBe(30);
+    expect(checkoutTrialDays(1)).toBe(0);
+    expect(checkoutTrialDays(3)).toBe(0);
+  });
+
+  it("takes another length, and 0 turns the trial off", () => {
+    expect(checkoutTrialDays(0, 7)).toBe(7);
+    expect(checkoutTrialDays(0, 0)).toBe(0);
+    expect(checkoutTrialDays(1, 7)).toBe(0);
+  });
+
+  it("gives none to an email Stripe has already held a subscription for", () => {
+    expect(checkoutTrialDays(0, undefined, true)).toBe(0);
+    expect(checkoutTrialDays(0, 7, true)).toBe(0);
+    expect(checkoutTrialDays(0, undefined, false)).toBe(30);
   });
 });
 

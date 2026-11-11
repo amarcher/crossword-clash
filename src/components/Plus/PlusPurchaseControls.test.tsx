@@ -10,7 +10,7 @@ vi.mock("../../lib/plusPurchase", async (importOriginal) => ({
   openBillingPortal: (...args: unknown[]) => purchase.openBillingPortal(...(args as [])),
   reconcileEntitlements: (...args: unknown[]) => purchase.reconcileEntitlements(...(args as [])),
 }));
-const native = { available: false, prices: [] as { plan: "annual" | "monthly"; priceString: string }[], outcome: "purchased" as "purchased" | "cancelled", restore: vi.fn(async () => {}) };
+const native = { available: false, prices: [] as { plan: "annual" | "monthly"; priceString: string; freeMonth?: boolean }[], outcome: "purchased" as "purchased" | "cancelled", restore: vi.fn(async () => {}) };
 vi.mock("../../lib/nativePurchase", () => ({
   nativePurchaseAvailable: () => native.available,
   purchasePlatform: () => (native.available ? "ios" : "web"),
@@ -52,11 +52,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("PlusPurchaseControls on the web", () => {
-  it("offers the two plans with the list prices, annual first, and the legal links; no restore", () => {
+  it("offers the two plans with the free month and the list prices, annual first, and the legal links; no restore", () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="test" />);
     const buttons = screen.getAllByRole("button");
-    expect(buttons[0].textContent).toBe("Get Plus yearly · $24.99");
-    expect(buttons[1].textContent).toBe("Monthly · $3.99");
+    expect(buttons[0].textContent).toBe("Yearly · 1 month free, then $24.99");
+    expect(buttons[1].textContent).toBe("Monthly · 1 month free, then $3.99");
     expect(screen.queryByRole("button", { name: "Restore purchases" })).toBeNull();
     expect(screen.getByRole("link", { name: "Terms of Service" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("/privacy");
@@ -66,13 +66,13 @@ describe("PlusPurchaseControls on the web", () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="archive" returnTo="/archive" />);
     fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
     await waitFor(() => expect(purchase.startCheckout).toHaveBeenCalledWith("monthly", "/archive"));
-    expect(track).toHaveBeenCalledWith("checkout_started", { channel: "stripe", plan: "monthly", placement: "archive" });
+    expect(track).toHaveBeenCalledWith("checkout_started", { channel: "stripe", plan: "monthly", placement: "archive", trial: true });
   });
 
   it("shows the failure when Checkout cannot start", async () => {
     purchase.startCheckout.mockRejectedValueOnce(new Error("Purchasing isn't available yet."));
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="test" />);
-    fireEvent.click(screen.getByRole("button", { name: /Get Plus yearly/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Yearly · 1 month free/ }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Purchasing isn't available yet."));
   });
 
@@ -113,6 +113,17 @@ describe("PlusPurchaseControls in the apps", () => {
     expect(track).toHaveBeenCalledWith("purchase_completed", { channel: "revenuecat", plan: "annual" });
     expect(screen.getByRole("status").textContent).toBe("You're Plus. Thank you!");
     expect(purchase.startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("words a plan as a free month only when the store offers one for it", async () => {
+    native.prices = [
+      { plan: "annual", priceString: "$24.99", freeMonth: true },
+      { plan: "monthly", priceString: "$3.99", freeMonth: false },
+    ];
+    render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Yearly · 1 month free, then $24.99" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "Monthly · $3.99" })).toBeTruthy();
+    expect(screen.getByText(/Free for one month, then the plan's price is charged/)).toBeTruthy();
   });
 
   it("doesn't claim Plus when the store took the payment but no Plus row has landed yet", async () => {

@@ -1,7 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { serviceClient, userFromRequest } from "../_shared/user.ts";
 import { entitlementsFor } from "../_shared/entitlementStore.ts";
-import { checkoutOrigin, stripeHeaders } from "../_shared/purchaseEvents.ts";
+import { checkoutOrigin, checkoutTrialDays, stripeHeaders } from "../_shared/purchaseEvents.ts";
 
 /**
  * Starts a Stripe Checkout session for Crossword Clash Plus on the web
@@ -18,6 +18,14 @@ import { checkoutOrigin, stripeHeaders } from "../_shared/purchaseEvents.ts";
  * session's own metadata. An existing Stripe customer (from an earlier
  * subscription) is reused so the Customer Portal shows one history.
  *
+ * A first subscription starts with a free month (`PLUS_TRIAL_DAYS`): Checkout
+ * still takes the card and Stripe charges the plan's price when the trial
+ * ends. An account that already has any entitlement row gets no trial, and
+ * neither does one whose email Stripe has already held a subscription for
+ * (`emailBilledBefore`: an account deleted and made again), so the free month
+ * is given once per email. STRIPE_TRIAL_DAYS overrides the length without a
+ * deploy of the client; 0 turns the trial off.
+ *
  * Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL
  * (price ids), SITE_URL (default https://crosswordclash.com), optional
  * STRIPE_AUTOMATIC_TAX=1 once Stripe Tax is set up.
@@ -29,6 +37,7 @@ const PRICES: Record<string, string | undefined> = {
 };
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://crosswordclash.com").replace(/\/+$/, "");
 const AUTOMATIC_TAX = Deno.env.get("STRIPE_AUTOMATIC_TAX") === "1";
+const TRIAL_DAYS_OVERRIDE = Deno.env.get("STRIPE_TRIAL_DAYS");
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -36,6 +45,29 @@ const json = (body: unknown, status = 200) =>
 /** Only a same-site path may be a return target. */
 function safeReturnPath(value: unknown): string {
   return typeof value === "string" && /^\/[A-Za-z0-9_\-/]*$/.test(value) ? value : "/menu";
+}
+
+/**
+ * Whether Stripe already holds a subscription, of any status, for a customer
+ * with this email. Customers outlive a deleted account, so this is the record
+ * of an earlier trial or subscription under the same identity. Throws when
+ * Stripe cannot answer: the caller then starts no Checkout, since guessing
+ * either way would give a second free month or charge someone promised one.
+ */
+async function emailBilledBefore(email: string): Promise<boolean> {
+  const list = await fetch(`https://api.stripe.com/v1/customers?limit=100&email=${encodeURIComponent(email)}`, {
+    headers: stripeHeaders(STRIPE_SECRET_KEY),
+  });
+  if (!list.ok) throw new Error(`Stripe customers ${list.status}`);
+  const customers = ((await list.json()) as { data?: Array<{ id: string }> }).data ?? [];
+  for (const customer of customers) {
+    const subs = await fetch(`https://api.stripe.com/v1/subscriptions?status=all&limit=1&customer=${encodeURIComponent(customer.id)}`, {
+      headers: stripeHeaders(STRIPE_SECRET_KEY),
+    });
+    if (!subs.ok) throw new Error(`Stripe subscriptions ${subs.status}`);
+    if ((((await subs.json()) as { data?: unknown[] }).data ?? []).length > 0) return true;
+  }
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -72,7 +104,14 @@ Deno.serve(async (req) => {
     params.set("allow_promotion_codes", "true");
     if (AUTOMATIC_TAX) params.set("automatic_tax[enabled]", "true");
     // Reuse the customer from an earlier Stripe subscription, else let Checkout create one for the account's email.
-    const previous = (await entitlementsFor(admin, user.id, "stripe")).find((r) => r.external_customer);
+    const held = await entitlementsFor(admin, user.id);
+    const override = TRIAL_DAYS_OVERRIDE ? Number(TRIAL_DAYS_OVERRIDE) : NaN;
+    const days = Number.isInteger(override) && override >= 0 ? override : undefined;
+    // Ask Stripe about the email only when a trial is otherwise due.
+    const billedBefore = checkoutTrialDays(held.length, days) > 0 && !!user.email && (await emailBilledBefore(user.email));
+    const trialDays = checkoutTrialDays(held.length, days, billedBefore);
+    if (trialDays > 0) params.set("subscription_data[trial_period_days]", String(trialDays));
+    const previous = held.find((r) => r.source === "stripe" && r.external_customer);
     if (previous?.external_customer) {
       params.set("customer", previous.external_customer);
       // Stripe Tax needs the customer's address; let Checkout save what the buyer enters onto the

@@ -9,6 +9,7 @@ import { openBillingPortal, reconcileEntitlements, startCheckout, storeManagemen
 import { nativePurchaseAvailable, purchaseNativePlan, purchasePlatform, restoreNativePurchases } from "../../lib/nativePurchase";
 import { SITE_ORIGIN } from "../../lib/pageMeta";
 import { useStorePrices } from "../../hooks/useStorePrices";
+import { useFreeMonth } from "../../hooks/useFreeMonth";
 
 export interface PurchaseAccount {
   /** Signed in to a real account (null while anonymous). */
@@ -34,7 +35,8 @@ const LINK = "min-h-11 inline-flex items-center rounded-lg px-1 underline-offset
  * The buy / manage / restore controls under the Plus pitch
  * (docs/monetization-spec.md §3.3): Stripe Checkout on the web, RevenueCat in
  * the apps, both ending in the same `entitlements` rows. Shows the two plans
- * (annual first), "Restore purchases" in the apps, "Manage subscription"
+ * (annual first; worded "1 month free, then …" when the purchase starts with
+ * the free month, `useFreeMonth`), "Restore purchases" in the apps, "Manage subscription"
  * (Customer Portal or the store's own settings), and the Terms / Privacy
  * links Apple's Schedule 2 requires on every paywall. The apps never link to
  * the web checkout.
@@ -46,6 +48,7 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const prices = useStorePrices();
+  const free = useFreeMonth();
 
   const priceFor = (plan: PlusPlan) =>
     prices.find((p) => p.plan === plan)?.priceString ?? formatUsd(plan === "annual" ? PLUS_ANNUAL_USD : PLUS_MONTHLY_USD, i18n.language);
@@ -64,7 +67,7 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
 
   const buy = (plan: PlusPlan) =>
     void act(plan, async () => {
-      track("checkout_started", { channel, plan, placement });
+      track("checkout_started", { channel, plan, placement, trial: free[plan] });
       if (native) {
         const outcome = await purchaseNativePlan(plan);
         if (outcome === "cancelled") return;
@@ -108,7 +111,7 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   const legalHref = (path: string) => (native ? `${SITE_ORIGIN}${path}` : path);
   const legal = (
     <p className="text-center text-xs leading-relaxed text-subtle">
-      {t("plus.legalNote")}{" "}
+      {t(free.annual || free.monthly ? "plus.legalNoteFreeMonth" : "plus.legalNote")}{" "}
       <a className={LINK} href={legalHref("/terms")} target="_blank" rel="noopener">
         {t("plus.terms")}
       </a>{" "}
@@ -144,10 +147,10 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   return (
     <div className="flex flex-col gap-2.5">
       <Button size="lg" block disabled={busy !== null} aria-busy={busy === "annual" || undefined} onClick={() => buy("annual")}>
-        {t("plus.subscribeAnnual", { price: priceFor("annual") })}
+        {t(free.annual ? "plus.subscribeAnnualFree" : "plus.subscribeAnnual", { price: priceFor("annual") })}
       </Button>
       <Button variant="secondary" size="lg" block disabled={busy !== null} aria-busy={busy === "monthly" || undefined} onClick={() => buy("monthly")}>
-        {t("plus.subscribeMonthly", { price: priceFor("monthly") })}
+        {t(free.monthly ? "plus.subscribeMonthlyFree" : "plus.subscribeMonthly", { price: priceFor("monthly") })}
       </Button>
       {native && (
         <Button variant="ghost" size="md" block disabled={busy !== null} aria-busy={busy === "restore" || undefined} onClick={restore}>
