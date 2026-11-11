@@ -508,12 +508,25 @@ The price ids and the prices do not change.
    card: the Checkout page reads "30 days free", the Slack line is
    "🆓 Free trial started", and the account page says "Renews on" the day
    the trial ends.
-2. **App Store Connect.** Subscriptions → Crossword Clash Plus → each of
-   `plus_monthly` and `plus_annual` → Subscription Prices → + →
-   **Create Introductory Offer** → all territories, no end date → type
-   **Free** → duration **1 month**. Apple gives it once per subscription
-   group per Apple ID. An introductory offer takes effect without an app
-   review, but the app's metadata must not promise it before it exists.
+2. **App Store Connect.** One command, with the API key `scripts/testflight.sh`
+   already uses (`ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, the `.p8` under
+   `~/.appstoreconnect/private_keys/`):
+
+   ```
+   pnpm appstore:intro-offers            # lists what it would create
+   pnpm appstore:intro-offers --apply    # creates the offers
+   ```
+
+   It adds a FREE_TRIAL / ONE_MONTH introductory offer to `plus_monthly` and
+   `plus_annual` in every territory each is sold in (the API takes one
+   territory per request), skips territories that already have an offer, and
+   can be run again after a partial failure. By hand it is Subscriptions →
+   Crossword Clash Plus → each product → Subscription Prices → + → Create
+   Introductory Offer → all territories, no end date → Free → 1 month. Apple
+   gives the offer once per subscription group per Apple ID. An introductory
+   offer takes effect without an app review. The script was written from
+   Apple's API reference and had not been run against the account when it
+   was committed, so read the dry run first.
 3. **Google Play.** Monetize → Subscriptions → each product → its base plan
    → **Add offer** → eligibility **New customer acquisition** ("never had
    this subscription") → one phase, **Free trial**, **1 month** → activate.
@@ -529,8 +542,9 @@ The price ids and the prices do not change.
    button while the store's own sheet shows the trial. So steps 2 and 3 can
    be done before or after the next app release.
 6. **Store listing.** `docs/app-store/description.txt` now mentions the free
-   month; paste it into the listing once step 2 is live (the Play
-   description names no price).
+   month. Apple only lets the description change with a new app version, so
+   it goes in with the next submission (the Play description names no
+   price).
 
 ## 4. Slack purchase alerts (#crossword-clash)
 
