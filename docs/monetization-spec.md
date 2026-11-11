@@ -33,7 +33,7 @@ Each has a recommendation; the reasoning is in the section named.
 | 7 | Reveal-letter rules | New feature; a reveal **disqualifies the solve from the daily leaderboard** and shows as 🟥 in the share block; free: 1 reveal per puzzle, rewarded ad +3, Plus unlimited | §1.1 |
 | 8 | When to ship AdMob | Build it after Plus (phase 2); **turn live ad units on only once the apps have ~300 DAU**, before that it cannot pay for its own review cycle | §1.10, §4 |
 | 9 | Stripe Tax and store programmes | Enrol in Apple's Small Business Program, set up the Google Play merchant profile, turn Stripe Tax on (0.5%/transaction, needs a tax registration decision) | §2.6 |
-| 10 | Free trial | **None at launch** (a trial hands out narrator minutes and Claude calls to churners); an introductory annual offer can come later | §2.6 |
+| 10 | Free trial | **First month free on both plans** (revised 2026-11-11; none at launch). The card or store account is taken at sign-up and first charged when the month ends; once per account on the web, once per store account in the apps | §2.6 |
 
 Open questions that are not decisions yet are listed in §5.
 
@@ -589,10 +589,24 @@ archive, synced progress, unlimited reveals and the studio editor for ever, and
 leaves narrator minutes and Claude drafting to the subscription or rewarded
 video. Same `entitlements` row with `expires_at null`, `product = 'supporter'`.
 
-**Free trial** (decision 10): none at launch. Apple and Google both support
-trials and introductory offers; the problem is ours, a trial hands narrator
-minutes and Claude calls to people who will cancel. An annual introductory
-price (first year $19.99) is the safer offer later.
+**Free trial** (decision 10, revised 2026-11-11): **the first month is free
+on both plans.** The launch decision was no trial, because a trial hands
+narrator minutes and Claude calls to people who will cancel; Andrew revised
+it because an immediate $3.99 charge was too much to ask while the game
+still needs players for a network effect. The yearly plan also charges only
+after the month. Mechanics: on the web, `create-checkout` sets
+`subscription_data[trial_period_days]` (`PLUS_TRIAL_DAYS` = 30,
+`checkoutTrialDays` in `purchaseEvents.ts`) for an account with no
+`entitlements` row and nothing for anyone else, and Checkout still collects
+the card; in the apps it is each store's own introductory offer (a 1-month
+free trial on `plus_monthly` and `plus_annual`, docs/plus-setup.md §3.8),
+which the stores give once per store account. The paywall says "1 month
+free, then …" only where the purchase will start that way (`useFreeMonth`).
+The exposure the launch decision named is still there and is bounded per
+trial by the same monthly allowances a subscriber has (60 narrator minutes,
+40 AI drafts) and overall by the narrator's global cap; a new account made
+after deleting one gets a new web trial. `STRIPE_TRIAL_DAYS=0` on the
+function turns the web trial off without a client deploy.
 
 **Prerequisites in the consoles:** Apple Paid Apps Agreement (Account Holder,
 App Store Connect → Business → Agreements; sandbox testing does not work until

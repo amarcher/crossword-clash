@@ -291,8 +291,8 @@ export interface StripeSubscriptionLike {
 }
 
 /**
- * Stripe subscription status → ours. `trialing` counts as active (no trial is
- * sold, but a goodwill trial from the dashboard should work); `past_due` is
+ * Stripe subscription status → ours. `trialing` counts as active (the free
+ * first month, `PLUS_TRIAL_DAYS`, and any goodwill trial from the dashboard); `past_due` is
  * Stripe's own retry window; everything else is not entitled.
  */
 export function stripeStatusToEntitlement(status: string): EntitlementStatus {
@@ -487,5 +487,25 @@ export function checkoutOrigin(requestOrigin: string | null | undefined, siteUrl
   const site = siteUrl.replace(/\/+$/, "");
   const origin = (requestOrigin ?? "").replace(/\/+$/, "");
   return origin === site || previewOrigin.test(origin) ? origin : site;
+}
+
+/**
+ * The free first month (Andrew, 2026-11-11: an immediate charge was too much
+ * to ask while the game still needs players). Both plans start with this many
+ * days at no charge; the card is taken at Checkout and first charged when the
+ * trial ends. The apps' trial is each store's own introductory offer.
+ */
+export const PLUS_TRIAL_DAYS = 30;
+
+/**
+ * How many free days a web Checkout starts with: the whole trial for a user
+ * who has never held an entitlement row, none for anyone who has (a lapsed
+ * subscriber, an earlier trial, a store purchase, a grant), so the free month
+ * is given once per account. `priorRows` is the count of the user's
+ * `entitlements` rows of any source, product or status. create-checkout
+ * decides with it; the paywall words its buttons with it.
+ */
+export function checkoutTrialDays(priorRows: number, days: number = PLUS_TRIAL_DAYS): number {
+  return priorRows > 0 ? 0 : days;
 }
 // --- MIRROR END ---

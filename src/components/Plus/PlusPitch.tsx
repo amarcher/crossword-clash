@@ -1,11 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { Archive, Check, Mic, PencilRuler, RefreshCw } from "lucide-react";
+import { Archive, Check, Gift, Mic, PencilRuler, RefreshCw } from "lucide-react";
 import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { useStorePrices } from "../../hooks/useStorePrices";
+import { useFreeMonth } from "../../hooks/useFreeMonth";
 
 /**
  * What Plus is, in one card: the four benefits and the two prices (annual
- * first, the one to push). Shared by the account sheet's Plus view and every
+ * first, the one to push), under a "first month is free" line when both
+ * plans start with the free month for this visitor. Shared by the account sheet's Plus view and every
  * gate's upsell (archive, studio, narrator). The purchase controls themselves
  * come from the caller: the web and the apps buy differently. A subscriber
  * gets the benefits without the plan tiles (`prices={false}`): the
@@ -22,6 +24,8 @@ export function PlusPitch({ children, prices = true }: { children?: React.ReactN
   const annualLabel = fromStore ? annual.priceString : formatUsd(PLUS_ANNUAL_USD, i18n.language);
   const monthlyLabel = fromStore ? monthly.priceString : formatUsd(PLUS_MONTHLY_USD, i18n.language);
   const saving = fromStore && monthly.price > 0 ? annualSavingPercent(monthly.price, annual.price) : annualSavingPercent();
+  const free = useFreeMonth();
+  const freeMonth = free.annual && free.monthly;
   const benefits = [
     { icon: Archive, text: t("plus.benefitArchive") },
     { icon: PencilRuler, text: t("plus.benefitStudio") },
@@ -40,6 +44,14 @@ export function PlusPitch({ children, prices = true }: { children?: React.ReactN
           </li>
         ))}
       </ul>
+      {prices && freeMonth && (
+        <p className="flex items-start gap-3 rounded-xl bg-gold-50 p-3 text-sm leading-snug text-ink">
+          <Gift className="mt-0.5 size-4 shrink-0 text-gold-700" aria-hidden="true" />
+          <span>
+            <strong className="font-semibold">{t("plus.freeMonthTitle")}</strong> {t("plus.freeMonthBody")}
+          </span>
+        </p>
+      )}
       {prices && (
       <dl className="grid grid-cols-2 gap-2.5">
         <div className="rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100">

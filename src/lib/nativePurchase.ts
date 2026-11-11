@@ -26,6 +26,56 @@ export interface NativePlanPrice {
   priceString: string;
   /** The same price as a number in the store's currency, for the annual saving. */
   price: number;
+  /** The store will start this plan with a free first month for this buyer (its own introductory offer). */
+  freeMonth: boolean;
+}
+
+/** The fields of a store's introductory offer `isFreeMonth` reads. */
+export interface IntroOfferLike {
+  price: number;
+  periodUnit: string;
+  periodNumberOfUnits: number;
+  cycles?: number;
+}
+
+/**
+ * Whether an introductory offer is "the first month free": no charge, for one
+ * month however the store spells it (1 month, 4 weeks, 28–31 days). Any other
+ * offer (a week's trial, a discounted first year) is not worded as a free
+ * month; the store's own sheet states it.
+ */
+export function isFreeMonth(intro: IntroOfferLike | null | undefined): boolean {
+  if (!intro || intro.price !== 0) return false;
+  const n = intro.periodNumberOfUnits * (intro.cycles && intro.cycles > 0 ? intro.cycles : 1);
+  switch (intro.periodUnit) {
+    case "MONTH":
+      return n === 1;
+    case "WEEK":
+      return n === 4;
+    case "DAY":
+      return n >= 28 && n <= 31;
+    default:
+      return false;
+  }
+}
+
+/** RevenueCat's INTRO_ELIGIBILITY_STATUS_INELIGIBLE: this store account has used its introductory offer. */
+const INTRO_INELIGIBLE = 1;
+
+/**
+ * The product ids whose introductory offer this store account can no longer
+ * have (iOS; Play only lists offers the buyer is eligible for, and answers
+ * "unknown" here). A failed check counts nobody out: the store's sheet is
+ * the final word on what is charged.
+ */
+async function introIneligible(productIds: string[]): Promise<Set<string>> {
+  if (productIds.length === 0) return new Set();
+  try {
+    const answer = await (await purchases()).p.checkTrialOrIntroductoryPriceEligibility({ productIdentifiers: productIds });
+    return new Set(productIds.filter((id) => answer?.[id]?.status === INTRO_INELIGIBLE));
+  } catch {
+    return new Set();
+  }
 }
 
 function platformKey(platform = Capacitor.getPlatform()): string | undefined {
@@ -111,10 +161,17 @@ export async function fetchNativePrices(): Promise<NativePlanPrice[]> {
   if (!nativePurchaseAvailable()) return [];
   try {
     const packages = await currentPackages();
-    return (Object.keys(PACKAGE_FOR_PLAN) as PlusPlan[])
+    const plans = (Object.keys(PACKAGE_FOR_PLAN) as PlusPlan[])
       .map((plan) => ({ plan, pkg: packages.find((p) => p.identifier === PACKAGE_FOR_PLAN[plan]) }))
-      .filter((x): x is { plan: PlusPlan; pkg: PurchasesPackage } => !!x.pkg)
-      .map(({ plan, pkg }) => ({ plan, priceString: pkg.product.priceString, price: pkg.product.price }));
+      .filter((x): x is { plan: PlusPlan; pkg: PurchasesPackage } => !!x.pkg);
+    const withFreeMonth = plans.filter(({ pkg }) => isFreeMonth(pkg.product.introPrice)).map(({ pkg }) => pkg.product.identifier);
+    const used = await introIneligible(withFreeMonth);
+    return plans.map(({ plan, pkg }) => ({
+      plan,
+      priceString: pkg.product.priceString,
+      price: pkg.product.price,
+      freeMonth: withFreeMonth.includes(pkg.product.identifier) && !used.has(pkg.product.identifier),
+    }));
   } catch {
     return [];
   }
