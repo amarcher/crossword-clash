@@ -43,6 +43,7 @@ export type AnalyticsEvent =
   | "challenge_accepted"
   | "live_bridge"
   | "leaderboard_viewed"
+  | "leaderboard_filter"
   /** A website visitor on iOS followed the App Store link. Param `placement`. */
   | "app_store_click"
   /** A phone visitor closed our own get-the-app banner (AppStoreBanner). Params `placement`, `store` (ios | android). */
