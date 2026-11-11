@@ -10,6 +10,7 @@ import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
 import { GameLayout } from "../components/Layout/GameLayout";
 import { PuzzleKeyboard } from "../components/CrosswordGrid/PuzzleKeyboard";
+import { HapticsSwitch } from "../components/SoloOptions";
 import { MultiplayerScoreboard } from "../components/Scoreboard/MultiplayerScoreboard";
 import { LockoutOverlay } from "../components/LockoutOverlay";
 import { CompletionModal } from "../components/CompletionModal";
@@ -412,17 +413,21 @@ export function MultiplayerPlayScreen() {
               onClose={() => setClueSheetOpen(false)}
               inputRef={gridInputRef}
               scoreboard={
-                isAsync ? (
-                  raceStatusPanel
-                ) : (
-                  <MultiplayerScoreboard
-                    players={multiplayerPlayers}
-                    totalCells={totalWhiteCells}
-                    isComplete={gameComplete}
-                    clueCountsByPlayer={clueCountsByPlayer}
-                    totalClues={puzzle.clues.length}
-                  />
-                )
+                <>
+                  {isAsync ? (
+                    raceStatusPanel
+                  ) : (
+                    <MultiplayerScoreboard
+                      players={multiplayerPlayers}
+                      totalCells={totalWhiteCells}
+                      isComplete={gameComplete}
+                      clueCountsByPlayer={clueCountsByPlayer}
+                      totalClues={puzzle.clues.length}
+                    />
+                  )}
+                  {/* The buzz on a refused letter is the device's setting, in a room as in solo. */}
+                  <HapticsSwitch className="ring-1 ring-line" />
+                </>
               }
               cluePanel={
                 <CluePanel

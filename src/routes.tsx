@@ -172,6 +172,8 @@ export const routes: RouteObject[] = [
             ? [
                 { path: "race", lazy: () => m.race().then((s) => ({ Component: s.RaceScreen })) },
                 { path: "race/friends", lazy: () => m.friends().then((s) => ({ Component: s.FriendsScreen })) },
+                // The "add me" link a player shares: one Add button for whoever opens it.
+                { path: "add/:username", lazy: () => m.addFriend().then((s) => ({ Component: s.AddFriendScreen })) },
               ]
             : []),
           // Community puzzles (docs/community-puzzles-spec.md), behind the launch switch: browse, an author's list, one puzzle's page.

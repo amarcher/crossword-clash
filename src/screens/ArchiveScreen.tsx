@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
-import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords, Trophy } from "lucide-react";
+import { leaderboardPath } from "../lib/dailyLeaderboard";
 import { PageShell } from "../components/PageShell";
-import { Button, Eyebrow } from "../components/ui";
+import { Button, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusNudge } from "../components/Plus/PlusNudge";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
@@ -157,7 +158,13 @@ export function ArchiveScreen() {
   const resume = useMemo(() => resumableItem(items), [items]);
 
   // Calendar state: the month shown and the day whose puzzles are listed.
-  const [selected, setSelected] = useState<{ day: string; month: string } | null>(null);
+  // A link may name the day to open on (`?day=YYYY-MM-DD`, from a past
+  // leaderboard's "Play this puzzle"); a day yet to come is ignored.
+  const [search] = useSearchParams();
+  const [selected, setSelected] = useState<{ day: string; month: string } | null>(() => {
+    const day = search.get("day");
+    return day && /^\d{4}-\d{2}-\d{2}$/.test(day) && day <= today ? { day, month: monthOf(day) } : null;
+  });
   const opening = selected ?? defaultSelection(items, today);
   const month = opening?.month ?? monthOf(today);
   const selectedDay = opening?.day ?? null;
@@ -475,6 +482,17 @@ export function ArchiveScreen() {
                               {it.theme ? ` · ${it.theme}` : ""}
                             </p>
                           </div>
+                          {!locked && !tv && (
+                            // That day's board: final for a past day, with the viewer's
+                            // time slotted in where it would have placed.
+                            <TransitionLink
+                              to={leaderboardPath(it.slot, it.day === today ? null : it.day)}
+                              aria-label={t("archive.leaderboardLabel", { title: it.title })}
+                              className="grid size-11 shrink-0 place-items-center rounded-xl text-gold-500 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500"
+                            >
+                              <Trophy className="size-5" aria-hidden="true" />
+                            </TransitionLink>
+                          )}
                           {locked ? (
                             <Lock className="size-4 shrink-0 text-subtle" aria-hidden="true" />
                           ) : tv ? (
@@ -499,7 +517,7 @@ export function ArchiveScreen() {
                               {busy === it.identity
                                 ? t("archive.loadingPuzzle")
                                 : it.status === "solved"
-                                  ? t("archive.playAgain")
+                                  ? t("archive.view")
                                   : it.status === "inprogress"
                                     ? t("archive.resume")
                                     : t("archive.play")}

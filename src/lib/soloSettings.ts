@@ -2,7 +2,8 @@
  * Solo play settings, remembered per device (localStorage
  * `crossword-clash:solo-settings`).
  *
- * One switch so far: **Autocheck**. On — the default, and what every solo
+ * Two switches: **Autocheck** and **Haptics** (a buzz on a refused letter,
+ * see haptics.ts; on by default). Autocheck: On — the default, and what every solo
  * time on a leaderboard and every play-insights row before 2026-10-28 was
  * made with — a wrong letter is refused on the spot (the square flashes and
  * nothing is written). Off, letters are written as typed, right or wrong, and
@@ -20,9 +21,15 @@ import { useCallback, useSyncExternalStore } from "react";
 export interface SoloSettings {
   /** Refuse wrong letters as they are typed (true), or type freely and check later (false). */
   autocheck: boolean;
+  /**
+   * Buzz when a letter is refused (haptics.ts). On by default; unlike
+   * Autocheck it applies in a room as well, since it changes how a refusal is
+   * felt and nothing about the game.
+   */
+  haptics: boolean;
 }
 
-export const DEFAULT_SOLO_SETTINGS: Readonly<SoloSettings> = Object.freeze({ autocheck: true });
+export const DEFAULT_SOLO_SETTINGS: Readonly<SoloSettings> = Object.freeze({ autocheck: true, haptics: true });
 
 export const SOLO_SETTINGS_KEY = "crossword-clash:solo-settings";
 
@@ -33,6 +40,7 @@ export function sanitizeSoloSettings(raw: unknown): SoloSettings {
   const obj = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
   return {
     autocheck: typeof obj.autocheck === "boolean" ? obj.autocheck : DEFAULT_SOLO_SETTINGS.autocheck,
+    haptics: typeof obj.haptics === "boolean" ? obj.haptics : DEFAULT_SOLO_SETTINGS.haptics,
   };
 }
 
@@ -102,10 +110,13 @@ export function resetSoloSettingsForTests(): void {
 const serverSnapshot = () => DEFAULT_SOLO_SETTINGS as SoloSettings;
 
 /** The device's solo settings, live, plus a setter per switch. */
-export function useSoloSettings(): SoloSettings & { setAutocheck: (on: boolean) => void } {
+export function useSoloSettings(): SoloSettings & { setAutocheck: (on: boolean) => void; setHaptics: (on: boolean) => void } {
   const settings = useSyncExternalStore(subscribeSoloSettings, loadSoloSettings, serverSnapshot);
   const setAutocheck = useCallback((on: boolean) => {
     updateSoloSettings({ autocheck: on });
   }, []);
-  return { ...settings, setAutocheck };
+  const setHaptics = useCallback((on: boolean) => {
+    updateSoloSettings({ haptics: on });
+  }, []);
+  return { ...settings, setAutocheck, setHaptics };
 }

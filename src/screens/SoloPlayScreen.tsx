@@ -16,7 +16,7 @@ import { SolvedStrip } from "../components/FinishedBar/SolvedStrip";
 import { useConfirm } from "../components/ConfirmDialog";
 import { solvedSeconds } from "../lib/solvedPuzzles";
 import { AccountControl } from "../components/Account/AccountControl";
-import { AutocheckSwitch, SoloOptions } from "../components/SoloOptions";
+import { AutocheckSwitch, HapticsSwitch, SoloOptions } from "../components/SoloOptions";
 import { useSoloSettings } from "../lib/soloSettings";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -659,6 +659,7 @@ export function SoloPlayScreen() {
                     isComplete={isComplete}
                   />
                   <AutocheckSwitch autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="ring-1 ring-line" />
+                  <HapticsSwitch className="ring-1 ring-line" />
                 </>
               }
               cluePanel={

@@ -36,6 +36,7 @@
                 <data android:path="/join" />
                 <data android:pathPrefix="/daily/" />
                 <data android:pathPrefix="/puzzles/" />
+                <data android:pathPrefix="/add/" />
             </intent-filter>
 
         </activity>

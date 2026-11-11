@@ -231,6 +231,21 @@ describe("client", () => {
     expect(calls.find((c) => c.op === "neq")?.args).toEqual(["user_id", "me"]);
   });
 
+  it("builds and reads the add-me link, and finds the account a username belongs to", async () => {
+    expect(friends.friendLinkPath("archer_1")).toBe("/add/archer_1");
+    expect(friends.friendLink("archer_1")).toBe(`${window.location.origin}/add/archer_1`);
+    expect(friends.friendLinkUsername("archer_1")).toBe("archer_1");
+    expect(friends.friendLinkUsername(" @Archer ")).toBe("Archer");
+    for (const bad of [null, undefined, "", "ab", "a".repeat(21), "arch er", "arch/er", "árcher"]) {
+      expect(friends.friendLinkUsername(bad)).toBeNull();
+    }
+
+    results = [{ data: { user_id: "a", username: "Alicia" }, error: null }, { data: null, error: null }];
+    expect(await friends.fetchProfileByUsername("ALICIA")).toEqual({ userId: "a", username: "Alicia" });
+    expect(calls.find((c) => c.op === "eq")?.args).toEqual(["username_lower", "alicia"]);
+    expect(await friends.fetchProfileByUsername("nobody")).toBeNull();
+  });
+
   it("sends a request by username through the RPC, nudges the recipient's channel, and surfaces each outcome and refusal", async () => {
     // Each request is the RPC answer, then the public profile lookup that finds the channel to nudge.
     results = [

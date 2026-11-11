@@ -41,6 +41,11 @@ export interface DailyResultEntry {
 export interface RankedDailyEntry extends DailyResultEntry {
   /** 1-based placement using standard competition ranking ("1224"). */
   rank: number;
+  /**
+   * The viewer's own time shown on a board it was never posted to: where it
+   * would have placed (see `withUnpostedTime`). Display only; no row exists.
+   */
+  unposted?: boolean;
 }
 
 /**
@@ -104,8 +109,57 @@ export function isTodaysDaily(
 }
 
 /** The leaderboard route for a slot; the mini keeps its original URL. */
-export function leaderboardPath(slot: DailySlot): string {
-  return slot === "mini" ? "/daily/leaderboard" : `/daily/leaderboard/${slot}`;
+export function leaderboardPath(slot: DailySlot, day?: string | null): string {
+  const path = slot === "mini" ? "/daily/leaderboard" : `/daily/leaderboard/${slot}`;
+  return day ? `${path}?day=${day}` : path;
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The past day a board link asks for (`?day=YYYY-MM-DD`), or null for today's
+ * board: a missing, malformed or impossible date, today itself, a day yet to
+ * come, and a day before the first published daily (`first`, when known) all
+ * mean today. Days are local calendar days, as everywhere on the board.
+ */
+export function boardDay(param: string | null | undefined, today: string, first?: string | null): string | null {
+  if (!param || !DAY.test(param)) return null;
+  const [y, m, d] = param.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (dayKey(date) !== param) return null; // 2026-02-31 and the like
+  if (param >= today) return null;
+  if (first && param < first) return null;
+  return param;
+}
+
+/** `day` moved by `delta` calendar days (local), as "YYYY-MM-DD". */
+export function shiftDay(day: string, delta: number): string {
+  const [y, m, d] = day.split("-").map(Number);
+  return dayKey(new Date(y, m - 1, d + delta));
+}
+
+/**
+ * Where a time would have placed on a board it is not on: one past every
+ * faster time (a tie shares the rank), out of the board plus this one.
+ */
+export function wouldHaveRanked(entries: readonly DailyResultEntry[], seconds: number): { rank: number; of: number } {
+  return { rank: 1 + entries.filter((e) => e.seconds < seconds).length, of: entries.length + 1 };
+}
+
+/**
+ * A board with the viewer's unposted time slotted in where it would have
+ * placed, marked `unposted`. The posted rows keep their own ranks: nothing
+ * about the board changes, the viewer only sees where they would stand
+ * (Andrew, 2026-11-10: a past day's board "doesn't write to it because you
+ * only have that day to do the daily"). A viewer already on the board gets
+ * the board back unchanged.
+ */
+export function withUnpostedTime(entries: readonly RankedDailyEntry[], mine: DailyResultEntry | null): RankedDailyEntry[] {
+  if (!mine || entries.some((e) => e.userId === mine.userId)) return [...entries];
+  const { rank } = wouldHaveRanked(entries, mine.seconds);
+  const at = entries.findIndex((e) => e.seconds > mine.seconds);
+  const row: RankedDailyEntry = { ...mine, rank, unposted: true };
+  return at < 0 ? [...entries, row] : [...entries.slice(0, at), row, ...entries.slice(at)];
 }
 
 /**
@@ -337,16 +391,23 @@ export async function fetchDailyLeaderboard(
   day: string,
   slot: DailySlot = "mini",
   limit = 50,
+  /**
+   * Only these players' rows (the friends-only board: the viewer and their
+   * friends), ranked among themselves. Asked of the server, so a friend
+   * outside the fastest `limit` is still found. An empty list is an empty board.
+   */
+  onlyUsers?: readonly string[] | null,
 ): Promise<RankedDailyEntry[]> {
   if (!supabase) return [];
+  if (onlyUsers && onlyUsers.length === 0) return [];
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("daily_results")
       .select("user_id, display_name, mode, seconds, autocheck")
       .eq("day", day)
-      .eq("slot", slot)
-      .order("seconds", { ascending: true })
-      .limit(limit);
+      .eq("slot", slot);
+    if (onlyUsers) query = query.in("user_id", [...onlyUsers]);
+    const { data, error } = await query.order("seconds", { ascending: true }).limit(limit);
     if (error || !data) return [];
     return rankEntries(
       data.map((r) => ({
