@@ -13,6 +13,8 @@ export interface SoloTimerApi {
   pause: () => boolean;
   resume: () => void;
   save: () => boolean;
+  /** A new attempt at the puzzle on screen: the clock back to zero and running, the finish forgotten. */
+  restart: () => void;
 }
 interface Clock {
   key: string;
@@ -39,6 +41,14 @@ export function useSoloTimer(
   isComplete: boolean,
   assisted = false,
   startOnLoad: (key: string) => boolean = () => true,
+  /**
+   * The puzzle was opened already solved (GameContext.reopenedSolved): the
+   * clock is its recorded time and the finish is not a new one. Passed in,
+   * not read from the single stored timer record, because a puzzle switched
+   * to inside the mounted screen has that record rewritten by the previous
+   * puzzle's cleanup just before this one's clock is built.
+   */
+  solved: { key: string; seconds: number } | null = null,
 ): SoloTimerApi {
   const key = useMemo(() => puzzle ? puzzleIdentity(puzzle) : null, [puzzle]);
   const explicitStart = useRef<string | null>(null);
@@ -47,6 +57,8 @@ export function useSoloTimer(
   initRef.current = startOnLoad;
   const assistedRef = useRef(assisted);
   assistedRef.current = assisted;
+  const solvedRef = useRef(solved);
+  solvedRef.current = solved;
   const [saveFailed, setSaveFailed] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SoloCompletionResult | null>(null);
@@ -70,22 +82,38 @@ export function useSoloTimer(
     setRunning(true);
   }, []);
 
+  const restart = useCallback(() => {
+    const clock = clockRef.current;
+    if (!clock) return;
+    clock.ms = 0;
+    clock.completed = false;
+    clock.anchor = document.visibilityState === "hidden" ? null : Date.now();
+    explicitStart.current = clock.anchor === null ? null : clock.key;
+    setResult(null);
+    setFresh(false);
+    setRunning(clock.anchor !== null);
+    setSaveFailed(!checkpoint(clock));
+  }, []);
+
   useEffect(() => {
     if (!key) { clockRef.current = null; setRunning(false); setResult(null); return; }
     const progress = getProgress(key);
     const saved = loadSoloTimer();
     const previous = clockRef.current;
     const same = previous?.key === key;
-    const completed = same ? previous.completed : !progress && saved?.key === key && saved.completed;
+    const reopened = !same && solvedRef.current?.key === key ? solvedRef.current : null;
+    const completed = same ? previous.completed : !!reopened || (!progress && saved?.key === key && saved.completed);
     // Preserve the initial explicit start through React StrictMode's effect replay.
     const start = same ? previous.anchor !== null || explicitStart.current === key : initRef.current(key);
     explicitStart.current = start ? key : null;
     const clock: Clock = {
-      key, ms: same ? elapsed(previous) : progress?.elapsedMs ?? (saved?.key === key ? saved.elapsedMs : 0),
+      key, ms: same ? elapsed(previous) : reopened ? reopened.seconds * 1000 : progress?.elapsedMs ?? (saved?.key === key ? saved.elapsedMs : 0),
       anchor: !completed && start && document.visibilityState !== "hidden" ? Date.now() : null,
       completed: !!completed,
     };
     clockRef.current = clock;
+    // The stored record follows the solved puzzle, so a reload restores it as finished.
+    if (reopened) checkpoint(clock);
     setRunning(clock.anchor !== null);
     setResult(null);
     setFresh(false);
@@ -118,5 +146,5 @@ export function useSoloTimer(
     setResult(wasCompleted ? describeRecordedCompletion(key, seconds) : recordSoloCompletion(key, seconds, new Date(), { assisted: assistedRef.current }));
   }, [key, isComplete]);
 
-  return { getElapsedSeconds, running, result, fresh, pause, resume, save, saveFailed };
+  return { getElapsedSeconds, running, result, fresh, pause, resume, save, saveFailed, restart };
 }

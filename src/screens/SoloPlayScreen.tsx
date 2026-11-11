@@ -12,6 +12,9 @@ import { Scoreboard } from "../components/Scoreboard/Scoreboard";
 import { CompletionModal } from "../components/CompletionModal";
 import { SoloTimer } from "../components/SoloTimer";
 import { FinishedBar } from "../components/FinishedBar";
+import { SolvedStrip } from "../components/FinishedBar/SolvedStrip";
+import { useConfirm } from "../components/ConfirmDialog";
+import { solvedSeconds } from "../lib/solvedPuzzles";
 import { AccountControl } from "../components/Account/AccountControl";
 import { AutocheckSwitch, SoloOptions } from "../components/SoloOptions";
 import { useSoloSettings } from "../lib/soloSettings";
@@ -120,11 +123,16 @@ export function SoloPlayScreen() {
 
   // Elapsed timer + personal-best / streak tracking (solo only). A finish with
   // a revealed square is "assisted": solved, but no record and no streak.
-  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed } = useSoloTimer(
+  // Opened already solved (GameContext.reopenedSolved): the grid is the
+  // solution and the visit is a look at it, not a finish — nothing below
+  // records, posts or reports it. "Clear and solve again" ends that state.
+  const reopened = !!key && game.reopenedSolved?.key === key;
+  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
     consumeSoloStart,
+    game.reopenedSolved,
   );
   const paused = !!puzzle && !isComplete && !timerRunning;
   const inputAllowed = useRef(false);
@@ -204,7 +212,7 @@ export function SoloPlayScreen() {
     wrongLetters,
     isComplete,
     mode: "solo",
-    active: timerRunning || isComplete,
+    active: !reopened && (timerRunning || isComplete),
     source: isDaily ? "daily" : puzzle?.origin === "nyt-bookmarklet" ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
     signedIn: !!user && !user.is_anonymous,
     autocheck: !usedFreeTyping,
@@ -212,11 +220,16 @@ export function SoloPlayScreen() {
   // The finish is also parked in context as a pending result, so the board
   // can await the round trip instead of racing it (audit §3, item 9).
   const dailySubmittedRef = useRef(false);
+  // Whether this puzzle had a recorded finish when the attempt on screen began.
+  const solvedBeforeRef = useRef(false);
   const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
-    if (!dailySlot || !user) return;
+    if (reopened || !dailySlot || !user) return;
     dailySubmittedRef.current = true;
+    // A second solve of a puzzle already solved is made knowing the answers:
+    // it may set a personal best, it never goes on the day's board.
+    if (freshResult && solvedBeforeRef.current) return;
     // A finish that used Reveal posts no time: the board is for solves.
     if (soloResult.assisted) return;
     const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
@@ -227,7 +240,7 @@ export function SoloPlayScreen() {
       return result.settled;
     });
     setPendingDailyResult(pending);
-  }, [soloResult, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
+  }, [soloResult, freshResult, reopened, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
   // The share block's red squares (shareBlock.ts): with Autocheck on, the
   // squares where a wrong letter was refused; off, every square a check
@@ -237,8 +250,11 @@ export function SoloPlayScreen() {
   // "Up next" moves the next daily into THIS screen, so everything latched
   // "once per puzzle" above resets when the puzzle changes.
   const puzzleKey = puzzle ? puzzleIdentity(puzzle) : null;
+  // ...and when the same puzzle is started over ("Clear and solve again").
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     dailySubmittedRef.current = false;
+    solvedBeforeRef.current = !!puzzleKey && solvedSeconds(puzzleKey) !== null;
     historyRecordedRef.current = false;
     completionReportedRef.current = false;
     setServerOutcome(null);
@@ -247,7 +263,7 @@ export function SoloPlayScreen() {
     const saved = puzzleKey ? getProgress(puzzleKey) : null;
     setUsedFreeTyping(!!saved?.usedFreeTyping);
     setFlaggedCells(saved?.flaggedCells ?? []);
-  }, [puzzleKey]);
+  }, [puzzleKey, attempt]);
   // Declared after the reset above so a puzzle change re-latches in order.
   useEffect(() => {
     if ((!autocheck && !isComplete) || wrong > 0) setUsedFreeTyping(true);
@@ -396,6 +412,7 @@ export function SoloPlayScreen() {
   useEffect(() => {
     if (!isComplete || completionReportedRef.current) return;
     completionReportedRef.current = true;
+    if (reopened) return;
     track("puzzle_completed", {
       mode: "solo",
       origin: puzzle?.origin,
@@ -405,16 +422,16 @@ export function SoloPlayScreen() {
       autocheck: !usedFreeTyping,
       assisted,
     });
-  }, [isComplete, puzzle, totalWhiteCells, getElapsedSeconds, usedFreeTyping, assisted]);
+  }, [isComplete, reopened, puzzle, totalWhiteCells, getElapsedSeconds, usedFreeTyping, assisted]);
 
   // NYT-bookmarklet return loop: finishing an imported NYT puzzle rolls the
   // NYT streak (same-day repeats/reloads are no-ops) and the modal nudges
   // "same time tomorrow". Solo only needs the finish, not a server round-trip.
   const [nytStreak, setNytStreak] = useState<number | null>(null);
   useEffect(() => {
-    if (!isComplete || !fromNyt || nytStreak !== null) return;
+    if (!isComplete || reopened || !fromNyt || nytStreak !== null) return;
     setNytStreak(recordNytPlay().current);
-  }, [isComplete, fromNyt, nytStreak]);
+  }, [isComplete, reopened, fromNyt, nytStreak]);
 
   const handleExit = useCallback(() => {
     pause();
@@ -451,6 +468,23 @@ export function SoloPlayScreen() {
   }, [setCompletionModalDismissed, account]);
 
   const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
+
+  // The explicit way back to an empty grid (Andrew, 2026-11-10): a solved
+  // puzzle stays solved until the solver asks, and confirms, to do it again.
+  const confirm = useConfirm();
+  const restartSolo = game.restartSolo;
+  const handleSolveAgain = useCallback(async () => {
+    const ok = await confirm({
+      title: t("playing.solveAgainTitle"),
+      body: t("playing.solveAgainBody"),
+      confirmLabel: t("playing.solveAgainConfirm"),
+    });
+    if (!ok || !restartSolo()) return;
+    restartTimer();
+    setAttempt((n) => n + 1);
+    track("solo_solve_again", { size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined });
+    requestAnimationFrame(() => gridInputRef.current?.focus());
+  }, [confirm, t, restartSolo, restartTimer, puzzle]);
 
   // "Up next" (audit §2, item 8): today's other dailies, then yesterday's.
   // A daily loads straight into this screen, the same path the menu's
@@ -552,6 +586,9 @@ export function SoloPlayScreen() {
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
             </div>
+            {isComplete && (
+              <SolvedStrip onSolveAgain={handleSolveAgain} />
+            )}
           </>
         }
         grid={

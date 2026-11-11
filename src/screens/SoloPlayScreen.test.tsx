@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 import { GameProvider, useGame } from "../contexts/GameContext";
 import { MultiplayerProvider, useMultiplayerContext } from "../contexts/MultiplayerContext";
+import { ConfirmProvider } from "../components/ConfirmDialog";
 import { SoloPlayScreen } from "./SoloPlayScreen";
 import { SOLO_SETTINGS_KEY, resetSoloSettingsForTests } from "../lib/soloSettings";
 import { loadSoloStats } from "../lib/soloStats";
@@ -79,12 +80,14 @@ function Probe() {
 async function renderSolo() {
   const utils = render(
     <MemoryRouter>
-      <GameProvider>
-        <MultiplayerProvider>
-          <Probe />
-          <SoloPlayScreen />
-        </MultiplayerProvider>
-      </GameProvider>
+      <ConfirmProvider>
+        <GameProvider>
+          <MultiplayerProvider>
+            <Probe />
+            <SoloPlayScreen />
+          </MultiplayerProvider>
+        </GameProvider>
+      </ConfirmProvider>
     </MemoryRouter>,
   );
   await act(async () => {
@@ -317,7 +320,7 @@ describe("pause and resume", () => {
     expect(localStorage.getItem("crossword-clash:solo-landing")).toBe("menu");
     expect(JSON.parse(localStorage.getItem("crossword-clash-solo")!).playerCells["0,0"].letter).toBe("C");
     view.unmount();
-    render(<MemoryRouter><GameProvider><MultiplayerProvider><Probe /><SoloPlayScreen /></MultiplayerProvider></GameProvider></MemoryRouter>);
+    render(<MemoryRouter><ConfirmProvider><GameProvider><MultiplayerProvider><Probe /><SoloPlayScreen /></MultiplayerProvider></GameProvider></ConfirmProvider></MemoryRouter>);
     expect(screen.getByRole("dialog", { name: "Paused" })).toBeTruthy();
     expect(game.playerCells["0,0"].letter).toBe("C");
   });
@@ -376,4 +379,117 @@ it("a signed-in solver with the default setting posts after the preference resol
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
   await act(async () => { resolve(true); });
   await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
+});
+
+describe("a solved puzzle stays solved", () => {
+  const completions = () => track.mock.calls.filter(([name]) => name === "puzzle_completed").length;
+  const filledCount = () => screen.getAllByRole("gridcell").filter((el) => /, [A-Z]$/.test(el.getAttribute("aria-label") ?? "")).length;
+  const reopen = () => act(async () => { await game.handleSoloPuzzleLoaded({ ...puzzle }); });
+  // A finish in zero seconds records no best time, so the solve takes 42 s.
+  const solve = async () => {
+    type("catbeta");
+    const spy = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 42_000);
+    type("o");
+    spy.mockRestore();
+    await screen.findByRole("dialog", { name: "Puzzle complete" });
+  };
+  const clearAndRedo = async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Clear & redo" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Clear the grid" }));
+    await waitFor(() => expect(filledCount()).toBe(0));
+  };
+
+  it("reopens on its filled grid, says so, and the visit is not a finish", async () => {
+    // Andrew, 2026-11-10: a solved puzzle opened empty again, which read as "not solved yet".
+    await renderSolo();
+    await solve();
+    expect(completions()).toBe(1);
+    const best = loadSoloStats().bestTimes;
+
+    await reopen(); // the menu's tile, the archive, a link: any way back in
+    expect(filledCount()).toBe(8);
+    expect(cell(1, 0).getAttribute("aria-label")).toBe("Row 2, Column 1, A");
+    expect(screen.queryByRole("dialog", { name: "Puzzle complete" })).toBeNull();
+    expect(within(screen.getByTestId("solved-strip")).getByText("You solved this")).toBeTruthy();
+    expect(screen.getByTestId("finished-bar")).toBeTruthy();
+    expect(Object.values(best)).toEqual([42]);
+    expect(game.reopenedSolved).toMatchObject({ seconds: 42 });
+    expect(screen.getByLabelText("Solved in 0:42")).toBeTruthy();
+    // Looking at it records nothing: no second finish, the same best time.
+    expect(completions()).toBe(1);
+    expect(loadSoloStats().bestTimes).toEqual(best);
+    // The keys do nothing on a solved grid.
+    type("x");
+    expect(mp.wrongLetters).toBe(0);
+  });
+
+  it("is cleared only by the explicit action, after a confirmation, and can then be solved again", async () => {
+    await renderSolo();
+    await solve();
+    await reopen();
+
+    // Cancel keeps the grid.
+    fireEvent.click(screen.getByRole("button", { name: "Clear & redo" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Clear the grid" })).toBeNull());
+    expect(filledCount()).toBe(8);
+
+    await clearAndRedo();
+    expect(screen.queryByTestId("solved-strip")).toBeNull();
+    expect(game.reopenedSolved).toBeNull();
+    expect(track).toHaveBeenCalledWith("solo_solve_again", expect.anything());
+
+    await solve();
+    expect(completions()).toBe(2);
+  });
+
+  it("a new attempt with a letter in it is what comes back, not the solved grid", async () => {
+    await renderSolo();
+    await solve();
+    await reopen();
+    await clearAndRedo();
+    type("c");
+    await reopen();
+    expect(filledCount()).toBe(1);
+    expect(game.reopenedSolved).toBeNull();
+    expect(screen.queryByTestId("solved-strip")).toBeNull();
+  });
+
+  it("a cleared grid left without a letter is the solved puzzle again", async () => {
+    await renderSolo();
+    await solve();
+    await reopen();
+    await clearAndRedo();
+    await reopen();
+    expect(filledCount()).toBe(8);
+    expect(screen.getByTestId("solved-strip")).toBeTruthy();
+  });
+
+  it("a challenge link asks for a fresh attempt even at a solved puzzle", async () => {
+    await renderSolo();
+    await solve();
+    await act(async () => { await game.handleSoloPuzzleLoaded({ ...puzzle }, undefined, { replay: true }); });
+    // (The challenge page is another route; the grid is read from the context here.)
+    expect(Object.keys(game.playerCells)).toEqual([]);
+    expect(game.reopenedSolved).toBeNull();
+  });
+
+  it("a second solve of today's daily is not posted to the board", async () => {
+    posting.user = { id: "me", is_anonymous: false } as User;
+    posting.daily = true;
+    await renderSolo();
+    act(() => game.setDisplayName("Remembered name"));
+    await solve();
+    await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
+    const first = game.pendingDailyResult;
+    expect(posting.preference).toHaveBeenCalledTimes(1);
+
+    await reopen(); // a look at the solved daily asks the board nothing
+    expect(posting.preference).toHaveBeenCalledTimes(1);
+
+    await clearAndRedo();
+    await solve();
+    expect(posting.preference).toHaveBeenCalledTimes(1);
+    expect(game.pendingDailyResult).toBe(first);
+  });
 });
