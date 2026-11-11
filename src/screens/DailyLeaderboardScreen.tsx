@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, Flame, Loader2, Swords, Trophy, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
 import { Button, Card, Eyebrow } from "../components/ui";
@@ -12,16 +12,22 @@ import { useMediaQuery } from "../hooks/useMediaQuery";
 import { DAILY_SLOTS, isDailySlot, type DailySlot, displayTheme } from "../lib/dailyFeed";
 import type { DailyMini } from "../lib/dailyMinis";
 import {
+  boardDay,
   boardPostsHere,
   fetchDailyLeaderboard,
   mergeOwnResult,
   pendingResultFor,
+  shiftDay,
   signDailyResult,
   dailyPostingNotice,
   todayKey,
   updateDailyDisplayName,
+  withUnpostedTime,
   type RankedDailyEntry,
 } from "../lib/dailyLeaderboard";
+import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
+import { friendsEnabled } from "../lib/friends";
+import { useFriends } from "../contexts/FriendsContext";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
@@ -62,6 +68,27 @@ const WIDE_GRID: Record<number, { grid: string; width: ShellWidth }> = {
   3: { grid: "lg:grid-cols-3 lg:gap-6", width: "7xl" },
 };
 
+/** Whether the board shows only the viewer and their friends; remembered per device. */
+const FRIENDS_ONLY_KEY = "crossword-clash:board-friends-only";
+function readFriendsOnly(): boolean {
+  try {
+    return localStorage.getItem(FRIENDS_ONLY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeFriendsOnly(on: boolean) {
+  try {
+    if (on) localStorage.setItem(FRIENDS_ONLY_KEY, "1");
+    else localStorage.removeItem(FRIENDS_ONLY_KEY);
+  } catch {
+    // A blocked store only costs the memory of the choice.
+  }
+}
+
+const STEP_BUTTON =
+  "grid size-11 shrink-0 place-items-center rounded-xl text-ink-soft hover:bg-surface-sunken active:bg-line disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-brand-500";
+
 /** Message panel used for the loading / empty / offline states. */
 function BoardMessage({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -97,7 +124,67 @@ export function DailyLeaderboardScreen() {
   const routeSlot: DailySlot = isDailySlot(params.slot) ? params.slot : "mini";
   const wide = useMediaQuery(LG_QUERY);
   const { daily: streak } = useStreaks();
-  const day = todayKey();
+  const { user } = useAuth();
+  const { i18n } = useTranslation();
+  const today = todayKey();
+
+  // Past boards (Andrew, 2026-11-10): `?day=YYYY-MM-DD` shows that day's
+  // board, read-only. The daily index names the day's puzzles (title, theme
+  // and the identity the viewer's own time is filed under) and bounds how far
+  // back the stepper goes; until it answers, a past day still shows its rows.
+  const [search, setSearch] = useSearchParams();
+  const [index, setIndex] = useState<DailyIndexEntry[] | null>(() => knownPublishedIndex(today));
+  useEffect(() => {
+    let alive = true;
+    void loadPublishedIndex(today).then((entries) => {
+      if (alive && entries) setIndex(entries);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [today]);
+  const first = useMemo(() => (index && index.length > 0 ? index.reduce((min, e) => (e.day < min ? e.day : min), index[0].day) : null), [index]);
+  const pastDay = boardDay(search.get("day"), today, first);
+  const day = pastDay ?? today;
+  const past = pastDay !== null;
+  const pastBySlot = useMemo(() => {
+    const bySlot: Partial<Record<DailySlot, DailyIndexEntry>> = {};
+    if (pastDay && index) for (const e of index) if (e.day === pastDay) bySlot[e.slot] = e;
+    return bySlot;
+  }, [pastDay, index]);
+  const goToDay = useCallback(
+    (next: string) => {
+      const params = new URLSearchParams(search);
+      if (next >= today) params.delete("day");
+      else params.set("day", next);
+      setSearch(params);
+    },
+    [search, setSearch, today],
+  );
+  const dayLabel = useMemo(() => {
+    const [y, m, d] = day.split("-").map(Number);
+    return new Intl.DateTimeFormat(i18n.language, { weekday: "short", month: "short", day: "numeric" }).format(new Date(y, m - 1, d));
+  }, [day, i18n.language]);
+
+  // Friends only (same day): the viewer and their friends, ranked among
+  // themselves. Offered once there is a friend to show; remembered per device.
+  const friends = useFriends();
+  const friendIds = useMemo(
+    () => (friendsEnabled() && friends.active ? friends.friendships.friends.map((f) => f.userId) : []),
+    [friends.active, friends.friendships.friends],
+  );
+  const canFilter = !!user && friendIds.length > 0;
+  const [friendsOnly, setFriendsOnly] = useState(readFriendsOnly);
+  const chooseFriendsOnly = useCallback(
+    (on: boolean) => {
+      setFriendsOnly(on);
+      writeFriendsOnly(on);
+      track("leaderboard_filter", { friends_only: on, slot: routeSlot });
+    },
+    [routeSlot],
+  );
+  const only = useMemo(() => (canFilter && friendsOnly && user ? [user.id, ...friendIds] : null), [canFilter, friendsOnly, user, friendIds]);
+  const onlyKey = only ? only.join(",") : "";
 
   // Undefined while a feed answers; null when the slot has nothing today.
   const dailies: Record<DailySlot, DailyMini | null | undefined> = {
@@ -110,13 +197,15 @@ export function DailyLeaderboardScreen() {
     if (supabase) track("leaderboard_viewed", { day, slot: routeSlot });
   }, [day, routeSlot]);
 
-  // Wide: every slot with a puzzle today (a feed still answering keeps its
-  // column until it says null, like the menu's tiles). Phone: the route's.
-  const wideSlots = DAILY_SLOTS.filter((slot) => dailies[slot] !== null);
+  // Wide: every slot with a puzzle that day (today, a feed still answering
+  // keeps its column until it says null, like the menu's tiles; a past day,
+  // the slots the index lists). Phone: the route's.
+  const wideSlots = past ? DAILY_SLOTS.filter((slot) => pastBySlot[slot]) : DAILY_SLOTS.filter((slot) => dailies[slot] !== null);
   const slots: readonly DailySlot[] = wide && wideSlots.length > 0 ? wideSlots : [routeSlot];
   const layout = WIDE_GRID[slots.length] ?? WIDE_GRID[3];
   const sideBySide = slots.length > 1;
   const routeDaily = dailies[routeSlot];
+  const routeTheme = past ? pastBySlot[routeSlot]?.theme || pastBySlot[routeSlot]?.title : displayTheme(routeDaily);
 
   return (
     <PageShell width="md" widthLg={layout.width} bar={{ backLabel: t("completion.backToMenu") }}>
@@ -126,10 +215,10 @@ export function DailyLeaderboardScreen() {
             <Trophy className="size-6" aria-hidden="true" />
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-            {t(sideBySide ? "leaderboard.titleAll" : TITLE[routeSlot])}
+            {t(sideBySide ? (past ? "leaderboard.titleAllPast" : "leaderboard.titleAll") : TITLE[routeSlot])}
           </h1>
-          {!sideBySide && displayTheme(routeDaily) && (
-            <p className="mt-1.5 text-sm text-muted">{t("menu.dailyMiniTheme", { theme: displayTheme(routeDaily) })}</p>
+          {!sideBySide && routeTheme && (
+            <p className="mt-1.5 text-sm text-muted">{past ? routeTheme : t("menu.dailyMiniTheme", { theme: routeTheme })}</p>
           )}
           {streak > 0 && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">
@@ -139,9 +228,73 @@ export function DailyLeaderboardScreen() {
           )}
         </div>
 
+        {/* Which day, and whose times. The stepper is bounded by the first
+            published daily and by today; both controls are 44 px targets. */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <div data-testid="board-day" className="flex items-center gap-1">
+            <button
+              type="button"
+              className={STEP_BUTTON}
+              onClick={() => goToDay(shiftDay(day, -1))}
+              disabled={!first || day <= first}
+              aria-label={t("leaderboard.previousDay")}
+            >
+              <ChevronLeft className="size-5" aria-hidden="true" />
+            </button>
+            <p className="min-w-32 text-center text-sm font-semibold text-ink tabular-nums" aria-live="polite">
+              {past ? dayLabel : t("leaderboard.today")}
+            </p>
+            <button
+              type="button"
+              className={STEP_BUTTON}
+              onClick={() => goToDay(shiftDay(day, 1))}
+              disabled={!past}
+              aria-label={t("leaderboard.nextDay")}
+            >
+              <ChevronRight className="size-5" aria-hidden="true" />
+            </button>
+          </div>
+          {canFilter && (
+            <div role="group" aria-label={t("leaderboard.whose")} className="inline-flex rounded-xl bg-surface-sunken p-1 ring-1 ring-line">
+              {([false, true] as const).map((on) => (
+                <button
+                  key={String(on)}
+                  type="button"
+                  aria-pressed={friendsOnly === on}
+                  onClick={() => chooseFriendsOnly(on)}
+                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${
+                    friendsOnly === on ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {on && <Users className="size-4" aria-hidden="true" />}
+                  {t(on ? "leaderboard.friends" : "leaderboard.everyone")}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {past && (
+          <p className="-mt-1 text-center text-xs text-muted">
+            {t("leaderboard.pastNote")}{" "}
+            <button type="button" onClick={() => goToDay(today)} className="font-semibold text-brand-700 underline-offset-2 hover:underline">
+              {t("leaderboard.backToToday")}
+            </button>
+          </p>
+        )}
+
         <div data-testid="boards" className={`grid items-start gap-4 ${layout.grid}`}>
           {slots.map((slot) => (
-            <SlotBoard key={slot} slot={slot} daily={dailies[slot]} labelled={sideBySide} />
+            // Keyed by what the board shows, so a new day or filter starts from its loading state.
+            <SlotBoard
+              key={`${slot}:${day}:${onlyKey}`}
+              slot={slot}
+              day={day}
+              past={past}
+              info={past ? pastBySlot[slot] ?? null : null}
+              only={only}
+              daily={past ? null : dailies[slot]}
+              labelled={sideBySide}
+            />
           ))}
         </div>
       </div>
@@ -151,22 +304,30 @@ export function DailyLeaderboardScreen() {
 
 interface SlotBoardProps {
   slot: DailySlot;
+  /** The board's day: today, or a past day shown read-only. */
+  day: string;
+  past: boolean;
+  /** A past day's puzzle as the daily index lists it; null today, or when the index does not know it. */
+  info: DailyIndexEntry | null;
+  /** The friends-only board: these players' rows and no others. */
+  only: readonly string[] | null;
+  /** Today's puzzle; null on a past day. */
   daily: DailyMini | null | undefined;
   /** Side by side, each board names its slot (the page title no longer does). */
   labelled: boolean;
 }
 
 /** One slot's board: the table, the sign form when the viewer's row needs a name, and Play / Race. */
-function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
+function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
   const bestTimes = useBestTimes();
 
-  const day = todayKey();
   const postsHere = boardPostsHere();
-  const pending = pendingResultFor(game.pendingDailyResult, day, slot);
+  // A past day takes no new time: nothing is pending, signed or posted there.
+  const pending = past ? null : pendingResultFor(game.pendingDailyResult, day, slot);
   const own = pending?.posted ? pending.entry : null;
   const privateFinish = pending && !pending.posted ? pending.entry : null;
   const postingNotice = dailyPostingNotice(pending);
@@ -182,7 +343,7 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
     const load = async () => {
       // A finish posted from this tab lands before the board is read.
       if (pending) await pending.settled;
-      const rows = await fetchDailyLeaderboard(day, slot);
+      const rows = await fetchDailyLeaderboard(day, slot, 50, only);
       if (alive) setEntries(mergeOwnResult(rows, pending?.posted ? pending.entry : null));
     };
     void load();
@@ -195,6 +356,8 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
       document.removeEventListener("visibilitychange", onVisible);
     };
     // `pending` is replaced by a new finish and by signing one (which posts it).
+    // `only` is fixed for this board's life (the parent keys the board by it).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, day, pending]);
 
   // While the server answers, the viewer's posted finish is already a row
@@ -209,7 +372,7 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
   // default-name row from an older client; held results cannot be posted.
   const myEntry = shown?.find((e) => e.userId === user?.id);
   const signEntry = privateFinish ?? myEntry;
-  const needsName = !!signEntry && !pending?.postingHold && (privateFinish || !isRealPlayerName(signEntry.displayName)) && postsHere;
+  const needsName = !past && !!signEntry && !pending?.postingHold && (privateFinish || !isRealPlayerName(signEntry.displayName)) && postsHere;
   const unposted = !!pending && !pending.posted;
   const [signedAs, setSignedAs] = useState<string | null>(null);
   const saveName = useCallback(
@@ -230,10 +393,19 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
 
   // Solved today's slot: the finish just made, the board's own row, or a best
   // time on record for this puzzle (local stats or the account's history).
-  const identity = daily ? puzzleIdentity(daily.puzzle) : null;
+  const identity = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
   const solvedSeconds = pending?.entry.seconds ?? myEntry?.seconds ?? (identity ? bestTimes[identity] : undefined);
   const solved = typeof solvedSeconds === "number";
   const myRank = !privateFinish && myEntry && myEntry.rank > 0 ? myEntry.rank : null;
+
+  // A past board the viewer was not on, for a puzzle they have since solved:
+  // their time is slotted in where it would have placed, marked as not on the
+  // board. Nothing is written; a daily ranks only on its own day.
+  const rows = useMemo<RankedDailyEntry[] | null>(() => {
+    if (!past || shown === null || myEntry || !user || typeof solvedSeconds !== "number") return shown;
+    return withUnpostedTime(shown, { userId: user.id, displayName: game.displayName, mode: "solo", seconds: solvedSeconds });
+  }, [past, shown, myEntry, user, solvedSeconds, game.displayName]);
+  const wouldBe = past && !myEntry ? rows?.find((e) => e.unposted) ?? null : null;
 
   const playToday = useCallback(async () => {
     track("mode_selected", { mode: "daily", slot });
@@ -258,7 +430,8 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
     navigate("/host-game/name");
   }, [game, daily, slot, solved, navigate]);
 
-  const theme = displayTheme(daily);
+  const theme = past ? info?.theme || info?.title || "" : displayTheme(daily);
+  const emptyMessage = only ? "leaderboard.emptyFriends" : past ? "leaderboard.emptyPast" : "leaderboard.empty";
 
   return (
     <section data-testid={`board-${slot}`} aria-label={t(TITLE[slot])} className="grid min-w-0 gap-4">
@@ -266,21 +439,21 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
         <div className="px-1 text-center">
           <Eyebrow as="h2">{t(SLOT_LABEL[slot])}</Eyebrow>
           {/* Fixed-height theme line, so three boards' tables start on one row. */}
-          <p className="mt-1 h-5 truncate text-sm text-muted">{theme ? t("menu.dailyMiniTheme", { theme }) : ""}</p>
+          <p className="mt-1 h-5 truncate text-sm text-muted">{theme ? (past ? theme : t("menu.dailyMiniTheme", { theme })) : ""}</p>
         </div>
       )}
 
       <Card className="overflow-hidden">
         {!supabase ? (
           <BoardMessage icon={<WifiOff className="size-5" aria-hidden="true" />}>{t("leaderboard.offline")}</BoardMessage>
-        ) : shown === null ? (
+        ) : rows === null ? (
           <div role="status">
             <BoardMessage icon={<Loader2 className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />}>
               {t("leaderboard.loading")}
             </BoardMessage>
           </div>
-        ) : shown.length === 0 ? (
-          <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t("leaderboard.empty")}</BoardMessage>
+        ) : rows.length === 0 ? (
+          <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(emptyMessage)}</BoardMessage>
         ) : (
           <>
             <table className="w-full text-sm">
@@ -292,17 +465,18 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {shown.map((e) => {
+                {rows.map((e) => {
                   const isMe = user?.id === e.userId;
                   return (
                     <tr
                       key={e.userId}
-                      className={isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}
+                      data-unposted={e.unposted || undefined}
+                      className={e.unposted ? "bg-surface-sunken/70 font-semibold text-ink" : isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}
                     >
                       <td className="py-2.5 pl-4 pr-2">
                         <span
                           className={`grid size-8 place-items-center rounded-full text-sm font-bold tabular-nums ${
-                            MEDAL[e.rank] ?? "text-muted"
+                            e.unposted ? "border border-dashed border-brand-500 text-brand-700" : MEDAL[e.rank] ?? "text-muted"
                           }`}
                         >
                           {e.rank > 0 ? e.rank : "–"}
@@ -310,19 +484,26 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
                       </td>
                       <td className="max-w-0 px-2 py-2.5">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="truncate">{e.displayName}</span>
-                          {isMe && (
+                          {/* The viewer's unposted time is simply "You": beside its chip a name had no room. */}
+                          <span className={e.unposted ? "shrink-0" : "truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
+                          {isMe && !e.unposted && (
                             <span className="shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                               {t("leaderboard.you")}
                             </span>
                           )}
-                          <span
-                            className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide min-[380px]:inline ${
-                              e.mode === "race" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-muted"
-                            }`}
-                          >
-                            {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
-                          </span>
+                          {e.unposted ? (
+                            <span className="shrink-0 rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted ring-1 ring-line">
+                              {t("leaderboard.notOnBoard")}
+                            </span>
+                          ) : (
+                            <span
+                              className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide min-[380px]:inline ${
+                                e.mode === "race" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-muted"
+                              }`}
+                            >
+                              {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
+                            </span>
+                          )}
                           {e.autocheck === false && (
                             <span className="shrink-0 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
                               {t("autocheck.noAutocheck")}
@@ -358,7 +539,31 @@ function SlotBoard({ slot, daily, labelled }: SlotBoardProps) {
         <BoardSignForm currentName={signEntry.displayName} signedAs={signedAs} unposted={unposted} onSign={saveName} />
       )}
 
-      {daily !== null && (
+      {past && (
+        <div className="grid gap-2.5">
+          {solved ? (
+            <p
+              data-testid="solved-line"
+              className="flex items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 text-center text-sm font-semibold text-brand-700 ring-1 ring-brand-100 tabular-nums"
+            >
+              <Check className="size-4 shrink-0" aria-hidden="true" />
+              <span>
+                {wouldBe
+                  ? t("leaderboard.wouldHavePlaced", { time: formatDuration(solvedSeconds), rank: wouldBe.rank, total: rows?.length ?? 1 })
+                  : `${t("leaderboard.solvedIn", { time: formatDuration(solvedSeconds) })}${myRank !== null ? ` · ${t("leaderboard.rankThatDay", { rank: myRank })}` : ""}`}
+              </span>
+            </p>
+          ) : (
+            info && (
+              <Button size="lg" variant="secondary" block onClick={() => navigate(`/archive?day=${day}`)}>
+                {t("leaderboard.playThatDay")}
+              </Button>
+            )
+          )}
+        </div>
+      )}
+
+      {!past && daily !== null && (
         <div className="grid gap-2.5">
           {solved ? (
             <p

@@ -157,12 +157,32 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByText("1 of 5 solved · 4 to catch up on")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: new RegExp(longDay(today, "en")) })).toBeTruthy();
     expect(screen.getByText(formatDuration(102))).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Play again" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     const cell = dayCell(today);
     expect(cell.getAttribute("aria-current")).toBe("date");
     expect(cell.getAttribute("aria-label")).toContain(`Daily Mini solved in ${formatDuration(102)}`);
     expect(cell.getAttribute("aria-label")).toContain("Daily Midi unsolved");
+  });
+
+  it("opens on the day a link names, and each puzzle links to that day's leaderboard (today's without a day)", async () => {
+    // From a past board's "Play this puzzle": /archive?day=<yesterday>.
+    renderScreen(`/archive?day=${yesterday}`);
+    await waitFor(() => expect(screen.getByText("Split Decision")).toBeTruthy());
+    expect(screen.queryByText("Movie Night")).toBeNull();
+    expect(screen.getByRole("link", { name: "Leaderboard for Split Decision" }).getAttribute("href")).toBe(`/daily/leaderboard/large?day=${yesterday}`);
+
+    cleanup();
+    renderScreen();
+    await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    expect(screen.getByRole("link", { name: "Leaderboard for Movie Night" }).getAttribute("href")).toBe("/daily/leaderboard");
+    expect(screen.getByRole("link", { name: "Leaderboard for Bard on Screen" }).getAttribute("href")).toBe("/daily/leaderboard/midi");
+
+    // A day yet to come in the link is ignored: today.
+    cleanup();
+    renderScreen(`/archive?day=${tomorrow}`);
+    await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
+    expect(screen.queryByText("Not Yet")).toBeNull();
   });
 
   it("picking another day lists it, and Play loads that day's puzzle straight into solo play", async () => {

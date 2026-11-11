@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, waitFor, act, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 import { DailyLeaderboardScreen } from "./DailyLeaderboardScreen";
-import { rankEntries, todayKey, type PendingDailyResult, type RankedDailyEntry } from "../lib/dailyLeaderboard";
+import { rankEntries, shiftDay, todayKey, type PendingDailyResult, type RankedDailyEntry } from "../lib/dailyLeaderboard";
+import type { DailyIndexEntry } from "../lib/dailyIndex";
 import { getDailyMini } from "../lib/dailyMinis";
 import { puzzleIdentity } from "../lib/soloStats";
 
@@ -18,6 +19,8 @@ vi.mock("react-router", async () => {
 vi.mock("../lib/supabaseClient", () => ({ supabase: {} }));
 
 const fetchBoard = vi.fn<(day: string, slot: string) => Promise<RankedDailyEntry[]>>();
+/** The friends-only list each board fetch asked for (null = everyone), oldest first. */
+const onlySeen: (string[] | null)[] = [];
 const updateName = vi.fn(async () => {});
 // Production by default; a test flips it to a preview.
 let postsHere = true;
@@ -25,7 +28,10 @@ vi.mock("../lib/dailyLeaderboard", async () => {
   const actual = await vi.importActual<typeof import("../lib/dailyLeaderboard")>("../lib/dailyLeaderboard");
   return {
     ...actual,
-    fetchDailyLeaderboard: (day: string, slot: string) => fetchBoard(day, slot),
+    fetchDailyLeaderboard: (day: string, slot: string, _limit?: number, only?: readonly string[] | null) => {
+      onlySeen.push(only ? [...only] : null);
+      return fetchBoard(day, slot);
+    },
     updateDailyDisplayName: (...a: unknown[]) => updateName(...(a as [])),
     boardPostsHere: () => postsHere,
   };
@@ -66,6 +72,20 @@ vi.mock("../hooks/useSolveHistory", () => ({
 
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 
+// The daily index names a past day's puzzles; empty unless a test fills it.
+let indexEntries: DailyIndexEntry[] = [];
+vi.mock("../lib/dailyIndex", () => ({
+  knownPublishedIndex: () => (indexEntries.length > 0 ? indexEntries : null),
+  loadPublishedIndex: async () => (indexEntries.length > 0 ? indexEntries : null),
+}));
+
+// No friends unless a test adds some (the switch is on).
+let friendList: { userId: string; username: string; since: string }[] = [];
+vi.mock("../lib/friends", async (original) => ({ ...(await original<typeof import("../lib/friends")>()), friendsEnabled: () => true }));
+vi.mock("../contexts/FriendsContext", () => ({
+  useFriends: () => ({ active: friendList.length > 0, friendships: { friends: friendList, incoming: [], outgoing: [] } }),
+}));
+
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => {
@@ -87,9 +107,9 @@ function pending(seconds: number, displayName = "Andy", posted = true): PendingD
   };
 }
 
-function renderBoard() {
+function renderBoard(path = "/daily/leaderboard") {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <DailyLeaderboardScreen />
     </MemoryRouter>,
   );
@@ -97,6 +117,10 @@ function renderBoard() {
 
 beforeEach(() => {
   bestTimes = {};
+  indexEntries = [];
+  friendList = [];
+  onlySeen.length = 0;
+  localStorage.clear();
   postsHere = true;
   dailies = { mini: daily, midi: getDailyMini(new Date(2026, 9, 21)), large: getDailyMini(new Date(2026, 9, 22)) };
   delete (window as { matchMedia?: unknown }).matchMedia;
@@ -316,4 +340,164 @@ it("does not offer signing or add a private row when account posting is disabled
   expect(screen.getByText(/Solo leaderboard posting is off/)).toBeTruthy();
   expect(screen.queryByPlaceholderText("Your name")).toBeNull();
   expect(screen.getAllByRole("row").some(r => r.textContent?.includes("Private result"))).toBe(false);
+});
+
+describe("past boards (?day=)", () => {
+  const today = todayKey();
+  const past = shiftDay(today, -3);
+  const first = shiftDay(today, -5);
+  const indexed = (day: string, slot: "mini" | "midi" | "large", identity: string, title: string): DailyIndexEntry =>
+    ({ day, slot, title, theme: "", author: "", width: 5, height: 5, clues: 10, identity, blocks: "" });
+  const board = () =>
+    rankEntries([
+      { userId: "a", displayName: "Ada", mode: "solo", seconds: 60 },
+      { userId: "b", displayName: "Bo", mode: "solo", seconds: 90 },
+    ]);
+  const rowTexts = () => screen.getAllByRole("row").slice(1).map((r) => r.textContent);
+
+  beforeEach(() => {
+    indexEntries = [indexed(first, "mini", "id-first", "Opening Day"), indexed(past, "mini", "id-past", "Old One"), indexed(past, "large", "id-past-large", "Big Old One")];
+    fetchBoard.mockResolvedValue(board());
+  });
+
+  it("shows that day's board read-only, with the viewer's time slotted in where it would have placed", async () => {
+    bestTimes = { "id-past": 75 };
+    renderBoard(`/daily/leaderboard?day=${past}`);
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(fetchBoard).toHaveBeenCalledWith(past, "mini");
+    expect(fetchBoard).not.toHaveBeenCalledWith(today, "mini");
+
+    // Ada 1st, the viewer between them as #2 and marked, Bo keeps his own rank.
+    const rows = rowTexts();
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toContain("1Ada");
+    expect(rows[1]).toBe("2YouNot on the board1:15");
+    expect(rows[2]).toContain("2Bo");
+    expect(document.querySelector("tr[data-unposted]")).toBeTruthy();
+    expect(screen.getByTestId("solved-line").textContent).toBe("Your 1:15 would have placed #2 of 3");
+
+    // The day is named, the board is final, and nothing can be posted or played for rank.
+    expect(screen.getByText("Old One")).toBeTruthy();
+    expect(screen.getByText(/A past day's board is final/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Play Today's Mini" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Race friends live" })).toBeNull();
+    expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+    expect(updateName).not.toHaveBeenCalled();
+  });
+
+  it("a board the viewer was on that day shows their own row and rank, nothing invented", async () => {
+    fetchBoard.mockResolvedValue(rankEntries([{ userId: "me", displayName: "Player", mode: "solo", seconds: 50 }, ...board()]));
+    renderBoard(`/daily/leaderboard?day=${past}`);
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(document.querySelector("tr[data-unposted]")).toBeNull();
+    expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 0:50 · #1 that day");
+    // A default-named row from that day is not asked to be renamed now.
+    expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+  });
+
+  it("an unsolved past puzzle opens the archive on that day; an empty board says nobody posted", async () => {
+    fetchBoard.mockResolvedValue([]);
+    renderBoard(`/daily/leaderboard?day=${past}`);
+    await waitFor(() => expect(screen.getByText("Nobody posted a time that day.")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Play this puzzle" }));
+    expect(navigate).toHaveBeenCalledWith(`/archive?day=${past}`);
+  });
+
+  it("the stepper walks between the first daily and today", async () => {
+    renderBoard();
+    await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(today, "mini"));
+    const day = within(screen.getByTestId("board-day"));
+    expect(day.getByText("Today")).toBeTruthy();
+    expect(day.getByRole("button", { name: "Next day" })).toHaveProperty("disabled", true);
+
+    fireEvent.click(day.getByRole("button", { name: "Previous day" }));
+    await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(shiftDay(today, -1), "mini"));
+    expect(day.queryByText("Today")).toBeNull();
+    fireEvent.click(day.getByRole("button", { name: "Next day" }));
+    await waitFor(() => expect(day.getByText("Today")).toBeTruthy());
+
+    // Straight to the first day: no further back.
+    cleanup();
+    renderBoard(`/daily/leaderboard?day=${first}`);
+    await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(first, "mini"));
+    expect(within(screen.getByTestId("board-day")).getByRole("button", { name: "Previous day" })).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Back to today" }));
+    await waitFor(() => expect(within(screen.getByTestId("board-day")).getByText("Today")).toBeTruthy());
+  });
+
+  it("a day before the first daily, a day to come or a malformed one is today's board", async () => {
+    for (const bad of [shiftDay(first, -1), shiftDay(today, 1), "soon"]) {
+      fetchBoard.mockClear();
+      renderBoard(`/daily/leaderboard?day=${bad}`);
+      await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(today, "mini"));
+      expect(screen.getByRole("button", { name: "Play Today's Mini" })).toBeTruthy();
+      cleanup();
+    }
+  });
+
+  it("wide: a past day shows the boards of the slots published that day", async () => {
+    wideViewport();
+    renderBoard(`/daily/leaderboard?day=${past}`);
+    await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(past, "large"));
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Leaderboards");
+    expect(screen.getByTestId("board-mini")).toBeTruthy();
+    expect(screen.getByTestId("board-large")).toBeTruthy();
+    expect(screen.queryByTestId("board-midi")).toBeNull();
+    expect(screen.getByText("Big Old One")).toBeTruthy();
+  });
+});
+
+describe("friends only", () => {
+  const group = () => screen.getByRole("group", { name: "Whose times" });
+
+  it("is not offered without a friend", async () => {
+    renderBoard();
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(screen.queryByRole("group", { name: "Whose times" })).toBeNull();
+    expect(onlySeen).toEqual([null]);
+  });
+
+  it("asks the board for the viewer and their friends, remembers the choice, and switches back", async () => {
+    friendList = [{ userId: "f1", username: "alicia", since: "" }, { userId: "f2", username: "russ", since: "" }];
+    renderBoard();
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(within(group()).getByRole("button", { name: "Everyone" }).getAttribute("aria-pressed")).toBe("true");
+    expect(onlySeen).toEqual([null]);
+
+    fetchBoard.mockResolvedValue(rankEntries([{ userId: "f1", displayName: "Alicia", mode: "solo", seconds: 80 }]));
+    fireEvent.click(within(group()).getByRole("button", { name: "Friends" }));
+    await waitFor(() => expect(screen.getByText("Alicia")).toBeTruthy());
+    expect(screen.queryByText("Ada")).toBeNull();
+    expect(onlySeen[onlySeen.length - 1]).toEqual(["me", "f1", "f2"]);
+    expect(localStorage.getItem("crossword-clash:board-friends-only")).toBe("1");
+
+    // The next visit opens on friends.
+    cleanup();
+    onlySeen.length = 0;
+    renderBoard();
+    await waitFor(() => expect(screen.getByText("Alicia")).toBeTruthy());
+    expect(onlySeen).toEqual([["me", "f1", "f2"]]);
+
+    fetchBoard.mockResolvedValue(rankEntries([{ userId: "a", displayName: "Ada", mode: "solo", seconds: 60 }]));
+    fireEvent.click(within(group()).getByRole("button", { name: "Everyone" }));
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(onlySeen[onlySeen.length - 1]).toBeNull();
+    expect(localStorage.getItem("crossword-clash:board-friends-only")).toBeNull();
+  });
+
+  it("says so when no friend is on the board, and a remembered choice does nothing once there are no friends", async () => {
+    friendList = [{ userId: "f1", username: "alicia", since: "" }];
+    localStorage.setItem("crossword-clash:board-friends-only", "1");
+    fetchBoard.mockResolvedValue([]);
+    renderBoard();
+    await waitFor(() => expect(screen.getByText("None of your friends are on this board yet.")).toBeTruthy());
+
+    cleanup();
+    friendList = [];
+    onlySeen.length = 0;
+    fetchBoard.mockResolvedValue(rankEntries([{ userId: "a", displayName: "Ada", mode: "solo", seconds: 60 }]));
+    renderBoard();
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    expect(onlySeen).toEqual([null]);
+  });
 });

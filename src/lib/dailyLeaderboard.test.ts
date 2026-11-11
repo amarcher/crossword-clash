@@ -4,7 +4,12 @@ import { describe, it, expect, vi } from "vitest";
 // I/O helpers would talk to the real Supabase project from unit tests.
 vi.mock("./supabaseClient", () => ({ supabase: null }));
 import {
+  boardDay,
   boardPostsFrom,
+  leaderboardPath,
+  shiftDay,
+  withUnpostedTime,
+  wouldHaveRanked,
   isTodaysDaily,
   mergeOwnResult,
   pendingResultFor,
@@ -202,5 +207,56 @@ describe("signDailyResult", () => {
   it("ignores a blank signature", () => {
     const parked = postDailyResult("2026-10-20", "mini", { ...entry("me", 50), displayName: "Player" });
     expect(signDailyResult(parked, "   ")).toBe(parked);
+  });
+});
+
+describe("past boards", () => {
+  const entry = (userId: string, seconds: number) => ({ userId, displayName: userId, mode: "solo" as const, seconds });
+
+  it("leaderboardPath names a past day in the query and leaves today's link bare", () => {
+    expect(leaderboardPath("mini")).toBe("/daily/leaderboard");
+    expect(leaderboardPath("large", null)).toBe("/daily/leaderboard/large");
+    expect(leaderboardPath("mini", "2026-11-05")).toBe("/daily/leaderboard?day=2026-11-05");
+    expect(leaderboardPath("midi", "2026-11-05")).toBe("/daily/leaderboard/midi?day=2026-11-05");
+  });
+
+  it("boardDay accepts only a real past day, no earlier than the first daily", () => {
+    const today = "2026-11-10";
+    expect(boardDay("2026-11-05", today, "2026-10-16")).toBe("2026-11-05");
+    expect(boardDay("2026-10-16", today, "2026-10-16")).toBe("2026-10-16");
+    // Before the index has answered, any past day is taken as asked.
+    expect(boardDay("2026-08-01", today)).toBe("2026-08-01");
+    for (const bad of [null, undefined, "", "yesterday", "2026-11-5", "2026-02-31", today, "2026-11-11", "2026-10-15"]) {
+      expect(boardDay(bad, today, "2026-10-16")).toBeNull();
+    }
+  });
+
+  it("shiftDay moves by calendar days across months and years", () => {
+    expect(shiftDay("2026-11-10", -1)).toBe("2026-11-09");
+    expect(shiftDay("2026-11-01", -1)).toBe("2026-10-31");
+    expect(shiftDay("2026-12-31", 1)).toBe("2027-01-01");
+    expect(shiftDay("2026-03-01", -1)).toBe("2026-02-28");
+  });
+
+  it("wouldHaveRanked is one past every faster time, a tie sharing the rank", () => {
+    const board = [entry("a", 60), entry("b", 90), entry("c", 90)];
+    expect(wouldHaveRanked(board, 30)).toEqual({ rank: 1, of: 4 });
+    expect(wouldHaveRanked(board, 75)).toEqual({ rank: 2, of: 4 });
+    expect(wouldHaveRanked(board, 90)).toEqual({ rank: 2, of: 4 });
+    expect(wouldHaveRanked(board, 200)).toEqual({ rank: 4, of: 4 });
+    expect(wouldHaveRanked([], 75)).toEqual({ rank: 1, of: 1 });
+  });
+
+  it("withUnpostedTime slots the viewer in where they would have placed and changes no posted row", () => {
+    const board = rankEntries([entry("a", 60), entry("b", 90)]);
+    const shown = withUnpostedTime(board, entry("me", 75));
+    expect(shown.map((e) => [e.userId, e.rank, !!e.unposted])).toEqual([["a", 1, false], ["me", 2, true], ["b", 2, false]]);
+    // Slower than everyone: last, after a tie's rows.
+    expect(withUnpostedTime(board, entry("me", 90)).map((e) => e.userId)).toEqual(["a", "b", "me"]);
+    expect(withUnpostedTime(board, entry("me", 10))[0]).toMatchObject({ userId: "me", rank: 1, unposted: true });
+    // Already on the board, or no time: the board as it is.
+    expect(withUnpostedTime(board, entry("a", 5))).toEqual(board);
+    expect(withUnpostedTime(board, null)).toEqual(board);
+    expect(withUnpostedTime([], entry("me", 75))).toEqual([{ ...entry("me", 75), rank: 1, unposted: true }]);
   });
 });
