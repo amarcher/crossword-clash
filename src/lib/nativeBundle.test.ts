@@ -16,10 +16,10 @@ const hasDist = existsSync(assets);
 const isWebBuild = hasDist && existsSync(here("../../dist/menu/index.html"));
 
 describe("the web bundle", () => {
-  it.skipIf(!isWebBuild)("carries none of the RevenueCat, social-login, app-update, filesystem, keep-awake, App and push plugins", () => {
+  it.skipIf(!isWebBuild)("carries none of the RevenueCat, social-login, app-update, filesystem, keep-awake, App, push and haptics plugins", () => {
     const offenders = readdirSync(assets)
       .filter((f) => f.endsWith(".js"))
-      .filter((f) => /purchases-capacitor|capacitor-social-login|capacitor-app-update|capacitor-filesystem|keep-awake|KeepAwake\.keepAwake|revenuecat\/purchases|SocialLogin\.initialize|AppUpdate\.getAppUpdateInfo|Filesystem\.writeFile|appUrlOpen|App\.getLaunchUrl|push-notifications|PushNotifications\.register/.test(readFileSync(assets + f, "utf8")));
+      .filter((f) => /purchases-capacitor|capacitor-social-login|capacitor-app-update|capacitor-filesystem|keep-awake|KeepAwake\.keepAwake|revenuecat\/purchases|SocialLogin\.initialize|AppUpdate\.getAppUpdateInfo|Filesystem\.writeFile|appUrlOpen|App\.getLaunchUrl|push-notifications|PushNotifications\.register|capacitor\/haptics|Haptics\.notification/.test(readFileSync(assets + f, "utf8")));
     expect(offenders).toEqual([]);
   });
 });

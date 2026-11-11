@@ -189,7 +189,7 @@ describe("SoloPlayScreen autocheck", () => {
     openOptions();
     fireEvent.click(screen.getByRole("switch", { name: /Autocheck/ }));
     expect(screen.getByRole("switch", { name: /Autocheck/ }).getAttribute("aria-checked")).toBe("false");
-    expect(JSON.parse(localStorage.getItem(SOLO_SETTINGS_KEY)!)).toEqual({ autocheck: false });
+    expect(JSON.parse(localStorage.getItem(SOLO_SETTINGS_KEY)!)).toMatchObject({ autocheck: false });
     expect(track).toHaveBeenCalledWith("autocheck_toggled", { on: false });
     fireEvent.keyDown(screen.getByRole("switch", { name: /Autocheck/ }), { key: "Escape" });
     expect(screen.queryByRole("switch")).toBeNull();
@@ -255,7 +255,7 @@ describe("SoloPlayScreen autocheck", () => {
     expect(toggle.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-checked")).toBe("false");
-    expect(JSON.parse(localStorage.getItem(SOLO_SETTINGS_KEY)!)).toEqual({ autocheck: false });
+    expect(JSON.parse(localStorage.getItem(SOLO_SETTINGS_KEY)!)).toMatchObject({ autocheck: false });
   });
 
   it("the notice can be dismissed and comes back once the grid changes", async () => {
@@ -491,5 +491,57 @@ describe("a solved puzzle stays solved", () => {
     await solve();
     expect(posting.preference).toHaveBeenCalledTimes(1);
     expect(game.pendingDailyResult).toBe(first);
+  });
+});
+
+describe("a refused letter is felt", () => {
+  // An Android phone's browser: the Vibration API and a touch screen (haptics.ts).
+  const vibrate = vi.fn(() => true);
+  const nav = navigator as unknown as { vibrate?: unknown; maxTouchPoints?: number };
+  beforeEach(() => {
+    vibrate.mockClear();
+    Object.defineProperty(nav, "vibrate", { configurable: true, writable: true, value: vibrate });
+    Object.defineProperty(nav, "maxTouchPoints", { configurable: true, value: 5 });
+  });
+  afterEach(() => {
+    Object.defineProperty(nav, "vibrate", { configurable: true, writable: true, value: undefined });
+    Object.defineProperty(nav, "maxTouchPoints", { configurable: true, value: 0 });
+  });
+
+  it("buzzes once per refusal by default, never for an accepted letter, and the switch turns it off", async () => {
+    // Andrew, 2026-11-11: typing fast, the red flash goes unseen and the solver
+    // carries on a square behind. The buzz says a letter was turned away.
+    await renderSolo();
+    type("c");
+    expect(vibrate).not.toHaveBeenCalled();
+    type("x");
+    expect(mp.wrongLetters).toBe(1);
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    type("x");
+    expect(vibrate).toHaveBeenCalledTimes(2);
+
+    // The switch sits with Autocheck in the puzzle options, on by default.
+    openOptions();
+    const toggle = screen.getByRole("switch", { name: "Vibrate on a wrong letter" });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    expect(JSON.parse(localStorage.getItem(SOLO_SETTINGS_KEY)!)).toMatchObject({ haptics: false });
+    fireEvent.keyDown(toggle, { key: "Escape" });
+
+    vibrate.mockClear();
+    type("x");
+    expect(mp.wrongLetters).toBe(3);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it("offers no switch where nothing can buzz", async () => {
+    Object.defineProperty(nav, "maxTouchPoints", { configurable: true, value: 0 }); // a desktop browser
+    await renderSolo();
+    openOptions();
+    expect(screen.getByRole("switch", { name: /Autocheck/ })).toBeTruthy();
+    expect(screen.queryByRole("switch", { name: "Vibrate on a wrong letter" })).toBeNull();
+    type("x");
+    expect(vibrate).not.toHaveBeenCalled();
   });
 });

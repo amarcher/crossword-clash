@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Settings2 } from "lucide-react";
+import { hapticsAvailable, wrongLetterHaptic } from "../../lib/haptics";
+import { useSoloSettings } from "../../lib/soloSettings";
 
 interface AutocheckSwitchProps {
   /** The Autocheck setting as the grid plays by it (soloSettings.ts). */
@@ -15,40 +17,64 @@ interface AutocheckSwitchProps {
  * fill, never an edge accent. Lives in the header gear's panel from `md` up
  * and in the phone's clue sheet below it, where the header has no room.
  */
-export function AutocheckSwitch({ autocheck, onAutocheckChange, className = "" }: AutocheckSwitchProps) {
-  const { t } = useTranslation();
+/** One labelled on/off row, 44 px tall: the label, a line of what it does, and the track. */
+function SettingSwitch({ on, onChange, label, hint, className = "" }: { on: boolean; onChange: (on: boolean) => void; label: string; hint: string; className?: string }) {
   const id = useId();
-  const labelId = `${id}-autocheck`;
-  const hintId = `${id}-autocheck-hint`;
+  const labelId = `${id}-label`;
+  const hintId = `${id}-hint`;
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={autocheck}
+      aria-checked={on}
       aria-labelledby={labelId}
       aria-describedby={hintId}
-      onClick={() => onAutocheckChange(!autocheck)}
+      onClick={() => onChange(!on)}
       className={`flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-surface-sunken active:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none ${className}`}
     >
       <span className="min-w-0 flex-1">
-        <span id={labelId} className="block text-sm font-semibold text-ink">{t("autocheck.label")}</span>
-        <span id={hintId} className="block text-xs leading-snug text-muted">{t("autocheck.hint")}</span>
+        <span id={labelId} className="block text-sm font-semibold text-ink">{label}</span>
+        <span id={hintId} className="block text-xs leading-snug text-muted">{hint}</span>
       </span>
       <span
         aria-hidden="true"
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${autocheck ? "bg-brand-600" : "bg-line-strong"}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? "bg-brand-600" : "bg-line-strong"}`}
       >
-        <span className={`absolute top-1 left-1 size-5 rounded-full bg-white shadow transition-transform ${autocheck ? "translate-x-5" : ""}`} />
+        <span className={`absolute top-1 left-1 size-5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : ""}`} />
       </span>
     </button>
   );
 }
 
+export function AutocheckSwitch({ autocheck, onAutocheckChange, className = "" }: AutocheckSwitchProps) {
+  const { t } = useTranslation();
+  return <SettingSwitch on={autocheck} onChange={onAutocheckChange} label={t("autocheck.label")} hint={t("autocheck.hint")} className={className} />;
+}
+
 /**
- * The solo play header's options control: a gear that opens a small panel
- * with the device's solo settings — today the one Autocheck switch. The panel
- * closes on Escape, an outside tap or a second press.
+ * "Vibrate on a wrong letter" (haptics.ts), on by default. Reads and writes
+ * the device setting itself, and renders nothing where nothing can buzz (a
+ * desktop, an iPhone on the website), so a play screen can place it anywhere.
  */
+export function HapticsSwitch({ className = "" }: { className?: string }) {
+  const { t } = useTranslation();
+  const { haptics, setHaptics } = useSoloSettings();
+  if (!hapticsAvailable()) return null;
+  return (
+    <SettingSwitch
+      on={haptics}
+      onChange={(on) => {
+        setHaptics(on);
+        // Turning it on answers with the buzz it controls.
+        if (on) wrongLetterHaptic();
+      }}
+      label={t("haptics.label")}
+      hint={t("haptics.hint")}
+      className={className}
+    />
+  );
+}
+
 export function SoloOptions({ autocheck, onAutocheckChange, className = "" }: AutocheckSwitchProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -97,6 +123,7 @@ export function SoloOptions({ autocheck, onAutocheckChange, className = "" }: Au
           className="absolute right-0 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-surface p-1.5 shadow-overlay ring-1 ring-line"
         >
           <AutocheckSwitch autocheck={autocheck} onAutocheckChange={onAutocheckChange} />
+          <HapticsSwitch />
         </div>
       )}
     </div>

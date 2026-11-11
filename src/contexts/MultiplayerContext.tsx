@@ -1,4 +1,6 @@
 import type { Puzzle } from "../types/puzzle";
+import { wrongLetterHaptic } from "../lib/haptics";
+import { loadSoloSettings } from "../lib/soloSettings";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useGame } from "./GameContext";
@@ -114,9 +116,13 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     setWrongCells((cells) => (cells.includes(key) ? cells : [...cells, key]));
     if (rejectTimerRef.current) clearTimeout(rejectTimerRef.current);
     setRejectedCell(null);
+    // Felt as well as seen: the flash is easy to miss while typing. This was
+    // a bare `navigator.vibrate(50)`, which Android has and no iPhone browser
+    // or webview does, so iPhones never buzzed; haptics.ts uses the system's
+    // haptics in the apps, and the device's switch (on by default) decides.
+    if (loadSoloSettings().haptics) wrongLetterHaptic();
     requestAnimationFrame(() => {
       setRejectedCell(`${row},${col}`);
-      navigator.vibrate?.(50);
       rejectTimerRef.current = setTimeout(() => setRejectedCell(null), 400);
     });
   }, []);
