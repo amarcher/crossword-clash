@@ -1,1 +1,1 @@
-export { SoloOptions, AutocheckSwitch } from "./SoloOptions";
+export { SoloOptions, AutocheckSwitch, HapticsSwitch } from "./SoloOptions";
