@@ -1,0 +1,9 @@
+<en-US>
+Typing fast no longer refuses a correct letter, the on-screen keys take two-thumb typing, and a wrong letter now buzzes (switch beside Autocheck).
+
+A solved puzzle stays solved: the grid reopens filled, with Clear & redo to start over, and the menu tile shows the solved state.
+
+Leaderboards show past days (and where you would have placed) and a friends-only view. Invite friends with your own link or QR code.
+
+Plus: the first month is free.
+</en-US>

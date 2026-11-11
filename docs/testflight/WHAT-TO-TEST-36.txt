@@ -1,0 +1,10 @@
+This build (1.1.1, build 36) is about typing, finished puzzles, leaderboards and friends. Please check:
+
+1. Typing fast no longer refuses a correct letter. Type a word straight through a square that is already filled (from a crossing word, or another player's letter in a race): nothing shakes and nothing counts as wrong.
+2. A wrong letter buzzes. Type a wrong letter with autocheck on and the phone vibrates. The switch "Vibrate on a wrong letter" sits beside Autocheck in the puzzle options and in the clue sheet; turn it off and the buzz stops.
+3. The on-screen keys take fast two-thumb typing: press the next key before lifting from the last and both letters land.
+4. A solved puzzle stays solved. Open a daily you finished: the grid is filled, the header says "You solved this", and only "Clear & redo" (with a confirmation) empties it. On the menu the solved daily's tile is tinted with a check and its button reads View.
+5. Leaderboards: step back through past days with the arrows. If you solved that day's puzzle later, your time appears as "Not on the board" where it would have placed. With a friend on the board, the Everyone / Friends switch shows only you and your friends.
+6. Friends: on Race friends → Friends, "Share my link" sends your add-me link and "Show QR code" shows it. Whoever opens the link sees an Add button. (On an iPhone the link opens the website for now.)
+7. Plus: both plans now offer the first month free on the web. In the app the plans show "1 month free, then …" only once the store offers exist.
+8. Everything from build 35 still applies.
