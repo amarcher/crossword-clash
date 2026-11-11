@@ -501,8 +501,14 @@ export const PLUS_TRIAL_DAYS = 30;
  * is given once per account. `priorRows` is the count of the user's
  * `entitlements` rows of any source, product or status. create-checkout
  * decides with it; the paywall words its buttons with it.
+ *
+ * `emailBilledBefore` closes the way round that rule (Andrew, 2026-11-11: one
+ * free month per email): Stripe already holds a subscription, of any status,
+ * for a customer with this account's email, so an account deleted and made
+ * again under the same identity is charged from the first day. Only the
+ * server can know it; the paywall passes nothing.
  */
-export function checkoutTrialDays(priorRows: number, days: number = PLUS_TRIAL_DAYS): number {
-  return priorRows > 0 ? 0 : days;
+export function checkoutTrialDays(priorRows: number, days: number = PLUS_TRIAL_DAYS, emailBilledBefore: boolean = false): number {
+  return priorRows > 0 || emailBilledBefore ? 0 : days;
 }
 // --- MIRROR END ---

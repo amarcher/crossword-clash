@@ -344,6 +344,12 @@ describe("checkoutTrialDays", () => {
     expect(checkoutTrialDays(0, 0)).toBe(0);
     expect(checkoutTrialDays(1, 7)).toBe(0);
   });
+
+  it("gives none to an email Stripe has already held a subscription for", () => {
+    expect(checkoutTrialDays(0, undefined, true)).toBe(0);
+    expect(checkoutTrialDays(0, 7, true)).toBe(0);
+    expect(checkoutTrialDays(0, undefined, false)).toBe(30);
+  });
 });
 
 describe("checkoutOrigin", () => {

@@ -499,7 +499,8 @@ The price ids and the prices do not change.
 
 1. **Web (Stripe): deploy only.** `supabase functions deploy create-checkout`.
    The function adds a 30-day trial to the Checkout session of an account
-   that has never had an entitlement row; Checkout still takes the card and
+   that has never had an entitlement row and whose email Stripe has never held
+   a subscription for; Checkout still takes the card and
    Stripe charges the plan when the trial ends. Nothing changes in the
    Stripe dashboard. To change the length or turn it off without touching
    the client: `supabase secrets set STRIPE_TRIAL_DAYS=0` (or another whole
