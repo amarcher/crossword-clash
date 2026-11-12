@@ -153,4 +153,30 @@ describe("CluePanel", () => {
     expect(clueInput("4 across").value).toBe("Lode load");
     expect(screen.queryByRole("status")).toBeNull();
   });
+
+  it("Enter moves to the next clue, across then down", () => {
+    renderPanel();
+    clueInput("5 across").focus();
+    fireEvent.keyDown(clueInput("5 across"), { key: "Enter" });
+    expect(document.activeElement).toBe(clueInput("1 down"));
+  });
+
+  it("can show only the entries still without a clue", () => {
+    const four = slotKey(slotsOf(studio().grid).find((s) => s.id === "4A")!);
+    renderPanel({ state: { clues: { ...studio().clues, [four]: "" } } });
+    fireEvent.click(screen.getByLabelText(/Missing only \(1\)/));
+    expect(screen.getAllByLabelText(/^Clue for /).map((i) => i.getAttribute("aria-label"))).toEqual(["Clue for 4 across"]);
+  });
+
+  it("tints the entry selected in the grid and selects an entry whose clue is focused", () => {
+    const onSelectSlot = vi.fn();
+    const initial = studio();
+    const oneAcross = slotKey(slotsOf(initial.grid).find((s) => s.id === "1A")!);
+    render(<CluePanel state={initial} dispatch={vi.fn()} onExport={vi.fn()} access={{ admin: true, plus: false }} userId={null} activeKey={oneAcross} onSelectSlot={onSelectSlot} />);
+    expect(clueInput("1 across").closest("li")?.className).toContain("bg-brand-50");
+    fireEvent.focus(clueInput("1 across"));
+    expect(onSelectSlot).not.toHaveBeenCalled();
+    fireEvent.focus(clueInput("1 down"));
+    expect(onSelectSlot).toHaveBeenCalledWith(expect.objectContaining({ id: "1D" }));
+  });
 });

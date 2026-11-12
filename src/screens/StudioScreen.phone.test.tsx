@@ -112,6 +112,24 @@ afterEach(() => {
 });
 
 describe("StudioScreen on a phone", () => {
+  it("writes a word from the strip under the grid without leaving the Grid tab", async () => {
+    renderStudio();
+    const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
+    fireEvent.click(await within(strip).findByRole("button", { name: "Write ABCDE" }));
+    expect(panel("grid").hidden).toBe(false);
+    await waitFor(() => expect(document.querySelector(".grid-shell")?.textContent).toMatch(/A.*B.*C.*D.*E/));
+    // "All words" is the way to the full list.
+    fireEvent.click(within(strip).getByRole("button", { name: /All words/ }));
+    expect(panel("words").hidden).toBe(false);
+  });
+
+  it("clues the selected entry from the bar under a finished grid, the same text the Clues tab holds", () => {
+    seedCompleteDraft();
+    renderStudio();
+    fireEvent.change(within(panel("grid")).getByLabelText("Clue for 1 Across"), { target: { value: "Shout of discovery" } });
+    expect((within(panel("clues")).getByLabelText("Clue for 1 across") as HTMLInputElement).value).toBe("Shout of discovery");
+  });
+
   it("shows one tab at a time and switches panels from the bottom bar", async () => {
     renderStudio();
     const tabs = screen.getAllByRole("tab");
@@ -257,11 +275,24 @@ describe("StudioScreen on a desktop", () => {
   it("keeps the three-column desk with no tab bar, Play test in the toolbar and Export in the clue panel", () => {
     matchMedia(true);
     renderStudio();
-    expect(screen.queryByRole("tablist")).toBeNull();
-    expect(screen.queryByRole("tabpanel")).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Studio sections" })).toBeNull();
     const grid = screen.getByRole("region", { name: "Grid" });
     expect(within(grid).getByRole("button", { name: /Play test/ })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Clues" })).getByRole("button", { name: /Export \.ipuz/ })).toBeTruthy();
+    // The clues share the right column with the word list, a tab each; both stay mounted.
+    // A hidden panel has no accessible name, so find it by the id its tab points at.
+    const clues = document.getElementById(screen.getByRole("tab", { name: /^Clues/ }).getAttribute("aria-controls")!)!;
+    expect(clues.hidden).toBe(true);
+    expect(within(clues).getByRole("button", { name: /Export \.ipuz/, hidden: true })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "My puzzles" })).toBeTruthy();
+  });
+
+  it("switches the right column between the words and the clues", () => {
+    matchMedia(true);
+    renderStudio();
+    const tabs = screen.getByRole("tablist", { name: "Words or clues" });
+    expect(screen.getByRole("tabpanel", { name: "Words" })).toBeTruthy();
+    fireEvent.click(within(tabs).getByRole("tab", { name: /Clues/ }));
+    expect(screen.getByRole("tabpanel", { name: /Clues/ })).toBeTruthy();
+    expect(screen.queryByRole("tabpanel", { name: "Words" })).toBeNull();
   });
 });
