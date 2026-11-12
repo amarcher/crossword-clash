@@ -94,6 +94,14 @@
     font-feature-settings: "ss01" 0;
   }
   h1, h2, h3 { text-wrap: balance; }
+  /* Tailwind v4's preflight leaves buttons on the arrow cursor (v3 gave them the
+     hand). Anything clickable shows the hand; a disabled button keeps the arrow.
+     A utility class (cursor-default, cursor-grab…) still wins over this layer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
 }
 
 /* Native screens own the safe areas instead of stacking WebView content insets
