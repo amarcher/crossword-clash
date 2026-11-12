@@ -2,7 +2,7 @@ import { puzzleIdentity } from "../../lib/soloStats";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
 import { buttonClass } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -32,6 +32,7 @@ import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
 import type { CellState, Puzzle } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
+import type { RaceResult } from "../../lib/race";
 import type { RaceStandingRow } from "../../lib/raceResults";
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
@@ -138,6 +139,11 @@ interface CompletionModalProps {
    * against the challenger's ghost — drives the personal outcome banner.
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
+  /** A race against recorded solves (race.ts): the verdict against each ghost. */
+  raceResults?: RaceResult[];
+  /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
+  replays?: { userId: string; name: string }[];
+  onWatchReplay?: (userId: string) => void;
   /**
    * "Up next" rows (at most two): today's unsolved dailies, then yesterday's
    * — from `nextUpSuggestions`. Solo/daily only.
@@ -197,6 +203,9 @@ export function CompletionModal({
   playerColors,
   challengerName,
   challengeOutcome,
+  raceResults,
+  replays,
+  onWatchReplay,
   nextUp,
   onNextUp,
   onRaceFresh,
@@ -633,6 +642,39 @@ export function CompletionModal({
                         delta: formatDuration(challengeOutcome.deltaSeconds),
                       })
                     : t("challenge.resultTied", { name: challengeOutcome.challengerName })}
+              </div>
+            )}
+
+            {raceResults && raceResults.length > 0 && (
+              <ul data-testid="race-results" aria-label={t("ghostRace.resultsLabel")} className={`mb-4 flex flex-col gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold ${darkMode ? "bg-white/5 text-white/90" : "bg-surface-sunken text-ink"}`}>
+                {raceResults.map((r) => (
+                  <li key={r.name} className="flex items-center gap-2">
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} aria-hidden="true" />
+                    <span className={r.outcome === "beat" ? (darkMode ? "text-emerald-300" : "text-emerald-700") : r.outcome === "lost" ? (darkMode ? "text-rose-300" : "text-rose-700") : ""}>
+                      {r.outcome === "beat"
+                        ? t("challenge.resultBeat", { name: r.name, delta: formatDuration(r.deltaSeconds) })
+                        : r.outcome === "lost"
+                          ? t("challenge.resultLost", { name: r.name, delta: formatDuration(r.deltaSeconds) })
+                          : t("challenge.resultTied", { name: r.name })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {replays && replays.length > 0 && onWatchReplay && (
+              <div className="mb-5 flex flex-wrap justify-center gap-2" data-testid="race-replays">
+                {replays.map((r) => (
+                  <button
+                    key={r.userId}
+                    type="button"
+                    onClick={() => onWatchReplay(r.userId)}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+                  >
+                    <PlayCircle className="size-4" aria-hidden="true" />
+                    {t("ghostRace.watch", { name: r.name })}
+                  </button>
+                ))}
               </div>
             )}
           </>

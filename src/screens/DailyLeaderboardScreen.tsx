@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
 import { Button, Card, Eyebrow } from "../components/ui";
@@ -34,6 +34,10 @@ import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
+import { useMaybeAccount } from "../contexts/AccountContext";
+import { useRaceCandidates } from "../hooks/useRace";
+import { saveRaceIntent } from "../lib/race";
+import { dailyPath } from "../lib/dailyChallenge";
 
 /** Tailwind's `lg` breakpoint (64rem) — the width at which the boards spread out. */
 const LG_QUERY = "(min-width: 64rem)";
@@ -360,6 +364,28 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, day, pending]);
 
+  // Race a row's recorded solve (race.ts; Plus), offered until the viewer has
+  // a finish of their own on this board. The puzzle opens with that player
+  // ticked in its race picker.
+  const account = useMaybeAccount();
+  const puzzleKey = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
+  const solvedHere = !!own || !!privateFinish || (!!entries && !!user && entries.some((e) => e.userId === user.id));
+  const raceCandidates = useRaceCandidates(puzzleKey, !solvedHere);
+  const raceable = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
+  const raceRow = useCallback(
+    (userId: string) => {
+      if (!puzzleKey || !account) return;
+      if (!account.plus) {
+        account.openPaywall({ placement: "leaderboard_race", feature: "race" });
+        return;
+      }
+      saveRaceIntent({ key: puzzleKey, userIds: [userId] });
+      track("leaderboard_race", { slot, past });
+      navigate(dailyPath(day, slot));
+    },
+    [puzzleKey, account, slot, past, navigate, day],
+  );
+
   // While the server answers, the viewer's posted finish is already a row
   // (rank unknown yet, drawn as "–").
   const shown = useMemo<RankedDailyEntry[] | null>(() => {
@@ -511,7 +537,22 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
                           )}
                         </div>
                       </td>
-                      <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">{formatDuration(e.seconds)}</td>
+                      <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">
+                        <span className="inline-flex items-center justify-end gap-2">
+                          {!isMe && raceable.has(e.userId) && (
+                            <button
+                              type="button"
+                              onClick={() => raceRow(e.userId)}
+                              aria-label={t("ghostRace.raceRow", { name: e.displayName })}
+                              className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-brand-50 px-2 font-sans text-xs font-semibold text-brand-700 hover:bg-brand-100 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
+                            >
+                              <Flag className="size-3.5" aria-hidden="true" />
+                              {t("ghostRace.raceButton")}
+                            </button>
+                          )}
+                          {formatDuration(e.seconds)}
+                        </span>
+                      </td>
                     </tr>
                   );
                 })}

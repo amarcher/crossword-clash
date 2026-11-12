@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
+import { RaceVisibilityCard } from "../components/Race/RaceVisibility";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { NotificationSettings } from "../components/Push";
 import { PendingRequests } from "../components/Friends";
@@ -283,6 +284,7 @@ export function AccountScreen() {
                       {friends.friendships.friends.length === 0 ? t("race.addFriends") : t("account.manageFriends")}
                     </Button>
                   </Card>
+                  {userId && <RaceVisibilityCard userId={userId} />}
                 </>
               )}
             </section>

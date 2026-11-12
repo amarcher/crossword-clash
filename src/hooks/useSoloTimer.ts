@@ -6,6 +6,8 @@ import { clearProgress, getProgress, saveAttempt } from "../lib/soloProgress";
 const PERSIST_INTERVAL_MS = 5_000;
 export interface SoloTimerApi {
   getElapsedSeconds: () => number;
+  /** The same clock to the millisecond: a race recording's timestamps (race.ts). */
+  getElapsedMs: () => number;
   running: boolean;
   result: SoloCompletionResult | null;
   fresh: boolean;
@@ -64,6 +66,7 @@ export function useSoloTimer(
   const [result, setResult] = useState<SoloCompletionResult | null>(null);
   const [fresh, setFresh] = useState(false);
   const getElapsedSeconds = useCallback(() => clockRef.current ? Math.floor(elapsed(clockRef.current) / 1000) : 0, []);
+  const getElapsedMs = useCallback(() => (clockRef.current ? elapsed(clockRef.current) : 0), []);
   const save = useCallback(() => {
     const saved = !clockRef.current || checkpoint(clockRef.current);
     setSaveFailed(!saved);
@@ -146,5 +149,5 @@ export function useSoloTimer(
     setResult(wasCompleted ? describeRecordedCompletion(key, seconds) : recordSoloCompletion(key, seconds, new Date(), { assisted: assistedRef.current }));
   }, [key, isComplete]);
 
-  return { getElapsedSeconds, running, result, fresh, pause, resume, save, saveFailed, restart };
+  return { getElapsedSeconds, getElapsedMs, running, result, fresh, pause, resume, save, saveFailed, restart };
 }

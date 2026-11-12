@@ -36,6 +36,12 @@ export type AnalyticsEvent =
   | "autocheck_toggled"
   /** Solo without autocheck: a check or a reveal was asked for. Param `scope` (puzzle | word | reveal). */
   | "puzzle_checked"
+  /** A race against recorded solves began (race.ts). Params: `ghosts` (1-3), `friends` (how many of them are friends). */
+  | "race_started"
+  /** A recorded solve was replayed after the finish. Param `racing`: it was one of the ghosts just raced. */
+  | "replay_watched"
+  /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
+  | "leaderboard_race"
   | "narrator_enabled"
   | "language_changed"
   | "result_shared"
