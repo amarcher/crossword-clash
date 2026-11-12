@@ -17,7 +17,9 @@ const state: {
   native: boolean;
   /** How the fake engine answers `load()`: a download with progress, straight away, or a failure (then success). */
   load: "download" | "ready" | "fail-once";
-} = { account: null as unknown as StudioAccount, native: false, load: "ready" };
+  /** What the fake engine says fits each entry (the heatmap's counts). */
+  counts: Record<string, number>;
+} = { account: null as unknown as StudioAccount, native: false, load: "ready", counts: {} };
 const loads: number[] = [];
 let failures = 0;
 
@@ -42,15 +44,15 @@ vi.mock("../lib/seedgrid/engineClient", () => {
     }
     restart = () => Promise.resolve(5000);
     dispose = () => undefined;
-    options = async () => ({ ok: true, counts: { "1A": 7 }, words: [{ word: "ABCDE", score: 50 }] });
+    options = async () => ({ ok: true, counts: state.counts, words: [{ word: "ABCDE", score: 50 }] });
     classify = async () => ({});
     fill = async () => ({ ok: false, reason: "timeout", ms: 1 });
     skeleton = async () => ({ grid: null, attempts: 0, minScore: 50 });
   }
   return { EngineClient, STUDIO_WORD_LIST_URL: "https://abc.supabase.co/storage/v1/object/public/seedgrid/words-production.dict" };
 });
-const draftClues = vi.hoisted(() => vi.fn(async () => ({})));
-vi.mock("../lib/seedgrid/studioClaude", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/seedgrid/studioClaude")>()), draftClues }));
+const draftClueOptions = vi.hoisted(() => vi.fn(async () => ({})));
+vi.mock("../lib/seedgrid/studioClaude", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/seedgrid/studioClaude")>()), draftClueOptions }));
 vi.mock("../hooks/useStudioAccount", () => ({ useStudioAccount: () => state.account }));
 vi.mock("../hooks/useStudioToken", () => ({ useStudioToken: () => "", setStudioToken: () => undefined }));
 const navigate = vi.fn();
@@ -102,6 +104,7 @@ beforeEach(() => {
   state.account = account();
   state.native = false;
   state.load = "ready";
+  state.counts = { "1A": 7 };
   loads.length = 0;
   failures = 0;
   navigate.mockClear();
@@ -119,7 +122,7 @@ describe("StudioScreen on a phone", () => {
     renderStudio();
     fireEvent.click(within(panel("grid")).getByRole("button", { name: /Draft all clues/ }));
     expect(panel("clues").hidden).toBe(false);
-    await waitFor(() => expect(draftClues).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(draftClueOptions).toHaveBeenCalledTimes(1));
   });
 
   it("reads out the tightest square while the heatmap is on", async () => {
@@ -135,9 +138,10 @@ describe("StudioScreen on a phone", () => {
     fireEvent.click(await within(strip).findByRole("button", { name: "Write ABCDE" }));
     expect(panel("grid").hidden).toBe(false);
     await waitFor(() => expect(document.querySelector(".grid-shell")?.textContent).toMatch(/A.*B.*C.*D.*E/));
-    // "All words" is the way to the full list.
-    fireEvent.click(within(strip).getByRole("button", { name: /All 1 words/ }));
-    expect(panel("words").hidden).toBe(false);
+    // Once the entry is written the strip keeps to one link, which pulls the full list up over the tools; the grid stays on screen.
+    fireEvent.click(within(strip).getByRole("button", { name: /Other words for 1 Across/ }));
+    expect(screen.getByRole("dialog", { name: "Words for 1 Across" })).toBeTruthy();
+    expect(panel("grid").hidden).toBe(false);
   });
 
   it("clues the selected entry from the bar under a finished grid, the same text the Clues tab holds", () => {
@@ -150,10 +154,9 @@ describe("StudioScreen on a phone", () => {
   it("shows one tab at a time and switches panels from the bottom bar", async () => {
     renderStudio();
     const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((t) => t.textContent)).toEqual(["Grid", "Words", "Clues", "More"]);
+    expect(tabs.map((t) => t.textContent)).toEqual(["Grid", "Clues", "More"]);
     expect(screen.getByRole("tab", { name: "Grid" }).getAttribute("aria-selected")).toBe("true");
     expect(panel("grid").hidden).toBe(false);
-    expect(panel("words").hidden).toBe(true);
     expect(panel("clues").hidden).toBe(true);
     expect(panel("more").hidden).toBe(true);
     // The grid, its title and toolbar are on the first tab; Play test and Export are not (they live under More).
@@ -161,13 +164,6 @@ describe("StudioScreen on a phone", () => {
     expect(within(panel("grid")).getByLabelText("Title")).toBeTruthy();
     expect(within(panel("grid")).getByRole("button", { name: /Fill/ })).toBeTruthy();
     expect(within(panel("grid")).queryByRole("button", { name: /Play test/ })).toBeNull();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Words" }));
-    expect(panel("grid").hidden).toBe(true);
-    expect(panel("words").hidden).toBe(false);
-    expect(screen.getByRole("tab", { name: "Words" }).getAttribute("aria-selected")).toBe("true");
-    // A fresh grid has a cursor, so the candidate list for 1 Across is there.
-    await waitFor(() => expect(within(panel("words")).getByRole("heading", { name: "1 Across" })).toBeTruthy());
 
     fireEvent.click(screen.getByRole("tab", { name: "Clues" }));
     expect(panel("clues").hidden).toBe(false);
@@ -186,15 +182,48 @@ describe("StudioScreen on a phone", () => {
     expect(more.getByRole("button", { name: /Export \.puz/ })).toBeTruthy();
   });
 
-  it("writes a tapped candidate into the grid and returns to the Grid tab", async () => {
+  it("writes a word from the pulled-up list with the grid still in view, and the list stays up", async () => {
     renderStudio();
-    fireEvent.click(screen.getByRole("tab", { name: "Words" }));
-    const word = await within(panel("words")).findByRole("button", { name: "ABCDE" });
-    fireEvent.click(word);
-    expect(panel("grid").hidden).toBe(false);
+    const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
+    fireEvent.click(await within(strip).findByRole("button", { name: /All 1 words/ }));
+    const sheet = screen.getByRole("dialog", { name: "Words for 1 Across" });
+    fireEvent.click(await within(sheet).findByRole("button", { name: "ABCDE" }));
     expect(screen.getByRole("tab", { name: "Grid" }).getAttribute("aria-selected")).toBe("true");
     const cells = within(panel("grid")).getAllByRole("gridcell");
     expect(cells.slice(0, 5).map((c) => c.textContent?.replace(/\d/g, ""))).toEqual(["A", "B", "C", "D", "E"]);
+    expect(screen.getByRole("dialog", { name: "Words for 1 Across" })).toBeTruthy();
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close the word list" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("moves between entries from the clue bar, by its arrows or a sideways swipe, across then down and around", () => {
+    renderStudio();
+    const grid = within(panel("grid"));
+    expect(grid.getByLabelText("Clue for 1 Across")).toBeTruthy();
+    fireEvent.click(grid.getByRole("button", { name: "Next entry" }));
+    expect(grid.getByLabelText("Clue for 6 Across")).toBeTruthy();
+    fireEvent.click(grid.getByRole("button", { name: "Previous entry" }));
+    fireEvent.click(grid.getByRole("button", { name: "Previous entry" }));
+    expect(grid.getByLabelText("Clue for 5 Down")).toBeTruthy();
+    // A swipe right goes back, a swipe left forward; a short or mostly vertical drag does nothing.
+    const bar = grid.getByLabelText("Clue for 5 Down").closest("div.touch-pan-y")!;
+    fireEvent.pointerDown(bar, { pointerType: "touch", clientX: 300, clientY: 10 });
+    fireEvent.pointerUp(bar, { pointerType: "touch", clientX: 200, clientY: 14 });
+    expect(grid.getByLabelText("Clue for 1 Across")).toBeTruthy();
+    fireEvent.pointerDown(bar, { pointerType: "touch", clientX: 100, clientY: 10 });
+    fireEvent.pointerUp(bar, { pointerType: "touch", clientX: 120, clientY: 90 });
+    expect(grid.getByLabelText("Clue for 1 Across")).toBeTruthy();
+  });
+
+  it("offers Fill from the start and disables it, saying why, when an entry has no word that fits", async () => {
+    renderStudio();
+    const fill = () => within(panel("grid")).getByRole("button", { name: /^Fill$/ }) as HTMLButtonElement;
+    await waitFor(() => expect(fill().disabled).toBe(false));
+    cleanup();
+    state.counts = { "1A": 0 };
+    renderStudio();
+    expect(await within(panel("grid")).findByText(/No word fits 1 Across/)).toBeTruthy();
+    expect(fill().disabled).toBe(true);
   });
 
   it("shows the word-list download with progress on a first open, then the word count", async () => {
