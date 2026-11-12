@@ -8,7 +8,8 @@
  */
 import { supabase } from "./supabaseClient";
 import { decodeReplay, REPLAY_KIND } from "./replayCode";
-import { GHOST_COLORS, type Ghost, type TraceEvent } from "./race";
+import { GHOST_COLORS, WRONG_LETTER, type Ghost, type TraceEvent } from "./race";
+import type { PuzzleCell } from "../types/puzzle";
 
 /** The shape of a replay share ID. */
 export const REPLAY_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -51,4 +52,29 @@ export function ghostFromReplay(code: string, shareId: string, name: string): Gh
   }
   if (events.length === 0) return null;
   return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events };
+}
+
+/**
+ * The sender's solve with its letters, for the replay after the racer
+ * finishes: the code holds where and when each right letter went in, and a
+ * right letter is the puzzle's answer there, so it is rebuilt from the grid;
+ * a wrong one shows as WRONG_LETTER (which wrong letter isn't kept). Null when
+ * the code doesn't decode or doesn't fit this puzzle.
+ */
+export function letteredReplay(
+  code: string,
+  puzzle: { width: number; height: number; cells: readonly (readonly Pick<PuzzleCell, "solution">[])[] },
+): { seconds: number; events: TraceEvent[] } | null {
+  const replay = decodeReplay(code);
+  if (!replay || replay.width !== puzzle.width || replay.height !== puzzle.height) return null;
+  const answer = (cell: number) => puzzle.cells[Math.floor(cell / puzzle.width)]?.[cell % puzzle.width]?.solution ?? null;
+  const events: TraceEvent[] = [];
+  for (const e of replay.events) {
+    if (e.kind === REPLAY_KIND.right) {
+      const letter = answer(e.cell);
+      if (letter) events.push([e.ms, e.cell, letter]);
+    } else if (e.kind === REPLAY_KIND.wrong) events.push([e.ms, e.cell, WRONG_LETTER]);
+    else if (e.kind === REPLAY_KIND.emptied) events.push([e.ms, e.cell, ""]);
+  }
+  return events.length ? { seconds: replay.seconds, events } : null;
 }

@@ -29,6 +29,12 @@ export type TraceEvent = [number, number, string | number];
  */
 export type ReplayMark = [number, number, "r" | "a" | "d"];
 
+/**
+ * In a replay rebuilt from a share code (replayShare.ts), a square that held a
+ * wrong letter: the code knows a letter there was wrong, not which one.
+ */
+export const WRONG_LETTER = "?";
+
 /** At most this many friends race at once. */
 export const MAX_GHOSTS = 3;
 /** A recording holds at most this many events (the server's limit too). */
