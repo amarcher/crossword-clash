@@ -28,7 +28,7 @@ proposed) and that friend races are built first. 8 and 9 are still open.
 |---|---|---|---|
 | 1 | Bonus cadence and size | **Decided: an extra puzzle every day.** Size proposed: **11×11**, between the midi (9×9) and the large (15×15); 7×7 sits too close to the mini. Size still open | §1.1 |
 | 2 | Free play of the bonus | **Decided: none.** Free players see the card only | §1.2 |
-| 3 | Who may race your solve | **Decided: your accepted friends**, unless you turn off "Let friends race my solves" (default on) | §2.3 |
+| 3 | Who may race your solve | **Decided: anyone with Plus, unless you opt out.** An account chooses "Anyone" (default), "Friends only" or "No one" for races and replays (revised 2026-11-12; built in PR #245) | §2.3 |
 | 4 | Friend races free vs Plus | **Decided: every race is Plus.** Free keeps today's "beat my time" challenge link | §2.2 |
 | 5 | Deeper stats free vs Plus | **Decided: the full page is Plus.** Free players see the real stat labels with blurred figures, so it reads as locked, not broken | §3.2 |
 | 6 | Streak freeze | **Decided: not now** (repair covers it; revisit if lost streaks drive people away) | §4 |
@@ -447,6 +447,43 @@ Share text and result cards stay plain text: no badge.
 
 ---
 
+## 6a. Sharing an animated replay (next, after races)
+
+Andrew's idea (2026-11-12): instead of the emoji grid, a shared result's
+link unfurls with a sped-up replay of *how* the solve went.
+
+**What works in iMessage, from Andrew's own projects** (space-race, which
+mirrors periodic-table): plain Open Graph tags in the HTML of the shared URL,
+`og:video` + `og:video:secure_url` pointing at a short H.264 MP4
+(`og:video:type` video/mp4, 1280×720), with an `og:image` poster for apps
+that won't play video and `twitter:card summary_large_image`. space-race's
+clip is 4 s, 1.1 MB, silent and faststart, served as a static file with
+`Content-Length` and `Accept-Ranges`. periodic-table learned: absolute URLs
+on the canonical domain, every asset must exist (a 404 drops the preview
+silently), trimmed env values, `og:image` dimensions that match the file.
+
+**For a solve** both the media and the tags are per share, which neither
+project needed:
+
+- **Spoiler-free:** the clip shows squares lighting up in solving order in
+  the player's colour, never letters, with the time ticking: the recording
+  (§2.3) already holds the order.
+- **Media:** render the clip from the recording when the player shares
+  (frames from the grid, H.264 at 1280×720, about 4–6 s, silent, faststart),
+  upload it to Supabase Storage (public, `immutable`), plus a poster frame.
+  Where to encode (in the browser with WebCodecs, or a server function with
+  ffmpeg) is the open engineering question; the browser is free and fast
+  enough for a few seconds of a flat grid.
+- **Tags:** a share link `/s/<id>` whose HTML carries that share's
+  `og:video` / `og:image`, served by a small Vercel function that renders
+  the tags from the share row (the page itself is the SPA). The emoji block
+  stays as the text that travels with the link.
+- **Phones:** the native share sheet can also attach the MP4 itself, so it
+  plays in WhatsApp and the like, where `og:video` isn't shown.
+
+Effort (estimate): 4–6 days after races (recording reuse, encoder, storage
+and share rows, the tags function, the share sheet).
+
 ## 7. Order and the pitch
 
 | Step | Feature | Effort (estimate) | Why this place |
@@ -455,7 +492,7 @@ Share text and result cards stay plain text: no badge.
 | 2 | Streak repair | 2 days | Small; protects the daily habit, Plus's most emotional hook |
 | 3 | Bonus puzzles | 3–5 days + a puzzle a day to review | Recurring new content, the strongest reason to stay subscribed |
 | 4 | Deeper stats | 4–6 days | Uses data already collected; the blurred free state sells it |
-| 5 | Friend races | 1.5–2 weeks | Needs the new recording, and the open choices in §2.6 |
+| 5 | Friend races | 1.5–2 weeks | Built first (PR #245) |
 
 When each ships, the Plus pitch (`PlusPitch.tsx`, `plus.benefit*`) gains a
 line. The intended final list, most compelling first:
