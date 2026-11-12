@@ -5,7 +5,7 @@ import { CrosswordGrid } from "../CrosswordGrid";
 import { Button } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
-import { ghostAt, replaySpeed, type TraceEvent } from "../../lib/race";
+import { ghostAt, replaySpeed, WRONG_LETTER, type TraceEvent } from "../../lib/race";
 import type { CellState, Puzzle } from "../../types/puzzle";
 
 interface ReplayDialogProps {
@@ -58,7 +58,9 @@ export function ReplayDialog({ puzzle, name, color, seconds, events, onClose }: 
     const out: Record<string, CellState> = {};
     for (const [cell, letter] of ghostAt({ events, seconds }, ms).filled) {
       if (typeof letter !== "string") continue;
-      out[`${Math.floor(cell / puzzle.width)},${cell % puzzle.width}`] = { letter, correct: true, playerId: "replay" };
+      // A wrong letter rebuilt from a share code is known only as wrong: drawn as the solver's checked-wrong square.
+      out[`${Math.floor(cell / puzzle.width)},${cell % puzzle.width}`] =
+        letter === WRONG_LETTER ? { letter, correct: false, checked: "wrong" } : { letter, correct: true, playerId: "replay" };
     }
     return out;
   }, [events, seconds, ms, puzzle.width]);

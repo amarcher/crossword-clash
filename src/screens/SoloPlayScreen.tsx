@@ -50,7 +50,7 @@ import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog } from "../components/Race/ReplayDialog";
 import { encodeReplay } from "../lib/replayCode";
-import { createReplayShare } from "../lib/replayShare";
+import { createReplayShare, fetchReplayShare, letteredReplay } from "../lib/replayShare";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -368,19 +368,30 @@ export function SoloPlayScreen() {
       seen.add(userId);
       out.push({ userId, name });
     };
-    // A shared link's sender (userId "link:…") has no recording with letters to replay.
-    for (const g of race) if (!g.userId.startsWith("link:")) add(g.userId, g.name);
+    for (const g of race) add(g.userId, g.name);
     for (const c of raceCandidates) add(c.userId, c.username);
     return out.slice(0, 3);
   }, [race, raceCandidates]);
   const watchReplay = useCallback(
     async (userId: string) => {
-      if (!puzzleKey) return;
+      if (!puzzleKey || !puzzle) return;
+      const who = replayable.find((r) => r.userId === userId);
+      const color = race.find((g) => g.userId === userId)?.color ?? GHOST_COLORS[0];
+      // A shared link's sender (userId "link:<share id>"), free like the race:
+      // their letters are rebuilt from the replay code and the puzzle.
+      if (userId.startsWith("link:")) {
+        const code = await fetchReplayShare(userId.slice(5));
+        const rebuilt = code ? letteredReplay(code, puzzle) : null;
+        if (rebuilt) {
+          setReplay({ name: who?.name ?? "", color, ...rebuilt });
+          track("replay_watched", { racing: true });
+        }
+        return;
+      }
       if (!plus) {
         openRacePitch();
         return;
       }
-      const who = replayable.find((r) => r.userId === userId);
       try {
         let trace = await fetchSolveTrace(userId, puzzleKey);
         // The finish this unlocks may still be on its way to the server: one more try.
@@ -389,14 +400,13 @@ export function SoloPlayScreen() {
           trace = await fetchSolveTrace(userId, puzzleKey);
         }
         if (!trace || !trace.withLetters) return;
-        const color = race.find((g) => g.userId === userId)?.color ?? GHOST_COLORS[0];
         setReplay({ name: who?.name ?? "", color, seconds: trace.seconds, events: trace.events });
         track("replay_watched", { racing: race.some((g) => g.userId === userId) });
       } catch {
         // A replay that can't load just doesn't open.
       }
     },
-    [puzzleKey, plus, openRacePitch, replayable, race],
+    [puzzleKey, puzzle, plus, openRacePitch, replayable, race],
   );
 
   // Autocheck off and the grid full but not right: a quiet notice over the

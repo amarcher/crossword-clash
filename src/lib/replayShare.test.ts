@@ -14,7 +14,7 @@ vi.mock("./supabaseClient", () => ({
   },
 }));
 
-const { createReplayShare, fetchReplayShare, ghostFromReplay } = await import("./replayShare");
+const { createReplayShare, fetchReplayShare, ghostFromReplay, letteredReplay } = await import("./replayShare");
 const { encodeReplay } = await import("./replayCode");
 
 afterEach(() => {
@@ -56,5 +56,20 @@ describe("racing a shared link's sender", () => {
     expect(ghost).toMatchObject({ userId: "link:E0Gqr8Iw09i", name: "Andrew", seconds: 4 });
     expect(ghost.events).toEqual([[1000, 0, 1], [1500, 0, 0], [2000, 0, 1], [3000, 1, 1]]);
     expect(ghostFromReplay("nope", "E0Gqr8Iw09i", "Andrew")).toBeNull();
+  });
+});
+
+describe("watching a shared link's sender", () => {
+  it("rebuilds their letters from the answers: right letters in full, a wrong one as ?, erases as empty", () => {
+    const grid = { width: 3, height: 1, cells: [[{ solution: "C" }, { solution: null }, { solution: "T" }]] };
+    const code = encodeReplay(grid, [[1000, 0, "Q"], [1500, 0, ""], [2000, 0, "C"], [3000, 2, "T"]], 4, [[2500, 2, "r"]])!;
+    expect(letteredReplay(code, grid)).toEqual({ seconds: 4, events: [[1000, 0, "?"], [1500, 0, ""], [2000, 0, "C"], [3000, 2, "T"]] });
+  });
+
+  it("refuses a code that doesn't fit the puzzle", () => {
+    const grid = { width: 2, height: 1, cells: [[{ solution: "A" }, { solution: "B" }]] };
+    const code = encodeReplay(grid, [[0, 0, "A"]], 2)!;
+    expect(letteredReplay(code, { width: 3, height: 1, cells: [[{ solution: "A" }, { solution: "B" }, { solution: "C" }]] })).toBeNull();
+    expect(letteredReplay("nope", grid)).toBeNull();
   });
 });
