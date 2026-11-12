@@ -1080,6 +1080,12 @@
     "remindTomorrowHint": "One notification when the day's puzzles are ready. Turn it off any time."
   },
   "ghostRace": {
+    "watchVs": "Watch you vs {{name}}",
+    "you": "You",
+    "watchRace": "Watch the race",
+    "raceTitle": "{{a}} vs {{b}}",
+    "raceWon": "{{name}} won by {{delta}} · played at {{speed}}× speed",
+    "raceTied": "A dead heat · played at {{speed}}× speed",
     "raceRow": "Race {{name}}'s solve",
     "pickTitle": "Race a recorded solve",
     "offerFriend": "{{name}} solved this. Race their solve",

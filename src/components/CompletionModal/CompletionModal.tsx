@@ -683,7 +683,7 @@ export function CompletionModal({
                     className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
                   >
                     <PlayCircle className="size-4" aria-hidden="true" />
-                    {t("ghostRace.watch", { name: r.name })}
+                    {t("ghostRace.watchVs", { name: r.name })}
                   </button>
                 ))}
               </div>

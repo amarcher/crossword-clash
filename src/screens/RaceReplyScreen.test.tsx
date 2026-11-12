@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import "../i18n/i18n";
 
@@ -26,11 +26,13 @@ const renderAt = () =>
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  share.fetchReplayShare.mockReset();
+  share.letteredReplay.mockReset();
 });
 
 describe("RaceReplyScreen", () => {
   it("says who raced which daily and how it went, offers their solve and a race back, and marks the reply seen", async () => {
-    replies.fetchRaceReply.mockResolvedValueOnce({ id: ID, name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: "", seen: false });
+    replies.fetchRaceReply.mockResolvedValueOnce({ id: ID, shareId: "E0Gqr8Iw09i", name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: "", seen: false });
     feed.fetchDailyForDay.mockResolvedValueOnce({ puzzle: { width: 5, height: 5, cells: [] } });
     share.fetchReplayShare.mockResolvedValueOnce("CODE");
     share.letteredReplay.mockReturnValueOnce({ seconds: 90, events: [[0, 0, "A"]] });
@@ -40,6 +42,18 @@ describe("RaceReplyScreen", () => {
     expect(screen.getByRole("button", { name: "Watch Sam's solve" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Race Sam's solve" }).getAttribute("href")).toBe("/daily/2026-11-12/mini?beat=90&by=Sam&r=VJ0ncnWyJ9j");
     expect(replies.markRepliesSeen).toHaveBeenCalledWith([ID]);
+  });
+
+  it("plays the race side by side when the viewer's own shared solve loads too", async () => {
+    replies.fetchRaceReply.mockResolvedValueOnce({ id: ID, shareId: "E0Gqr8Iw09i", name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: "", seen: false });
+    feed.fetchDailyForDay.mockResolvedValueOnce({ puzzle: { width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A", number: 1 }]], clues: [] } });
+    share.fetchReplayShare.mockImplementation(async (id: string) => (id === "VJ0ncnWyJ9j" ? "THEIRS" : "MINE"));
+    share.letteredReplay.mockImplementation((code: string) => ({ seconds: code === "THEIRS" ? 90 : 102, events: [[0, 0, "A"]] }));
+    renderAt();
+    fireEvent.click(await screen.findByRole("button", { name: "Watch the race" }));
+    expect(await screen.findByRole("dialog", { name: "You vs Sam" })).toBeTruthy();
+    expect(screen.getByText("Sam won by 0:12 · played at 6× speed")).toBeTruthy();
+    expect(screen.getAllByRole("figure").map((f) => f.getAttribute("aria-label"))).toEqual(["You", "Sam"]);
   });
 
   it("says so when the reply isn't there", async () => {

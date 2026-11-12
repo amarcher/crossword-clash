@@ -21,7 +21,7 @@ afterEach(() => {
   rows.error = null;
 });
 
-const row = { id: "0a1b2c3d-4e5f-6789-abcd-ef0123456789", name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, to_seconds: 102, reply_share_id: "VJ0ncnWyJ9j", created_at: "2026-11-12T20:00:00Z", seen_at: null };
+const row = { id: "0a1b2c3d-4e5f-6789-abcd-ef0123456789", share_id: "E0Gqr8Iw09i", name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, to_seconds: 102, reply_share_id: "VJ0ncnWyJ9j", created_at: "2026-11-12T20:00:00Z", seen_at: null };
 
 describe("race replies", () => {
   it("files the reply with whole seconds", async () => {
@@ -38,7 +38,7 @@ describe("race replies", () => {
   it("reads replies as the screens use them, dropping a row with an unknown slot", async () => {
     rows.data = [row, { ...row, id: "x", slot: "huge" }];
     expect(await fetchRaceReplies("u1")).toEqual([
-      { id: row.id, name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: row.created_at, seen: false },
+      { id: row.id, shareId: "E0Gqr8Iw09i", name: "Sam", day: "2026-11-12", slot: "mini", seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: row.created_at, seen: false },
     ]);
   });
 

@@ -48,12 +48,15 @@ import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace
 import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
-import { ReplayDialog } from "../components/Race/ReplayDialog";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { encodeReplay } from "../lib/replayCode";
 import { createReplayShare, fetchReplayShare, letteredReplay } from "../lib/replayShare";
 import { replyToRace } from "../lib/raceReplies";
 import { buildDailyLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
+
+/** The viewer's own solve beside someone else's in a race replay: the brand blue. */
+const MY_REPLAY_COLOR = "#3a6bf0";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -362,7 +365,15 @@ export function SoloPlayScreen() {
     raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
 
   // Watching a recorded solve, letters and all, once this one is finished.
-  const [replay, setReplay] = useState<{ name: string; color: string; seconds: number; events: Ghost["events"] } | null>(null);
+  const [replay, setReplay] = useState<ReplaySolve[] | null>(null);
+  // Watching someone just raced: their solve beside this one, on one clock (both sides have finished).
+  const withMine = useCallback(
+    (theirs: ReplaySolve): ReplaySolve[] => {
+      const mine = soloResult ? recorder.take() : null;
+      return mine && soloResult ? [{ name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
+    },
+    [soloResult, recorder, t],
+  );
   const replayable = useMemo(() => {
     const seen = new Set<string>();
     const out: { userId: string; name: string }[] = [];
@@ -386,7 +397,7 @@ export function SoloPlayScreen() {
         const code = await fetchReplayShare(userId.slice(5));
         const rebuilt = code ? letteredReplay(code, puzzle) : null;
         if (rebuilt) {
-          setReplay({ name: who?.name ?? "", color, ...rebuilt });
+          setReplay(withMine({ name: who?.name ?? "", color, ...rebuilt }));
           track("replay_watched", { racing: true });
         }
         return;
@@ -403,13 +414,13 @@ export function SoloPlayScreen() {
           trace = await fetchSolveTrace(userId, puzzleKey);
         }
         if (!trace || !trace.withLetters) return;
-        setReplay({ name: who?.name ?? "", color, seconds: trace.seconds, events: trace.events });
+        setReplay(withMine({ name: who?.name ?? "", color, seconds: trace.seconds, events: trace.events }));
         track("replay_watched", { racing: race.some((g) => g.userId === userId) });
       } catch {
         // A replay that can't load just doesn't open.
       }
     },
-    [puzzleKey, puzzle, plus, openRacePitch, replayable, race],
+    [puzzleKey, puzzle, plus, openRacePitch, replayable, race, withMine],
   );
 
   // Autocheck off and the grid full but not right: a quiet notice over the
@@ -923,7 +934,7 @@ export function SoloPlayScreen() {
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
       />
-      {replay && <ReplayDialog puzzle={puzzle} {...replay} onClose={() => setReplay(null)} />}
+      {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
     </>
   );
 }

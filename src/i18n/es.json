@@ -1080,6 +1080,12 @@
     "remindTomorrowHint": "Una notificación cuando los crucigramas del día estén listos. Desactívala cuando quieras."
   },
   "ghostRace": {
+    "watchVs": "Ver tú contra {{name}}",
+    "you": "Tú",
+    "watchRace": "Ver la carrera",
+    "raceTitle": "{{a}} contra {{b}}",
+    "raceWon": "{{name}} ganó por {{delta}} · a {{speed}}× de velocidad",
+    "raceTied": "Empate · a {{speed}}× de velocidad",
     "raceRow": "Competir contra la partida de {{name}}",
     "pickTitle": "Compite contra una partida grabada",
     "offerFriend": "{{name}} lo resolvió. Compite contra su partida",

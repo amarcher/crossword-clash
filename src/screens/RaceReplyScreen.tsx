@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Flag, Loader2, PlayCircle, Reply } from "lucide-react";
 import { Button, Card, buttonClass } from "../components/ui";
 import { FlowPage } from "../components/Flow";
-import { ReplayDialog } from "../components/Race/ReplayDialog";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { replyVerdict } from "../components/Race/RaceRepliesCard";
 import { fetchRaceReply, markRepliesSeen, type RaceReply } from "../lib/raceReplies";
 import { fetchReplayShare, letteredReplay } from "../lib/replayShare";
@@ -20,7 +20,9 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
 type State =
   | { kind: "loading" }
   | { kind: "missing" }
-  | { kind: "ready"; reply: RaceReply; puzzle: Puzzle | null; replay: { seconds: number; events: TraceEvent[] } | null };
+  | { kind: "ready"; reply: RaceReply; puzzle: Puzzle | null; theirs: Replay | null; mine: Replay | null };
+
+type Replay = { seconds: number; events: TraceEvent[] };
 
 /**
  * `/reply/:id` — someone raced a daily the viewer shared (raceReplies.ts):
@@ -44,10 +46,21 @@ export function RaceReplyScreen() {
         return;
       }
       void markRepliesSeen([reply.id]);
-      const [daily, code] = await Promise.all([fetchDailyForDay(reply.day, reply.slot), reply.replyShareId ? fetchReplayShare(reply.replyShareId) : Promise.resolve(null)]);
+      // Their solve and the viewer's own (the shared link), to watch the race side by side.
+      const [daily, theirCode, myCode] = await Promise.all([
+        fetchDailyForDay(reply.day, reply.slot),
+        reply.replyShareId ? fetchReplayShare(reply.replyShareId) : Promise.resolve(null),
+        fetchReplayShare(reply.shareId),
+      ]);
       if (!live) return;
       const puzzle = daily?.puzzle ?? null;
-      setState({ kind: "ready", reply, puzzle, replay: puzzle && code ? letteredReplay(code, puzzle) : null });
+      setState({
+        kind: "ready",
+        reply,
+        puzzle,
+        theirs: puzzle && theirCode ? letteredReplay(theirCode, puzzle) : null,
+        mine: puzzle && myCode ? letteredReplay(myCode, puzzle) : null,
+      });
     })();
     return () => {
       live = false;
@@ -71,7 +84,10 @@ export function RaceReplyScreen() {
     );
   }
 
-  const { reply, puzzle, replay } = state;
+  const { reply, puzzle, theirs, mine } = state;
+  const solves: ReplaySolve[] = theirs
+    ? [...(mine ? [{ name: t("ghostRace.you"), color: "#3a6bf0", ...mine }] : []), { name: reply.name, color: GHOST_COLORS[0], ...theirs }]
+    : [];
   const raceBack = reply.replyShareId ? buildDailyLink("", { day: reply.day, slot: reply.slot, seconds: reply.seconds, name: reply.name, replay: reply.replyShareId }) : null;
   return (
     <FlowPage
@@ -86,22 +102,20 @@ export function RaceReplyScreen() {
       onBack={() => history.back()}
     >
       <Card className="grid gap-3 p-5">
-        {replay && puzzle && (
-          <Button size="lg" block onClick={() => (setWatching(true), track("replay_watched", { racing: false }))}>
+        {solves.length > 0 && puzzle && (
+          <Button size="lg" block onClick={() => (setWatching(true), track("replay_watched", { racing: solves.length > 1 }))}>
             <PlayCircle className="size-5" aria-hidden="true" />
-            {t("ghostRace.watch", { name: reply.name })}
+            {solves.length > 1 ? t("ghostRace.watchRace") : t("ghostRace.watch", { name: reply.name })}
           </Button>
         )}
         {raceBack && (
-          <Link to={raceBack} className={buttonClass(replay ? "secondary" : "primary", "lg", "w-full")}>
+          <Link to={raceBack} className={buttonClass(solves.length ? "secondary" : "primary", "lg", "w-full")}>
             <Flag className="size-4" aria-hidden="true" />
             {t("challenge.raceButton", { name: reply.name })}
           </Link>
         )}
       </Card>
-      {watching && replay && puzzle && (
-        <ReplayDialog puzzle={puzzle} name={reply.name} color={GHOST_COLORS[0]} seconds={replay.seconds} events={replay.events} onClose={() => setWatching(false)} />
-      )}
+      {watching && solves.length > 0 && puzzle && <ReplayDialog puzzle={puzzle} solves={solves} onClose={() => setWatching(false)} />}
     </FlowPage>
   );
 }

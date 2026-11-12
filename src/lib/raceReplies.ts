@@ -10,6 +10,8 @@ import { isDailySlot, type DailySlot } from "./dailyFeed";
 
 export interface RaceReply {
   id: string;
+  /** The shared link that was raced (the sender's own replay share). */
+  shareId: string;
   /** The recipient's name as they finished. */
   name: string;
   day: string;
@@ -23,14 +25,15 @@ export interface RaceReply {
   seen: boolean;
 }
 
-type Row = { id: string; name: string; day: string; slot: string; seconds: number; to_seconds: number; reply_share_id: string | null; created_at: string; seen_at: string | null };
+type Row = { id: string; share_id: string; name: string; day: string; slot: string; seconds: number; to_seconds: number; reply_share_id: string | null; created_at: string; seen_at: string | null };
 
-const COLUMNS = "id, name, day, slot, seconds, to_seconds, reply_share_id, created_at, seen_at";
+const COLUMNS = "id, share_id, name, day, slot, seconds, to_seconds, reply_share_id, created_at, seen_at";
 
 function toReply(row: Row): RaceReply | null {
   if (!isDailySlot(row.slot)) return null;
   return {
     id: row.id,
+    shareId: row.share_id,
     name: row.name,
     day: row.day,
     slot: row.slot,
