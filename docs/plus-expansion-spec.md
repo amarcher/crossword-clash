@@ -1,4 +1,4 @@
-# Plus expansion: bonus puzzles, friend races, deeper stats, streak freeze, the Plus badge
+# Plus expansion: bonus puzzles, friend races, deeper stats, streak repair, the Plus badge
 
 Written 2026-11-12. Spec only: no application code changes. Claims about the
 current code cite a file (line numbers are from `main` at 4c70878); numbers not
@@ -9,7 +9,7 @@ archive past 30 days, the studio, the AI host on the TV view and synced
 progress (`plus.benefit*` in `src/i18n/en.json:734-737`). Andrew's read
 (2026-11-12): someone who only solves has enough free puzzles never to need
 Plus. This spec adds four features aimed at the daily solver (bonus puzzles,
-friend races, deeper stats, streak freeze and repair) and a Plus badge that
+friend races, deeper stats, streak repair) and a Plus badge that
 makes membership visible. Host and league perks (team mode, larger leagues,
 season history) are deferred: worth doing once rooms and leagues show use,
 and the bigger lift.
@@ -19,22 +19,23 @@ takes nothing they have today away.
 
 ---
 
-## Decisions needed from Andrew
+## Decisions
 
-Each has a recommendation; the reasoning is in the section named.
+Decided by Andrew on 2026-11-12 (1–7); 8–10 and the racing details in §2.6
+are still open.
 
-| # | Decision | Recommendation | Where |
+| # | Decision | Status | Where |
 |---|---|---|---|
-| 1 | Bonus cadence and size | **One themed bonus a week**, published Saturday (local day), 11×11 to 15×15, from the SeedGrid themed pipeline you already review | §1.1 |
-| 2 | Free taste of the bonus | **Free players see the card, title, theme and grid shape every week, and may play one bonus a month** (the first of the month); everything else opens the Plus pitch | §1.2 |
-| 3 | Who may race a recorded solve | **A friend's daily solves are raceable by their accepted friends**, with a setting "Let friends race my solves" (default on). Ghosts show *which squares* the friend filled and when, never the letters | §2.3 |
-| 4 | Friend races free vs Plus | **Free: race a friend on today's three dailies.** Plus: any archive day, your own best as a ghost, up to three friends at once | §2.2 |
-| 5 | Deeper stats free vs Plus | **Free: this week's times and your streak (as now). Plus: the full Stats page** (trends, percentiles, head-to-head with friends, slowest clues) | §3.2 |
-| 6 | Streak freeze | **Plus earns one freeze a week, banks up to two; a missed day uses one automatically** | §4.2 |
-| 7 | Streak repair | **Plus: a missed day can be repaired within 7 days by solving that day's daily.** Free players see the offer and the Plus pitch | §4.3 |
-| 8 | Badge design | **Option B, the gold seal**: the Plus pitch and menu already mark Plus with gold, gold is the app's colour for earned things, and it avoids reading as identity verification. Option A (blue seal) is the closest to Instagram's tick if you prefer that | §5.1 |
-| 9 | Badge visibility | **On by default, with "Show my Plus badge" in the account page**; the badge appears wherever a signed-in account's name does | §5.2 |
-| 10 | Order | **Badge → streak freeze/repair → bonus puzzles → stats → friend races** (smallest and most visible first; races last because they need a new recording) | §7 |
+| 1 | Bonus cadence and size | **Decided: an extra puzzle every day.** Size proposed: **11×11**, between the midi (9×9) and the large (15×15); 7×7 sits too close to the mini. Size still open | §1.1 |
+| 2 | Free play of the bonus | **Decided: none.** Free players see the card only | §1.2 |
+| 3 | Who may race your solve | **Decided: your accepted friends**, unless you turn off "Let friends race my solves" (default on) | §2.3 |
+| 4 | Friend races free vs Plus | **Decided: every race is Plus.** Free keeps today's "beat my time" challenge link | §2.2 |
+| 5 | Deeper stats free vs Plus | **Decided: the full page is Plus.** Free players see the real stat labels with blurred figures, so it reads as locked, not broken | §3.2 |
+| 6 | Streak freeze | **Decided: not now** (repair covers it; revisit if lost streaks drive people away) | §4 |
+| 7 | Streak repair | **Decided: Plus only, offered for 24 hours**: a missed day can be repaired until the end of the next day (local), by solving the missed day's daily. Free players see the offer and the Plus pitch | §4.2 |
+| 8 | Badge design | **Open.** Recommendation: option B, the gold seal (Plus is already marked with gold, gold is the app's colour for earned things, and it won't read as identity verification). Option A, the blue seal, is the closest to Instagram's tick | §5.1 |
+| 9 | Badge visibility | **Open.** Recommendation: on by default, with "Show my Plus badge" on the account page | §5.2 |
+| 10 | Order | **Open.** Recommendation: badge → streak repair → bonus puzzles → stats → friend races | §7 |
 
 ---
 
@@ -61,22 +62,22 @@ Each has a recommendation; the reasoning is in the section named.
 
 ### 1.1 Product
 
-A weekly themed puzzle that only Plus can play: "This week's bonus" on the
-menu beside the dailies, with its title, theme line and grid shape
-(`MiniGridThumb`). It publishes on Saturday (the player's local day, like the
-dailies) and stays playable for Plus forever; past bonuses get a row per
-week in the archive.
+An extra puzzle every day that only Plus can play: "Today's bonus" on the
+menu beside the mini, midi and large, with its title, theme line and grid
+shape (`MiniGridThumb`). It releases on the player's local day like the
+dailies and stays playable for Plus forever; past bonuses get their own row
+per day in the archive.
 
-Size 11×11 to 15×15, built with `pnpm seedgrid:large` from the themes
-backlog (`docs/large-puzzle-themes.json`) and reviewed by you as the dailies
-are. A themed weekend puzzle is the format solvers already pay for elsewhere
-(the New York Times' bonus puzzles), and it costs one review a week.
+Proposed size **11×11** (decision 1): between the midi (9×9) and the large
+(15×15), roughly a 5–8 minute solve (estimate). A 7×7 would sit too close to
+the mini. Built with the same SeedGrid tooling as the midi and large and
+reviewed by you as the dailies are; the real cost is **one more puzzle a day
+to review**. Its difficulty can follow the large's weekday register.
 
 ### 1.2 Free versus Plus
 
-Free players see the card every week (title, theme, shape, "N solvers this
-week") and may play **one bonus a month**: the first one published in each
-calendar month, so they taste it. Every other bonus opens the Plus pitch
+**No free play** (decision 2). Free players see today's card (title, theme,
+shape, "N solvers today") and the archive rows; Play opens the Plus pitch
 (`paywall_viewed { placement: "bonus", feature: "bonus" }`, a new
 `PlusFeature`).
 
@@ -88,7 +89,7 @@ who reads the network tab. So bonuses live in the database:
 
 ```sql
 create table bonus_puzzles (
-  week      date primary key,          -- the Saturday it publishes
+  day       date primary key,          -- the day it publishes
   title     text not null,
   theme     text,
   author    text not null default 'Crossword Clash',
@@ -102,27 +103,25 @@ create table bonus_puzzles (
 alter table bonus_puzzles enable row level security;
 -- No select policy on the table itself: nobody reads `puzzle` directly.
 
--- The card: metadata for released weeks, for everyone.
+-- The card: metadata for released days, for everyone.
 create view bonus_cards as
-  select week, title, theme, author, width, height, blocks, identity
-  from bonus_puzzles where week <= (now() at time zone 'utc')::date + 1;
+  select day, title, theme, author, width, height, blocks, identity
+  from bonus_puzzles where day <= (now() at time zone 'utc')::date + 1;
 
--- The puzzle: Plus, or the month's free one.
-create function bonus_puzzle(p_week date) returns jsonb
+-- The puzzle: Plus only.
+create function bonus_puzzle(p_day date) returns jsonb
   language sql security definer stable as $$
   select puzzle from bonus_puzzles
-  where week = p_week and week <= (now() at time zone 'utc')::date + 1
-    and (has_entitlement(auth.uid(), 'plus')
-         or week = (select min(week) from bonus_puzzles
-                    where date_trunc('month', week) = date_trunc('month', p_week)));
+  where day = p_day and day <= (now() at time zone 'utc')::date + 1
+    and has_entitlement(auth.uid(), 'plus');
 $$;
 ```
 
 Release uses the same "UTC date + 1" rule as the dailies (`proxy.ts:38-47`),
-so a player ahead of UTC sees it on their Saturday. The client caches a
+so a player ahead of UTC sees it on their own day. The client caches a
 fetched bonus in localStorage so it plays offline afterwards.
 
-**Publishing:** `pnpm bonus:add <week> <puzzle.ipuz> ["Theme"]` writes the row
+**Publishing:** `pnpm bonus:add <day> <puzzle.ipuz> ["Theme"]` writes the row
 with the service key (the way `daily:add` writes files), and the studio's
 daily queue gains a "Bonus" lane for admins. The bonus never enters
 `public/daily-puzzles/`, the index files or `proxy.ts`.
@@ -136,17 +135,17 @@ small module (`src/lib/bonus.ts`) that the menu, archive and Up next read.
 
 - A bonus finish records a `solves` row with `source: 'bonus'` (extend the
   CHECK) and counts for the streak like any solo finish (§0).
-- A weekly bonus board reuses `daily_results` with `slot = 'bonus'` and
-  `day = week` (extend its CHECK). Times are public as they are for the
+- A bonus board reuses `daily_results` with `slot = 'bonus'` (extend its
+  CHECK). Times are public as they are for the
   dailies; that is fine because the puzzle is not.
-- Analytics: `bonus_viewed`, `bonus_started { free_taste }`,
-  `bonus_completed`.
+- Analytics: `bonus_viewed`, `bonus_started`, `bonus_completed`.
 
 ### 1.5 Effort (estimate)
 
 3–5 days: migration and RPC, the `bonus:add` script, the menu card and
-archive rows, the paywall placement, tests. Plus about 1 hour a week of your
-review per puzzle.
+archive rows, the paywall placement, tests. Then one more puzzle a day
+through the content pipeline and your review (the daily batch worktree
+gains a bonus lane).
 
 ---
 
@@ -165,22 +164,22 @@ This is the async half of the roadmap's open F4 question (`ROADMAP.md:81-93,
 125-126`) and an upgrade of `challenge.ts`, which already races a finish
 time from a link.
 
-Entry points:
+Entry points (each opens the Plus pitch for a free player,
+`paywall_viewed { placement: "race", feature: "race" }`):
 - the friends filter on the daily board ("Race" beside each friend's time);
 - the friend's "Solved" chip on a puzzle (`SolveChip`);
 - the completion screen ("Race a friend's solve of this").
 
 ### 2.2 Free versus Plus
 
-| | Free account | Plus |
-|---|---|---|
-| Race a friend on today's mini, midi, large | yes | yes |
-| Race a friend on any archive day or bonus | — | yes |
-| Race your own best solve | — | yes |
-| Several friends at once (up to 3 ghosts) | — | yes |
+**Every race is Plus** (decision 4): a friend's solve on any daily, archive
+day or bonus, your own best, and several friends at once. Free players keep
+what exists today: the "beat my time" challenge link (`challenge.ts`,
+`dailyChallenge.ts`), which races a finish time, not a recorded solve.
 
-Free gets the viral part (a friend sees "race me" and plays today); Plus
-gets everything that turns it into a habit.
+A free player's recorded solves are still raceable by their Plus friends
+(recording costs nothing and a friend racing you is what makes you curious
+about Plus).
 
 ### 2.3 Recording a solve
 
@@ -209,7 +208,7 @@ create policy "own traces" on solve_traces for all using (auth.uid() = user_id);
 (SECURITY DEFINER) returns `{seconds, events}` with the letters **stripped to
 "filled" / "erased"** when the caller is an accepted, unblocked friend and
 the friend's `race_my_solves` setting (a new `profiles` column, default
-true) is on. The server strips the letters so a ghost can never be used to
+true, decision 3) is on, and the caller has Plus. The server strips the letters so a ghost can never be used to
 cheat the board. The board's existing time rule is unaffected.
 
 Retention: traces older than a year are deleted by `retention_sweep()`. Only
@@ -229,6 +228,19 @@ fill bar in the header. It pauses with the solo pause. On finish,
 1.5–2 weeks: recording in `usePuzzle` / `SoloPlayScreen`, the table and RPC,
 the ghost hook and grid tint, three entry points, the result card, the
 setting, tests. This is the largest item here.
+
+### 2.6 Open: how a race looks
+
+Andrew wants input on the racing experience; these are the open choices,
+with the current proposal first:
+
+1. **What the ghost shows on your grid**: a faint tint on the squares the
+   friend had filled by now (proposed); or nothing on the grid, only their
+   clock and fill bar; or their cursor moving through the grid.
+2. **A replay after you finish**: watch the friend's whole solve with
+   letters, sped up. Safe because you've finished. Proposed: yes.
+3. **Which solve you race**: the friend's fastest (proposed) or their first.
+4. **How many ghosts at once**: up to 3 (proposed) or just 1.
 
 ---
 
@@ -253,17 +265,20 @@ stats") built from data already collected:
    focus to solved, with the puzzle and your time on each
    (`play_sessions.clues`). Shown only when that data exists (the apps, or
    web with analytics consent), with a line saying so otherwise.
-6. **A solved-days calendar** (a year heatmap), with freezes and repairs
-   marked (§4).
+6. **A solved-days calendar** (a year heatmap), with repaired days marked
+   (§4).
 
 ### 3.2 Free versus Plus
 
-Free keeps what the account page shows today (streak, count, recent solves)
-plus card 1 for the **last 7 days**. The rest of the page renders for free
-players as blurred cards with real shapes behind them and a "See all your
-stats with Plus" button (`paywall_viewed { placement: "stats", feature:
-"stats" }`). Real-but-blurred converts better than an empty lock (estimate,
-based on how comparable apps present it).
+**The Stats page is Plus** (decision 5). The account page keeps what it shows
+today (streak, count, recent solves). A free player who opens Stats sees
+every card **with its real label and layout, the figures blurred**: "Faster
+than ▒▒% of solvers", "Your average Saturday: ▒:▒▒", a chart line with its
+axes and the line itself blurred. Nothing is empty or greyed, so it reads as
+locked rather than broken. One "See your stats with Plus" button sits under
+the first card (`paywall_viewed { placement: "stats", feature: "stats" }`).
+The blurred figures are placeholders drawn on the client: the RPCs return
+nothing to a free player (§3.3), so the blur hides no real data.
 
 ### 3.3 Server
 
@@ -278,8 +293,8 @@ based on how comparable apps present it).
 - `my_slow_clues(p_since date)`: the top 10 `play_sessions.clues` entries by
   `s - f`, owner-only by the existing RLS.
 
-The Plus check is in the RPCs (`has_entitlement(auth.uid(), 'plus')` or
-return only the free window), not only in the UI.
+The Plus check is in the RPCs (`has_entitlement(auth.uid(), 'plus')`), not
+only in the UI.
 
 ### 3.4 Effort (estimate)
 
@@ -288,7 +303,7 @@ return only the free window), not only in the UI.
 
 ---
 
-## 4. Streak freeze and repair
+## 4. Streak repair
 
 ### 4.1 Today
 
@@ -296,52 +311,53 @@ A streak is consecutive local days with a qualifying finish; one missed day
 resets it to zero (`effectiveStreak`, `soloStats.ts:218`; `streakFromDays`,
 `solveHistory.ts:128`). Nothing protects or restores it.
 
-### 4.2 Freeze (Plus)
+Freezes (a banked day that covers a miss automatically) are **not in this
+round** (decision 6): repair covers the common case and keeps you playing to
+keep a streak. Revisit if lost streaks show up as a reason people leave.
 
-- Plus earns **one freeze a week** (each Monday, local), banking up to two.
-- When the streak would break because yesterday has no qualifying finish,
-  a banked freeze is used automatically and yesterday counts as kept.
-- The menu says "Your streak is safe: a freeze covered Tuesday", once.
-- Free players who lose a streak see what a freeze would have done ("Plus
-  would have kept your 23-day streak") with the pitch
-  (`paywall_viewed { placement: "streak", feature: "streak" }`).
+### 4.2 Repair (Plus only)
 
-### 4.3 Repair (Plus)
+- When a streak breaks, the missed day's dailies show **"Repair your
+  streak"** in the archive and on the menu **for 24 hours: until the end of
+  the next local day** (miss Tuesday, repair any time Wednesday). Solving one
+  of them (no reveals) restores that day, and the streak carries on as if it
+  never broke. After that the offer is gone and the streak stays broken.
+- One repair per missed day. Because the window is a single day, only a
+  one-day gap can be repaired: miss two days in a row and the first is out
+  of reach by the time you return.
+- **Free players** see the same prompt with what it would save ("Repair your
+  23-day streak with Plus") and the pitch
+  (`paywall_viewed { placement: "streak", feature: "streak" }`). The prompt
+  appears the day the streak breaks, the moment it matters most.
+- The menu confirms once: "Streak repaired: Tuesday counts again."
 
-- Within 7 days of a missed day, the missed day's dailies show "Repair your
-  streak" in the archive and on the menu. Solving one of them restores that
-  day.
-- One repair per missed day. A repair can't bridge a gap of more than one
-  missing day unless each day is repaired.
-- Free players see the offer and the pitch.
+### 4.3 Data
 
-### 4.4 Data
-
-Freezes and repairs are rows, so the streak stays derived and syncs as it
-does now:
+A repair is a row, so the streak stays derived and syncs as it does now:
 
 ```sql
-create table streak_marks (
+create table streak_repairs (
   user_id    uuid not null,
-  day        date not null,             -- the day kept
-  kind       text not null check (kind in ('freeze','repair')),
-  puzzle_key text,                      -- for a repair, the daily solved
+  day        date not null,             -- the missed day, now kept
+  puzzle_key text not null,             -- the daily solved to repair it
   created_at timestamptz not null default now(),
   primary key (user_id, day)
 );
 ```
 
-- `streakFromDays` takes the union of solve days and mark days.
-- The freeze bank is computed from Plus weeks and marks used, not stored.
-- `use_streak_freeze()` and `repair_streak(p_day, p_puzzle_key)` are
-  SECURITY DEFINER RPCs that check `has_entitlement` and the rules above.
-- The local streak (`crossword-clash-solo-stats`) applies the same marks for
-  a signed-out Plus session, so the number matches on every screen.
+- `streakFromDays` takes the union of solve days and repaired days.
+- `repair_streak(p_day, p_puzzle_key)` is a SECURITY DEFINER RPC that checks
+  `has_entitlement`, that the day was missed, that the caller's local today
+  is the day after it (the client sends its day key, as `solves` already
+  trusts; the server checks it is within a day of UTC now), and that the
+  puzzle is that day's daily.
+- The local streak (`crossword-clash-solo-stats`) applies the same repairs
+  for a signed-out Plus session, so the number matches on every screen.
 
-### 4.5 Effort (estimate)
+### 4.4 Effort (estimate)
 
-2–3 days: the table, two RPCs, the streak function change on both paths,
-menu and archive prompts, the lost-streak pitch, tests.
+2 days: the table and RPC, the streak function change on both paths, the
+menu and archive prompts, the free-player pitch, tests.
 
 ---
 
@@ -437,18 +453,18 @@ Share text and result cards stay plain text: no badge.
 | Step | Feature | Effort (estimate) | Why this place |
 |---|---|---|---|
 | 1 | Plus badge | 2–3 days | Smallest; makes Plus visible on every board; fixes the status leak |
-| 2 | Streak freeze and repair | 2–3 days | Small; protects the daily habit, Plus's most emotional hook |
-| 3 | Bonus puzzles | 3–5 days + weekly review | Recurring new content, the strongest reason to stay subscribed |
+| 2 | Streak repair | 2 days | Small; protects the daily habit, Plus's most emotional hook |
+| 3 | Bonus puzzles | 3–5 days + a puzzle a day to review | Recurring new content, the strongest reason to stay subscribed |
 | 4 | Deeper stats | 4–6 days | Uses data already collected; the blurred free state sells it |
-| 5 | Friend races | 1.5–2 weeks | Needs the new recording; the free tier makes it viral |
+| 5 | Friend races | 1.5–2 weeks | Needs the new recording, and the open choices in §2.6 |
 
 When each ships, the Plus pitch (`PlusPitch.tsx`, `plus.benefit*`) gains a
 line. The intended final list, most compelling first:
 
-- A new themed bonus puzzle every week
-- Race friends on any puzzle, and your own best
+- An extra bonus puzzle every day
+- Race your friends' solves, and your own best
 - Your full stats: trends, ranks, head-to-heads
-- Streak freezes and repairs
+- Repair a broken streak
 - Every daily since the archive began
 - The Plus badge
 - Build your own crosswords in the studio
