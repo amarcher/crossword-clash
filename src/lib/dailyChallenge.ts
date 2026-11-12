@@ -16,6 +16,7 @@ import type { ChallengePayload } from "./challenge";
 
 const BEAT_PARAM = "beat";
 const BY_PARAM = "by";
+const REPLAY_PARAM = "r";
 const MAX_NAME_LENGTH = 40;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -35,6 +36,8 @@ export interface DailyLinkInput {
   seconds?: number;
   /** The finisher's name; omitted when blank. */
   name?: string;
+  /** The solve's replay code (replayCode.ts): the link's preview plays it (api/share.ts → og:video). */
+  replay?: string;
 }
 
 /** `https://crosswordclash.com/daily/2026-10-20/mini?beat=102&by=Archer`. */
@@ -46,6 +49,7 @@ export function buildDailyLink(origin: string, input: DailyLinkInput): string {
   }
   const name = (input.name ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
   if (name) params.set(BY_PARAM, name);
+  if (input.replay && /^[A-Za-z0-9_-]+$/.test(input.replay)) params.set(REPLAY_PARAM, input.replay);
   const query = params.toString();
   return `${base}${dailyPath(input.day, input.slot)}${query ? `?${query}` : ""}`;
 }

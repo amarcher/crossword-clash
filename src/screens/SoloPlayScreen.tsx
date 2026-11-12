@@ -49,6 +49,7 @@ import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSol
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog } from "../components/Race/ReplayDialog";
+import { encodeReplay } from "../lib/replayCode";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -442,6 +443,16 @@ export function SoloPlayScreen() {
       assisted: soloResult.assisted,
     }).then((outcome) => outcome && setServerOutcome(outcome));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+
+  // A fresh daily finish's replay code (replayCode.ts): previewed on the
+  // completion screen and carried by the share link, for every solver.
+  const [replayCode, setReplayCode] = useState<string | null>(null);
+  useEffect(() => setReplayCode(null), [puzzleKey, attempt]);
+  useEffect(() => {
+    if (!soloResult || !freshResult || !dailySlot || !puzzle || soloResult.assisted || replayCode) return;
+    const trace = recorder.take();
+    if (trace) setReplayCode(encodeReplay(puzzle, trace.events, soloResult.finishSeconds));
+  }, [soloResult, freshResult, dailySlot, puzzle, recorder, replayCode]);
 
   // File the finish's recording for others to race (race.ts): an account's
   // own first solve only, nothing revealed, recorded from the first letter.
@@ -840,6 +851,7 @@ export function SoloPlayScreen() {
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
         raceResults={race.length && soloResult ? raceResults(race, soloResult.finishSeconds) : undefined}
+        replayCode={replayCode ?? undefined}
         replays={reopened ? undefined : replayable}
         onWatchReplay={(userId) => void watchReplay(userId)}
         nextUp={nextUp}

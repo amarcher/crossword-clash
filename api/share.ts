@@ -4,7 +4,7 @@
  * GET /share?t=race&code=ABC123&title=…        → invite card + redirect to /?join=ABC123
  * GET /share?t=result&title=…&time=1:42&rank=1&total=4&name=…
  *                                              → boast card + redirect to /
- * GET /daily/2026-10-20/mini?beat=102&by=Archer (rewritten here by vercel.json
+ * GET /daily/2026-10-20/mini?beat=102&by=Archer[&r=<replay>] (rewritten here by vercel.json
  *     as ?t=daily&day=…&slot=…, the original query merged in)
  *                                              → "beat my time" card, and the
  *                                                SPA itself: the built
@@ -67,7 +67,16 @@ export interface HeadTags {
   description: string;
   image: string;
   url: string;
+  /**
+   * A daily link with a replay code (`r`): the solve as an MP4 from
+   * /api/replay, for `og:video` (iMessage plays it in the preview); `image`
+   * is then that clip's poster frame, 1280×720.
+   */
+  video?: string;
 }
+
+/** A replay code's shape (src/lib/replayCode.ts); api/replay.ts decodes it fully. */
+export const REPLAY_CODE = /^[A-Za-z0-9_-]{4,2000}$/;
 
 /**
  * Replace the page's own title and social tags with the card's, so crawlers
@@ -85,9 +94,18 @@ export function spliceHead(html: string, tags: HeadTags): string {
 <meta property="og:description" content="${esc(tags.description)}" />
 <meta property="og:url" content="${esc(tags.url)}" />
 <meta property="og:image" content="${esc(tags.image)}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image:width" content="${tags.video ? 1280 : 1200}" />
+<meta property="og:image:height" content="${tags.video ? 720 : 630}" />
+${
+  tags.video
+    ? `<meta property="og:video" content="${esc(tags.video)}" />
+<meta property="og:video:secure_url" content="${esc(tags.video)}" />
+<meta property="og:video:type" content="video/mp4" />
+<meta property="og:video:width" content="1280" />
+<meta property="og:video:height" content="720" />
+`
+    : ""
+}<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${esc(tags.title)}" />
 <meta name="twitter:description" content="${esc(tags.description)}" />
 <meta name="twitter:image" content="${esc(tags.image)}" />
@@ -123,9 +141,12 @@ export default async function handler(req: Request): Promise<Response> {
     description = time
       ? `Same puzzle, your clock. Tap to race ${by ? `${by}'s` : "this"} time on Crossword Clash.`
       : "Tap to play this daily on Crossword Clash — solo, or race friends live.";
+    const replay = clean(url, "r", 2000);
+    const hasReplay = REPLAY_CODE.test(replay);
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
+    if (hasReplay) query.set("r", replay);
     dest = `/daily/${day}/${slot}${query.size ? `?${query.toString()}` : ""}`;
     og.set("heading", `${label} · ${date}`);
     if (by) og.set("title", by);
@@ -133,8 +154,10 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("detail", time ? "Beat my time" : "Play it");
     og.set("glyph", time ? "⏱" : "🧩");
 
-    const image = `${origin}/api/og?${og.toString()}`;
-    const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}` };
+    // With a replay the preview plays the solve (og:video), its last frame as the poster.
+    const replayUrl = hasReplay ? `${origin}/api/replay?r=${replay}` : "";
+    const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
+    const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) };
     // Serve the real app with the card's tags: humans play, crawlers unfurl.
     try {
       const res = await fetch(`${origin}/index.html`, { headers: { accept: "text/html" } });

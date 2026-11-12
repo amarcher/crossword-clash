@@ -15,6 +15,7 @@ import { playWinSound } from "../../lib/winSound";
 import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import { ReplayPreview } from "./ReplayPreview";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
@@ -141,6 +142,8 @@ interface CompletionModalProps {
   challengeOutcome?: ChallengeComparison & { challengerName: string };
   /** A race against recorded solves (race.ts): the verdict against each ghost. */
   raceResults?: RaceResult[];
+  /** The finished daily's replay code (replayCode.ts): previewed above Share, and carried by the daily link. */
+  replayCode?: string;
   /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
   replays?: { userId: string; name: string }[];
   onWatchReplay?: (userId: string) => void;
@@ -204,6 +207,7 @@ export function CompletionModal({
   challengerName,
   challengeOutcome,
   raceResults,
+  replayCode,
   replays,
   onWatchReplay,
   nextUp,
@@ -325,7 +329,7 @@ export function CompletionModal({
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
       const link = dailySlot
-        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name })
+        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name, replay: isMultiplayer ? undefined : replayCode })
         : shareSeconds !== undefined
           ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
           : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
@@ -347,7 +351,7 @@ export function CompletionModal({
         },
       });
     },
-    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language],
+    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayCode],
   );
 
   if (!open) return null;
@@ -706,6 +710,7 @@ export function CompletionModal({
         <div className="flex flex-col gap-2.5">
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
+          {dailySlot && !isMultiplayer && replayCode && <ReplayPreview code={replayCode} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton
               mode={isMultiplayer ? "multiplayer" : "solo"}
@@ -725,7 +730,7 @@ export function CompletionModal({
           {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
           {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
-              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName") })}
+              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayCode })}
               puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}
               darkMode={darkMode}
             />
