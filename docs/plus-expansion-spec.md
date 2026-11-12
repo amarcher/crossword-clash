@@ -21,8 +21,8 @@ takes nothing they have today away.
 
 ## Decisions
 
-Decided by Andrew on 2026-11-12 (1–7); 8–10 and the racing details in §2.6
-are still open.
+Decided by Andrew on 2026-11-12: 1–7, the racing details in §2.6 (as
+proposed) and that friend races are built first. 8 and 9 are still open.
 
 | # | Decision | Status | Where |
 |---|---|---|---|
@@ -35,7 +35,7 @@ are still open.
 | 7 | Streak repair | **Decided: Plus only, offered for 24 hours**: a missed day can be repaired until the end of the next day (local), by solving the missed day's daily. Free players see the offer and the Plus pitch | §4.2 |
 | 8 | Badge design | **Open.** Recommendation: option B, the gold seal (Plus is already marked with gold, gold is the app's colour for earned things, and it won't read as identity verification). Option A, the blue seal, is the closest to Instagram's tick | §5.1 |
 | 9 | Badge visibility | **Open.** Recommendation: on by default, with "Show my Plus badge" on the account page | §5.2 |
-| 10 | Order | **Open.** Recommendation: badge → streak repair → bonus puzzles → stats → friend races | §7 |
+| 10 | Order | **Decided: friend races first** ("asap"), then badge → streak repair → bonus puzzles → stats | §7 |
 
 ---
 
@@ -229,10 +229,9 @@ fill bar in the header. It pauses with the solo pause. On finish,
 the ghost hook and grid tint, three entry points, the result card, the
 setting, tests. This is the largest item here.
 
-### 2.6 Open: how a race looks
+### 2.6 How a race looks (decided: as proposed)
 
-Andrew wants input on the racing experience; these are the open choices,
-with the current proposal first:
+Andrew approved the proposal (the first option in each):
 
 1. **What the ghost shows on your grid**: a faint tint on the squares the
    friend had filled by now (proposed); or nothing on the grid, only their
