@@ -19,6 +19,7 @@ import { StudioPopover } from "../components/Studio/StudioPopover";
 import { StudioSection } from "../components/Studio/StudioSection";
 import { CandidateStrip } from "../components/Studio/CandidateStrip";
 import { ActiveClueBar } from "../components/Studio/ActiveClueBar";
+import { WordSheet } from "../components/Studio/WordSheet";
 import { StudioTabBar, studioPanelId, studioTabId, type StudioTab } from "../components/Studio/StudioTabBar";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useStudioAccount } from "../hooks/useStudioAccount";
@@ -44,6 +45,7 @@ import {
   activeSlot,
   cellHeat,
   duplicateEntries,
+  clueOptionsFor,
   initialStudioState,
   layoutSymmetry,
   newPuzzleId,
@@ -75,6 +77,11 @@ function loadDraft(): StudioState {
     // A missing or unreadable draft just means a fresh grid.
   }
   return initialStudioState(5);
+}
+
+/** "4A" → "4 Across", for messages. */
+function entryName(id: string): string {
+  return `${id.slice(0, -1)} ${id.endsWith("A") ? "Across" : "Down"}`;
 }
 
 /** The grid with only the curator's letters: what the engine reasons from. */
@@ -112,6 +119,9 @@ export function StudioScreen() {
   // The desk's right column: the word list or the clues.
   const [sideTab, setSideTab] = useState<"words" | "clues">("words");
   const cluePanelRef = useRef<CluePanelHandle>(null);
+  // The phone's pull-up word list, and the grid box it rises to meet.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const gridBox = useRef<HTMLDivElement>(null);
   // The daily queue, reports and insights are the constructor's: a Plus-only visitor never sees them, and the apps never show them.
   const adminPanels = (account.admin || !!studioToken || !account.plus) && studioAdminPanelsAllowed();
   const access = { admin: account.admin, plus: account.plus };
@@ -232,7 +242,12 @@ export function StudioScreen() {
   const base = useMemo(() => committed(state.grid), [state.grid]);
   const rulesJson = JSON.stringify(rules);
   const dupes = useMemo(() => duplicateEntries(base), [base]);
-  useEffect(() => setStuck([]), [base, rulesJson]);
+  // Set when a fill proved this grid can't be filled under these rules; any change to either clears it.
+  const [unfillable, setUnfillable] = useState(false);
+  useEffect(() => {
+    setStuck([]);
+    setUnfillable(false);
+  }, [base, rulesJson]);
 
   // Heatmap, candidates for the selected entry, then background proofs for the top candidates.
   useEffect(() => {
@@ -298,6 +313,7 @@ export function StudioScreen() {
           fill: (g, r) => client.fill(g, r, PROBE_MS, fillSeed.current++),
         });
         if (latestGrid.current !== started) return;
+        setUnfillable(true);
         setStuck(verdict.cells);
         setMessage(verdict.message);
       }
@@ -365,6 +381,14 @@ export function StudioScreen() {
   );
 
   const heat = useMemo(() => (showHeat && heatCounts ? cellHeat(base, heatCounts) : undefined), [showHeat, heatCounts, base]);
+  // Why Fill can't run right now, if it can't: it is offered from the start and disabled only then.
+  const fillBlocked = useMemo(() => {
+    if (dupes.length) return `${dupes.map(entryName).join(", ")} repeat a word. Change one to fill.`;
+    const dead = slotsOf(base).find((s) => s.cells.some((c) => base.cells[c] === "") && heatCounts?.[s.id] === 0);
+    if (dead) return `No word fits ${entryName(dead.id)}. Change a crossing letter or a black square to fill.`;
+    if (unfillable) return "These rules can't fill this grid. Change a square, an approval or the score floor to try again.";
+    return null;
+  }, [dupes, base, heatCounts, unfillable]);
   const fewest = useMemo(() => {
     const known = (heat ?? []).filter((n): n is number => n !== undefined);
     return known.length ? Math.min(...known) : null;
@@ -462,7 +486,7 @@ export function StudioScreen() {
           <Square className="size-4" aria-hidden="true" /> Stop
         </Button>
       ) : (
-        <Button size={toolSize} onClick={runFill} disabled={engine.kind !== "ready" || busy !== null}>
+        <Button size={toolSize} onClick={runFill} disabled={engine.kind !== "ready" || busy !== null || !!fillBlocked} title={fillBlocked ?? undefined}>
           <Sparkles className="size-4" aria-hidden="true" /> {complete ? "New fill" : "Fill"}
         </Button>
       )}
@@ -511,6 +535,19 @@ export function StudioScreen() {
     </div>
   );
 
+  // Says why Fill is greyed out, unless a message from the last fill already does.
+  const blockedNote = fillBlocked && !message && busy === null ? <p className="text-sm text-red-700">{fillBlocked}</p> : null;
+
+  // The clue bar's ‹ ›: the previous or next entry, across then down, wrapping around.
+  const stepEntry = (delta: 1 | -1) => {
+    const order = [...slots.filter((s) => s.dir === "across"), ...slots.filter((s) => s.dir === "down")];
+    const at = order.findIndex((s) => slotKey(s) === key);
+    const next = order[(at + delta + order.length) % order.length];
+    if (!next) return;
+    dispatch({ type: "SELECT", cell: next.cells[0] });
+    dispatch({ type: "SET_DIR", dir: next.dir });
+  };
+
   const statsLine = (
     <p className="text-sm text-muted">
       {stats.words} words · {stats.blocks} blocks ({Math.round(stats.blockPct * 100)}%) · average {stats.avgLength.toFixed(1)}
@@ -541,7 +578,7 @@ export function StudioScreen() {
         dispatch({ type: "SELECT", cell });
         dispatch({ type: "SET_DIR", dir });
         if (desktop) setSideTab("words");
-        else setTab("words");
+        else setSheetOpen(true);
       }}
       input={gridInput}
     />
@@ -560,23 +597,41 @@ export function StudioScreen() {
         </div>
       </div>
       {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
+      {blockedNote}
       {statsLine}
     </section>
   ) : (
     <section aria-label="Grid" className="flex flex-col gap-2">
       <TitleField state={state} dispatch={dispatch} access={access} />
       {/* A tablet in portrait would otherwise get a grid taller than the screen; leave room for the strip, tools and tab bar. */}
-      <div className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 31rem)))` }}>
+      <div ref={gridBox} className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 31rem)))` }}>
         {grid}
       </div>
       {slot && key && (
-        <CandidateStrip slotLabel={slotLabel} words={slotWords} viability={viability} rejected={state.rejected} onPlace={placeWord} onMore={() => setTab("words")} />
+        <CandidateStrip
+          slotLabel={slotLabel}
+          words={slotWords}
+          viability={viability}
+          rejected={state.rejected}
+          onPlace={placeWord}
+          onMore={() => setSheetOpen(true)}
+          filled={!slotText(state.grid, slot).includes(".")}
+        />
       )}
-      {slot && key && complete && (
-        <ActiveClueBar slotLabel={slotLabel} answer={slotText(state.grid, slot)} clue={state.clues[key] ?? ""} onChange={(clue) => dispatch({ type: "SET_CLUE", key, clue })} />
+      {slot && key && (
+        <ActiveClueBar
+          slotLabel={slotLabel}
+          answer={slotText(state.grid, slot)}
+          clue={state.clues[key] ?? ""}
+          onChange={(clue) => dispatch({ type: "SET_CLUE", key, clue })}
+          onPrev={() => stepEntry(-1)}
+          onNext={() => stepEntry(1)}
+          options={clueOptionsFor(state, slot)}
+        />
       )}
       {toolbar}
       {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
+      {blockedNote}
       {statsLine}
     </section>
   );
@@ -591,17 +646,13 @@ export function StudioScreen() {
         viability={viability}
         approved={state.approved[key] ?? []}
         rejected={state.rejected}
-        onPlace={(word) => {
-          placeWord(word);
-          // On a phone the word is written out of sight: show it.
-          if (!desktop) setTab("grid");
-        }}
+        onPlace={placeWord}
         onApprove={(word) => dispatch({ type: "TOGGLE_APPROVE", key, word })}
         onReject={(word) => dispatch({ type: "TOGGLE_REJECT", word })}
         onClearApprovals={() => dispatch({ type: "CLEAR_APPROVALS", key })}
       />
     ) : (
-      <p className="text-sm text-muted">{desktop ? "Select a square to see what fits there." : "Select a square on the Grid tab to see what fits there."}</p>
+      <p className="text-sm text-muted">Select a square to see what fits there.</p>
     );
 
   const cluePanel = (
@@ -832,7 +883,6 @@ export function StudioScreen() {
           <main className="mt-3 flex flex-col gap-4 pb-[calc(3rem+env(safe-area-inset-bottom))]">
             {engineNotice}
             {tabPanel("grid", gridPanel)}
-            {tabPanel("words", <Card className="flex max-h-[calc(100dvh-12rem)] flex-col p-4">{candidatePanel}</Card>)}
             {tabPanel("clues", cluePanel)}
             {tabPanel(
               "more",
@@ -843,6 +893,10 @@ export function StudioScreen() {
             )}
           </main>
           <StudioTabBar tab={tab} onChange={setTab} counts={{ clues: missingClues }} />
+          {/* Over the Grid tab only: the grid stays above it, in view and in reach. */}
+          <WordSheet open={sheetOpen && tab === "grid"} onClose={() => setSheetOpen(false)} label={`Words for ${slotLabel}`} anchor={gridBox}>
+            {candidatePanel}
+          </WordSheet>
         </>
       )}
       {publishOpen && (

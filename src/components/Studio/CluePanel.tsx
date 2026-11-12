@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type KeyboardEvent, type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, KeyRound, Loader2, Sparkles, WandSparkles } from "lucide-react";
+import { Download, KeyRound, Sparkles } from "lucide-react";
 import { Button, Card, Eyebrow, Select } from "../ui";
 import { CLUE_MAX } from "../../lib/seedgrid/audit";
 import { slotsOf, slotText, type Slot } from "../../lib/seedgrid/grid";
-import { ALTERNATIVES_COUNT, type Difficulty } from "../../lib/seedgrid/cluePrompt";
-import { slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
-import { draftClues, edgeCaller, entryAnswers, puzzleContext, StudioClaudeError, suggestClues } from "../../lib/seedgrid/studioClaude";
+import type { Difficulty } from "../../lib/seedgrid/cluePrompt";
+import { clueOptionsFor, slotKey, type StudioAction, type StudioState } from "../../lib/seedgrid/studioState";
+import { draftClueOptions, edgeCaller, puzzleContext, StudioClaudeError } from "../../lib/seedgrid/studioClaude";
 import { setStudioToken, useStudioToken } from "../../hooks/useStudioToken";
 import type { StudioAccess } from "../../lib/studioGate";
 import { allowanceLeft, fetchStudioAllowance, type StudioAllowance } from "../../lib/studioUsage";
@@ -34,31 +34,21 @@ export interface CluePanelHandle {
   draftAll: () => void;
 }
 
-/** How many rows may be redrafting at once; the rest of the panel stays live either way. */
-export const MAX_REDRAFTS_IN_FLIGHT = 3;
-
 const INPUT =
   "min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500 disabled:opacity-60";
-/** 44 px for a finger, 32 px under a mouse. */
-const ICON_BUTTON =
-  "inline-flex size-11 pointer-fine:size-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-brand-700 active:bg-line disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-500";
 
-const without = <T,>(rec: Record<string, T>, key: string): Record<string, T> => {
-  const next = { ...rec };
-  delete next[key];
-  return next;
-};
 
 /**
- * Clue editor with AI drafting: "Draft" writes a clue for every entry still
- * missing one (then "Redraft AI clues" replaces the AI's own), and the wand on
- * a row redrafts that one entry — `ALTERNATIVES_COUNT` alternatives in one
- * call, offered as chips while the rest of the panel stays editable (up to
- * `MAX_REDRAFTS_IN_FLIGHT` rows at once). Anything typed or picked by hand is
- * the constructor's and is never overwritten. Calls go through the
- * studio-claude function as a signed-in admin, a Plus subscriber or with the
- * studio token (kept in this browser only). Speed clues are no longer edited
- * here: no player-facing screen shows them (see `StudioState.speedClues`).
+ * Clue editor with AI drafting. "Draft" asks for `OPTIONS_COUNT` clues for
+ * every entry still missing one, in one call (then "Redraft AI clues" redoes
+ * the AI's own); the best is written in and the others wait as chips on the
+ * row of the entry selected in the grid. There is no per-entry AI call: it
+ * resent the whole grid for one entry's clues, about three times the cost per
+ * clue. Anything typed or picked by hand is the constructor's and is never
+ * overwritten. Calls go through the studio-claude function as a signed-in
+ * admin, a Plus subscriber or with the studio token (kept in this browser
+ * only). Speed clues are not drafted or edited here: no player-facing screen
+ * shows them (see `StudioState.speedClues`).
  */
 export function CluePanel({ state, dispatch, onExport, showExport = true, access, userId, activeKey = null, onSelectSlot, ref }: CluePanelProps) {
   const { t } = useTranslation();
@@ -79,13 +69,6 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
   /** The whole-puzzle draft in progress, by its status line. */
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** Rows (slot keys) whose redraft is still out. */
-  const [inFlight, setInFlight] = useState<Record<string, true>>({});
-  /** Per row: the alternatives offered by the last redraft, until the row is typed in or redrafted again. */
-  const [alternatives, setAlternatives] = useState<Record<string, string[]>>({});
-  /** Per row: what the last redraft had to say when it offered nothing. */
-  const [rowNotes, setRowNotes] = useState<Record<string, string>>({});
-  const inFlightCount = Object.keys(inFlight).length;
 
   const context = useMemo(() => puzzleContext(grid, state.title, state.theme), [grid, state.title, state.theme]);
 
@@ -112,11 +95,13 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
     setError(null);
     void (async () => {
       try {
-        const drafted = await draftClues(edgeCaller(token), grid, context, { slots: targets.map((s) => s.id), difficulty: state.difficulty });
-        const byKey = Object.fromEntries(slots.filter((s) => drafted[s.id]).map((s) => [slotKey(s), drafted[s.id]]));
-        dispatch({ type: "APPLY_CLUES", clues: byKey });
+        const drafted = await draftClueOptions(edgeCaller(token), grid, context, { slots: targets.map((s) => s.id), difficulty: state.difficulty });
+        const byKey = Object.fromEntries(
+          slots.filter((s) => drafted[s.id]).map((s) => [slotKey(s), { answer: slotText(grid, s), options: drafted[s.id] }]),
+        );
+        dispatch({ type: "APPLY_CLUE_OPTIONS", options: byKey });
         const skipped = targets.length - Object.keys(byKey).length;
-        if (skipped > 0) setError(`${skipped} clue${skipped === 1 ? "" : "s"} didn't pass the checks; write ${skipped === 1 ? "it" : "them"} or try the wand.`);
+        if (skipped > 0) setError(`${skipped} clue${skipped === 1 ? "" : "s"} didn't pass the checks; write ${skipped === 1 ? "it" : "them"} by hand.`);
       } catch (err) {
         setError(explain(err));
       } finally {
@@ -131,26 +116,6 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
       if (complete && busy === null) draft();
     },
   }));
-
-  /** Redraft one row: only that row is busy; its alternatives arrive as chips. */
-  const redraft = (slotId: string, key: string) => {
-    if (!allowed() || inFlight[key] || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT) return;
-    setInFlight((prev) => ({ ...prev, [key]: true }));
-    setRowNotes((prev) => without(prev, key));
-    const current = state.clues[key];
-    void (async () => {
-      try {
-        const clues = await suggestClues(edgeCaller(token), grid, context, slotId, { difficulty: state.difficulty, current });
-        setAlternatives((prev) => ({ ...prev, [key]: clues }));
-        if (!clues.length) setRowNotes((prev) => ({ ...prev, [key]: "Nothing usable came back; try again." }));
-      } catch (err) {
-        setRowNotes((prev) => ({ ...prev, [key]: explain(err) }));
-      } finally {
-        setInFlight((prev) => without(prev, key));
-        refreshAllowance();
-      }
-    })();
-  };
 
   const saveToken = () => {
     setStudioToken(tokenDraft);
@@ -290,9 +255,8 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
               const clue = state.clues[k] ?? "";
               if (missingOnly && clue.trim() && k !== activeKey) return null;
               const answer = slotText(grid, s);
-              const rowBusy = !!inFlight[k];
-              const alts = alternatives[k];
-              const note = rowNotes[k];
+              // The AI's other clues, offered on the selected entry only so the list stays one line per entry.
+              const options = k === activeKey ? clueOptionsFor(state, s) : [];
               const label = `${s.number} ${dir}`;
               const active = k === activeKey;
               return (
@@ -312,58 +276,19 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
                         className={`${INPUT} h-10 pointer-fine:h-8 md:text-sm`}
                         aria-label={`Clue for ${label}`}
                         value={clue}
-                        disabled={rowBusy}
                         onFocus={() => {
                           if (!active) onSelectSlot?.(s);
                         }}
                         onKeyDown={nextOnEnter}
-                        onChange={(e) => {
-                          dispatch({ type: "SET_CLUE", key: k, clue: e.target.value });
-                          // Typing by hand retires the offered alternatives.
-                          if (alts) setAlternatives((prev) => without(prev, k));
-                        }}
+                        onChange={(e) => dispatch({ type: "SET_CLUE", key: k, clue: e.target.value })}
                       />
                       {/* The length under a mouse; on a phone only once it runs over, to leave the input its width. */}
                       <span className={`w-5 text-right text-[11px] tabular-nums ${clue.length > CLUE_MAX ? "text-red-600" : "hidden text-subtle pointer-fine:inline"}`}>
                         {clue.length || ""}
                       </span>
-                      <button
-                        type="button"
-                        className={ICON_BUTTON}
-                        aria-label={`Redraft ${label} with AI`}
-                        aria-busy={rowBusy || undefined}
-                        title={`Redraft with AI: ${ALTERNATIVES_COUNT} alternatives to pick from`}
-                        disabled={!entryAnswers(grid)[s.id] || rowBusy || busy !== null || inFlightCount >= MAX_REDRAFTS_IN_FLIGHT}
-                        onClick={() => redraft(s.id, k)}
-                      >
-                        {rowBusy ? (
-                          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                        ) : (
-                          <WandSparkles className="size-4" aria-hidden="true" />
-                        )}
-                      </button>
                     </div>
                   </div>
-                  {note && <p className="text-xs text-muted @[19rem]:pl-18 @md:pl-22">{note}</p>}
-                  {alts && alts.length > 0 && (
-                    <ul className="flex flex-wrap gap-1.5 @[19rem]:pl-18 @md:pl-22" aria-label={`Alternatives for ${label}`}>
-                      {alts.map((alt) => {
-                        const chosen = alt === clue;
-                        return (
-                          <li key={alt}>
-                            <button
-                              type="button"
-                              aria-pressed={chosen}
-                              className={`min-h-9 rounded-full px-3 text-left text-sm hover:bg-brand-100 active:bg-brand-200 ${chosen ? "bg-brand-100 font-semibold text-brand-800" : "bg-brand-50 text-brand-700"}`}
-                              onClick={() => dispatch({ type: "SET_CLUE", key: k, clue: alt })}
-                            >
-                              {alt}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                  {options.length > 0 && <ClueOptions label={label} options={options} clue={clue} onPick={(alt) => dispatch({ type: "SET_CLUE", key: k, clue: alt })} className="@[19rem]:pl-18 @md:pl-22" />}
                 </li>
               );
             })}
@@ -371,5 +296,28 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
         ))}
       </div>
     </Card>
+  );
+}
+
+/** The AI's clues for one entry as chips; the one in the row is marked, a tap writes another in. */
+export function ClueOptions({ label, options, clue, onPick, className = "" }: { label: string; options: string[]; clue: string; onPick: (clue: string) => void; className?: string }) {
+  return (
+    <ul className={`flex flex-wrap gap-1.5 ${className}`} aria-label={`AI clues for ${label}`}>
+      {options.map((alt) => {
+        const chosen = alt === clue;
+        return (
+          <li key={alt}>
+            <button
+              type="button"
+              aria-pressed={chosen}
+              className={`min-h-9 rounded-full px-3 text-left text-sm hover:bg-brand-100 active:bg-brand-200 ${chosen ? "bg-brand-100 font-semibold text-brand-800" : "bg-brand-50 text-brand-700"}`}
+              onClick={() => onPick(alt)}
+            >
+              {alt}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -7,7 +7,7 @@
  * by number, so they survive renumbering when blacks move elsewhere, and are
  * dropped only when their own slot changes shape.
  */
-import { cloneGrid, emptyGrid, partners, slotsOf, type Grid, type Slot, type Symmetry } from "./grid";
+import { cloneGrid, emptyGrid, partners, slotsOf, slotText, type Grid, type Slot, type Symmetry } from "./grid";
 import type { EngineRules } from "./ingrid";
 import type { Difficulty } from "./cluePrompt";
 
@@ -42,6 +42,12 @@ export interface StudioState {
   speedClues: Record<string, string>;
   /** Slot keys whose clues the constructor wrote or picked; drafting never overwrites them. */
   editedClues: string[];
+  /**
+   * Slot key → the AI's clues for the answer it was drafted for, best first
+   * (the first is written in; the rest are offered as chips). Read through
+   * `clueOptionsFor`, which hides them once the entry's answer changes.
+   */
+  clueOptions: Record<string, { answer: string; options: string[] }>;
   title: string;
   /** What the puzzle is about, if anything: an optional note passed to the AI with clue requests. */
   theme: string;
@@ -70,6 +76,8 @@ export type StudioAction =
   | { type: "SET_CLUE"; key: string; clue: string }
   | { type: "SET_SPEED_CLUE"; key: string; clue: string }
   | { type: "APPLY_CLUES"; clues: Record<string, { standard: string; speed: string }> }
+  /** A whole-puzzle draft: each entry's options are kept, and the first fills any clue the constructor hasn't written. */
+  | { type: "APPLY_CLUE_OPTIONS"; options: Record<string, { answer: string; options: string[] }> }
   | { type: "SET_TITLE"; title: string }
   | { type: "SET_THEME"; theme: string }
   | { type: "SET_DIFFICULTY"; difficulty: Difficulty }
@@ -87,6 +95,12 @@ export function layoutSymmetry(symmetry: Symmetry): Symmetry {
   return symmetry === "none" ? "rotational" : symmetry;
 }
 
+/** The AI's options for an entry, while its answer is still the one they were written for. */
+export function clueOptionsFor(state: StudioState, slot: Slot): string[] {
+  const o = state.clueOptions?.[slotKey(slot)];
+  return o && o.answer === slotText(state.grid, slot) ? o.options : [];
+}
+
 export function initialStudioState(size = 5, id = newPuzzleId()): StudioState {
   return {
     id,
@@ -102,6 +116,7 @@ export function initialStudioState(size = 5, id = newPuzzleId()): StudioState {
     clues: {},
     speedClues: {},
     editedClues: [],
+    clueOptions: {},
     title: "",
     theme: "",
     difficulty: "medium",
@@ -142,6 +157,7 @@ function prune(state: StudioState, grid: Grid): StudioState {
     clues: keep(state.clues),
     speedClues: keep(state.speedClues),
     editedClues: (state.editedClues ?? []).filter((k) => keys.has(k)),
+    clueOptions: keep(state.clueOptions ?? {}),
   };
 }
 
@@ -284,6 +300,15 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
         speedClues[key] = c.speed;
       }
       return { ...state, clues, speedClues };
+    }
+    case "APPLY_CLUE_OPTIONS": {
+      const clues = { ...state.clues };
+      const edited = new Set(state.editedClues ?? []);
+      for (const [key, o] of Object.entries(action.options)) {
+        // Hand-written clues win: a draft only fills or replaces the AI's own.
+        if (!edited.has(key) && o.options[0]) clues[key] = o.options[0];
+      }
+      return { ...state, clues, clueOptions: { ...(state.clueOptions ?? {}), ...action.options } };
     }
     case "SET_TITLE":
       return { ...state, title: action.title };
