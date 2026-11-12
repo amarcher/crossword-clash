@@ -200,6 +200,22 @@ describe("Cell", () => {
   });
 });
 
+describe("Cell race ghost", () => {
+  it("marks a square a ghost has filled with a quiet dot in its colour, leaving the square's colour alone", () => {
+    const { container } = render(<Cell cell={whiteCell()} isSelected={false} isHighlighted={false} ghostColor="#8b5cf6" />);
+    const dot = container.querySelector("[data-ghost]") as HTMLElement;
+    expect(dot).toBeTruthy();
+    expect(dot.style.backgroundColor).toBe("rgb(139, 92, 246)");
+    const square = container.querySelector('[role="gridcell"]') as HTMLElement;
+    expect(square.style.backgroundColor).toBe("");
+  });
+
+  it("has no dot without a ghost", () => {
+    const { container } = render(<Cell cell={whiteCell()} isSelected={false} isHighlighted={false} />);
+    expect(container.querySelector("[data-ghost]")).toBeNull();
+  });
+});
+
 describe("Cell hover and announcement", () => {
   it("carries the id the grid's hidden input points aria-activedescendant at", () => {
     const { container } = render(

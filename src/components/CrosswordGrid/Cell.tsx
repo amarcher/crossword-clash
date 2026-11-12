@@ -50,7 +50,7 @@ interface CellProps {
   wordCompleteColor?: string;
   /** Stagger delay (ms) for the word-completion sweep */
   wordCompleteDelay?: number;
-  /** A race ghost has this square filled (race.ts): its colour tints the square, never a letter. */
+  /** A race ghost has this square filled (race.ts): a small dot in its colour, never a letter. */
   ghostColor?: string;
 }
 
@@ -94,8 +94,7 @@ export const Cell = memo(function Cell({
   // A player's colour is pre-blended against white (18% reads as a pastel with
   // high text contrast) so it never composites against the ink grid behind.
   const playerHex = cellState?.playerId ? playerColorMap?.[cellState.playerId] : undefined;
-  // A race ghost's square takes the same treatment as a player's, a shade lighter.
-  const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : ghostColor ? blendOver(ghostColor, 0.16, WHITE) : undefined;
+  const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : undefined;
 
   // Background priority: cursor > active word (over any player tint) > player tint > white.
   // A plain white cell takes a faint sunken tint under a mouse (Tailwind's
@@ -149,6 +148,15 @@ export const Cell = memo(function Cell({
       )}
       {wrong && <span aria-hidden="true" className="cell-wrong-slash pointer-events-none absolute inset-0" />}
       {revealed && !wrong && <span aria-hidden="true" className="cell-revealed-mark pointer-events-none absolute top-0 right-0" />}
+      {/* A race ghost's square: a quiet dot in the bottom-right corner (the clue number has the top-left), never a fill (Andrew, 2026-11-12: visible, not distracting). */}
+      {ghostColor && (
+        <span
+          aria-hidden="true"
+          data-ghost
+          className="pointer-events-none absolute right-[8cqi] bottom-[8cqi] rounded-full opacity-70"
+          style={{ width: "max(4px, 14cqi)", height: "max(4px, 14cqi)", backgroundColor: ghostColor }}
+        />
+      )}
       {cellState?.letter && (
         <span
           aria-hidden="true"

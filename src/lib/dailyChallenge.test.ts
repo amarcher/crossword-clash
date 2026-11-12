@@ -49,6 +49,11 @@ describe("parseDailyChallenge", () => {
     expect(parseDailyChallenge("beat=0&by=Sam", "A friend")).toEqual({ name: "Sam", seconds: 0 });
   });
 
+  it("carries the sender's replay share ID when the link has one", () => {
+    expect(parseDailyChallenge("?beat=612&by=Andrew&r=E0Gqr8Iw09i", "A friend")).toEqual({ name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i" });
+    expect(parseDailyChallenge("?beat=612&by=Andrew&r=nope", "A friend")).toEqual({ name: "Andrew", seconds: 612 });
+  });
+
   it("falls back to the given name when `by` is missing or blank", () => {
     expect(parseDailyChallenge("?beat=30", "A friend")).toEqual({ name: "A friend", seconds: 30 });
     expect(parseDailyChallenge("?beat=30&by=%20", "A friend")).toEqual({ name: "A friend", seconds: 30 });
