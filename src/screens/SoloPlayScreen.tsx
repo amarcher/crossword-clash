@@ -51,6 +51,9 @@ import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog } from "../components/Race/ReplayDialog";
 import { encodeReplay } from "../lib/replayCode";
 import { createReplayShare, fetchReplayShare, letteredReplay } from "../lib/replayShare";
+import { replyToRace } from "../lib/raceReplies";
+import { buildDailyLink } from "../lib/dailyChallenge";
+import { SHARE_URL } from "../lib/resultCard";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -479,13 +482,30 @@ export function SoloPlayScreen() {
     setReplayId(null);
     replayFiledRef.current = false;
   }, [puzzleKey, attempt]);
+  // Racing a shared link's sender (ChallengeScreen): their daily, for the reply.
+  const linkGhost = race.find((g) => g.link) ?? null;
   useEffect(() => {
-    if (!soloResult || !freshResult || !dailySlot || !puzzle || soloResult.assisted || replayFiledRef.current) return;
+    if (!soloResult || !freshResult || !(dailySlot || linkGhost) || !puzzle || soloResult.assisted || replayFiledRef.current) return;
     replayFiledRef.current = true;
     const trace = recorder.take();
     const code = trace ? encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks) : null;
-    if (code) void createReplayShare(code).then((id) => id && setReplayId(id));
-  }, [soloResult, freshResult, dailySlot, puzzle, recorder]);
+    void (async () => {
+      const id = code ? await createReplayShare(code) : null;
+      if (id) setReplayId(id);
+      // Close the loop: the link's sender hears how this racer did (raceReplies.ts).
+      if (linkGhost?.link) {
+        await replyToRace({
+          shareId: linkGhost.link.shareId,
+          replyShareId: id,
+          name: isRealPlayerName(game.displayName) ? game.displayName : t("common.defaultPlayerName"),
+          day: linkGhost.link.day,
+          slot: linkGhost.link.slot,
+          seconds: soloResult.finishSeconds,
+          toSeconds: linkGhost.seconds,
+        });
+      }
+    })();
+  }, [soloResult, freshResult, dailySlot, linkGhost, puzzle, recorder, game.displayName, t]);
 
   // File the finish's recording for others to race (race.ts): an account's
   // own first solve only, nothing revealed, recorded from the first letter.
@@ -885,6 +905,15 @@ export function SoloPlayScreen() {
         challengeOutcome={challengeOutcome}
         raceResults={race.length && soloResult ? raceResults(race, soloResult.finishSeconds) : undefined}
         replayId={replayId ?? undefined}
+        shareBack={
+          linkGhost?.link && replayId && soloResult
+            ? {
+                name: linkGhost.name,
+                link: buildDailyLink(SHARE_URL, { day: linkGhost.link.day, slot: linkGhost.link.slot, seconds: soloResult.finishSeconds, name: isRealPlayerName(game.displayName) ? game.displayName : undefined, replay: replayId }),
+                ...compareToChallenge(linkGhost.seconds, soloResult.finishSeconds),
+              }
+            : undefined
+        }
         replays={reopened ? undefined : replayable}
         onWatchReplay={(userId) => void watchReplay(userId)}
         nextUp={nextUp}

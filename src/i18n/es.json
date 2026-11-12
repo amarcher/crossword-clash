@@ -373,6 +373,12 @@
     "streakDays": "Racha de {{count}} días"
   },
   "challenge": {
+    "raceReplyNotice": "Cuando termines, {{name}} verá tu tiempo y tu partida.",
+    "shareBack": "Envía tu partida a {{name}}",
+    "shareBackCopied": "Enlace copiado: pégaselo a {{name}}",
+    "shareBackBeat": "¡Superé tu tiempo por {{delta}}! Mira cómo lo hice:",
+    "shareBackLost": "Me ganaste por {{delta}}. Mira cómo lo hice:",
+    "shareBackTied": "¡Empate! Mira cómo lo hice:",
     "raceButton": "Compite contra la partida de {{name}}",
     "raceHint": "Sus casillas se llenan como lo hicieron, con tu reloj. Nunca ves sus letras.",
     "justSolve": "Solo resolverlo",
@@ -1105,5 +1111,15 @@
     "visibilityFriends": "Solo amigos",
     "visibilityHidden": "Nadie",
     "visibilitySaveFailed": "No se pudo guardar. Inténtalo de nuevo."
+  },
+  "raceReplies": {
+    "heading": "Respuestas a tus diarios compartidos",
+    "raced": "{{name}} compitió contra tu {{daily}}",
+    "theyWon": "{{name}} ganó por {{delta}}",
+    "youWon": "Ganaste por {{delta}}",
+    "tied": "Empate",
+    "watch": "Ver",
+    "missingTitle": "Esta carrera ya no está",
+    "missingBody": "Quizá fue en otro dispositivo, o tiene más de un año."
   }
 }

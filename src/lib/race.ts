@@ -50,6 +50,8 @@ export interface Ghost {
   /** The friend's finish, whole seconds. */
   seconds: number;
   events: TraceEvent[];
+  /** A shared daily link's sender (replayShare.ts): the share raced, and the daily, for the reply at the finish. */
+  link?: { shareId: string; day: string; slot: "mini" | "midi" | "large" };
 }
 
 // --- Pure: recording ---

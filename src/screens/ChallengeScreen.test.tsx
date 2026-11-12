@@ -47,17 +47,18 @@ afterEach(() => {
 });
 
 describe("ChallengeScreen", () => {
-  it("offers to race the sender's solve by default when the link carries their replay", async () => {
-    game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i" };
+  it("offers to race the sender's solve by default when the link carries their replay, saying they'll see the result", async () => {
+    game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i", day: "2026-11-12", slot: "large" };
     share.fetchReplayShare.mockResolvedValueOnce("CODE");
-    share.ghostFromReplay.mockReturnValueOnce(ghost);
+    share.ghostFromReplay.mockReturnValueOnce({ ...ghost, link: { shareId: "E0Gqr8Iw09i", day: "2026-11-12", slot: "large" } });
     renderScreen();
     const race = await screen.findByRole("button", { name: "Race Andrew's solve" });
-    expect(share.ghostFromReplay).toHaveBeenCalledWith("CODE", "E0Gqr8Iw09i", "Andrew");
+    expect(share.ghostFromReplay).toHaveBeenCalledWith("CODE", "E0Gqr8Iw09i", "Andrew", { day: "2026-11-12", slot: "large" });
+    expect(screen.getByText(/When you finish, Andrew sees your time and solve/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Just solve it" })).toBeTruthy();
     fireEvent.click(race);
     await screen.findByText("playing");
-    expect(raceSaved()).toEqual({ ghosts: [ghost] });
+    expect(raceSaved()).toEqual({ ghosts: [{ ...ghost, link: { shareId: "E0Gqr8Iw09i", day: "2026-11-12", slot: "large" } }] });
   });
 
   it("falls back to the time-only challenge when the replay can't load", async () => {

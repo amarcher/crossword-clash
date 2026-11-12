@@ -43,6 +43,7 @@ export const screenModules = {
   race: () => import("./screens/RaceScreen"),
   friends: () => import("./screens/FriendsScreen"),
   addFriend: () => import("./screens/AddFriendScreen"),
+  raceReply: () => import("./screens/RaceReplyScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),

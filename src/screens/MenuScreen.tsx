@@ -14,6 +14,7 @@ import { AppStoreBanner } from "../components/AppStoreBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
+import { RaceRepliesCard } from "../components/Race/RaceRepliesCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
@@ -301,6 +302,7 @@ export function MenuScreen() {
         </div>
 
         <div className="grid gap-8">
+          <RaceRepliesCard />
           {multiplayer && (
             <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>

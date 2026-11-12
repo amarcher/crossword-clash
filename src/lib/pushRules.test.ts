@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  raceReplyFromWebhook,
+  raceReplyNotification,
   apnsRequest,
   apnsTokenClaims,
   apnsTokenStale,
@@ -242,5 +244,31 @@ describe("the store requests", () => {
     expect(tokenUnregistered("ios", 500, "InternalServerError")).toBe(false);
     expect(tokenUnregistered("android", 404, "UNREGISTERED")).toBe(true);
     expect(tokenUnregistered("android", 503, "UNAVAILABLE")).toBe(false);
+  });
+});
+
+describe("race replies", () => {
+  const reply = { id: "0a1b2c3d-4e5f-6789-abcd-ef0123456789", name: "Sam", slot: "mini" as const, toSeconds: 102 };
+
+  it("tells the sender who raced which daily and how it went, and opens the reply's page", () => {
+    const won = raceReplyNotification({ ...reply, seconds: 90 }, "en");
+    expect(won).toMatchObject({ kind: "race_reply", title: "Sam raced your mini", body: "Sam won by 0:12 · Watch", url: `https://crosswordclash.com/reply/${reply.id}`, collapseId: `reply-${reply.id}` });
+    expect(raceReplyNotification({ ...reply, seconds: 130 }, "en").body).toBe("You won by 0:28 · Watch");
+    expect(raceReplyNotification({ ...reply, seconds: 102 }, "en").body).toBe("Dead heat · Watch");
+    expect(raceReplyNotification({ ...reply, seconds: 90 }, "es").title).toBe("Sam compitió contra tu mini");
+  });
+
+  it("reads a race_replies insert from the webhook, and nothing else", () => {
+    const record = { id: reply.id, to_user_id: "u1", name: "Sam", slot: "large", seconds: 600, to_seconds: 612 };
+    expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record })).toEqual({ id: reply.id, toUserId: "u1", name: "Sam", slot: "large", seconds: 600, toSeconds: 612 });
+    expect(raceReplyFromWebhook({ type: "INSERT", table: "room_nudges", record })).toBeNull();
+    expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record: { ...record, slot: "huge" } })).toBeNull();
+  });
+
+  it("rides on the room switch and keeps to quiet hours", () => {
+    expect(deliveryDecision(prefs({ room_invites: false }), "race_reply", NOW)).toBe("opted_out");
+    expect(deliveryDecision(prefs({ quiet_hours: false }), "race_reply", NOW)).toBe("send");
+    // 06:30 UTC is 06:30 in London: inside the default 22 → 8 quiet window, and invites crossing it don't carry replies.
+    expect(deliveryDecision(prefs({ quiet_allow_invites: true }), "race_reply", NOW)).toBe("quiet");
   });
 });

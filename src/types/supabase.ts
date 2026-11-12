@@ -176,6 +176,25 @@ export interface Database {
         Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
         Relationships: [];
       };
+      race_replies: {
+        Row: {
+          id: string;
+          share_id: string;
+          to_user_id: string;
+          from_user_id: string;
+          reply_share_id: string | null;
+          name: string;
+          day: string;
+          slot: "mini" | "midi" | "large";
+          seconds: number;
+          to_seconds: number;
+          created_at: string;
+          seen_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       replay_shares: {
         Row: {
           /** 11 characters: the start of the code's SHA-256 in base64url. */
@@ -548,6 +567,13 @@ export interface Database {
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
       /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
+      /** Files the racer's reply to a raced share link; its id, or null (own link, unknown sender, already replied). */
+      reply_to_race: {
+        Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string; p_slot: string; p_seconds: number; p_to_seconds: number };
+        Returns: string | null;
+      };
+      /** The sender marks replies to their links seen. */
+      mark_race_replies_seen: { Args: { p_ids: string[] }; Returns: undefined };
       /** Files a replay code and returns its 11-character share ID (the same code, the same ID). */
       create_replay_share: { Args: { p_code: string }; Returns: string };
       /** Files a finished solve's race recording; true when it replaced a slower one (or was the first). */

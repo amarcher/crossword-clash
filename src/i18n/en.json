@@ -373,6 +373,12 @@
     "streakDays": "{{count}}-day streak"
   },
   "challenge": {
+    "raceReplyNotice": "When you finish, {{name}} sees your time and solve.",
+    "shareBack": "Send {{name}} your solve",
+    "shareBackCopied": "Link copied: paste it to {{name}}",
+    "shareBackBeat": "Beat your time by {{delta}}! Watch how I did it:",
+    "shareBackLost": "You got me by {{delta}}. Watch how I did it:",
+    "shareBackTied": "Dead heat! Watch how I did it:",
     "raceButton": "Race {{name}}'s solve",
     "raceHint": "Their squares fill in as they did, on your clock. You never see their letters.",
     "justSolve": "Just solve it",
@@ -1105,5 +1111,15 @@
     "visibilityFriends": "Friends only",
     "visibilityHidden": "No one",
     "visibilitySaveFailed": "Couldn't save that. Try again."
+  },
+  "raceReplies": {
+    "heading": "Replies to your shared dailies",
+    "raced": "{{name}} raced your {{daily}}",
+    "theyWon": "{{name}} won by {{delta}}",
+    "youWon": "You won by {{delta}}",
+    "tied": "Dead heat",
+    "watch": "Watch",
+    "missingTitle": "This race isn't here anymore",
+    "missingBody": "It may have been on another device, or it's over a year old."
   }
 }

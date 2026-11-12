@@ -42,7 +42,7 @@ export async function fetchReplayShare(id: string): Promise<string | null> {
  * alike count as filled (a ghost never says which), refusals and clue changes
  * are left out. Null when the code doesn't decode or holds no fills.
  */
-export function ghostFromReplay(code: string, shareId: string, name: string): Ghost | null {
+export function ghostFromReplay(code: string, shareId: string, name: string, daily?: { day: string; slot: "mini" | "midi" | "large" }): Ghost | null {
   const replay = decodeReplay(code);
   if (!replay) return null;
   const events: TraceEvent[] = [];
@@ -51,7 +51,7 @@ export function ghostFromReplay(code: string, shareId: string, name: string): Gh
     else if (e.kind === REPLAY_KIND.emptied) events.push([e.ms, e.cell, 0]);
   }
   if (events.length === 0) return null;
-  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events };
+  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events, ...(daily ? { link: { shareId, ...daily } } : {}) };
 }
 
 /**

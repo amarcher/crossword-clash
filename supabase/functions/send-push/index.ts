@@ -15,6 +15,8 @@ import {
   reminderNotification,
   roomJoinedFromBody,
   roomJoinedNotification,
+  raceReplyFromWebhook,
+  raceReplyNotification,
   roomNudgeFromWebhook,
   roomNudgeNotification,
   tokenUnregistered,
@@ -35,6 +37,7 @@ import {
  *   POST { type: "INSERT", table: "friendships", record }     → the recipient of a pending friend request (the webhook's body)
  *   POST { kind: "room_joined", gameId, joinerUserId }        → the host of a waiting room, on the first join (the players trigger's body)
  *   POST { type: "INSERT", table: "room_nudges", record }     → the host, nudged by a waiting joiner (the webhook's body)
+ *   POST { type: "INSERT", table: "race_replies", record }    → a shared daily's sender, raced by whoever opened the link (the webhook's body)
  *   POST { kind: "test", userId }                             → one user's devices, for the runbook's smoke test
  *
  * iOS goes straight to APNs over HTTP/2 with an ES256 provider token signed
@@ -327,6 +330,14 @@ async function roomNudge(db: SupabaseClient, target: { gameId: string; fromUserI
   return json({ ok: true, ...counts });
 }
 
+/** "Sam raced your mini · Sam won by 0:12 · Watch" to the link's sender; the reply row named both. */
+async function raceReply(db: SupabaseClient, target: NonNullable<ReturnType<typeof raceReplyFromWebhook>>) {
+  const prefs = await prefsFor(db, [target.toUserId]);
+  const tokens = await tokensFor(db, [target.toUserId]);
+  const counts = await notifyUser(db, target.toUserId, "race_reply", prefs.get(target.toUserId), tokens, (locale) => raceReplyNotification(target, locale));
+  return json({ ok: true, ...counts });
+}
+
 async function smokeTest(db: SupabaseClient, userId: string) {
   const tokens = await tokensFor(db, [userId]);
   const note: Notification = { kind: "daily_reminder", title: "Crossword Clash", body: "Push is set up.", url: `${SITE_URL}/menu`, collapseId: "test", ttlSeconds: 600 };
@@ -356,6 +367,8 @@ Deno.serve(async (req) => {
   if (joined) return roomJoined(db, joined);
   const nudge = roomNudgeFromWebhook(body as Parameters<typeof roomNudgeFromWebhook>[0]);
   if (nudge) return roomNudge(db, nudge);
+  const reply = raceReplyFromWebhook(body as Parameters<typeof raceReplyFromWebhook>[0]);
+  if (reply) return raceReply(db, reply);
   if (body.kind === "test" && body.userId) return smokeTest(db, body.userId);
   return json({ error: "invalid_request" }, 400);
 });
