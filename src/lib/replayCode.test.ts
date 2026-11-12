@@ -71,10 +71,12 @@ describe("replay codes", () => {
     expect(decodeReplay(encodeReplay(grid(2, 1), [[0, 0, "A"]], 2)!)).not.toBeNull();
   });
 
-  it("rides on the daily link as r, and only when it looks like a code", () => {
-    expect(buildDailyLink("https://x.test", { day: "2026-11-12", slot: "mini", seconds: 74, name: "Andrew", replay: "AQUF_-x" })).toBe(
-      "https://x.test/daily/2026-11-12/mini?beat=74&by=Andrew&r=AQUF_-x",
+  it("rides on the daily link as r, as a short share ID and nothing else", () => {
+    expect(buildDailyLink("https://x.test", { day: "2026-11-12", slot: "large", seconds: 612, name: "Andrew", replay: "VJ0ncnWyJ9j" })).toBe(
+      "https://x.test/daily/2026-11-12/large?beat=612&by=Andrew&r=VJ0ncnWyJ9j",
     );
-    expect(buildDailyLink("https://x.test", { day: "2026-11-12", slot: "mini", seconds: 74, replay: "<script>" })).toBe("https://x.test/daily/2026-11-12/mini?beat=74");
+    for (const replay of ["<script>xyz", "AQUF_-x", "AgUFEAAQAEoBID9efZwBuwHaAfk"]) {
+      expect(buildDailyLink("https://x.test", { day: "2026-11-12", slot: "mini", seconds: 74, replay })).toBe("https://x.test/daily/2026-11-12/mini?beat=74");
+    }
   });
 });

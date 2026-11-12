@@ -8,11 +8,11 @@ import { SHARE_URL } from "../../lib/resultCard";
  * loading it here renders and caches the clip before any preview asks for it.
  * Always the production URL (the link's own); hidden if it can't load.
  */
-export function ReplayPreview({ code, darkMode }: { code: string; darkMode?: boolean }) {
+export function ReplayPreview({ id, darkMode }: { id: string; darkMode?: boolean }) {
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   if (failed) return null;
-  const src = `${SHARE_URL}/api/replay?r=${code}`;
+  const src = `${SHARE_URL}/api/replay?s=${id}`;
   return (
     <figure data-testid="replay-preview" className="mb-1">
       <video

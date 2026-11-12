@@ -1,6 +1,10 @@
 /**
- * GET /api/replay?r=<code>            → the solve as a short silent MP4 (H.264, 1280×720, faststart)
- * GET /api/replay?r=<code>&poster=1   → its last frame as a JPEG (the og:image beside og:video)
+ * GET /api/replay?s=<share id>        → the solve as a short silent MP4 (H.264, 1280×720, faststart)
+ * GET /api/replay?s=<share id>&poster=1 → its last frame as a JPEG (the og:image beside og:video)
+ * GET /api/replay?r=<code>            → the same from a code itself (tests, previews)
+ *
+ * A share ID (src/lib/replayShare.ts) names a code filed in `replay_shares`
+ * and never changes meaning, so either form caches for good.
  *
  * The code (src/lib/replayCode.ts) is the grid's shape and a timeline of what
  * each square showed and which clue the solver was on, never a letter, so the
@@ -356,9 +360,32 @@ export async function renderPoster(replay: Replay): Promise<Buffer> {
 
 const FOREVER = "public, max-age=31536000, s-maxage=31536000, immutable";
 
+/** A share ID's code from `replay_shares` (public by ID), or null when there is none. */
+export async function lookupShare(id: string): Promise<string | null | "unavailable"> {
+  const base = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!base || !key || !/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
+  try {
+    const res = await fetch(`${base}/rest/v1/replay_shares?id=eq.${id}&select=code`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!res.ok) return "unavailable";
+    const rows = (await res.json()) as { code?: string }[];
+    return rows[0]?.code ?? null;
+  } catch {
+    return "unavailable";
+  }
+}
+
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const replay = decodeReplay(url.searchParams.get("r") ?? "");
+  const shareId = url.searchParams.get("s");
+  let code = url.searchParams.get("r") ?? "";
+  if (shareId !== null) {
+    const found = await lookupShare(shareId);
+    if (found === "unavailable") return new Response("Try again", { status: 503, headers: { "cache-control": "no-store" } });
+    if (!found) return new Response("No such replay", { status: 404, headers: { "cache-control": "public, max-age=300" } });
+    code = found;
+  }
+  const replay = decodeReplay(code);
   if (!replay) return new Response("Bad replay code", { status: 400, headers: { "cache-control": "public, max-age=3600" } });
   const poster = url.searchParams.get("poster") === "1";
   try {

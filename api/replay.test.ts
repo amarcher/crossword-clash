@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { clockText, decodeReplay, drawFrames, FRAME_COUNT, FPS, GET, H, renderVideo, W } from "./replay";
 import { decodeReplay as decodeInApp, encodeReplay } from "../src/lib/replayCode";
 import type { ReplayMark, TraceEvent } from "../src/lib/race";
@@ -121,6 +121,47 @@ describe("the endpoint", () => {
     const bytes = new Uint8Array(await res.arrayBuffer());
     expect([bytes[0], bytes[1]]).toEqual([0xff, 0xd8]);
   }, 30_000);
+});
+
+describe("share IDs", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  const serve = (rows: unknown, ok = true) => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://db.test");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon");
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      calls.push(url);
+      return { ok, json: async () => rows };
+    });
+    return calls;
+  };
+
+  it("looks the code up by ID and renders it", async () => {
+    const calls = serve([{ code: encodeReplay(puzzle, events, 30, marks) }]);
+    const res = await GET(new Request("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1"));
+    expect(calls).toEqual(["https://db.test/rest/v1/replay_shares?id=eq.VJ0ncnWyJ9j&select=code"]);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("image/jpeg");
+    expect(res.headers.get("cache-control")).toContain("immutable");
+  }, 30_000);
+
+  it("answers an unknown ID 404 (briefly cached) and a database error 503 (not cached), and never asks for a malformed one", async () => {
+    serve([]);
+    const missing = await GET(new Request("https://x.test/api/replay?s=VJ0ncnWyJ9j"));
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get("cache-control")).toBe("public, max-age=300");
+    serve([], false);
+    const down = await GET(new Request("https://x.test/api/replay?s=VJ0ncnWyJ9j"));
+    expect(down.status).toBe(503);
+    expect(down.headers.get("cache-control")).toBe("no-store");
+    const calls = serve([]);
+    expect((await GET(new Request("https://x.test/api/replay?s=../etc"))).status).toBe(404);
+    expect(calls).toEqual([]);
+  });
 });
 
 describe("renderVideo", () => {

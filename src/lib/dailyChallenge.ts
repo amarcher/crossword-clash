@@ -36,7 +36,7 @@ export interface DailyLinkInput {
   seconds?: number;
   /** The finisher's name; omitted when blank. */
   name?: string;
-  /** The solve's replay code (replayCode.ts): the link's preview plays it (api/share.ts → og:video). */
+  /** The solve's replay share ID (replayShare.ts): the link's preview plays it (api/share.ts → og:video). */
   replay?: string;
 }
 
@@ -49,7 +49,7 @@ export function buildDailyLink(origin: string, input: DailyLinkInput): string {
   }
   const name = (input.name ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
   if (name) params.set(BY_PARAM, name);
-  if (input.replay && /^[A-Za-z0-9_-]+$/.test(input.replay)) params.set(REPLAY_PARAM, input.replay);
+  if (input.replay && /^[A-Za-z0-9_-]{11}$/.test(input.replay)) params.set(REPLAY_PARAM, input.replay);
   const query = params.toString();
   return `${base}${dailyPath(input.day, input.slot)}${query ? `?${query}` : ""}`;
 }

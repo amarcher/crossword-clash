@@ -92,19 +92,19 @@ describe("daily link", () => {
     expect(html).not.toContain("http-equiv");
   });
 
-  it("plays the solve in the preview when the link carries a replay (og:video, the clip's poster)", async () => {
-    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&by=Archer&r=AQUFAA_8"));
+  it("plays the solve in the preview when the link carries a replay share ID (og:video, the clip's poster)", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&by=Archer&r=VJ0ncnWyJ9j"));
     const html = await res.text();
-    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?r=AQUFAA_8");
-    expect(meta(html, "og:video:secure_url")).toBe("https://x.test/api/replay?r=AQUFAA_8");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:video:secure_url")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
     expect(meta(html, "og:video:type")).toBe("video/mp4");
-    expect(meta(html, "og:image")).toBe("https://x.test/api/replay?r=AQUFAA_8&poster=1");
+    expect(meta(html, "og:image")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1");
     expect(meta(html, "og:image:width")).toBe("1280");
-    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?beat=102&by=Archer&r=AQUFAA_8");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?beat=102&by=Archer&r=VJ0ncnWyJ9j");
   });
 
-  it("ignores a replay code with characters a code never has", async () => {
-    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&r=%22%3E%3Cscript"));
+  it("ignores an r that isn't a share ID", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&r=%22%3E%3Cscript%3Exyz"));
     const html = await res.text();
     expect(meta(html, "og:video")).toBeNull();
     expect(new URL(meta(html, "og:image")!).pathname).toBe("/api/og");
