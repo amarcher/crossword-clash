@@ -2,10 +2,12 @@
  * GET /api/replay?r=<code>            → the solve as a short silent MP4 (H.264, 1280×720, faststart)
  * GET /api/replay?r=<code>&poster=1   → its last frame as a JPEG (the og:image beside og:video)
  *
- * The code (src/lib/replayCode.ts) is the grid's shape and when each square
- * was first filled, never a letter, so the clip shows *how* a daily was solved
- * without giving it away: squares light up gold as they're filled and settle
- * to blue, a clock races to the finish time, a bar fills. Nothing is stored:
+ * The code (src/lib/replayCode.ts) is the grid's shape and a timeline of what
+ * each square showed and which clue the solver was on, never a letter, so the
+ * clip shows *how* a daily was solved without giving it away: squares turn
+ * blue with a right letter and red with a wrong one (a letter Autocheck
+ * refused flashes red, then the square is empty again), the clue being worked
+ * on is pale gold, a clock races to the finish time and a bar fills. Nothing is stored:
  * the clip is drawn from the code on request (flat colours straight into RGB
  * buffers, no canvas or fonts) and encoded by ffmpeg, and the response is
  * cached for good at the CDN (the code is the content). The completion screen
@@ -28,19 +30,22 @@ declare const process: { env: Record<string, string | undefined> };
 
 // --- The code (mirror of decodeReplay in src/lib/replayCode.ts) ---
 
+/** 0 emptied · 1 right letter · 2 wrong letter · 3 refused (a red flash) · 4 / 5 now on the Across / Down clue starting at this square. */
+export type Kind = 0 | 1 | 2 | 3 | 4 | 5;
+
 export interface Replay {
   width: number;
   height: number;
   blocks: boolean[];
   seconds: number;
-  fills: (number | null)[];
+  events: { ms: number; cell: number; kind: Kind }[];
 }
 
 const MAX_SIDE = 25;
 const MAX_SECONDS = 36_000;
 
 export function decodeReplay(code: string): Replay | null {
-  if (!/^[A-Za-z0-9_-]{4,2000}$/.test(code)) return null;
+  if (!/^[A-Za-z0-9_-]{4,3000}$/.test(code)) return null;
   let bytes: Uint8Array;
   try {
     const bin = atob(code.replace(/-/g, "+").replace(/_/g, "/"));
@@ -62,7 +67,8 @@ export function decodeReplay(code: string): Replay | null {
     }
     return -1;
   };
-  if (byte() !== 1) return null;
+  const version = byte();
+  if (version !== 2) return null;
   const width = byte();
   const height = byte();
   if (width < 1 || height < 1 || width > MAX_SIDE || height > MAX_SIDE) return null;
@@ -76,18 +82,24 @@ export function decodeReplay(code: string): Replay | null {
   for (let i = 0; i < width * height; i++) blocks.push(!!(bits[i >> 3] & (1 << (i & 7))));
   const seconds = varint();
   if (seconds < 0 || seconds > MAX_SECONDS) return null;
-  const fills: (number | null)[] = [];
-  for (let i = 0; i < width * height; i++) {
-    if (blocks[i]) {
-      fills.push(null);
-      continue;
-    }
-    const v = varint();
-    if (v < 0) return null;
-    fills.push(v === 0 ? null : (v - 1) * 100);
+  const step = varint();
+  if (step < 1 || step > MAX_SECONDS) return null;
+  const events: Replay["events"] = [];
+  let tick = 0;
+  let cell = 0;
+  while (at < bytes.length) {
+    const head = varint();
+    const delta = varint();
+    if (head < 0 || delta < 0) return null;
+    const kind = head & 7;
+    if (kind > 5) return null;
+    tick += head >> 3;
+    cell += delta % 2 === 0 ? delta / 2 : -(delta + 1) / 2;
+    if (cell < 0 || cell >= width * height || tick * step > seconds * 10 + 10 + step) return null;
+    events.push({ ms: tick * step * 100, cell, kind: kind as Kind });
   }
   if (at !== bytes.length) return null;
-  return { width, height, blocks, seconds, fills };
+  return { width, height, blocks, seconds, events };
 }
 
 // --- Drawing ---
@@ -99,15 +111,16 @@ export const FPS = 24;
 const ANIM_S = 4.5;
 const HOLD_S = 1.5;
 export const FRAME_COUNT = Math.round((ANIM_S + HOLD_S) * FPS);
-/** How long (of the clip) a newly filled square stays gold before settling to blue. */
-const FRESH_S = 0.45;
+/** How long (of the clip) a refused letter shows red before the square clears again. */
+const FLASH_S = 0.35;
 
 type Rgb = readonly [number, number, number];
 const CANVAS: Rgb = [244, 246, 250]; // --color-canvas
 const INK: Rgb = [20, 26, 38]; // --color-ink
 const WHITE: Rgb = [255, 255, 255];
 const BLUE: Rgb = [58, 107, 240]; // --color-brand-500
-const GOLD: Rgb = [245, 189, 44]; // --color-gold-400
+const RED: Rgb = [239, 68, 68]; // red-500: a wrong letter, as the share block's red squares
+const CLUE: Rgb = [253, 239, 196]; // --color-gold-100: the clue being worked on, as in the game
 const TRACK: Rgb = [221, 231, 255]; // --color-brand-100
 
 function fillRect(buf: Uint8Array, x: number, y: number, w: number, h: number, [r, g, b]: Rgb): void {
@@ -168,10 +181,28 @@ function layoutFor(replay: Replay): Layout {
   return { cell, gap, x0: 90 + Math.floor((box - gridW) / 2), y0: Math.floor((H - gridH) / 2) };
 }
 
+/** The squares of the clue that starts at `start` and runs `across` or down: to the first black square or the edge. */
+function wordCells(replay: Replay, start: number, across: boolean): number[] {
+  const out: number[] = [];
+  const w = replay.width;
+  let r = Math.floor(start / w);
+  let c = start % w;
+  while (r < replay.height && c < w && !replay.blocks[r * w + c]) {
+    out.push(r * w + c);
+    if (across) c++;
+    else r++;
+  }
+  return out;
+}
+
 /**
  * Draws every frame into one buffer, calling `emit` with it after each (the
- * same buffer each time: copy or write it before returning). Only squares whose
- * colour changed and the clock and bar are redrawn per frame.
+ * same buffer each time: copy or write it before returning). Squares are
+ * white when empty, blue with a right letter, red with a wrong one (a refused
+ * letter flashes red and the square clears again), and the empty squares of
+ * the clue being worked on are pale gold, as the game shows them. The last
+ * 1.5 s hold the finished grid. Only squares whose colour changed, the clock
+ * and the bar are redrawn per frame.
  */
 export async function drawFrames(replay: Replay, emit: (frame: Uint8Array, index: number) => Promise<void> | void, frames = FRAME_COUNT): Promise<void> {
   const buf = new Uint8Array(W * H * 3);
@@ -188,25 +219,35 @@ export async function drawFrames(replay: Replay, emit: (frame: Uint8Array, index
   for (const i of white) fillRect(buf, cellX(i), cellY(i), cell, cell, WHITE);
   const painted = new Map<number, string>();
 
+  // Each square's letter state (0 empty, 1 right, 2 wrong), refusal flashes, and the clue on screen.
+  const state = new Uint8Array(replay.width * replay.height);
+  const flashUntil = new Map<number, number>();
+  let clue = new Set<number>();
+  let next = 0;
+  const flashMs = (FLASH_S / ANIM_S) * totalMs;
+
   // Right panel: the clock above a progress bar.
   const panelX = 760;
   const panelW = 440;
   const barY = 450;
-  const freshMs = (FRESH_S / ANIM_S) * totalMs;
 
   for (let f = 0; f < frames; f++) {
     const clipS = Math.min(f / FPS, ANIM_S);
-    const solveMs = (clipS / ANIM_S) * totalMs;
-    let filled = 0;
+    const holding = f / FPS >= ANIM_S;
+    const solveMs = holding ? Infinity : (clipS / ANIM_S) * totalMs;
+    while (next < replay.events.length && replay.events[next].ms <= solveMs) {
+      const e = replay.events[next++];
+      if (e.kind <= 2) {
+        state[e.cell] = e.kind;
+        flashUntil.delete(e.cell);
+      } else if (e.kind === 3) flashUntil.set(e.cell, e.ms + flashMs);
+      else clue = new Set(wordCells(replay, e.cell, e.kind === 4));
+    }
+    let right = 0;
     for (const i of white) {
-      const at = replay.fills[i] ?? totalMs;
-      let color: Rgb = WHITE;
-      if (at <= solveMs) {
-        filled++;
-        const age = solveMs - at;
-        // Gold while fresh, then blue: blending the two in RGB passes through a muddy grey.
-        color = clipS >= ANIM_S || age >= freshMs ? BLUE : GOLD;
-      }
+      if (state[i] === 1) right++;
+      const flashing = !holding && (flashUntil.get(i) ?? -1) > solveMs;
+      const color: Rgb = flashing || state[i] === 2 ? RED : state[i] === 1 ? BLUE : !holding && clue.has(i) ? CLUE : WHITE;
       const key = color.join(",");
       if (painted.get(i) !== key) {
         painted.set(i, key);
@@ -236,8 +277,8 @@ export async function drawFrames(replay: Replay, emit: (frame: Uint8Array, index
       }
     }
 
-    // Progress bar.
-    const share = white.length ? filled / white.length : 1;
+    // Progress bar: the share of squares holding their right letter.
+    const share = white.length ? right / white.length : 1;
     fillRect(buf, panelX + 20, barY, panelW - 40, 22, TRACK);
     fillRect(buf, panelX + 20, barY, (panelW - 40) * share, 22, BLUE);
 

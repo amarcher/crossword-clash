@@ -300,6 +300,20 @@ export function SoloPlayScreen() {
   // recorded; an account's finish files its recording for others to race.
   const width = puzzle?.width ?? 0;
   const recorder = useSolveRecorder({ puzzleKey, width, playerCells, getElapsedMs, enabled: !reopened });
+  // For the share replay: the clue the solver is on, and each letter Autocheck
+  // refuses (counted as it happens, on the square under the cursor).
+  const recordMark = recorder.mark;
+  useEffect(() => {
+    if (!activeClue || !timerRunning || isComplete) return;
+    recordMark(activeClue.row * width + activeClue.col, activeClue.direction === "across" ? "a" : "d");
+  }, [activeClue, timerRunning, isComplete, width, recordMark]);
+  const refusals = useRef(wrongLetters);
+  useEffect(() => {
+    const before = refusals.current;
+    refusals.current = wrongLetters;
+    if (wrongLetters > before && selectedCell && !isComplete) recordMark(selectedCell.row * width + selectedCell.col, "r");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new refusal is the trigger; the cursor is read at that moment
+  }, [wrongLetters]);
   const [race, setRace] = useState<Ghost[]>([]);
   useEffect(() => {
     setRace(puzzleKey ? loadRace(puzzleKey)?.ghosts ?? [] : []);
@@ -451,7 +465,7 @@ export function SoloPlayScreen() {
   useEffect(() => {
     if (!soloResult || !freshResult || !dailySlot || !puzzle || soloResult.assisted || replayCode) return;
     const trace = recorder.take();
-    if (trace) setReplayCode(encodeReplay(puzzle, trace.events, soloResult.finishSeconds));
+    if (trace) setReplayCode(encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks));
   }, [soloResult, freshResult, dailySlot, puzzle, recorder, replayCode]);
 
   // File the finish's recording for others to race (race.ts): an account's
