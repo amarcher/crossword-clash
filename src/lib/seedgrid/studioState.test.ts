@@ -15,8 +15,17 @@ describe("studio state", () => {
     expect(s.cursor).toBe(2);
   });
 
+  it("a new puzzle has no symmetry, and a new grid doesn't inherit the last one's", () => {
+    expect(initialStudioState(5).symmetry).toBe("none");
+    const s = run(initialStudioState(5), { type: "SET_SYMMETRY", symmetry: "rotational" }, { type: "SET_MIN_SCORE", minScore: 45 }, { type: "NEW_GRID", size: 7, id: "p-2" });
+    expect(s.symmetry).toBe("none");
+    expect(s.minScore).toBe(45);
+    const blocked = run(initialStudioState(5), { type: "TOGGLE_BLOCK", cell: 0 });
+    expect(gridToRows(blocked.grid)).toEqual(["#....", ".....", ".....", ".....", "....."]);
+  });
+
   it("clicking the cursor flips direction; blocks follow the symmetry", () => {
-    let s = run(initialStudioState(5), { type: "SELECT", cell: 0 });
+    let s = run(initialStudioState(5), { type: "SET_SYMMETRY", symmetry: "rotational" }, { type: "SELECT", cell: 0 });
     expect(s.dir).toBe("down");
     s = run(s, { type: "TOGGLE_BLOCK", cell: 0 });
     expect(gridToRows(s.grid)).toEqual(["#....", ".....", ".....", ".....", "....#"]);
@@ -107,6 +116,7 @@ describe("studio state", () => {
     expect(heat[0]).toBe(0);
     expect(heat[4]).toBe(4);
     expect([heatLevel(heat[0]), heatLevel(heat[4]), heatLevel(heat[8]), heatLevel(undefined)]).toEqual(["dead", "tight", "snug", "open"]);
+    expect([heatLevel(20), heatLevel(21), heatLevel(100), heatLevel(101)]).toEqual(["snug", "fair", "fair", "open"]);
   });
 
   it("applies drafted clues by slot key and drops them when the slot changes shape", () => {

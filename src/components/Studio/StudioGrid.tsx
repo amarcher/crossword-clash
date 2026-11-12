@@ -33,15 +33,15 @@ const MENU_ITEM =
   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink hover:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none";
 
 /**
- * Heat sits on a cool, neutral ramp so gold is reserved for the selection: a
+ * Heat sits on one cool blue ramp (darker = fewer words) so gold is reserved for the selection: a
  * snug run must never read as a second highlighted word.
  */
-const HEAT_BG = { dead: "bg-red-200", tight: "bg-brand-100", snug: "bg-surface-sunken", open: "bg-surface" } as const;
+const HEAT_BG = { dead: "bg-red-200", tight: "bg-brand-200", snug: "bg-brand-100", fair: "bg-brand-50", open: "bg-surface" } as const;
 /**
  * On the active word the gold fill wins, so those cells carry their heat as a
  * corner dot instead (a translucent gold wash over the heat turned to khaki).
  */
-const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-500", snug: "bg-subtle", open: null } as const;
+const HEAT_DOT = { dead: "bg-red-500", tight: "bg-brand-600", snug: "bg-brand-400", fair: "bg-brand-200", open: null } as const;
 
 /**
  * Editable construction grid. Keys go through one visually hidden input so

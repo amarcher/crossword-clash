@@ -82,11 +82,18 @@ export function newPuzzleId(): string {
   return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** The symmetry Lay out builds with: theme entries pair up in mirrored rows, so "none" lays out rotationally. */
+export function layoutSymmetry(symmetry: Symmetry): Symmetry {
+  return symmetry === "none" ? "rotational" : symmetry;
+}
+
 export function initialStudioState(size = 5, id = newPuzzleId()): StudioState {
   return {
     id,
     grid: emptyGrid(size),
-    symmetry: "rotational",
+    // A black square goes only where it is put: a mirrored partner appearing
+    // across the grid read as a bug (Andrew, 2026-11-11). Symmetry is opt-in.
+    symmetry: "none",
     minScore: 50,
     approved: {},
     rejected: [],
@@ -150,8 +157,8 @@ export function studioReducer(state: StudioState, action: StudioAction): StudioS
   switch (action.type) {
     case "NEW_GRID":
       return {
+        // Symmetry is the puzzle's own, so a new one starts without it; the word rules carry over.
         ...initialStudioState(action.size, action.id),
-        symmetry: state.symmetry,
         minScore: state.minScore,
         rejected: state.rejected,
         difficulty: state.difficulty,
@@ -321,11 +328,18 @@ export function duplicateEntries(grid: Grid): string[] {
   return [...seen.values()].filter((ids) => ids.length > 1).flat();
 }
 
-/** Option count → heat bucket, as Ingrid colors its grid. */
-export function heatLevel(count: number | undefined): "dead" | "tight" | "snug" | "open" {
-  if (count === undefined || count >= 20) return "open";
+export type HeatLevel = "dead" | "tight" | "snug" | "fair" | "open";
+
+/**
+ * Option count → heat bucket, as Ingrid colors its grid. "fair" (21–100) was
+ * added on 2026-11-11: with "open" starting at 20, a laid-out 15×15 shaded 5
+ * squares of 173 and a mini none, so the heatmap looked broken.
+ */
+export function heatLevel(count: number | undefined): HeatLevel {
+  if (count === undefined || count > 100) return "open";
   if (count === 0) return "dead";
-  return count <= 5 ? "tight" : "snug";
+  if (count <= 5) return "tight";
+  return count <= 20 ? "snug" : "fair";
 }
 
 /** Per cell, the fewest options among the entries through it (fixed entries don't count). */
