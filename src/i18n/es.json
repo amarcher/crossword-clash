@@ -373,6 +373,10 @@
     "streakDays": "Racha de {{count}} días"
   },
   "challenge": {
+    "raceButton": "Compite contra la partida de {{name}}",
+    "raceHint": "Sus casillas se llenan como lo hicieron, con tu reloj. Nunca ves sus letras.",
+    "justSolve": "Solo resolverlo",
+    "loadingRace": "Cargando su partida…",
     "heading": "¡{{name}} te desafía!",
     "subtitle": "Resuelve \"{{title}}\" y compite contra su tiempo.",
     "targetTime": "{{name}} lo resolvió en {{time}}",

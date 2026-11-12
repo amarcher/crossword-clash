@@ -368,7 +368,8 @@ export function SoloPlayScreen() {
       seen.add(userId);
       out.push({ userId, name });
     };
-    for (const g of race) add(g.userId, g.name);
+    // A shared link's sender (userId "link:…") has no recording with letters to replay.
+    for (const g of race) if (!g.userId.startsWith("link:")) add(g.userId, g.name);
     for (const c of raceCandidates) add(c.userId, c.username);
     return out.slice(0, 3);
   }, [race, raceCandidates]);

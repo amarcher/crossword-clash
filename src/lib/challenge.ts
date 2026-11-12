@@ -23,6 +23,8 @@ export interface ChallengePayload {
   name: string;
   /** The challenger's finish time, whole seconds. */
   seconds: number;
+  /** A daily link's replay share ID (replayShare.ts): the challenger's solve, to race as a ghost. */
+  replay?: string;
 }
 
 export type ChallengeOutcome = "beat" | "lost" | "tied";

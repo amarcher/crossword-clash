@@ -73,7 +73,8 @@ export function parseDailyChallenge(search: string, fallbackName: string): Chall
     const seconds = Number(raw);
     if (!Number.isInteger(seconds) || seconds < 0) return null;
     const name = (params.get(BY_PARAM) ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
-    return { name: name || fallbackName, seconds };
+    const replay = params.get(REPLAY_PARAM) ?? "";
+    return { name: name || fallbackName, seconds, ...(/^[A-Za-z0-9_-]{11}$/.test(replay) ? { replay } : {}) };
   } catch {
     return null;
   }

@@ -373,6 +373,10 @@
     "streakDays": "{{count}}-day streak"
   },
   "challenge": {
+    "raceButton": "Race {{name}}'s solve",
+    "raceHint": "Their squares fill in as they did, on your clock. You never see their letters.",
+    "justSolve": "Just solve it",
+    "loadingRace": "Loading their solve…",
     "heading": "{{name}} challenges you!",
     "subtitle": "Solve \"{{title}}\" and race their time.",
     "targetTime": "{{name}} solved it in {{time}}",
