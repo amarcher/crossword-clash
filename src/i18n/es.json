@@ -254,6 +254,8 @@
     "tie": "¡Empate!"
   },
   "completion": {
+    "replayPreviewLabel": "Tu partida, repetida",
+    "replayPreviewCaption": "Esto se reproduce cuando compartes el enlace",
     "nextYesterday": "{{daily}} de ayer",
     "puzzleComplete": "¡Crucigrama completo!",
     "tie": "¡Empate!",

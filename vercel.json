@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/replay.ts": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "node_modules/.pnpm/@ffmpeg-installer+*/node_modules/@ffmpeg-installer/**"
+    }
+  },
   "proxy": {
     "entrypoint": "proxy.ts",
     "matcher": [

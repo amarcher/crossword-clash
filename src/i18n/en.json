@@ -254,6 +254,8 @@
     "tie": "It's a tie!"
   },
   "completion": {
+    "replayPreviewLabel": "Your solve, replayed",
+    "replayPreviewCaption": "This plays when you share the link",
     "nextYesterday": "Yesterday's {{daily}}",
     "puzzleComplete": "Puzzle complete",
     "tie": "It's a tie!",

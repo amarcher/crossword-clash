@@ -51,6 +51,7 @@
     "@capawesome/capacitor-app-update": "8.1.1",
     "@capgo/capacitor-social-login": "^8.7.5",
     "@elevenlabs/client": "^1.10.0",
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource/roboto": "5.3.0",
