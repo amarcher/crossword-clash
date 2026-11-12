@@ -13,6 +13,7 @@ import {
   type Ghost,
   type GhostFrame,
   type RaceCandidate,
+  type ReplayMark,
   type StoredTrace,
 } from "../lib/race";
 
@@ -53,7 +54,7 @@ export function useSolveRecorder({
     trace.current =
       stored && matchesGrid(stored, latest.current, width)
         ? stored
-        : { key: puzzleKey, events: [], partial: hasLetters(latest.current) };
+        : { key: puzzleKey, events: [], marks: [], partial: hasLetters(latest.current) };
   }, [puzzleKey, width]);
 
   useEffect(() => {
@@ -78,9 +79,25 @@ export function useSolveRecorder({
   /** "Clear and solve again": a fresh recording. */
   const reset = useCallback(() => {
     if (!puzzleKey) return;
-    trace.current = { key: puzzleKey, events: [], partial: false };
+    trace.current = { key: puzzleKey, events: [], marks: [], partial: false };
     saveTrace(trace.current);
   }, [puzzleKey]);
+
+  /** A refusal or a change of clue, stamped with the solve clock (for the share replay). */
+  const mark = useCallback(
+    (cell: number, kind: ReplayMark[2]) => {
+      const current = trace.current;
+      if (!enabled || !current || current.key !== puzzleKey) return;
+      const marks = current.marks ?? [];
+      const last = marks[marks.length - 1];
+      // A clue change to the clue already on record is no change.
+      if (kind !== "r" && last && last[1] === cell && last[2] === kind) return;
+      current.marks = [...marks, [Math.max(0, Math.round(getElapsedMs())), cell, kind]];
+      if (current.marks.length > MAX_EVENTS) current.partial = true;
+      saveTrace(current);
+    },
+    [enabled, puzzleKey, getElapsedMs],
+  );
 
   /** The finished recording, or null when it can't be raced. */
   const take = useCallback((): StoredTrace | null => {
@@ -88,7 +105,7 @@ export function useSolveRecorder({
     return current && current.key === puzzleKey && !current.partial && current.events.length ? current : null;
   }, [puzzleKey]);
 
-  return { reset, take };
+  return { reset, take, mark };
 }
 
 /** Whether replaying a recording to its end gives exactly the letters in the grid. */

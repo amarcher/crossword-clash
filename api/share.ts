@@ -4,7 +4,7 @@
  * GET /share?t=race&code=ABC123&title=…        → invite card + redirect to /?join=ABC123
  * GET /share?t=result&title=…&time=1:42&rank=1&total=4&name=…
  *                                              → boast card + redirect to /
- * GET /daily/2026-10-20/mini?beat=102&by=Archer[&r=<replay>] (rewritten here by vercel.json
+ * GET /daily/2026-10-20/mini?beat=102&by=Archer[&r=<replay share id>] (rewritten here by vercel.json
  *     as ?t=daily&day=…&slot=…, the original query merged in)
  *                                              → "beat my time" card, and the
  *                                                SPA itself: the built
@@ -68,15 +68,15 @@ export interface HeadTags {
   image: string;
   url: string;
   /**
-   * A daily link with a replay code (`r`): the solve as an MP4 from
+   * A daily link with a replay (`r`, a share ID): the solve as an MP4 from
    * /api/replay, for `og:video` (iMessage plays it in the preview); `image`
    * is then that clip's poster frame, 1280×720.
    */
   video?: string;
 }
 
-/** A replay code's shape (src/lib/replayCode.ts); api/replay.ts decodes it fully. */
-export const REPLAY_CODE = /^[A-Za-z0-9_-]{4,2000}$/;
+/** A replay share ID's shape (src/lib/replayShare.ts); api/replay.ts looks the code up. */
+export const REPLAY_ID = /^[A-Za-z0-9_-]{11}$/;
 
 /**
  * Replace the page's own title and social tags with the card's, so crawlers
@@ -141,8 +141,8 @@ export default async function handler(req: Request): Promise<Response> {
     description = time
       ? `Same puzzle, your clock. Tap to race ${by ? `${by}'s` : "this"} time on Crossword Clash.`
       : "Tap to play this daily on Crossword Clash — solo, or race friends live.";
-    const replay = clean(url, "r", 2000);
-    const hasReplay = REPLAY_CODE.test(replay);
+    const replay = clean(url, "r", 11);
+    const hasReplay = REPLAY_ID.test(replay);
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
@@ -155,7 +155,7 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("glyph", time ? "⏱" : "🧩");
 
     // With a replay the preview plays the solve (og:video), its last frame as the poster.
-    const replayUrl = hasReplay ? `${origin}/api/replay?r=${replay}` : "";
+    const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
     const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
     const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) };
     // Serve the real app with the card's tags: humans play, crawlers unfurl.

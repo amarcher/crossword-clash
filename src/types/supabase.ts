@@ -176,6 +176,19 @@ export interface Database {
         Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
         Relationships: [];
       };
+      replay_shares: {
+        Row: {
+          /** 11 characters: the start of the code's SHA-256 in base64url. */
+          id: string;
+          /** The replay code (src/lib/replayCode.ts). */
+          code: string;
+          user_id: string | null;
+          created_at: string;
+        };
+        Insert: { id: string; code: string; user_id?: string | null; created_at?: string };
+        Update: { id?: string; code?: string; user_id?: string | null; created_at?: string };
+        Relationships: [];
+      };
       solve_traces: {
         Row: {
           user_id: string;
@@ -535,6 +548,8 @@ export interface Database {
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
       /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
+      /** Files a replay code and returns its 11-character share ID (the same code, the same ID). */
+      create_replay_share: { Args: { p_code: string }; Returns: string };
       /** Files a finished solve's race recording; true when it replaced a slower one (or was the first). */
       save_solve_trace: { Args: { p_puzzle_key: string; p_seconds: number; p_events: unknown }; Returns: boolean };
       /** Raceable recordings of a puzzle: friends first, then up to 10 fastest public ones; `seconds` only for Plus callers. */

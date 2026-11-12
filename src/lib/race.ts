@@ -21,6 +21,14 @@ import { supabase } from "./supabaseClient";
 /** `[ms, cell, letter]`; a stripped recording has 1 (filled) / 0 (emptied) instead of the letter. */
 export type TraceEvent = [number, number, string | number];
 
+/**
+ * What a share replay (replayCode.ts) needs beyond the letters, kept with the
+ * recording on this device only (never uploaded for races): `[ms, cell, "r"]`
+ * for a letter Autocheck refused on that square, and `[ms, cell, "a" | "d"]`
+ * when the solver moved to the Across / Down clue starting at that square.
+ */
+export type ReplayMark = [number, number, "r" | "a" | "d"];
+
 /** At most this many friends race at once. */
 export const MAX_GHOSTS = 3;
 /** A recording holds at most this many events (the server's limit too). */
@@ -155,6 +163,8 @@ export interface StoredTrace {
   /** puzzleIdentity of the puzzle being recorded. */
   key: string;
   events: TraceEvent[];
+  /** Refusals and clue changes, for the share replay (absent in recordings from before it). */
+  marks?: ReplayMark[];
   /** The recording missed part of the solve (it began with letters already in the grid). */
   partial: boolean;
 }
