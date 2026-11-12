@@ -1,0 +1,50 @@
+import { ChevronRight } from "lucide-react";
+import type { Viability } from "../../lib/seedgrid/ingrid";
+
+interface CandidateStripProps {
+  slotLabel: string;
+  words: { word: string; score: number }[] | null;
+  viability: Record<string, Viability>;
+  rejected: string[];
+  onPlace: (word: string) => void;
+  /** Opens the full list (the phone's Words tab). */
+  onMore: () => void;
+}
+
+/** How many words the strip offers before "All words". */
+export const STRIP_COUNT = 8;
+
+/**
+ * The phone's shortcut under the grid: the best few words for the selected
+ * entry as one row of chips, so most entries are written without a trip to
+ * the Words tab. Proven-impossible and rejected words are left out; approvals
+ * and rejections stay on the full list.
+ */
+export function CandidateStrip({ slotLabel, words, viability, rejected, onPlace, onMore }: CandidateStripProps) {
+  const top = (words ?? []).filter((o) => viability[o.word] !== "nogood" && !rejected.includes(o.word)).slice(0, STRIP_COUNT);
+  return (
+    <div role="group" aria-label={`Words for ${slotLabel}`} className="-mx-4 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain px-4 py-0.5 [scrollbar-width:none]">
+      {words === null && <span className="min-h-10 py-2.5 text-sm text-muted">Looking for words…</span>}
+      {words?.length === 0 && <span className="min-h-10 py-2.5 text-sm text-muted">No word fits every crossing.</span>}
+      {top.map(({ word }) => (
+        <button
+          key={word}
+          type="button"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 font-mono text-sm tracking-wide text-ink hover:bg-surface-sunken active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500"
+          onClick={() => onPlace(word)}
+          aria-label={`Write ${word}`}
+        >
+          {viability[word] === "good" && <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />}
+          {word}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="inline-flex min-h-10 shrink-0 items-center gap-0.5 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
+        onClick={onMore}
+      >
+        All words <ChevronRight className="size-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
