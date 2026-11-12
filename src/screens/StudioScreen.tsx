@@ -7,7 +7,7 @@ import { StudioGrid } from "../components/Studio/StudioGrid";
 import { TitleField } from "../components/Studio/TitleField";
 import type { HiddenGridInputHandlers } from "../hooks/useHiddenGridInput";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
-import { CluePanel } from "../components/Studio/CluePanel";
+import { CluePanel, type CluePanelHandle } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
 import { Insights } from "../components/Studio/Insights";
@@ -45,6 +45,7 @@ import {
   cellHeat,
   duplicateEntries,
   initialStudioState,
+  layoutSymmetry,
   newPuzzleId,
   rulesFor,
   slotKey,
@@ -110,6 +111,7 @@ export function StudioScreen() {
   const [tab, setTab] = useState<StudioTab>("grid");
   // The desk's right column: the word list or the clues.
   const [sideTab, setSideTab] = useState<"words" | "clues">("words");
+  const cluePanelRef = useRef<CluePanelHandle>(null);
   // The daily queue, reports and insights are the constructor's: a Plus-only visitor never sees them, and the apps never show them.
   const adminPanels = (account.admin || !!studioToken || !account.plus) && studioAdminPanelsAllowed();
   const access = { admin: account.admin, plus: account.plus };
@@ -327,7 +329,8 @@ export function StudioScreen() {
     const started = state.grid;
     try {
       // Approvals belong to the current grid's slots, so a new layout only uses score and rejections.
-      const res = await client.skeleton(gridSize, state.symmetry, seeds, { minScore: state.minScore, rejected: state.rejected });
+      // Theme entries pair up in mirrored rows, which takes a symmetry: with none chosen, lay out rotationally.
+      const res = await client.skeleton(gridSize, layoutSymmetry(state.symmetry), seeds, { minScore: state.minScore, rejected: state.rejected });
       if (latestGrid.current !== started) setMessage("The grid changed during layout, so that layout was dropped.");
       else if (res.grid) {
         setSize(gridSize);
@@ -362,6 +365,10 @@ export function StudioScreen() {
   );
 
   const heat = useMemo(() => (showHeat && heatCounts ? cellHeat(base, heatCounts) : undefined), [showHeat, heatCounts, base]);
+  const fewest = useMemo(() => {
+    const known = (heat ?? []).filter((n): n is number => n !== undefined);
+    return known.length ? Math.min(...known) : null;
+  }, [heat]);
   const stats = gridStats(state.grid);
   const slots = slotsOf(state.grid);
   const complete = state.grid.cells.every((c) => c !== "");
@@ -468,6 +475,22 @@ export function StudioScreen() {
       <Button variant="ghost" size={toolSize} aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""} title="Heatmap: how many words fit through each square">
         <Flame className="size-4" aria-hidden="true" /> <span className={TOOL_LABEL}>Heatmap</span>
       </Button>
+      {/* AI clues, offered where the constructor is looking once there's something to clue; the draft runs in the clue panel, which opens. */}
+      {complete && missingClues > 0 && (
+        <Button
+          variant="soft"
+          size={toolSize}
+          disabled={busy !== null}
+          title="Write a clue for every entry without one, with AI"
+          onClick={() => {
+            if (desktop) setSideTab("clues");
+            else setTab("clues");
+            cluePanelRef.current?.draftAll();
+          }}
+        >
+          <Sparkles className="size-4" aria-hidden="true" /> Draft {missingClues === slots.length ? "all" : missingClues} clues
+        </Button>
+      )}
       {desktop && playTestButton()}
       {desktop && publishButton()}
       <StudioPopover label="How the studio works" icon={<CircleHelp className="size-4" aria-hidden="true" />} className="ml-auto">
@@ -477,9 +500,11 @@ export function StudioScreen() {
             : "Tap a square and type (your letters are bold and kept). Hold a square for black / white, direction and the words through it; typing a letter on a black square opens it again. A second tap switches between across and down."}
         </p>
         <ul className="mt-2 flex flex-col gap-1" aria-label="Heatmap legend">
-          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-red-200" aria-hidden="true" /> no word fits through this square</li>
-          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-100" aria-hidden="true" /> only a few</li>
-          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-surface-sunken ring-1 ring-line" aria-hidden="true" /> some</li>
+          <li>Heatmap: how many words still fit through each square, given the letters you typed. Darker means fewer.</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-red-200" aria-hidden="true" /> none: no word fits</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-200" aria-hidden="true" /> 1–5 words</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-100" aria-hidden="true" /> 6–20</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-50 ring-1 ring-line" aria-hidden="true" /> 21–100; white is more</li>
           <li>On the gold word the same shows as a corner dot.</li>
         </ul>
       </StudioPopover>
@@ -491,6 +516,13 @@ export function StudioScreen() {
       {stats.words} words · {stats.blocks} blocks ({Math.round(stats.blockPct * 100)}%) · average {stats.avgLength.toFixed(1)}
       {stats.shortRuns > 0 && <span className="text-red-600"> · {stats.shortRuns} two-letter runs</span>}
       {!stats.connected && <span className="text-red-600"> · grid is split</span>}
+      {/* The heatmap's own readout, so turning it on always says something even when no square is tight. */}
+      {heat && (fewest !== null || complete) && (
+        <span className={fewest === 0 ? "text-red-600" : ""}>
+          {" · "}
+          {fewest === null ? "every entry is written" : `tightest square: ${fewest.toLocaleString()} ${fewest === 1 ? "word" : "words"}`}
+        </span>
+      )}
     </p>
   );
 
@@ -534,7 +566,7 @@ export function StudioScreen() {
     <section aria-label="Grid" className="flex flex-col gap-2">
       <TitleField state={state} dispatch={dispatch} access={access} />
       {/* A tablet in portrait would otherwise get a grid taller than the screen; leave room for the strip, tools and tab bar. */}
-      <div className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 28.5rem)))` }}>
+      <div className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 31rem)))` }}>
         {grid}
       </div>
       {slot && key && (
@@ -574,6 +606,7 @@ export function StudioScreen() {
 
   const cluePanel = (
     <CluePanel
+      ref={cluePanelRef}
       state={state}
       dispatch={dispatch}
       onExport={(format) => void exportFile(format)}
@@ -683,6 +716,9 @@ export function StudioScreen() {
           ]}
           onChange={(symmetry: Symmetry) => dispatch({ type: "SET_SYMMETRY", symmetry })}
         />
+        <p className="mt-1 text-xs text-subtle">
+          {state.symmetry === "none" ? "Black squares go only where you put them. Lay out still builds a rotationally symmetric grid." : "A black square also places its mirrored partner."}
+        </p>
         <label className="mt-3 flex items-baseline justify-between text-sm font-medium text-ink-soft" htmlFor="studio-score">
           Minimum word score <span className="tabular-nums text-ink">{state.minScore}</span>
         </label>
@@ -793,7 +829,7 @@ export function StudioScreen() {
       ) : (
         <>
           {/* The tab bar is fixed above the home indicator; the page keeps clear of it. */}
-          <main className="mt-3 flex flex-col gap-4 pb-24">
+          <main className="mt-3 flex flex-col gap-4 pb-[calc(3rem+env(safe-area-inset-bottom))]">
             {engineNotice}
             {tabPanel("grid", gridPanel)}
             {tabPanel("words", <Card className="flex max-h-[calc(100dvh-12rem)] flex-col p-4">{candidatePanel}</Card>)}

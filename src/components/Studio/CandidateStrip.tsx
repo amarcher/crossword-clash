@@ -11,26 +11,30 @@ interface CandidateStripProps {
   onMore: () => void;
 }
 
-/** How many words the strip offers before "All words". */
-export const STRIP_COUNT = 8;
+/** How many words the strip offers before "All words": about two rows of chips at phone width. */
+export function stripCount(length: number): number {
+  return length <= 5 ? 6 : length <= 8 ? 4 : 2;
+}
 
 /**
  * The phone's shortcut under the grid: the best few words for the selected
- * entry as one row of chips, so most entries are written without a trip to
- * the Words tab. Proven-impossible and rejected words are left out; approvals
- * and rejections stay on the full list.
+ * entry as chips that wrap onto a second row (a sideways scroll hid that there
+ * were more, 2026-11-11), then "All N words" for the full list. Proven-
+ * impossible and rejected words are left out; approvals and rejections stay on
+ * the full list.
  */
 export function CandidateStrip({ slotLabel, words, viability, rejected, onPlace, onMore }: CandidateStripProps) {
-  const top = (words ?? []).filter((o) => viability[o.word] !== "nogood" && !rejected.includes(o.word)).slice(0, STRIP_COUNT);
+  const usable = (words ?? []).filter((o) => viability[o.word] !== "nogood" && !rejected.includes(o.word));
+  const top = usable.slice(0, stripCount(usable[0]?.word.length ?? 5));
   return (
-    <div role="group" aria-label={`Words for ${slotLabel}`} className="-mx-4 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain px-4 py-0.5 [scrollbar-width:none]">
+    <div role="group" aria-label={`Words for ${slotLabel}`} className="flex flex-wrap items-center gap-1.5">
       {words === null && <span className="min-h-10 py-2.5 text-sm text-muted">Looking for words…</span>}
       {words?.length === 0 && <span className="min-h-10 py-2.5 text-sm text-muted">No word fits every crossing.</span>}
       {top.map(({ word }) => (
         <button
           key={word}
           type="button"
-          className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 font-mono text-sm tracking-wide text-ink hover:bg-surface-sunken active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500"
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 font-mono text-sm tracking-wide text-ink hover:bg-surface-sunken active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500"
           onClick={() => onPlace(word)}
           aria-label={`Write ${word}`}
         >
@@ -40,10 +44,10 @@ export function CandidateStrip({ slotLabel, words, viability, rejected, onPlace,
       ))}
       <button
         type="button"
-        className="inline-flex min-h-10 shrink-0 items-center gap-0.5 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
+        className="inline-flex min-h-10 items-center gap-0.5 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
         onClick={onMore}
       >
-        All words <ChevronRight className="size-4" aria-hidden="true" />
+        {words?.length ? `All ${words.length.toLocaleString()} words` : "All words"} <ChevronRight className="size-4" aria-hidden="true" />
       </button>
     </div>
   );

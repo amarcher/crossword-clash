@@ -42,13 +42,15 @@ vi.mock("../lib/seedgrid/engineClient", () => {
     }
     restart = () => Promise.resolve(5000);
     dispose = () => undefined;
-    options = async () => ({ ok: true, counts: {}, words: [{ word: "ABCDE", score: 50 }] });
+    options = async () => ({ ok: true, counts: { "1A": 7 }, words: [{ word: "ABCDE", score: 50 }] });
     classify = async () => ({});
     fill = async () => ({ ok: false, reason: "timeout", ms: 1 });
     skeleton = async () => ({ grid: null, attempts: 0, minScore: 50 });
   }
   return { EngineClient, STUDIO_WORD_LIST_URL: "https://abc.supabase.co/storage/v1/object/public/seedgrid/words-production.dict" };
 });
+const draftClues = vi.hoisted(() => vi.fn(async () => ({})));
+vi.mock("../lib/seedgrid/studioClaude", async (importOriginal) => ({ ...(await importOriginal<typeof import("../lib/seedgrid/studioClaude")>()), draftClues }));
 vi.mock("../hooks/useStudioAccount", () => ({ useStudioAccount: () => state.account }));
 vi.mock("../hooks/useStudioToken", () => ({ useStudioToken: () => "", setStudioToken: () => undefined }));
 const navigate = vi.fn();
@@ -112,6 +114,21 @@ afterEach(() => {
 });
 
 describe("StudioScreen on a phone", () => {
+  it("offers AI clues from the Grid tab once the grid is full, opening the Clues tab where the draft runs", async () => {
+    seedCompleteDraft();
+    renderStudio();
+    fireEvent.click(within(panel("grid")).getByRole("button", { name: /Draft all clues/ }));
+    expect(panel("clues").hidden).toBe(false);
+    await waitFor(() => expect(draftClues).toHaveBeenCalledTimes(1));
+  });
+
+  it("reads out the tightest square while the heatmap is on", async () => {
+    renderStudio();
+    await waitFor(() => expect(within(panel("grid")).getByText(/tightest square: 7 words/)).toBeTruthy());
+    fireEvent.click(within(panel("grid")).getByRole("button", { name: /Heatmap/ }));
+    expect(within(panel("grid")).queryByText(/tightest square/)).toBeNull();
+  });
+
   it("writes a word from the strip under the grid without leaving the Grid tab", async () => {
     renderStudio();
     const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
@@ -119,7 +136,7 @@ describe("StudioScreen on a phone", () => {
     expect(panel("grid").hidden).toBe(false);
     await waitFor(() => expect(document.querySelector(".grid-shell")?.textContent).toMatch(/A.*B.*C.*D.*E/));
     // "All words" is the way to the full list.
-    fireEvent.click(within(strip).getByRole("button", { name: /All words/ }));
+    fireEvent.click(within(strip).getByRole("button", { name: /All 1 words/ }));
     expect(panel("words").hidden).toBe(false);
   });
 

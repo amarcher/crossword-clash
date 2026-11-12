@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Dispatch, type KeyboardEvent, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, KeyRound, Loader2, Sparkles, WandSparkles } from "lucide-react";
 import { Button, Card, Eyebrow, Select } from "../ui";
@@ -25,6 +25,13 @@ interface CluePanelProps {
   activeKey?: string | null;
   /** A clue row was focused: select its entry in the grid. */
   onSelectSlot?: (slot: Slot) => void;
+  /** Lets the grid's toolbar start a whole-puzzle draft here, where its progress and any token prompt show. */
+  ref?: Ref<CluePanelHandle>;
+}
+
+export interface CluePanelHandle {
+  /** The panel's "Draft" button: a clue for every entry without one (or a redraft of the AI's own). */
+  draftAll: () => void;
 }
 
 /** How many rows may be redrafting at once; the rest of the panel stays live either way. */
@@ -53,7 +60,7 @@ const without = <T,>(rec: Record<string, T>, key: string): Record<string, T> => 
  * studio token (kept in this browser only). Speed clues are no longer edited
  * here: no player-facing screen shows them (see `StudioState.speedClues`).
  */
-export function CluePanel({ state, dispatch, onExport, showExport = true, access, userId, activeKey = null, onSelectSlot }: CluePanelProps) {
+export function CluePanel({ state, dispatch, onExport, showExport = true, access, userId, activeKey = null, onSelectSlot, ref }: CluePanelProps) {
   const { t } = useTranslation();
   const { grid } = state;
   const slots = slotsOf(grid);
@@ -118,6 +125,12 @@ export function CluePanel({ state, dispatch, onExport, showExport = true, access
       }
     })();
   };
+
+  useImperativeHandle(ref, () => ({
+    draftAll: () => {
+      if (complete && busy === null) draft();
+    },
+  }));
 
   /** Redraft one row: only that row is busy; its alternatives arrive as chips. */
   const redraft = (slotId: string, key: string) => {
