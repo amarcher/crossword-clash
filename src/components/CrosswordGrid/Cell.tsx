@@ -50,6 +50,8 @@ interface CellProps {
   wordCompleteColor?: string;
   /** Stagger delay (ms) for the word-completion sweep */
   wordCompleteDelay?: number;
+  /** A race ghost has this square filled (race.ts): its colour tints the square, never a letter. */
+  ghostColor?: string;
 }
 
 /**
@@ -72,6 +74,7 @@ export const Cell = memo(function Cell({
   animateFill,
   wordCompleteColor,
   wordCompleteDelay,
+  ghostColor,
 }: CellProps) {
   if (cell.solution === null) {
     return <div className="bg-ink min-h-0 min-w-0 overflow-hidden" role="gridcell" aria-hidden="true" />;
@@ -91,7 +94,8 @@ export const Cell = memo(function Cell({
   // A player's colour is pre-blended against white (18% reads as a pastel with
   // high text contrast) so it never composites against the ink grid behind.
   const playerHex = cellState?.playerId ? playerColorMap?.[cellState.playerId] : undefined;
-  const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : undefined;
+  // A race ghost's square takes the same treatment as a player's, a shade lighter.
+  const playerTint = playerHex ? blendOver(playerHex, 0.18, WHITE) : ghostColor ? blendOver(ghostColor, 0.16, WHITE) : undefined;
 
   // Background priority: cursor > active word (over any player tint) > player tint > white.
   // A plain white cell takes a faint sunken tint under a mouse (Tailwind's

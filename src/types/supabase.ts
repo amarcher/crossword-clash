@@ -167,11 +167,27 @@ export interface Database {
           /** Generated: lower(username), unique. */
           username_lower: string;
           display_name: string | null;
+          /** Who may race or replay this account's recorded solves (race.ts). */
+          race_visibility: "everyone" | "friends" | "hidden";
           created_at: string;
           updated_at: string;
         };
-        Insert: { user_id: string; username: string; display_name?: string | null; created_at?: string; updated_at?: string };
-        Update: { user_id?: string; username?: string; display_name?: string | null; created_at?: string; updated_at?: string };
+        Insert: { user_id: string; username: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
+        Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
+      solve_traces: {
+        Row: {
+          user_id: string;
+          puzzle_key: string;
+          /** The recorded finish, whole seconds. */
+          seconds: number;
+          /** `[[ms, cell, letter], …]` (race.ts TraceEvent). */
+          events: unknown;
+          created_at: string;
+        };
+        Insert: { user_id: string; puzzle_key: string; seconds: number; events: unknown; created_at?: string };
+        Update: { user_id?: string; puzzle_key?: string; seconds?: number; events?: unknown; created_at?: string };
         Relationships: [];
       };
       solves: {
@@ -519,6 +535,12 @@ export interface Database {
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
       /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
+      /** Files a finished solve's race recording; true when it replaced a slower one (or was the first). */
+      save_solve_trace: { Args: { p_puzzle_key: string; p_seconds: number; p_events: unknown }; Returns: boolean };
+      /** Raceable recordings of a puzzle: friends first, then up to 10 fastest public ones; `seconds` only for Plus callers. */
+      race_candidates: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number | null; friend: boolean }[] };
+      /** A recording to race or replay (Plus); letters stripped to 1/0 until the caller has finished the puzzle. */
+      solve_trace: { Args: { p_user: string; p_puzzle_key: string }; Returns: { seconds: number; events: unknown; with_letters: boolean }[] };
       /** Which of a room's players have finished its puzzle before (the host or a player may ask): the mode, never a time. */
       room_solves: { Args: { p_game_id: string; p_puzzle_key: string }; Returns: { user_id: string; mode: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */

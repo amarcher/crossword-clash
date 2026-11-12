@@ -44,6 +44,11 @@ import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
+import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
+import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { RaceStarter } from "../components/Race/RaceStarter";
+import { RaceGhosts } from "../components/Race/RaceGhosts";
+import { ReplayDialog } from "../components/Race/ReplayDialog";
 
 export function SoloPlayScreen() {
   const { t } = useTranslation();
@@ -127,7 +132,7 @@ export function SoloPlayScreen() {
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
   const reopened = !!key && game.reopenedSolved?.key === key;
-  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
+  const { getElapsedSeconds, getElapsedMs, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
@@ -256,6 +261,7 @@ export function SoloPlayScreen() {
     dailySubmittedRef.current = false;
     solvedBeforeRef.current = !!puzzleKey && solvedSeconds(puzzleKey) !== null;
     historyRecordedRef.current = false;
+    traceFiledRef.current = false;
     completionReportedRef.current = false;
     setServerOutcome(null);
     setBoardSignedAs(null);
@@ -287,6 +293,93 @@ export function SoloPlayScreen() {
   const shareWrongCells = useMemo(
     () => (flaggedCells.length ? [...new Set([...wrongCells, ...flaggedCells])] : wrongCells),
     [wrongCells, flaggedCells],
+  );
+
+  // Races and replays of recorded solves (race.ts; Plus). Every solo solve is
+  // recorded; an account's finish files its recording for others to race.
+  const width = puzzle?.width ?? 0;
+  const recorder = useSolveRecorder({ puzzleKey, width, playerCells, getElapsedMs, enabled: !reopened });
+  const [race, setRace] = useState<Ghost[]>([]);
+  useEffect(() => {
+    setRace(puzzleKey ? loadRace(puzzleKey)?.ghosts ?? [] : []);
+  }, [puzzleKey, attempt]);
+  // A Race tap on the daily board names who to race once the puzzle opens.
+  const [raceIntent, setRaceIntent] = useState<string[]>([]);
+  useEffect(() => {
+    setRaceIntent(puzzleKey ? takeRaceIntent(puzzleKey) : []);
+  }, [puzzleKey]);
+  const raceCandidates = useRaceCandidates(puzzleKey, !reopened);
+  const plus = account.plus;
+  const racing = race.length > 0 && !isComplete;
+  const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);
+  const openRacePitch = useCallback(() => account.openPaywall({ placement: "race", feature: "race" }), [account]);
+  const startRace = useCallback(
+    async (userIds: string[]): Promise<boolean> => {
+      if (!puzzleKey) return false;
+      try {
+        const traces = await Promise.all(userIds.map((id) => fetchSolveTrace(id, puzzleKey)));
+        const ghosts: Ghost[] = [];
+        traces.forEach((trace, i) => {
+          const who = raceCandidates.find((c) => c.userId === userIds[i]);
+          if (!trace || !who || trace.events.length === 0) return;
+          ghosts.push({ userId: who.userId, name: who.username, color: GHOST_COLORS[ghosts.length % GHOST_COLORS.length], seconds: trace.seconds, events: trace.events });
+        });
+        if (ghosts.length === 0) return false;
+        saveRace({ key: puzzleKey, ghosts });
+        setRace(ghosts);
+        // The race starts with the grid untouched: both clocks from zero.
+        restartTimer();
+        recorder.reset();
+        track("race_started", { ghosts: ghosts.length, friends: ghosts.filter((g) => raceCandidates.find((c) => c.userId === g.userId)?.friend).length });
+        requestAnimationFrame(() => gridInputRef.current?.focus());
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [puzzleKey, raceCandidates, restartTimer, recorder],
+  );
+  const showRaceStarter =
+    raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
+
+  // Watching a recorded solve, letters and all, once this one is finished.
+  const [replay, setReplay] = useState<{ name: string; color: string; seconds: number; events: Ghost["events"] } | null>(null);
+  const replayable = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { userId: string; name: string }[] = [];
+    const add = (userId: string, name: string) => {
+      if (seen.has(userId)) return;
+      seen.add(userId);
+      out.push({ userId, name });
+    };
+    for (const g of race) add(g.userId, g.name);
+    for (const c of raceCandidates) add(c.userId, c.username);
+    return out.slice(0, 3);
+  }, [race, raceCandidates]);
+  const watchReplay = useCallback(
+    async (userId: string) => {
+      if (!puzzleKey) return;
+      if (!plus) {
+        openRacePitch();
+        return;
+      }
+      const who = replayable.find((r) => r.userId === userId);
+      try {
+        let trace = await fetchSolveTrace(userId, puzzleKey);
+        // The finish this unlocks may still be on its way to the server: one more try.
+        if (trace && !trace.withLetters) {
+          await new Promise((r) => setTimeout(r, 1500));
+          trace = await fetchSolveTrace(userId, puzzleKey);
+        }
+        if (!trace || !trace.withLetters) return;
+        const color = race.find((g) => g.userId === userId)?.color ?? GHOST_COLORS[0];
+        setReplay({ name: who?.name ?? "", color, seconds: trace.seconds, events: trace.events });
+        track("replay_watched", { racing: race.some((g) => g.userId === userId) });
+      } catch {
+        // A replay that can't load just doesn't open.
+      }
+    },
+    [puzzleKey, plus, openRacePitch, replayable, race],
   );
 
   // Autocheck off and the grid full but not right: a quiet notice over the
@@ -349,6 +442,18 @@ export function SoloPlayScreen() {
       assisted: soloResult.assisted,
     }).then((outcome) => outcome && setServerOutcome(outcome));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+
+  // File the finish's recording for others to race (race.ts): an account's
+  // own first solve only, nothing revealed, recorded from the first letter.
+  const traceFiledRef = useRef(false);
+  useEffect(() => {
+    if (!soloResult || !freshResult || !accountId || !puzzleKey || traceFiledRef.current) return;
+    traceFiledRef.current = true;
+    const trace = recorder.take();
+    saveTrace(null);
+    if (!trace || soloResult.assisted || solvedBeforeRef.current) return;
+    void saveSolveTrace(puzzleKey, soloResult.finishSeconds, trace.events).catch(() => undefined);
+  }, [soloResult, freshResult, accountId, puzzleKey, recorder]);
 
   const shownResult = useMemo(() => {
     if (!soloResult) return null;
@@ -481,10 +586,13 @@ export function SoloPlayScreen() {
     });
     if (!ok || !restartSolo()) return;
     restartTimer();
+    recorder.reset();
+    saveRace(null);
+    setRace([]);
     setAttempt((n) => n + 1);
     track("solo_solve_again", { size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined });
     requestAnimationFrame(() => gridInputRef.current?.focus());
-  }, [confirm, t, restartSolo, restartTimer, puzzle]);
+  }, [confirm, t, restartSolo, restartTimer, puzzle, recorder]);
 
   // "Up next" (audit §2, item 8): today's other dailies, then yesterday's.
   // A daily loads straight into this screen, the same path the menu's
@@ -589,6 +697,17 @@ export function SoloPlayScreen() {
             {isComplete && (
               <SolvedStrip onSolveAgain={handleSolveAgain} />
             )}
+            {racing && <RaceGhosts ghosts={race} frames={ghostFrames} totalCells={totalWhiteCells} />}
+            {showRaceStarter && (
+              <RaceStarter
+                key={`${puzzleKey}:${raceIntent.join(",")}`}
+                candidates={raceCandidates}
+                plus={plus}
+                preselect={raceIntent}
+                onStart={startRace}
+                onPitch={openRacePitch}
+              />
+            )}
           </>
         }
         grid={
@@ -603,6 +722,7 @@ export function SoloPlayScreen() {
               navigationActions={guardedActions}
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
+              ghostTints={racing ? ghostTintMap : undefined}
             />
             {showWrongNotice && (
               <div
@@ -719,6 +839,9 @@ export function SoloPlayScreen() {
         wrongCells={shareWrongCells}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
+        raceResults={race.length && soloResult ? raceResults(race, soloResult.finishSeconds) : undefined}
+        replays={reopened ? undefined : replayable}
+        onWatchReplay={(userId) => void watchReplay(userId)}
         nextUp={nextUp}
         onNextUp={(item) => void handleNextUp(item)}
         onRaceFresh={user ? handleRaceFresh : undefined}
@@ -726,6 +849,7 @@ export function SoloPlayScreen() {
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
       />
+      {replay && <ReplayDialog puzzle={puzzle} {...replay} onClose={() => setReplay(null)} />}
     </>
   );
 }
