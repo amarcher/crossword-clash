@@ -151,6 +151,7 @@ export const routes: RouteObject[] = [
           { path: "solo/play", lazy: () => m.soloPlay().then((s) => ({ Component: s.SoloPlayScreen })) },
           // Someone raced a daily the viewer shared: the inbox and the race-reply push land here (raceReplies.ts).
           { path: "reply/:id", lazy: () => m.raceReply().then((s) => ({ Component: s.RaceReplyScreen })) },
+          { path: "stats", lazy: () => m.stats().then((s) => ({ Component: s.StatsScreen })) },
           { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
           { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
           // A day's daily by date + slot (the short challenge link); the static

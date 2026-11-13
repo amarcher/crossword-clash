@@ -784,7 +784,8 @@
     "showBadgeBody": "The gold seal beside your name on leaderboards, friends lists and races.",
     "showBadgeFailed": "Couldn't save that. Try again.",
     "benefitStreak": "Repair a broken streak the day after you miss",
-    "benefitBonus": "An extra bonus puzzle every day"
+    "benefitBonus": "An extra bonus puzzle every day",
+    "benefitStats": "Your full stats: trends, ranks, head-to-heads"
   },
   "appBanner": {
     "label": "Get the app",
@@ -1157,5 +1158,35 @@
     "playWithPlus": "Play with Plus",
     "loadFailed": "Couldn't load the bonus. Check your connection and try again.",
     "archiveHeading": "Bonus puzzles"
+  },
+  "stats": {
+    "title": "Your stats",
+    "subtitle": "Your dailies over the past year.",
+    "slot": "Daily",
+    "average": "Average",
+    "best": "Best",
+    "fasterThan": "Faster than",
+    "solved": "Solved",
+    "seeWithPlus": "See your stats with Plus",
+    "overTime": "Times over time",
+    "byWeekday": "By weekday",
+    "headToHead": "Head-to-head with friends",
+    "friend": "Friend",
+    "record": "Won · lost",
+    "recordLine": "{{wins}} · {{losses}}",
+    "slowClues": "Slowest clues this year",
+    "calendar": "Days solved",
+    "legendSolved": "Solved",
+    "legendRepaired": "Repaired",
+    "legendNone": "Missed",
+    "notEnough": "Solve a few more to see a line.",
+    "noFriends": "Solve the same dailies as a friend to see who's ahead.",
+    "noClues": "Clue times are recorded in the apps, or on the web with analytics allowed.",
+    "loading": "Loading…",
+    "loadFailed": "Couldn't load your stats. Try again in a moment.",
+    "open": "Your stats",
+    "openBody": "Times, weekdays, rank and head-to-heads",
+    "averageLine": "Average {{time}}",
+    "bestDot": "Best {{time}}"
   }
 }

@@ -1,7 +1,7 @@
 import { LeaderboardSettings } from "../components/Account/LeaderboardSettings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
+import { BookOpen, CalendarDays, ChartLine, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { RaceVisibilityCard } from "../components/Race/RaceVisibility";
@@ -215,6 +215,12 @@ export function AccountScreen() {
                 </dd>
               </Card>
             </dl>
+            {plusEnabled() && (
+              <Button variant="secondary" block onClick={() => navigate("/stats")} {...prefetchOnIntent("/stats")}>
+                <ChartLine className="size-4" aria-hidden="true" />
+                {t("stats.open")}
+              </Button>
+            )}
           </section>
 
           {/* Plus: only once the launch switch is on. */}
