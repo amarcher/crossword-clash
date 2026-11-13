@@ -184,15 +184,17 @@ export function ShareBlockPreview({ block, legend, darkMode }: { block: ShareBlo
       {block.stats && <p className={`text-sm ${darkMode ? "text-white/70" : "text-ink-soft"}`}>{block.stats}</p>}
       {/* Rows of up to 9 squares at 17px; a 15-block pace bar steps down so it
           fits a 375px phone inside the modal's padding. */}
-      <div
-        className={`mt-2 select-all leading-[1.15] tracking-[0.04em] ${[...(block.grid[0] ?? "")].length > 9 ? "text-[12px]" : "text-[17px]"}`}
-        aria-hidden="true"
-      >
-        {block.grid.map((row, i) => (
-          <div key={i}>{row}</div>
-        ))}
-      </div>
-      {legend && (
+      {block.grid.length > 0 && (
+        <div
+          className={`mt-2 select-all leading-[1.15] tracking-[0.04em] ${[...(block.grid[0] ?? "")].length > 9 ? "text-[12px]" : "text-[17px]"}`}
+          aria-hidden="true"
+        >
+          {block.grid.map((row, i) => (
+            <div key={i}>{row}</div>
+          ))}
+        </div>
+      )}
+      {legend && block.grid.length > 0 && (
         <p data-testid="share-legend" className={`mt-1.5 text-[11px] leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>
           {legend}
         </p>

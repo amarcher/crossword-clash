@@ -358,6 +358,8 @@ export function CompletionModal({
         locale: i18n.language,
         playerColors,
         link,
+        // A link that carries the replay unfurls as the solve itself: no emoji rows.
+        rows: isMultiplayer || !replayId || !linkRef,
         labels: {
           brand: t("completion.shareBrand"),
           daily: shareDaily,
