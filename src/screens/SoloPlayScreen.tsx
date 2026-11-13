@@ -23,8 +23,10 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
 
-import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
-import { recordSolve, type SolveOutcome } from "../lib/solveHistory";
+import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay, shiftDayKey } from "../lib/soloStats";
+import { repairAccountStreak, repairLocalStreak, repairRow } from "../lib/streakRepair";
+import { emitToast } from "../lib/toastBus";
+import { addHistoryRows, getSolveHistoryState, recordSolve, type SolveOutcome } from "../lib/solveHistory";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
@@ -59,7 +61,7 @@ import { SHARE_URL } from "../lib/resultCard";
 const MY_REPLAY_COLOR = "#3a6bf0";
 
 export function SoloPlayScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
@@ -470,6 +472,8 @@ export function SoloPlayScreen() {
   const accountId = account.user?.id;
   const history = useSolveHistory();
   const [serverOutcome, setServerOutcome] = useState<SolveOutcome | null>(null);
+  // The account's write of this finish is over (whatever came of it): a streak repair goes after it.
+  const [historySettled, setHistorySettled] = useState(false);
   const historyRecordedRef = useRef(false);
   useEffect(() => {
     if (!soloResult || !freshResult || !accountId || !puzzle || historyRecordedRef.current) return;
@@ -481,8 +485,48 @@ export function SoloPlayScreen() {
       mode: "solo",
       seconds: soloResult.finishSeconds,
       assisted: soloResult.assisted,
-    }).then((outcome) => outcome && setServerOutcome(outcome));
+    })
+      .then((outcome) => outcome && setServerOutcome(outcome))
+      .finally(() => setHistorySettled(true));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+
+  // Streak repair (streakRepair.ts; Plus): yesterday's daily, solved today
+  // after a single missed day, makes yesterday count again. The account's
+  // history gets the server's marker row; this device's stats are repaired
+  // too, so a signed-out Plus session (an app purchase) works the same way.
+  const [repairedStreak, setRepairedStreak] = useState<number | null>(null);
+  const repairTriedRef = useRef(false);
+  useEffect(() => {
+    setRepairedStreak(null);
+    repairTriedRef.current = false;
+  }, [puzzleKey, attempt]);
+  useEffect(() => {
+    if (!soloResult || !freshResult || soloResult.assisted || !account.plus || !puzzle || repairTriedRef.current) return;
+    if (accountId && !historySettled) return;
+    const ref = puzzle.ref;
+    const today = dayKey(new Date());
+    if (!ref || !("day" in ref) || ref.day !== shiftDayKey(today, -1)) return;
+    repairTriedRef.current = true;
+    void (async () => {
+      const local = repairLocalStreak();
+      let streak = local?.current ?? null;
+      if (accountId && serverOutcome) {
+        try {
+          if (await repairAccountStreak(ref.day, puzzleIdentity(puzzle), today)) {
+            addHistoryRows(accountId, [repairRow(ref.day, puzzleIdentity(puzzle), new Date().toISOString())]);
+            const summary = getSolveHistoryState()?.summary;
+            if (summary) streak = effectiveStreak(summary.streak, today);
+          } else streak = null;
+        } catch {
+          streak = null;
+        }
+      }
+      if (streak === null) return;
+      setRepairedStreak(streak);
+      const weekday = new Date(`${ref.day}T12:00:00`).toLocaleDateString(i18n.language, { weekday: "long" });
+      emitToast({ message: t("streakRepair.done", { day: weekday }) });
+    })();
+  }, [soloResult, freshResult, account.plus, puzzle, accountId, historySettled, serverOutcome, t, i18n.language]);
 
   // The shared puzzle this is, where the site can link to it (Puzzle.ref):
   // any day's daily, or a community puzzle. Imports have none.
@@ -543,7 +587,7 @@ export function SoloPlayScreen() {
     void saveSolveTrace(puzzleKey, soloResult.finishSeconds, trace.events).catch(() => undefined);
   }, [soloResult, freshResult, accountId, puzzleKey, recorder]);
 
-  const shownResult = useMemo(() => {
+  const baseResult = useMemo(() => {
     if (!soloResult) return null;
     if (serverOutcome) {
       return {
@@ -575,6 +619,10 @@ export function SoloPlayScreen() {
       nytStreak: null,
     };
   }, [soloResult, serverOutcome, freshResult, history.summary, puzzle]);
+  const shownResult = useMemo(
+    () => (baseResult && repairedStreak !== null ? { ...baseResult, streak: repairedStreak, streakAdvanced: true } : baseResult),
+    [baseResult, repairedStreak],
+  );
 
   // Guests explicitly sign each finish, even with a remembered name. Account
   // opt-outs stay private. The confirmation latches after a successful sign;

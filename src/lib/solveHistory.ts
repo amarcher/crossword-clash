@@ -450,6 +450,11 @@ export async function recordSolve(userId: string, input: SolveInput, now: Date =
   return outcome;
 }
 
+/** Rows the server already holds (a streak repair's marker): merged into the loaded history so every screen updates. */
+export function addHistoryRows(userId: string, rows: SolveRow[]): void {
+  if (state?.userId === userId && state.rows) setRows(userId, mergeRows(state.rows, rows), "ready");
+}
+
 /** Test hook: forget everything, including the in-flight load. */
 export function resetSolveHistoryForTests(): void {
   state = null;
