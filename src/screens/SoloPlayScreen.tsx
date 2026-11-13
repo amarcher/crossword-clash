@@ -142,7 +142,7 @@ export function SoloPlayScreen() {
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
   const reopened = !!key && game.reopenedSolved?.key === key;
-  const { getElapsedSeconds, getElapsedMs, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
+  const { getElapsedSeconds, getElapsedMs, running: timerRunning, idlePaused, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
@@ -952,7 +952,7 @@ export function SoloPlayScreen() {
         }
       />
       </div>
-      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError}
+      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
         onResume={handleResume} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
         open={showCompletionModal}

@@ -5,8 +5,10 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { formatDuration } from "../lib/soloStats";
 import { Button } from "./ui";
 
-export function SoloPause({ title, seconds, error, onResume, onExit, onRetry }: {
+export function SoloPause({ title, seconds, error, idle = false, onResume, onExit, onRetry }: {
   title: string; seconds: number; error: boolean;
+  /** The clock paused itself after a minute without input: say so, since nobody pressed Pause. */
+  idle?: boolean;
   onResume: () => void; onExit: () => void; onRetry: () => void;
 }) {
   const { t } = useTranslation();
@@ -27,7 +29,7 @@ export function SoloPause({ title, seconds, error, onResume, onExit, onRetry }: 
           {error ? <Button variant="secondary" size="lg" onClick={onRetry}>{t("soloPause.retry")}</Button>
             : <Button variant="secondary" size="lg" onClick={onExit}>{t("soloPause.exit")}</Button>}
         </div>
-        <p className="mt-5 text-xs text-muted">{t("soloPause.clockHint")}</p>
+        <p className="mt-5 text-xs text-muted">{t(idle ? "soloPause.idleHint" : "soloPause.clockHint")}</p>
       </div>
     </div>
   );
