@@ -50,7 +50,7 @@ import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { encodeReplay } from "../lib/replayCode";
-import { createReplayShare, fetchReplayShare, letteredReplay } from "../lib/replayShare";
+import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, rememberedReplay } from "../lib/replayShare";
 import { replyToRace } from "../lib/raceReplies";
 import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
@@ -498,6 +498,12 @@ export function SoloPlayScreen() {
     setReplayId(null);
     replayFiledRef.current = false;
   }, [puzzleKey, attempt]);
+  // A solve reopened later shares with the replay this device filed for it,
+  // when the time it shows is that finish's.
+  const reopenedSeconds = reopened ? soloResult?.finishSeconds : undefined;
+  useEffect(() => {
+    if (puzzleKey && reopenedSeconds !== undefined) setReplayId(rememberedReplay(puzzleKey, reopenedSeconds));
+  }, [puzzleKey, reopenedSeconds]);
   // Racing a shared link's sender (ChallengeScreen): their puzzle, for the reply.
   const linkGhost = race.find((g) => g.link) ?? null;
   useEffect(() => {
@@ -507,7 +513,10 @@ export function SoloPlayScreen() {
     const code = trace ? encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks) : null;
     void (async () => {
       const id = code ? await createReplayShare(code) : null;
-      if (id) setReplayId(id);
+      if (id) {
+        setReplayId(id);
+        if (puzzleKey) rememberReplay(puzzleKey, id, soloResult.finishSeconds);
+      }
       // Close the loop: the link's sender hears how this racer did (raceReplies.ts).
       if (linkGhost?.link) {
         await replyToRace({
@@ -520,7 +529,7 @@ export function SoloPlayScreen() {
         });
       }
     })();
-  }, [soloResult, freshResult, puzzleRef, linkGhost, puzzle, recorder, game.displayName, t]);
+  }, [soloResult, freshResult, puzzleRef, linkGhost, puzzle, puzzleKey, recorder, game.displayName, t]);
 
   // File the finish's recording for others to race (race.ts): an account's
   // own first solve only, nothing revealed, recorded from the first letter.
