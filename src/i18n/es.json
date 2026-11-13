@@ -784,7 +784,8 @@
     "showBadgeBody": "El sello dorado junto a tu nombre en clasificaciones, listas de amigos y carreras.",
     "showBadgeFailed": "No se pudo guardar. Inténtalo de nuevo.",
     "benefitStreak": "Repara una racha rota al día siguiente de perderla",
-    "benefitBonus": "Un crucigrama extra cada día"
+    "benefitBonus": "Un crucigrama extra cada día",
+    "benefitStats": "Tus estadísticas completas: tendencias, posiciones, cara a cara"
   },
   "appBanner": {
     "label": "Descarga la app",
@@ -1157,5 +1158,35 @@
     "playWithPlus": "Jugar con Plus",
     "loadFailed": "No se pudo cargar el bonus. Revisa tu conexión e inténtalo de nuevo.",
     "archiveHeading": "Crucigramas bonus"
+  },
+  "stats": {
+    "title": "Tus estadísticas",
+    "subtitle": "Tus diarios del último año.",
+    "slot": "Diario",
+    "average": "Promedio",
+    "best": "Mejor",
+    "fasterThan": "Más rápido que",
+    "solved": "Resueltos",
+    "seeWithPlus": "Mira tus estadísticas con Plus",
+    "overTime": "Tiempos a lo largo del tiempo",
+    "byWeekday": "Por día de la semana",
+    "headToHead": "Cara a cara con amigos",
+    "friend": "Amigo",
+    "record": "Ganadas · perdidas",
+    "recordLine": "{{wins}} · {{losses}}",
+    "slowClues": "Pistas más lentas este año",
+    "calendar": "Días resueltos",
+    "legendSolved": "Resuelto",
+    "legendRepaired": "Reparado",
+    "legendNone": "Perdido",
+    "notEnough": "Resuelve algunos más para ver una línea.",
+    "noFriends": "Resuelve los mismos diarios que un amigo para ver quién va delante.",
+    "noClues": "Los tiempos por pista se registran en las apps, o en la web con analíticas permitidas.",
+    "loading": "Cargando…",
+    "loadFailed": "No se pudieron cargar tus estadísticas. Inténtalo de nuevo en un momento.",
+    "open": "Tus estadísticas",
+    "openBody": "Tiempos, días, posición y cara a cara",
+    "averageLine": "Promedio {{time}}",
+    "bestDot": "Mejor {{time}}"
   }
 }

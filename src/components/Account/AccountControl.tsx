@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import { CalendarDays, LogOut, Pencil, PencilRuler, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, ChartLine, LogOut, Pencil, PencilRuler, Sparkles, UserRound, Users } from "lucide-react";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useFriends } from "../../contexts/FriendsContext";
 import { friendsEnabled } from "../../lib/friends";
@@ -121,6 +121,7 @@ export function AccountControl({ placement = "header", className = "" }: Account
     items.push({ key: "studio", icon: PencilRuler, label: t("account.menuStudio"), run: () => navigate("/studio"), warm: "/studio" });
   }
   if (plusEnabled()) {
+    items.push({ key: "stats", icon: ChartLine, label: t("stats.open"), run: () => navigate("/stats"), warm: "/stats" });
     items.push({
       key: "plus",
       icon: Sparkles,
