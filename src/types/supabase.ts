@@ -586,10 +586,12 @@ export interface Database {
       };
       /** The day's bonus puzzle (transfer JSON) for a Plus caller; null otherwise. */
       bonus_puzzle: { Args: { p_day: string }; Returns: unknown };
-      /** The caller's daily results with how many solvers they beat each day (Plus; nothing otherwise). */
+      /** The caller's daily results; `faster_than` (the share of solvers they beat) only for Plus. */
       my_daily_results: { Args: { p_since: string | null }; Returns: { day: string; slot: string; seconds: number; solvers: number; faster_than: number | string | null }[] };
-      /** Wins and losses against each accepted friend on the dailies both finished (Plus). */
-      my_head_to_head: { Args: { p_since: string | null }; Returns: { friend_id: string; username: string; played: number; wins: number; losses: number; ties: number }[] };
+      /** Each accepted friend and the dailies both finished; the wins, losses and ties only for Plus. */
+      my_head_to_head: { Args: { p_since: string | null }; Returns: { friend_id: string; username: string; played: number; wins: number | null; losses: number | null; ties: number | null }[] };
+      /** How many of the caller's clues took over a minute (the free stats page's teaser). */
+      my_slow_clue_count: { Args: { p_since: string | null }; Returns: number };
       /** The caller's ten slowest clues from their play sessions (Plus). */
       my_slow_clues: { Args: { p_since: string | null }; Returns: { puzzle_title: string; clue: string; seconds: number; played_on: string }[] };
       /** Repairs the caller's daily streak (Plus): yesterday, missed right after a streak, counts again; true when it now does. */
