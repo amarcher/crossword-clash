@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Bricolage+Grotesque:wght@700&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#141a26; --ink-soft:#3a4252; --muted:#5b6475; --line:#e3e7ee; --canvas:#f4f6fa; --surface:#fff; --sunken:#eef1f6;
+          --b50:#eef3ff; --b100:#dde7ff; --b500:#3a6bf0; --b600:#2456e6; --b700:#1c45c2; --g400:#f5bd2c; --g500:#eaa90f; --g700:#9a6a00; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:28px; background:var(--canvas); font-family:Figtree, system-ui, sans-serif; color:var(--ink); width:1180px; }
+  h1 { font-family:"Bricolage Grotesque"; font-size:26px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:14px; margin:0 0 22px; }
+  .cols { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 1px 2px rgb(20 26 38 / .06); }
+  .card h2 { margin:0; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#8a93a3; }
+  .card .name { font-family:"Bricolage Grotesque"; font-size:20px; margin:6px 0 2px; }
+  .card .why { font-size:13px; color:var(--muted); margin:0 0 14px; min-height:54px; }
+  .hero { display:flex; align-items:flex-end; gap:16px; padding:10px 0 16px; border-bottom:1px solid var(--line); margin-bottom:12px; }
+  .row { display:flex; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid var(--line); font-size:15px; }
+  .row:last-child { border-bottom:0; }
+  .rank { width:18px; color:#8a93a3; font-variant-numeric:tabular-nums; font-size:13px; }
+  .av { width:28px; height:28px; border-radius:999px; background:var(--b100); color:var(--b700); display:grid; place-items:center; font-weight:700; font-size:12px; }
+  .who { display:inline-flex; align-items:center; gap:4px; font-weight:600; white-space:nowrap; }
+  .t { margin-left:auto; font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+  .profile { display:flex; align-items:center; gap:10px; margin-top:12px; padding:10px; border-radius:12px; background:var(--sunken); }
+  .profile .big { font-family:"Bricolage Grotesque"; font-size:22px; display:inline-flex; align-items:center; gap:6px; }
+  .chip { display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:4px 10px 4px 6px; border-radius:999px; font-size:12px; font-weight:700; }
+  svg.badge { display:block; flex:none; }
+  .label { font-size:11px; color:#8a93a3; text-align:center; margin-top:4px; }
+</style>
+</head>
+<body>
+<h1>Plus badge: three directions</h1>
+<p class="sub">Shown at 64, 24, 16 and 14 px, beside names as they appear on the daily leaderboard, the friends list and a profile. Light surfaces only (the app has no dark theme).</p>
+<div class="cols" id="cols"></div>
+<script>
+// A scalloped seal: radius modulated by a cosine, like Instagram's verified rosette.
+function sealPath(cx, cy, R, lobes, depth) {
+  const pts = [];
+  for (let i = 0; i <= 720; i++) {
+    const a = (i / 720) * Math.PI * 2 - Math.PI / 2;
+    const r = R * (1 - depth * (0.5 - 0.5 * Math.cos(lobes * a)));
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join("L")}Z`;
+}
+const plus = (w) => `<path d="M12 7.2v9.6M7.2 12h9.6" stroke="#fff" stroke-width="${w}" stroke-linecap="round"/>`;
+let uid = 0;
+const DESIGNS = [
+  {
+    key: "blue", name: "Blue seal", why: "Closest to Instagram's verified mark: a scalloped rosette in the brand blue with a white plus. Instantly reads as an official mark.",
+    svg: (s) => { const id = `g${uid++}`; return `<svg class="badge" width="${s}" height="${s}" viewBox="0 0 24 24" role="img" aria-label="Crossword Clash Plus"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7bff"/><stop offset="1" stop-color="#1c45c2"/></linearGradient></defs><path d="${sealPath(12, 12, 11.6, 10, 0.16)}" fill="url(#${id})"/>${plus(s < 18 ? 3 : 2.6)}</svg>`; },
+    chip: "background:var(--b50);color:var(--b700)",
+  },
+  {
+    key: "gold", name: "Gold seal", why: "The same rosette in the logo's gold, the colour the app already keeps for streaks and trophies. Reads as earned and premium, not as identity verification.",
+    svg: (s) => { const id = `g${uid++}`; return `<svg class="badge" width="${s}" height="${s}" viewBox="0 0 24 24" role="img" aria-label="Crossword Clash Plus"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd25a"/><stop offset="1" stop-color="#e09a00"/></linearGradient></defs><path d="${sealPath(12, 12, 11.6, 10, 0.16)}" fill="url(#${id})"/><path d="${sealPath(12, 12, 11.6, 10, 0.16)}" fill="none" stroke="#b07a00" stroke-opacity=".35" stroke-width=".8"/>${plus(s < 18 ? 3 : 2.6)}</svg>`; },
+    chip: "background:var(--g50,#fff8e6);color:var(--g700)",
+  },
+  {
+    key: "tile", name: "Grid tile", why: "A crossword square like the logo's letter tiles: blue cell, white plus, a tiny clue number in the corner. Unmistakably Crossword Clash, less like a verified tick.",
+    svg: (s) => { const id = `g${uid++}`; return `<svg class="badge" width="${s}" height="${s}" viewBox="0 0 24 24" role="img" aria-label="Crossword Clash Plus"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7bff"/><stop offset="1" stop-color="#1c45c2"/></linearGradient></defs><rect x="1.5" y="1.5" width="21" height="21" rx="5.5" fill="url(#${id})"/><rect x="1.5" y="1.5" width="21" height="21" rx="5.5" fill="none" stroke="#f5bd2c" stroke-width="1.6"/>${s >= 24 ? `<text x="5" y="8.6" font-size="5.2" font-weight="700" fill="#dde7ff" font-family="Figtree">1</text>` : ""}${plus(s < 18 ? 3.2 : 2.8)}</svg>`; },
+    chip: "background:var(--b50);color:var(--b700)",
+  },
+];
+const PEOPLE = [["1", "SA", "sam_solves", true, "1:42"], ["2", "AA", "andrew", true, "1:58"], ["3", "JL", "jlo_puzzles", false, "2:05"], ["4", "MK", "mkat", true, "2:31"]];
+document.getElementById("cols").innerHTML = DESIGNS.map((d) => `
+  <div class="card">
+    <h2>Option ${"ABC"[DESIGNS.indexOf(d)]}</h2>
+    <div class="name">${d.name}</div>
+    <p class="why">${d.why}</p>
+    <div class="hero">
+      ${[64, 24, 16, 14].map((s) => `<div>${d.svg(s)}<div class="label">${s}px</div></div>`).join("")}
+    </div>
+    ${PEOPLE.map(([r, ini, n, plus, t]) => `<div class="row"><span class="rank">${r}</span><span class="av">${ini}</span><span class="who">${n}${plus ? d.svg(15) : ""}</span><span class="t">${t}</span></div>`).join("")}
+    <div class="profile"><span class="av" style="width:44px;height:44px;font-size:16px">AA</span><span class="big">andrew${d.svg(20)}</span></div>
+    <span class="chip" style="${d.chip}">${d.svg(16)} Plus member since Nov 2026</span>
+  </div>`).join("");
+</script>
+</body>
+</html>
