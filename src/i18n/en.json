@@ -783,7 +783,8 @@
     "showBadge": "Show my Plus badge",
     "showBadgeBody": "The gold seal beside your name on leaderboards, friends lists and races.",
     "showBadgeFailed": "Couldn't save that. Try again.",
-    "benefitStreak": "Repair a broken streak the day after you miss"
+    "benefitStreak": "Repair a broken streak the day after you miss",
+    "benefitBonus": "An extra bonus puzzle every day"
   },
   "appBanner": {
     "label": "Get the app",
@@ -1148,5 +1149,13 @@
     "play": "Solve it",
     "withPlus": "Repair with Plus",
     "done": "Streak repaired: {{day}} counts again."
+  },
+  "bonus": {
+    "eyebrow": "Today's bonus",
+    "plusChip": "Plus",
+    "meta": "{{width}}×{{height}} · an extra puzzle for Plus",
+    "playWithPlus": "Play with Plus",
+    "loadFailed": "Couldn't load the bonus. Check your connection and try again.",
+    "archiveHeading": "Bonus puzzles"
   }
 }

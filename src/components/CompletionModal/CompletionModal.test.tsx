@@ -502,6 +502,26 @@ describe("CompletionModal", () => {
     }
   });
 
+  it("never puts a bonus puzzle in its share link (Plus only)", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={{ ...fakePuzzle("Deep Blue", 5), origin: "bonus" }} challengerName="Player" />,
+      );
+      const sharing = within(getByTestId("share-result"));
+      fireEvent.click(sharing.getByRole("button", { name: /^Share/ }));
+      const name = sharing.getByPlaceholderText("Your name");
+      fireEvent.change(name, { target: { value: "Sam" } });
+      fireEvent.keyDown(name, { key: "Enter" });
+      await waitFor(() => expect(share).toHaveBeenCalled());
+      expect(share.mock.lastCall![0].text).not.toContain("#puzzle=");
+      expect(share.mock.lastCall![0].text).toMatch(/→ https?:\/\/[^/\s]+\/$/m);
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
   it("says quietly that a preview's finish was not posted, instead of offering a signature", () => {
     const { getByTestId, queryByPlaceholderText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} boardNotPosted />,

@@ -481,7 +481,7 @@ export function SoloPlayScreen() {
     void recordSolve(accountId, {
       puzzleKey: puzzleIdentity(puzzle),
       title: puzzle.title,
-      source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
+      source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : puzzle?.origin === "bonus" ? "bonus" : "other",
       mode: "solo",
       seconds: soloResult.finishSeconds,
       assisted: soloResult.assisted,
@@ -489,6 +489,9 @@ export function SoloPlayScreen() {
       .then((outcome) => outcome && setServerOutcome(outcome))
       .finally(() => setHistorySettled(true));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+  useEffect(() => {
+    if (soloResult && freshResult && puzzle?.origin === "bonus") track("bonus_completed", { seconds: soloResult.finishSeconds, assisted: soloResult.assisted });
+  }, [soloResult, freshResult, puzzle]);
 
   // Streak repair (streakRepair.ts; Plus): yesterday's daily, solved today
   // after a single missed day, makes yesterday count again. The account's

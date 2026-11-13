@@ -24,10 +24,11 @@ export interface PuzzleClue {
 /**
  * Where a puzzle came from, when it matters after import. The NYT bookmarklet
  * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
- * (docs/community-puzzles-spec.md) records its solves under its own source.
+ * (docs/community-puzzles-spec.md) records its solves under its own source;
+ * a bonus (bonus.ts) is Plus only, so its share link never carries it.
  * Absent for file uploads, dailies and samples.
  */
-export type PuzzleOrigin = "nyt-bookmarklet" | "community";
+export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
 
 /**
  * Which shared puzzle this is, where the site can name it by link: a day's

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Archive, BadgeCheck, Check, Flag, Flame, Gift, Mic, PencilRuler, RefreshCw } from "lucide-react";
+import { Archive, BadgeCheck, Check, Flag, Flame, Gift, Mic, PencilRuler, RefreshCw, Sparkles } from "lucide-react";
 import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { useStorePrices } from "../../hooks/useStorePrices";
 import { useFreeMonth } from "../../hooks/useFreeMonth";
@@ -27,6 +27,7 @@ export function PlusPitch({ children, prices = true }: { children?: React.ReactN
   const free = useFreeMonth();
   const freeMonth = free.annual && free.monthly;
   const benefits = [
+    { icon: Sparkles, text: t("plus.benefitBonus") },
     { icon: Flag, text: t("plus.benefitRace") },
     { icon: Archive, text: t("plus.benefitArchive") },
     { icon: Flame, text: t("plus.benefitStreak") },

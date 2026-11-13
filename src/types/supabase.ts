@@ -235,7 +235,7 @@ export interface Database {
           /** soloStats.puzzleIdentity() of the puzzle. */
           puzzle_key: string;
           title: string;
-          source: "daily" | "nyt" | "community" | "other";
+          source: "daily" | "nyt" | "community" | "bonus" | "other";
           /** 'solo', a race mode, or 'import' for rows uploaded from pre-account localStorage. */
           mode: "solo" | "versus" | "coop" | "async" | "import";
           /** Personal finish time in whole seconds; null for a shared-grid race finish. */
@@ -248,7 +248,7 @@ export interface Database {
           user_id: string;
           puzzle_key: string;
           title?: string;
-          source: "daily" | "nyt" | "community" | "other";
+          source: "daily" | "nyt" | "community" | "bonus" | "other";
           mode: "solo" | "versus" | "coop" | "async" | "import";
           seconds?: number | null;
           completed_day: string;
@@ -537,6 +537,11 @@ export interface Database {
       };
     };
     Views: {
+      /** Released bonus puzzles' cards (bonus.ts); the puzzle itself is bonus_puzzle(). */
+      bonus_cards: {
+        Row: { day: string; title: string; theme: string | null; author: string; width: number; height: number; blocks: string; identity: string };
+        Relationships: [];
+      };
       /** published_puzzles joined with the author's username (security_invoker: the table's RLS applies). */
       community_puzzles: {
         Row: {
@@ -579,6 +584,8 @@ export interface Database {
         Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string | null; p_slot: string | null; p_short_id?: string | null; p_seconds: number; p_to_seconds: number };
         Returns: string | null;
       };
+      /** The day's bonus puzzle (transfer JSON) for a Plus caller; null otherwise. */
+      bonus_puzzle: { Args: { p_day: string }; Returns: unknown };
       /** Repairs the caller's daily streak (Plus): yesterday, missed right after a streak, counts again; true when it now does. */
       repair_streak: { Args: { p_day: string; p_puzzle_key: string; p_today: string }; Returns: boolean };
       /** The sender marks replies to their links seen. */

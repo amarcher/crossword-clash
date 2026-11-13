@@ -16,6 +16,7 @@ import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
 import { RaceRepliesCard } from "../components/Race/RaceRepliesCard";
 import { StreakRepairCard } from "../components/Plus/StreakRepairCard";
+import { BonusCard } from "../components/Plus/BonusCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
@@ -300,6 +301,7 @@ export function MenuScreen() {
               onRace={() => raceDaily(dailyLarge, "large")}
             />
           )}
+          <BonusCard />
         </div>
 
         <div className="grid gap-8">
