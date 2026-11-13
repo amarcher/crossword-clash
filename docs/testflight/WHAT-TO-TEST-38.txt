@@ -1,0 +1,5 @@
+This build (1.1.2, build 38) changes how a finished puzzle is shared. Please check:
+
+1. Finish a daily (or an archive daily, or a community puzzle) without revealing anything, and tap Share. The message is now three short lines (the puzzle, your time and streak, and the link) with no emoji grid. The link's preview in Messages plays your solve.
+2. A share with no replay still has the emoji grid: a live room with friends, an imported puzzle, or a puzzle where you revealed letters.
+3. Everything from build 37 still applies.
