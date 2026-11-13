@@ -42,11 +42,11 @@ puzzle before its day, not after.
 ## Stock
 
 Stock runs to 2026-12-26, built 2026-11-13 (five lanes, about 45 minutes with retries). Ten of 43
-free-theme builds needed a second try: a fresh , a narrower theme (Card games, Sailing), or
-for holiday days a hand-picked mirrored  pair, which fills an 11×11 far more reliably than a
+free-theme builds needed a second try: a fresh `--seed`, a narrower theme (Card games, Sailing), or
+for holiday days a hand-picked mirrored `--seeds` pair, which fills an 11×11 far more reliably than a
 free brainstorm (Snow Day, Ski Trip, Fairy Tales, Inventions, Sailing, Christmas all shipped first try
 that way; seeded builds come out "Untitled", so name them). Pass every themer already in the stock
-to  so no themer repeats across days (Christmas first repeated 20 Dec's BOW AND ARROW).
+to `--reject` so no themer repeats across days (Christmas first repeated 20 Dec's BOW AND ARROW).
 
 Keep the bonus as far ahead as the dailies: the next daily batch (due by 2026-12-12, for days
 from 2026-12-27) builds the bonus lane with it.
