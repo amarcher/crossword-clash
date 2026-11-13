@@ -25,7 +25,8 @@ let savedSession: { puzzle: Puzzle; playerCells: Record<string, unknown>; gameId
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game, loadSavedSession: () => savedSession }));
 
 let bestTimes: Record<string, number> = {};
-vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
+let repairOffer: { day: string; streak: number } | null = null;
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes, useRepairOffer: () => repairOffer }));
 
 // null = no AccountProvider (nothing locked); set per test to gate.
 const openAccount = vi.fn();
@@ -120,6 +121,7 @@ describe("ArchiveScreen (/archive)", () => {
     fetched.length = 0;
     indexDown = false;
     bestTimes = {};
+    repairOffer = null;
     savedSession = null;
     accountState = null;
     plusFlag.on = false;
@@ -332,6 +334,27 @@ describe("ArchiveScreen (/archive)", () => {
     await waitFor(() => expect(screen.getByText("Movie Night")).toBeTruthy());
     fireEvent.click(dayCell(lastWeek));
     expect(screen.getByText("Sign in to play puzzles older than 7 days")).toBeTruthy();
+  });
+
+  it("opens on the missed day while a streak repair is on offer: Plus is told what a solve does, a free account gets the pitch", async () => {
+    plusFlag.on = true;
+    repairOffer = { day: yesterday, streak: 12 };
+    accountState = { available: true, ready: true, user: { id: "me" }, plus: true, plusReady: true, openAccount, openPaywall };
+    const first = renderScreen();
+    const row = await screen.findByTestId("archive-repair");
+    expect(row.textContent).toContain("Repair your 12-day streak");
+    expect(row.textContent).toContain("Solve any of this day's puzzles today");
+    expect(within(row).queryByRole("button")).toBeNull();
+    expect(screen.getByText("Split Decision")).toBeTruthy();
+    // Another day's panel says nothing about it.
+    fireEvent.click(dayCell(today));
+    expect(screen.queryByTestId("archive-repair")).toBeNull();
+    first.unmount();
+
+    accountState = { ...accountState, plus: false };
+    renderScreen();
+    fireEvent.click(within(await screen.findByTestId("archive-repair")).getByRole("button", { name: "Repair with Plus" }));
+    expect(openPaywall).toHaveBeenCalledWith({ placement: "streak-archive", feature: "streak", returnTo: "/archive" });
   });
 
   it("says so when the index cannot be read", async () => {

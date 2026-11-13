@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
+import { todayKey } from "../lib/dailyLeaderboard";
 import { GameProvider, useGame } from "../contexts/GameContext";
 import { MultiplayerProvider, useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { ConfirmProvider } from "../components/ConfirmDialog";
@@ -379,6 +380,30 @@ it("a signed-in solver with the default setting posts after the preference resol
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
   await act(async () => { resolve(true); });
   await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
+});
+
+it("today's bonus posts to the bonus board; a bonus from another day posts nowhere", async () => {
+  posting.user = { id: "me", is_anonymous: false } as User;
+  const today = todayKey();
+  await renderSolo();
+  act(() => game.setDisplayName("archer"));
+  await act(async () => { await game.handleSoloPuzzleLoaded({ ...puzzle, title: "Bonus", origin: "bonus", bonusDay: today }); });
+  type("catbetao");
+  await screen.findByRole("dialog", { name: "Puzzle complete" });
+  await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ slot: "bonus", day: today, posted: true }));
+  expect(screen.getByRole("button", { name: "Bonus leaderboard" })).toBeTruthy();
+  cleanup();
+  localStorage.clear();
+
+  await renderSolo();
+  await act(async () => {
+    game.setPendingDailyResult(null);
+    await game.handleSoloPuzzleLoaded({ ...puzzle, title: "Old bonus", origin: "bonus", bonusDay: "2020-01-01" });
+  });
+  type("catbetao");
+  await screen.findByRole("dialog", { name: "Puzzle complete" });
+  expect(game.pendingDailyResult).toBeNull();
+  expect(screen.queryByRole("button", { name: "Bonus leaderboard" })).toBeNull();
 });
 
 describe("a solved puzzle stays solved", () => {

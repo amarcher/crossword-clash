@@ -39,7 +39,7 @@ import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type PendingDailyResult } from "../lib/dailyLeaderboard";
+import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
@@ -215,6 +215,9 @@ export function SoloPlayScreen() {
   // accounts honor their saved leaderboard preference.
   const dailySlot = useTodaysDailySlot(puzzle);
   const isDaily = dailySlot !== null;
+  // The board a finish here belongs on: a daily's, or the bonus board for
+  // today's bonus (bonus.ts; a bonus played on a later day ranks nowhere).
+  const boardSlot: BoardSlot | null = dailySlot ?? (puzzle?.origin === "bonus" && puzzle.bonusDay === todayKey() ? "bonus" : null);
   // Whether this solve was ever typed freely: Autocheck off while the grid was
   // unfinished, or wrong letters restored from such a visit. Recorded with the
   // play-insights row and the daily board entry; reset per puzzle below.
@@ -240,7 +243,7 @@ export function SoloPlayScreen() {
   const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
-    if (reopened || !dailySlot || !user) return;
+    if (reopened || !boardSlot || !user) return;
     dailySubmittedRef.current = true;
     // A second solve of a puzzle already solved is made knowing the answers:
     // it may set a personal best, it never goes on the day's board.
@@ -249,13 +252,13 @@ export function SoloPlayScreen() {
     if (soloResult.assisted) return;
     const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
     const day = todayKey();
-    const pending: PendingDailyResult = { day, slot: dailySlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
-    pending.settled = prepareSoloDailyResult(day, dailySlot, entry, user).then(result => {
+    const pending: PendingDailyResult = { day, slot: boardSlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
+    pending.settled = prepareSoloDailyResult(day, boardSlot, entry, user).then(result => {
       setPendingDailyResult(current => current === pending ? result : current);
       return result.settled;
     });
     setPendingDailyResult(pending);
-  }, [soloResult, freshResult, reopened, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
+  }, [soloResult, freshResult, reopened, boardSlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
   // The share block's red squares (shareBlock.ts): with Autocheck on, the
   // squares where a wrong letter was refused; off, every square a check
@@ -631,7 +634,7 @@ export function SoloPlayScreen() {
   // opt-outs stay private. The confirmation latches after a successful sign;
   // previews show a notice instead of offering to post.
   const [boardSignedAs, setBoardSignedAs] = useState<string | null>(null);
-  const pendingDaily = dailySlot ? pendingResultFor(game.pendingDailyResult, todayKey(), dailySlot) : null;
+  const pendingDaily = boardSlot ? pendingResultFor(game.pendingDailyResult, todayKey(), boardSlot) : null;
   const handleSignBoard = useCallback(
     (name: string) => {
       const trimmed = name.trim();
@@ -645,9 +648,9 @@ export function SoloPlayScreen() {
     },
     [game, pendingDaily],
   );
-  const boardNotPosted = isDaily && !!user && !!soloResult && !boardPostsHere();
+  const boardNotPosted = !!boardSlot && !!user && !!soloResult && !boardPostsHere();
   const dailySign =
-    isDaily && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
+    boardSlot && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
       ? { signedAs: boardSignedAs, onSign: handleSignBoard, unposted: !pendingDaily?.posted }
       : undefined;
 
@@ -701,15 +704,21 @@ export function SoloPlayScreen() {
   // the celebration: coming back shows the solved grid with the slim finished
   // header, whose Share button re-opens the modal on demand.
   const handleViewLeaderboard = useCallback(() => {
-    if (!dailySlot) return;
+    if (!boardSlot) return;
     setCompletionModalDismissed(true);
-    navigate(leaderboardPath(dailySlot));
-  }, [dailySlot, setCompletionModalDismissed, navigate]);
+    navigate(leaderboardPath(boardSlot));
+  }, [boardSlot, setCompletionModalDismissed, navigate]);
 
   const handleSignIn = useCallback(() => {
     setCompletionModalDismissed(true);
     account.openAccount({ returnTo: "/menu", placement: "completion" });
   }, [setCompletionModalDismissed, account]);
+
+  const handleSeeStats = useCallback(() => {
+    setCompletionModalDismissed(true);
+    track("stats_opened", { from: "completion" });
+    navigate("/stats");
+  }, [setCompletionModalDismissed, navigate]);
 
   const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
 
@@ -809,7 +818,7 @@ export function SoloPlayScreen() {
                   <FinishedBar
                     seconds={soloResult?.finishSeconds ?? getElapsedSeconds()}
                     onShare={reopenCompletion}
-                    onLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+                    onLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
                   />
                 ) : (
                   <div className="flex flex-col items-end leading-tight">
@@ -968,7 +977,7 @@ export function SoloPlayScreen() {
         streakCount={shownResult?.streak}
         streakAdvanced={shownResult?.streakAdvanced}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+        onViewLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
         puzzleRef={puzzleRef ?? undefined}
         dailySign={dailySign}
@@ -998,6 +1007,8 @@ export function SoloPlayScreen() {
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
+        onSeeStats={account.available && account.user ? handleSeeStats : undefined}
+        leaderboardLabel={boardSlot === "bonus" ? t("bonus.boardLink") : undefined}
       />
       {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
     </>

@@ -50,6 +50,8 @@ export interface Puzzle {
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
   ref?: PuzzleRef;
+  /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on. Never a link. */
+  bonusDay?: string;
 }
 
 export interface CellState {

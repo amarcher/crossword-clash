@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
-import { Button, Card, Eyebrow, PlusBadgeFor } from "../components/ui";
+import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
@@ -31,6 +31,7 @@ import { useFriends } from "../contexts/FriendsContext";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { BoardTable } from "../components/Leaderboard/BoardTable";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
@@ -43,11 +44,6 @@ import { dailyPath } from "../lib/dailyChallenge";
 const LG_QUERY = "(min-width: 64rem)";
 
 /** Medal treatment for the podium, all in gold tokens (gold -> pale gold). */
-const MEDAL: Record<number, string> = {
-  1: "bg-gold-400 text-ink shadow-[0_1px_0_rgb(255_255_255/0.5)_inset]",
-  2: "bg-gold-100 text-gold-700 ring-1 ring-gold-400/50",
-  3: "bg-gold-50 text-gold-700 ring-1 ring-gold-100",
-};
 
 const TITLE: Record<DailySlot, string> = {
   mini: "leaderboard.title",
@@ -482,83 +478,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(emptyMessage)}</BoardMessage>
         ) : (
           <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line bg-surface-sunken/60 text-xs font-semibold uppercase tracking-[0.08em] text-subtle">
-                  <th scope="col" className="w-14 py-2.5 pl-4 pr-2 text-left">#</th>
-                  <th scope="col" className="px-2 py-2.5 text-left">{t("completion.player")}</th>
-                  <th scope="col" className="py-2.5 pl-2 pr-4 text-right">{t("leaderboard.time")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {rows.map((e) => {
-                  const isMe = user?.id === e.userId;
-                  return (
-                    <tr
-                      key={e.userId}
-                      data-unposted={e.unposted || undefined}
-                      className={e.unposted ? "bg-surface-sunken/70 font-semibold text-ink" : isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}
-                    >
-                      <td className="py-2.5 pl-4 pr-2">
-                        <span
-                          className={`grid size-8 place-items-center rounded-full text-sm font-bold tabular-nums ${
-                            e.unposted ? "border border-dashed border-brand-500 text-brand-700" : MEDAL[e.rank] ?? "text-muted"
-                          }`}
-                        >
-                          {e.rank > 0 ? e.rank : "–"}
-                        </span>
-                      </td>
-                      <td className="max-w-0 px-2 py-2.5">
-                        <div className="flex min-w-0 items-center gap-2">
-                          {/* The viewer's unposted time is simply "You": beside its chip a name had no room. */}
-                          <span className={e.unposted ? "shrink-0" : "truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
-                          {!e.unposted && <PlusBadgeFor userId={e.userId} />}
-                          {isMe && !e.unposted && (
-                            <span className="shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                              {t("leaderboard.you")}
-                            </span>
-                          )}
-                          {e.unposted ? (
-                            <span className="shrink-0 rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted ring-1 ring-line">
-                              {t("leaderboard.notOnBoard")}
-                            </span>
-                          ) : (
-                            <span
-                              className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide min-[380px]:inline ${
-                                e.mode === "race" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-muted"
-                              }`}
-                            >
-                              {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
-                            </span>
-                          )}
-                          {e.autocheck === false && (
-                            <span className="shrink-0 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
-                              {t("autocheck.noAutocheck")}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">
-                        <span className="inline-flex items-center justify-end gap-2">
-                          {!isMe && raceable.has(e.userId) && (
-                            <button
-                              type="button"
-                              onClick={() => raceRow(e.userId)}
-                              aria-label={t("ghostRace.raceRow", { name: e.displayName })}
-                              className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-brand-50 px-2 font-sans text-xs font-semibold text-brand-700 hover:bg-brand-100 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
-                            >
-                              <Flag className="size-3.5" aria-hidden="true" />
-                              {t("ghostRace.raceButton")}
-                            </button>
-                          )}
-                          {formatDuration(e.seconds)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <BoardTable rows={rows} userId={user?.id} raceable={raceable} onRace={raceRow} />
             {loading && (
               <p role="status" className="flex items-center justify-center gap-2 border-t border-line px-4 py-2.5 text-center text-xs text-muted">
                 <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />

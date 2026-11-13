@@ -195,6 +195,16 @@ describe("CompletionModal", () => {
     expect(queryByTestId("share-block-preview")).toBeNull();
   });
 
+  it("offers a signed-in solver their stats, and names a board that isn't a daily's", () => {
+    const onSeeStats = vi.fn();
+    const { getByRole, queryByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} onViewLeaderboard={vi.fn()} leaderboardLabel="Bonus leaderboard" onSeeStats={onSeeStats} />);
+    fireEvent.click(getByRole("button", { name: "See your stats" }));
+    expect(onSeeStats).toHaveBeenCalledOnce();
+    expect(getByRole("button", { name: "Bonus leaderboard" })).toBeTruthy();
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+    expect(queryByRole("button", { name: "See your stats" })).toBeNull();
+  });
+
   it("shows the leaderboard and Save image as the secondary row; the share link itself is the challenge", () => {
     const onViewLeaderboard = vi.fn();
     const { getByRole, getByTestId, queryByRole } = render(

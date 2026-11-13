@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import "../../i18n/i18n";
 
 const card = { day: "2026-11-13", title: "Grounds for Arrest", theme: "Coffee", author: "Crossword Clash", width: 3, height: 3, blocks: "#........", identity: "abc" };
@@ -27,7 +28,7 @@ afterEach(cleanup);
 
 describe("BonusCard", () => {
   it("shows today's bonus to everyone, and a free player gets the pitch instead of the puzzle", async () => {
-    render(<BonusCard />);
+    render(<BonusCard />, { wrapper: MemoryRouter });
     expect(await screen.findByText("Grounds for Arrest")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Unlock with Plus" }));
     expect(account.value.openPaywall).toHaveBeenCalledWith({ placement: "bonus", feature: "bonus" });
@@ -38,7 +39,7 @@ describe("BonusCard", () => {
     account.value = { ...account.value, plus: true };
     const puzzle = { title: "Grounds for Arrest", origin: "bonus" };
     bonus.loadBonusPuzzle.mockResolvedValue(puzzle);
-    render(<BonusCard />);
+    render(<BonusCard />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByRole("button", { name: "Play" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
     expect(bonus.loadBonusPuzzle).toHaveBeenCalledWith("2026-11-13");
@@ -48,12 +49,12 @@ describe("BonusCard", () => {
 
   it("says so when the bonus can't be loaded, and renders nothing on a day without one", async () => {
     bonus.loadBonusPuzzle.mockResolvedValue(null);
-    const { unmount } = render(<BonusCard />);
+    const { unmount } = render(<BonusCard />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByRole("button", { name: "Play" }));
     expect(await screen.findByRole("alert")).toBeTruthy();
     unmount();
     bonus.fetchBonusCard.mockResolvedValue(null);
-    const { container } = render(<BonusCard />);
+    const { container } = render(<BonusCard />, { wrapper: MemoryRouter });
     await Promise.resolve();
     expect(container.textContent).toBe("");
   });

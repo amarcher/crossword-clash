@@ -153,6 +153,7 @@ export const routes: RouteObject[] = [
           { path: "reply/:id", lazy: () => m.raceReply().then((s) => ({ Component: s.RaceReplyScreen })) },
           { path: "stats", lazy: () => m.stats().then((s) => ({ Component: s.StatsScreen })) },
           { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
+          { path: "bonus/leaderboard", lazy: () => m.bonusLeaderboard().then((s) => ({ Component: s.BonusLeaderboardScreen })) },
           { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
           // A day's daily by date + slot (the short challenge link); the static
           // "leaderboard" segment above outranks the :day param.

@@ -42,6 +42,8 @@ export type AnalyticsEvent =
   | "bonus_viewed"
   | "bonus_started"
   | "bonus_completed"
+  /** A solver opened the Stats page from somewhere other than the account page. Param `from` (completion). */
+  | "stats_opened"
   /** A recorded solve was replayed after the finish. Param `racing`: it was one of the ghosts just raced. */
   | "replay_watched"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */

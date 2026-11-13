@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
-import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords, Trophy } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Flame, Lock, Play, Swords, Trophy } from "lucide-react";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow, TransitionLink } from "../components/ui";
@@ -11,7 +11,7 @@ import { BonusArchive } from "../components/Plus/BonusArchive";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
-import { useBestTimes } from "../hooks/useSolveHistory";
+import { useBestTimes, useRepairOffer } from "../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { track } from "../lib/analytics";
 import { fetchDailyForDay, type DailySlot } from "../lib/dailyFeed";
@@ -166,7 +166,12 @@ export function ArchiveScreen() {
     const day = search.get("day");
     return day && /^\d{4}-\d{2}-\d{2}$/.test(day) && day <= today ? { day, month: monthOf(day) } : null;
   });
-  const opening = selected ?? defaultSelection(items, today);
+  // Streak repair (streakRepair.ts): for the one day after a single missed
+  // day, the missed day is where the archive opens, and its panel says what
+  // solving one of its puzzles today does (Plus), or would do (the pitch).
+  const repairOffer = useRepairOffer();
+  const repair = plusEnabled() && account?.plusReady && repairOffer && items.some((it) => it.day === repairOffer.day) ? repairOffer : null;
+  const opening = selected ?? (repair ? { day: repair.day, month: monthOf(repair.day) } : defaultSelection(items, today));
   const month = opening?.month ?? monthOf(today);
   const selectedDay = opening?.day ?? null;
   const firstMonth = items.length > 0 ? monthOf(items[0].day) : month;
@@ -392,7 +397,7 @@ export function ArchiveScreen() {
                               onKeyDown={(e) => onGridKey(e, day)}
                               className={`flex h-12 w-full max-w-12 flex-col items-center justify-center gap-1 rounded-xl text-sm font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
                                 isSelected ? "bg-brand-600 text-white" : empty ? "text-subtle/60" : "text-ink hover:bg-surface-sunken active:bg-line"
-                              } ${isToday && !isSelected ? "ring-1 ring-inset ring-brand-500" : ""}`}
+                              } ${isToday && !isSelected ? "ring-1 ring-inset ring-brand-500" : ""} ${repair?.day === day && !isSelected ? "bg-gold-50 ring-1 ring-inset ring-gold-500" : ""}`}
                             >
                               <span>{toDate(day).getDate()}</span>
                               <span className="flex h-1.5 items-center gap-1" aria-hidden="true">
@@ -462,6 +467,22 @@ export function ArchiveScreen() {
                         ) : (
                           <Button size="sm" onClick={() => account.openAccount({ placement: "archive" })}>
                             {t("account.signIn")}
+                          </Button>
+                        )}
+                      </li>
+                    )}
+                    {repair && account && selectedDay === repair.day && (
+                      <li data-testid="archive-repair" className="flex items-center gap-3 rounded-2xl bg-gold-50 p-3 ring-1 ring-gold-100">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-gold-700 ring-1 ring-gold-100">
+                          <Flame className="size-5" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold leading-snug text-ink">{t("streakRepair.title", { count: repair.streak })}</p>
+                          <p className="mt-0.5 text-sm leading-snug text-muted">{t(account.plus ? "streakRepair.archiveBody" : "streakRepair.archiveBodyFree")}</p>
+                        </div>
+                        {!account.plus && (
+                          <Button size="sm" onClick={() => account.openPaywall({ placement: "streak-archive", feature: "streak", returnTo: "/archive" })}>
+                            {t("streakRepair.withPlus")}
                           </Button>
                         )}
                       </li>

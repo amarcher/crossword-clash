@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck, Lock } from "lucide-react";
-import { Button, Eyebrow, MiniGridThumb } from "../ui";
+import { CircleCheck, Lock, Trophy } from "lucide-react";
+import { Button, Eyebrow, MiniGridThumb, TransitionLink } from "../ui";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../../lib/bonus";
+import { leaderboardPath } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
+import { dayKey } from "../../lib/soloStats";
 import { formatDuration } from "../../lib/soloStats";
 import { track } from "../../lib/analytics";
 
@@ -31,7 +33,8 @@ export function BonusArchive() {
   useEffect(() => {
     if (!on) return;
     let live = true;
-    void fetchBonusCards().then((rows) => live && setCards(rows));
+    // A bonus is out once it is today anywhere (UTC date + 1): tomorrow's is never listed here.
+    void fetchBonusCards().then((rows) => live && setCards(rows.filter((c) => c.day <= dayKey(new Date()))));
     return () => {
       live = false;
     };
@@ -65,15 +68,24 @@ export function BonusArchive() {
 
   return (
     <section className="mt-8" aria-labelledby="archive-bonus">
-      <Eyebrow as="h2" id="archive-bonus" className="px-1">
-        {t("bonus.archiveHeading")}
-      </Eyebrow>
+      <div className="flex items-center justify-between gap-3 px-1">
+        <Eyebrow as="h2" id="archive-bonus">
+          {t("bonus.archiveHeading")}
+        </Eyebrow>
+        <TransitionLink
+          to={leaderboardPath("bonus")}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+          {t("bonus.boardLink")}
+        </TransitionLink>
+      </div>
       {failed && (
         <p role="alert" className="mt-2 text-sm text-red-700">
           {t("bonus.loadFailed")}
         </p>
       )}
-      <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <ul className="mt-1 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
         {cards.map((card) => {
           const best = bestTimes[card.identity];
           return (

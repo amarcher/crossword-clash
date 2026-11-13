@@ -75,8 +75,8 @@ function cache(day: string, transfer: TransferPuzzle): void {
 }
 
 /** A puzzle tagged as a bonus: its share link never carries the puzzle (CompletionModal). */
-function asBonus(transfer: TransferPuzzle): Puzzle {
-  return { ...normalizeTransferPuzzle(transfer), origin: "bonus" };
+function asBonus(transfer: TransferPuzzle, day: string): Puzzle {
+  return { ...normalizeTransferPuzzle(transfer), origin: "bonus", bonusDay: day };
 }
 
 /**
@@ -88,7 +88,7 @@ export async function loadBonusPuzzle(day: string): Promise<Puzzle | null> {
   const kept = readCache()[day];
   if (kept) {
     try {
-      return asBonus(kept);
+      return asBonus(kept, day);
     } catch {
       // A damaged copy: fetch it again.
     }
@@ -98,7 +98,7 @@ export async function loadBonusPuzzle(day: string): Promise<Puzzle | null> {
     const { data, error } = await supabase.rpc("bonus_puzzle", { p_day: day });
     if (error || !data) return null;
     const transfer = data as TransferPuzzle;
-    const puzzle = asBonus(transfer);
+    const puzzle = asBonus(transfer, day);
     cache(day, transfer);
     return puzzle;
   } catch {
