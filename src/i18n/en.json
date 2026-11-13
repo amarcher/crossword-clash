@@ -1155,9 +1155,11 @@
     "eyebrow": "Today's bonus",
     "plusChip": "Plus",
     "meta": "{{width}}×{{height}} · an extra puzzle for Plus",
-    "playWithPlus": "Play with Plus",
+    "playWithPlus": "Unlock with Plus",
     "loadFailed": "Couldn't load the bonus. Check your connection and try again.",
-    "archiveHeading": "Bonus puzzles"
+    "archiveHeading": "Bonus puzzles",
+    "unlock": "Unlock",
+    "metaLocked": "{{width}}×{{height}} · for Plus members"
   },
   "stats": {
     "title": "Your stats",

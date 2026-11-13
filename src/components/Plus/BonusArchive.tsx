@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Lock } from "lucide-react";
 import { Button, Eyebrow, MiniGridThumb } from "../ui";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
@@ -78,7 +78,14 @@ export function BonusArchive() {
           const best = bestTimes[card.identity];
           return (
             <li key={card.day} className="flex min-h-16 items-center gap-3 px-4 py-2.5">
-              <MiniGridThumb puzzle={shapePuzzle(card)} solved={typeof best === "number"} className="w-10 shrink-0" />
+              <span className="relative w-10 shrink-0">
+                <MiniGridThumb puzzle={shapePuzzle(card)} solved={typeof best === "number"} className={plus ? "" : "opacity-60"} />
+                {!plus && (
+                  <span className="absolute inset-0 grid place-items-center text-gold-700" aria-hidden="true">
+                    <Lock className="size-4 drop-shadow-[0_0_2px_white]" />
+                  </span>
+                )}
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold leading-snug text-ink">{card.title}</span>
                 <span className="mt-0.5 flex items-center gap-1.5 truncate text-sm leading-snug text-muted tabular-nums">
@@ -88,7 +95,8 @@ export function BonusArchive() {
                 </span>
               </span>
               <Button size="sm" variant={plus ? "secondary" : "soft"} onClick={() => void play(card)} disabled={busy !== null} aria-busy={busy === card.day || undefined}>
-                {plus ? t(typeof best === "number" ? "archive.view" : "archive.play") : t("bonus.playWithPlus")}
+                {!plus && <Lock className="size-3.5" aria-hidden="true" />}
+                {plus ? t(typeof best === "number" ? "archive.view" : "archive.play") : t("bonus.unlock")}
               </Button>
             </li>
           );

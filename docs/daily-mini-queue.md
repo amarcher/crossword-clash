@@ -94,7 +94,7 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
   clue writer sees the feed's recent clues, and run `pnpm seedgrid:crosscheck` (it reports repeats) and
   `pnpm seedgrid:unrepeat <from> <to>` before the PR; `feedRepeats.test.ts` fails CI otherwise. The
   first run rewrote the repeats on 8 Nov – 26 Dec (table in `artifacts/unrepeat/`).
-- Keep two weeks ahead: stock runs to 2026-12-26 (all three slots); the next batch should start by 2026-12-12.
+- Keep two weeks ahead: stock runs to 2026-12-26 (all three slots and the Plus bonus); the next batch should start by 2026-12-12 and builds four lanes: mini, midi, large and the bonus 11×11 (`docs/daily-bonus-queue.md`).
 - The 13–26 Dec minis (built 2026-11-04, after each day's large) rejected the large's answers of
   4+ letters through the new `--reject` flag. A free `--theme` brainstorm proposed three seeds for
   most 5×5s and found no skeleton (Longest Night, Last Minute, Christmas Day, Me Time, Ode to Joy,

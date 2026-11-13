@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck, Loader2, Sparkles } from "lucide-react";
+import { CircleCheck, Loader2, Lock } from "lucide-react";
 import { Button, Card, Eyebrow, MiniGridThumb } from "../ui";
+import { PlusBadge } from "../ui/PlusBadge";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
@@ -73,12 +74,16 @@ export function BonusCard() {
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
           <div className="flex min-h-5 items-center gap-2">
-            <Eyebrow className="shrink-0 text-gold-700">{t("bonus.eyebrow")}</Eyebrow>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100">
-              <Sparkles className="size-3" aria-hidden="true" />
-              {t("bonus.plusChip")}
-            </span>
-            {card.theme && <span className="min-w-0 truncate text-xs font-semibold text-muted">{card.theme}</span>}
+            {/* Plus is marked with the badge's seal; the gold chip is the theme, as on the dailies. */}
+            <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
+              {t("bonus.eyebrow")}
+              <PlusBadge interactive={false} size="1.15em" />
+            </Eyebrow>
+            {card.theme && (
+              <span className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100" title={card.theme}>
+                {card.theme}
+              </span>
+            )}
           </div>
           <h2 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {solved ? (
@@ -87,14 +92,25 @@ export function BonusCard() {
               {t("menu.dailySolvedIn", { time: formatDuration(best) })}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-muted tabular-nums">{t("bonus.meta", { width: card.width, height: card.height })}</p>
+            <p className="mt-1 text-sm text-muted tabular-nums">{t(plus ? "bonus.meta" : "bonus.metaLocked", { width: card.width, height: card.height })}
+            </p>
           )}
         </div>
-        <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+        {/* Locked for a viewer without Plus: the grid's shape shows through, a padlock over it. */}
+        <div className="relative w-24 shrink-0 sm:w-28 lg:w-36">
+          <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
+          {!plus && (
+            <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+              <span className="grid size-10 place-items-center rounded-full bg-surface/95 text-gold-700 shadow-card ring-1 ring-gold-100">
+                <Lock className="size-5" />
+              </span>
+            </span>
+          )}
+        </div>
       </div>
       <div className="grid gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
         <Button size="lg" variant={solved ? "secondary" : "primary"} block onClick={() => void play()} disabled={busy} aria-busy={busy || undefined}>
-          {busy && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+          {busy ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : !plus && <Lock className="size-4" aria-hidden="true" />}
           {plus ? t(solved ? "menu.dailyView" : "menu.dailyPlay") : t("bonus.playWithPlus")}
         </Button>
         {failed && (
