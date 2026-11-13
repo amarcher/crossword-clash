@@ -472,7 +472,7 @@ describe("CompletionModal", () => {
     }
   });
 
-  it("links a community puzzle's or a past daily's share to its page, with the solve's replay", async () => {
+  it("links a community puzzle's or a past daily's share to its page, with the solve's replay and no emoji rows", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     navigator.share = share;
     try {
@@ -491,6 +491,9 @@ describe("CompletionModal", () => {
         fireEvent.keyDown(name, { key: "Enter" });
         await waitFor(() => expect(share).toHaveBeenCalled());
         expect(share.mock.lastCall![0].text).toContain(path);
+        // The link's preview plays the solve, so no emoji rows go with it, nor in the preview.
+        expect(share.mock.lastCall![0].text).not.toMatch(/[🟩🟨🟧🟥🟦⬛⬜]/u);
+        expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
         share.mockClear();
         cleanup();
       }
