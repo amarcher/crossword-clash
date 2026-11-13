@@ -9,6 +9,7 @@
     "saveError": "We couldn’t save this puzzle on your device. Keep it open and try again.",
     "retry": "Try again",
     "clockHint": "Solo time counts active play. Your clock stops while paused.",
+    "idleHint": "Paused after a minute without a key or tap, so time away isn't counted.",
     "choose": "Choose another puzzle",
     "continue": "Continue playing",
     "inProgress": "In progress ({{count}})",

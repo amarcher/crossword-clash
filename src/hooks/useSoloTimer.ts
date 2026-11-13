@@ -2,13 +2,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Puzzle } from "../types/puzzle";
 import { puzzleIdentity, loadSoloTimer, saveSoloTimer, recordSoloCompletion, describeRecordedCompletion, type SoloCompletionResult } from "../lib/soloStats";
 import { clearProgress, getProgress, saveAttempt } from "../lib/soloProgress";
+import { IDLE_GAP_SECONDS } from "../lib/playInsights";
 
 const PERSIST_INTERVAL_MS = 5_000;
+/**
+ * A running clock never holds more than this past the solver's last input, and
+ * pauses there (Andrew, 2026-11-13: a puzzle left open on a desk, or a laptop
+ * closed on it, kept counting, and finishing it filed that time on the board
+ * and in the history). Nothing is refunded: the clock keeps the idle minute, so
+ * looking at a ranked grid is never free. The cap is in the clock's arithmetic,
+ * not only in a timer, because a sleeping computer fires no timer and no
+ * visibility event: whatever reads the clock next reads the capped time.
+ */
+export const IDLE_PAUSE_MS = IDLE_GAP_SECONDS * 1000;
+const IDLE_CHECK_MS = 1_000;
+/** What counts as the solver being there: a key, a tap or click, a scroll. Not a mouse merely moving. */
+const ACTIVITY_EVENTS = ["keydown", "pointerdown", "touchstart", "wheel", "scroll"] as const;
 export interface SoloTimerApi {
   getElapsedSeconds: () => number;
   /** The same clock to the millisecond: a race recording's timestamps (race.ts). */
   getElapsedMs: () => number;
   running: boolean;
+  /** The clock paused itself after a minute without input; false again once resumed. */
+  idlePaused: boolean;
   result: SoloCompletionResult | null;
   fresh: boolean;
   saveFailed: boolean;
@@ -22,9 +38,12 @@ interface Clock {
   key: string;
   ms: number;
   anchor: number | null;
+  /** When the solver last did something (or the clock last started). */
+  active: number;
   completed: boolean;
 }
-const elapsed = (clock: Clock) => clock.ms + (clock.anchor === null ? 0 : Math.max(0, Date.now() - clock.anchor));
+const elapsed = (clock: Clock) => clock.ms + (clock.anchor === null ? 0 : Math.max(0, Math.min(Date.now(), clock.active + IDLE_PAUSE_MS) - clock.anchor));
+const idle = (clock: Clock) => clock.anchor !== null && Date.now() - clock.active >= IDLE_PAUSE_MS;
 function checkpoint(clock: Clock): boolean {
   const ms = elapsed(clock);
   const progress = getProgress(clock.key);
@@ -63,6 +82,7 @@ export function useSoloTimer(
   solvedRef.current = solved;
   const [saveFailed, setSaveFailed] = useState(false);
   const [running, setRunning] = useState(false);
+  const [idlePaused, setIdlePaused] = useState(false);
   const [result, setResult] = useState<SoloCompletionResult | null>(null);
   const [fresh, setFresh] = useState(false);
   const getElapsedSeconds = useCallback(() => clockRef.current ? Math.floor(elapsed(clockRef.current) / 1000) : 0, []);
@@ -81,7 +101,8 @@ export function useSoloTimer(
   const resume = useCallback(() => {
     const clock = clockRef.current;
     if (!clock || clock.completed || clock.anchor !== null || document.visibilityState === "hidden") return;
-    clock.anchor = Date.now();
+    clock.anchor = clock.active = Date.now();
+    setIdlePaused(false);
     setRunning(true);
   }, []);
 
@@ -90,7 +111,9 @@ export function useSoloTimer(
     if (!clock) return;
     clock.ms = 0;
     clock.completed = false;
-    clock.anchor = document.visibilityState === "hidden" ? null : Date.now();
+    clock.active = Date.now();
+    clock.anchor = document.visibilityState === "hidden" ? null : clock.active;
+    setIdlePaused(false);
     explicitStart.current = clock.anchor === null ? null : clock.key;
     setResult(null);
     setFresh(false);
@@ -99,7 +122,7 @@ export function useSoloTimer(
   }, []);
 
   useEffect(() => {
-    if (!key) { clockRef.current = null; setRunning(false); setResult(null); return; }
+    if (!key) { clockRef.current = null; setRunning(false); setIdlePaused(false); setResult(null); return; }
     const progress = getProgress(key);
     const saved = loadSoloTimer();
     const previous = clockRef.current;
@@ -112,6 +135,7 @@ export function useSoloTimer(
     const clock: Clock = {
       key, ms: same ? elapsed(previous) : reopened ? reopened.seconds * 1000 : progress?.elapsedMs ?? (saved?.key === key ? saved.elapsedMs : 0),
       anchor: !completed && start && document.visibilityState !== "hidden" ? Date.now() : null,
+      active: same ? previous.active : Date.now(),
       completed: !!completed,
     };
     clockRef.current = clock;
@@ -121,6 +145,12 @@ export function useSoloTimer(
     setResult(null);
     setFresh(false);
     setSaveFailed(false);
+    if (!same) setIdlePaused(false);
+    const idlePause = () => { explicitStart.current = null; pause(); setIdlePaused(true); };
+    // Input that arrives once the minute is up (a key on waking the computer) pauses; it never restarts the count.
+    const activity = () => { if (idle(clock)) idlePause(); else if (clock.anchor !== null) clock.active = Date.now(); };
+    const idleCheck = window.setInterval(() => { if (idle(clock)) idlePause(); }, IDLE_CHECK_MS);
+    for (const type of ACTIVITY_EVENTS) window.addEventListener(type, activity, { capture: true, passive: true });
     const hide = () => { if (document.visibilityState === "hidden") { explicitStart.current = null; pause(); } };
     const pagehide = () => { explicitStart.current = null; pause(); };
     const interval = window.setInterval(() => { if (clock.anchor !== null) setSaveFailed(!checkpoint(clock)); }, PERSIST_INTERVAL_MS);
@@ -128,6 +158,8 @@ export function useSoloTimer(
     window.addEventListener("pagehide", pagehide);
     return () => {
       window.clearInterval(interval);
+      window.clearInterval(idleCheck);
+      for (const type of ACTIVITY_EVENTS) window.removeEventListener(type, activity, { capture: true });
       document.removeEventListener("visibilitychange", hide);
       window.removeEventListener("pagehide", pagehide);
       stop(clock);
@@ -149,5 +181,5 @@ export function useSoloTimer(
     setResult(wasCompleted ? describeRecordedCompletion(key, seconds) : recordSoloCompletion(key, seconds, new Date(), { assisted: assistedRef.current }));
   }, [key, isComplete]);
 
-  return { getElapsedSeconds, getElapsedMs, running, result, fresh, pause, resume, save, saveFailed, restart };
+  return { getElapsedSeconds, getElapsedMs, running, idlePaused, result, fresh, pause, resume, save, saveFailed, restart };
 }

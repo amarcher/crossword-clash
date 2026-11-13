@@ -9,6 +9,7 @@
     "saveError": "No pudimos guardar este crucigrama en tu dispositivo. Déjalo abierto e inténtalo de nuevo.",
     "retry": "Reintentar",
     "clockHint": "El tiempo individual cuenta solo mientras juegas. El reloj se detiene al pausar.",
+    "idleHint": "En pausa tras un minuto sin teclas ni toques, para no contar el tiempo que no estabas.",
     "choose": "Elegir otro crucigrama",
     "continue": "Seguir jugando",
     "inProgress": "En curso ({{count}})",
