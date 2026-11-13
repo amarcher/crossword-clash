@@ -1155,9 +1155,11 @@
     "eyebrow": "Bonus de hoy",
     "plusChip": "Plus",
     "meta": "{{width}}×{{height}} · un crucigrama extra para Plus",
-    "playWithPlus": "Jugar con Plus",
+    "playWithPlus": "Desbloquear con Plus",
     "loadFailed": "No se pudo cargar el bonus. Revisa tu conexión e inténtalo de nuevo.",
-    "archiveHeading": "Crucigramas bonus"
+    "archiveHeading": "Crucigramas bonus",
+    "unlock": "Desbloquear",
+    "metaLocked": "{{width}}×{{height}} · para miembros Plus"
   },
   "stats": {
     "title": "Tus estadísticas",

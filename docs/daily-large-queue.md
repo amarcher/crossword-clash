@@ -144,6 +144,9 @@ WEK/APOLLOI) were cleared with `pnpm seedgrid:refix … --apply` + `reclue
    `pnpm seedgrid:crosscheck` reports repeats, `pnpm seedgrid:unrepeat <from> <to>`
    rewrites them, and `feedRepeats.test.ts` fails CI on any left.
 
+Each batch also builds that day's Plus bonus (11×11, from the database, not the feed) after its
+three dailies, with their answers rejected: see `docs/daily-bonus-queue.md`.
+
 ## Daily Midi queue
 
 The midi (9×9) is the third daily, `public/daily-puzzles/midi/YYYY-MM-DD.json` via `pnpm daily:add --slot midi`. Each one bridges the day's mini and large where a large exists (16 Oct – 1 Nov: Pumpkin Spice + gardening×finance → Pumpkin Patch, Taco Tuesday + tennis×romance → Date Night…); from 2 November the midis follow the mini's theme until the larges catch up
