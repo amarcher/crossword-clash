@@ -12,6 +12,12 @@
  *                                                tags spliced into its head,
  *                                                so the short daily link both
  *                                                unfurls and plays.
+ * GET /puzzles/ab12cd34[?beat=75&by=Archer&r=<replay share id>] (rewritten here as
+ *     ?t=puzzle&id=…, the query merged in)    → the community puzzle's card
+ *                                                (title, author, size; the
+ *                                                race-my-solve card and clip
+ *                                                with a challenge), spliced
+ *                                                into the SPA the same way.
  *
  * Crawlers (iMessage/Slack/Twitter/…) read the OG meta tags — including a
  * per-link og:image rendered by /api/og — and never follow the redirect.
@@ -40,6 +46,34 @@ function clean(url: URL, key: string, max: number): string {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const SHORT_ID = /^[a-z0-9]{8}$/;
+const DIFFICULTY: Record<string, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
+
+/** What a community puzzle's card says about it (the public `community_puzzles` view). */
+export interface CommunityFacts {
+  title: string;
+  author: string;
+  width: number;
+  height: number;
+  difficulty: string;
+}
+
+/** A published community puzzle's facts over REST with the anon key; null when it isn't one or can't be read. */
+async function communityFacts(id: string): Promise<CommunityFacts | null> {
+  const base = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(`${base}/rest/v1/community_puzzles?short_id=eq.${id}&status=eq.published&select=title,author,width,height,difficulty`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as CommunityFacts[];
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 const SLOT_LABEL: Record<string, string> = { mini: "Daily Mini", midi: "Daily Midi", large: "Daily Large" };
 
 /** "1:42" from whole seconds; "" for anything unusable. */
@@ -158,22 +192,43 @@ export default async function handler(req: Request): Promise<Response> {
     const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
     const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
     const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) };
-    // Serve the real app with the card's tags: humans play, crawlers unfurl.
-    try {
-      const res = await fetch(`${origin}/index.html`, { headers: { accept: "text/html" } });
-      if (res.ok) {
-        const html = await res.text();
-        return new Response(spliceHead(html, tags), {
-          status: 200,
-          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, s-maxage=300" },
-        });
-      }
-    } catch {
-      // Fall back to the card-plus-redirect page below (the front door, since
-      // redirecting to the daily path would land back here).
+    return serveShell(tags, origin);
+  }
+
+  if (type === "puzzle") {
+    const id = clean(url, "id", 8);
+    if (!SHORT_ID.test(id)) {
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
     }
-    dest = "/";
-    return redirectPage(tags, dest, origin);
+    const facts = await communityFacts(id);
+    const time = formatSeconds(clean(url, "beat", 6));
+    const by = clean(url, "by", 40);
+    const replay = clean(url, "r", 11);
+    const hasReplay = REPLAY_ID.test(replay);
+    const named = facts ? `“${facts.title}”` : "a community crossword";
+    const who = by || "I";
+    pageTitle = time
+      ? `${who} solved ${named} in ${time} — ${hasReplay ? "race my solve" : "beat my time"}`
+      : facts
+        ? `${named} by @${facts.author} — Crossword Clash`
+        : "A community crossword on Crossword Clash";
+    const about = facts ? `A ${facts.width}×${facts.height} community crossword by @${facts.author}${DIFFICULTY[facts.difficulty] ? ` · ${DIFFICULTY[facts.difficulty]}` : ""}.` : "A community crossword.";
+    description = time
+      ? `${about} Same puzzle, your clock: tap to race ${by ? `${by}'s` : "this"} ${hasReplay ? "solve" : "time"}.`
+      : `${about} Play it free on Crossword Clash, solo or racing friends.`;
+    const query = new URLSearchParams();
+    if (time) query.set("beat", clean(url, "beat", 6));
+    if (by) query.set("by", by);
+    if (hasReplay) query.set("r", replay);
+    dest = `/puzzles/${id}${query.size ? `?${query.toString()}` : ""}`;
+    og.set("heading", "Community puzzle");
+    if (facts) og.set("title", facts.title);
+    if (time) og.set("metric", time);
+    og.set("detail", time ? (hasReplay ? `Race ${by || "my"}${by ? "'s" : ""} solve` : "Beat my time") : facts ? `by @${facts.author} · ${facts.width}×${facts.height}` : "Play it");
+    og.set("glyph", time ? "⏱" : "🧩");
+    const replayUrl = hasReplay && time ? `${origin}/api/replay?s=${replay}` : "";
+    const image = replayUrl ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
+    return serveShell({ title: pageTitle, description, image, url: `${origin}${dest}`, ...(replayUrl ? { video: replayUrl } : {}) }, origin);
   }
 
   if (type === "race") {
@@ -222,6 +277,27 @@ export default async function handler(req: Request): Promise<Response> {
 
   const image = `${origin}/api/og?${og.toString()}`;
   return redirectPage({ title: pageTitle, description, image, url: `${origin}${dest}` }, dest, origin);
+}
+
+/**
+ * The real app with the card's tags: humans play, crawlers unfurl. Falls back
+ * to the card-plus-redirect page (to the front door, since redirecting to the
+ * link's own path would land back here) when the shell can't be fetched.
+ */
+async function serveShell(tags: HeadTags, origin: string): Promise<Response> {
+  try {
+    const res = await fetch(`${origin}/index.html`, { headers: { accept: "text/html" } });
+    if (res.ok) {
+      const html = await res.text();
+      return new Response(spliceHead(html, tags), {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, s-maxage=300" },
+      });
+    }
+  } catch {
+    // The redirect page below.
+  }
+  return redirectPage(tags, "/", origin);
 }
 
 /** The card page for crawlers plus an instant redirect into the SPA for humans. */

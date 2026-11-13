@@ -30,6 +30,10 @@
       "destination": "/api/share?t=daily&day=:day&slot=:slot"
     },
     {
+      "source": "/puzzles/:id([a-z0-9]{8})",
+      "destination": "/api/share?t=puzzle&id=:id"
+    },
+    {
       "source": "/daily-puzzles/midi/:day.json",
       "destination": "/api/daily?day=:day&slot=midi"
     },
