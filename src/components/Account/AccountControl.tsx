@@ -9,6 +9,7 @@ import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { accountName, signOut } from "../../lib/account";
 import { useHydrated } from "../../lib/hydration";
 import { plusEnabled } from "../../lib/plus";
+import { PlusName } from "../ui/PlusBadge";
 import { studioRouteEnabled } from "../../lib/studioGate";
 import { prefetchRoute } from "../../routeModules";
 
@@ -190,7 +191,9 @@ export function AccountControl({ placement = "header", className = "" }: Account
               {avatarInitial(name)}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold leading-snug">{name}</span>
+              <span className="block truncate text-sm font-semibold leading-snug">
+                <PlusName userId={user?.id} interactive={false}>{name}</PlusName>
+              </span>
               <span className="block truncate text-xs leading-snug text-muted">{username ? accountName(user) : t("account.noUsernameYet")}</span>
             </span>
           </div>

@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Archive, Check, Gift, Mic, PencilRuler, RefreshCw } from "lucide-react";
+import { Archive, BadgeCheck, Check, Flag, Gift, Mic, PencilRuler, RefreshCw } from "lucide-react";
 import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { useStorePrices } from "../../hooks/useStorePrices";
 import { useFreeMonth } from "../../hooks/useFreeMonth";
 
 /**
- * What Plus is, in one card: the four benefits and the two prices (annual
+ * What Plus is, in one card: the benefits and the two prices (annual
  * first, the one to push), under a "first month is free" line when both
  * plans start with the free month for this visitor. Shared by the account sheet's Plus view and every
  * gate's upsell (archive, studio, narrator). The purchase controls themselves
@@ -27,7 +27,9 @@ export function PlusPitch({ children, prices = true }: { children?: React.ReactN
   const free = useFreeMonth();
   const freeMonth = free.annual && free.monthly;
   const benefits = [
+    { icon: Flag, text: t("plus.benefitRace") },
     { icon: Archive, text: t("plus.benefitArchive") },
+    { icon: BadgeCheck, text: t("plus.benefitBadge") },
     { icon: PencilRuler, text: t("plus.benefitStudio") },
     { icon: Mic, text: t("plus.benefitNarrator") },
     { icon: RefreshCw, text: t("plus.benefitProgress") },

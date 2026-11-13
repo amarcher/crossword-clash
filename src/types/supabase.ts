@@ -169,11 +169,15 @@ export interface Database {
           display_name: string | null;
           /** Who may race or replay this account's recorded solves (race.ts). */
           race_visibility: "everyone" | "friends" | "hidden";
+          /** The owner's "Show my Plus badge" switch. */
+          show_plus_badge: boolean;
+          /** Derived on the server (Plus and show_plus_badge); whatever a client writes is recomputed. */
+          plus_badge: boolean;
           created_at: string;
           updated_at: string;
         };
-        Insert: { user_id: string; username: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
-        Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; created_at?: string; updated_at?: string };
+        Insert: { user_id: string; username: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; show_plus_badge?: boolean; created_at?: string; updated_at?: string };
+        Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; show_plus_badge?: boolean; created_at?: string; updated_at?: string };
         Relationships: [];
       };
       race_replies: {

@@ -5,6 +5,7 @@ import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOu
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { RaceVisibilityCard } from "../components/Race/RaceVisibility";
+import { PlusBadgeSwitch } from "../components/Plus/PlusBadgeSwitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { NotificationSettings } from "../components/Push";
 import { PendingRequests } from "../components/Friends";
@@ -231,6 +232,11 @@ export function AccountScreen() {
                 </div>
               </div>
               <div className="mt-4">
+                {account.plus && userId && profile && (
+                  <div className="mb-4 border-b border-line pb-2">
+                    <PlusBadgeSwitch userId={userId} username={profile.username} />
+                  </div>
+                )}
                 {account.plus ? (
                   <PlusPurchaseControls
                     account={{ signedIn: true, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}

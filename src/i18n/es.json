@@ -775,7 +775,14 @@
     "legalNoteFreeMonth": "Gratis durante un mes; después se cobra el precio del plan y se renueva automáticamente hasta que la canceles. Cancela cuando quieras.",
     "terms": "Términos del servicio",
     "privacy": "Política de privacidad",
-    "keepOnEveryDevice": "Conserva Plus en todos tus dispositivos: inicia sesión y te acompaña."
+    "keepOnEveryDevice": "Conserva Plus en todos tus dispositivos: inicia sesión y te acompaña.",
+    "benefitRace": "Compite contra la solución grabada de cualquiera y mira la repetición",
+    "benefitBadge": "La insignia dorada de Plus junto a tu nombre",
+    "badgeLabel": "Miembro de Crossword Clash Plus",
+    "badgeGetPlus": "Hazte Plus",
+    "showBadge": "Mostrar mi insignia Plus",
+    "showBadgeBody": "El sello dorado junto a tu nombre en clasificaciones, listas de amigos y carreras.",
+    "showBadgeFailed": "No se pudo guardar. Inténtalo de nuevo."
   },
   "appBanner": {
     "label": "Descarga la app",

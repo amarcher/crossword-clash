@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
-import { Button, Card, Eyebrow } from "../components/ui";
+import { Button, Card, Eyebrow, PlusBadgeFor } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
@@ -512,6 +512,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
                         <div className="flex min-w-0 items-center gap-2">
                           {/* The viewer's unposted time is simply "You": beside its chip a name had no room. */}
                           <span className={e.unposted ? "shrink-0" : "truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
+                          {!e.unposted && <PlusBadgeFor userId={e.userId} />}
                           {isMe && !e.unposted && (
                             <span className="shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                               {t("leaderboard.you")}

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
-import { buttonClass } from "../ui";
+import { buttonClass, PlusName } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import {
@@ -483,7 +483,9 @@ export function CompletionModal({
                               className="w-2.5 h-2.5 rounded-full shrink-0"
                               style={{ backgroundColor: row.color }}
                             />
-                            <span className="font-medium truncate">{row.displayName}</span>
+                            <span className="font-medium truncate">
+                              <PlusName userId={row.userId}>{row.displayName}</PlusName>
+                            </span>
                           </div>
                         </td>
                         <td className="py-2 px-3 text-right tabular-nums">
@@ -516,7 +518,7 @@ export function CompletionModal({
                               style={{ backgroundColor: player.color }}
                             />
                             <span className="font-medium truncate">
-                              {player.displayName}
+                              <PlusName userId={player.userId}>{player.displayName}</PlusName>
                             </span>
                           </div>
                         </td>
