@@ -1,4 +1,4 @@
-This build (1.1.1, build 37) is about racing other people's solves, sharing replays, and the puzzle studio. Please check:
+This build (1.1.2, build 37) is about racing other people's solves, sharing replays, and the puzzle studio. Please check:
 
 1. Your solve is recorded. Finish a daily without revealing anything: the end screen plays a short replay of how you filled the grid, blue for right letters and red for wrong ones.
 2. Shared links play the solve. Tap Share on that end screen and send the link in Messages: the preview should be the moving replay, not a still card.
