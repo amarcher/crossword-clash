@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { averageByWeekday, calendarWeeks, summarizeSlot, weekdayOf, type DailyResult } from "./stats";
+import { averageByWeekday, calendarWeeks, lastDays, rankedCount, summarizeSlot, weekdayOf, type DailyResult } from "./stats";
 
 const r = (day: string, seconds: number, fasterThan: number | null = null): DailyResult => ({ day, slot: "mini", seconds, solvers: 10, fasterThan });
 
@@ -9,6 +9,12 @@ describe("stats arithmetic", () => {
     expect(s).toMatchObject({ count: 3, average: 60, fasterThan: 0.75 });
     expect(s.best?.day).toBe("2026-11-11");
     expect(summarizeSlot([])).toEqual({ count: 0, average: null, best: null, fasterThan: null });
+  });
+
+  it("keeps the last days, today included, and counts the days with someone to be ranked against", () => {
+    const all = [r("2026-10-14", 60), r("2026-10-15", 61), r("2026-11-13", 62), r("2026-11-14", 63)];
+    expect(lastDays(all, "2026-11-13", 30).map((x) => x.day)).toEqual(["2026-10-15", "2026-11-13"]);
+    expect(rankedCount([r("2026-11-09", 60), { ...r("2026-11-10", 60), solvers: 1 }])).toBe(1);
   });
 
   it("averages by weekday, Monday first", () => {
