@@ -37,7 +37,8 @@ export function ChallengeScreen() {
     if (!replayId || !challenge) return;
     let live = true;
     void fetchReplayShare(replayId).then((code) => {
-      if (live) setGhost(code ? ghostFromReplay(code, replayId, challenge.name) : null);
+      const daily = challenge.day && challenge.slot ? { day: challenge.day, slot: challenge.slot } : undefined;
+      if (live) setGhost(code ? ghostFromReplay(code, replayId, challenge.name, daily) : null);
     });
     return () => {
       live = false;
@@ -107,7 +108,9 @@ export function ChallengeScreen() {
               <Flag className="size-4" aria-hidden="true" />
               {t("challenge.raceButton", { name: challenge.name })}
             </Button>
-            <p className="text-center text-sm text-muted">{t("challenge.raceHint", { name: challenge.name })}</p>
+            <p className="text-center text-sm text-muted">
+              {t("challenge.raceHint", { name: challenge.name })} {ghost.link ? t("challenge.raceReplyNotice", { name: challenge.name }) : null}
+            </p>
             <Button variant="ghost" block onClick={() => void handleAccept()}>
               {t("challenge.justSolve")}
             </Button>

@@ -25,6 +25,9 @@ export interface ChallengePayload {
   seconds: number;
   /** A daily link's replay share ID (replayShare.ts): the challenger's solve, to race as a ghost. */
   replay?: string;
+  /** The daily a daily link names (DailyPuzzleScreen adds it), for the race's reply to the sender. */
+  day?: string;
+  slot?: "mini" | "midi" | "large";
 }
 
 export type ChallengeOutcome = "beat" | "lost" | "tied";

@@ -10,7 +10,7 @@
 
 // --- MIRROR START ---
 
-export type PushKind = "daily_reminder" | "room_invite" | "beat" | "friend_request" | "room_joined" | "room_nudge";
+export type PushKind = "daily_reminder" | "room_invite" | "beat" | "friend_request" | "room_joined" | "room_nudge" | "race_reply";
 
 /** The kinds that ride on the `room_invites` switch: an invite, a beat challenge, and the host's side of a room (a join, a nudge). */
 export const ROOM_KINDS: readonly PushKind[] = ["room_invite", "beat", "room_joined", "room_nudge"];
@@ -79,6 +79,8 @@ export function deliveryDecision(prefs: PushPrefs, kind: PushKind, now: Date = n
   if (kind === "daily_reminder" && !prefs.daily_reminder) return "opted_out";
   if (ROOM_KINDS.includes(kind) && !prefs.room_invites) return "opted_out";
   if (kind === "friend_request" && !prefs.friend_requests) return "opted_out";
+  // A race reply rides on the room switch but, not being urgent, keeps to quiet hours.
+  if (kind === "race_reply" && !prefs.room_invites) return "opted_out";
   if (!inQuietHours(prefs, now)) return "send";
   if (ROOM_KINDS.includes(kind) && prefs.quiet_allow_invites) return "send";
   return "quiet";
@@ -122,6 +124,10 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     nudgeTitleAnon: "A player is waiting in your room",
     nudgeBody: "{{title}} · Go to room",
     nudgeBodyPlain: "Go to room",
+    replyTitle: "{{name}} raced your {{slot}}",
+    replyWon: "{{name}} won by {{delta}} · Watch",
+    replyLost: "You won by {{delta}} · Watch",
+    replyTied: "Dead heat · Watch",
     mini: "mini",
     midi: "midi",
     large: "large",
@@ -144,6 +150,10 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     nudgeTitleAnon: "Alguien te espera en tu sala",
     nudgeBody: "{{title}} · Ir a la sala",
     nudgeBodyPlain: "Ir a la sala",
+    replyTitle: "{{name}} compitió contra tu {{slot}}",
+    replyWon: "{{name}} ganó por {{delta}} · Ver",
+    replyLost: "Ganaste por {{delta}} · Ver",
+    replyTied: "Empate · Ver",
     mini: "mini",
     midi: "midi",
     large: "grande",
@@ -261,6 +271,25 @@ export function roomNudgeNotification(input: RoomSideInput, locale: PushLocale):
   };
 }
 
+/**
+ * "Sam raced your mini · Sam won by 0:12 · Watch", to the sender of a shared
+ * daily that someone raced (migration 20261113100000_race_replies.sql); a tap
+ * opens the reply's page, which plays their solve.
+ */
+export function raceReplyNotification(input: { id: string; name: string; slot: "mini" | "midi" | "large"; seconds: number; toSeconds: number }, locale: PushLocale): Notification {
+  const t = STRINGS[locale];
+  const delta = formatSeconds(Math.abs(input.seconds - input.toSeconds));
+  const body = input.seconds < input.toSeconds ? fill(t.replyWon, { name: input.name, delta }) : input.seconds > input.toSeconds ? fill(t.replyLost, { delta }) : t.replyTied;
+  return {
+    kind: "race_reply",
+    title: fill(t.replyTitle, { name: input.name, slot: t[input.slot] }),
+    body,
+    url: `${SITE}/reply/${input.id}`,
+    collapseId: `reply-${input.id}`,
+    ttlSeconds: REMINDER_TTL_SECONDS,
+  };
+}
+
 /** The APNs request: headers and the JSON body for a token. */
 export function apnsRequest(note: Notification, bundleId: string, now: Date = new Date()): { headers: Record<string, string>; body: unknown } {
   return {
@@ -334,6 +363,26 @@ export function roomNudgeFromWebhook(body: { type?: string; table?: string; reco
 }
 
 /** The players trigger's own body (`docs/push-setup-players.sql`): the SQL already checked the room is waiting and the joiner is not the host. */
+/** A race_replies row as the webhook carries it. */
+export interface RaceReplyRecord {
+  id: string;
+  to_user_id: string;
+  name: string;
+  slot: string;
+  seconds: number;
+  to_seconds: number;
+}
+
+/** The webhook body of a race_replies INSERT, when it is one. */
+export function raceReplyFromWebhook(body: { type?: string; table?: string; record?: Partial<RaceReplyRecord> | null }): { id: string; toUserId: string; name: string; slot: "mini" | "midi" | "large"; seconds: number; toSeconds: number } | null {
+  const r = body.record;
+  if (body.type !== "INSERT" || body.table !== "race_replies" || !r) return null;
+  if (typeof r.id !== "string" || typeof r.to_user_id !== "string" || typeof r.name !== "string") return null;
+  if (r.slot !== "mini" && r.slot !== "midi" && r.slot !== "large") return null;
+  if (typeof r.seconds !== "number" || typeof r.to_seconds !== "number") return null;
+  return { id: r.id, toUserId: r.to_user_id, name: r.name, slot: r.slot, seconds: r.seconds, toSeconds: r.to_seconds };
+}
+
 export function roomJoinedFromBody(body: { kind?: string; gameId?: unknown; joinerUserId?: unknown }): { gameId: string; joinerUserId: string } | null {
   if (body.kind !== "room_joined" || typeof body.gameId !== "string" || typeof body.joinerUserId !== "string") return null;
   return { gameId: body.gameId, joinerUserId: body.joinerUserId };

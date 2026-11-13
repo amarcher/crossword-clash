@@ -16,6 +16,7 @@ import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { ReplayPreview } from "./ReplayPreview";
+import { ShareBackButton } from "./ShareBackButton";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
@@ -144,6 +145,11 @@ interface CompletionModalProps {
   raceResults?: RaceResult[];
   /** The finished daily's replay share ID (replayShare.ts): previewed above Share, and carried by the daily link. */
   replayId?: string;
+  /**
+   * After racing a shared link's sender: send them this solve back, in the
+   * thread the link came from (their name, this solve's own link, the verdict).
+   */
+  shareBack?: ChallengeComparison & { name: string; link: string };
   /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
   replays?: { userId: string; name: string }[];
   onWatchReplay?: (userId: string) => void;
@@ -208,6 +214,7 @@ export function CompletionModal({
   challengeOutcome,
   raceResults,
   replayId,
+  shareBack,
   replays,
   onWatchReplay,
   nextUp,
@@ -676,7 +683,7 @@ export function CompletionModal({
                     className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
                   >
                     <PlayCircle className="size-4" aria-hidden="true" />
-                    {t("ghostRace.watch", { name: r.name })}
+                    {t("ghostRace.watchVs", { name: r.name })}
                   </button>
                 ))}
               </div>
@@ -711,6 +718,7 @@ export function CompletionModal({
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
           {dailySlot && !isMultiplayer && replayId && <ReplayPreview id={replayId} darkMode={darkMode} />}
+          {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton
               mode={isMultiplayer ? "multiplayer" : "solo"}

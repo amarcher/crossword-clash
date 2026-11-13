@@ -42,6 +42,8 @@ export type AnalyticsEvent =
   | "replay_watched"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"
+  /** "Send X your solve" after racing a shared link's sender. Params `method`, `outcome`, `verdict` (beat | lost | tied). */
+  | "race_share_back"
   | "narrator_enabled"
   | "language_changed"
   | "result_shared"

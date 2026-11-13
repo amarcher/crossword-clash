@@ -45,7 +45,7 @@ export function DailyPuzzleScreen() {
       }
       const challenge = parseDailyChallenge(search, unsignedName);
       setUrlPuzzle(daily.puzzle);
-      setUrlChallenge(challenge);
+      setUrlChallenge(challenge ? { ...challenge, day, slot } : null);
       navigate(challenge ? "/challenge" : "/puzzle-ready", { replace: true });
     });
     return () => {
