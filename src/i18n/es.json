@@ -782,7 +782,8 @@
     "badgeGetPlus": "Hazte Plus",
     "showBadge": "Mostrar mi insignia Plus",
     "showBadgeBody": "El sello dorado junto a tu nombre en clasificaciones, listas de amigos y carreras.",
-    "showBadgeFailed": "No se pudo guardar. Inténtalo de nuevo."
+    "showBadgeFailed": "No se pudo guardar. Inténtalo de nuevo.",
+    "benefitStreak": "Repara una racha rota al día siguiente de perderla"
   },
   "appBanner": {
     "label": "Descarga la app",
@@ -1138,5 +1139,14 @@
     "missingBody": "Quizá fue en otro dispositivo, o tiene más de un año.",
     "titleQuoted": "«{{title}}»",
     "communityPuzzle": "crucigrama de la comunidad"
+  },
+  "streakRepair": {
+    "title_one": "Repara tu racha de {{count}} día",
+    "title_other": "Repara tu racha de {{count}} días",
+    "body": "Te perdiste el {{day}}. Resuelve su mini hoy y la racha sigue.",
+    "bodyFree": "Te perdiste el {{day}}. Con Plus, resolver su mini hoy mantiene la racha.",
+    "play": "Resolverlo",
+    "withPlus": "Reparar con Plus",
+    "done": "Racha reparada: el {{day}} vuelve a contar."
   }
 }

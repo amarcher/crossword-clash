@@ -579,6 +579,8 @@ export interface Database {
         Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string | null; p_slot: string | null; p_short_id?: string | null; p_seconds: number; p_to_seconds: number };
         Returns: string | null;
       };
+      /** Repairs the caller's daily streak (Plus): yesterday, missed right after a streak, counts again; true when it now does. */
+      repair_streak: { Args: { p_day: string; p_puzzle_key: string; p_today: string }; Returns: boolean };
       /** The sender marks replies to their links seen. */
       mark_race_replies_seen: { Args: { p_ids: string[] }; Returns: undefined };
       /** Files a replay code and returns its 11-character share ID (the same code, the same ID). */

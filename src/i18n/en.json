@@ -782,7 +782,8 @@
     "badgeGetPlus": "Get Plus",
     "showBadge": "Show my Plus badge",
     "showBadgeBody": "The gold seal beside your name on leaderboards, friends lists and races.",
-    "showBadgeFailed": "Couldn't save that. Try again."
+    "showBadgeFailed": "Couldn't save that. Try again.",
+    "benefitStreak": "Repair a broken streak the day after you miss"
   },
   "appBanner": {
     "label": "Get the app",
@@ -1138,5 +1139,14 @@
     "missingBody": "It may have been on another device, or it's over a year old.",
     "titleQuoted": "“{{title}}”",
     "communityPuzzle": "community puzzle"
+  },
+  "streakRepair": {
+    "title_one": "Repair your {{count}}-day streak",
+    "title_other": "Repair your {{count}}-day streak",
+    "body": "You missed {{day}}. Solve its mini today and the streak carries on.",
+    "bodyFree": "You missed {{day}}. With Plus, solving its mini today keeps the streak going.",
+    "play": "Solve it",
+    "withPlus": "Repair with Plus",
+    "done": "Streak repaired: {{day}} counts again."
   }
 }

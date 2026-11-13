@@ -15,6 +15,7 @@ import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
 import { RaceRepliesCard } from "../components/Race/RaceRepliesCard";
+import { StreakRepairCard } from "../components/Plus/StreakRepairCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
@@ -302,6 +303,7 @@ export function MenuScreen() {
         </div>
 
         <div className="grid gap-8">
+          <StreakRepairCard />
           <RaceRepliesCard />
           {multiplayer && (
             <section className="grid gap-3" aria-busy={loading || undefined}>
