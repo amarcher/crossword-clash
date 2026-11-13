@@ -309,7 +309,8 @@
     "upNext": "Up next",
     "raceFresh": "Race a friend live",
     "nextPuzzleSameRoom": "Next puzzle, same room",
-    "nextPuzzleSameRoomHint": "Pick a fresh puzzle — the room code stays"
+    "nextPuzzleSameRoomHint": "Pick a fresh puzzle — the room code stays",
+    "seeStats": "See your stats"
   },
   "leaderboardSettings": {
     "retry": "Try again",
@@ -1150,7 +1151,9 @@
     "bodyFree": "You missed {{day}}. With Plus, solving its mini today keeps the streak going.",
     "play": "Solve it",
     "withPlus": "Repair with Plus",
-    "done": "Streak repaired: {{day}} counts again."
+    "done": "Streak repaired: {{day}} counts again.",
+    "archiveBody": "Solve any of this day's puzzles today and the streak carries on.",
+    "archiveBodyFree": "With Plus, solving one of this day's puzzles today keeps the streak going."
   },
   "bonus": {
     "eyebrow": "Daily Plus",
@@ -1160,7 +1163,14 @@
     "loadFailed": "Couldn't load the Daily Plus. Check your connection and try again.",
     "archiveHeading": "Daily Plus puzzles",
     "unlock": "Unlock",
-    "metaLocked": "{{width}}×{{height}} · for Plus members"
+    "metaLocked": "{{width}}×{{height}} · for Plus members",
+    "boardTitle": "Bonus Leaderboard",
+    "boardLink": "Bonus leaderboard",
+    "boardEmpty": "No bonus times yet today. Be the first!",
+    "boardNone": "There was no bonus puzzle that day.",
+    "boardPlay": "Play today's bonus",
+    "boardPitch": "The bonus is an extra puzzle every day for Plus members.",
+    "eyebrowShort": "Bonus"
   },
   "stats": {
     "title": "Your stats",

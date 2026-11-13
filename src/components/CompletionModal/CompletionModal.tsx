@@ -2,7 +2,7 @@ import { puzzleIdentity } from "../../lib/soloStats";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChartLine, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
 import { buttonClass, PlusName } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -185,6 +185,10 @@ interface CompletionModalProps {
    * wherever accounts aren't on offer, so the modal shows nothing extra.
    */
   onSignIn?: () => void;
+  /** A signed-in solver's way to the Stats page (`/stats`); omit where there is no account. */
+  onSeeStats?: () => void;
+  /** The board button's label when the board isn't a daily's (the bonus board). */
+  leaderboardLabel?: string;
   darkMode?: boolean;
 }
 
@@ -231,6 +235,8 @@ export function CompletionModal({
   onNextPuzzle,
   onBackToMenu,
   onSignIn,
+  onSeeStats,
+  leaderboardLabel,
   darkMode,
 }: CompletionModalProps) {
   const { t, i18n } = useTranslation();
@@ -759,12 +765,18 @@ export function CompletionModal({
               darkMode={darkMode}
             />
           )}
-          {(onViewLeaderboard || (challengePuzzle && !Capacitor.isNativePlatform())) && (
+          {(onViewLeaderboard || onSeeStats || (challengePuzzle && !Capacitor.isNativePlatform())) && (
             <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
               {onViewLeaderboard && (
                 <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
                   <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-                  {t('completion.viewLeaderboard')}
+                  {leaderboardLabel ?? t('completion.viewLeaderboard')}
+                </button>
+              )}
+              {onSeeStats && (
+                <button onClick={onSeeStats} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
+                  <ChartLine className="size-4" aria-hidden="true" />
+                  {t('completion.seeStats')}
                 </button>
               )}
               {/* The canvas card stays as a secondary "Save image" (the app's

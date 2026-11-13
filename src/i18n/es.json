@@ -309,7 +309,8 @@
     "upNext": "A continuación",
     "raceFresh": "Carrera en vivo con un amigo",
     "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
-    "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene"
+    "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene",
+    "seeStats": "Ver tus estadísticas"
   },
   "leaderboardSettings": {
     "retry": "Intentar de nuevo",
@@ -1150,7 +1151,9 @@
     "bodyFree": "Te perdiste el {{day}}. Con Plus, resolver su mini hoy mantiene la racha.",
     "play": "Resolverlo",
     "withPlus": "Reparar con Plus",
-    "done": "Racha reparada: el {{day}} vuelve a contar."
+    "done": "Racha reparada: el {{day}} vuelve a contar.",
+    "archiveBody": "Resuelve hoy cualquiera de los crucigramas de este día y la racha continúa.",
+    "archiveBodyFree": "Con Plus, resolver hoy uno de los crucigramas de este día mantiene la racha."
   },
   "bonus": {
     "eyebrow": "Plus del día",
@@ -1160,7 +1163,14 @@
     "loadFailed": "No se pudo cargar el Plus del día. Revisa tu conexión e inténtalo de nuevo.",
     "archiveHeading": "Crucigramas Plus del día",
     "unlock": "Desbloquear",
-    "metaLocked": "{{width}}×{{height}} · para miembros Plus"
+    "metaLocked": "{{width}}×{{height}} · para miembros Plus",
+    "boardTitle": "Clasificación del bonus",
+    "boardLink": "Clasificación del bonus",
+    "boardEmpty": "Aún no hay tiempos del bonus hoy. ¡Sé el primero!",
+    "boardNone": "Ese día no hubo crucigrama bonus.",
+    "boardPlay": "Jugar el bonus de hoy",
+    "boardPitch": "El bonus es un crucigrama adicional cada día para miembros Plus.",
+    "eyebrowShort": "Bonus"
   },
   "stats": {
     "title": "Tus estadísticas",

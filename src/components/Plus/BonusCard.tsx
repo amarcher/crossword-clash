@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck, Loader2, Lock } from "lucide-react";
-import { Button, Card, Eyebrow, MiniGridThumb } from "../ui";
+import { CircleCheck, Loader2, Lock, Trophy } from "lucide-react";
+import { Button, Card, Eyebrow, MiniGridThumb, TransitionLink } from "../ui";
 import { PlusBadge } from "../ui/PlusBadge";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
+import { leaderboardPath } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
 import { formatDuration } from "../../lib/soloStats";
 import { track } from "../../lib/analytics";
@@ -76,7 +77,8 @@ export function BonusCard() {
           <div className="flex min-h-5 items-center gap-2">
             {/* Plus is marked with the badge's seal; the gold chip is the theme, as on the dailies. */}
             <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
-              {t("bonus.eyebrow")}
+              {/* Short, so the theme chip beside it has room; the region's name says "Today's bonus". */}
+              {t("bonus.eyebrowShort")}
               <PlusBadge interactive={false} size="1.15em" />
             </Eyebrow>
             {card.theme && (
@@ -118,6 +120,17 @@ export function BonusCard() {
             {t("bonus.loadFailed")}
           </p>
         )}
+      </div>
+      {/* The bonus board is open to everyone, like the dailies': the times are public, the puzzle is not. */}
+      <div className="flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
+        <TransitionLink
+          to={leaderboardPath("bonus")}
+          onClick={() => track("mode_selected", { mode: "leaderboard", slot: "bonus" })}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+          {t("bonus.boardLink")}
+        </TransitionLink>
       </div>
     </Card>
   );
