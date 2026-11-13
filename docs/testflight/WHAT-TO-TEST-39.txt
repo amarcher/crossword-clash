@@ -1,0 +1,8 @@
+This build (1.1.2, build 39) adds four Plus features and a sharing fix. Please check:
+
+1. The Plus badge: Plus members get a gold seal beside their name on friends lists, the daily leaderboard, rooms and results. Tap a badge to see what it is. Account → Plus has "Show my Plus badge" to hide yours.
+2. Your stats (account menu → Your stats): averages, best, how many solvers you beat, times over time, by weekday, head-to-head with friends, slowest clues and a calendar of solved days. Without Plus the page shows with its figures blurred.
+3. Streak repair: if you miss a single day, the next day the menu offers "Repair your streak". With Plus, solving the missed day's mini keeps the streak going.
+4. Today's bonus: an extra Plus puzzle on the menu below the large, and past ones at the bottom of the archive. It only appears on days that have one.
+5. Reopening a puzzle you solved in this build and sharing it sends the replay link (no emoji grid), like sharing right after the finish.
+6. Everything from build 38 still applies.
