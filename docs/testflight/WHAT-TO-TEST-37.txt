@@ -5,6 +5,6 @@ This build (1.1.1, build 37) is about racing other people's solves, sharing repl
 3. Racing a shared link. Open a link someone sent you: "Race their solve" is the main button. Their squares fill in as small quiet dots, on your clock, never showing their letters. When you finish, they hear how you did.
 4. Replies. When someone races a link you shared, a notification says "Sam raced your mini · Sam won by 0:12". Tap it (or the line on the menu) and "Watch the race" plays both solves side by side.
 5. Send to a friend from any finished puzzle: an archive daily or a community puzzle too, not only today's. Your friend gets a notification naming the puzzle and can race your solve.
-6. Race and replay recorded solves (Plus): when a puzzle has recorded solves from friends or others, the start of the puzzle offers to race them. Account → "Who can race and replay my solves" lets you choose Anyone, Friends only or No one.
+6. Race and replay recorded solves (Plus): when a puzzle has recorded solves from friends or others, the start of the puzzle offers to race them. Account → "Who can race and replay your solves" lets you choose Anyone, Friends only or No one.
 7. The studio (Build a crossword) fits on one phone screen: grid, clue bar and a pull-up word list. Swipe the clue bar left and right to move between clues. "Write clues" drafts three options per word with one filled in.
 8. Everything from build 36 still applies.
