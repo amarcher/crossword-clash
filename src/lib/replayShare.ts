@@ -25,6 +25,49 @@ export async function createReplayShare(code: string): Promise<string | null> {
   }
 }
 
+// --- This device's own replays, by puzzle ---
+
+const REMEMBERED_KEY = "crossword-clash:replay-shares";
+const MAX_REMEMBERED = 200;
+type Remembered = Record<string, { id: string; seconds: number; at: number }>;
+
+function readRemembered(): Remembered {
+  try {
+    const raw = localStorage.getItem(REMEMBERED_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? (parsed as Remembered) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Keep a finish's replay share ID by puzzle (puzzleIdentity), so the solve
+ * shares with its replay when it is reopened later, not only on the screen
+ * right after the finish: the fastest finish's, for the newest 200 puzzles;
+ * best-effort.
+ */
+export function rememberReplay(puzzleKey: string, id: string, seconds: number): void {
+  if (!REPLAY_ID.test(id)) return;
+  const all = readRemembered();
+  // A reopened solve shows its best time, so a slower re-solve keeps the best one's replay.
+  const best = all[puzzleKey];
+  if (best && best.seconds < Math.floor(seconds)) return;
+  all[puzzleKey] = { id, seconds: Math.floor(seconds), at: Date.now() };
+  const kept = Object.entries(all).sort((a, b) => b[1].at - a[1].at).slice(0, MAX_REMEMBERED);
+  try {
+    localStorage.setItem(REMEMBERED_KEY, JSON.stringify(Object.fromEntries(kept)));
+  } catch {
+    // Storage full or unavailable: a reopened solve just shares without its replay.
+  }
+}
+
+/** The replay this device filed for a puzzle's finish in `seconds` (the time the share names), or null. */
+export function rememberedReplay(puzzleKey: string, seconds: number): string | null {
+  const entry = readRemembered()[puzzleKey];
+  return entry && REPLAY_ID.test(entry.id) && entry.seconds === Math.floor(seconds) ? entry.id : null;
+}
+
 /** A shared replay's code by its ID (public), or null when there is none or it can't be read. */
 export async function fetchReplayShare(id: string): Promise<string | null> {
   if (!supabase || !REPLAY_ID.test(id)) return null;
