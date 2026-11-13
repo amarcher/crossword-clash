@@ -13,7 +13,7 @@ import { formatDuration } from "../../lib/soloStats";
 import { track } from "../../lib/analytics";
 
 /**
- * "Today's bonus" on the menu (bonus.ts; Plus only, no free play): the card,
+ * The "Daily Plus" on the menu (called the bonus in code, data and analytics; bonus.ts; Plus only, no free play): the card,
  * its title, theme and grid shape, for everyone; Play loads it for Plus and
  * opens the pitch for anyone else (`paywall_viewed { placement: "bonus" }`).
  * Nothing renders while Plus is switched off or when today has no bonus.

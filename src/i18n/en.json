@@ -785,7 +785,7 @@
     "showBadgeBody": "The gold seal beside your name on leaderboards, friends lists and races.",
     "showBadgeFailed": "Couldn't save that. Try again.",
     "benefitStreak": "Repair a broken streak the day after you miss",
-    "benefitBonus": "An extra bonus puzzle every day",
+    "benefitBonus": "The Daily Plus: an extra puzzle every day",
     "benefitStats": "Your full stats: trends, ranks, head-to-heads"
   },
   "appBanner": {
@@ -1153,12 +1153,12 @@
     "done": "Streak repaired: {{day}} counts again."
   },
   "bonus": {
-    "eyebrow": "Today's bonus",
+    "eyebrow": "Daily Plus",
     "plusChip": "Plus",
     "meta": "{{width}}×{{height}} · an extra puzzle for Plus",
     "playWithPlus": "Unlock with Plus",
-    "loadFailed": "Couldn't load the bonus. Check your connection and try again.",
-    "archiveHeading": "Bonus puzzles",
+    "loadFailed": "Couldn't load the Daily Plus. Check your connection and try again.",
+    "archiveHeading": "Daily Plus puzzles",
     "unlock": "Unlock",
     "metaLocked": "{{width}}×{{height}} · for Plus members"
   },
