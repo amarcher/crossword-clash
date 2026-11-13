@@ -65,7 +65,7 @@ export interface RoomInvite {
   seenAt: string | null;
   /** kind = room */
   room: { gameId: string; code: string; status: string; title: string; width: number; height: number } | null;
-  /** kind = beat: the /daily/:day/:slot?beat=… path. */
+  /** kind = beat: the /daily/:day/:slot?beat=… or /puzzles/:shortId?beat=… path. */
   link: string | null;
   /** The invitee's "Can't now" (phase f); null until answered. */
   response: "declined" | null;

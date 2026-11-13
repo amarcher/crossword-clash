@@ -5,6 +5,7 @@ import {
   apnsRequest,
   apnsTokenStale,
   beatNotification,
+  parseBeatLink,
   deliveryDecision,
   DEFAULT_PUSH_PREFS,
   fcmMessage,
@@ -267,7 +268,14 @@ async function roomInvite(db: SupabaseClient, record: InviteRecord) {
     const code = game.short_code;
     build = (locale) => inviteNotification({ name: sender.username, title: puzzle?.title ?? "", width: puzzle?.width ?? 0, height: puzzle?.height ?? 0, code, gameId: record.game_id! }, locale);
   } else {
-    build = (locale) => beatNotification({ name: sender.username, link: record.link ?? "", inviteId: record.id }, locale);
+    // A community puzzle's invite names it by title (send_beat checked it is published).
+    const target = parseBeatLink(record.link ?? "");
+    let title: string | null = null;
+    if (target && "shortId" in target) {
+      const { data: puzzle } = await db.from("published_puzzles").select("title").eq("short_id", target.shortId).maybeSingle();
+      title = (puzzle as { title?: string } | null)?.title ?? null;
+    }
+    build = (locale) => beatNotification({ name: sender.username, link: record.link ?? "", inviteId: record.id, title }, locale);
   }
   const prefs = await prefsFor(db, [record.to_user_id]);
   const tokens = await tokensFor(db, [record.to_user_id]);
@@ -330,7 +338,7 @@ async function roomNudge(db: SupabaseClient, target: { gameId: string; fromUserI
   return json({ ok: true, ...counts });
 }
 
-/** "Sam raced your mini · Sam won by 0:12 · Watch" to the link's sender; the reply row named both. */
+/** "Sam raced your mini · Sam won by 0:12 · Watch" (or "your “Farm”") to the link's sender; the reply row named both. */
 async function raceReply(db: SupabaseClient, target: NonNullable<ReturnType<typeof raceReplyFromWebhook>>) {
   const prefs = await prefsFor(db, [target.toUserId]);
   const tokens = await tokensFor(db, [target.toUserId]);

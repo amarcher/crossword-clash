@@ -29,6 +29,15 @@ export interface PuzzleClue {
  */
 export type PuzzleOrigin = "nyt-bookmarklet" | "community";
 
+/**
+ * Which shared puzzle this is, where the site can name it by link: a day's
+ * daily (`/daily/:day/:slot`) or a community puzzle (`/puzzles/:shortId`).
+ * Set where the puzzle is fetched (dailyFeed.fetchDailyForDay,
+ * communityPuzzles.toPlayablePuzzle); what a finish's friend invite, replay
+ * and race reply point at. Absent for imports, which have no such link.
+ */
+export type PuzzleRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
+
 export interface Puzzle {
   /** Provenance for subscriber-directed imports; contains no account or session data. */
   source?: { provider: "nyt"; date: string; kind: "daily" | "mini"; url: string };
@@ -39,6 +48,7 @@ export interface Puzzle {
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
+  ref?: PuzzleRef;
 }
 
 export interface CellState {

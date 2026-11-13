@@ -14,7 +14,7 @@
  * The pure helpers (recording diffs, the ghost at a moment, outcomes) are
  * unit-tested in race.test.ts; storage and the RPC calls sit at the bottom.
  */
-import type { CellState, Puzzle } from "../types/puzzle";
+import type { CellState, Puzzle, PuzzleRef } from "../types/puzzle";
 import { compareToChallenge, type ChallengeComparison } from "./challenge";
 import { supabase } from "./supabaseClient";
 
@@ -50,8 +50,8 @@ export interface Ghost {
   /** The friend's finish, whole seconds. */
   seconds: number;
   events: TraceEvent[];
-  /** A shared daily link's sender (replayShare.ts): the share raced, and the daily, for the reply at the finish. */
-  link?: { shareId: string; day: string; slot: "mini" | "midi" | "large" };
+  /** A shared link's sender (replayShare.ts): the share raced, and the puzzle it named, for the reply at the finish. */
+  link?: { shareId: string; ref: PuzzleRef };
 }
 
 // --- Pure: recording ---

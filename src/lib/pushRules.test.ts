@@ -121,14 +121,29 @@ describe("notifications", () => {
   });
 
   it("builds a beat challenge from the daily link and refuses any other link", () => {
-    expect(parseBeatLink("/daily/2026-10-20/mini?beat=102&by=Archer")).toEqual({ day: "2026-10-20", slot: "mini", seconds: 102 });
-    expect(parseBeatLink("/daily/2026-10-20/large")).toEqual({ day: "2026-10-20", slot: "large", seconds: null });
+    const now = new Date("2026-10-20T15:00:00Z");
+    expect(parseBeatLink("/daily/2026-10-20/mini?beat=102&by=Archer")).toEqual({ day: "2026-10-20", slot: "mini", seconds: 102, race: false });
+    expect(parseBeatLink("/daily/2026-10-20/large")).toEqual({ day: "2026-10-20", slot: "large", seconds: null, race: false });
     expect(parseBeatLink("https://evil.example/daily/2026-10-20/mini")).toBeNull();
-    const note = beatNotification({ name: "milo", link: "/daily/2026-10-20/mini?beat=102", inviteId: "i1" }, "en")!;
+    const note = beatNotification({ name: "milo", link: "/daily/2026-10-20/mini?beat=102", inviteId: "i1" }, "en", now)!;
     expect(note.title).toBe("@milo solved today's mini in 1:42");
+    expect(note.body).toBe("Beat it");
     expect(note.url).toBe("https://crosswordclash.com/daily/2026-10-20/mini?beat=102");
-    expect(beatNotification({ name: "milo", link: "/daily/2026-10-20/large", inviteId: "i1" }, "es")!.title).toBe("@milo resolvió el grande de hoy");
-    expect(beatNotification({ name: "milo", link: "/nope", inviteId: "i1" }, "en")).toBeNull();
+    expect(beatNotification({ name: "milo", link: "/daily/2026-10-20/large", inviteId: "i1" }, "es", now)!.title).toBe("@milo resolvió el grande de hoy");
+    expect(beatNotification({ name: "milo", link: "/nope", inviteId: "i1" }, "en", now)).toBeNull();
+  });
+
+  it("names a past daily by date and a community puzzle by title, and offers the race when the link carries the solve", () => {
+    const now = new Date("2026-11-12T15:00:00Z");
+    const past = beatNotification({ name: "milo", link: "/daily/2026-11-03/midi?beat=200&r=E0Gqr8Iw09i", inviteId: "i1" }, "en", now)!;
+    expect(past.title).toBe("@milo solved the Nov 3 midi in 3:20");
+    expect(past.body).toBe("Race their solve");
+    expect(beatNotification({ name: "milo", link: "/daily/2026-11-03/midi?beat=200", inviteId: "i1" }, "es", now)!.title).toMatch(/^@milo resolvió el midi del 3 nov\.? en 3:20$/);
+    expect(parseBeatLink("/puzzles/ab12cd34?beat=75&r=E0Gqr8Iw09i")).toEqual({ shortId: "ab12cd34", seconds: 75, race: true });
+    expect(parseBeatLink("/puzzles/AB12cd34?beat=75")).toBeNull();
+    const community = beatNotification({ name: "milo", link: "/puzzles/ab12cd34?beat=75&r=E0Gqr8Iw09i", inviteId: "i2", title: "Farm" }, "en", now)!;
+    expect(community).toMatchObject({ title: "@milo solved “Farm” in 1:15", body: "Race their solve", url: "https://crosswordclash.com/puzzles/ab12cd34?beat=75&r=E0Gqr8Iw09i" });
+    expect(beatNotification({ name: "milo", link: "/puzzles/ab12cd34?beat=75", inviteId: "i2", title: null }, "en", now)!.title).toBe("@milo solved a community puzzle in 1:15");
     expect(formatSeconds(0)).toBe("0:00");
     expect(formatSeconds(3661)).toBe("61:01");
   });
@@ -256,11 +271,14 @@ describe("race replies", () => {
     expect(raceReplyNotification({ ...reply, seconds: 130 }, "en").body).toBe("You won by 0:28 · Watch");
     expect(raceReplyNotification({ ...reply, seconds: 102 }, "en").body).toBe("Dead heat · Watch");
     expect(raceReplyNotification({ ...reply, seconds: 90 }, "es").title).toBe("Sam compitió contra tu mini");
+    expect(raceReplyNotification({ ...reply, slot: null, title: "Farm", seconds: 90 }, "en").title).toBe("Sam raced your “Farm”");
+    expect(raceReplyNotification({ ...reply, slot: null, title: null, seconds: 90 }, "en").title).toBe("Sam raced your community puzzle");
   });
 
   it("reads a race_replies insert from the webhook, and nothing else", () => {
     const record = { id: reply.id, to_user_id: "u1", name: "Sam", slot: "large", seconds: 600, to_seconds: 612 };
-    expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record })).toEqual({ id: reply.id, toUserId: "u1", name: "Sam", slot: "large", seconds: 600, toSeconds: 612 });
+    expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record })).toEqual({ id: reply.id, toUserId: "u1", name: "Sam", slot: "large", title: null, seconds: 600, toSeconds: 612 });
+    expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record: { ...record, slot: null, short_id: "ab12cd34", title: "Farm" } })).toEqual({ id: reply.id, toUserId: "u1", name: "Sam", slot: null, title: "Farm", seconds: 600, toSeconds: 612 });
     expect(raceReplyFromWebhook({ type: "INSERT", table: "room_nudges", record })).toBeNull();
     expect(raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record: { ...record, slot: "huge" } })).toBeNull();
   });

@@ -184,8 +184,11 @@ export interface Database {
           from_user_id: string;
           reply_share_id: string | null;
           name: string;
-          day: string;
-          slot: "mini" | "midi" | "large";
+          /** A daily's day and slot, or a community puzzle's short ID and title. */
+          day: string | null;
+          slot: "mini" | "midi" | "large" | null;
+          short_id: string | null;
+          title: string | null;
           seconds: number;
           to_seconds: number;
           created_at: string;
@@ -569,7 +572,7 @@ export interface Database {
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
       /** Files the racer's reply to a raced share link; its id, or null (own link, unknown sender, already replied). */
       reply_to_race: {
-        Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string; p_slot: string; p_seconds: number; p_to_seconds: number };
+        Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string | null; p_slot: string | null; p_short_id?: string | null; p_seconds: number; p_to_seconds: number };
         Returns: string | null;
       };
       /** The sender marks replies to their links seen. */

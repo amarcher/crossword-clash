@@ -937,6 +937,8 @@
     "invitesHeading": "De tus amigos",
     "inviteRoom": "Abrió una sala · {{title}} · {{size}}",
     "inviteBeat": "Supera mi tiempo en el diario de hoy",
+    "inviteBeatDay": "Compite contra mi solución del diario del {{date}}",
+    "inviteBeatPuzzle": "Compite contra mi solución de un crucigrama de la comunidad",
     "friendsHeading": "Amigos",
     "manage": "Gestionar",
     "manageWithRequests_one": "{{count}} solicitud",
@@ -1119,13 +1121,15 @@
     "visibilitySaveFailed": "No se pudo guardar. Inténtalo de nuevo."
   },
   "raceReplies": {
-    "heading": "Respuestas a tus diarios compartidos",
+    "heading": "Respuestas a tus soluciones compartidas",
     "raced": "{{name}} compitió contra tu {{daily}}",
     "theyWon": "{{name}} ganó por {{delta}}",
     "youWon": "Ganaste por {{delta}}",
     "tied": "Empate",
     "watch": "Ver",
     "missingTitle": "Esta carrera ya no está",
-    "missingBody": "Quizá fue en otro dispositivo, o tiene más de un año."
+    "missingBody": "Quizá fue en otro dispositivo, o tiene más de un año.",
+    "titleQuoted": "«{{title}}»",
+    "communityPuzzle": "crucigrama de la comunidad"
   }
 }

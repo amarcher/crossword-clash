@@ -236,9 +236,9 @@ export async function snapshotKeys(snapshot: TransferPuzzle): Promise<{ puzzleKe
 }
 
 /** A row as the solver plays it: the live username as author, tagged so finishes record under `community`. */
-export function toPlayablePuzzle(row: Pick<CommunityPuzzleFull, "puzzle" | "author">): Puzzle {
+export function toPlayablePuzzle(row: Pick<CommunityPuzzleFull, "puzzle" | "author" | "short_id">): Puzzle {
   const transfer = row.puzzle as TransferPuzzle;
-  return normalizeTransferPuzzle({ ...transfer, author: row.author, origin: "community" });
+  return { ...normalizeTransferPuzzle({ ...transfer, author: row.author, origin: "community" }), ref: { shortId: row.short_id } };
 }
 
 /** The page link for a row. */

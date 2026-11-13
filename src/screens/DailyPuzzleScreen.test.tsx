@@ -61,14 +61,14 @@ describe("DailyPuzzleScreen (/daily/:day/:slot)", () => {
     expect(fetched).toEqual(["/daily-puzzles/2026-10-20.json"]);
     expect(setUrlPuzzle).toHaveBeenCalledTimes(1);
     expect(setUrlPuzzle.mock.calls[0][0].title).toBe("Deep Blue");
-    expect(setUrlChallenge).toHaveBeenCalledWith({ name: "Archer", seconds: 102, day: "2026-10-20", slot: "mini" });
+    expect(setUrlChallenge).toHaveBeenCalledWith({ name: "Archer", seconds: 102, ref: { day: "2026-10-20", slot: "mini" } });
   });
 
   it("reads the slot from the path and signs an anonymous ghost as 'A friend'", async () => {
     renderAt("/daily/2026-10-20/large?beat=600");
     await waitFor(() => expect(screen.getByTestId("challenge-screen")).toBeTruthy());
     expect(fetched).toEqual(["/daily-puzzles/large/2026-10-20.json"]);
-    expect(setUrlChallenge).toHaveBeenCalledWith({ name: "A friend", seconds: 600, day: "2026-10-20", slot: "large" });
+    expect(setUrlChallenge).toHaveBeenCalledWith({ name: "A friend", seconds: 600, ref: { day: "2026-10-20", slot: "large" } });
   });
 
   it("goes to the plain puzzle-ready screen when the link carries no time", async () => {

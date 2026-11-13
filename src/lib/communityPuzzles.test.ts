@@ -164,11 +164,12 @@ describe("snapshot", () => {
     expect(keys.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("plays a row with the live username as author, tagged as a community puzzle", () => {
-    const row = { puzzle: toPublishSnapshot(studio(), "old_name"), author: "new_name" };
+  it("plays a row with the live username as author, tagged as a community puzzle with its page", () => {
+    const row = { puzzle: toPublishSnapshot(studio(), "old_name"), author: "new_name", short_id: "ab12cd34" };
     const puzzle = toPlayablePuzzle(row);
     expect(puzzle.author).toBe("new_name");
     expect(puzzle.origin).toBe("community");
+    expect(puzzle.ref).toEqual({ shortId: "ab12cd34" });
     expect(puzzle.title).toBe("Farm");
   });
 });

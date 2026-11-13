@@ -13,7 +13,7 @@ const auth = { user: { id: "me" } as { id: string } | null, loading: false };
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => auth }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("../lib/toastBus", () => ({ emitToast: vi.fn() }));
-const game = { handleSoloPuzzleLoaded: vi.fn(async () => {}), setSoloTheme: vi.fn(), setUrlPuzzle: vi.fn() };
+const game = { handleSoloPuzzleLoaded: vi.fn(async () => {}), setSoloTheme: vi.fn(), setUrlPuzzle: vi.fn(), setUrlChallenge: vi.fn() };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 let bestTimes: Record<string, number> = {};
 vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => bestTimes }));
@@ -39,11 +39,12 @@ const base: CommunityPuzzleFull = {
   published_at: "2026-10-28T00:00:00Z", updated_at: "2026-10-28T00:00:00Z", removed_reason: null,
 };
 
-function renderAt(shortId = "abcdefgh") {
+function renderAt(shortId = "abcdefgh", search = "") {
   return render(
-    <MemoryRouter initialEntries={[`/puzzles/${shortId}`]}>
+    <MemoryRouter initialEntries={[`/puzzles/${shortId}${search}`]}>
       <Routes>
         <Route path="/puzzles/:shortId" element={<CommunityPuzzleScreen />} />
+        <Route path="/challenge" element={<p>challenge screen</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -62,6 +63,21 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CommunityPuzzleScreen (/puzzles/:shortId)", () => {
+  it("turns a friend's challenge link into the challenge, naming the puzzle for the race's reply", async () => {
+    renderAt("abcdefgh", "?beat=75&by=andrew&r=E0Gqr8Iw09i");
+    expect(await screen.findByText("challenge screen")).toBeTruthy();
+    expect(game.setUrlPuzzle.mock.lastCall?.[0]).toMatchObject({ title: "Farm", ref: { shortId: "abcdefgh" } });
+    expect(game.setUrlChallenge).toHaveBeenLastCalledWith({ name: "andrew", seconds: 75, replay: "E0Gqr8Iw09i", ref: { shortId: "abcdefgh" } });
+  });
+
+  it("stays on the page for a challenge to a puzzle that is no longer published", async () => {
+    community.fetchCommunityPuzzle.mockResolvedValue({ ...base, status: "unpublished" });
+    game.setUrlChallenge.mockClear();
+    renderAt("abcdefgh", "?beat=75&by=andrew");
+    expect(await screen.findByRole("heading", { level: 1 })).toBeTruthy();
+    expect(game.setUrlChallenge).not.toHaveBeenCalled();
+  });
+
   it("shows the puzzle's facts and plays it through the solo path", async () => {
     renderAt();
     expect(await screen.findByRole("heading", { level: 1 })).toHaveProperty("textContent", "Farm");
