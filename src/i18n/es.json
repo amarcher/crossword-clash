@@ -1164,13 +1164,12 @@
     "archiveHeading": "Crucigramas Plus del día",
     "unlock": "Desbloquear",
     "metaLocked": "{{width}}×{{height}} · para miembros Plus",
-    "boardTitle": "Clasificación del bonus",
-    "boardLink": "Clasificación del bonus",
-    "boardEmpty": "Aún no hay tiempos del bonus hoy. ¡Sé el primero!",
-    "boardNone": "Ese día no hubo crucigrama bonus.",
-    "boardPlay": "Jugar el bonus de hoy",
-    "boardPitch": "El bonus es un crucigrama adicional cada día para miembros Plus.",
-    "eyebrowShort": "Bonus"
+    "boardTitle": "Clasificación del Plus del día",
+    "boardLink": "Clasificación del Plus del día",
+    "boardEmpty": "Aún no hay tiempos del Plus del día. ¡Sé el primero!",
+    "boardNone": "Ese día no hubo Plus del día.",
+    "boardPlay": "Jugar el Plus del día",
+    "boardPitch": "El Plus del día es un crucigrama adicional cada día para miembros Plus."
   },
   "stats": {
     "title": "Tus estadísticas",

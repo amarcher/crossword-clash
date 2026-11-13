@@ -1,0 +1,8 @@
+This build (1.1.2, build 40) adds a leaderboard for the Daily Plus puzzle and a few follow-ups. Please check:
+
+1. Daily Plus: the extra Plus puzzle on the menu is now called "Daily Plus". Without Plus it shows locked, with its title, theme and grid shape under a padlock and "Unlock with Plus".
+2. Daily Plus leaderboard: linked from the Daily Plus card, the archive's Daily Plus section and the finish screen. Everyone can see the times; a Plus member's finish on the day posts one. The arrows step back through past days.
+3. Streak repair in the archive: the day after a single missed day, Past puzzles opens on the missed day with "Repair your streak" above its puzzles. With Plus, solving any of them that day keeps the streak.
+4. See your stats: a button on the finish screen when you are signed in. Free accounts now see real figures on the stats page, with the Plus ones locked.
+5. Solo play pauses after a minute without input, and the clock stops there.
+6. Everything from build 39 still applies.

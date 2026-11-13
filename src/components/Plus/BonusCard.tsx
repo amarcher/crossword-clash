@@ -77,8 +77,7 @@ export function BonusCard() {
           <div className="flex min-h-5 items-center gap-2">
             {/* Plus is marked with the badge's seal; the gold chip is the theme, as on the dailies. */}
             <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
-              {/* Short, so the theme chip beside it has room; the region's name says "Today's bonus". */}
-              {t("bonus.eyebrowShort")}
+              {t("bonus.eyebrow")}
               <PlusBadge interactive={false} size="1.15em" />
             </Eyebrow>
             {card.theme && (
