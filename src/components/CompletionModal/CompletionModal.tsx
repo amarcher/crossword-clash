@@ -344,9 +344,12 @@ export function CompletionModal({
   const blockFor = useCallback(
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
+      // A bonus is Plus only: its link is the site, never the puzzle in a #puzzle= hash.
       const link = linkRef
         ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: isMultiplayer ? undefined : replayId })
-        : shareSeconds !== undefined
+        : puzzle.origin === "bonus"
+          ? `${SHARE_URL}/`
+          : shareSeconds !== undefined
           ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
           : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
       return buildShareBlock({

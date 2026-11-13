@@ -7,6 +7,7 @@ import { leaderboardPath } from "../lib/dailyLeaderboard";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusNudge } from "../components/Plus/PlusNudge";
+import { BonusArchive } from "../components/Plus/BonusArchive";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
@@ -546,6 +547,7 @@ export function ArchiveScreen() {
             </div>
           </>
         )}
+        <BonusArchive />
       </div>
     </PageShell>
   );

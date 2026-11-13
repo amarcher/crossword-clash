@@ -783,7 +783,8 @@
     "showBadge": "Mostrar mi insignia Plus",
     "showBadgeBody": "El sello dorado junto a tu nombre en clasificaciones, listas de amigos y carreras.",
     "showBadgeFailed": "No se pudo guardar. Inténtalo de nuevo.",
-    "benefitStreak": "Repara una racha rota al día siguiente de perderla"
+    "benefitStreak": "Repara una racha rota al día siguiente de perderla",
+    "benefitBonus": "Un crucigrama extra cada día"
   },
   "appBanner": {
     "label": "Descarga la app",
@@ -1148,5 +1149,13 @@
     "play": "Resolverlo",
     "withPlus": "Reparar con Plus",
     "done": "Racha reparada: el {{day}} vuelve a contar."
+  },
+  "bonus": {
+    "eyebrow": "Bonus de hoy",
+    "plusChip": "Plus",
+    "meta": "{{width}}×{{height}} · un crucigrama extra para Plus",
+    "playWithPlus": "Jugar con Plus",
+    "loadFailed": "No se pudo cargar el bonus. Revisa tu conexión e inténtalo de nuevo.",
+    "archiveHeading": "Crucigramas bonus"
   }
 }
