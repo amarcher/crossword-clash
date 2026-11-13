@@ -58,6 +58,29 @@ blue), checked in as the single 1024px opaque RGB PNG in
 from it and iOS masks the corners, so replace that file to change the icon.
 The website favicon and touch icon in `public/` are exports of the same art.
 
+## Signing on the Mac Studio (since build 37)
+
+The Nov 7 migration's `studio-release` keychain does not open with its saved
+password, so on 2026-11-13 the Studio got its own certificates, created through
+the App Store Connect API with private keys generated on the Studio (nothing was
+revoked; the MacBook's certificates still work):
+
+- Keychain `~/Library/Keychains/studio-signing.keychain-db`, password in
+  `~/.config/release-signing/studio-signing-password` (0600). It holds
+  "Apple Development: Created via API" (cert 928LRF7KTU), "Apple Distribution:
+  Andrew Archer" (cert DSCBVUCNT4) and Apple's WWDR G3/G4/G6 intermediates. The
+  search list is login + studio-signing; `studio-release` was taken off it (its
+  same-named identities made signing ambiguous) but left on disk.
+- Profile "Crossword Clash App Store (Studio)" (U7VGX4RW6R) holds both the
+  MacBook's distribution certificate (Z7FXVDNWJ8) and the Studio's, and
+  `ios/ExportOptions-TestFlight-manual.plist` names it. A Mac without it
+  installed downloads it from the Profiles list (or via the API) first.
+
+Before `pnpm testflight` in a non-interactive shell: `source ~/.zshrc` (the
+ASC key variables) and unlock the keychain with that password file. After
+upload, add the build to the internal "Development" group and set the build's
+What to Test (both possible through the API with the same key).
+
 ## Review material
 
 - `BETA-DESCRIPTION.txt`: TestFlight beta app description.
