@@ -218,6 +218,16 @@ export function SoloPlayScreen() {
   // The board a finish here belongs on: a daily's, or the bonus board for
   // today's bonus (bonus.ts; a bonus played on a later day ranks nowhere).
   const boardSlot: BoardSlot | null = dailySlot ?? (puzzle?.origin === "bonus" && puzzle.bonusDay === todayKey() ? "bonus" : null);
+  // The board the finished grid links to: that one, or for a past daily or
+  // bonus (from the archive) that day's final board, which slots the
+  // viewer's time in where it would have placed.
+  const boardView = useMemo((): { slot: BoardSlot; day: string | null } | null => {
+    if (boardSlot) return { slot: boardSlot, day: null };
+    const today = todayKey();
+    if (puzzle?.ref && "day" in puzzle.ref && puzzle.ref.day < today) return { slot: puzzle.ref.slot, day: puzzle.ref.day };
+    if (puzzle?.origin === "bonus" && puzzle.bonusDay && puzzle.bonusDay < today) return { slot: "bonus", day: puzzle.bonusDay };
+    return null;
+  }, [boardSlot, puzzle]);
   // Whether this solve was ever typed freely: Autocheck off while the grid was
   // unfinished, or wrong letters restored from such a visit. Recorded with the
   // play-insights row and the daily board entry; reset per puzzle below.
@@ -704,10 +714,10 @@ export function SoloPlayScreen() {
   // the celebration: coming back shows the solved grid with the slim finished
   // header, whose Share button re-opens the modal on demand.
   const handleViewLeaderboard = useCallback(() => {
-    if (!boardSlot) return;
+    if (!boardView) return;
     setCompletionModalDismissed(true);
-    navigate(leaderboardPath(boardSlot));
-  }, [boardSlot, setCompletionModalDismissed, navigate]);
+    navigate(leaderboardPath(boardView.slot, boardView.day));
+  }, [boardView, setCompletionModalDismissed, navigate]);
 
   const handleSignIn = useCallback(() => {
     setCompletionModalDismissed(true);
@@ -818,7 +828,7 @@ export function SoloPlayScreen() {
                   <FinishedBar
                     seconds={soloResult?.finishSeconds ?? getElapsedSeconds()}
                     onShare={reopenCompletion}
-                    onLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
+                    onLeaderboard={boardView ? handleViewLeaderboard : undefined}
                   />
                 ) : (
                   <div className="flex flex-col items-end leading-tight">
@@ -977,7 +987,7 @@ export function SoloPlayScreen() {
         streakCount={shownResult?.streak}
         streakAdvanced={shownResult?.streakAdvanced}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
+        onViewLeaderboard={boardView ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
         puzzleRef={puzzleRef ?? undefined}
         dailySign={dailySign}
@@ -1008,7 +1018,7 @@ export function SoloPlayScreen() {
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
         onSeeStats={account.available && account.user ? handleSeeStats : undefined}
-        leaderboardLabel={boardSlot === "bonus" ? t("bonus.boardLink") : undefined}
+        leaderboardLabel={boardView?.slot === "bonus" ? t("bonus.boardLink") : undefined}
       />
       {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
     </>
