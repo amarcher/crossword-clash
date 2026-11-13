@@ -1164,13 +1164,12 @@
     "archiveHeading": "Daily Plus puzzles",
     "unlock": "Unlock",
     "metaLocked": "{{width}}×{{height}} · for Plus members",
-    "boardTitle": "Bonus Leaderboard",
-    "boardLink": "Bonus leaderboard",
-    "boardEmpty": "No bonus times yet today. Be the first!",
-    "boardNone": "There was no bonus puzzle that day.",
-    "boardPlay": "Play today's bonus",
-    "boardPitch": "The bonus is an extra puzzle every day for Plus members.",
-    "eyebrowShort": "Bonus"
+    "boardTitle": "Daily Plus Leaderboard",
+    "boardLink": "Daily Plus leaderboard",
+    "boardEmpty": "No Daily Plus times yet today. Be the first!",
+    "boardNone": "There was no Daily Plus that day.",
+    "boardPlay": "Play today's Daily Plus",
+    "boardPitch": "The Daily Plus is an extra puzzle every day for Plus members."
   },
   "stats": {
     "title": "Your stats",

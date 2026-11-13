@@ -391,7 +391,7 @@ it("today's bonus posts to the bonus board; a bonus from another day posts nowhe
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ slot: "bonus", day: today, posted: true }));
-  expect(screen.getByRole("button", { name: "Bonus leaderboard" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Daily Plus leaderboard" })).toBeTruthy();
   cleanup();
   localStorage.clear();
 
@@ -403,7 +403,7 @@ it("today's bonus posts to the bonus board; a bonus from another day posts nowhe
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   expect(game.pendingDailyResult).toBeNull();
-  expect(screen.queryByRole("button", { name: "Bonus leaderboard" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Daily Plus leaderboard" })).toBeNull();
 });
 
 describe("a solved puzzle stays solved", () => {

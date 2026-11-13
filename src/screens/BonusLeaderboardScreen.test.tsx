@@ -63,7 +63,7 @@ describe("BonusLeaderboardScreen", () => {
     const puzzle = { title: "Tempting Fate", origin: "bonus" };
     bonus.loadBonusPuzzle.mockResolvedValue(puzzle);
     show();
-    fireEvent.click(await screen.findByRole("button", { name: "Play today's bonus" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Play today's Daily Plus" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
     expect(bonus.loadBonusPuzzle).toHaveBeenCalledWith(TODAY);
   });
