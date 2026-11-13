@@ -7,6 +7,8 @@ import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
 import { useFriendSolves } from "../hooks/useFriendSolves";
 import { puzzleIdentity } from "../lib/soloStats";
+import { todayKey } from "../lib/dailyLeaderboard";
+import { formatShareDay } from "../lib/shareBlock";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame } from "../contexts/GameContext";
 import { useFriends } from "../contexts/FriendsContext";
@@ -26,7 +28,7 @@ export const FRIENDS_PATH = "/race/friends";
  * never pass through here: a scanned QR still lands on /join with the code.
  */
 export function RaceScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useTransitionNavigate();
   const game = useGame();
   const account = useAccountContext();
@@ -67,6 +69,13 @@ export function RaceScreen() {
     else account.openAccount({ placement: "race", returnTo: "/race" });
   };
 
+  // A beat invite's line: today's daily, another day's, or a community puzzle.
+  const beatDetail = (link: string | null) => {
+    const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\//.exec(link ?? "");
+    if (daily && daily[1] !== todayKey()) return t("race.inviteBeatDay", { date: formatShareDay(daily[1], i18n.language) });
+    return link?.startsWith("/puzzles/") ? t("race.inviteBeatPuzzle") : t("race.inviteBeat");
+  };
+
   const render = (block: (typeof blocks)[number], index: number) => {
     switch (block) {
       case "invites":
@@ -81,7 +90,7 @@ export function RaceScreen() {
                   detail={
                     invite.kind === "room"
                       ? t("race.inviteRoom", { title: invite.room?.title ?? "", size: invite.room ? `${invite.room.width}×${invite.room.height}` : "" })
-                      : t("race.inviteBeat")
+                      : beatDetail(invite.link)
                   }
                 >
                   {invite.kind === "room" && (

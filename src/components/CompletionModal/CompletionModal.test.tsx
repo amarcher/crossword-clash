@@ -472,6 +472,33 @@ describe("CompletionModal", () => {
     }
   });
 
+  it("links a community puzzle's or a past daily's share to its page, with the solve's replay", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      for (const [puzzleRef, path] of [
+        [{ shortId: "abcdefgh" }, "/puzzles/abcdefgh?beat=90&by=Sam&r=E0Gqr8Iw09i"],
+        [{ day: "2026-11-03", slot: "midi" }, "/daily/2026-11-03/midi?beat=90&by=Sam&r=E0Gqr8Iw09i"],
+      ] as const) {
+        const { getByTestId } = render(
+          <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleRef={puzzleRef} replayId="E0Gqr8Iw09i"
+            challengePuzzle={fakePuzzle("Deep Blue", 5)} challengerName="Player" />,
+        );
+        const sharing = within(getByTestId("share-result"));
+        fireEvent.click(sharing.getByRole("button", { name: /^Share/ }));
+        const name = sharing.getByPlaceholderText("Your name");
+        fireEvent.change(name, { target: { value: "Sam" } });
+        fireEvent.keyDown(name, { key: "Enter" });
+        await waitFor(() => expect(share).toHaveBeenCalled());
+        expect(share.mock.lastCall![0].text).toContain(path);
+        share.mockClear();
+        cleanup();
+      }
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
   it("says quietly that a preview's finish was not posted, instead of offering a signature", () => {
     const { getByTestId, queryByPlaceholderText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} boardNotPosted />,

@@ -113,7 +113,11 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     inviteTitle: "@{{name}} opened a room",
     inviteBody: "{{title}} · {{size}} · Join",
     beatTitle: "@{{name}} solved today's {{slot}} in {{time}}",
+    beatTitleDay: "@{{name}} solved the {{date}} {{slot}} in {{time}}",
+    beatTitlePuzzle: "@{{name}} solved “{{title}}” in {{time}}",
+    beatTitlePuzzlePlain: "@{{name}} solved a community puzzle in {{time}}",
     beatBody: "Beat it",
+    beatBodyRace: "Race their solve",
     requestTitle: "@{{name}} wants to be friends",
     requestBody: "Accept or decline on your Race friends screen",
     joinedTitle: "@{{name}} joined your room",
@@ -125,6 +129,8 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     nudgeBody: "{{title}} · Go to room",
     nudgeBodyPlain: "Go to room",
     replyTitle: "{{name}} raced your {{slot}}",
+    replyTitlePuzzle: "{{name}} raced your “{{title}}”",
+    replyTitlePuzzlePlain: "{{name}} raced your community puzzle",
     replyWon: "{{name}} won by {{delta}} · Watch",
     replyLost: "You won by {{delta}} · Watch",
     replyTied: "Dead heat · Watch",
@@ -139,7 +145,11 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     inviteTitle: "@{{name}} abrió una sala",
     inviteBody: "{{title}} · {{size}} · Unirse",
     beatTitle: "@{{name}} resolvió el {{slot}} de hoy en {{time}}",
+    beatTitleDay: "@{{name}} resolvió el {{slot}} del {{date}} en {{time}}",
+    beatTitlePuzzle: "@{{name}} resolvió «{{title}}» en {{time}}",
+    beatTitlePuzzlePlain: "@{{name}} resolvió un crucigrama de la comunidad en {{time}}",
     beatBody: "Supéralo",
+    beatBodyRace: "Compite contra su solución",
     requestTitle: "@{{name}} quiere ser tu amigo",
     requestBody: "Acepta o rechaza en tu pantalla Compite con amigos",
     joinedTitle: "@{{name}} entró en tu sala",
@@ -151,6 +161,8 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     nudgeBody: "{{title}} · Ir a la sala",
     nudgeBodyPlain: "Ir a la sala",
     replyTitle: "{{name}} compitió contra tu {{slot}}",
+    replyTitlePuzzle: "{{name}} compitió contra tu «{{title}}»",
+    replyTitlePuzzlePlain: "{{name}} compitió contra tu crucigrama de la comunidad",
     replyWon: "{{name}} ganó por {{delta}} · Ver",
     replyLost: "Ganaste por {{delta}} · Ver",
     replyTied: "Empate · Ver",
@@ -198,24 +210,53 @@ export function inviteNotification(input: { name: string; title: string; width: 
   };
 }
 
-/** The daily challenge link an invite carries: `/daily/:day/:slot?beat=<seconds>&by=<name>`. */
-export function parseBeatLink(link: string): { day: string; slot: "mini" | "midi" | "large"; seconds: number | null } | null {
-  const m = /^\/daily\/(\d{4}-\d{2}-\d{2})\/(mini|midi|large)(?:\?(.*))?$/.exec(link);
-  if (!m) return null;
-  const params = new URLSearchParams(m[3] ?? "");
+export type BeatLink = { seconds: number | null; race: boolean } & ({ day: string; slot: "mini" | "midi" | "large" } | { shortId: string });
+
+/**
+ * The challenge link an invite carries: a day's daily
+ * (`/daily/:day/:slot?beat=<seconds>&by=<name>&r=<replay>`) or a community
+ * puzzle (`/puzzles/:shortId?…`). `race` when it carries the sender's replay.
+ */
+export function parseBeatLink(link: string): BeatLink | null {
+  const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\/(mini|midi|large)(?:\?(.*))?$/.exec(link);
+  const community = daily ? null : /^\/puzzles\/([a-z0-9]{8})(?:\?(.*))?$/.exec(link);
+  if (!daily && !community) return null;
+  const params = new URLSearchParams((daily ? daily[3] : community![2]) ?? "");
   const raw = params.get("beat");
   const seconds = raw !== null && /^\d+$/.test(raw) ? Number(raw) : null;
-  return { day: m[1], slot: m[2] as "mini" | "midi" | "large", seconds };
+  const race = /^[A-Za-z0-9_-]{11}$/.test(params.get("r") ?? "");
+  return daily ? { day: daily[1], slot: daily[2] as "mini" | "midi" | "large", seconds, race } : { shortId: community![1], seconds, race };
 }
 
-export function beatNotification(input: { name: string; link: string; inviteId: string }, locale: PushLocale): Notification | null {
+/** "Nov 3", for a past daily's invite. */
+function shortDay(day: string, locale: PushLocale): string {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(locale === "es" ? "es" : "en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/**
+ * "@milo solved today's mini in 1:42 · Race their solve": a friend's invite to
+ * race (or beat) their finish. A daily more than a day from now (UTC, so any
+ * time zone's today reads as today) is named by date; a community puzzle by
+ * its title, which the caller looks up (null when it couldn't).
+ */
+export function beatNotification(input: { name: string; link: string; inviteId: string; title?: string | null }, locale: PushLocale, now: Date = new Date()): Notification | null {
   const parsed = parseBeatLink(input.link);
   if (!parsed) return null;
   const t = STRINGS[locale];
+  const time = parsed.seconds === null ? "" : formatSeconds(parsed.seconds);
+  let title: string;
+  if ("shortId" in parsed) {
+    const name = (input.title ?? "").trim();
+    title = name ? fill(t.beatTitlePuzzle, { name: input.name, title: name, time }) : fill(t.beatTitlePuzzlePlain, { name: input.name, time });
+  } else {
+    const recent = Math.abs(Date.parse(`${parsed.day}T12:00:00Z`) - now.getTime()) <= 36 * 60 * 60 * 1000;
+    title = recent ? fill(t.beatTitle, { name: input.name, slot: t[parsed.slot], time }) : fill(t.beatTitleDay, { name: input.name, slot: t[parsed.slot], date: shortDay(parsed.day, locale), time });
+  }
   return {
     kind: "beat",
-    title: fill(t.beatTitle, { name: input.name, slot: t[parsed.slot], time: parsed.seconds === null ? "" : formatSeconds(parsed.seconds) }).replace(/ in $/, "").replace(/ en $/, ""),
-    body: t.beatBody,
+    title: title.replace(/ in $/, "").replace(/ en $/, ""),
+    body: parsed.race ? t.beatBodyRace : t.beatBody,
     url: `${SITE}${input.link}`,
     collapseId: `beat-${input.inviteId}`,
     ttlSeconds: REMINDER_TTL_SECONDS,
@@ -273,16 +314,21 @@ export function roomNudgeNotification(input: RoomSideInput, locale: PushLocale):
 
 /**
  * "Sam raced your mini · Sam won by 0:12 · Watch", to the sender of a shared
- * daily that someone raced (migration 20261113100000_race_replies.sql); a tap
+ * daily or community puzzle that someone raced (migrations
+ * 20261113100000_race_replies.sql, 20261114000000_races_anywhere.sql); a tap
  * opens the reply's page, which plays their solve.
  */
-export function raceReplyNotification(input: { id: string; name: string; slot: "mini" | "midi" | "large"; seconds: number; toSeconds: number }, locale: PushLocale): Notification {
+export function raceReplyNotification(input: { id: string; name: string; slot: "mini" | "midi" | "large" | null; title?: string | null; seconds: number; toSeconds: number }, locale: PushLocale): Notification {
   const t = STRINGS[locale];
   const delta = formatSeconds(Math.abs(input.seconds - input.toSeconds));
   const body = input.seconds < input.toSeconds ? fill(t.replyWon, { name: input.name, delta }) : input.seconds > input.toSeconds ? fill(t.replyLost, { delta }) : t.replyTied;
   return {
     kind: "race_reply",
-    title: fill(t.replyTitle, { name: input.name, slot: t[input.slot] }),
+    title: input.slot
+      ? fill(t.replyTitle, { name: input.name, slot: t[input.slot] })
+      : input.title?.trim()
+        ? fill(t.replyTitlePuzzle, { name: input.name, title: input.title.trim() })
+        : fill(t.replyTitlePuzzlePlain, { name: input.name }),
     body,
     url: `${SITE}/reply/${input.id}`,
     collapseId: `reply-${input.id}`,
@@ -368,19 +414,23 @@ export interface RaceReplyRecord {
   id: string;
   to_user_id: string;
   name: string;
-  slot: string;
+  slot: string | null;
+  short_id: string | null;
+  title: string | null;
   seconds: number;
   to_seconds: number;
 }
 
 /** The webhook body of a race_replies INSERT, when it is one. */
-export function raceReplyFromWebhook(body: { type?: string; table?: string; record?: Partial<RaceReplyRecord> | null }): { id: string; toUserId: string; name: string; slot: "mini" | "midi" | "large"; seconds: number; toSeconds: number } | null {
+export function raceReplyFromWebhook(body: { type?: string; table?: string; record?: Partial<RaceReplyRecord> | null }): { id: string; toUserId: string; name: string; slot: "mini" | "midi" | "large" | null; title: string | null; seconds: number; toSeconds: number } | null {
   const r = body.record;
   if (body.type !== "INSERT" || body.table !== "race_replies" || !r) return null;
   if (typeof r.id !== "string" || typeof r.to_user_id !== "string" || typeof r.name !== "string") return null;
-  if (r.slot !== "mini" && r.slot !== "midi" && r.slot !== "large") return null;
+  const daily = r.slot === "mini" || r.slot === "midi" || r.slot === "large";
+  if (!daily && typeof r.short_id !== "string") return null;
   if (typeof r.seconds !== "number" || typeof r.to_seconds !== "number") return null;
-  return { id: r.id, toUserId: r.to_user_id, name: r.name, slot: r.slot, seconds: r.seconds, toSeconds: r.to_seconds };
+  const slot = daily ? (r.slot as "mini" | "midi" | "large") : null;
+  return { id: r.id, toUserId: r.to_user_id, name: r.name, slot, title: daily || typeof r.title !== "string" ? null : r.title, seconds: r.seconds, toSeconds: r.to_seconds };
 }
 
 export function roomJoinedFromBody(body: { kind?: string; gameId?: unknown; joinerUserId?: unknown }): { gameId: string; joinerUserId: string } | null {

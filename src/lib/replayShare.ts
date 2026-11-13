@@ -9,7 +9,7 @@
 import { supabase } from "./supabaseClient";
 import { decodeReplay, REPLAY_KIND } from "./replayCode";
 import { GHOST_COLORS, WRONG_LETTER, type Ghost, type TraceEvent } from "./race";
-import type { PuzzleCell } from "../types/puzzle";
+import type { PuzzleCell, PuzzleRef } from "../types/puzzle";
 
 /** The shape of a replay share ID. */
 export const REPLAY_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -37,12 +37,12 @@ export async function fetchReplayShare(id: string): Promise<string | null> {
 }
 
 /**
- * The sender of a shared daily as a race ghost (race.ts): their solve's
+ * The sender of a shared link as a race ghost (race.ts): their solve's
  * squares filling and emptying on the racer's clock. Right and wrong letters
  * alike count as filled (a ghost never says which), refusals and clue changes
  * are left out. Null when the code doesn't decode or holds no fills.
  */
-export function ghostFromReplay(code: string, shareId: string, name: string, daily?: { day: string; slot: "mini" | "midi" | "large" }): Ghost | null {
+export function ghostFromReplay(code: string, shareId: string, name: string, ref?: PuzzleRef): Ghost | null {
   const replay = decodeReplay(code);
   if (!replay) return null;
   const events: TraceEvent[] = [];
@@ -51,7 +51,7 @@ export function ghostFromReplay(code: string, shareId: string, name: string, dai
     else if (e.kind === REPLAY_KIND.emptied) events.push([e.ms, e.cell, 0]);
   }
   if (events.length === 0) return null;
-  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events, ...(daily ? { link: { shareId, ...daily } } : {}) };
+  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events, ...(ref ? { link: { shareId, ref } } : {}) };
 }
 
 /**

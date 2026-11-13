@@ -14,7 +14,7 @@
  */
 
 import { compressPuzzleToHash, puzzleFromHash } from "./puzzleUrl";
-import type { Puzzle } from "../types/puzzle";
+import type { Puzzle, PuzzleRef } from "../types/puzzle";
 
 // --- Types ---
 
@@ -25,9 +25,8 @@ export interface ChallengePayload {
   seconds: number;
   /** A daily link's replay share ID (replayShare.ts): the challenger's solve, to race as a ghost. */
   replay?: string;
-  /** The daily a daily link names (DailyPuzzleScreen adds it), for the race's reply to the sender. */
-  day?: string;
-  slot?: "mini" | "midi" | "large";
+  /** The puzzle the link names (DailyPuzzleScreen, CommunityPuzzleScreen add it), for the race's reply to the sender. */
+  ref?: PuzzleRef;
 }
 
 export type ChallengeOutcome = "beat" | "lost" | "tied";

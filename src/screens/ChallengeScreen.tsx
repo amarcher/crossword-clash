@@ -17,7 +17,7 @@ import { track } from "../lib/analytics";
  * you, on which puzzle, and the ghost time to beat — then loads the puzzle into
  * solo play with the ghost target stored for the completion comparison.
  *
- * A daily link that carries the sender's replay (`r`, replayShare.ts) offers to
+ * A daily or community link that carries the sender's replay (`r`, replayShare.ts) offers to
  * race their actual solve by default: their squares fill on your clock as they
  * filled them, never their letters (race.ts). Free for whoever got the link
  * (Andrew, 2026-11-12): it is how a share turns into a new player. "Just solve
@@ -37,8 +37,7 @@ export function ChallengeScreen() {
     if (!replayId || !challenge) return;
     let live = true;
     void fetchReplayShare(replayId).then((code) => {
-      const daily = challenge.day && challenge.slot ? { day: challenge.day, slot: challenge.slot } : undefined;
-      if (live) setGhost(code ? ghostFromReplay(code, replayId, challenge.name, daily) : null);
+      if (live) setGhost(code ? ghostFromReplay(code, replayId, challenge.name, challenge.ref) : null);
     });
     return () => {
       live = false;

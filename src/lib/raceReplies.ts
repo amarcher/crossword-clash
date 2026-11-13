@@ -1,12 +1,13 @@
 /**
  * Race replies (migration 20261113100000_race_replies.sql): when someone races
- * the sender of a shared daily and finishes, the sender hears how they did,
+ * the sender of a shared daily or community puzzle and finishes, the sender hears how they did,
  * in the menu's inbox and as a push, and can watch their solve (/reply/:id).
  * The recipient files the reply at the finish; the server finds the sender
  * from the link's share, so either side may be an anonymous session.
  */
 import { supabase } from "./supabaseClient";
-import { isDailySlot, type DailySlot } from "./dailyFeed";
+import { isDailySlot } from "./dailyFeed";
+import type { PuzzleRef } from "../types/puzzle";
 
 export interface RaceReply {
   id: string;
@@ -14,8 +15,9 @@ export interface RaceReply {
   shareId: string;
   /** The recipient's name as they finished. */
   name: string;
-  day: string;
-  slot: DailySlot;
+  /** The puzzle raced: a day's daily, or a community puzzle (with its title). */
+  ref: PuzzleRef;
+  title: string | null;
   /** The recipient's time and the sender's, whole seconds. */
   seconds: number;
   toSeconds: number;
@@ -25,18 +27,19 @@ export interface RaceReply {
   seen: boolean;
 }
 
-type Row = { id: string; share_id: string; name: string; day: string; slot: string; seconds: number; to_seconds: number; reply_share_id: string | null; created_at: string; seen_at: string | null };
+type Row = { id: string; share_id: string; name: string; day: string | null; slot: string | null; short_id: string | null; title: string | null; seconds: number; to_seconds: number; reply_share_id: string | null; created_at: string; seen_at: string | null };
 
-const COLUMNS = "id, share_id, name, day, slot, seconds, to_seconds, reply_share_id, created_at, seen_at";
+const COLUMNS = "id, share_id, name, day, slot, short_id, title, seconds, to_seconds, reply_share_id, created_at, seen_at";
 
 function toReply(row: Row): RaceReply | null {
-  if (!isDailySlot(row.slot)) return null;
+  const ref: PuzzleRef | null = row.short_id ? { shortId: row.short_id } : row.day && isDailySlot(row.slot) ? { day: row.day, slot: row.slot } : null;
+  if (!ref) return null;
   return {
     id: row.id,
     shareId: row.share_id,
     name: row.name,
-    day: row.day,
-    slot: row.slot,
+    ref,
+    title: row.title,
     seconds: row.seconds,
     toSeconds: row.to_seconds,
     replyShareId: row.reply_share_id,
@@ -46,15 +49,16 @@ function toReply(row: Row): RaceReply | null {
 }
 
 /** File the racer's reply to the link they raced. Best-effort: null when it can't be (offline, own link, limits). */
-export async function replyToRace(input: { shareId: string; replyShareId: string | null; name: string; day: string; slot: DailySlot; seconds: number; toSeconds: number }): Promise<string | null> {
+export async function replyToRace(input: { shareId: string; replyShareId: string | null; name: string; ref: PuzzleRef; seconds: number; toSeconds: number }): Promise<string | null> {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.rpc("reply_to_race", {
       p_share_id: input.shareId,
       p_reply_share_id: input.replyShareId,
       p_name: input.name,
-      p_day: input.day,
-      p_slot: input.slot,
+      p_day: "day" in input.ref ? input.ref.day : null,
+      p_slot: "slot" in input.ref ? input.ref.slot : null,
+      p_short_id: "shortId" in input.ref ? input.ref.shortId : null,
       p_seconds: Math.max(0, Math.floor(input.seconds)),
       p_to_seconds: Math.max(0, Math.floor(input.toSeconds)),
     });

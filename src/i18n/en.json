@@ -937,6 +937,8 @@
     "invitesHeading": "From your friends",
     "inviteRoom": "Opened a room · {{title}} · {{size}}",
     "inviteBeat": "Beat my time on today's daily",
+    "inviteBeatDay": "Race my solve of the {{date}} daily",
+    "inviteBeatPuzzle": "Race my solve of a community puzzle",
     "friendsHeading": "Friends",
     "manage": "Manage",
     "manageWithRequests_one": "{{count}} request",
@@ -1119,13 +1121,15 @@
     "visibilitySaveFailed": "Couldn't save that. Try again."
   },
   "raceReplies": {
-    "heading": "Replies to your shared dailies",
+    "heading": "Replies to your shared solves",
     "raced": "{{name}} raced your {{daily}}",
     "theyWon": "{{name}} won by {{delta}}",
     "youWon": "You won by {{delta}}",
     "tied": "Dead heat",
     "watch": "Watch",
     "missingTitle": "This race isn't here anymore",
-    "missingBody": "It may have been on another device, or it's over a year old."
+    "missingBody": "It may have been on another device, or it's over a year old.",
+    "titleQuoted": "“{{title}}”",
+    "communityPuzzle": "community puzzle"
   }
 }

@@ -1,5 +1,5 @@
 import { puzzleIdentity } from "../../lib/soloStats";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
@@ -23,7 +23,7 @@ import { ReminderSwitch } from "../Push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
-import { buildDailyLink } from "../../lib/dailyChallenge";
+import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { compressPuzzleToHash } from "../../lib/puzzleUrl";
 import { todayKey } from "../../lib/dailyLeaderboard";
@@ -32,7 +32,7 @@ import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
 import { NytRecommendation } from "../NytRecommendation";
-import type { CellState, Puzzle } from "../../types/puzzle";
+import type { CellState, Puzzle, PuzzleRef } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
 import type { RaceResult } from "../../lib/race";
 import type { RaceStandingRow } from "../../lib/raceResults";
@@ -93,6 +93,12 @@ interface CompletionModalProps {
   onViewLeaderboard?: () => void;
   /** Which daily this was ("mini" | "midi" | "large"), so the share text can say so. */
   dailySlot?: DailySlot;
+  /**
+   * The shared puzzle this was, where the site can link to it (Puzzle.ref):
+   * any day's daily, or a community puzzle. Its link carries the share, the
+   * replay and the friend invite; without it, today's daily (`dailySlot`).
+   */
+  puzzleRef?: PuzzleRef;
   /**
    * Explicitly post a private daily finish, or rename an older default-name
    * entry. Sharing may rename an already posted entry, but cannot post one.
@@ -199,6 +205,7 @@ export function CompletionModal({
   raceSeconds,
   onViewLeaderboard,
   dailySlot,
+  puzzleRef,
   dailySign,
   boardNotPosted,
   dailyPostingNotice,
@@ -327,7 +334,9 @@ export function CompletionModal({
     : isMultiplayer && playerColors
       ? t(wideGrid ? "completion.legendRaceBar" : "completion.legendRace", { players: claimantLegend(ranked) })
       : t(wideGrid ? "completion.legendSoloBar" : "completion.legendSolo");
-  const shareDaily = dailySlot ? t(SLOT_EYEBROW[dailySlot]) : undefined;
+  const linkRef = useMemo<PuzzleRef | undefined>(() => puzzleRef ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : undefined), [puzzleRef, dailySlot]);
+  const refDaily = linkRef && "day" in linkRef ? linkRef : undefined;
+  const shareDaily = refDaily ? t(SLOT_EYEBROW[refDaily.slot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
   // The spoiler-free result block for a given challenger name: the link
@@ -335,8 +344,8 @@ export function CompletionModal({
   const blockFor = useCallback(
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
-      const link = dailySlot
-        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name, replay: isMultiplayer ? undefined : replayId })
+      const link = linkRef
+        ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: isMultiplayer ? undefined : replayId })
         : shareSeconds !== undefined
           ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
           : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
@@ -345,7 +354,7 @@ export function CompletionModal({
         cells: playerCells ?? {},
         wrongCells,
         seconds: shareSeconds,
-        day: dailySlot ? todayKey() : undefined,
+        day: refDaily?.day,
         locale: i18n.language,
         playerColors,
         link,
@@ -358,7 +367,7 @@ export function CompletionModal({
         },
       });
     },
-    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayId],
+    [challengePuzzle, linkRef, refDaily, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayId],
   );
 
   if (!open) return null;
@@ -717,7 +726,7 @@ export function CompletionModal({
         <div className="flex flex-col gap-2.5">
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
-          {dailySlot && !isMultiplayer && replayId && <ReplayPreview id={replayId} darkMode={darkMode} />}
+          {!isMultiplayer && replayId && <ReplayPreview id={replayId} darkMode={darkMode} />}
           {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton
@@ -726,19 +735,19 @@ export function CompletionModal({
               challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
               hasTime={shareSeconds !== undefined}
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
-              daily={!!dailySlot && !isMultiplayer}
+              daily={!!refDaily && !isMultiplayer}
               legend={shareLegend}
               onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}
             />
           )}
-          {/* A daily finish with friends: the beat-my-time link delivered in-app
+          {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
               (docs/friends-spec.md §3.2). Renders nothing without friends. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
           {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
-          {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
+          {linkRef && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
-              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayId })}
+              link={buildPuzzleLink("", linkRef, { seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayId })}
               puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}
               darkMode={darkMode}
             />

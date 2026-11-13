@@ -5,17 +5,16 @@ import { Flag, Loader2, PlayCircle, Reply } from "lucide-react";
 import { Button, Card, buttonClass } from "../components/ui";
 import { FlowPage } from "../components/Flow";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
-import { replyVerdict } from "../components/Race/RaceRepliesCard";
+import { replyPuzzleLabel, replyVerdict } from "../components/Race/RaceRepliesCard";
 import { fetchRaceReply, markRepliesSeen, type RaceReply } from "../lib/raceReplies";
 import { fetchReplayShare, letteredReplay } from "../lib/replayShare";
 import { fetchDailyForDay } from "../lib/dailyFeed";
-import { buildDailyLink } from "../lib/dailyChallenge";
+import { buildPuzzleLink } from "../lib/dailyChallenge";
+import { fetchCommunityPuzzle, toPlayablePuzzle } from "../lib/communityPuzzles";
 import { GHOST_COLORS, type TraceEvent } from "../lib/race";
 import { formatShareDay } from "../lib/shareBlock";
 import { track } from "../lib/analytics";
-import type { Puzzle } from "../types/puzzle";
-
-const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
+import type { Puzzle, PuzzleRef } from "../types/puzzle";
 
 type State =
   | { kind: "loading" }
@@ -24,8 +23,19 @@ type State =
 
 type Replay = { seconds: number; events: TraceEvent[] };
 
+/** The puzzle a reply raced: the day's daily, or the community puzzle (null once it's gone). */
+async function replyPuzzle(ref: PuzzleRef): Promise<Puzzle | null> {
+  if ("day" in ref) return (await fetchDailyForDay(ref.day, ref.slot))?.puzzle ?? null;
+  try {
+    const row = await fetchCommunityPuzzle(ref.shortId);
+    return row ? toPlayablePuzzle(row) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * `/reply/:id` — someone raced a daily the viewer shared (raceReplies.ts):
+ * `/reply/:id` — someone raced a solve the viewer shared (raceReplies.ts):
  * how it went, their solve replayed with letters (rebuilt from the answers,
  * replayShare.ts), and a way to race their solve back. Where the menu's inbox
  * and the race-reply push land; opening it marks the reply seen.
@@ -48,12 +58,12 @@ export function RaceReplyScreen() {
       void markRepliesSeen([reply.id]);
       // Their solve and the viewer's own (the shared link), to watch the race side by side.
       const [daily, theirCode, myCode] = await Promise.all([
-        fetchDailyForDay(reply.day, reply.slot),
+        replyPuzzle(reply.ref),
         reply.replyShareId ? fetchReplayShare(reply.replyShareId) : Promise.resolve(null),
         fetchReplayShare(reply.shareId),
       ]);
       if (!live) return;
-      const puzzle = daily?.puzzle ?? null;
+      const puzzle = daily;
       setState({
         kind: "ready",
         reply,
@@ -88,7 +98,7 @@ export function RaceReplyScreen() {
   const solves: ReplaySolve[] = theirs
     ? [...(mine ? [{ name: t("ghostRace.you"), color: "#3a6bf0", ...mine }] : []), { name: reply.name, color: GHOST_COLORS[0], ...theirs }]
     : [];
-  const raceBack = reply.replyShareId ? buildDailyLink("", { day: reply.day, slot: reply.slot, seconds: reply.seconds, name: reply.name, replay: reply.replyShareId }) : null;
+  const raceBack = reply.replyShareId ? buildPuzzleLink("", reply.ref, { seconds: reply.seconds, name: reply.name, replay: reply.replyShareId }) : null;
   return (
     <FlowPage
       eyebrow={
@@ -96,8 +106,8 @@ export function RaceReplyScreen() {
           <Reply className="size-5" aria-hidden="true" />
         </span>
       }
-      title={t("raceReplies.raced", { name: reply.name, daily: t(SLOT_LABEL[reply.slot]) })}
-      subtitle={`${formatShareDay(reply.day, i18n.language)} · ${replyVerdict(t, reply)}`}
+      title={t("raceReplies.raced", { name: reply.name, daily: replyPuzzleLabel(t, reply) })}
+      subtitle={"day" in reply.ref ? `${formatShareDay(reply.ref.day, i18n.language)} · ${replyVerdict(t, reply)}` : replyVerdict(t, reply)}
       backLabel={t("completion.backToMenu")}
       onBack={() => history.back()}
     >

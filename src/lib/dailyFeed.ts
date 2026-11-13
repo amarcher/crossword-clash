@@ -228,6 +228,12 @@ export async function fetchDailyForDay(
   slot: DailySlot,
   fetchImpl: FetchLike | undefined = typeof fetch === "function" ? (fetch as unknown as FetchLike) : undefined,
 ): Promise<DailyMini | null> {
+  const daily = await fetchDayEntry(day, slot, fetchImpl);
+  // Named by day and slot, so a finish can link back to it (Puzzle.ref).
+  return daily && { ...daily, puzzle: { ...daily.puzzle, ref: { day, slot } } };
+}
+
+async function fetchDayEntry(day: string, slot: DailySlot, fetchImpl: FetchLike | undefined): Promise<DailyMini | null> {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
   const date = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
   const bundled = () => (date && slot === "mini" ? getDailyMini(date) : null);

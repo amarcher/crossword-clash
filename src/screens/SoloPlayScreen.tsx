@@ -42,7 +42,7 @@ import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
-import type { PuzzleClue } from "../types/puzzle";
+import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
 import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
@@ -52,7 +52,7 @@ import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog"
 import { encodeReplay } from "../lib/replayCode";
 import { createReplayShare, fetchReplayShare, letteredReplay } from "../lib/replayShare";
 import { replyToRace } from "../lib/raceReplies";
-import { buildDailyLink } from "../lib/dailyChallenge";
+import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
 
 /** The viewer's own solve beside someone else's in a race replay: the brand blue. */
@@ -484,19 +484,24 @@ export function SoloPlayScreen() {
     }).then((outcome) => outcome && setServerOutcome(outcome));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
 
-  // A fresh daily finish's replay (replayCode.ts), filed under a short share ID
-  // (replayShare.ts): previewed on the completion screen and carried by the
-  // share link, for every solver. No ID (offline, say), no replay.
+  // The shared puzzle this is, where the site can link to it (Puzzle.ref):
+  // any day's daily, or a community puzzle. Imports have none.
+  const puzzleRef = useMemo<PuzzleRef | null>(() => puzzle?.ref ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : null), [puzzle, dailySlot]);
+
+  // A fresh finish's replay (replayCode.ts) on a linkable puzzle, filed under
+  // a short share ID (replayShare.ts): previewed on the completion screen and
+  // carried by the share link and friend invites, for every solver. No ID
+  // (offline, say), no replay.
   const [replayId, setReplayId] = useState<string | null>(null);
   const replayFiledRef = useRef(false);
   useEffect(() => {
     setReplayId(null);
     replayFiledRef.current = false;
   }, [puzzleKey, attempt]);
-  // Racing a shared link's sender (ChallengeScreen): their daily, for the reply.
+  // Racing a shared link's sender (ChallengeScreen): their puzzle, for the reply.
   const linkGhost = race.find((g) => g.link) ?? null;
   useEffect(() => {
-    if (!soloResult || !freshResult || !(dailySlot || linkGhost) || !puzzle || soloResult.assisted || replayFiledRef.current) return;
+    if (!soloResult || !freshResult || !(puzzleRef || linkGhost) || !puzzle || soloResult.assisted || replayFiledRef.current) return;
     replayFiledRef.current = true;
     const trace = recorder.take();
     const code = trace ? encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks) : null;
@@ -509,14 +514,13 @@ export function SoloPlayScreen() {
           shareId: linkGhost.link.shareId,
           replyShareId: id,
           name: isRealPlayerName(game.displayName) ? game.displayName : t("common.defaultPlayerName"),
-          day: linkGhost.link.day,
-          slot: linkGhost.link.slot,
+          ref: linkGhost.link.ref,
           seconds: soloResult.finishSeconds,
           toSeconds: linkGhost.seconds,
         });
       }
     })();
-  }, [soloResult, freshResult, dailySlot, linkGhost, puzzle, recorder, game.displayName, t]);
+  }, [soloResult, freshResult, puzzleRef, linkGhost, puzzle, recorder, game.displayName, t]);
 
   // File the finish's recording for others to race (race.ts): an account's
   // own first solve only, nothing revealed, recorded from the first letter.
@@ -906,6 +910,7 @@ export function SoloPlayScreen() {
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
+        puzzleRef={puzzleRef ?? undefined}
         dailySign={dailySign}
         boardNotPosted={boardNotPosted}
         dailyPostingNotice={!boardNotPosted && dailyPostingNotice(pendingDaily) ? t(dailyPostingNotice(pendingDaily)!) : undefined}
@@ -920,7 +925,7 @@ export function SoloPlayScreen() {
           linkGhost?.link && replayId && soloResult
             ? {
                 name: linkGhost.name,
-                link: buildDailyLink(SHARE_URL, { day: linkGhost.link.day, slot: linkGhost.link.slot, seconds: soloResult.finishSeconds, name: isRealPlayerName(game.displayName) ? game.displayName : undefined, replay: replayId }),
+                link: buildPuzzleLink(SHARE_URL, linkGhost.link.ref, { seconds: soloResult.finishSeconds, name: isRealPlayerName(game.displayName) ? game.displayName : undefined, replay: replayId }),
                 ...compareToChallenge(linkGhost.seconds, soloResult.finishSeconds),
               }
             : undefined

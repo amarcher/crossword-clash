@@ -9,6 +9,12 @@ import { formatDuration } from "../../lib/soloStats";
 
 const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
+/** What a reply raced, for "Sam raced your …": "Mini", or a community puzzle's title. */
+export function replyPuzzleLabel(t: (key: string, params?: Record<string, unknown>) => string, reply: Pick<RaceReply, "ref" | "title">): string {
+  if ("slot" in reply.ref) return t(SLOT_LABEL[reply.ref.slot]);
+  return reply.title ? t("raceReplies.titleQuoted", { title: reply.title }) : t("raceReplies.communityPuzzle");
+}
+
 /** "Sam won by 0:12", "You won by 0:12" or "Dead heat": a reply's verdict from the sender's side. */
 export function replyVerdict(t: (key: string, params?: Record<string, unknown>) => string, reply: Pick<RaceReply, "name" | "seconds" | "toSeconds">): string {
   const delta = formatDuration(Math.abs(reply.seconds - reply.toSeconds));
@@ -18,7 +24,7 @@ export function replyVerdict(t: (key: string, params?: Record<string, unknown>) 
 }
 
 /**
- * The menu's inbox of replies to the viewer's shared dailies (raceReplies.ts):
+ * The menu's inbox of replies to the viewer's shared solves (raceReplies.ts):
  * who raced which one, and how it went. Unseen replies only; each opens its
  * page, which plays that racer's solve. Nothing renders without replies.
  */
@@ -45,7 +51,7 @@ export function RaceRepliesCard() {
               <Reply className="size-4" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-ink">{t("raceReplies.raced", { name: r.name, daily: t(SLOT_LABEL[r.slot]) })}</span>
+              <span className="block truncate text-sm font-semibold text-ink">{t("raceReplies.raced", { name: r.name, daily: replyPuzzleLabel(t, r) })}</span>
               <span className="block truncate text-xs text-muted">{replyVerdict(t, r)} · {t("raceReplies.watch")}</span>
             </span>
             <ChevronRight className="size-4 shrink-0 text-subtle" aria-hidden="true" />

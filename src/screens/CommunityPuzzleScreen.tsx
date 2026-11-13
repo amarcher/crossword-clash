@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { isTvIntent, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
 import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine, Swords } from "lucide-react";
@@ -16,6 +16,7 @@ import { authorPath, fetchCommunityPuzzle, puzzlePath, toPlayablePuzzle, type Co
 import { hideAuthor, unhideAuthor } from "../lib/hiddenAuthors";
 import { shareOrigin } from "../lib/shareOrigin";
 import { getProgress } from "../lib/soloProgress";
+import { parseDailyChallenge } from "../lib/dailyChallenge";
 import { formatDuration } from "../lib/soloStats";
 import { emitToast } from "../lib/toastBus";
 
@@ -36,7 +37,8 @@ export function CommunityPuzzleScreen() {
   const navigate = useTransitionNavigate();
   const { shortId = "" } = useParams<{ shortId: string }>();
   const { user, loading: authLoading } = useAuth();
-  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, setUrlChallenge } = useGame();
+  const replaceRoute = useNavigate();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [busy, setBusy] = useState<"play" | "race" | "tv" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +78,17 @@ export function CommunityPuzzleScreen() {
       return null;
     }
   }, [row]);
+
+  // A friend's challenge (`?beat=102&by=Archer&r=…`, dailyChallenge.buildPuzzleLink):
+  // straight on to the challenge screen, which offers to race their solve.
+  const [params] = useSearchParams();
+  const challenge = useMemo(() => parseDailyChallenge(params.toString(), t("challenge.unsignedName")), [params, t]);
+  useEffect(() => {
+    if (!puzzle || !challenge || row?.status !== "published") return;
+    setUrlPuzzle(puzzle);
+    setUrlChallenge({ ...challenge, ref: { shortId } });
+    replaceRoute("/challenge", { replace: true });
+  }, [puzzle, challenge, row?.status, shortId, setUrlPuzzle, setUrlChallenge, replaceRoute]);
 
   const hidden = useHiddenAuthors();
   const bestTimes = useBestTimes();
@@ -146,7 +159,6 @@ export function CommunityPuzzleScreen() {
 
   const date = row ? new Date(row.published_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" }) : "";
   // Reached from the TV's chooser: the one action hands the puzzle to the TV (tvHandoff.ts).
-  const [params] = useSearchParams();
   const tv = isTvIntent(params);
   const canRace = (Boolean(user) || authLoading) && !tv;
 

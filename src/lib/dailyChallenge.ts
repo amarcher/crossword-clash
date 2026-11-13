@@ -13,6 +13,7 @@
 
 import { isDailySlot, type DailySlot } from "./dailyFeed";
 import type { ChallengePayload } from "./challenge";
+import type { PuzzleRef } from "../types/puzzle";
 
 const BEAT_PARAM = "beat";
 const BY_PARAM = "by";
@@ -42,6 +43,20 @@ export interface DailyLinkInput {
 
 /** `https://crosswordclash.com/daily/2026-10-20/mini?beat=102&by=Archer`. */
 export function buildDailyLink(origin: string, input: DailyLinkInput): string {
+  return buildPuzzleLink(origin, { day: input.day, slot: input.slot }, input);
+}
+
+/** The page a shared puzzle lives at: its daily route, or its community page. */
+export function puzzleRefPath(ref: PuzzleRef): string {
+  return "shortId" in ref ? `/puzzles/${ref.shortId}` : dailyPath(ref.day, ref.slot);
+}
+
+/**
+ * The challenge link to any shared puzzle (Puzzle.ref): a daily's, or a
+ * community puzzle's `/puzzles/ab12cd34?beat=102&by=Archer&r=…`, which
+ * CommunityPuzzleScreen turns into the same challenge.
+ */
+export function buildPuzzleLink(origin: string, ref: PuzzleRef, input: Pick<DailyLinkInput, "seconds" | "name" | "replay">): string {
   const base = origin.replace(/\/+$/, "");
   const params = new URLSearchParams();
   if (input.seconds !== undefined && Number.isFinite(input.seconds)) {
@@ -51,7 +66,7 @@ export function buildDailyLink(origin: string, input: DailyLinkInput): string {
   if (name) params.set(BY_PARAM, name);
   if (input.replay && /^[A-Za-z0-9_-]{11}$/.test(input.replay)) params.set(REPLAY_PARAM, input.replay);
   const query = params.toString();
-  return `${base}${dailyPath(input.day, input.slot)}${query ? `?${query}` : ""}`;
+  return `${base}${puzzleRefPath(ref)}${query ? `?${query}` : ""}`;
 }
 
 /** Validate the route params; null when the URL isn't a daily we could serve. */
