@@ -775,7 +775,14 @@
     "legalNoteFreeMonth": "Free for one month, then the plan's price is charged and it renews automatically until cancelled. Cancel any time.",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
-    "keepOnEveryDevice": "Keep Plus on every device: sign in, and it follows you."
+    "keepOnEveryDevice": "Keep Plus on every device: sign in, and it follows you.",
+    "benefitRace": "Race anyone's recorded solve, and watch the replay",
+    "benefitBadge": "The gold Plus badge beside your name",
+    "badgeLabel": "Crossword Clash Plus member",
+    "badgeGetPlus": "Get Plus",
+    "showBadge": "Show my Plus badge",
+    "showBadgeBody": "The gold seal beside your name on leaderboards, friends lists and races.",
+    "showBadgeFailed": "Couldn't save that. Try again."
   },
   "appBanner": {
     "label": "Get the app",

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { ReportDialog } from "../components/ReportDialog";
-import { Button, Card, MiniGridThumb, TransitionLink } from "../components/ui";
+import { Button, Card, MiniGridThumb, PlusBadgeFor, TransitionLink } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
@@ -204,7 +204,8 @@ export function CommunityPuzzleScreen() {
             <p className="mt-1 text-sm text-muted">
               <TransitionLink to={authorPath(row.author)} className="rounded-md font-medium hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
                 {t("community.by", { author: row.author })}
-              </TransitionLink>
+              </TransitionLink>{" "}
+              <PlusBadgeFor username={row.author} />
               {" · "}
               {t("community.published", { date })}
             </p>

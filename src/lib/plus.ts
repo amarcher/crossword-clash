@@ -16,7 +16,7 @@ export const PLUS_MONTHLY_USD = 3.99;
 export const PLUS_ANNUAL_USD = 24.99;
 
 /** The gates that can open the paywall, for the funnel (`paywall_viewed { placement, feature }`). */
-export type PlusFeature = "archive" | "studio" | "narrator" | "reveal" | "progress" | "race";
+export type PlusFeature = "archive" | "studio" | "narrator" | "reveal" | "progress" | "race" | "badge" | "streak" | "bonus" | "stats";
 
 /** Formats a price in USD for the pitch; the stores and Stripe show their own localized price at purchase. */
 export function formatUsd(amount: number, locale = "en"): string {

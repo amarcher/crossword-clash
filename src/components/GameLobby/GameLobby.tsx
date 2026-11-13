@@ -7,7 +7,7 @@ import { BellRing, Check, Link2, Loader2, Share2, Users } from "lucide-react";
 import { TimeoutSelector } from "./TimeoutSelector";
 import { RaceModeSelector } from "./RaceModeSelector";
 import { FlowPage } from "../Flow";
-import { Button, Card, Eyebrow } from "../ui";
+import { Button, Card, Eyebrow, PlusName } from "../ui";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
 import { formatCountdown, FriendsError, nextNudgeAt } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
@@ -202,7 +202,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                     style={{ backgroundColor: player.color }}
                     aria-hidden="true"
                   />
-                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>{player.displayName}</span>
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>
+                    <PlusName userId={player.userId}>{player.displayName}</PlusName>
+                  </span>
                   {priorSolveChip(solves[player.userId]) === "solved" && (
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">{t("lobby.solvedBefore")}</span>
                   )}
