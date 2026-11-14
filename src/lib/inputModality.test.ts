@@ -24,7 +24,7 @@ afterEach(() => {
 
 describe("isPhysicalGridKey", () => {
   it("takes letters and Backspace", () => {
-    for (const k of ["a", "Z", "Backspace"]) {
+    for (const k of ["a", "Z", "ñ", "Ñ", "Backspace"]) {
       expect(isPhysicalGridKey(key({ key: k }))).toBe(true);
     }
   });

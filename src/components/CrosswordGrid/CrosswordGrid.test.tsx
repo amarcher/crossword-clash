@@ -115,7 +115,7 @@ describe("CrosswordGrid announcement", () => {
     fireEvent.keyDown(input, { key: "x" });
     fireEvent.keyDown(input, { key: "Tab", shiftKey: true });
     fireEvent.change(input, { target: { value: "" } });
-    expect(nav.inputLetter).toHaveBeenCalledWith("x");
+    expect(nav.inputLetter).toHaveBeenCalledWith("X");
     expect(nav.prevWord).toHaveBeenCalledTimes(1);
     expect(nav.deleteLetter).toHaveBeenCalledTimes(1);
   });

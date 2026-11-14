@@ -3,6 +3,7 @@
  * duplicates, the weakest entries, corners where niche entries pile up,
  * abbreviations crossing abbreviations, and the clue character budget.
  */
+import { gridWords } from "../gridLetters";
 import type { WordIndex } from "./dictionary";
 import { crossingsOf, slotsOf, slotText, type Grid } from "./grid";
 
@@ -122,7 +123,7 @@ export function clueBudget(entryCount: number): number {
 
 /** True if the answer, or a run of clue words spelling it, appears in the clue ("Hat tip" for HATTIP). */
 export function clueGivesAway(clue: string, answer: string): boolean {
-  const words = clue.toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+  const words = gridWords(clue);
   for (let i = 0; i < words.length; i++) {
     let joined = "";
     for (let j = i; j < Math.min(words.length, i + 4); j++) {

@@ -126,9 +126,15 @@ fn find_slot(slots: &[SlotConfig], width: usize, start: usize, dir: &str) -> Opt
         .position(|s| start_index(s, width) == start && dir_name(s.direction) == dir)
 }
 
+/// A letter a square can hold: ASCII, or Ñ (Spanish treats it as its own letter and
+/// drops every other diacritic in the grid, so nothing else is let through).
+fn is_grid_letter(c: char) -> bool {
+    c.is_ascii_alphabetic() || c == 'ñ' || c == 'Ñ'
+}
+
 fn normalize(word: &str) -> String {
     word.chars()
-        .filter(char::is_ascii_alphanumeric)
+        .filter(|&c| c.is_ascii_digit() || is_grid_letter(c))
         .collect::<String>()
         .to_lowercase()
 }
@@ -299,7 +305,7 @@ impl Engine {
     fn prepare(&mut self, req: &Request) -> Result<Prepared, Unprepared> {
         let height = req.rows.len();
         let width = req.rows.first().map_or(0, |r| r.chars().count());
-        let valid_cell = |c: char| c == '#' || c == '.' || c.is_ascii_alphabetic();
+        let valid_cell = |c: char| c == '#' || c == '.' || is_grid_letter(c);
         if width == 0 || req.rows.iter().any(|r| r.chars().count() != width || !r.chars().all(valid_cell)) {
             return Err(Unprepared::BadRequest);
         }

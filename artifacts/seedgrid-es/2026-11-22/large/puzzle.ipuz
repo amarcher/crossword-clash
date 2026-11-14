@@ -1,0 +1,1133 @@
+{
+ "version": "http://ipuz.org/v2",
+ "kind": [
+  "http://ipuz.org/crossword#1"
+ ],
+ "dimensions": {
+  "width": 15,
+  "height": 15
+ },
+ "title": "Con la música a otra parte",
+ "author": "Crossword Clash (borrador en español)",
+ "notes": "Theme: three everyday idioms that come from music, clued as question-mark wordplay: DAR EL DO DE PECHO (to give one's all), EN ARMONÍA, LLEVAR LA BATUTA (to call the shots). The title is a fourth such idiom.",
+ "block": "#",
+ "empty": 0,
+ "puzzle": [
+  [
+   1,
+   2,
+   3,
+   "#",
+   "#",
+   "#",
+   4,
+   5,
+   6,
+   7,
+   "#",
+   "#",
+   8,
+   9,
+   10
+  ],
+  [
+   11,
+   0,
+   0,
+   12,
+   "#",
+   13,
+   0,
+   0,
+   0,
+   0,
+   14,
+   "#",
+   15,
+   0,
+   0
+  ],
+  [
+   16,
+   0,
+   0,
+   0,
+   "#",
+   17,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   18,
+   0,
+   0
+  ],
+  [
+   19,
+   0,
+   0,
+   0,
+   20,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   21,
+   0,
+   0,
+   "#"
+  ],
+  [
+   22,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   "#",
+   23,
+   0,
+   0,
+   "#",
+   24,
+   0,
+   0,
+   25
+  ],
+  [
+   26,
+   0,
+   0,
+   0,
+   0,
+   27,
+   28,
+   "#",
+   "#",
+   "#",
+   29,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   30,
+   0,
+   0,
+   "#",
+   31,
+   0,
+   0,
+   32,
+   "#",
+   33,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   "#",
+   "#",
+   "#",
+   34,
+   0,
+   0,
+   0,
+   0,
+   35,
+   0,
+   0,
+   0,
+   "#",
+   "#",
+   "#"
+  ],
+  [
+   36,
+   37,
+   38,
+   0,
+   0,
+   0,
+   "#",
+   39,
+   0,
+   0,
+   0,
+   "#",
+   40,
+   41,
+   42
+  ],
+  [
+   43,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   "#",
+   "#",
+   44,
+   0,
+   0,
+   45,
+   0,
+   0,
+   0
+  ],
+  [
+   46,
+   0,
+   0,
+   0,
+   "#",
+   47,
+   48,
+   49,
+   "#",
+   "#",
+   50,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   "#",
+   51,
+   0,
+   0,
+   52,
+   0,
+   0,
+   0,
+   53,
+   54,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   55,
+   0,
+   0,
+   "#",
+   56,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   57,
+   0,
+   0,
+   0
+  ],
+  [
+   58,
+   0,
+   0,
+   "#",
+   59,
+   0,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   60,
+   0,
+   0,
+   0
+  ],
+  [
+   61,
+   0,
+   0,
+   "#",
+   "#",
+   62,
+   0,
+   0,
+   0,
+   "#",
+   "#",
+   "#",
+   63,
+   0,
+   0
+  ]
+ ],
+ "solution": [
+  [
+   "A",
+   "C",
+   "A",
+   "#",
+   "#",
+   "#",
+   "C",
+   "A",
+   "F",
+   "E",
+   "#",
+   "#",
+   "P",
+   "R",
+   "O"
+  ],
+  [
+   "P",
+   "A",
+   "L",
+   "A",
+   "#",
+   "R",
+   "E",
+   "C",
+   "A",
+   "T",
+   "O",
+   "#",
+   "R",
+   "E",
+   "I"
+  ],
+  [
+   "O",
+   "V",
+   "A",
+   "L",
+   "#",
+   "E",
+   "D",
+   "U",
+   "C",
+   "A",
+   "R",
+   "#",
+   "O",
+   "L",
+   "A"
+  ],
+  [
+   "D",
+   "A",
+   "R",
+   "E",
+   "L",
+   "D",
+   "O",
+   "D",
+   "E",
+   "P",
+   "E",
+   "C",
+   "H",
+   "O",
+   "#"
+  ],
+  [
+   "E",
+   "M",
+   "I",
+   "T",
+   "E",
+   "#",
+   "#",
+   "O",
+   "S",
+   "A",
+   "#",
+   "L",
+   "I",
+   "J",
+   "A"
+  ],
+  [
+   "R",
+   "O",
+   "D",
+   "A",
+   "J",
+   "A",
+   "S",
+   "#",
+   "#",
+   "#",
+   "C",
+   "A",
+   "B",
+   "E",
+   "R"
+  ],
+  [
+   "O",
+   "S",
+   "O",
+   "#",
+   "A",
+   "R",
+   "E",
+   "A",
+   "#",
+   "A",
+   "R",
+   "R",
+   "A",
+   "S",
+   "O"
+  ],
+  [
+   "#",
+   "#",
+   "#",
+   "E",
+   "N",
+   "A",
+   "R",
+   "M",
+   "O",
+   "N",
+   "I",
+   "A",
+   "#",
+   "#",
+   "#"
+  ],
+  [
+   "A",
+   "D",
+   "O",
+   "R",
+   "A",
+   "R",
+   "#",
+   "O",
+   "I",
+   "D",
+   "O",
+   "#",
+   "S",
+   "A",
+   "N"
+  ],
+  [
+   "H",
+   "O",
+   "R",
+   "A",
+   "S",
+   "#",
+   "#",
+   "#",
+   "R",
+   "E",
+   "L",
+   "L",
+   "E",
+   "N",
+   "A"
+  ],
+  [
+   "I",
+   "B",
+   "I",
+   "S",
+   "#",
+   "M",
+   "I",
+   "A",
+   "#",
+   "#",
+   "L",
+   "A",
+   "G",
+   "O",
+   "S"
+  ],
+  [
+   "#",
+   "L",
+   "L",
+   "E",
+   "V",
+   "A",
+   "R",
+   "L",
+   "A",
+   "B",
+   "A",
+   "T",
+   "U",
+   "T",
+   "A"
+  ],
+  [
+   "S",
+   "A",
+   "L",
+   "#",
+   "A",
+   "L",
+   "E",
+   "G",
+   "R",
+   "O",
+   "#",
+   "O",
+   "R",
+   "A",
+   "L"
+  ],
+  [
+   "I",
+   "D",
+   "A",
+   "#",
+   "S",
+   "O",
+   "N",
+   "A",
+   "D",
+   "A",
+   "#",
+   "N",
+   "A",
+   "D",
+   "E"
+  ],
+  [
+   "N",
+   "O",
+   "S",
+   "#",
+   "#",
+   "S",
+   "E",
+   "S",
+   "O",
+   "#",
+   "#",
+   "#",
+   "S",
+   "O",
+   "S"
+  ]
+ ],
+ "clues": {
+  "Across": [
+   [
+    1,
+    "En este lugar"
+   ],
+   [
+    4,
+    "Se toma por la mañana, solo o con leche"
+   ],
+   [
+    8,
+    "A favor; lo opuesto de contra"
+   ],
+   [
+    11,
+    "Herramienta para hacer hoyos"
+   ],
+   [
+    13,
+    "Modestia, pudor"
+   ],
+   [
+    15,
+    "Solté una carcajada"
+   ],
+   [
+    16,
+    "Con forma de huevo"
+   ],
+   [
+    17,
+    "Tarea de padres y maestros"
+   ],
+   [
+    18,
+    "Rompe en la playa"
+   ],
+   [
+    19,
+    "¿Esforzarse al máximo, como un tenor?"
+   ],
+   [
+    22,
+    "Transmite por radio o televisión"
+   ],
+   [
+    23,
+    "___ Mayor, constelación del norte"
+   ],
+   [
+    24,
+    "Papel áspero del carpintero"
+   ],
+   [
+    26,
+    "Así se corta el limón"
+   ],
+   [
+    29,
+    "Tener sitio suficiente"
+   ],
+   [
+    30,
+    "Animal que hiberna"
+   ],
+   [
+    31,
+    "Superficie; base por altura"
+   ],
+   [
+    33,
+    "Se llevó todos los premios"
+   ],
+   [
+    34,
+    "¿Como vive un coro bien avenido?"
+   ],
+   [
+    36,
+    "Querer con locura"
+   ],
+   [
+    39,
+    "Sentido que más usa un músico"
+   ],
+   [
+    40,
+    "Título de Nicolás o de Valentín"
+   ],
+   [
+    43,
+    "Un día tiene veinticuatro"
+   ],
+   [
+    44,
+    "Como una aceituna con anchoa dentro"
+   ],
+   [
+    46,
+    "Ave zancuda de pico curvo"
+   ],
+   [
+    47,
+    "Esta casa es tuya; aquella es ___"
+   ],
+   [
+    50,
+    "El Titicaca y el Maracaibo"
+   ],
+   [
+    51,
+    "¿Mandar, como el director de orquesta?"
+   ],
+   [
+    55,
+    "Compañera de la pimienta"
+   ],
+   [
+    56,
+    "Tempo vivo en una partitura"
+   ],
+   [
+    57,
+    "Examen que se da hablando"
+   ],
+   [
+    58,
+    "Viaje sin la vuelta"
+   ],
+   [
+    59,
+    "Muy comentada, como una boda famosa"
+   ],
+   [
+    60,
+    "Cruce la piscina a brazadas"
+   ],
+   [
+    61,
+    "«___ vemos mañana»"
+   ],
+   [
+    62,
+    "Juicio, sensatez"
+   ],
+   [
+    63,
+    "Pedido de ayuda en clave"
+   ]
+  ],
+  "Down": [
+   [
+    1,
+    "Dio poderes a otro para actuar por él"
+   ],
+   [
+    2,
+    "Hacemos un hoyo en la tierra"
+   ],
+   [
+    3,
+    "Grito muy fuerte"
+   ],
+   [
+    4,
+    "Dejo pasar; doy mi asiento"
+   ],
+   [
+    5,
+    "Voy adonde me llaman"
+   ],
+   [
+    6,
+    "Plural de «faz»"
+   ],
+   [
+    7,
+    "Tramo de una carrera ciclista"
+   ],
+   [
+    8,
+    "No permita"
+   ],
+   [
+    9,
+    "Los de arena miden el tiempo"
+   ],
+   [
+    10,
+    "Escuchaba"
+   ],
+   [
+    12,
+    "Extremidad del tiburón"
+   ],
+   [
+    13,
+    "Separa a los tenistas"
+   ],
+   [
+    14,
+    "Rece"
+   ],
+   [
+    20,
+    "Distantes"
+   ],
+   [
+    21,
+    "Parte del huevo que no es la yema"
+   ],
+   [
+    25,
+    "Juguete que gira en la cintura"
+   ],
+   [
+    27,
+    "Abrir surcos en el campo"
+   ],
+   [
+    28,
+    "«___ o no ___», dudaba Hamlet"
+   ],
+   [
+    29,
+    "Música ___: valses y marineras del Perú"
+   ],
+   [
+    32,
+    "Dueño"
+   ],
+   [
+    33,
+    "Camine"
+   ],
+   [
+    34,
+    "«___ una vez...»"
+   ],
+   [
+    35,
+    "Percibir sonidos"
+   ],
+   [
+    36,
+    "En ese lugar"
+   ],
+   [
+    37,
+    "Plegado, como una camisa en el cajón"
+   ],
+   [
+    38,
+    "Bordes de un río"
+   ],
+   [
+    40,
+    "Libres de todo riesgo"
+   ],
+   [
+    41,
+    "Apuntado en la libreta"
+   ],
+   [
+    42,
+    "Como los sonidos de la M y la N"
+   ],
+   [
+    45,
+    "Aleación dorada de trompetas y tubas"
+   ],
+   [
+    47,
+    "Los villanos de la película"
+   ],
+   [
+    48,
+    "Nombre de mujer que significa «paz»"
+   ],
+   [
+    49,
+    "Plantas del mar"
+   ],
+   [
+    52,
+    "«¿Adónde ___?»"
+   ],
+   [
+    53,
+    "Me abraso de calor"
+   ],
+   [
+    54,
+    "Serpiente grande que no es venenosa"
+   ],
+   [
+    55,
+    "Lo contrario de «con»"
+   ]
+  ]
+ },
+ "com.crosswordclash:speedclues": {
+  "Across": [
+   [
+    1,
+    "En este lugar"
+   ],
+   [
+    4,
+    "Se toma por la mañana, solo o con leche"
+   ],
+   [
+    8,
+    "A favor; lo opuesto de contra"
+   ],
+   [
+    11,
+    "Herramienta para hacer hoyos"
+   ],
+   [
+    13,
+    "Modestia, pudor"
+   ],
+   [
+    15,
+    "Solté una carcajada"
+   ],
+   [
+    16,
+    "Con forma de huevo"
+   ],
+   [
+    17,
+    "Tarea de padres y maestros"
+   ],
+   [
+    18,
+    "Rompe en la playa"
+   ],
+   [
+    19,
+    "¿Esforzarse al máximo, como un tenor?"
+   ],
+   [
+    22,
+    "Transmite por radio o televisión"
+   ],
+   [
+    23,
+    "___ Mayor, constelación del norte"
+   ],
+   [
+    24,
+    "Papel áspero del carpintero"
+   ],
+   [
+    26,
+    "Así se corta el limón"
+   ],
+   [
+    29,
+    "Tener sitio suficiente"
+   ],
+   [
+    30,
+    "Animal que hiberna"
+   ],
+   [
+    31,
+    "Superficie; base por altura"
+   ],
+   [
+    33,
+    "Se llevó todos los premios"
+   ],
+   [
+    34,
+    "¿Como vive un coro bien avenido?"
+   ],
+   [
+    36,
+    "Querer con locura"
+   ],
+   [
+    39,
+    "Sentido que más usa un músico"
+   ],
+   [
+    40,
+    "Título de Nicolás o de Valentín"
+   ],
+   [
+    43,
+    "Un día tiene veinticuatro"
+   ],
+   [
+    44,
+    "Como una aceituna con anchoa dentro"
+   ],
+   [
+    46,
+    "Ave zancuda de pico curvo"
+   ],
+   [
+    47,
+    "Esta casa es tuya; aquella es ___"
+   ],
+   [
+    50,
+    "El Titicaca y el Maracaibo"
+   ],
+   [
+    51,
+    "¿Mandar, como el director de orquesta?"
+   ],
+   [
+    55,
+    "Compañera de la pimienta"
+   ],
+   [
+    56,
+    "Tempo vivo en una partitura"
+   ],
+   [
+    57,
+    "Examen que se da hablando"
+   ],
+   [
+    58,
+    "Viaje sin la vuelta"
+   ],
+   [
+    59,
+    "Muy comentada, como una boda famosa"
+   ],
+   [
+    60,
+    "Cruce la piscina a brazadas"
+   ],
+   [
+    61,
+    "«___ vemos mañana»"
+   ],
+   [
+    62,
+    "Juicio, sensatez"
+   ],
+   [
+    63,
+    "Pedido de ayuda en clave"
+   ]
+  ],
+  "Down": [
+   [
+    1,
+    "Dio poderes a otro para actuar por él"
+   ],
+   [
+    2,
+    "Hacemos un hoyo en la tierra"
+   ],
+   [
+    3,
+    "Grito muy fuerte"
+   ],
+   [
+    4,
+    "Dejo pasar; doy mi asiento"
+   ],
+   [
+    5,
+    "Voy adonde me llaman"
+   ],
+   [
+    6,
+    "Plural de «faz»"
+   ],
+   [
+    7,
+    "Tramo de una carrera ciclista"
+   ],
+   [
+    8,
+    "No permita"
+   ],
+   [
+    9,
+    "Los de arena miden el tiempo"
+   ],
+   [
+    10,
+    "Escuchaba"
+   ],
+   [
+    12,
+    "Extremidad del tiburón"
+   ],
+   [
+    13,
+    "Separa a los tenistas"
+   ],
+   [
+    14,
+    "Rece"
+   ],
+   [
+    20,
+    "Distantes"
+   ],
+   [
+    21,
+    "Parte del huevo que no es la yema"
+   ],
+   [
+    25,
+    "Juguete que gira en la cintura"
+   ],
+   [
+    27,
+    "Abrir surcos en el campo"
+   ],
+   [
+    28,
+    "«___ o no ___», dudaba Hamlet"
+   ],
+   [
+    29,
+    "Música ___: valses y marineras del Perú"
+   ],
+   [
+    32,
+    "Dueño"
+   ],
+   [
+    33,
+    "Camine"
+   ],
+   [
+    34,
+    "«___ una vez...»"
+   ],
+   [
+    35,
+    "Percibir sonidos"
+   ],
+   [
+    36,
+    "En ese lugar"
+   ],
+   [
+    37,
+    "Plegado, como una camisa en el cajón"
+   ],
+   [
+    38,
+    "Bordes de un río"
+   ],
+   [
+    40,
+    "Libres de todo riesgo"
+   ],
+   [
+    41,
+    "Apuntado en la libreta"
+   ],
+   [
+    42,
+    "Como los sonidos de la M y la N"
+   ],
+   [
+    45,
+    "Aleación dorada de trompetas y tubas"
+   ],
+   [
+    47,
+    "Los villanos de la película"
+   ],
+   [
+    48,
+    "Nombre de mujer que significa «paz»"
+   ],
+   [
+    49,
+    "Plantas del mar"
+   ],
+   [
+    52,
+    "«¿Adónde ___?»"
+   ],
+   [
+    53,
+    "Me abraso de calor"
+   ],
+   [
+    54,
+    "Serpiente grande que no es venenosa"
+   ],
+   [
+    55,
+    "Lo contrario de «con»"
+   ]
+  ]
+ }
+}

@@ -28,6 +28,9 @@ export interface PuzzleClue {
  * a bonus (bonus.ts) is Plus only, so its share link never carries it.
  * Absent for file uploads, dailies and samples.
  */
+/** The language a puzzle is written in; absent means English (docs/spanish-puzzles-spec.md §3.1). */
+export type PuzzleLanguage = "en" | "es";
+
 export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
 
 /**
@@ -49,6 +52,7 @@ export interface Puzzle {
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
+  language?: PuzzleLanguage;
   ref?: PuzzleRef;
   /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on. Never a link. */
   bonusDay?: string;

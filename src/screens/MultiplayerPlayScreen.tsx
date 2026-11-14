@@ -35,6 +35,7 @@ import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
 import { buildRoomReplay } from "../lib/roomReplay";
 import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
+import { puzzleNeedsEnye } from "../lib/gridLetters";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
@@ -337,7 +338,7 @@ export function MultiplayerPlayScreen() {
   return (
     <>
       <GameLayout
-        keyboard={<PuzzleKeyboard actions={navActions} allowDelete={false} disabled={isComplete || clueSheetOpen || gameStatus !== "active"} />}
+        keyboard={<PuzzleKeyboard actions={navActions} allowDelete={false} enye={puzzleNeedsEnye(puzzle)} disabled={isComplete || clueSheetOpen || gameStatus !== "active"} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">

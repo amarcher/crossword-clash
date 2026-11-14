@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { gridLetter } from "../../lib/gridLetters";
 
 interface NavigationActions {
   inputLetter: (letter: string) => void;
@@ -31,10 +32,11 @@ export function useGridNavigation(actions: NavigationActions) {
       // Keep keyboard buttons and modal/other controls accessible via Space/Tab.
       if ((key === " " || key === "Tab") && target?.closest("button, a, select")) return;
 
-      // Letter input
-      if (/^[a-zA-Z]$/.test(key)) {
+      // Letter input (Ñ is a letter; an accented vowel is its plain one)
+      const letter = gridLetter(key);
+      if (letter) {
         e.preventDefault();
-        a.inputLetter(key);
+        a.inputLetter(letter);
         return;
       }
 

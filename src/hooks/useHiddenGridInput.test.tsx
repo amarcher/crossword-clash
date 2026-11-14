@@ -50,7 +50,7 @@ describe("useHiddenGridInput", () => {
 
     const a = keyEvent("a");
     onKeyDown(a);
-    expect(h.onLetter).toHaveBeenCalledWith("a");
+    expect(h.onLetter).toHaveBeenCalledWith("A");
     expect(a.preventDefault).toHaveBeenCalled();
 
     onKeyDown(keyEvent("Backspace"));
@@ -116,7 +116,7 @@ describe("useHiddenGridInput", () => {
     const h = handlers({ block: true });
     const { result } = renderHook(() => useHiddenGridInput(h, { label: "Grid" }));
     result.current.inputProps.onChange(changeEvent(`${GRID_INPUT_SENTINEL}ab .7`));
-    expect(h.onLetter.mock.calls).toEqual([["a"], ["b"]]);
+    expect(h.onLetter.mock.calls).toEqual([["A"], ["B"]]);
     expect(h.onToggleDirection).toHaveBeenCalledTimes(1);
     expect(h.onToggleBlock!).toHaveBeenCalledTimes(1);
     expect(h.onErase).not.toHaveBeenCalled();
@@ -129,13 +129,31 @@ describe("useHiddenGridInput", () => {
 
     const cancelable = beforeInputEvent("q", true);
     onBeforeInput(cancelable);
-    expect(h.onLetter).toHaveBeenCalledWith("q");
+    expect(h.onLetter).toHaveBeenCalledWith("Q");
     expect(cancelable.preventDefault).toHaveBeenCalled();
 
     const commit = beforeInputEvent("z", false);
     onBeforeInput(commit);
     expect(h.onLetter).toHaveBeenCalledTimes(1);
     expect(commit.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("takes Ñ as a letter on every path and an accented vowel as its plain one", () => {
+    const h = handlers();
+    const { result } = renderHook(() => useHiddenGridInput(h, { label: "Grid" }));
+    const { onKeyDown, onBeforeInput, onChange } = result.current.inputProps;
+
+    // A Spanish layout's own key.
+    const key = keyEvent("ñ");
+    onKeyDown(key);
+    expect(key.preventDefault).toHaveBeenCalled();
+    // A soft keyboard's letter.
+    const typed = beforeInputEvent("Ñ", true);
+    onBeforeInput(typed);
+    expect(typed.preventDefault).toHaveBeenCalled();
+    // A composed character (hold N, or a dead key) that only shows up in the value.
+    onChange(changeEvent(`${GRID_INPUT_SENTINEL}ñá`));
+    expect(h.onLetter.mock.calls).toEqual([["Ñ"], ["Ñ"], ["Ñ"], ["A"]]);
   });
 
   it("does nothing without handlers", () => {
@@ -157,7 +175,7 @@ describe("useHiddenGridInput", () => {
     expect(input.value).toBe(GRID_INPUT_SENTINEL);
 
     fireEvent.change(input, { target: { value: `${GRID_INPUT_SENTINEL}k` } });
-    expect(h.onLetter).toHaveBeenCalledWith("k");
+    expect(h.onLetter).toHaveBeenCalledWith("K");
     expect(input.value).toBe(GRID_INPUT_SENTINEL);
 
     fireEvent.change(input, { target: { value: "" } });

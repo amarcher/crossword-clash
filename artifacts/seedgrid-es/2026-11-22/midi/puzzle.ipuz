@@ -1,0 +1,485 @@
+{
+ "version": "http://ipuz.org/v2",
+ "kind": [
+  "http://ipuz.org/crossword#1"
+ ],
+ "dimensions": {
+  "width": 9,
+  "height": 9
+ },
+ "title": "Música, maestro",
+ "author": "Crossword Clash (borrador en español)",
+ "notes": "Light theme: the two long acrosses (ACOMPAÑAS, CANCIONES) and TRIOS are musical.",
+ "block": "#",
+ "empty": 0,
+ "puzzle": [
+  [
+   1,
+   2,
+   3,
+   "#",
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  [
+   9,
+   0,
+   0,
+   "#",
+   10,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   11,
+   0,
+   0,
+   12,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   13,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   14,
+   0,
+   0
+  ],
+  [
+   "#",
+   "#",
+   "#",
+   15,
+   0,
+   16,
+   "#",
+   "#",
+   "#"
+  ],
+  [
+   17,
+   18,
+   19,
+   "#",
+   20,
+   0,
+   21,
+   22,
+   23
+  ],
+  [
+   24,
+   0,
+   0,
+   25,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   26,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   27,
+   0,
+   0
+  ],
+  [
+   28,
+   0,
+   0,
+   0,
+   0,
+   "#",
+   29,
+   0,
+   0
+  ]
+ ],
+ "solution": [
+  [
+   "R",
+   "O",
+   "L",
+   "#",
+   "I",
+   "M",
+   "P",
+   "A",
+   "R"
+  ],
+  [
+   "I",
+   "R",
+   "E",
+   "#",
+   "M",
+   "I",
+   "E",
+   "D",
+   "O"
+  ],
+  [
+   "A",
+   "C",
+   "O",
+   "M",
+   "P",
+   "A",
+   "Ñ",
+   "A",
+   "S"
+  ],
+  [
+   "S",
+   "A",
+   "N",
+   "A",
+   "R",
+   "#",
+   "A",
+   "N",
+   "A"
+  ],
+  [
+   "#",
+   "#",
+   "#",
+   "S",
+   "E",
+   "A",
+   "#",
+   "#",
+   "#"
+  ],
+  [
+   "A",
+   "S",
+   "A",
+   "#",
+   "C",
+   "R",
+   "U",
+   "C",
+   "E"
+  ],
+  [
+   "C",
+   "A",
+   "N",
+   "C",
+   "I",
+   "O",
+   "N",
+   "E",
+   "S"
+  ],
+  [
+   "T",
+   "R",
+   "I",
+   "O",
+   "S",
+   "#",
+   "A",
+   "Ñ",
+   "O"
+  ],
+  [
+   "A",
+   "I",
+   "S",
+   "L",
+   "A",
+   "#",
+   "S",
+   "O",
+   "S"
+  ]
+ ],
+ "clues": {
+  "Across": [
+   [
+    1,
+    "Papel que cumple un actor"
+   ],
+   [
+    4,
+    "Como el 3, el 5 o el 7"
+   ],
+   [
+    9,
+    "Futuro de «voy»"
+   ],
+   [
+    10,
+    "Lo provoca una película de terror"
+   ],
+   [
+    11,
+    "Tocas la guitarra mientras otro canta"
+   ],
+   [
+    13,
+    "Recuperar la salud"
+   ],
+   [
+    14,
+    "Nombre de mujer que es palíndromo"
+   ],
+   [
+    15,
+    "«O ___» (es decir)"
+   ],
+   [
+    17,
+    "Por ahí se agarra la taza"
+   ],
+   [
+    20,
+    "Donde se encuentran dos calles"
+   ],
+   [
+    24,
+    "Temas de un disco"
+   ],
+   [
+    26,
+    "Grupos como Los Panchos"
+   ],
+   [
+    27,
+    "Doce meses"
+   ],
+   [
+    28,
+    "Separa del resto"
+   ],
+   [
+    29,
+    "Llamada de auxilio en el mar"
+   ]
+  ],
+  "Down": [
+   [
+    1,
+    "Entradas del mar típicas de Galicia"
+   ],
+   [
+    2,
+    "Cetáceo blanco y negro"
+   ],
+   [
+    3,
+    "Rey de la selva"
+   ],
+   [
+    4,
+    "Poco exacta"
+   ],
+   [
+    5,
+    "Que me pertenece, en femenino"
+   ],
+   [
+    6,
+    "Monte de piedra, o club de aficionados"
+   ],
+   [
+    7,
+    "Compañero de Eva"
+   ],
+   [
+    8,
+    "Flor con espinas"
+   ],
+   [
+    12,
+    "Signo de la suma"
+   ],
+   [
+    16,
+    "Donde entra el balón en básquet"
+   ],
+   [
+    17,
+    "Registro escrito de una reunión"
+   ],
+   [
+    18,
+    "Vestido tradicional de la India"
+   ],
+   [
+    19,
+    "Semilla aromática de ciertos licores"
+   ],
+   [
+    21,
+    "Algunas"
+   ],
+   [
+    22,
+    "Se frunce al enojarse"
+   ],
+   [
+    23,
+    "Aquellos, pero más cerca"
+   ],
+   [
+    25,
+    "Repollo"
+   ]
+  ]
+ },
+ "com.crosswordclash:speedclues": {
+  "Across": [
+   [
+    1,
+    "Papel que cumple un actor"
+   ],
+   [
+    4,
+    "Como el 3, el 5 o el 7"
+   ],
+   [
+    9,
+    "Futuro de «voy»"
+   ],
+   [
+    10,
+    "Lo provoca una película de terror"
+   ],
+   [
+    11,
+    "Tocas la guitarra mientras otro canta"
+   ],
+   [
+    13,
+    "Recuperar la salud"
+   ],
+   [
+    14,
+    "Nombre de mujer que es palíndromo"
+   ],
+   [
+    15,
+    "«O ___» (es decir)"
+   ],
+   [
+    17,
+    "Por ahí se agarra la taza"
+   ],
+   [
+    20,
+    "Donde se encuentran dos calles"
+   ],
+   [
+    24,
+    "Temas de un disco"
+   ],
+   [
+    26,
+    "Grupos como Los Panchos"
+   ],
+   [
+    27,
+    "Doce meses"
+   ],
+   [
+    28,
+    "Separa del resto"
+   ],
+   [
+    29,
+    "Llamada de auxilio en el mar"
+   ]
+  ],
+  "Down": [
+   [
+    1,
+    "Entradas del mar típicas de Galicia"
+   ],
+   [
+    2,
+    "Cetáceo blanco y negro"
+   ],
+   [
+    3,
+    "Rey de la selva"
+   ],
+   [
+    4,
+    "Poco exacta"
+   ],
+   [
+    5,
+    "Que me pertenece, en femenino"
+   ],
+   [
+    6,
+    "Monte de piedra, o club de aficionados"
+   ],
+   [
+    7,
+    "Compañero de Eva"
+   ],
+   [
+    8,
+    "Flor con espinas"
+   ],
+   [
+    12,
+    "Signo de la suma"
+   ],
+   [
+    16,
+    "Donde entra el balón en básquet"
+   ],
+   [
+    17,
+    "Registro escrito de una reunión"
+   ],
+   [
+    18,
+    "Vestido tradicional de la India"
+   ],
+   [
+    19,
+    "Semilla aromática de ciertos licores"
+   ],
+   [
+    21,
+    "Algunas"
+   ],
+   [
+    22,
+    "Se frunce al enojarse"
+   ],
+   [
+    23,
+    "Aquellos, pero más cerca"
+   ],
+   [
+    25,
+    "Repollo"
+   ]
+  ]
+ }
+}

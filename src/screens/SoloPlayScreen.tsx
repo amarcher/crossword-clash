@@ -56,6 +56,7 @@ import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, re
 import { replyToRace } from "../lib/raceReplies";
 import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
+import { puzzleNeedsEnye } from "../lib/gridLetters";
 
 /** The viewer's own solve beside someone else's in a race replay: the brand blue. */
 const MY_REPLAY_COLOR = "#3a6bf0";
@@ -821,7 +822,7 @@ export function SoloPlayScreen() {
       {dataRouter && <SoloNavigationGuard saveBeforeLeave={saveBeforeLeave} />}
       <div inert={paused} aria-hidden={paused || undefined} className={paused ? "hidden" : undefined}>
       <GameLayout
-        keyboard={<PuzzleKeyboard actions={guardedActions} disabled={isComplete || clueSheetOpen} />}
+        keyboard={<PuzzleKeyboard actions={guardedActions} disabled={isComplete || clueSheetOpen} enye={puzzleNeedsEnye(puzzle)} />}
         header={
           <>
             <div className="flex items-center justify-between gap-2">

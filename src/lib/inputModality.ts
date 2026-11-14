@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { isGridLetter } from "./gridLetters";
 
 /**
  * Whether the player is typing on a physical keyboard (an iPad Magic Keyboard,
@@ -26,7 +27,7 @@ export function isPhysicalGridKey(e: Pick<KeyboardEvent, "key" | "isComposing" |
   if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return false;
   const target = e.target instanceof Element ? e.target : null;
   if (target?.closest('input, textarea, select, [contenteditable="true"]')) return false;
-  return /^[a-zA-Z]$/.test(e.key) || e.key === "Backspace";
+  return isGridLetter(e.key) || e.key === "Backspace";
 }
 
 function read(): boolean {

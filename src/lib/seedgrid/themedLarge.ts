@@ -3,6 +3,7 @@
  * themer validator and the fill scorer. No engine, no I/O, so they are unit
  * tested here and the CLI stays a thin orchestration layer.
  */
+import { foldAccents } from "../gridLetters";
 import { normalizeEntry } from "./dictionary";
 
 export const DEFAULT_LARGE_SIZE = 15;
@@ -289,5 +290,5 @@ export function parseWordSet(text: string): Set<string> {
 
 /** "Football x music" → "football-x-music", the folder and theme-bonus file name. */
 export function themeSlug(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  return foldAccents(text).toLowerCase().replace(/ñ/g, "n").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 }

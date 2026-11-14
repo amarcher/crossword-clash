@@ -1,4 +1,4 @@
-import type { Puzzle, PuzzleCell, PuzzleClue, PuzzleOrigin, Direction } from "../types/puzzle";
+import type { Puzzle, PuzzleCell, PuzzleClue, PuzzleLanguage, PuzzleOrigin, Direction } from "../types/puzzle";
 import { computeCellNumbers } from "./gridUtils";
 
 type ParserClues = {
@@ -203,6 +203,8 @@ export interface TransferPuzzle {
   answers: { across: string[]; down: string[] };
   /** Set by the NYT bookmarklet; older installs omit it (see puzzleUrl.ts). */
   origin?: PuzzleOrigin;
+  /** Absent for English. */
+  language?: PuzzleLanguage;
 }
 
 /**
@@ -298,6 +300,7 @@ export function normalizeTransferPuzzle(transfer: TransferPuzzle): Puzzle {
   ];
 
   if (transfer.origin === "nyt-bookmarklet" || transfer.origin === "community") puzzle.origin = transfer.origin;
+  if (transfer.language === "es") puzzle.language = "es";
 
   return puzzle;
 }
@@ -349,6 +352,7 @@ export function puzzleToTransferFormat(puzzle: Puzzle): TransferPuzzle {
     // Carried through share/challenge/TV links so a friend who receives an
     // NYT puzzle also sees the bookmarklet hook.
     ...(puzzle.origin ? { origin: puzzle.origin } : {}),
+    ...(puzzle.language && puzzle.language !== "en" ? { language: puzzle.language } : {}),
     clues: {
       across: acrossClues.map((c) => `${c.number}. ${c.text}`),
       down: downClues.map((c) => `${c.number}. ${c.text}`),

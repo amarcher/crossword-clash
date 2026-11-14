@@ -1,4 +1,5 @@
 import { useCallback, useRef, type FormEvent, type KeyboardEvent, type RefObject } from "react";
+import { gridLetter, isGridLetter } from "../lib/gridLetters";
 
 /**
  * The hidden input always holds this zero-width character, so a soft-keyboard
@@ -68,8 +69,9 @@ export function useHiddenGridInput(handlers: HiddenGridInputHandlers | null, opt
     const h = handlersRef.current;
     if (!h || e.metaKey || e.ctrlKey || e.altKey) return;
     const key = e.key;
-    if (/^[a-zA-Z]$/.test(key)) {
-      h.onLetter(key);
+    const letter = gridLetter(key);
+    if (letter) {
+      h.onLetter(letter);
     } else if (key === "Backspace" || key === "Delete") {
       h.onErase();
     } else if (key === "ArrowUp") {
@@ -99,7 +101,8 @@ export function useHiddenGridInput(handlers: HiddenGridInputHandlers | null, opt
     const h = handlersRef.current;
     if (!h) return;
     for (const ch of text) {
-      if (/[a-zA-Z]/.test(ch)) h.onLetter(ch);
+      const letter = gridLetter(ch);
+      if (letter) h.onLetter(letter);
       else if (ch === " ") h.onToggleDirection();
       else if (ch === "." && h.onToggleBlock) h.onToggleBlock();
     }
@@ -110,7 +113,7 @@ export function useHiddenGridInput(handlers: HiddenGridInputHandlers | null, opt
       const native = e.nativeEvent as InputEvent;
       if (!handlersRef.current || !native.cancelable) return;
       const data = native.data;
-      if (data && /^[a-zA-Z]$/.test(data)) {
+      if (data && isGridLetter(data)) {
         e.preventDefault();
         takeText(data);
       }
