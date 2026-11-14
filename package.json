@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "e2e": "playwright test",
+    "shots": "node scripts/shots.mjs",
     "build:daily-index": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-daily-index.mts",
     "daily:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-daily-puzzle.mts",
     "bonus:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-bonus-puzzle.mts",
