@@ -165,7 +165,7 @@ describe("GameLobby", () => {
   });
 
   describe("host controls", () => {
-    it("enables Start Game when 2+ players", () => {
+    it("enables Start game when 2+ players", () => {
       render(
         <GameLobby
           shareCode="ABC123"
@@ -175,7 +175,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      const btn = screen.getByText("Start Game") as HTMLButtonElement;
+      const btn = screen.getByText("Start game") as HTMLButtonElement;
       expect(btn.disabled).toBe(false);
     });
 
@@ -193,7 +193,7 @@ describe("GameLobby", () => {
       expect(btn.disabled).toBe(true);
     });
 
-    it("calls onStartGame when Start Game is clicked", () => {
+    it("calls onStartGame when Start game is clicked", () => {
       const onStartGame = vi.fn();
       render(
         <GameLobby
@@ -204,7 +204,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      fireEvent.click(screen.getByText("Start Game"));
+      fireEvent.click(screen.getByText("Start game"));
       expect(onStartGame).toHaveBeenCalledOnce();
     });
   });
@@ -223,7 +223,7 @@ describe("GameLobby", () => {
       expect(screen.getByText("Waiting for host to start the game...")).toBeDefined();
     });
 
-    it("does not show Start Game button for non-host", () => {
+    it("does not show Start game button for non-host", () => {
       render(
         <GameLobby
           shareCode="ABC123"
@@ -233,7 +233,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(screen.queryByText("Start Game")).toBeNull();
+      expect(screen.queryByText("Start game")).toBeNull();
     });
   });
 
@@ -301,7 +301,7 @@ describe("GameLobby", () => {
         // The most important line leads: the host's Start, or a joiner's waiting status.
         if (isHost) {
           expect(follows(screen.getByText("Game settings")), "settings after the roster").toBe(true);
-          expect(follows(screen.getByText("Start Game")), "Start before the roster").toBe(false);
+          expect(follows(screen.getByText("Start game")), "Start before the roster").toBe(false);
         } else {
           expect(follows(screen.getByRole("status")), "waiting status before the roster").toBe(false);
         }

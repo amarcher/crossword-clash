@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { JoinGame } from "../components/GameLobby";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
@@ -12,6 +12,7 @@ import { tStatic } from "../i18n/i18n";
 
 export function JoinScreen() {
   const navigate = useNavigate();
+  const autoJoin = (useLocation().state as { auto?: boolean } | null)?.auto === true;
   const { user, loading: authLoading } = useAuth();
   const game = useGame();
   const { profile } = useAccountContext();
@@ -127,6 +128,7 @@ export function JoinScreen() {
       error={joinError}
       initialCode={initialCode}
       initialName={profile?.username}
+      autoJoin={autoJoin}
     />
   );
 }

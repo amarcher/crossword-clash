@@ -86,7 +86,7 @@ export function RaceReplyScreen() {
   }
   if (state.kind === "missing") {
     return (
-      <FlowPage title={t("raceReplies.missingTitle")} subtitle={t("raceReplies.missingBody")} backLabel={t("completion.backToMenu")} onBack={() => history.back()}>
+      <FlowPage title={t("raceReplies.missingTitle")} subtitle={t("raceReplies.missingBody")} backLabel={t("common.back")} onBack={() => history.back()}>
         <Link to="/menu" className={buttonClass("primary", "lg", "w-full")}>
           {t("completion.backToMenu")}
         </Link>
@@ -108,7 +108,7 @@ export function RaceReplyScreen() {
       }
       title={t("raceReplies.raced", { name: reply.name, daily: replyPuzzleLabel(t, reply) })}
       subtitle={"day" in reply.ref ? `${formatShareDay(reply.ref.day, i18n.language)} · ${replyVerdict(t, reply)}` : replyVerdict(t, reply)}
-      backLabel={t("completion.backToMenu")}
+      backLabel={t("common.back")}
       onBack={() => history.back()}
     >
       <Card className="grid gap-3 p-5">

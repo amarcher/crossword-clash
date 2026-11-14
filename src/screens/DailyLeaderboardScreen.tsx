@@ -63,9 +63,9 @@ const PLAY_TODAY: Record<DailySlot, string> = {
 
 /** Column count → the lg grid and the shell width that fits it (spelled out for Tailwind's scanner). */
 const WIDE_GRID: Record<number, { grid: string; width: ShellWidth }> = {
-  1: { grid: "", width: "md" },
+  1: { grid: "", width: "2xl" },
   2: { grid: "lg:grid-cols-2 lg:gap-6", width: "5xl" },
-  3: { grid: "lg:grid-cols-3 lg:gap-6", width: "7xl" },
+  3: { grid: "lg:grid-cols-3 lg:gap-5", width: "5xl" },
 };
 
 /** Whether the board shows only the viewer and their friends; remembered per device. */
@@ -208,7 +208,7 @@ export function DailyLeaderboardScreen() {
   const routeTheme = past ? pastBySlot[routeSlot]?.theme || pastBySlot[routeSlot]?.title : displayTheme(routeDaily);
 
   return (
-    <PageShell width="md" widthLg={layout.width} bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg={layout.width} bar={{ backLabel: t("completion.backToMenu") }}>
       <div className="mt-4 grid gap-4 sm:mt-6">
         <div className="text-center">
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">

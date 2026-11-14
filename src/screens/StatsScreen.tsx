@@ -90,7 +90,7 @@ export function StatsScreen() {
   }, [history.rows, today]);
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu") }}>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-10 pt-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("stats.title")}</h1>
@@ -139,7 +139,7 @@ export function StatsScreen() {
           )}
         </Card>
 
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
           <Card className="p-5">
             <Eyebrow as="h2">{t("stats.overTime")}</Eyebrow>
             {charted.length > 0 ? (
@@ -166,7 +166,7 @@ export function StatsScreen() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
           <Card className="p-5">
             <Eyebrow as="h2">{t("stats.headToHead")}</Eyebrow>
             {data && data.headToHead.length > 0 ? (

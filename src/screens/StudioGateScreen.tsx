@@ -114,8 +114,9 @@ const FEATURES = [
 ] as const;
 
 function GateShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <PageShell width="md" widthLg="5xl" background="canvas" bar={{ backLabel: "Menu", backTo: "/menu" }}>
+    <PageShell width="md" widthLg="5xl" background="canvas" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
       <main className="mt-6 pb-8">{children}</main>
     </PageShell>
   );

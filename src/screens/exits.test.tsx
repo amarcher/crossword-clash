@@ -77,7 +77,7 @@ describe("every page has a way out", () => {
     at(<HostPuzzleReadyScreen />);
     expect(link("Back to menu")).toBe("/menu");
     expect(link("Choose another puzzle")).toBe("/host/import");
-    expect(screen.getByRole("button", { name: /Host game/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Start a room/i })).toBeTruthy();
   });
 
   it("the TV rejoin spinner's Back to menu drops the host session", () => {

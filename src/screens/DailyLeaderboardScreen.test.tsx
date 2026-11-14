@@ -202,7 +202,7 @@ describe("DailyLeaderboardScreen", () => {
     await screen.findByText("Ada");
     expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:42 · #2 today");
     expect(screen.queryByRole("button", { name: /Play Today's Mini/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Race friends live/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
     expect(game.setUrlPuzzle).not.toHaveBeenCalled();
   });
@@ -219,7 +219,7 @@ describe("DailyLeaderboardScreen", () => {
     await screen.findByText("Ada");
     expect(screen.queryByTestId("solved-line")).toBeNull();
     expect(screen.getByRole("button", { name: /Play Today's Mini/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Race friends live/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(game.setUrlPuzzle).toHaveBeenCalledWith(daily.puzzle);
     expect(navigate).toHaveBeenCalledWith("/host-game/name");
   });
@@ -380,7 +380,7 @@ describe("past boards (?day=)", () => {
     expect(screen.getByText("Old One")).toBeTruthy();
     expect(screen.getByText(/A past day's board is final/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Today's Mini" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Race friends live" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
     expect(updateName).not.toHaveBeenCalled();
   });

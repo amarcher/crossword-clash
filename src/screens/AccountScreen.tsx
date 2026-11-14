@@ -159,7 +159,7 @@ export function AccountScreen() {
   const solveCount = history.summary?.solveCount ?? null;
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu") }}>
       <h1 className="sr-only">{t("account.pageTitle")}</h1>
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-6 lg:mt-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-8">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6">

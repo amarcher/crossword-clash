@@ -108,7 +108,7 @@ describe("PuzzleReady", () => {
     expect(onPlaySolo).toHaveBeenCalledOnce();
   });
 
-  it("calls onHostGame when Host game as player is clicked", () => {
+  it("calls onHostGame when Start a room is clicked", () => {
     const onHostGame = vi.fn();
     render(
       <PuzzleReady
@@ -120,11 +120,11 @@ describe("PuzzleReady", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("Host game as player"));
+    fireEvent.click(screen.getByText("Start a room"));
     expect(onHostGame).toHaveBeenCalledOnce();
   });
 
-  it("calls onHostOnTV when Host game as TV is clicked", () => {
+  it("calls onHostOnTV when Start a room on a TV is clicked", () => {
     const onHostOnTV = vi.fn();
     render(
       <PuzzleReady
@@ -136,7 +136,7 @@ describe("PuzzleReady", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("Host game as TV"));
+    fireEvent.click(screen.getByText("Start a room on a TV"));
     expect(onHostOnTV).toHaveBeenCalledOnce();
   });
 
@@ -152,7 +152,7 @@ describe("PuzzleReady", () => {
     );
 
     expect(screen.getByText("Play solo")).toBeTruthy();
-    expect(screen.queryByText("Host game as player")).toBeNull();
-    expect(screen.queryByText("Host game as TV")).toBeNull();
+    expect(screen.queryByText("Start a room")).toBeNull();
+    expect(screen.queryByText("Start a room on a TV")).toBeNull();
   });
 });

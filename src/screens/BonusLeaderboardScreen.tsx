@@ -147,7 +147,7 @@ export function BonusLeaderboardScreen() {
   const dayLabel = new Intl.DateTimeFormat(i18n.language, { weekday: "short", month: "short", day: "numeric" }).format(new Date(`${day}T12:00:00`));
 
   return (
-    <PageShell width="md" bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" bar={{ backLabel: t("completion.backToMenu") }}>
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 sm:mt-6">
         <div className="text-center">
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
