@@ -92,6 +92,8 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-feature-settings: "ss01" 0;
+    /* No widows, site-wide (Andrew, 2026-11-13): inherited, so every paragraph avoids a last line of one word. */
+    text-wrap: pretty;
   }
   h1, h2, h3 { text-wrap: balance; }
   /* Tailwind v4's preflight leaves buttons on the arrow cursor (v3 gave them the

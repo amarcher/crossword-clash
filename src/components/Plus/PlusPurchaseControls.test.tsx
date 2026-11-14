@@ -54,9 +54,14 @@ afterEach(cleanup);
 describe("PlusPurchaseControls on the web", () => {
   it("offers the two plans with the free month and the list prices, annual first, and the legal links; no restore", () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="test" />);
-    const buttons = screen.getAllByRole("button");
-    expect(buttons[0].textContent).toBe("Yearly · 1 month free, then $24.99");
-    expect(buttons[1].textContent).toBe("Monthly · 1 month free, then $3.99");
+    const tiles = screen.getAllByRole("radio");
+    expect(tiles[0].textContent).toBe("YearlySave 48%$24.99 a year1 month free");
+    expect(tiles[0].getAttribute("aria-checked")).toBe("true");
+    expect(tiles[1].textContent).toBe("Monthly$3.99 a month1 month free");
+    expect(screen.getByRole("button", { name: "Start my free month" })).toBeTruthy();
+    expect(screen.getByText("Free for 1 month, then $24.99 a year. Renews until cancelled; cancel any time.")).toBeTruthy();
+    fireEvent.click(tiles[1]);
+    expect(screen.getByText("Free for 1 month, then $3.99 a month. Renews until cancelled; cancel any time.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Restore purchases" })).toBeNull();
     expect(screen.getByRole("link", { name: "Terms of Service" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("/privacy");
@@ -64,7 +69,8 @@ describe("PlusPurchaseControls on the web", () => {
 
   it("starts Stripe Checkout for the tapped plan with the return path, and tracks it", async () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="archive" returnTo="/archive" />);
-    fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start my free month" }));
     await waitFor(() => expect(purchase.startCheckout).toHaveBeenCalledWith("monthly", "/archive"));
     expect(track).toHaveBeenCalledWith("checkout_started", { channel: "stripe", plan: "monthly", placement: "archive", trial: true });
   });
@@ -72,7 +78,7 @@ describe("PlusPurchaseControls on the web", () => {
   it("shows the failure when Checkout cannot start", async () => {
     purchase.startCheckout.mockRejectedValueOnce(new Error("Purchasing isn't available yet."));
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="test" />);
-    fireEvent.click(screen.getByRole("button", { name: /Yearly · 1 month free/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start my free month" }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Purchasing isn't available yet."));
   });
 
@@ -104,10 +110,10 @@ describe("PlusPurchaseControls in the apps", () => {
     native.prices = [{ plan: "annual", priceString: "24,99 €" }];
     purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Get Plus yearly · 24,99 €" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("radio", { name: /Yearly/ }).textContent).toContain("24,99 € a year"));
     // The monthly price falls back to the list price until the store answers.
-    expect(screen.getByRole("button", { name: "Monthly · $3.99" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Get Plus yearly/ }));
+    expect(screen.getByRole("radio", { name: /Monthly/ }).textContent).toBe("Monthly$3.99 a month");
+    fireEvent.click(screen.getByRole("button", { name: "Get Plus" }));
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     expect(purchase.reconcileEntitlements).toHaveBeenCalledWith("revenuecat");
     expect(track).toHaveBeenCalledWith("purchase_completed", { channel: "revenuecat", plan: "annual" });
@@ -121,14 +127,18 @@ describe("PlusPurchaseControls in the apps", () => {
       { plan: "monthly", priceString: "$3.99", freeMonth: false },
     ];
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Yearly · 1 month free, then $24.99" })).toBeTruthy());
-    expect(screen.getByRole("button", { name: "Monthly · $3.99" })).toBeTruthy();
-    expect(screen.getByText(/Free for one month, then the plan's price is charged/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("radio", { name: /Yearly/ }).textContent).toContain("1 month free"));
+    expect(screen.getByRole("radio", { name: /Monthly/ }).textContent).toBe("Monthly$3.99 a month");
+    expect(screen.getByRole("button", { name: "Start my free month" })).toBeTruthy();
+    expect(screen.getByText(/^Free for 1 month, then \$24.99 a year/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: /Monthly/ }));
+    expect(screen.getByRole("button", { name: "Get Plus" })).toBeTruthy();
+    expect(screen.getByText("$3.99 a month. Renews until cancelled; cancel any time.")).toBeTruthy();
   });
 
   it("doesn't claim Plus when the store took the payment but no Plus row has landed yet", async () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
-    fireEvent.click(screen.getByRole("button", { name: /Get Plus yearly/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Get Plus" }));
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     expect(screen.getByRole("status").textContent).toMatch(/can take a minute/);
     expect(screen.getByRole("status").textContent).not.toMatch(/You're Plus/);
@@ -143,7 +153,8 @@ describe("PlusPurchaseControls in the apps", () => {
   it("treats a dismissed store sheet as nothing happened", async () => {
     native.outcome = "cancelled";
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
-    fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Get Plus" }));
     await waitFor(() => expect(track).toHaveBeenCalledWith("checkout_started", expect.objectContaining({ plan: "monthly" })));
     await new Promise((r) => setTimeout(r, 0));
     expect(refresh).not.toHaveBeenCalled();
@@ -184,7 +195,8 @@ describe("PlusPurchaseControls in the apps", () => {
       <PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" signInPrompt={<p>Sign in to keep it</p>} />,
     );
     purchase.reconcileEntitlements.mockResolvedValueOnce([row({ source: "revenuecat" })] as never);
-    fireEvent.click(screen.getByRole("button", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Monthly/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Get Plus" }));
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     // The refresh flips the account to a subscriber; the notice must lead that view.
     rerender(

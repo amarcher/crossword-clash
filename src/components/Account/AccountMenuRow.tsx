@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { useAccountContext } from "../../contexts/AccountContext";
 import { plusEnabled } from "../../lib/plus";
 import { ListGroup, ListRow } from "../ui";
+import { PlusSeal } from "../ui/PlusBadge";
+
+/** The gold Plus seal where a row takes an icon. */
+const MenuSeal = () => <PlusSeal size="1.5rem" />;
 
 /**
  * The menu's account rows. Anonymous visitors get the benefit-led sign-in
@@ -40,8 +44,8 @@ export function AccountMenuRow({ children }: { children?: ReactNode }) {
       {children}
       {showPlus && (
         <ListRow
-          icon={Sparkles}
-          tone={account.plus ? "brand" : "gold"}
+          icon={MenuSeal}
+          tone="gold"
           title={t("plus.title")}
           subtitle={t(account.plus ? "plus.rowActive" : "plus.rowPitch")}
           onClick={() => account.openPaywall({ placement: "menu" })}

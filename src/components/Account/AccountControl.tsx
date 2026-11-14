@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { PlusSeal } from "../ui/PlusBadge";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import { CalendarDays, ChartLine, LogOut, Pencil, PencilRuler, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, ChartLine, LogOut, Pencil, PencilRuler, UserRound, Users } from "lucide-react";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useFriends } from "../../contexts/FriendsContext";
 import { friendsEnabled } from "../../lib/friends";
@@ -124,7 +125,7 @@ export function AccountControl({ placement = "header", className = "" }: Account
     items.push({ key: "stats", icon: ChartLine, label: t("stats.open"), run: () => navigate("/stats"), warm: "/stats" });
     items.push({
       key: "plus",
-      icon: Sparkles,
+      icon: UserRound, // drawn as the Plus seal below
       label: account.plus ? t("account.menuPlusManage") : t("account.menuPlusAbout"),
       run: () => account.openPaywall({ placement, returnTo: pathname }),
     });
@@ -213,7 +214,7 @@ export function AccountControl({ placement = "header", className = "" }: Account
                 run();
               }}
             >
-              <Icon className={`size-4 shrink-0 ${key === "plus" ? "text-brand-600" : "text-muted"}`} aria-hidden="true" />
+              {key === "plus" ? <PlusSeal size="1rem" /> : <Icon className="size-4 shrink-0 text-muted" aria-hidden="true" />}
               <span className="min-w-0 flex-1 truncate">{label}</span>
               {badge !== undefined && (
                 <span aria-hidden="true" className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold tabular-nums text-white">

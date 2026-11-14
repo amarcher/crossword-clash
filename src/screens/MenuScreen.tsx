@@ -362,18 +362,20 @@ export function MenuScreen() {
                     />
                   </>
                 )}
+                {/* A TV board is for a big screen: tablets and wider only (Andrew, 2026-11-13), as is the watch link below. */}
                 <ListRow
                   icon={Tv}
                   to="/host"
                   title={t("menu.tvMode")}
                   subtitle={t("menu.tvModeHint")}
                   disabled={disabled}
+                  className="max-md:hidden"
                   onClick={() => track("mode_selected", { mode: "tv" })}
                 />
               </ListGroup>
               <TransitionLink
                 to="/watch"
-                className="justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
+                className="max-md:hidden justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
               >
                 {t("menu.watchLink")}
               </TransitionLink>

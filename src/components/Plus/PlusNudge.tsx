@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Sparkles } from "lucide-react";
+import { PlusSeal } from "../ui/PlusBadge";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { plusEnabled, type PlusFeature } from "../../lib/plus";
 import { Button } from "../ui";
@@ -30,7 +30,7 @@ export function PlusNudge({ title, body, placement, feature, returnTo, className
   return (
     <div className={`flex items-center gap-3 rounded-2xl bg-gold-50 p-3 text-left ring-1 ring-gold-100 ${className}`}>
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-gold-700 ring-1 ring-gold-100">
-        <Sparkles className="size-5" aria-hidden="true" />
+        <PlusSeal size="1.5rem" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-semibold leading-snug text-ink">{title}</p>
