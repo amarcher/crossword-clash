@@ -463,9 +463,7 @@
   },
   "nyt": {
     "cardText": "¿Buscas crucigramas? El NYT Crossword tiene miles de crucigramas de fácil a experto.",
-    "cardCta": "Prueba NYT Crossword →",
-    "inlineText": "¿Quieres más crucigramas?",
-    "inlineCta": "Prueba el NYT Crossword"
+    "cardCta": "Prueba NYT Crossword →"
   },
   "archive": {
     "progressHint": "{{filled}} de {{total}} rellenadas · {{time}}",

@@ -32,7 +32,6 @@ import { Capacitor } from "@capacitor/core";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
-import { NytRecommendation } from "../NytRecommendation";
 import type { CellState, Puzzle, PuzzleRef } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
 import type { RaceResult } from "../../lib/race";
@@ -871,11 +870,6 @@ export function CompletionModal({
         {/* Ad */}
         <div className="flex justify-center mt-4">
           <AdSlot placement="completion-footer" darkMode={darkMode} />
-        </div>
-
-        {/* NYT affiliate */}
-        <div className="mt-4">
-          <NytRecommendation variant="inline" darkMode={darkMode} />
         </div>
       </div>
     </div>

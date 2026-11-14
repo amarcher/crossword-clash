@@ -463,9 +463,7 @@
   },
   "nyt": {
     "cardText": "Looking for puzzles? The NYT Crossword has thousands of puzzles from easy to expert.",
-    "cardCta": "Try NYT Crossword →",
-    "inlineText": "Want more puzzles?",
-    "inlineCta": "Try the NYT Crossword"
+    "cardCta": "Try NYT Crossword →"
   },
   "archive": {
     "progressHint": "{{filled}} of {{total}} filled · {{time}}",
