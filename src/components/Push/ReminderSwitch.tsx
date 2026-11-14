@@ -6,12 +6,13 @@ import { usePushSettings } from "../../hooks/usePushSettings";
  * The completion modal's "Remind me tomorrow" after a daily (docs/friends-spec.md
  * §3.3): the reminder switch where it makes sense, right after a finish. The
  * OS prompt is shown on the first tap, with the row's own sentence as the
- * context. Renders nothing on the web, after a denial, or once it is on.
+ * context. Renders nothing on the web, before notifications are allowed, or once it is on.
  */
 export function ReminderSwitch({ darkMode }: { darkMode?: boolean }) {
   const { t } = useTranslation();
   const { available, ready, prefs, permission, saving, update } = usePushSettings();
-  if (!available || !ready || permission === "denied" || prefs.daily_reminder) return null;
+  // Only where one tap is enough: a device the OS has not asked yet gets the ask after this dialog closes (PushEffects).
+  if (!available || !ready || permission !== "granted" || prefs.daily_reminder) return null;
   return (
     <button
       type="button"

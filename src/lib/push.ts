@@ -54,6 +54,9 @@ function toPermission(state: string): PushPermission {
   return "prompt";
 }
 
+/** Fired on `window` when a solo daily's finish dialog closes: the moment for the reminder ask (PushEffects). */
+export const DAILY_FINISH_CLOSED_EVENT = "crossword-clash:daily-finish-closed";
+
 export async function checkPushPermission(): Promise<PushPermission> {
   if (!pushAvailable()) return "denied";
   const m = await loadSdk();

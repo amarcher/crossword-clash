@@ -1096,7 +1096,14 @@
     "quietHint": "Nothing between {{start}} and {{end}}",
     "quietInvites": "Still let room invites through",
     "remindTomorrow": "Remind me tomorrow",
-    "remindTomorrowHint": "One notification when the day's puzzles are ready. Turn it off any time."
+    "remindTomorrowHint": "One notification when the day's puzzles are ready. Turn it off any time.",
+    "askTitle": "Crossword Clash is better with notifications",
+    "askBody": "Know the moment a friend invites you to a race or asks to be friends.",
+    "askEnable": "Enable",
+    "askNotNow": "Not now",
+    "reminderAskTitle": "Want a reminder tomorrow?",
+    "reminderAskBody": "One notification when the day's puzzles are ready. Turn it off any time.",
+    "reminderAskYes": "Remind me"
   },
   "ghostRace": {
     "watchVs": "Watch you vs {{name}}",

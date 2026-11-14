@@ -1096,7 +1096,14 @@
     "quietHint": "Nada entre las {{start}} y las {{end}}",
     "quietInvites": "Dejar pasar las invitaciones a salas",
     "remindTomorrow": "Recuérdamelo mañana",
-    "remindTomorrowHint": "Una notificación cuando los crucigramas del día estén listos. Desactívala cuando quieras."
+    "remindTomorrowHint": "Una notificación cuando los crucigramas del día estén listos. Desactívala cuando quieras.",
+    "askTitle": "Crossword Clash es mejor con notificaciones",
+    "askBody": "Entérate al momento cuando un amigo te invite a una carrera o te pida amistad.",
+    "askEnable": "Activar",
+    "askNotNow": "Ahora no",
+    "reminderAskTitle": "¿Te lo recordamos mañana?",
+    "reminderAskBody": "Una notificación cuando estén listos los crucigramas del día. Puedes desactivarla cuando quieras.",
+    "reminderAskYes": "Recuérdamelo"
   },
   "ghostRace": {
     "watchVs": "Ver tú contra {{name}}",

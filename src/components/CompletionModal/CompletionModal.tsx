@@ -20,6 +20,7 @@ import { ShareBackButton } from "./ShareBackButton";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
+import { DAILY_FINISH_CLOSED_EVENT } from "../../lib/push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
@@ -274,6 +275,15 @@ export function CompletionModal({
 
   const isAsync = !!raceStandings && raceStandings.length > 0;
   const isMultiplayer = (players && players.length > 0) || isAsync;
+  // The reminder ask waits for this dialog to close, so it never competes with Share. A dialog
+  // that was up for under a second was not read (and StrictMode's remount is not a close).
+  useEffect(() => {
+    if (!open || !dailySlot || isMultiplayer) return;
+    const openedAt = Date.now();
+    return () => {
+      if (Date.now() - openedAt > 1000) window.dispatchEvent(new Event(DAILY_FINISH_CLOSED_EVENT));
+    };
+  }, [open, dailySlot, isMultiplayer]);
   const ranked = players && players.length > 0
     ? [...players].sort((a, b) => b.cellsClaimed - a.cellsClaimed)
     : [];
