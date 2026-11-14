@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Flag, Loader2, Sparkles } from "lucide-react";
+import { Flag, Loader2 } from "lucide-react";
+import { PlusSeal } from "../ui/PlusBadge";
 import { Button } from "../ui";
 import { formatDuration } from "../../lib/soloStats";
 import { MAX_GHOSTS, type RaceCandidate } from "../../lib/race";
@@ -59,7 +60,7 @@ export function RaceStarter({ candidates, plus, preselect, onStart, onPitch }: R
             onClick={() => (plus ? setOpen(true) : onPitch())}
             aria-label={plus ? t("ghostRace.raceButton") : t("ghostRace.raceWithPlus")}
           >
-            {!plus && <Sparkles className="size-4 text-gold-500" aria-hidden="true" />}
+            {!plus && <PlusSeal size="1rem" />}
             {t("ghostRace.raceButton")}
           </Button>
         )}

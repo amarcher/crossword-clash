@@ -128,7 +128,7 @@ export function BonusCard() {
           className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-          {t("bonus.boardLink")}
+          {t("menu.dailyLeaderboard")}
         </TransitionLink>
       </div>
     </Card>

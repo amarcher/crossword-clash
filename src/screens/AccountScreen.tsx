@@ -1,10 +1,11 @@
 import { LeaderboardSettings } from "../components/Account/LeaderboardSettings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, ChartLine, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
+import { BookOpen, CalendarDays, ChartLine, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, UserPlus, Users } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { RaceVisibilityCard } from "../components/Race/RaceVisibility";
+import { PlusSeal } from "../components/ui/PlusBadge";
 import { PlusBadgeSwitch } from "../components/Plus/PlusBadgeSwitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { NotificationSettings } from "../components/Push";
@@ -227,8 +228,8 @@ export function AccountScreen() {
           {plusEnabled() && (
             <Card className="p-5 sm:p-6" aria-labelledby="account-plus">
               <div className="flex items-start gap-3.5">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                  <Sparkles className="size-5" aria-hidden="true" />
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold-50">
+                  <PlusSeal size="1.625rem" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 id="account-plus" className="font-display text-lg font-bold leading-snug tracking-tight text-ink">

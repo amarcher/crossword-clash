@@ -77,7 +77,7 @@ export function BonusArchive() {
           className="inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-          {t("bonus.boardLink")}
+          {t("menu.dailyLeaderboard")}
         </TransitionLink>
       </div>
       {failed && (
@@ -89,7 +89,7 @@ export function BonusArchive() {
         {cards.map((card) => {
           const best = bestTimes[card.identity];
           return (
-            <li key={card.day} className="flex min-h-16 items-center gap-3 px-4 py-2.5">
+            <li key={card.day} className={`flex min-h-16 items-center gap-3 px-4 py-2.5 ${typeof best === "number" ? "bg-brand-50" : ""}`} data-solved={typeof best === "number" || undefined}>
               <span className="relative w-10 shrink-0">
                 <MiniGridThumb puzzle={shapePuzzle(card)} solved={typeof best === "number"} className={plus ? "" : "opacity-60"} />
                 {!plus && (

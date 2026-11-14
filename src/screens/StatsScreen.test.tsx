@@ -38,10 +38,10 @@ describe("StatsScreen", () => {
     expect(stats.fetchStats).toHaveBeenCalledWith(expect.any(String), false);
     expect(screen.getByText("0:30")).toBeTruthy(); // the best
     expect(screen.getByText("3")).toBeTruthy(); // solved
-    expect(screen.getByText("Ranked on 2 days")).toBeTruthy();
+    expect(screen.getByText("Ranked on 2 days. See how many solvers you beat.")).toBeTruthy();
     expect(screen.queryByText(/%/)).toBeNull();
     // The chart covers the last 30 days only: its first date label is two days ago, not 200.
-    expect(container.querySelectorAll('svg[aria-label="Times over time"] rect').length).toBe(0); // no hover detail
+    expect(container.querySelectorAll('svg[aria-label="Your times"] rect').length).toBe(0); // no hover detail
     expect(screen.getByText(/Showing your last 30 days/)).toBeTruthy();
     expect(screen.getByText("See which weekday is your fastest.")).toBeTruthy();
     expect(container.querySelector('svg[aria-label="By weekday"]')).toBeNull();
@@ -59,7 +59,7 @@ describe("StatsScreen", () => {
   it("tells a free player with nothing yet the truth: no chart, no teaser counts", async () => {
     stats.fetchStats.mockResolvedValue({ results: [], headToHead: [], slowClues: [], slowClueCount: 0 });
     renderPage();
-    expect(await screen.findByText("Solve a few more to see a line.")).toBeTruthy();
+    expect(await screen.findByText("Solve a daily to see your times here.")).toBeTruthy();
     expect(screen.getByText("Solve the same dailies as a friend to see who's ahead.")).toBeTruthy();
     expect(screen.queryByText(/Ranked on/)).toBeNull();
     expect(screen.queryByText(/took you over a minute/)).toBeNull();

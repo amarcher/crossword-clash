@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Lock, Sparkles } from "lucide-react";
+import { Lock } from "lucide-react";
+import { PlusSeal } from "../components/ui/PlusBadge";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useMaybeAccount } from "../contexts/AccountContext";
@@ -28,7 +29,7 @@ function Locked({ children, cta, onUnlock }: { children: React.ReactNode; cta: s
       className="mt-3 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl bg-gold-50 px-3 py-2 text-left text-sm text-ink ring-1 ring-gold-100 hover:bg-gold-100 focus-visible:outline-2 focus-visible:outline-brand-500"
     >
       <Lock className="size-4 shrink-0 text-gold-700" aria-hidden="true" />
-      <span className="min-w-0 flex-1">{children}</span>
+      <span className="min-w-0 flex-1 text-balance">{children}</span>
       <span className="shrink-0 font-semibold text-gold-700">{cta}</span>
     </button>
   );
@@ -118,28 +119,21 @@ export function StatsScreen() {
         )}
 
         <Card className="p-5">
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {/* A free player's tiles are the three figures they have; what Plus adds sits under them as one locked row, like the sections below (Andrew, 2026-11-13: a lock inside a tile read badly). */}
+          <dl className={`grid gap-4 ${locked ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
             <Stat label={t("stats.average")} value={summary.average === null ? "–" : formatDuration(summary.average)} />
             <Stat label={t("stats.best")} value={summary.best ? formatDuration(summary.best.seconds) : "–"} />
-            {locked ? (
-              <Stat
-                label={t("stats.fasterThan")}
-                value={
-                  <>
-                    <Lock className="inline size-5 text-gold-700" aria-hidden="true" />
-                    <span className="sr-only">{t("stats.withPlus")}</span>
-                  </>
-                }
-                note={ranked > 0 ? t("stats.rankedOn", { count: ranked }) : undefined}
-              />
-            ) : (
-              <Stat label={t("stats.fasterThan")} value={summary.fasterThan === null ? "–" : `${Math.round(summary.fasterThan * 100)}%`} />
-            )}
+            {!locked && <Stat label={t("stats.fasterThan")} value={summary.fasterThan === null ? "–" : `${Math.round(summary.fasterThan * 100)}%`} />}
             <Stat label={t("stats.solved")} value={String(summary.count)} />
           </dl>
+          {locked && data && (
+            <Locked cta={unlockLabel} onUnlock={unlock}>
+              {ranked > 0 ? t("stats.fasterTeaser", { count: ranked }) : t("stats.fasterTeaserNone")}
+            </Locked>
+          )}
           {locked && (
-            <Button className="mt-5" block onClick={unlock}>
-              <Sparkles className="size-4" aria-hidden="true" />
+            <Button className="mt-3" block onClick={unlock}>
+              <PlusSeal size="1rem" />
               {t("stats.seeWithPlus")}
             </Button>
           )}
@@ -148,7 +142,7 @@ export function StatsScreen() {
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <Eyebrow as="h2">{t("stats.overTime")}</Eyebrow>
-            {charted.length > 1 ? (
+            {charted.length > 0 ? (
               <TimesChart results={charted} average={summary.average} detail={!locked} locale={i18n.language} label={t("stats.overTime")} />
             ) : (
               <p className="mt-3 text-sm text-muted">{data ? t("stats.notEnough") : t("stats.loading")}</p>
@@ -271,10 +265,17 @@ function TimesChart({ results, average, detail, locale, label }: { results: Dail
   const { t } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(...results.map((r) => r.seconds), (detail ? average : null) ?? 0) * 1.1;
-  const x = (i: number) => PAD.l + (i / Math.max(1, results.length - 1)) * (W - PAD.l - PAD.r);
+  // One bar per day played, in order: a day without a solve takes no room, so the bars never imply a trend across a gap.
+  const slot = (W - PAD.l - PAD.r) / results.length;
+  const barW = Math.max(1.5, Math.min(22, slot * 0.7));
+  const cx = (i: number) => PAD.l + slot * i + slot / 2;
   const y = (s: number) => PAD.t + (1 - s / max) * (H - PAD.t - PAD.b);
-  const path = results.map((r, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(r.seconds).toFixed(1)}`).join("");
-  const bestIndex = results.reduce((b, r, i) => (r.seconds < results[b].seconds ? i : b), 0);
+  const r = Math.min(3, barW / 2);
+  const bar = (i: number, s: number) => {
+    const top = Math.min(y(s), H - PAD.b - r);
+    return `M${cx(i) - barW / 2},${H - PAD.b}V${top + r}a${r},${r} 0 0 1 ${r},${-r}H${cx(i) + barW / 2 - r}a${r},${r} 0 0 1 ${r},${r}V${H - PAD.b}Z`;
+  };
+  const bestIndex = results.reduce((b, res, i) => (res.seconds < results[b].seconds ? i : b), 0);
   const ticks = [0, max / 2, max].map((s) => Math.round(s));
   const dateLabel = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString(locale, { month: "short", day: "numeric" });
   const hovered = hover !== null ? results[hover] : null;
@@ -290,29 +291,18 @@ function TimesChart({ results, average, detail, locale, label }: { results: Dail
           </g>
         ))}
         <text x={PAD.l} y={H - 6} className="fill-muted text-[9px]">{dateLabel(results[0].day)}</text>
-        <text x={W - PAD.r} y={H - 6} textAnchor="end" className="fill-muted text-[9px]">{dateLabel(results[results.length - 1].day)}</text>
+        {results.length > 1 && (
+          <text x={W - PAD.r} y={H - 6} textAnchor="end" className="fill-muted text-[9px]">{dateLabel(results[results.length - 1].day)}</text>
+        )}
         <g>
+          {results.map((res, i) => (
+            <path key={res.day} d={bar(i, res.seconds)} className={`${i === bestIndex ? "fill-gold-400" : "fill-brand-500"} ${hover === i ? "opacity-80" : ""}`} />
+          ))}
           {detail && average !== null && <line x1={PAD.l} x2={W - PAD.r} y1={y(average)} y2={y(average)} className="stroke-ink-soft" strokeWidth="1" strokeDasharray="3 3" />}
-          <path d={path} fill="none" className="stroke-brand-500" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-          <circle cx={x(bestIndex)} cy={y(results[bestIndex].seconds)} r="4" className="fill-brand-500 stroke-surface" strokeWidth="2" />
-          {hover !== null && detail && (
-            <>
-              <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={H - PAD.b} className="stroke-ink-soft" strokeWidth="1" />
-              <circle cx={x(hover)} cy={y(results[hover].seconds)} r="4" className="fill-brand-500 stroke-surface" strokeWidth="2" />
-            </>
-          )}
         </g>
         {detail &&
-          results.map((r, i) => (
-            <rect
-              key={r.day}
-              x={x(i) - (W - PAD.l - PAD.r) / results.length / 2}
-              y={PAD.t}
-              width={(W - PAD.l - PAD.r) / results.length}
-              height={H - PAD.t - PAD.b}
-              fill="transparent"
-              onPointerEnter={() => setHover(i)}
-            />
+          results.map((res, i) => (
+            <rect key={res.day} x={cx(i) - slot / 2} y={PAD.t} width={slot} height={H - PAD.t - PAD.b} fill="transparent" onPointerEnter={() => setHover(i)} />
           ))}
       </svg>
       {hovered && (
@@ -329,7 +319,7 @@ function TimesChart({ results, average, detail, locale, label }: { results: Dail
             </span>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-brand-500" aria-hidden="true" />
+            <span className="size-2 rounded-sm bg-gold-400" aria-hidden="true" />
             {t("stats.bestDot", { time: formatDuration(results[bestIndex].seconds) })}
           </span>
         </p>

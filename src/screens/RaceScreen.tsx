@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Swords, UserPlus, Users } from "lucide-react";
+import { Share2, Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
+import { useShareFriendLink } from "../components/Friends/InviteFriendCard";
 import { useFriendSolves } from "../hooks/useFriendSolves";
 import { puzzleIdentity } from "../lib/soloStats";
 import { todayKey } from "../lib/dailyLeaderboard";
@@ -146,9 +147,13 @@ export function RaceScreen() {
                 <p className="mt-1 text-sm text-muted">{t("race.addFriendsBody")}</p>
               </div>
             </div>
-            <Button variant="secondary" size="lg" block className="mt-4" onClick={() => { track("race_action", { action: "add-friend", signed_in: true }); navigate(FRIENDS_PATH); }}>
-              {t("race.addFriends")}
-            </Button>
+            <div className="mt-4 grid gap-2.5">
+              {/* The quickest way to a first friend: send your own add-me link, no usernames to type. */}
+              {account.profile && <ShareMyLink username={account.profile.username} />}
+              <Button variant="secondary" size="lg" block onClick={() => { track("race_action", { action: "add-friend", signed_in: true }); navigate(FRIENDS_PATH); }}>
+                {t("race.addFriends")}
+              </Button>
+            </div>
           </Card>
         );
       case "start":
@@ -203,5 +208,24 @@ export function RaceScreen() {
         {blocks.map(render)}
       </div>
     </PageShell>
+  );
+}
+
+/** "Share my link" on the add-friends prompt: the same add-me link as the Friends screen's invite card. */
+function ShareMyLink({ username }: { username: string }) {
+  const { t } = useTranslation();
+  const { share, busy, note } = useShareFriendLink(username, "race");
+  return (
+    <>
+      <Button size="lg" block onClick={() => void share()} disabled={busy} aria-busy={busy || undefined}>
+        <Share2 className="size-4" aria-hidden="true" />
+        {t("friends.linkShare")}
+      </Button>
+      {note && (
+        <p role="status" className="text-center text-sm font-medium text-brand-700">
+          {note}
+        </p>
+      )}
+    </>
   );
 }

@@ -1,80 +1,59 @@
 import { useTranslation } from "react-i18next";
-import { Archive, BadgeCheck, ChartLine, Check, Flag, Flame, Gift, Mic, PencilRuler, RefreshCw, Sparkles } from "lucide-react";
-import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
+import { Archive, ChartLine, Flag, Flame, Grid3x3, Mic, PencilRuler } from "lucide-react";
+import { formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { useStorePrices } from "../../hooks/useStorePrices";
 import { useFreeMonth } from "../../hooks/useFreeMonth";
 
 /**
- * What Plus is, in one card: the benefits and the two prices (annual
- * first, the one to push), under a "first month is free" line when both
- * plans start with the free month for this visitor. Shared by the account sheet's Plus view and every
- * gate's upsell (archive, studio, narrator). The purchase controls themselves
- * come from the caller: the web and the apps buy differently. A subscriber
- * gets the benefits without the plan tiles (`prices={false}`): the
- * entitlement row records no plan, so a highlighted tile would be a guess,
- * and switching plans is the billing portal's job.
+ * What is extra in Plus, as one short list (Andrew, 2026-11-13: only what a
+ * subscriber gets, no allowances, nothing a free account already has). Shared
+ * by the account sheet's Plus view and every gate's upsell (archive, studio,
+ * narrator). The plans and the purchase come from the caller
+ * (PlusPurchaseControls): the web and the apps buy differently, and a
+ * subscriber sees the list with Manage under it.
  */
-export function PlusPitch({ children, prices = true }: { children?: React.ReactNode; prices?: boolean }) {
-  const { t, i18n } = useTranslation();
-  // In the apps, show what the store will charge (local currency) rather than the USD list price.
-  const store = useStorePrices();
-  const annual = store.find((p) => p.plan === "annual");
-  const monthly = store.find((p) => p.plan === "monthly");
-  const fromStore = !!annual && !!monthly;
-  const annualLabel = fromStore ? annual.priceString : formatUsd(PLUS_ANNUAL_USD, i18n.language);
-  const monthlyLabel = fromStore ? monthly.priceString : formatUsd(PLUS_MONTHLY_USD, i18n.language);
-  const saving = fromStore && monthly.price > 0 ? annualSavingPercent(monthly.price, annual.price) : annualSavingPercent();
-  const free = useFreeMonth();
-  const freeMonth = free.annual && free.monthly;
+export function PlusPitch({ children }: { children?: React.ReactNode }) {
+  const { t } = useTranslation();
   const benefits = [
-    { icon: Sparkles, text: t("plus.benefitBonus") },
+    { icon: Grid3x3, text: t("plus.benefitBonus") },
     { icon: Flag, text: t("plus.benefitRace") },
     { icon: Archive, text: t("plus.benefitArchive") },
     { icon: ChartLine, text: t("plus.benefitStats") },
-    { icon: Flame, text: t("plus.benefitStreak") },
-    { icon: BadgeCheck, text: t("plus.benefitBadge") },
     { icon: PencilRuler, text: t("plus.benefitStudio") },
     { icon: Mic, text: t("plus.benefitNarrator") },
-    { icon: RefreshCw, text: t("plus.benefitProgress") },
+    { icon: Flame, text: t("plus.benefitStreak") },
   ];
   return (
-    <div className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-5">
+      <ul className="flex flex-col gap-2">
         {benefits.map(({ icon: Icon, text }) => (
-          <li key={text} className="flex items-start gap-3 text-sm leading-snug text-ink">
+          <li key={text} className="flex items-center gap-3 text-sm leading-snug text-ink">
             <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
               <Icon className="size-4" aria-hidden="true" />
             </span>
-            <span className="pt-1">{text}</span>
+            <span>{text}</span>
           </li>
         ))}
       </ul>
-      {prices && freeMonth && (
-        <p className="flex items-start gap-3 rounded-xl bg-gold-50 p-3 text-sm leading-snug text-ink">
-          <Gift className="mt-0.5 size-4 shrink-0 text-gold-700" aria-hidden="true" />
-          <span>
-            <strong className="font-semibold">{t("plus.freeMonthTitle")}</strong> {t("plus.freeMonthBody")}
-          </span>
-        </p>
-      )}
-      {prices && (
-      <dl className="grid grid-cols-2 gap-2.5">
-        <div className="rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100">
-          <dt className="flex items-center gap-1.5 text-xs font-semibold text-brand-700">
-            <Check className="size-3.5" aria-hidden="true" />
-            {t("plus.annualSave", { percent: saving })}
-          </dt>
-          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{annualLabel}</dd>
-          <dd className="mt-1 text-xs text-muted">{t("plus.perYear")}</dd>
-        </div>
-        <div className="rounded-xl bg-surface-sunken p-3 ring-1 ring-line">
-          <dt className="text-xs font-semibold text-ink-soft">{t("plus.monthly")}</dt>
-          <dd className="mt-1 font-display text-lg font-bold leading-none text-ink">{monthlyLabel}</dd>
-          <dd className="mt-1 text-xs text-muted">{t("plus.perMonth")}</dd>
-        </div>
-      </dl>
-      )}
       {children}
     </div>
+  );
+}
+
+/**
+ * The two prices in one line, for a visitor who has to sign in before the
+ * plans can be offered (the plan tiles sit with the purchase button).
+ */
+export function PlusPriceLine() {
+  const { t, i18n } = useTranslation();
+  // In the apps, what the store will charge (local currency) rather than the USD list price.
+  const store = useStorePrices();
+  const annual = store.find((p) => p.plan === "annual")?.priceString ?? formatUsd(PLUS_ANNUAL_USD, i18n.language);
+  const monthly = store.find((p) => p.plan === "monthly")?.priceString ?? formatUsd(PLUS_MONTHLY_USD, i18n.language);
+  const free = useFreeMonth();
+  return (
+    <p className="rounded-xl bg-surface-sunken px-3 py-2.5 text-center text-sm leading-snug text-ink-soft">
+      {t(free.annual && free.monthly ? "plus.priceLineFree" : "plus.priceLine", { annual, monthly })}
+    </p>
   );
 }

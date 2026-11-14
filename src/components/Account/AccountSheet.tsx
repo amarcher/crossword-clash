@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, UserRound, X } from "lucide-react";
+import { UserRound, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { accountName, availableProviders, deleteAccount, fetchEnabledProviders, signInWith, type AuthProvider } from "../../lib/account";
 import { nativePurchaseAvailable } from "../../lib/nativePurchase";
@@ -10,7 +10,8 @@ import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { Button } from "../ui";
 import { ProviderButton } from "./ProviderButton";
 import { UsernamePicker } from "./UsernamePicker";
-import { PlusPitch } from "../Plus/PlusPitch";
+import { PlusPitch, PlusPriceLine } from "../Plus/PlusPitch";
+import { PlusSeal } from "../ui/PlusBadge";
 import type { AccountContextValue } from "../../contexts/AccountContext";
 
 export type AccountSheetView = "account" | "username" | "delete" | "plus";
@@ -129,15 +130,15 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
         className="lf-pop-in scroll-quiet relative max-h-full w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-line bg-surface p-6 text-ink shadow-overlay"
       >
         <div className="flex items-start gap-3.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-            {view === "plus" ? <Sparkles className="size-5" aria-hidden="true" /> : <UserRound className="size-5" aria-hidden="true" />}
+          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${view === "plus" ? "bg-gold-50" : "bg-brand-50 text-brand-600"}`}>
+            {view === "plus" ? <PlusSeal size="1.625rem" /> : <UserRound className="size-5" aria-hidden="true" />}
           </span>
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className={`font-display text-lg font-bold leading-snug tracking-tight ${user && view === "account" ? "truncate" : ""}`}>
               {title}
             </h2>
             {view === "plus" ? (
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{account.plus ? t("plus.youHavePlus") : t("plus.subtitle")}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{account.plus ? t("plus.youHavePlus") : t("plus.lead")}</p>
             ) : view === "username" ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.usernameBody")}</p>
             ) : view === "delete" ? (
@@ -166,7 +167,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
 
         <div className="mt-5">
           {view === "plus" ? (
-            <PlusPitch prices={!account.plus}>
+            <PlusPitch>
               {user || (nativePurchaseAvailable() && account.plus) ? (
                 // Plus belongs to an account on every platform (spec §3.5, revised 2026-10-28: half the
                 // benefits need one and the studio is web-only), so an anonymous visitor signs in first.
@@ -185,6 +186,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
                 />
               ) : (
                 <div className="flex flex-col gap-2.5">
+                  <PlusPriceLine />
                   <p className="text-sm leading-relaxed text-ink-soft">{t("plus.signInFirst")}</p>
                   {providerButtons}
                 </div>

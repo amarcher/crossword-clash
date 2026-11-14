@@ -17,8 +17,8 @@ function sealPath(cx: number, cy: number, r: number, lobes: number, depth: numbe
 
 const SEAL = sealPath(12, 12, 11.6, 10, 0.16);
 
-/** The gold seal itself (Andrew, 2026-11-13: option B of docs/plus-expansion/badge-options.html). */
-function Seal({ size }: { size: string }) {
+/** The gold seal itself, undescribed: also the Plus mark inside controls that already say "Plus" (Andrew, 2026-11-13: option B of docs/plus-expansion/badge-options.html). */
+export function PlusSeal({ size = "1em" }: { size?: string }) {
   const gradient = useId();
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" style={{ width: size, height: size }} className="inline-block shrink-0 align-[-0.12em]">
@@ -71,7 +71,7 @@ export function PlusBadge({ size = "0.95em", interactive = true }: PlusBadgeProp
   if (!interactive) {
     return (
       <span role="img" aria-label={t("plus.badgeLabel")} className="inline-flex">
-        <Seal size={size} />
+        <PlusSeal size={size} />
       </span>
     );
   }
@@ -90,7 +90,7 @@ export function PlusBadge({ size = "0.95em", interactive = true }: PlusBadgeProp
         }}
         className="-m-1 inline-flex cursor-pointer rounded-full p-1 focus-visible:outline-2 focus-visible:outline-brand-500"
       >
-        <Seal size={size} />
+        <PlusSeal size={size} />
       </button>
       {open && (
         <span
@@ -100,7 +100,7 @@ export function PlusBadge({ size = "0.95em", interactive = true }: PlusBadgeProp
           className="lf-pop-in absolute left-1/2 top-full z-40 mt-1.5 w-max max-w-56 -translate-x-1/2 rounded-xl border border-line bg-surface px-3 py-2 text-left text-sm font-normal normal-case tracking-normal text-ink shadow-overlay"
         >
           <span className="flex items-center gap-1.5 font-semibold">
-            <Seal size="1em" />
+            <PlusSeal size="1em" />
             {t("plus.badgeLabel")}
           </span>
           {offerPlus && (
