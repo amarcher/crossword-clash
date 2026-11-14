@@ -5,7 +5,8 @@ import { track } from "../lib/analytics";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { decodeChallengeParams, loadChallenge, saveChallenge, clearChallenge, type ChallengePayload } from "../lib/challenge";
 import { loadMpSession } from "../lib/sessionPersistence";
-import { loadPlayerName } from "../lib/playerName";
+import { isRealPlayerName, loadPlayerName } from "../lib/playerName";
+import { useMaybeAccount } from "./AccountContext";
 import type { PendingDailyResult } from "../lib/dailyLeaderboard";
 import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import { clearProgress, filledCells, getProgress, saveAttempt, whiteCellCount, type SaveAttemptResult } from "../lib/soloProgress";
@@ -192,6 +193,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [displayName, setDisplayName] = useState(
     () => mpSession?.displayName ?? loadPlayerName() ?? tStatic('common.defaultPlayerName'),
   );
+  // A signed-in account's username is its name everywhere a name is needed (the share link, the
+  // board, a room) until the player types another: a fresh device has no remembered name, and
+  // the finish used to ask a signed-in solver "Your name" and share as "A friend".
+  const accountUsername = useMaybeAccount()?.profile?.username ?? null;
+  useEffect(() => {
+    if (accountUsername && !isRealPlayerName(displayName)) setDisplayName(accountUsername);
+  }, [accountUsername, displayName]);
   const [clueSheetOpen, setClueSheetOpen] = useState(false);
   // A finished solo puzzle restored at launch has had its celebration already:
   // the play screen opens on the solved grid with the modal closed (its header

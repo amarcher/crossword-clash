@@ -181,6 +181,13 @@
   box-shadow: 0 2px 0 #a4aab3;
   -webkit-touch-callout: none;
 }
+/* A key is pressed from anywhere in its share of the gaps around it, and the outer keys from the
+   screen edge: a thumb landing between two keys used to type nothing. */
+.puzzle-key { position: relative; }
+.puzzle-key::after { content: ""; position: absolute; inset: -4px -3px -3px; }
+.puzzle-key:first-child::after { left: -40px; }
+.puzzle-key:last-child::after { right: -40px; }
+.puzzle-keyboard-row:last-child .puzzle-key::after { bottom: -10px; }
 .puzzle-key-action { flex: 1.45; background: #bfc8d3; color: #25344b; }
 .puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
 .puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }

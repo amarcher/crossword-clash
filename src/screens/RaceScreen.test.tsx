@@ -149,7 +149,7 @@ describe("RaceScreen (/race, spec §3.6)", () => {
 
   it("takes a typed code to the join screen, and not before six characters", () => {
     renderScreen();
-    const field = screen.getByLabelText("Game Code");
+    const field = screen.getByLabelText("Game code");
     const joinButton = () => screen.getByRole("button", { name: "Join" });
     expect(joinButton()).toHaveProperty("disabled", true);
     fireEvent.change(field, { target: { value: "kq7m" } });

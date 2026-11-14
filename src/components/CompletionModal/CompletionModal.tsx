@@ -20,6 +20,7 @@ import { ShareBackButton } from "./ShareBackButton";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
+import { DAILY_FINISH_CLOSED_EVENT } from "../../lib/push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
@@ -31,7 +32,6 @@ import { Capacitor } from "@capacitor/core";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
-import { NytRecommendation } from "../NytRecommendation";
 import type { CellState, Puzzle, PuzzleRef } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
 import type { RaceResult } from "../../lib/race";
@@ -274,6 +274,15 @@ export function CompletionModal({
 
   const isAsync = !!raceStandings && raceStandings.length > 0;
   const isMultiplayer = (players && players.length > 0) || isAsync;
+  // The reminder ask waits for this dialog to close, so it never competes with Share. A dialog
+  // that was up for under a second was not read (and StrictMode's remount is not a close).
+  useEffect(() => {
+    if (!open || !dailySlot || isMultiplayer) return;
+    const openedAt = Date.now();
+    return () => {
+      if (Date.now() - openedAt > 1000) window.dispatchEvent(new Event(DAILY_FINISH_CLOSED_EVENT));
+    };
+  }, [open, dailySlot, isMultiplayer]);
   const ranked = players && players.length > 0
     ? [...players].sort((a, b) => b.cellsClaimed - a.cellsClaimed)
     : [];
@@ -406,7 +415,8 @@ export function CompletionModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`modal-enter scroll-quiet relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
+        tabIndex={-1}
+        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
@@ -860,11 +870,6 @@ export function CompletionModal({
         {/* Ad */}
         <div className="flex justify-center mt-4">
           <AdSlot placement="completion-footer" darkMode={darkMode} />
-        </div>
-
-        {/* NYT affiliate */}
-        <div className="mt-4">
-          <NytRecommendation variant="inline" darkMode={darkMode} />
         </div>
       </div>
     </div>

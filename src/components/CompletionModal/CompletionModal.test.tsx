@@ -254,13 +254,13 @@ describe("CompletionModal", () => {
   it("says when the streak already counted today, and nothing when the finish advanced it", () => {
     const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced={false} />);
     expect(counted.getByText("6-day streak")).toBeTruthy();
-    expect(counted.getByText(/Today already counted/)).toBeTruthy();
+    expect(counted.getByText(/already counted today/)).toBeTruthy();
     counted.unmount();
     const advanced = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced />);
-    expect(advanced.queryByText(/Today already counted/)).toBeNull();
+    expect(advanced.queryByText(/already counted today/)).toBeNull();
     advanced.unmount();
     const unknown = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
-    expect(unknown.queryByText(/Today already counted/)).toBeNull();
+    expect(unknown.queryByText(/already counted today/)).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {

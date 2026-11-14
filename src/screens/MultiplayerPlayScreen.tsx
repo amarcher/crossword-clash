@@ -443,7 +443,7 @@ export function MultiplayerPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 md:gap-4 h-full">
+          <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />
             <div className="flex-1 min-h-0">
             <CluePanel

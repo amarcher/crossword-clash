@@ -1,9 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { Check, Newspaper, Tv, Users } from "lucide-react";
+import { CalendarDays, Check, Newspaper, Tv, Users } from "lucide-react";
 import { FlowPage } from "../Flow";
 import { AdSlot } from "../AdSlot";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../ui";
 import type { Puzzle } from "../../types/puzzle";
+import { formatShareDay } from "../../lib/shareBlock";
+
+const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
 interface PuzzleReadyProps {
   puzzle: Puzzle;
@@ -32,7 +35,9 @@ export function PuzzleReady({
   onBack,
   nytStreak = 0,
 }: PuzzleReadyProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // A daily opened by its link is ours, not an import: say which daily it is.
+  const daily = puzzle.ref && "day" in puzzle.ref ? puzzle.ref : null;
   const acrossCount = puzzle.clues.filter((c) => c.direction === "across").length;
   const downCount = puzzle.clues.filter((c) => c.direction === "down").length;
   const fromNyt = puzzle.origin === "nyt-bookmarklet";
@@ -46,8 +51,12 @@ export function PuzzleReady({
         // First thing a bookmarklet import shows — confirm success explicitly
         // rather than silently landing on a puzzle summary.
         <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
-          <Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
-          {fromNyt ? t("puzzleReady.importedFromNyt") : t("puzzleReady.importedBadge")}
+          {daily ? <CalendarDays className="size-3.5" aria-hidden="true" /> : <Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" />}
+          {daily
+            ? t("puzzleReady.dailyBadge", { slot: t(SLOT_LABEL[daily.slot]), date: formatShareDay(daily.day, i18n.language) })
+            : fromNyt
+              ? t("puzzleReady.importedFromNyt")
+              : t("puzzleReady.importedBadge")}
         </span>
       }
       title={puzzle.title}
@@ -101,6 +110,7 @@ export function PuzzleReady({
                   title={t("menu.hostAsTV")}
                   subtitle={t("menu.hostAsTVSubtitle")}
                   onClick={onHostOnTV}
+                  className="max-md:hidden"
                 />
               </ListGroup>
             </section>

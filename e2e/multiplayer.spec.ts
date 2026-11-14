@@ -41,9 +41,9 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     // Player: /join → name + code → lobby.
     await player.goto("/join");
     await waitForAnonAuth(player, "player");
-    await player.getByLabel(/Your Name/i).fill("E2E Player");
-    await player.getByLabel(/Game Code/i).fill(code!);
-    await player.getByRole("button", { name: /^Join Game$/i }).click();
+    await player.getByLabel(/Your name/i).fill("E2E Player");
+    await player.getByLabel(/Game code/i).fill(code!);
+    await player.getByRole("button", { name: /^Join game$/i }).click();
     await expect(player.getByText(/Waiting for host/i)).toBeVisible({ timeout: 20_000 });
 
     // Host sees the player and starts.

@@ -85,14 +85,21 @@ describe("NotificationSettings", () => {
 });
 
 describe("ReminderSwitch", () => {
-  it("offers the reminder after a daily until it is on, and turns it on with the prompt in context", async () => {
+  it("offers the reminder in the finish dialog only where one tap turns it on: notifications already allowed", async () => {
+    push.permission = "granted";
     render(<ReminderSwitch />);
     const row = await screen.findByRole("button", { name: /Remind me tomorrow/ });
     fireEvent.click(row);
-    await waitFor(() => expect(push.enablePush).toHaveBeenCalled());
     await waitFor(() => expect(push.savePushPrefs).toHaveBeenCalledWith("u1", expect.objectContaining({ daily_reminder: true })));
-    expect(track).toHaveBeenCalledWith("push_permission_prompted", { placement: "completion" });
+    expect(push.enablePush).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole("button", { name: /Remind me tomorrow/ })).toBeNull());
+  });
+
+  it("leaves a device the OS has not asked to the ask after the dialog closes", async () => {
+    push.permission = "prompt";
+    const { container } = render(<ReminderSwitch />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(container.innerHTML).toBe("");
   });
 
   it("renders nothing once the reminder is on, after a denial, or on the web", async () => {

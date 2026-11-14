@@ -98,7 +98,7 @@ describe("i18n", () => {
 
     it("falls back to English for unsupported language", () => {
       i18n.changeLanguage("fr");
-      expect(i18n.t("menu.playSolo")).toBe("Play Solo");
+      expect(i18n.t("menu.playSolo")).toBe("Play solo");
     });
 
     it("persists language to localStorage", () => {
