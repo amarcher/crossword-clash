@@ -513,7 +513,8 @@ export function ArchiveScreen() {
                             <p className="mt-0.5 truncate font-display text-base font-semibold leading-snug text-ink">{it.title}</p>
                             <p className="truncate text-xs text-muted tabular-nums">
                               {t("menu.dailyMeta", { width: it.width, height: it.height, count: it.clues })}
-                              {it.theme ? ` · ${it.theme}` : ""}
+                              {/* A phone's row has no room for the theme beside the board link and the buttons: it cut off after a few letters. */}
+                              {it.theme ? <span className="max-sm:hidden">{` · ${it.theme}`}</span> : null}
                             </p>
                           </div>
                           {!locked && !tv && (

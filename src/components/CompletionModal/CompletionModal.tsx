@@ -406,7 +406,8 @@ export function CompletionModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`modal-enter scroll-quiet relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
+        tabIndex={-1}
+        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}

@@ -22,7 +22,8 @@
     "removeHint": "Se borrarán sus letras y tiempo guardados. Los resultados completados se conservarán.",
     "keep": "Conservar",
     "remove": "Eliminar",
-    "removeNamed": "Eliminar {{title}}"
+    "removeNamed": "Eliminar {{title}}",
+    "chooseShort": "Menú"
   },
   "common": {
     "defaultPlayerName": "Jugador",
@@ -149,7 +150,8 @@
     "friendsHeading": "O juega con amigos",
     "importedFromNyt": "Importado del NYT",
     "nytTomorrow": "Funciona todos los días: abre el crucigrama de mañana en nytimes.com y vuelve a hacer clic en el marcador.",
-    "nytStreak": "¡Racha NYT de {{count}} días!"
+    "nytStreak": "¡Racha NYT de {{count}} días!",
+    "dailyBadge": "{{slot}} · {{date}}"
   },
   "lobby": {
     "shareInvite": "Comparte el código para invitar jugadores",
@@ -310,7 +312,8 @@
     "raceFresh": "Carrera en vivo con un amigo",
     "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
     "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene",
-    "seeStats": "Ver tus estadísticas"
+    "seeStats": "Ver tus estadísticas",
+    "raceFreshHint": "Elige uno e invita por enlace"
   },
   "leaderboardSettings": {
     "retry": "Intentar de nuevo",
@@ -1107,7 +1110,7 @@
     "offerFriend": "{{name}} lo resolvió. Compite contra su partida",
     "offerFriends_one": "{{name}} y 1 amigo más lo resolvieron",
     "offerFriends_other": "{{name}} y {{count}} amigos más lo resolvieron",
-    "offerPublic": "Compite contra quienes lo resolvieron más rápido",
+    "offerPublic": "Compite contra los más rápidos",
     "raceButton": "Competir",
     "raceWithPlus": "Competir con Plus",
     "pickBody": "Su partida avanza junto a la tuya con tu reloj: ves qué casillas llenó, nunca sus letras. Elige hasta {{max}}.",

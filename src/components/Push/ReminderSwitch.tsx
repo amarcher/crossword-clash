@@ -18,7 +18,7 @@ export function ReminderSwitch({ darkMode }: { darkMode?: boolean }) {
       onClick={() => void update({ daily_reminder: true }, "completion")}
       disabled={saving}
       aria-busy={saving || undefined}
-      className={`flex min-h-12 w-full items-center gap-3 rounded-2xl px-4 text-left ring-1 ${darkMode ? "bg-stage-raised text-white ring-stage-line" : "bg-surface text-ink ring-line"} disabled:opacity-45`}
+      className={`flex min-h-12 w-full shrink-0 items-center gap-3 rounded-2xl px-4 py-2.5 text-left ring-1 ${darkMode ? "bg-stage-raised text-white ring-stage-line" : "bg-surface text-ink ring-line"} disabled:opacity-45`}
     >
       <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${darkMode ? "bg-stage-line text-white" : "bg-brand-50 text-brand-600"}`}>
         <Bell className="size-4.5" aria-hidden="true" />

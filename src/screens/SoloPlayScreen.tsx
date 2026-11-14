@@ -837,7 +837,15 @@ export function SoloPlayScreen() {
                   className={buttonClass("secondary", "md")}
                 >
                   {!isComplete && <Pause className="size-4" aria-hidden="true" />}
-                  {t(isComplete ? "soloPause.choose" : "soloPause.pause")}
+                  {/* A phone's header has no room for "Choose another puzzle" beside the finish chip: it pushed the title off the row. */}
+                  {isComplete ? (
+                    <>
+                      <span className="lg:hidden">{t("soloPause.chooseShort")}</span>
+                      <span className="max-lg:hidden">{t("soloPause.choose")}</span>
+                    </>
+                  ) : (
+                    t("soloPause.pause")
+                  )}
                 </button>
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
@@ -942,7 +950,7 @@ export function SoloPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 md:gap-4 h-full">
+          <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />
             <div className="flex-1 min-h-0">
             <CluePanel

@@ -33,22 +33,22 @@ export function FinishedBar({ seconds, onShare, onLeaderboard }: FinishedBarProp
         <span aria-hidden="true">
           {hasTime ? (
             <>
-              <span className="hidden md:inline">{label}</span>
-              <span className="md:hidden">{formatDuration(seconds)}</span>
+              <span className="hidden lg:inline">{label}</span>
+              <span className="lg:hidden">{formatDuration(seconds)}</span>
             </>
           ) : (
             label
           )}
         </span>
       </span>
-      <button type="button" onClick={onShare} className={buttonClass("secondary", "sm", "max-md:px-2.5")}>
+      <button type="button" onClick={onShare} className={buttonClass("secondary", "sm", "max-lg:px-2.5")}>
         <Share2 className="size-4" aria-hidden="true" />
-        <span className="max-md:sr-only">{t("playing.share")}</span>
+        <span className="max-lg:sr-only">{t("playing.share")}</span>
       </button>
       {onLeaderboard && (
-        <button type="button" onClick={onLeaderboard} className={buttonClass("secondary", "sm", "max-md:px-2.5")}>
+        <button type="button" onClick={onLeaderboard} className={buttonClass("secondary", "sm", "max-lg:px-2.5")}>
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-          <span className="max-md:sr-only">{t("playing.leaderboard")}</span>
+          <span className="max-lg:sr-only">{t("playing.leaderboard")}</span>
         </button>
       )}
     </div>

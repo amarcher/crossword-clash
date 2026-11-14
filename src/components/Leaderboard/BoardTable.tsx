@@ -27,7 +27,7 @@ export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) 
       <thead>
         <tr className="border-b border-line bg-surface-sunken/60 text-xs font-semibold uppercase tracking-[0.08em] text-subtle">
           <th scope="col" className="w-14 py-2.5 pl-4 pr-2 text-left">#</th>
-          <th scope="col" className="px-2 py-2.5 text-left">{t("completion.player")}</th>
+          <th scope="col" className="w-full px-2 py-2.5 text-left">{t("completion.player")}</th>
           <th scope="col" className="py-2.5 pl-2 pr-4 text-right">{t("leaderboard.time")}</th>
         </tr>
       </thead>
@@ -49,7 +49,8 @@ export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) 
                   {e.rank > 0 ? e.rank : "–"}
                 </span>
               </td>
-              <td className="max-w-0 px-2 py-2.5">
+              {/* w-full + max-w-0: the name column takes what the rank and time leave and truncates inside it. Without w-full it collapsed to a few letters on a phone. */}
+              <td className="w-full max-w-0 px-2 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
                   {/* The viewer's unposted time is simply "You": beside its chip a name had no room. */}
                   <span className={e.unposted ? "shrink-0" : "truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
@@ -79,7 +80,7 @@ export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) 
                   )}
                 </div>
               </td>
-              <td className="py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">
+              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">
                 <span className="inline-flex items-center justify-end gap-2">
                   {!isMe && onRace && raceable?.has(e.userId) && (
                     <button

@@ -16,7 +16,10 @@ export function useFocusTrap(
     previousFocusRef.current = document.activeElement as HTMLElement;
 
     const focusableElements = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-    focusableElements[0]?.focus();
+    // A container that takes focus itself (tabIndex -1) gets it: the first control, often a close
+    // button, then shows no focus ring to someone who never pressed Tab.
+    if (container.tabIndex === -1 && container.hasAttribute('tabindex')) container.focus();
+    else focusableElements[0]?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -33,7 +36,7 @@ export function useFocusTrap(
       const last = currentFocusable[currentFocusable.length - 1];
 
       if (e.shiftKey) {
-        if (document.activeElement === first) {
+        if ((document.activeElement === first || document.activeElement === container)) {
           last?.focus();
           e.preventDefault();
         }
