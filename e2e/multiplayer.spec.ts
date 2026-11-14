@@ -31,7 +31,7 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     await host.getByRole("region", { name: "Daily Mini" }).getByRole("button", { name: /Race friends/i }).click();
     await expect(host).toHaveURL(/\/host-game\/name/);
     await host.getByRole("textbox", { name: /Your name/i }).fill("E2E Host");
-    await host.getByRole("button", { name: /Create Room/i }).click();
+    await host.getByRole("button", { name: /Create room/i }).click();
 
     const codeButton = host.getByRole("button", { name: /copy/i }).first();
     await expect(codeButton).toBeVisible({ timeout: 20_000 });
@@ -42,13 +42,13 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     await player.goto("/join");
     await waitForAnonAuth(player, "player");
     await player.getByLabel(/Your name/i).fill("E2E Player");
-    await player.getByLabel(/Game code/i).fill(code!);
-    await player.getByRole("button", { name: /^Join game$/i }).click();
+    await player.getByLabel(/Room code/i).fill(code!);
+    await player.getByRole("button", { name: /^Join room$/i }).click();
     await expect(player.getByText(/Waiting for host/i)).toBeVisible({ timeout: 20_000 });
 
     // Host sees the player and starts.
     await expect(host.getByText("E2E Player")).toBeVisible({ timeout: 20_000 });
-    const start = host.getByRole("button", { name: /^Start Game$/i });
+    const start = host.getByRole("button", { name: /^Start game$/i });
     await expect(start).toBeEnabled();
     await start.click();
 

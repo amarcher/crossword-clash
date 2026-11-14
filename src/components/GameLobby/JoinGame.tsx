@@ -17,6 +17,8 @@ interface JoinGameProps {
   connecting?: boolean;
   /** A signed-in solver's username: prefilled ahead of the remembered name, still editable. */
   initialName?: string;
+  /** The code was typed on the Race friends screen: join at once when a name is already known. */
+  autoJoin?: boolean;
 }
 
 const CODE_LENGTH = 6;
@@ -28,7 +30,7 @@ function sanitizeCode(raw: string): string {
   return source.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CODE_LENGTH);
 }
 
-export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecting, initialName }: JoinGameProps) {
+export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecting, initialName, autoJoin }: JoinGameProps) {
   const { t } = useTranslation();
   const [code, setCode] = useState(() => sanitizeCode(initialCode ?? ""));
   // Prefill with the username, else the persisted name, so returning players just hit Join.
@@ -59,6 +61,16 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // One attempt, and never once the player has started editing the name: a
+  // failed code leaves this form up with the error, to fix and resubmit.
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (!autoJoin || autoTried.current || nameTouched.current) return;
+    if (code.length !== CODE_LENGTH || !displayName.trim()) return;
+    autoTried.current = true;
+    onJoin(code, displayName.trim());
+  }, [autoJoin, code, displayName, onJoin]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -75,7 +87,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
   };
 
   return (
-    <FlowPage title={t("join.title")} subtitle={t("join.subtitle")} onBack={onBack} backLabel={t("join.back")}>
+    <FlowPage title={t("join.title")} subtitle={t("join.subtitle")} onBack={onBack} backLabel={t("completion.backToMenu")}>
       <form onSubmit={handleSubmit} className="grid gap-5" autoComplete="off">
         <div>
           <label htmlFor="join-game-code" className="mb-1.5 block text-sm font-semibold text-ink-soft">

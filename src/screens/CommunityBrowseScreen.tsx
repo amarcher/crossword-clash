@@ -181,7 +181,7 @@ export function CommunityBrowseScreen() {
   return (
     <PageShell
       width="5xl"
-      bar={tv ? { backLabel: username ? t("legal.back") : t("importer.tvBack"), backTo: username ? withTvIntent("/puzzles") : TV_CHOOSER_PATH } : { backLabel: t("legal.back"), backTo: username ? "/puzzles" : "/menu" }}
+      bar={tv ? { backLabel: username ? t("community.title") : t("importer.tvBack"), backTo: username ? withTvIntent("/puzzles") : TV_CHOOSER_PATH } : { backLabel: username ? t("community.title") : t("completion.backToMenu"), backTo: username ? "/puzzles" : "/menu" }}
       below={
         <>
           <div className="sticky top-0 z-20 border-y border-line bg-canvas/90 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-canvas/75">

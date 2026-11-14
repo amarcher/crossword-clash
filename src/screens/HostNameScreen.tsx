@@ -123,7 +123,7 @@ export function HostNameScreen() {
       title={t('hostName.heading')}
       subtitle={game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
       onBack={handleReset}
-      backLabel={t('hostName.back')}
+      backLabel={t("completion.backToMenu")}
     >
       <form onSubmit={handleSubmit} className="grid gap-5" autoComplete="off">
         {game.urlPuzzle && (

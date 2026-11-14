@@ -352,15 +352,15 @@ describe("CompletionModal", () => {
 
   it("hides the fresh race row when onRaceFresh is undefined (multiplayer unavailable)", () => {
     const { queryByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
-    expect(queryByText("Race a friend live")).toBeNull();
+    expect(queryByText("Race friends")).toBeNull();
   });
 
-  it("'Race a friend live' calls onRaceFresh and emits the live_bridge funnel event", () => {
+  it("'Race friends' calls onRaceFresh and emits the live_bridge funnel event", () => {
     const onRaceFresh = vi.fn();
     const { getByRole } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleSize="15x15" onRaceFresh={onRaceFresh} />,
     );
-    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    fireEvent.click(getByRole("button", { name: /Race friends/ }));
     expect(onRaceFresh).toHaveBeenCalledOnce();
     expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "solo", size: "15x15" });
   });
@@ -375,7 +375,7 @@ describe("CompletionModal", () => {
         challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
       />,
     );
-    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    fireEvent.click(getByRole("button", { name: /Race friends/ }));
     expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "challenge_result", size: "15x15" });
   });
 
@@ -406,7 +406,7 @@ describe("CompletionModal", () => {
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[]} onNextUp={() => {}} onRaceFresh={() => {}} />,
     );
     expect(queryByText("Up next")).toBeNull();
-    expect(getByRole("button", { name: /Race a friend live/ })).toBeTruthy();
+    expect(getByRole("button", { name: /Race friends/ })).toBeTruthy();
   });
 
   it("hides the sign-the-board form when dailySign is absent", () => {

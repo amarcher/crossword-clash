@@ -25,3 +25,20 @@ describe("JoinGame focus on arrival", () => {
     expect(document.activeElement).toBe(document.getElementById("join-display-name"));
   });
 });
+
+describe("JoinGame arriving from the Race friends code card", () => {
+  it("joins at once when the code and a name are already known, and only once", () => {
+    const onJoin = vi.fn();
+    const { rerender } = render(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" initialName="alicia" autoJoin /></MemoryRouter>);
+    expect(onJoin).toHaveBeenCalledWith("ABC123", "alicia");
+    rerender(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error="No open room has that code" initialCode="ABC123" initialName="alicia" autoJoin /></MemoryRouter>);
+    expect(onJoin).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits on the form when there is no name yet, or the code came from a link", () => {
+    const onJoin = vi.fn();
+    render(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" autoJoin /></MemoryRouter>);
+    render(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" initialName="alicia" /></MemoryRouter>);
+    expect(onJoin).not.toHaveBeenCalled();
+  });
+});

@@ -149,7 +149,7 @@ describe("RaceScreen (/race, spec §3.6)", () => {
 
   it("takes a typed code to the join screen, and not before six characters", () => {
     renderScreen();
-    const field = screen.getByLabelText("Game code");
+    const field = screen.getByLabelText("Room code");
     const joinButton = () => screen.getByRole("button", { name: "Join" });
     expect(joinButton()).toHaveProperty("disabled", true);
     fireEvent.change(field, { target: { value: "kq7m" } });
@@ -157,6 +157,6 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     fireEvent.change(field, { target: { value: "https://crosswordclash.com/?join=KQ7MXB" } });
     expect(joinButton()).toHaveProperty("disabled", false);
     fireEvent.submit(field.closest("form")!);
-    expect(navigate).toHaveBeenCalledWith("/join?join=KQ7MXB");
+    expect(navigate).toHaveBeenCalledWith("/join?join=KQ7MXB", { state: { auto: true } });
   });
 });

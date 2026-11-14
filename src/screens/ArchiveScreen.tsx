@@ -283,7 +283,7 @@ export function ArchiveScreen() {
         : t("archive.unsolved").toLowerCase();
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={tv ? { backLabel: t("importer.tvBack"), backTo: TV_CHOOSER_PATH } : { backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={tv ? { backLabel: t("importer.tvBack"), backTo: TV_CHOOSER_PATH } : { backLabel: t("completion.backToMenu") }}>
       <div className="pb-10 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("archive.title")}</h1>
         <p className="mt-1 min-h-5 text-sm text-muted tabular-nums" aria-live="polite">

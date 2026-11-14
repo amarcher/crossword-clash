@@ -191,7 +191,7 @@ export function RaceScreen() {
   };
 
   return (
-    <PageShell width="md" bar={{ backLabel: t("common.back"), backTo: "/menu" }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
       <header className="mb-5">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("race.title")}</h1>
         <p className="mt-1 text-muted">{t("race.subtitle")}</p>
@@ -204,7 +204,7 @@ export function RaceScreen() {
           </p>
         )}
       </header>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4" aria-busy={!friends.ready || undefined}>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid" aria-busy={!friends.ready || undefined}>
         {blocks.map(render)}
       </div>
     </PageShell>

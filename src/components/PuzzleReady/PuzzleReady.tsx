@@ -46,7 +46,7 @@ export function PuzzleReady({
     <FlowPage
       wide
       onBack={onBack}
-      backLabel={t("common.back")}
+      backLabel={t("completion.backToMenu")}
       eyebrow={
         // First thing a bookmarklet import shows — confirm success explicitly
         // rather than silently landing on a puzzle summary.
