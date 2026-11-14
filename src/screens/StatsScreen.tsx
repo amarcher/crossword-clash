@@ -296,7 +296,7 @@ function TimesChart({ results, average, detail, locale, label }: { results: Dail
         )}
         <g>
           {results.map((res, i) => (
-            <path key={res.day} d={bar(i, res.seconds)} className={`${i === bestIndex ? "fill-brand-700" : "fill-brand-400"} ${hover === i ? "opacity-80" : ""}`} />
+            <path key={res.day} d={bar(i, res.seconds)} className={`${i === bestIndex ? "fill-gold-400" : "fill-brand-500"} ${hover === i ? "opacity-80" : ""}`} />
           ))}
           {detail && average !== null && <line x1={PAD.l} x2={W - PAD.r} y1={y(average)} y2={y(average)} className="stroke-ink-soft" strokeWidth="1" strokeDasharray="3 3" />}
         </g>
@@ -319,7 +319,7 @@ function TimesChart({ results, average, detail, locale, label }: { results: Dail
             </span>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-sm bg-brand-700" aria-hidden="true" />
+            <span className="size-2 rounded-sm bg-gold-400" aria-hidden="true" />
             {t("stats.bestDot", { time: formatDuration(results[bestIndex].seconds) })}
           </span>
         </p>
