@@ -1100,6 +1100,12 @@
     "reminderAskBody": "One notification when the day's puzzles are ready. Turn it off any time.",
     "reminderAskYes": "Remind me"
   },
+  "roomReplay": {
+    "watch": "Watch the replay",
+    "title": "Race replay",
+    "subtitle": "{{time}}, played at {{speed}}× speed",
+    "playersLabel": "Squares claimed so far"
+  },
   "ghostRace": {
     "watchVs": "Watch you vs {{name}}",
     "you": "You",

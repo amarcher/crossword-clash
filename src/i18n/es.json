@@ -1100,6 +1100,12 @@
     "reminderAskBody": "Una notificación cuando estén listos los crucigramas del día. Puedes desactivarla cuando quieras.",
     "reminderAskYes": "Recuérdamelo"
   },
+  "roomReplay": {
+    "watch": "Ver la repetición",
+    "title": "Repetición de la carrera",
+    "subtitle": "{{time}}, a velocidad {{speed}}×",
+    "playersLabel": "Casillas conseguidas hasta ahora"
+  },
   "ghostRace": {
     "watchVs": "Ver tú contra {{name}}",
     "you": "Tú",

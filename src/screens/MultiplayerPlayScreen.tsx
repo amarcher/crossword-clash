@@ -32,6 +32,8 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
+import { buildRoomReplay } from "../lib/roomReplay";
+import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
@@ -89,6 +91,13 @@ export function MultiplayerPlayScreen() {
 
   const isAsync = raceMode === "async";
   const isCoop = raceMode === "coop";
+
+  // The room's replay (roomReplay.ts): a finished shared grid whose every square has a time.
+  const roomReplay = useMemo(
+    () => (gameStatus === "completed" && !isAsync ? buildRoomReplay(playerCells, mp.raceStartedAt) : null),
+    [gameStatus, isAsync, playerCells, mp.raceStartedAt],
+  );
+  const [replayOpen, setReplayOpen] = useState(false);
 
   useBeforeUnload(gameStatus === "active");
 
@@ -490,7 +499,18 @@ export function MultiplayerPlayScreen() {
         onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
+        onWatchRoomReplay={
+          roomReplay
+            ? () => {
+                track("room_replay_opened", { placement: "player" });
+                setReplayOpen(true);
+              }
+            : undefined
+        }
       />
+      {replayOpen && roomReplay && (
+        <RoomReplayDialog puzzle={puzzle} replay={roomReplay} players={playerResults ?? []} playerColorMap={playerColorMap ?? {}} onClose={() => setReplayOpen(false)} />
+      )}
     </>
   );
 }
