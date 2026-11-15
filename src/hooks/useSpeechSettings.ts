@@ -158,10 +158,7 @@ export function useSpeechSettings(): SpeechSettings {
     (text: string) => {
       if (settingsRef.current.muted) return;
 
-      // Agent narrators (ElevenLabs, OpenAI) handle their own audio — speak() is a no-op.
-      // Claude narrator uses a separate pipeline during gameplay, but Test Voice should still work.
-      const narrator = settingsRef.current.narratorEngine;
-      if (narrator === "elevenlabs-agent" || narrator === "openai-agent") return;
+      // The AI host speaks through its own pipeline during a game; Test voice still comes through here.
 
       if (settingsRef.current.engine === "elevenlabs" && elAvailable) {
         getAudioQueue().enqueue(text);

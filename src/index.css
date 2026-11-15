@@ -118,6 +118,10 @@
   min-height: 100dvh;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+/* The TV's stage is dark to the glass: the insets `#root` pads showed the
+   app's white canvas as a strip behind the status bar and the home indicator
+   on an iPad (Andrew, 2026-11-14). Only while a stage is mounted. */
+.native-app:has(.tv-stage), .native-app:has(.tv-stage) body { background: var(--color-stage); }
 @utility min-h-app { min-height: var(--app-height); }
 .native-game-layout {
   position: fixed;
@@ -524,7 +528,7 @@ select,
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   gap: calc(var(--u) * 2);
   padding: calc(var(--u) * 2.2);
-  height: 100dvh;
+  height: var(--app-height);
 }
 .tv-lobby-join {
   background:

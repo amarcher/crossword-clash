@@ -1,3 +1,4 @@
+import { narratorAudioContext } from "./audioUnlock";
 import { formatEvent } from "./events";
 import { CLAUDE_SYSTEM_PROMPT } from "./prompts";
 import { NARRATOR_UNAVAILABLE, NARRATOR_UNAVAILABLE_BUDGET, NARRATOR_UNAVAILABLE_PLUS } from "../narratorBudget";
@@ -112,9 +113,6 @@ function fetchTTSAudio(
 /** Default ElevenLabs voice for Claude narrator TTS */
 const DEFAULT_VOICE_ID = "TxGEqnHWrfWFTfGW9XjX"; // Josh — deep, young male
 
-/** How long after the last commentary before we auto-disconnect (ms) */
-const IDLE_DISCONNECT_MS = 30_000;
-
 export type TTSEngine = "browser" | "elevenlabs";
 
 export interface ClaudeNarratorOptions {
@@ -137,7 +135,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
   private onIdle: (() => void) | null = null;
-  private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private processing = false;
   private eventQueue: AgentGameEvent[] = [];
   private audioContext: AudioContext | null = null;
@@ -181,9 +178,11 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       if (!supabaseUrl) {
         throw new Error("Claude narrator not configured");
       }
-      // Create AudioContext for ElevenLabs TTS (during user interaction so it's unlocked)
+      // The shared context a tap unlocked (audioUnlock.ts): one made here, as
+      // the game starts, is suspended for good on iOS.
       if (this.ttsEngine === "elevenlabs") {
-        this.audioContext = new AudioContext();
+        this.audioContext = narratorAudioContext();
+        if (!this.audioContext) throw new Error("No audio output");
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.value = this._volume;
         this.gainNode.connect(this.audioContext.destination);
@@ -215,13 +214,13 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.messages = [];
     this.eventQueue = [];
     this.processing = false;
-    this.clearIdleTimer();
     if (this.currentSource) {
       this.currentSource.stop();
       this.currentSource = null;
     }
     if (this.audioContext) {
-      await this.audioContext.close().catch(() => {});
+      // The context is shared and stays unlocked for the next game.
+      this.gainNode?.disconnect();
       this.audioContext = null;
       this.gainNode = null;
     }
@@ -240,7 +239,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
     const text = formatEvent(event);
     console.log("[ClaudeNarrator] Sending:", text);
-    this.clearIdleTimer();
 
     this.eventQueue.push(event);
     if (!this.processing) {
@@ -266,7 +264,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async processQueue(): Promise<void> {
     if (this.eventQueue.length === 0 || !this._isConnected) {
       this.processing = false;
-      this.resetIdleTimer();
       this.onIdle?.();
       return;
     }
@@ -345,12 +342,14 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async speakElevenLabs(text: string, demo = false): Promise<void> {
     if (!this.audioContext || !this.gainNode) return;
 
-    // Resume AudioContext if suspended (browser autoplay policy)
-    if (this.audioContext.state === "suspended") {
-      await this.audioContext.resume();
-    }
-
     try {
+      // Resume if suspended (autoplay policy). Never wait on it for long: on
+      // WebKit a resume with no gesture behind it can stay pending, which
+      // froze the whole queue.
+      if (this.audioContext.state === "suspended") {
+        await Promise.race([this.audioContext.resume(), new Promise((r) => setTimeout(r, 1500))]);
+      }
+
       const voiceId = this.elevenLabsVoiceId || DEFAULT_VOICE_ID;
       const audioData = await fetchTTSAudio(text, voiceId, demo);
       if (this.intentionalDisconnect || !this.audioContext) return;
@@ -378,22 +377,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
         throw err;
       }
       console.error("[ClaudeNarrator] TTS failed:", err);
-    }
-  }
-
-  private resetIdleTimer(): void {
-    this.clearIdleTimer();
-    this.idleTimer = setTimeout(() => {
-      console.log("[ClaudeNarrator] Idle timeout — disconnecting");
-      this.disconnect();
-      this.onStateChange?.();
-    }, IDLE_DISCONNECT_MS);
-  }
-
-  private clearIdleTimer(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
     }
   }
 }

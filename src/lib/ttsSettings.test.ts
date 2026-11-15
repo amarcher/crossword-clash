@@ -98,7 +98,7 @@ describe("TTS settings persistence", () => {
     expect(loadTTSSettings().engine).toBe("elevenlabs");
   });
 
-  it("migrates legacy engine agent to narratorEngine elevenlabs-agent", () => {
+  it("migrates the legacy engine \"agent\" to the AI host", () => {
     // Simulate old settings with engine: "agent"
     localStorage.setItem(
       "crossword-clash-tts",
@@ -106,7 +106,7 @@ describe("TTS settings persistence", () => {
     );
     const loaded = loadTTSSettings();
     expect(loaded.engine).toBe("browser");
-    expect(loaded.narratorEngine).toBe("elevenlabs-agent");
+    expect(loaded.narratorEngine).toBe("claude");
   });
 
   it("defaults engine to browser for unknown value", () => {
@@ -142,14 +142,11 @@ describe("TTS settings persistence", () => {
     expect(loadTTSSettings().narratorEngine).toBeNull();
   });
 
-  it("round-trips narratorEngine elevenlabs-agent", () => {
-    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "elevenlabs-agent" });
-    expect(loadTTSSettings().narratorEngine).toBe("elevenlabs-agent");
-  });
-
-  it("round-trips narratorEngine openai-agent", () => {
-    saveTTSSettings({ ...DEFAULT_TTS_SETTINGS, narratorEngine: "openai-agent" });
-    expect(loadTTSSettings().narratorEngine).toBe("openai-agent");
+  it("reads a stored realtime agent (retired 2026-11-14) as the AI host", () => {
+    for (const old of ["elevenlabs-agent", "openai-agent"]) {
+      localStorage.setItem("crossword-clash-tts", JSON.stringify({ ...DEFAULT_TTS_SETTINGS, narratorEngine: old }));
+      expect(loadTTSSettings().narratorEngine).toBe("claude");
+    }
   });
 
   it("round-trips narratorEngine claude", () => {

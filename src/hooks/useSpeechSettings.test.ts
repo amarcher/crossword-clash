@@ -200,10 +200,10 @@ describe("useSpeechSettings", () => {
 
   it("setNarratorEngine updates and persists", () => {
     const { result } = renderHook(() => useSpeechSettings());
-    act(() => result.current.setNarratorEngine("elevenlabs-agent"));
-    expect(result.current.narratorEngine).toBe("elevenlabs-agent");
+    act(() => result.current.setNarratorEngine("claude"));
+    expect(result.current.narratorEngine).toBe("claude");
     const stored = JSON.parse(localStorage.getItem("crossword-clash-tts")!);
-    expect(stored.narratorEngine).toBe("elevenlabs-agent");
+    expect(stored.narratorEngine).toBe("claude");
   });
 
   it("setElevenLabsVoiceId updates and persists", () => {
@@ -224,22 +224,6 @@ describe("useSpeechSettings", () => {
     const { result } = renderHook(() => useSpeechSettings());
     expect(result.current.elevenLabsVoices.length).toBe(7);
     expect(result.current.elevenLabsVoices[0].name).toBe("Andrew");
-  });
-
-  it("speak is a no-op when narratorEngine is active", () => {
-    saveTTSSettings({
-      muted: false,
-      voiceName: null,
-      rate: 1.0,
-      pitch: 1.0,
-      engine: "browser",
-      elevenLabsVoiceId: null,
-      narratorEngine: "elevenlabs-agent",
-      spokenEvents: false,
-    });
-    const { result } = renderHook(() => useSpeechSettings());
-    act(() => result.current.speak("Hello"));
-    expect(mockSpeak).not.toHaveBeenCalled();
   });
 
   it("speak does not call speechSynthesis when engine is elevenlabs", () => {
