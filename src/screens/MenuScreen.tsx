@@ -30,7 +30,7 @@ import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
-import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
 import {
   ANDROID_PLAY_STORE_URL,
   IOS_APP_STORE_URL,
@@ -71,13 +71,18 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
   // thumbnail and its own fill, and Play becomes View — the puzzle opens on
   // its solved grid, where "Clear & redo" is the explicit way to do it again.
   const solved = typeof best === "number";
+  // Finished in a room (a shared grid has no personal time, so no best): the
+  // tile says the day is done instead of offering it as untouched (Andrew,
+  // 2026-11-14). Solo is still open, for a time of one's own.
+  const { rows } = useSolveHistory();
+  const raced = !solved && !!key && !!rows?.some((r) => r.puzzle_key === key && r.mode !== "solo" && r.mode !== "import");
   const attempt = key ? progress[key] : undefined;
   // A solved puzzle is "in progress" again only once its new attempt has a letter.
   const resumable = !!attempt && (!solved || attempt.filled > 0);
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
-    <Card role="region" aria-label={label} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined}>
+    <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
           {/* One 20px row whatever the feed says: the theme chip is 20px and the
@@ -104,6 +109,11 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
                   <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
                   {t("menu.dailySolvedIn", { time: formatDuration(best) })}
                 </p>
+              ) : raced ? (
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+                  <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
+                  {t("menu.dailyRaced")}
+                </p>
               ) : (
                 <p className="mt-1 text-sm text-muted tabular-nums">
                   {t("menu.dailyMeta", {
@@ -122,15 +132,15 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
           )}
         </div>
         {daily ? (
-          <MiniGridThumb puzzle={daily.puzzle} solved={solved} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+          <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-24 shrink-0 sm:w-28 lg:w-36" />
         ) : (
           <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
         )}
       </div>
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
-        <Button size="lg" variant={solved && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
-          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : "menu.dailyPlay")}
+        <Button size="lg" variant={(solved || raced) && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
+          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : raced ? "menu.dailyPlaySolo" : "menu.dailyPlay")}
         </Button>
         {multiplayer && (
           <Button

@@ -35,7 +35,9 @@ export function InviteBanner() {
   // The Race screen lists the same invite with its own Join and Can't now:
   // the banner over it showed two Joins for one room (Andrew, 2026-11-03).
   // A joined-your-room notice has no row there, so it still shows.
-  const inviteQuiet = quiet || pathname === "/race";
+  // The join screen is where its Join leads, and a link to the same room
+  // opened it under the heading (Andrew, 2026-11-14).
+  const inviteQuiet = quiet || pathname === "/race" || pathname === "/join";
   const invite = inviteQuiet ? undefined : unseenInvites[0];
   // A host on their own lobby sees the roster change; the banner is for a host elsewhere in the app.
   const joined = roomJoined && !pathname.startsWith(`/lobby/${roomJoined.gameId}`) ? roomJoined : null;
