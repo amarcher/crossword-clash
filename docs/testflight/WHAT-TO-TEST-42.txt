@@ -1,0 +1,10 @@
+This build (1.1.3, build 42) is about hosting a game on a TV, plus a replay after a race. Please check:
+
+1. Race replay: after a versus or co-op game on one shared grid, the finish screen has "Watch the replay". It plays the grid filling in, each square in the colour of whoever got it, with pause and watch again. It appears on phones and on the TV.
+2. AI host: when you host on a TV with Plus, the lobby has an "AI host" Off / On switch and a Voice settings button. With it on, the host should speak from the first clue after you tap Start game, and keep speaking through the game.
+3. Screen mirroring: mirroring an iPad or iPhone to a TV with AirPlay should show what is on the device (the hosted game), not the app's home screen.
+4. Status bar: on the dark TV screens (lobby and game) the clock and battery are light and readable, with no white strip behind them. They go back to dark on the normal screens.
+5. Next puzzle on the TV: when the host picks another puzzle from a phone, the TV follows to the new game by itself.
+6. Invite links: opening a room link joins the room at once. Dailies you have finished are marked on the home screen and in the TV puzzle chooser.
+7. Notifications keep working after an app update or reinstall without being switched off and on again.
+8. Everything from build 41 still applies.
