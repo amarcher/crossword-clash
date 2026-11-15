@@ -11,7 +11,7 @@ locks to that account on first upload.
   `6294983081887284734` (sign in as the Fable Designer Google login, not the
   personal one; the console then lands on `/console/u/<n>/`).
 - Live since October 13, 2026: release **2 (1.0.0)**, all 178 countries.
-- Current work: **4 (1.0.2)**, see "Status" below.
+- Latest: **22 (1.1.2)**, sent for review November 14, 2026; see "History" below.
 
 ## What is in this folder
 
@@ -200,6 +200,35 @@ Done by Claude, nothing submitted or rolled out:
   API (`edits` → `tracks/production` PUT with `whats-new-1.1.0.txt` → commit).
   Release notes are capped at 500 characters; the first two drafts were
   refused at the commit for 868 and 524.
+- **November 11, 2026:** 21 (1.1.1) on the internal track and in production.
+- **November 14, 2026:** 22 (1.1.2) built on the Mac Studio, uploaded through
+  the console (see "Uploading without the API" below), rolled out to internal
+  testing with `whats-new-1.1.2-internal-22.txt`, then promoted to production
+  (100%) with the same notes and sent for review. Managed publishing is off,
+  so it goes live on approval.
+
+## Uploading without the API
+
+The play-publisher service-account key and `play-upload.mjs` live on the
+MacBook only. From any other machine, upload through the console in a Chrome
+that is signed in as the Fable Designer login (it may not be account 0; try
+`/console/u/<n>/` until the app loads):
+
+1. Test and release → Internal testing → Create new release, drop the `.aab`
+   on "Upload app bundles", paste the notes, Next, Save and publish.
+2. Promote release → Production, Next, Save, then Publishing overview →
+   Submit for review.
+
+Claude in Chrome's `file_upload` refuses more than 10 MB per call and the
+bundle is about 12 MB. Split it (`split -b 6500000`), upload each part to a
+temporary `<input type=file>` added to the page, join them with
+`new File([a, b], name)`, check the SHA-256 against the bundle on disk, then
+set the result on the console's `input[accept=".aab"]` with a `DataTransfer`
+and dispatch `change`.
+
+On a machine where Android Studio bundles JDK 25, Gradle fails with
+"Unsupported class file major version 69"; build with
+`JAVA_HOME=/opt/homebrew/opt/openjdk@21` instead.
 
 ## Known gaps
 
