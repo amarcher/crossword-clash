@@ -7,9 +7,9 @@ import type { Puzzle } from "../types/puzzle";
 import { puzzleIdentity } from "../lib/soloStats";
 
 /** The menu's daily tile alone: what it says for an unsolved, a solved and a re-attempted daily. */
-const state = vi.hoisted(() => ({ best: {} as Record<string, number>, progress: {} as Record<string, { filled: number }> }));
+const state = vi.hoisted(() => ({ best: {} as Record<string, number>, progress: {} as Record<string, { filled: number }>, rows: null as { puzzle_key: string; mode: string }[] | null }));
 vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
-vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => state.best, useStreaks: () => ({ daily: 0, nyt: 0 }) }));
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => state.best, useSolveHistory: () => ({ rows: state.rows }), useStreaks: () => ({ daily: 0, nyt: 0 }) }));
 vi.mock("../hooks/useSoloProgress", () => ({ useSoloProgress: () => state.progress }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 
@@ -35,6 +35,7 @@ afterEach(() => {
   cleanup();
   state.best = {};
   state.progress = {};
+  state.rows = null;
 });
 
 describe("the menu's daily tile", () => {
@@ -44,6 +45,15 @@ describe("the menu's daily tile", () => {
     expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Daily Mini" }).hasAttribute("data-solved")).toBe(false);
     expect(container.querySelector("[data-solved]")).toBeNull();
+  });
+
+  it("finished in a room: says so, fills the thumbnail and tints the tile, and Play becomes Play solo", () => {
+    state.rows = [{ puzzle_key: key, mode: "versus" }];
+    const { container } = tile();
+    expect(screen.getByText("Finished in a race")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Play solo" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Daily Mini" }).hasAttribute("data-raced")).toBe(true);
+    expect(container.querySelector("[data-solved]")).toBeTruthy();
   });
 
   it("solved: says so with the time, fills the thumbnail, tints the tile, and Play becomes View", () => {

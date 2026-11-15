@@ -17,7 +17,7 @@ interface JoinGameProps {
   connecting?: boolean;
   /** A signed-in solver's username: prefilled ahead of the remembered name, still editable. */
   initialName?: string;
-  /** The code was typed on the Race friends screen: join at once when a name is already known. */
+  /** The code was typed on the Race screen or came with the page (a link, a QR code): join at once when a name is already known. */
   autoJoin?: boolean;
 }
 
@@ -52,7 +52,8 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
   // cell stayed unlit.
   useEffect(() => {
     if (code.length === CODE_LENGTH) {
-      nameRef.current?.focus();
+      // A code and a name on arrival join by themselves: no keyboard over it.
+      if (!displayName.trim()) nameRef.current?.focus();
     } else {
       codeRef.current?.focus();
       setCodeFocused(true);

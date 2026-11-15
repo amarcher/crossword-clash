@@ -12,10 +12,10 @@ import { tStatic } from "../i18n/i18n";
 
 export function JoinScreen() {
   const navigate = useNavigate();
-  const autoJoin = (useLocation().state as { auto?: boolean } | null)?.auto === true;
+  const typedCode = (useLocation().state as { auto?: boolean } | null)?.auto === true;
   const { user, loading: authLoading } = useAuth();
   const game = useGame();
-  const { profile } = useAccountContext();
+  const { profile, ready, profileReady } = useAccountContext();
 
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -37,6 +37,11 @@ export function JoinScreen() {
     }
     return game.initialJoinCode ?? undefined;
   });
+  // A code that came with the page (an invite link, the room's QR code, the
+  // invite banner's Join) is a decision already made: join at once when a
+  // name is known, instead of a form to confirm (Andrew, 2026-11-14). It
+  // waits for the account, so a signed-in player joins under their username.
+  const autoJoin = typedCode || (!!initialCode && ready && profileReady);
   const { consumeInitialJoinCode } = game;
   useEffect(() => {
     consumeInitialJoinCode();

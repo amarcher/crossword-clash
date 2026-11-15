@@ -51,6 +51,8 @@
     "pastPuzzles": "Past puzzles",
     "pastPuzzlesSubtitle": "Catch up on dailies you missed",
     "dailyPlay": "Play",
+    "dailyRaced": "Finished in a race",
+    "dailyPlaySolo": "Play solo",
     "dailyView": "View",
     "dailySolved": "Solved",
     "dailySolvedIn": "Solved in {{time}}",

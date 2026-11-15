@@ -51,6 +51,7 @@ export function HostImportScreen() {
       if (result) {
         game.setGameId(result.gameId);
         game.setIsMultiplayer(true);
+        game.setCompletionModalDismissed(false);
         navigate(`/lobby/${result.gameId}`);
       }
     },

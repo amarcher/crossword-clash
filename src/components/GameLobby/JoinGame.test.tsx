@@ -35,7 +35,12 @@ describe("JoinGame arriving from the Race friends code card", () => {
     expect(onJoin).toHaveBeenCalledTimes(1);
   });
 
-  it("waits on the form when there is no name yet, or the code came from a link", () => {
+  it("leaves the keyboard down when a code and a name arrive together", () => {
+    render(<MemoryRouter><JoinGame onJoin={vi.fn()} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" initialName="alicia" autoJoin /></MemoryRouter>);
+    expect(document.activeElement).not.toBe(document.getElementById("join-display-name"));
+  });
+
+  it("waits on the form when there is no name yet, or auto join is off", () => {
     const onJoin = vi.fn();
     render(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" autoJoin /></MemoryRouter>);
     render(<MemoryRouter><JoinGame onJoin={onJoin} onBack={vi.fn()} loading={false} error={null} initialCode="ABC123" initialName="alicia" /></MemoryRouter>);

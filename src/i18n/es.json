@@ -51,6 +51,8 @@
     "pastPuzzles": "Crucigramas anteriores",
     "pastPuzzlesSubtitle": "Los diarios que te perdiste",
     "dailyPlay": "Jugar",
+    "dailyRaced": "Terminado en una carrera",
+    "dailyPlaySolo": "Jugar en solitario",
     "dailyView": "Ver",
     "dailySolved": "Resuelto",
     "dailySolvedIn": "Resuelto en {{time}}",
