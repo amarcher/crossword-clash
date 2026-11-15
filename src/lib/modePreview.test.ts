@@ -35,19 +35,21 @@ describe("modePreviewFrame", () => {
   it("your own copy holds only your letters; the friend is slower", () => {
     for (let s = 0; s <= PREVIEW_CELLS; s++) {
       const f = modePreviewFrame("async", s);
-      expect(f.cells.every((c) => c.by !== 1 && !c.dot)).toBe(true);
+      expect(f.cells.every((c) => c.by !== 1)).toBe(true);
       expect(f.counts[0]).toBe(s);
       expect(f.counts[1]).toBeLessThanOrEqual(s);
     }
     expect(modePreviewFrame("async", PREVIEW_CELLS).counts[1]).toBeLessThan(PREVIEW_CELLS);
   });
 
-  it("a ghost race marks the friend's squares with dots on your grid", () => {
-    const mid = modePreviewFrame("ghost", 8);
-    expect(mid.cells.filter((c) => c.dot)).toHaveLength(mid.counts[1]);
-    expect(mid.counts[1]).toBeGreaterThan(0);
-    // A dot can sit on a square you have not reached.
-    expect(mid.cells.some((c) => c.dot && c.by === null)).toBe(true);
-    expect(mid.cells.every((c) => c.by !== 1)).toBe(true);
+  it("an own-copy race marks the friend's squares with dots on your grid, live or recorded", () => {
+    for (const mode of ["async", "ghost"] as const) {
+      const mid = modePreviewFrame(mode, 8);
+      expect(mid.cells.filter((c) => c.dot)).toHaveLength(mid.counts[1]);
+      expect(mid.counts[1]).toBeGreaterThan(0);
+      // A dot can sit on a square you have not reached.
+      expect(mid.cells.some((c) => c.dot && c.by === null)).toBe(true);
+      expect(mid.cells.every((c) => c.by !== 1)).toBe(true);
+    }
   });
 });

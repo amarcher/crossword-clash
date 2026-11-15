@@ -14,6 +14,7 @@ import { displayableName } from "../lib/nameFilter";
 import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
 import { buildFinalStandings, mergeRosters, type FinalStandings } from "../lib/finalStandings";
 import { liveRoster } from "../lib/roster";
+import { mergeRaceProgress, type RaceProgress } from "../lib/raceProgress";
 
 interface TrackedPresence {
   user_id: string;
@@ -124,6 +125,14 @@ interface UseMultiplayerReturn {
    */
   finishRace: () => number | null;
   /**
+   * Async mode: userId → the squares ("row,col") that player has filled on
+   * their own copy. Keys only, never letters: the grid marks them with a dot.
+   * Empty for a player on a build that does not send it.
+   */
+  raceProgress: RaceProgress;
+  /** Async mode: tell the room which squares the local player has filled. */
+  announceRaceProgress: (cells: string[]) => void;
+  /**
    * The frozen record of the finished game (finalStandings.ts): every player
    * who was in it, their colour, squares and finish time, and the winner.
    * Taken once when the room completes (or when a completed room is
@@ -168,6 +177,8 @@ export function useMultiplayer({
   const [completedAtMs, setCompletedAtMs] = useState<number | null>(null);
   // Async ("time trial") mode: per-player finish times, userId → seconds.
   const [raceFinishTimes, setRaceFinishTimes] = useState<Record<string, number>>({});
+  // Async mode: the squares each other player has filled on their own copy.
+  const [raceProgress, setRaceProgress] = useState<RaceProgress>({});
   // The finished game's record, keyed by room like statusState so a new room
   // never reads the last game's standings.
   const [finalState, setFinalState] = useState<{ gameId: string; standings: FinalStandings } | null>(null);
@@ -298,6 +309,7 @@ export function useMultiplayer({
     setStartedAtMs(null);
     setCompletedAtMs(null);
     setRaceFinishTimes({});
+    setRaceProgress({});
     setGameSettings(DEFAULT_GAME_SETTINGS);
     setLobbySettings(null);
 
@@ -392,6 +404,13 @@ export function useMultiplayer({
       );
     });
 
+    // Async mode: the squares another player has filled so far. Each message
+    // carries the whole list, so a missed one (or a late join) heals on the
+    // next letter; nothing is ever erased in a room, so the longer list wins.
+    channel.on("broadcast", { event: "race_progress" }, ({ payload }) => {
+      setRaceProgress((prev) => mergeRaceProgress(prev, payload?.playerId, payload?.cells, userId));
+    });
+
     channel.on("broadcast", { event: "room_closed" }, () => {
       setIsRoomClosed(true);
     });
@@ -435,6 +454,7 @@ export function useMultiplayer({
     setStartedAtMs(null);
     setCompletedAtMs(null);
     setRaceFinishTimes({});
+    setRaceProgress({});
     setGameSettings(DEFAULT_GAME_SETTINGS);
     setIsHost(false);
     setIsRoomClosed(false);
@@ -681,6 +701,12 @@ export function useMultiplayer({
       .catch(() => {});
   }, []);
 
+  const announceRaceProgress = useCallback((cells: string[]) => {
+    void channelRef.current
+      ?.send({ type: "broadcast", event: "race_progress", payload: { playerId: userId, cells } })
+      .catch(() => {});
+  }, [userId]);
+
   const broadcastNewGame = useCallback((newGameId: string) => {
     void channelRef.current
       ?.send({
@@ -753,6 +779,8 @@ export function useMultiplayer({
     raceStartedAt: startedAtMs,
     raceFinishTimes,
     finishRace,
+    raceProgress,
+    announceRaceProgress,
     finalStandings,
   };
 }

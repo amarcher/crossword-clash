@@ -5,8 +5,8 @@
  * - versus / coop: one shared grid. The two take turns from opposite corners
  *   and each square keeps the colour of whoever placed it.
  * - async (time trial) / ghost: your own copy. You fill it in reading order;
- *   the friend works on theirs at a different pace. In a ghost race their
- *   filled squares show on your grid as a dot, the way race.ts draws them.
+ *   the friend works on theirs at a different pace, live or from a recorded
+ *   solve. Their filled squares show on your grid as a dot (Cell.tsx).
  *
  * Pure: a frame is a function of the mode and the step. Tested in
  * modePreview.test.ts.
@@ -36,7 +36,7 @@ export interface PreviewCell {
   letter: string;
   /** Who placed it here: 0 you, 1 the friend, null while empty. */
   by: 0 | 1 | null;
-  /** Ghost race: the friend has filled this square on their solve. */
+  /** Own-copy modes: the friend has filled this square on their grid. */
   dot: boolean;
 }
 
@@ -79,7 +79,7 @@ export function modePreviewFrame(mode: PreviewMode, step: number): PreviewFrame 
   const shared = mode === "versus" || mode === "coop";
   const mine = by.filter((b) => b === 0).length;
   return {
-    cells: by.map((b, i) => ({ letter: letterAt(i), by: b, dot: mode === "ghost" && dots.has(i) })),
+    cells: by.map((b, i) => ({ letter: letterAt(i), by: b, dot: dots.has(i) })),
     counts: [mine, shared ? by.filter((b) => b === 1).length : dots.size],
     done: s >= PREVIEW_CELLS,
   };

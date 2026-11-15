@@ -163,7 +163,7 @@
     "modeCoop": "Co-op",
     "modeCoopDesc": "One shared grid. Everyone fills it in together and you finish as a team.",
     "modeAsync": "Time trial",
-    "modeAsyncDesc": "Everyone solves their own copy at the same time. The fastest finish wins.",
+    "modeAsyncDesc": "Everyone solves their own copy at the same time. Dots show the squares the others have filled, and the fastest finish wins.",
     "howItWorksStep1": "Friends scan the QR code or enter the code at crosswordclash.com.",
     "howItWorksStep2": "When everyone's in, press Start.",
     "copied": "Copied!",

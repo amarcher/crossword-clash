@@ -107,7 +107,7 @@ export function ModePreview({ mode, label, variant = "light" }: ModePreviewProps
             {row(
               FRIEND,
               mode === "ghost" ? t("modePreview.earlierSolve", { name: friend }) : friend,
-              mode === "ghost" ? `${Math.round((frame.counts[1] / PREVIEW_CELLS) * 100)}%` : solving,
+              `${Math.round((frame.counts[1] / PREVIEW_CELLS) * 100)}%`,
             )}
           </>
         )}
