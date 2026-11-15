@@ -73,6 +73,25 @@ const closeFinish = () =>
     await vi.advanceTimersByTimeAsync(0);
   });
 
+describe("PushEffects launch registration", () => {
+  it("registers on every launch the OS allows, even when this webview has no remembered token", async () => {
+    push.permission = "granted";
+    renderEffects();
+    await elapse(1);
+    expect(push.registerPushToken).toHaveBeenCalledWith("u1", expect.anything());
+  });
+
+  it("registers nothing while the OS has not been asked or said no", async () => {
+    renderEffects();
+    await elapse(1);
+    push.permission = "denied";
+    cleanup();
+    renderEffects();
+    await elapse(1);
+    expect(push.registerPushToken).not.toHaveBeenCalled();
+  });
+});
+
 describe("PushEffects first-open ask", () => {
   it("asks in our own words first, and shows the OS sheet only after Enable", async () => {
     renderEffects();
