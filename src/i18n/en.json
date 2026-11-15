@@ -159,11 +159,11 @@
     "shareInvite": "Share the code below to invite players",
     "modeHeading": "Game mode",
     "modeVersus": "Compete",
-    "modeVersusDesc": "One shared grid — race to claim the most squares.",
+    "modeVersusDesc": "One shared grid. Each square goes to whoever gets it first, and the most squares wins.",
     "modeCoop": "Co-op",
-    "modeCoopDesc": "One shared grid — fill it together as a team.",
+    "modeCoopDesc": "One shared grid. Everyone fills it in together and you finish as a team.",
     "modeAsync": "Time trial",
-    "modeAsyncDesc": "Everyone gets their own copy — fastest solve wins.",
+    "modeAsyncDesc": "Everyone solves their own copy at the same time. The fastest finish wins.",
     "howItWorksStep1": "Friends scan the QR code or enter the code at crosswordclash.com.",
     "howItWorksStep2": "When everyone's in, press Start.",
     "copied": "Copied!",
@@ -1226,5 +1226,14 @@
     "fasterTeaser_one": "Ranked on {{count}} day. See how many solvers you beat.",
     "fasterTeaser_other": "Ranked on {{count}} days. See how many solvers you beat.",
     "fasterTeaserNone": "See how many solvers you beat."
+  },
+  "modePreview": {
+    "you": "You",
+    "friend": "Friend",
+    "together": "Together: {{count}} of {{total}}",
+    "done": "Done",
+    "earlierSolve": "{{name}}'s solve",
+    "guestHeading": "Game mode",
+    "ghostDesc": "You solve your own grid. A dot marks each square the other solver had filled by this point in their solve."
   }
 }

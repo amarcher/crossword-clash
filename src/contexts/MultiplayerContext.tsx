@@ -44,6 +44,10 @@ interface MultiplayerContextValue {
   finishRace: () => number | null;
   /** The room's play mode (defaults to "versus" for legacy games). */
   raceMode: RaceMode;
+  /** The host announces its lobby choices so joiners see the mode before Start (useMultiplayer). */
+  announceLobbySettings: (settings: GameSettings) => void;
+  /** What the host last announced while the room waits; null until it has. */
+  lobbySettings: GameSettings | null;
   /** The finished game's frozen record (see useMultiplayer); null while in progress. */
   finalStandings: FinalStandings | null;
 

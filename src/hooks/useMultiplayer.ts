@@ -92,6 +92,10 @@ interface UseMultiplayerReturn {
     direction: "across" | "down",
   ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
+  /** The host tells the lobby what it has chosen so far, so joiners see the mode before Start. */
+  announceLobbySettings: (settings: GameSettings) => void;
+  /** What the host last announced while the room waits; null until it has (or from a host on an older build). */
+  lobbySettings: GameSettings | null;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
   leaveGame: () => Promise<void>;
@@ -155,6 +159,7 @@ export function useMultiplayer({
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [lobbySettings, setLobbySettings] = useState<GameSettings | null>(null);
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor !== null && hydratedFor === gameId;
   // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
@@ -294,6 +299,7 @@ export function useMultiplayer({
     setCompletedAtMs(null);
     setRaceFinishTimes({});
     setGameSettings(DEFAULT_GAME_SETTINGS);
+    setLobbySettings(null);
 
     // Fetch short_code
     supabase
@@ -351,6 +357,13 @@ export function useMultiplayer({
       // flash). Once warmed, an empty sync means everyone legitimately left.
       if (fromPresence.length > 0 || presenceRef.current !== null) presenceRef.current = fromPresence;
       refreshRoster();
+    });
+
+    // The host's choices while the room waits (a hint for the lobby; game_started carries the real ones).
+    channel.on("broadcast", { event: "lobby_settings" }, ({ payload }) => {
+      const s = payload?.settings;
+      if (!s || typeof s.wrongAnswerTimeoutSeconds !== "number") return;
+      setLobbySettings({ wrongAnswerTimeoutSeconds: s.wrongAnswerTimeoutSeconds, raceMode: resolveRaceMode(s) });
     });
 
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
@@ -662,6 +675,12 @@ export function useMultiplayer({
     }
   }, [gameId, setGameStatus]);
 
+  const announceLobbySettings = useCallback((settings: GameSettings) => {
+    void channelRef.current
+      ?.send({ type: "broadcast", event: "lobby_settings", payload: { settings } })
+      .catch(() => {});
+  }, []);
+
   const broadcastNewGame = useCallback((newGameId: string) => {
     void channelRef.current
       ?.send({
@@ -717,6 +736,8 @@ export function useMultiplayer({
     claimCell,
     broadcastWrongLetter,
     startGame,
+    announceLobbySettings,
+    lobbySettings,
     closeRoom,
     broadcastNewGame,
     leaveGame,
