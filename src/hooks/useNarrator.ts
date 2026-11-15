@@ -67,11 +67,7 @@ function pausedReasonOf(sentinel: string): NarratorPausedReason {
 
 // Cheapest path first: on a connection failure we cascade toward the least
 // costly backend so cost-favoring is preserved even during fallback.
-const FALLBACK_CHAIN: Exclude<NarratorEngine, null>[] = [
-  "claude",
-  "elevenlabs-agent",
-  "openai-agent",
-];
+const FALLBACK_CHAIN: Exclude<NarratorEngine, null>[] = ["claude"];
 
 export function useNarrator({
   narratorEngine,

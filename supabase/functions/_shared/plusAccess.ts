@@ -150,7 +150,10 @@ export async function demoOnly(req: Request, endpoint: string): Promise<Response
  * Returns the refusal, or null to proceed. Only for subscribers.
  */
 export async function chargeClaudeCall(admin: SupabaseClient, userId: string): Promise<Response | null> {
-  const calls = await consumeAllowance(admin, userId, "narrator_claude_calls", 1, Number.MAX_SAFE_INTEGER);
+  // "No limit" as the largest value consume_allowance's INTEGER p_limit holds:
+  // Number.MAX_SAFE_INTEGER matched no function signature, the call failed
+  // closed, and every subscriber was told their minutes were spent.
+  const calls = await consumeAllowance(admin, userId, "narrator_claude_calls", 1, 2147483647);
   if (!calls.allowed) return allowanceExhaustedResponse("narrator_minutes", { allowed: false, used: 0, bonus: 0, month: "" }, NARRATOR_MINUTES_PER_MONTH);
   if ((calls.used - 1) % CLAUDE_CALLS_PER_MINUTE !== 0) return null;
   const minutes = await consumeAllowance(admin, userId, "narrator_minutes", 1, NARRATOR_MINUTES_PER_MONTH);

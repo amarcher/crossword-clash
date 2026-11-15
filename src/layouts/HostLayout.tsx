@@ -11,6 +11,7 @@ import {
   uploadPuzzle,
   createGame,
   createNextGame,
+  rejoinGame,
 } from "../lib/puzzleService";
 import { loadHostSession, saveHostSession, clearHostSession } from "../lib/sessionPersistence";
 import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
@@ -444,6 +445,29 @@ export function HostLayout() {
       navigate("/host");
     }
   }, [multiplayer.isRoomClosed, navigate]);
+
+  // A phone chose the room's next puzzle (the first player to join holds
+  // "Next puzzle, same room"): follow it. The TV stayed on the finished game,
+  // which had given up the room code, and its next pick then made a room with
+  // nobody in it (Andrew, 2026-11-14).
+  const followedGame = useRef<string | null>(null);
+  const nextGameId = multiplayer.newGameId;
+  useEffect(() => {
+    if (!nextGameId || !user || nextGameId === gameId || followedGame.current === nextGameId) return;
+    followedGame.current = nextGameId;
+    let live = true;
+    void rejoinGame(nextGameId, user.id, "", { spectator: true }).then((result) => {
+      if (!live || !result) return;
+      loadPuzzle(result.puzzle);
+      fileBufferRef.current = null;
+      setGameId(result.gameId);
+      setCompletionModalDismissed(false);
+      navigate(result.status === "waiting" ? `/host/lobby/${result.gameId}` : `/host/spectate/${result.gameId}`);
+    });
+    return () => {
+      live = false;
+    };
+  }, [nextGameId, user, gameId, loadPuzzle, navigate]);
 
   const handlePuzzleLoaded = useCallback(
     async (p: Puzzle, fileBuffer?: ArrayBuffer) => {
