@@ -14,6 +14,7 @@ import { priorSolveChip } from "../../lib/roomSolves";
 import { puzzleIdentity } from "../../lib/soloStats";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useKeepAwake } from "../../lib/keepAwake";
+import { useLightStatusBar } from "../../lib/statusBar";
 import { useHostContext } from "../../layouts/HostLayout";
 import { WRONG_ANSWER_TIMEOUT_OPTIONS } from "../../lib/gameSettings";
 
@@ -25,6 +26,7 @@ export function HostLobbyScreen() {
   useBeforeUnload(true);
   // A shared screen nobody touches: keep it from dimming while players join.
   useKeepAwake(true);
+  useLightStatusBar();
 
   // Who in the room has finished this puzzle before (room_solves): a chip on their row (Andrew, 2026-11-03).
   const playerIds = useMemo(() => multiplayer.players.map((p) => p.userId), [multiplayer.players]);
