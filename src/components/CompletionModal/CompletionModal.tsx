@@ -159,6 +159,8 @@ interface CompletionModalProps {
   /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
   replays?: { userId: string; name: string }[];
   onWatchReplay?: (userId: string) => void;
+  /** A finished shared-grid race this device can play back (roomReplay.ts): opens the room's replay. */
+  onWatchRoomReplay?: () => void;
   /**
    * "Up next" rows (at most two): today's unsolved dailies, then yesterday's
    * — from `nextUpSuggestions`. Solo/daily only.
@@ -228,6 +230,7 @@ export function CompletionModal({
   shareBack,
   replays,
   onWatchReplay,
+  onWatchRoomReplay,
   nextUp,
   onNextUp,
   onRaceFresh,
@@ -749,6 +752,18 @@ export function CompletionModal({
         <div className="flex flex-col gap-2.5">
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
+          {onWatchRoomReplay && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={onWatchRoomReplay}
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+              >
+                <PlayCircle className="size-4" aria-hidden="true" />
+                {t("roomReplay.watch")}
+              </button>
+            </div>
+          )}
           {!isMultiplayer && replayId && <ReplayPreview id={replayId} darkMode={darkMode} />}
           {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (

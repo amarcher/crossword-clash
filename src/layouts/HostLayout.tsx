@@ -89,6 +89,7 @@ export interface HostContextValue {
     isRoomClosed: boolean;
     newGameId: string | null;
     hydrated: boolean;
+    raceStartedAt: number | null;
   };
 
   // TTS
