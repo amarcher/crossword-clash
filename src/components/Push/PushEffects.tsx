@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { Bell } from "lucide-react";
-import { checkPushPermission, DAILY_FINISH_CLOSED_EVENT, enablePush, fetchPushPrefs, pushAvailable, PUSH_TOKEN_KEY, registerPushToken, savePushPrefs, startPushTaps } from "../../lib/push";
+import { checkPushPermission, DAILY_FINISH_CLOSED_EVENT, enablePush, fetchPushPrefs, pushAvailable, registerPushToken, savePushPrefs, startPushTaps } from "../../lib/push";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Button } from "../ui";
 import { track } from "../../lib/analytics";
@@ -59,13 +59,11 @@ export function PushEffects() {
 
   useEffect(() => {
     if (!pushAvailable() || !sessionUserId) return;
-    let stored: string | null;
-    try {
-      stored = localStorage.getItem(PUSH_TOKEN_KEY);
-    } catch {
-      stored = null;
-    }
-    if (!stored) return;
+    // Every launch the OS allows, whether or not this webview remembers a
+    // token: a device whose storage lost it (a reinstall, a restore, cleared
+    // site data) kept its permission and was never registered again, so its
+    // pushes went to a token nothing held (Andrew's phone, 2026-11-14). What
+    // is sent is still decided by the player's switches.
     void checkPushPermission().then((perm) => {
       if (perm === "granted") void registerPushToken(sessionUserId, { locale: i18n.language });
     });
