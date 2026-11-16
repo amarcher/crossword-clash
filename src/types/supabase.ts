@@ -350,6 +350,13 @@ export interface Database {
         Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
         Relationships: [];
       };
+      /** An account's small preferences (accountPrefs.ts): one row per preference, owner-only. */
+      account_preferences: {
+        Row: { user_id: string; key: string; value: unknown; updated_at: string };
+        Insert: { user_id: string; key: string; value: unknown; updated_at?: string };
+        Update: { value?: unknown; updated_at?: string };
+        Relationships: [];
+      };
       /** Community puzzles (docs/community-puzzles-spec.md): one row per author, read-own. Written by accept_publishing_terms() and the admin. */
       publishers: {
         Row: {
