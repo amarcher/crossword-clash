@@ -1,3 +1,4 @@
+import type { PuzzleRef } from "./puzzle";
 import type { CellState } from "./puzzle";
 
 export type GameStatus = "waiting" | "active" | "completed";
@@ -14,6 +15,13 @@ export interface GameSettings {
   wrongAnswerTimeoutSeconds: number;
   /** Absent in pre-existing persisted settings — treat as "versus". */
   raceMode?: RaceMode;
+  /**
+   * The link to the room's puzzle (a past daily, a community puzzle), set by
+   * the host at the start: the room's stored puzzle is its content only, so
+   * without this a finish has no link to carry its replay clip. Read through
+   * resolvePuzzleRef, never directly.
+   */
+  puzzleRef?: PuzzleRef;
 }
 
 export interface Player {
