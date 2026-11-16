@@ -1,4 +1,4 @@
-This build (1.1.3, build 44) is about seeing how each game mode plays, and watching solves. Please check:
+This build (1.1.3, build 45) is about seeing how each game mode plays, and watching solves. Please check:
 
 1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
 2. Time trial: everyone solves their own copy, and each square another player has filled shows as a small dot in their colour. The standings show each player's percent filled until they finish.
@@ -7,4 +7,6 @@ This build (1.1.3, build 44) is about seeing how each game mode plays, and watch
 5. Notifications after signing in or out: if you allowed notifications before signing in to an existing account, invites and friend requests should now reach this device. After signing out, the account's notifications should stop.
 6. Signing out: signing out on one device no longer signs your other devices out.
 7. Sharing an older solve: reopen a puzzle you solved on another device (signed in) and tap Share. It should show the replay clip, not only the coloured squares.
-8. Everything from build 42 still applies.
+8. Signed out means empty: sign out and the menu restarts with no streak, solved marks or puzzles in progress, and a "You're signed out" card. Sign back in and they return. (A phone that was already signed out before this build tidies itself after the next sign-in.)
+9. Puzzles in progress follow any account, not only Plus: start a puzzle signed in, then open the same account on another device or the website and continue it.
+10. Everything from build 42 still applies.
