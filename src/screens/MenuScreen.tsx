@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { UpdateBanner } from "../components/UpdateBanner";
+import { SignedOutNotice } from "../components/Account/SignedOutNotice";
 import { AppStoreBanner } from "../components/AppStoreBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
@@ -272,6 +273,7 @@ export function MenuScreen() {
       <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
       {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
       <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
+      <SignedOutNotice className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
       <SoloContinue />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">

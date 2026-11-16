@@ -741,7 +741,7 @@
   "plus": {
     "title": "Crossword Clash Plus",
     "about": "About Plus",
-    "subtitle": "Every past daily, the construction studio, the AI host and your progress on every device.",
+    "subtitle": "Every past daily, the Daily Plus puzzle, the construction studio and the AI host.",
     "youHavePlus": "You have Plus.",
     "benefitArchive": "Play every past daily",
     "benefitStudio": "Build your own crosswords in the studio",
@@ -797,6 +797,13 @@
     "install": "Install",
     "dismiss": "Close",
     "inAppPurchases": "In-App Purchases"
+  },
+  "signedOut": {
+    "label": "Signed out",
+    "title": "You're signed out",
+    "body": "Your streak, history and puzzles in progress are kept with your account.",
+    "signIn": "Sign in",
+    "dismiss": "Not now"
   },
   "update": {
     "label": "App update",

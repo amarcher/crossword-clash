@@ -1,7 +1,8 @@
 /**
- * Synced per-puzzle progress for Plus (docs/monetization-spec.md §2.4): the
- * local store (soloProgress.ts) is mirrored to the `solo_progress` table so
- * another device picks a puzzle up where it was.
+ * Synced per-puzzle progress for every account (Plus only until 2026-11-16,
+ * docs/monetization-spec.md §2.4): the local store (soloProgress.ts) is
+ * mirrored to the `solo_progress` table so another device picks a puzzle up
+ * where it was.
  *
  * - `startProgressSync(userId)` subscribes to the store's change
  *   notifications: a record is pushed (upsert) 2 s after its last change, or
@@ -9,15 +10,18 @@
  *   its row. `stopProgressSync()` flushes and unsubscribes (sign-out, lapse).
  * - `pullProgress(userId)` reads the account's rows and merges them into the
  *   local store, newer `updatedAt` wins (`mergeRemoteProgress`), and returns
- *   the keys that changed. Called when a Plus account appears and when the
+ *   the keys that changed. Called when an account appears and when the
  *   tab comes back.
+ * - `uploadLocalProgress(userId)` sends what the device already holds, once
+ *   per account per device: puzzles started before signing in, or before
+ *   every account synced. After the pull, so the local store is the newer.
  *
- * RLS decides who may write: a real account with Plus in force. A refused
+ * RLS decides who may write: a real account. A refused
  * write is logged and dropped; the local record is untouched, so nothing is
  * lost on the device. Pure parts (row ↔ record) are exported for tests.
  */
 import { supabase } from "./supabaseClient";
-import { getProgress, mergeRemoteProgress, subscribeProgressChanges, type SoloProgressRecord } from "./soloProgress";
+import { getProgress, loadProgressStore, mergeRemoteProgress, subscribeProgressChanges, type SoloProgressRecord } from "./soloProgress";
 import type { CellState } from "../types/puzzle";
 
 export const PUSH_DEBOUNCE_MS = 2000;
@@ -97,7 +101,7 @@ export function flushProgressSync(): void {
   }
 }
 
-/** Start mirroring the local store for this Plus account. Idempotent per user. */
+/** Start mirroring the local store for this account. Idempotent per user. */
 export function startProgressSync(userId: string): void {
   if (!supabase) return;
   if (syncUser === userId) return;
@@ -144,6 +148,39 @@ export async function pullProgress(userId: string): Promise<string[]> {
   } catch (err) {
     console.warn("Progress sync: could not read", err);
     return [];
+  }
+}
+
+/** Accounts whose puzzles in progress this device has sent once (deviceData.ts forgets one when a guest's work is folded in). */
+export const PROGRESS_UPLOADED_KEY = "crossword-clash:progress-uploaded";
+
+function uploadedIds(): string[] {
+  try {
+    const ids: unknown = JSON.parse(localStorage.getItem(PROGRESS_UPLOADED_KEY) ?? "[]");
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Send every puzzle in progress on this device to the account, once per
+ * account per device. A change after that goes through the subscription; a
+ * failed send is not marked done and is tried again the next time.
+ */
+export async function uploadLocalProgress(userId: string): Promise<void> {
+  if (!supabase || uploadedIds().includes(userId)) return;
+  const rows = Object.values(loadProgressStore())
+    .filter((r) => Object.keys(r.cells).length > 0)
+    .map((r) => rowFromRecord(userId, r));
+  try {
+    if (rows.length > 0) {
+      const { error } = await supabase.from("solo_progress").upsert(rows, { onConflict: "user_id,puzzle_key" });
+      if (error) throw error;
+    }
+    localStorage.setItem(PROGRESS_UPLOADED_KEY, JSON.stringify([...uploadedIds(), userId]));
+  } catch (err) {
+    console.warn("Progress sync: could not send this device's puzzles", err);
   }
 }
 
