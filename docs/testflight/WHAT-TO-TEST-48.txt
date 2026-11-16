@@ -1,4 +1,4 @@
-This build (1.1.3, build 47) is about seeing how each game mode plays, and watching solves. Please check:
+This build (1.1.3, build 48) is about seeing how each game mode plays, and watching solves. Please check:
 
 1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
 2. Time trial: everyone solves their own copy, and each square another player has filled shows a folded corner in their colour. The standings show each player's percent filled until they finish.
@@ -13,4 +13,6 @@ This build (1.1.3, build 47) is about seeing how each game mode plays, and watch
 11. Sign-in buttons: "Continue with Apple" and "Continue with Google" have the same text size, with the logos lined up.
 12. Hosting a room: Game settings (the mode picker and its preview) sit right under the player list, and the little preview board has all four rounded corners.
 13. Race buttons on the leaderboard: start the mini, switch to the midi, then finish both. Both finishes should be raceable by other players (each keeps its own recording now).
-14. Everything from build 42 still applies.
+14. A puzzle across two devices: start a daily on one device, finish it on another signed in to the same account (both on this build). The finish should have a Race / Watch button on the leaderboard.
+15. Daily cards on the menu: the label and the theme sit in a grey strip across the top of each card, and a long theme reads in full. Tapping anywhere on the Leaderboard strip opens the leaderboard.
+16. Everything from build 42 still applies.
