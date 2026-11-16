@@ -345,9 +345,10 @@ export interface Database {
           filled: number;
           total: number;
           updated_at: string;
+          trace: unknown;
         };
-        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string };
-        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
+        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string; trace?: unknown };
+        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string; trace?: unknown };
         Relationships: [];
       };
       /** An account's small preferences (accountPrefs.ts): one row per preference, owner-only. */
