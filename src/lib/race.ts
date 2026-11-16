@@ -198,14 +198,45 @@ function write(storage: Storage | undefined, name: string, value: unknown): void
 const local = () => (typeof localStorage === "undefined" ? undefined : localStorage);
 const session = () => (typeof sessionStorage === "undefined" ? undefined : sessionStorage);
 
-/** The recording in progress for this puzzle, if it is the one stored. */
-export function loadTrace(key: string): StoredTrace | null {
-  const stored = read<StoredTrace>(local(), TRACE_KEY);
-  return stored && stored.key === key ? stored : null;
+/** Recordings in progress kept at once; the one touched longest ago goes first. */
+export const MAX_TRACES = 8;
+type TraceStore = Record<string, StoredTrace & { at?: number }>;
+
+/**
+ * The recordings in progress, one per puzzle. The store held a single
+ * recording until 2026-11-16, so starting the midi before finishing the mini
+ * threw the mini's away and that finish could never be raced or replayed
+ * (about a third of board rows had none). A value in the old shape is read as
+ * a store of one.
+ */
+function readTraces(): TraceStore {
+  const stored = read<TraceStore | StoredTrace>(local(), TRACE_KEY);
+  if (!stored || typeof stored !== "object") return {};
+  if (typeof (stored as StoredTrace).key === "string" && Array.isArray((stored as StoredTrace).events)) {
+    const one = stored as StoredTrace;
+    return { [one.key]: one };
+  }
+  return stored as TraceStore;
 }
 
-export function saveTrace(trace: StoredTrace | null): void {
-  write(local(), TRACE_KEY, trace);
+/** The recording in progress for this puzzle, if one is stored. */
+export function loadTrace(key: string): StoredTrace | null {
+  const stored = readTraces()[key];
+  return stored && stored.key === key && Array.isArray(stored.events) ? stored : null;
+}
+
+export function saveTrace(trace: StoredTrace, now: number = Date.now()): void {
+  const all = { ...readTraces(), [trace.key]: { ...trace, at: now } };
+  const kept = Object.entries(all).sort((a, b) => (b[1].at ?? 0) - (a[1].at ?? 0)).slice(0, MAX_TRACES);
+  write(local(), TRACE_KEY, Object.fromEntries(kept));
+}
+
+/** Forget a puzzle's recording (it was finished and filed, or will never be). */
+export function clearTrace(key: string): void {
+  const all = readTraces();
+  if (!(key in all)) return;
+  delete all[key];
+  write(local(), TRACE_KEY, Object.keys(all).length ? all : null);
 }
 
 export interface StoredRace {
