@@ -8,7 +8,9 @@ import {
   ghostTints,
   hasLetters,
   loadRace,
+  clearTrace,
   loadTrace,
+  MAX_TRACES,
   MAX_EVENTS,
   raceResults,
   replaySpeed,
@@ -119,6 +121,24 @@ describe("storage", () => {
     saveRace({ key: "p1", ghosts: [] });
     expect(loadRace("p1")).toEqual({ key: "p1", ghosts: [] });
     expect(loadRace("p2")).toBeNull();
+  });
+
+  it("keeps a recording per puzzle, so starting a second puzzle does not lose the first", () => {
+    saveTrace({ key: "mini", events: [[1, 0, "A"]], partial: false }, 1);
+    saveTrace({ key: "midi", events: [[2, 0, "B"]], partial: false }, 2);
+    expect(loadTrace("mini")?.events).toEqual([[1, 0, "A"]]);
+    expect(loadTrace("midi")?.events).toEqual([[2, 0, "B"]]);
+    clearTrace("mini");
+    expect(loadTrace("mini")).toBeNull();
+    expect(loadTrace("midi")).not.toBeNull();
+  });
+
+  it("drops the recording touched longest ago past the cap, and reads the old single-recording shape", () => {
+    for (let i = 0; i <= MAX_TRACES; i++) saveTrace({ key: `p${i}`, events: [[1, 0, "A"]], partial: false }, i);
+    expect(loadTrace("p0")).toBeNull();
+    expect(loadTrace(`p${MAX_TRACES}`)).not.toBeNull();
+    localStorage.setItem("crossword-clash:solve-trace", JSON.stringify({ key: "old", events: [[1, 0, "A"]], partial: false }));
+    expect(loadTrace("old")?.events).toEqual([[1, 0, "A"]]);
   });
 
   it("hands a board's race intent over once, to the puzzle it names", () => {

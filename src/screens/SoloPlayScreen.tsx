@@ -47,7 +47,7 @@ import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
-import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
@@ -613,7 +613,7 @@ export function SoloPlayScreen() {
     if (!soloResult || !freshResult || !accountId || !puzzleKey || traceFiledRef.current) return;
     traceFiledRef.current = true;
     const trace = recorder.take();
-    saveTrace(null);
+    clearTrace(puzzleKey);
     if (!trace || soloResult.assisted || solvedBeforeRef.current) return;
     void saveSolveTrace(puzzleKey, soloResult.finishSeconds, trace.events).catch(() => undefined);
   }, [soloResult, freshResult, accountId, puzzleKey, recorder]);
