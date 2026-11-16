@@ -37,8 +37,14 @@ import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useRaceCandidates } from "../hooks/useRace";
-import { saveRaceIntent } from "../lib/race";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
+import { fetchDailyForDay } from "../lib/dailyFeed";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import type { Puzzle } from "../types/puzzle";
 import { dailyPath } from "../lib/dailyChallenge";
+
+/** The viewer's own solve in a replay, as on the play screen. */
+const MY_REPLAY_COLOR = "#3a6bf0";
 
 /** Tailwind's `lg` breakpoint (64rem) — the width at which the boards spread out. */
 const LG_QUERY = "(min-width: 64rem)";
@@ -366,8 +372,8 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const account = useMaybeAccount();
   const puzzleKey = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
   const solvedHere = !!own || !!privateFinish || (!!entries && !!user && entries.some((e) => e.userId === user.id));
-  const raceCandidates = useRaceCandidates(puzzleKey, !solvedHere);
-  const raceable = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
+  const raceCandidates = useRaceCandidates(puzzleKey, true);
+  const candidateIds = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
   const raceRow = useCallback(
     (userId: string) => {
       if (!puzzleKey || !account) return;
@@ -437,6 +443,37 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     navigate("/solo/play");
   }, [game, daily, slot, navigate]);
 
+  // Race before the viewer has solved the puzzle; Watch after, here on the
+  // board (Andrew, 2026-11-16: see how anyone on it solved). The viewer's own
+  // solve plays with it when the account has a recording of it kept.
+  const canWatch = solvedHere || solved;
+  const [watching, setWatching] = useState<{ puzzle: Puzzle; solves: ReplaySolve[] } | null>(null);
+  const watchRow = useCallback(
+    async (userId: string) => {
+      if (!puzzleKey || !account) return;
+      if (!account.plus) {
+        account.openPaywall({ placement: "leaderboard_watch", feature: "race" });
+        return;
+      }
+      try {
+        const [board, theirs, mine] = await Promise.all([
+          daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
+          fetchSolveTrace(userId, puzzleKey),
+          user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null,
+        ]);
+        if (!board || !theirs || theirs.events.length === 0) return;
+        const name = rows?.find((e) => e.userId === userId)?.displayName ?? "";
+        const them: ReplaySolve = { name, color: GHOST_COLORS[0], seconds: theirs.seconds, events: theirs.events };
+        const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
+        setWatching({ puzzle: board, solves: me ? [me, them] : [them] });
+        track("replay_watched", { racing: !!me, placement: "leaderboard" });
+      } catch (err) {
+        console.warn("Leaderboard replay:", err);
+      }
+    },
+    [puzzleKey, account, daily, day, slot, user, rows, t],
+  );
+
   const raceFriends = useCallback(() => {
     if (solved) {
       // Already solved: a fresh puzzle through the picker, never this one.
@@ -478,7 +515,14 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(emptyMessage)}</BoardMessage>
         ) : (
           <>
-            <BoardTable rows={rows} userId={user?.id} raceable={raceable} onRace={raceRow} />
+            <BoardTable
+              rows={rows}
+              userId={user?.id}
+              raceable={canWatch ? undefined : candidateIds}
+              onRace={raceRow}
+              watchable={canWatch ? candidateIds : undefined}
+              onWatch={watchRow}
+            />
             {loading && (
               <p role="status" className="flex items-center justify-center gap-2 border-t border-line px-4 py-2.5 text-center text-xs text-muted">
                 <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -551,6 +595,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           )}
         </div>
       )}
+      {watching && <ReplayDialog puzzle={watching.puzzle} solves={watching.solves} onClose={() => setWatching(null)} />}
     </section>
   );
 }

@@ -45,7 +45,7 @@ export type AnalyticsEvent =
   /** A solver opened the Stats page from somewhere other than the account page. Param `from` (completion). */
   | "stats_opened"
   | "room_replay_opened"
-  /** A recorded solve was replayed after the finish. Param `racing`: it was one of the ghosts just raced. */
+  /** A recorded solve was replayed after the finish. Params `racing`: the viewer's own solve played with it; `placement`: "leaderboard" from a board row. */
   | "replay_watched"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"

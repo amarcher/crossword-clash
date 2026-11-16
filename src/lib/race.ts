@@ -290,6 +290,14 @@ export async function fetchSolveTrace(userId: string, puzzleKey: string): Promis
 }
 
 /** File a finished solve's recording; the server keeps the fastest. Best-effort. */
+/** The account's own kept recording of a puzzle, letters and all (its own rows are readable); null when none is kept. */
+export async function fetchOwnSolveTrace(userId: string, puzzleKey: string): Promise<{ seconds: number; events: TraceEvent[] } | null> {
+  const { data, error } = await db().from("solve_traces").select("seconds, events").eq("user_id", userId).eq("puzzle_key", puzzleKey).maybeSingle();
+  if (error) throw refusal(error);
+  const row = data as { seconds: number; events: unknown } | null;
+  return row ? { seconds: row.seconds, events: cleanEvents(row.events) } : null;
+}
+
 export async function saveSolveTrace(puzzleKey: string, seconds: number, events: TraceEvent[]): Promise<void> {
   if (!supabase || events.length === 0 || events.length > MAX_EVENTS) return;
   await supabase.rpc("save_solve_trace", { p_puzzle_key: puzzleKey, p_seconds: Math.max(0, Math.floor(seconds)), p_events: events });

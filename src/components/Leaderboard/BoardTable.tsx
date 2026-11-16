@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Flag } from "lucide-react";
+import { Flag, Play } from "lucide-react";
 import { PlusBadgeFor } from "../ui/PlusBadge";
 import { formatDuration } from "../../lib/soloStats";
 import type { RankedDailyEntry } from "../../lib/dailyLeaderboard";
@@ -17,10 +17,21 @@ interface BoardTableProps {
   /** Players whose recorded solve the viewer may race (race.ts); a Race button on their rows. */
   raceable?: ReadonlySet<string>;
   onRace?: (userId: string) => void;
+  /** Players whose recorded solve the viewer may watch: a Watch button on their rows, once the viewer has solved the puzzle. */
+  watchable?: ReadonlySet<string>;
+  onWatch?: (userId: string) => void;
 }
 
+/**
+ * A row's action. Drawn as a button (a border, a shadow, a white face), never
+ * as a tinted pill: beside the row's tags a pill read as one more tag, "they
+ * did a race", and nobody pressed it (Andrew, 2026-11-16).
+ */
+const ROW_ACTION =
+  "inline-flex min-h-9 items-center gap-1 rounded-lg border border-brand-200 bg-surface px-2.5 font-sans text-xs font-semibold text-brand-700 shadow-card hover:bg-brand-50 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500";
+
 /** A board's ranked rows: the dailies' boards and the bonus board draw the same table. */
-export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) {
+export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch }: BoardTableProps) {
   const { t } = useTranslation();
   return (
     <table className="w-full text-sm">
@@ -65,11 +76,8 @@ export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) 
                       {t("leaderboard.notOnBoard")}
                     </span>
                   ) : (
-                    <span
-                      className={`hidden shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide min-[380px]:inline ${
-                        e.mode === "race" ? "bg-brand-50 text-brand-700" : "bg-surface-sunken text-muted"
-                      }`}
-                    >
+                    // Both tags are quiet: the brand colour on a row belongs to its action.
+                    <span className="hidden shrink-0 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted min-[380px]:inline">
                       {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
                     </span>
                   )}
@@ -87,10 +95,16 @@ export function BoardTable({ rows, userId, raceable, onRace }: BoardTableProps) 
                       type="button"
                       onClick={() => onRace(e.userId)}
                       aria-label={t("ghostRace.raceRow", { name: e.displayName })}
-                      className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-brand-50 px-2 font-sans text-xs font-semibold text-brand-700 hover:bg-brand-100 active:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500"
+                      className={ROW_ACTION}
                     >
                       <Flag className="size-3.5" aria-hidden="true" />
                       {t("ghostRace.raceButton")}
+                    </button>
+                  )}
+                  {!isMe && onWatch && watchable?.has(e.userId) && (
+                    <button type="button" onClick={() => onWatch(e.userId)} aria-label={t("ghostRace.watchRow", { name: e.displayName })} className={ROW_ACTION}>
+                      <Play className="size-3.5" aria-hidden="true" />
+                      {t("ghostRace.watchButton")}
                     </button>
                   )}
                   {formatDuration(e.seconds)}
