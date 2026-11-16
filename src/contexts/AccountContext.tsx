@@ -4,7 +4,7 @@ import { useAccount, type Account } from "../hooks/useAccount";
 import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
 import { clearSolveHistory, ensureSolveHistory } from "../lib/solveHistory";
-import { pullProgress, startProgressSync, stopProgressSync } from "../lib/soloProgressSync";
+import { pullProgress, startProgressSync, stopProgressSync, uploadLocalProgress } from "../lib/soloProgressSync";
 import { checkoutReturn, reconcileEntitlements, withoutCheckoutParam } from "../lib/plusPurchase";
 import { nativePurchaseAvailable, syncNativePurchaseUser } from "../lib/nativePurchase";
 import { plusEnabled, type PlusFeature } from "../lib/plus";
@@ -109,24 +109,25 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
   // An account's solve history: loaded once it appears (and this device's
   // pre-account history uploaded once), forgotten when it goes.
-  const { user, profile, profileReady, plus } = account;
+  const { user, profile, profileReady } = account;
   const userId = user?.id;
   useEffect(() => {
     if (userId) void ensureSolveHistory(userId);
     else clearSolveHistory();
   }, [userId]);
 
-  // Plus: mirror per-puzzle progress to the account (soloProgressSync.ts) while
-  // a real account holds Plus; pull the other devices' records on appearance
-  // and whenever the tab comes back.
-  const syncId = userId && plus ? userId : null;
+  // Mirror per-puzzle progress to the account (soloProgressSync.ts) while one
+  // is signed in (every account since 2026-11-16, not only Plus): send what
+  // this device holds, pull the other devices' records on appearance and
+  // whenever the tab comes back.
+  const syncId = userId ?? null;
   useEffect(() => {
     if (!syncId) {
       stopProgressSync();
       return;
     }
     startProgressSync(syncId);
-    void pullProgress(syncId);
+    void pullProgress(syncId).then(() => uploadLocalProgress(syncId));
     const onVisible = () => {
       if (document.visibilityState === "visible") void pullProgress(syncId);
     };

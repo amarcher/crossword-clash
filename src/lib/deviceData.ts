@@ -38,6 +38,7 @@ export const MAX_VAULTS = 3;
 const STATS_KEY = "crossword-clash-solo-stats";
 const REPLAYS_KEY = "crossword-clash:replay-shares";
 const UPLOADED_KEY = "crossword-clash:solves-uploaded";
+const PROGRESS_UPLOADED_KEY = "crossword-clash:progress-uploaded";
 
 /** The play data that belongs to whoever is signed in. */
 export const ACCOUNT_KEYS: readonly string[] = [
@@ -122,13 +123,14 @@ function merged(key: string, guest: string | null, vault: string): string {
 function restore(store: Store, id: string): boolean {
   const vaults = readVaults(store);
   if (!vaults.some((v) => v.id === id)) return false;
-  // The guest's own finishes are not in the account's history yet: let the upload run again.
-  if (store.getItem(STATS_KEY) !== null) {
+  // The guest's own finishes and puzzles in progress are not in the account yet: let each upload run again.
+  for (const [dataKey, flagKey] of [[STATS_KEY, UPLOADED_KEY], [PROGRESS_KEY, PROGRESS_UPLOADED_KEY]] as const) {
+    if (store.getItem(dataKey) === null) continue;
     try {
-      const ids: unknown = JSON.parse(store.getItem(UPLOADED_KEY) ?? "[]");
-      if (Array.isArray(ids)) store.setItem(UPLOADED_KEY, JSON.stringify(ids.filter((u) => u !== id)));
+      const ids: unknown = JSON.parse(store.getItem(flagKey) ?? "[]");
+      if (Array.isArray(ids)) store.setItem(flagKey, JSON.stringify(ids.filter((u) => u !== id)));
     } catch {
-      store.removeItem(UPLOADED_KEY);
+      store.removeItem(flagKey);
     }
   }
   for (const key of ACCOUNT_KEYS) {

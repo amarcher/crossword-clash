@@ -29,6 +29,7 @@ import {
   rowFromRecord,
   startProgressSync,
   stopProgressSync,
+  uploadLocalProgress,
 } from "./soloProgressSync";
 
 const UID = "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c";
@@ -116,7 +117,7 @@ describe("pushing", () => {
     void flushProgressSync();
   });
 
-  it("logs and keeps the local record when a write is refused (RLS: Plus lapsed)", async () => {
+  it("logs and keeps the local record when a write is refused (RLS)", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     nextResult = { data: null, error: { message: "new row violates row-level security policy" } };
     startProgressSync(UID);
@@ -124,6 +125,29 @@ describe("pushing", () => {
     await vi.advanceTimersByTimeAsync(PUSH_DEBOUNCE_MS);
     expect(warn).toHaveBeenCalled();
     expect(loadProgressStore().k).toBeTruthy();
+    warn.mockRestore();
+  });
+});
+
+describe("the device's own puzzles", () => {
+  it("are sent to the account once per device, then left to the change subscription", async () => {
+    recordProgressCells("k1", cells, 9);
+    recordProgressCells("k2", cells, 9);
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(1);
+    expect((upserts()[0] as unknown as { puzzle_key: string; user_id: string }[]).map((r) => [r.user_id, r.puzzle_key])).toEqual([[UID, "k1"], [UID, "k2"]]);
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(1);
+  });
+
+  it("are tried again after a failed send", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    recordProgressCells("k1", cells, 9);
+    nextResult = { data: null, error: { message: "offline" } };
+    await uploadLocalProgress(UID);
+    nextResult = { data: [], error: null };
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(2);
     warn.mockRestore();
   });
 });
