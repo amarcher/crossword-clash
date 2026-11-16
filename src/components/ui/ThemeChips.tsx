@@ -12,6 +12,8 @@ export function themeParts(theme: string): string[] {
  * (Andrew, 2026-11-16: a single chip beside the eyebrow cut the second half
  * off). Rendered as siblings for a wrapping row: a chip that does not fit
  * moves to the next line whole, and only one wider than the row is cut short.
+ * The row hangs left by a chip's padding (-ml-2 at the call site), so the
+ * chip's text, not its edge, lines up with the title above it.
  */
 export function ThemeChips({ theme }: { theme: string }) {
   return (

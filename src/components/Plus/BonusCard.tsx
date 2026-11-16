@@ -85,7 +85,7 @@ export function BonusCard() {
           <h2 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {/* The theme, under the title as on the dailies. */}
           {card.theme && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <div className="mt-1.5 -ml-2 flex flex-wrap gap-1.5">
               <ThemeChips theme={card.theme} />
             </div>
           )}
@@ -123,11 +123,12 @@ export function BonusCard() {
         )}
       </div>
       {/* The bonus board is open to everyone, like the dailies': the times are public, the puzzle is not. */}
-      <div className="flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
+      {/* The whole strip opens the board, as on the dailies. */}
+      <div className="relative flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
         <TransitionLink
           to={leaderboardPath("bonus")}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot: "bonus" })}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft after:absolute after:inset-0 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
           {t("menu.dailyLeaderboard")}

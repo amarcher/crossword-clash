@@ -98,7 +98,7 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
               {/* The theme: chips on their own line under the title, in the same place on
                   every tile (Andrew, 2026-11-16; beside the eyebrow they were cut off). */}
               {displayTheme(daily) && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <div className="mt-1.5 -ml-2 flex flex-wrap gap-1.5">
                   <ThemeChips theme={displayTheme(daily)} />
                 </div>
               )}
@@ -155,11 +155,12 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
           </Button>
         )}
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
+      {/* The whole strip opens the board, not just the words (Andrew, 2026-11-16): the link's ::after covers it. */}
+      <div className="relative flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
         <TransitionLink
           to={leaderboardPath(slot)}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft after:absolute after:inset-0 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
           {t("menu.dailyLeaderboard")}
