@@ -47,7 +47,7 @@ import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
-import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
@@ -552,8 +552,33 @@ export function SoloPlayScreen() {
   // when the time it shows is that finish's.
   const reopenedSeconds = reopened ? soloResult?.finishSeconds : undefined;
   useEffect(() => {
-    if (puzzleKey && reopenedSeconds !== undefined) setReplayId(rememberedReplay(puzzleKey, reopenedSeconds));
-  }, [puzzleKey, reopenedSeconds]);
+    if (!puzzleKey || reopenedSeconds === undefined) return;
+    const remembered = rememberedReplay(puzzleKey, reopenedSeconds);
+    setReplayId(remembered);
+    // Solved on another device, or before a reinstall: this one never filed
+    // the replay, and the share fell back to the squares alone (Andrew,
+    // 2026-11-16). The account's kept recording of that same finish makes it
+    // again; it has no refusals or clue changes, only the letters going in.
+    if (remembered || !accountId || !puzzle || !puzzleRef) return;
+    let live = true;
+    void (async () => {
+      try {
+        const kept = await fetchOwnSolveTrace(accountId, puzzleKey);
+        if (!live || !kept || kept.events.length === 0 || kept.seconds !== Math.floor(reopenedSeconds)) return;
+        const code = encodeReplay(puzzle, kept.events, kept.seconds);
+        const id = code ? await createReplayShare(code) : null;
+        if (!id) return;
+        rememberReplay(puzzleKey, id, kept.seconds);
+        if (live) setReplayId(id);
+      } catch {
+        // Best-effort: the share still goes out with its squares.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per reopened finish; the puzzle object is that finish's
+  }, [puzzleKey, reopenedSeconds, accountId]);
   // Racing a shared link's sender (ChallengeScreen): their puzzle, for the reply.
   const linkGhost = race.find((g) => g.link) ?? null;
   useEffect(() => {

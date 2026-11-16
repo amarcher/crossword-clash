@@ -266,8 +266,13 @@ export function resetSignInForTests(): void {
 }
 
 /**
- * Signs the account out. The app's anonymous session is gone with it; the
- * auth hook signs in anonymously again, so play continues with a fresh id.
+ * Signs the account out on THIS device. The app's anonymous session is gone
+ * with it; the auth hook signs in anonymously again, so play continues with a
+ * fresh id.
+ *
+ * `scope: "local"`: supabase-js signs out everywhere by default, which ended
+ * the account's sessions on every other phone, tablet and browser. Signing
+ * out of an emulator signed Andrew's iPhone out (2026-11-16).
  */
 export async function signOut(): Promise<void> {
   // The account being left has a provider: a later sign-in with it on this
@@ -275,7 +280,7 @@ export async function signOut(): Promise<void> {
   const { data } = await client().auth.getSession();
   const provider = data.session?.user.app_metadata?.provider;
   if (!data.session?.user.is_anonymous && (provider === "apple" || provider === "google")) rememberKnownProvider(provider);
-  await client().auth.signOut();
+  await client().auth.signOut({ scope: "local" });
 }
 
 /**
