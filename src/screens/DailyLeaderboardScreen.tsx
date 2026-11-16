@@ -37,7 +37,7 @@ import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useRaceCandidates } from "../hooks/useRace";
-import { fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import type { Puzzle } from "../types/puzzle";
@@ -445,7 +445,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
 
   // Race before the viewer has solved the puzzle; Watch after, here on the
   // board (Andrew, 2026-11-16: see how anyone on it solved). The viewer's own
-  // recording plays with it when the server has one.
+  // solve plays with it when the account has a recording of it kept.
   const canWatch = solvedHere || solved;
   const [watching, setWatching] = useState<{ puzzle: Puzzle; solves: ReplaySolve[] } | null>(null);
   const watchRow = useCallback(
@@ -459,12 +459,12 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
         const [board, theirs, mine] = await Promise.all([
           daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
           fetchSolveTrace(userId, puzzleKey),
-          user ? fetchSolveTrace(user.id, puzzleKey).catch(() => null) : null,
+          user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null,
         ]);
         if (!board || !theirs || theirs.events.length === 0) return;
         const name = rows?.find((e) => e.userId === userId)?.displayName ?? "";
         const them: ReplaySolve = { name, color: GHOST_COLORS[0], seconds: theirs.seconds, events: theirs.events };
-        const me: ReplaySolve | null = mine && mine.withLetters && mine.events.length > 0 ? { name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
+        const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
         setWatching({ puzzle: board, solves: me ? [me, them] : [them] });
         track("replay_watched", { racing: !!me, placement: "leaderboard" });
       } catch (err) {
