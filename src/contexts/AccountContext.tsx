@@ -4,6 +4,7 @@ import { useAccount, type Account } from "../hooks/useAccount";
 import { accountsAvailable, resumeSignIn } from "../lib/account";
 import { AccountSheet, type AccountSheetView } from "../components/Account/AccountSheet";
 import { clearSolveHistory, ensureSolveHistory } from "../lib/solveHistory";
+import { pullPrefs, startPrefsSync, stopPrefsSync } from "../lib/accountPrefs";
 import { pullProgress, startProgressSync, stopProgressSync, uploadLocalProgress } from "../lib/soloProgressSync";
 import { checkoutReturn, reconcileEntitlements, withoutCheckoutParam } from "../lib/plusPurchase";
 import { nativePurchaseAvailable, syncNativePurchaseUser } from "../lib/nativePurchase";
@@ -124,12 +125,18 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!syncId) {
       stopProgressSync();
+      stopPrefsSync();
       return;
     }
     startProgressSync(syncId);
     void pullProgress(syncId).then(() => uploadLocalProgress(syncId));
+    // The account's small preferences travel the same way (accountPrefs.ts).
+    startPrefsSync(syncId);
+    void pullPrefs(syncId);
     const onVisible = () => {
-      if (document.visibilityState === "visible") void pullProgress(syncId);
+      if (document.visibilityState !== "visible") return;
+      void pullProgress(syncId);
+      void pullPrefs(syncId);
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);

@@ -25,10 +25,18 @@ interface ReplayDialogProps {
 
 const NO_HIGHLIGHT = new Set<string>();
 
+/**
+ * Where a solve is `ms` into the replay. Its time is in whole seconds and its
+ * last letter went in a fraction of a second after that, so once its clock
+ * has stopped the solve is shown whole: the replay used to end one square
+ * short of a finished grid (Andrew, 2026-11-16).
+ */
+const solveAt = (solve: ReplaySolve, ms: number) => ghostAt(solve, ms >= solve.seconds * 1000 ? Infinity : ms);
+
 /** The letters a solve shows `ms` into it, in the solve's colour (a wrong one rebuilt from a share code as checked-wrong). */
 function cellsAt(solve: ReplaySolve, ms: number, width: number): Record<string, CellState> {
   const out: Record<string, CellState> = {};
-  for (const [cell, letter] of ghostAt(solve, ms).filled) {
+  for (const [cell, letter] of solveAt(solve, ms).filled) {
     if (typeof letter !== "string") continue;
     out[`${Math.floor(cell / width)},${cell % width}`] = letter === WRONG_LETTER ? { letter, correct: false, checked: "wrong" } : { letter, correct: true, playerId: "replay" };
   }
@@ -38,7 +46,7 @@ function cellsAt(solve: ReplaySolve, ms: number, width: number): Record<string, 
 /** The squares a solve has filled `ms` into it, as the grid's dot map (cell key → colour). */
 function dotsAt(solve: ReplaySolve, ms: number, width: number): Map<string, string> {
   const out = new Map<string, string>();
-  for (const cell of ghostAt(solve, ms).filled.keys()) out.set(`${Math.floor(cell / width)},${cell % width}`, solve.color);
+  for (const cell of solveAt(solve, ms).filled.keys()) out.set(`${Math.floor(cell / width)},${cell % width}`, solve.color);
   return out;
 }
 
