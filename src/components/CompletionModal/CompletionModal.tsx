@@ -364,7 +364,7 @@ export function CompletionModal({
       const puzzle = challengePuzzle as Puzzle;
       // A bonus is Plus only: its link is the site, never the puzzle in a #puzzle= hash.
       const link = linkRef
-        ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: isMultiplayer ? undefined : replayId })
+        ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: replayId })
         : puzzle.origin === "bonus"
           ? `${SHARE_URL}/`
           : shareSeconds !== undefined
@@ -380,7 +380,7 @@ export function CompletionModal({
         playerColors,
         link,
         // A link that carries the replay unfurls as the solve itself: no emoji rows.
-        rows: isMultiplayer || !replayId || !linkRef,
+        rows: !replayId || !linkRef,
         labels: {
           brand: t("completion.shareBrand"),
           daily: shareDaily,
@@ -764,7 +764,7 @@ export function CompletionModal({
               </button>
             </div>
           )}
-          {!isMultiplayer && replayId && <ReplayPreview id={replayId} darkMode={darkMode} />}
+          {replayId && linkRef && <ReplayPreview id={replayId} race={isMultiplayer} darkMode={darkMode} />}
           {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton

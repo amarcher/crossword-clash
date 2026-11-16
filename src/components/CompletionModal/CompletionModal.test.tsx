@@ -512,6 +512,23 @@ describe("CompletionModal", () => {
     }
   });
 
+  it("a finished room race with its replay filed shows the clip and shares the link without emoji rows", () => {
+    const { getByTestId, unmount } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90} replayId="E0Gqr8Iw09i"
+        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
+    );
+    expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
+    expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("aria-label")).toBe("The race, replayed");
+    expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
+    unmount();
+    // Without a filed replay the race shares its squares, as before.
+    const plain = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90}
+        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
+    );
+    expect(plain.queryByTestId("replay-preview")).toBeNull();
+  });
+
   it("never puts a bonus puzzle in its share link (Plus only)", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     navigator.share = share;
