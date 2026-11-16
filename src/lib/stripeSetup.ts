@@ -19,7 +19,7 @@ export const PLUS_MARKER = { key: "app", value: "crossword-clash-plus" } as cons
 export const PLUS_PRODUCT = {
   name: "Crossword Clash Plus",
   /** Must equal `plus.subtitle` in src/i18n/en.json (the test holds them together). */
-  description: "Every past daily, the construction studio, the AI host and your progress on every device.",
+  description: "Every past daily, the Daily Plus puzzle, the construction studio and the AI host.",
   /** What the card statement says for subscription charges: at most 22 characters, letters/digits/spaces. */
   statementDescriptor: "CROSSWORD CLASH PLUS",
 } as const;

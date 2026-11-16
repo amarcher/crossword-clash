@@ -63,6 +63,7 @@ describe("settleDeviceData", () => {
       [PROGRESS_KEY]: JSON.stringify({ p1: rec("p1", 10), p2: rec("p2", 10) }),
       [REPLAYS]: JSON.stringify({ k1: { id: "a" } }),
       "crossword-clash:solves-uploaded": JSON.stringify(["a", "b"]),
+      "crossword-clash:progress-uploaded": JSON.stringify(["a"]),
     });
     settleDeviceData(store, account("a"));
     settleDeviceData(store, null);
@@ -76,6 +77,7 @@ describe("settleDeviceData", () => {
     expect(progress.p2.updatedAt).toBe(20);
     expect(Object.keys(JSON.parse(store.data.get(REPLAYS)!)).sort()).toEqual(["k1", "k2"]);
     expect(JSON.parse(store.data.get("crossword-clash:solves-uploaded")!)).toEqual(["b"]);
+    expect(JSON.parse(store.data.get("crossword-clash:progress-uploaded")!)).toEqual([]);
   });
 
   it("keeps two accounts apart", () => {
