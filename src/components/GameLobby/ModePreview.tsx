@@ -82,7 +82,7 @@ export function ModePreview({ mode, label, variant = "light" }: ModePreviewProps
           >
             {cell.by !== null && cell.letter}
             {cell.dot && (
-              <span className="absolute right-0.5 bottom-0.5 size-1.5 rounded-full opacity-70" style={{ backgroundColor: FRIEND }} />
+              <span className="absolute right-0 bottom-0 size-2 opacity-85" style={{ backgroundColor: FRIEND, clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }} />
             )}
           </span>
         ))}

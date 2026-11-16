@@ -127,11 +127,13 @@ export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
               const won = done && s.seconds === fastest;
               return (
                 <li key={`${s.name}-${i}`} data-testid="replay-racer" className="flex min-w-0 items-center gap-1.5">
-                  {/* The key to the board: a shaded square for the solve whose letters show, a dot for the other. */}
+                  {/* The key to the board: a shaded square for the solve whose letters show, a square with the folded corner for the other. */}
                   {i === 0 ? (
                     <span className="size-3 shrink-0 rounded-[3px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: `color-mix(in srgb, ${s.color} 18%, white)` }} aria-hidden="true" />
                   ) : (
-                    <span className="mx-[3px] size-1.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} aria-hidden="true" />
+                    <span className="size-3 shrink-0 rounded-[3px] border border-line-strong bg-surface" aria-hidden="true">
+                      <span className="block size-full opacity-85" style={{ backgroundColor: s.color, clipPath: "polygon(100% 20%, 100% 100%, 20% 100%)" }} />
+                    </span>
                   )}
                   <span className="min-w-0 flex-1 truncate font-semibold text-ink">{s.name}</span>
                   <span className={`inline-flex items-center gap-0.5 font-mono tabular-nums ${won ? "font-bold text-emerald-700" : "text-muted"}`}>
