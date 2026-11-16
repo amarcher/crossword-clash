@@ -62,4 +62,15 @@ describe("ReplayDialog", () => {
     expect(letters()).toBe("A|B|C|D");
     expect(dots()).toBe(0);
   });
+
+  it("ends on the whole grid: a last letter typed a fraction of a second after the whole-second time still goes in", () => {
+    // A time is whole seconds; the last letter of a 20 s solve can land at 20.6 s.
+    const late: ReplaySolve = { ...you, events: [...you.events.slice(0, 3), [20_600, 3, "D"]] };
+    const lateAnn: ReplaySolve = { ...ann, events: [...ann.events.slice(0, 3), [12_900, 0, "A"]] };
+    render(<ReplayDialog puzzle={puzzle} solves={[late, lateAnn]} onClose={() => {}} />);
+    frame(0);
+    frame(100_000);
+    expect(letters()).toBe("A|B|C|D");
+    expect(dots()).toBe(4);
+  });
 });

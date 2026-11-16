@@ -25,10 +25,18 @@ interface ReplayDialogProps {
 
 const NO_HIGHLIGHT = new Set<string>();
 
+/**
+ * Where a solve is `ms` into the replay. Its time is in whole seconds and its
+ * last letter went in a fraction of a second after that, so once its clock
+ * has stopped the solve is shown whole: the replay used to end one square
+ * short of a finished grid (Andrew, 2026-11-16).
+ */
+const solveAt = (solve: ReplaySolve, ms: number) => ghostAt(solve, ms >= solve.seconds * 1000 ? Infinity : ms);
+
 /** The letters a solve shows `ms` into it, in the solve's colour (a wrong one rebuilt from a share code as checked-wrong). */
 function cellsAt(solve: ReplaySolve, ms: number, width: number): Record<string, CellState> {
   const out: Record<string, CellState> = {};
-  for (const [cell, letter] of ghostAt(solve, ms).filled) {
+  for (const [cell, letter] of solveAt(solve, ms).filled) {
     if (typeof letter !== "string") continue;
     out[`${Math.floor(cell / width)},${cell % width}`] = letter === WRONG_LETTER ? { letter, correct: false, checked: "wrong" } : { letter, correct: true, playerId: "replay" };
   }
@@ -38,7 +46,7 @@ function cellsAt(solve: ReplaySolve, ms: number, width: number): Record<string, 
 /** The squares a solve has filled `ms` into it, as the grid's dot map (cell key → colour). */
 function dotsAt(solve: ReplaySolve, ms: number, width: number): Map<string, string> {
   const out = new Map<string, string>();
-  for (const cell of ghostAt(solve, ms).filled.keys()) out.set(`${Math.floor(cell / width)},${cell % width}`, solve.color);
+  for (const cell of solveAt(solve, ms).filled.keys()) out.set(`${Math.floor(cell / width)},${cell % width}`, solve.color);
   return out;
 }
 
@@ -119,11 +127,13 @@ export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
               const won = done && s.seconds === fastest;
               return (
                 <li key={`${s.name}-${i}`} data-testid="replay-racer" className="flex min-w-0 items-center gap-1.5">
-                  {/* The key to the board: a shaded square for the solve whose letters show, a dot for the other. */}
+                  {/* The key to the board: a shaded square for the solve whose letters show, a square with the folded corner for the other. */}
                   {i === 0 ? (
                     <span className="size-3 shrink-0 rounded-[3px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: `color-mix(in srgb, ${s.color} 18%, white)` }} aria-hidden="true" />
                   ) : (
-                    <span className="mx-[3px] size-1.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} aria-hidden="true" />
+                    <span className="size-3 shrink-0 rounded-[3px] border border-line-strong bg-surface" aria-hidden="true">
+                      <span className="block size-full opacity-85" style={{ backgroundColor: s.color, clipPath: "polygon(100% 20%, 100% 100%, 20% 100%)" }} />
+                    </span>
                   )}
                   <span className="min-w-0 flex-1 truncate font-semibold text-ink">{s.name}</span>
                   <span className={`inline-flex items-center gap-0.5 font-mono tabular-nums ${won ? "font-bold text-emerald-700" : "text-muted"}`}>
