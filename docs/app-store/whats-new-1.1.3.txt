@@ -1,6 +1,6 @@
 See how each game mode plays before you start: the lobby shows a small sample board for Compete, Co-op and Time trial.
 
-In a time trial you now see the other players' progress as dots on your own grid.
+In a time trial you now see the other players' progress on your own grid, square by square.
 
 Watch the replay after a race, on one board. On the daily leaderboard, watch how any player solved once you have finished the puzzle (Plus).
 
