@@ -260,6 +260,7 @@
   },
   "completion": {
     "replayPreviewLabel": "Tu partida, repetida",
+    "raceReplayPreviewLabel": "La carrera, repetida",
     "replayPreviewCaption": "Esto se reproduce cuando compartes el enlace",
     "nextYesterday": "{{daily}} de ayer",
     "puzzleComplete": "¡Crucigrama completo!",

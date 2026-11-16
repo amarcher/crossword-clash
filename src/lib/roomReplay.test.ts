@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildRoomReplay, roomReplayAt } from "./roomReplay";
+import { buildRoomReplay, roomReplayAt, roomReplayCode } from "./roomReplay";
+import { decodeRaceReplay } from "./replayCode";
 
 const cell = (letter: string, playerId: string | undefined, at?: number) => ({ letter, correct: true, playerId, at });
 
@@ -46,5 +47,24 @@ describe("roomReplayAt", () => {
     expect(mid.cells["0,1"]).toEqual({ letter: "B", correct: true, playerId: "bob" });
     expect(mid.counts).toEqual({ ann: 1, bob: 1 });
     expect(roomReplayAt(replay, 5000).counts).toEqual({ ann: 2, bob: 1 });
+  });
+});
+
+describe("roomReplayCode", () => {
+  const puzzle = { width: 2, height: 2, cells: [[{ solution: "A" }, { solution: "B" }], [{ solution: "C" }, { solution: null }]] };
+  const replay = buildRoomReplay({ "0,0": cell("A", "ann", 11_000), "0,1": cell("B", "bob", 12_500), "1,0": cell("C", "bob", 19_000) }, 10_000)!;
+  const colors = { ann: "#3b82f6", bob: "#ef4444" };
+
+  it("files the claims with players in standing order, most squares first", () => {
+    const race = decodeRaceReplay(roomReplayCode(puzzle, replay, colors, "ann")!)!;
+    // Bob holds two squares, so Bob is player 0.
+    expect(race.colors).toEqual([[239, 68, 68], [59, 130, 246]]);
+    expect(race.claims.map((c) => [c.cell, c.player])).toEqual([[0, 1], [1, 0], [2, 0]]);
+    expect(race.seconds).toBe(9);
+    expect(race.blocks).toEqual([false, false, false, true]);
+  });
+
+  it("gives nothing when a claimant has no colour", () => {
+    expect(roomReplayCode(puzzle, replay, { ann: "#3b82f6" })).toBeNull();
   });
 });

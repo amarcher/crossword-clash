@@ -8,7 +8,7 @@ import { SHARE_URL } from "../../lib/resultCard";
  * loading it here renders and caches the clip before any preview asks for it.
  * Always the production URL (the link's own); hidden if it can't load.
  */
-export function ReplayPreview({ id, darkMode }: { id: string; darkMode?: boolean }) {
+export function ReplayPreview({ id, race, darkMode }: { id: string; race?: boolean; darkMode?: boolean }) {
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   if (failed) return null;
@@ -22,7 +22,7 @@ export function ReplayPreview({ id, darkMode }: { id: string; darkMode?: boolean
         muted
         loop
         playsInline
-        aria-label={t("completion.replayPreviewLabel")}
+        aria-label={t(race ? "completion.raceReplayPreviewLabel" : "completion.replayPreviewLabel")}
         onError={() => setFailed(true)}
         className={`aspect-video w-full rounded-xl object-cover ${darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line"}`}
       />

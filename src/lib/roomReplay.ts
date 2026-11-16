@@ -8,6 +8,7 @@
  * there is no link.
  */
 import type { CellState } from "../types/puzzle";
+import { encodeRaceReplay, MAX_RACE_PLAYERS } from "./replayCode";
 
 /** One claim: when (ms from the replay's start), where ("row,col"), what and who. */
 export interface RoomReplayEvent {
@@ -62,4 +63,29 @@ export function roomReplayAt(replay: RoomReplay, ms: number): { cells: Record<st
     counts[e.playerId] = (counts[e.playerId] ?? 0) + 1;
   }
   return { cells, counts };
+}
+
+/**
+ * The room's replay as a share code (encodeRaceReplay), for the clip a shared
+ * link plays (Andrew, 2026-11-16: a finished race shared the emoji squares,
+ * not the video). Players are ordered by squares held, most first, the
+ * sharer first among equals, so the clip's bars read as the final standings.
+ * Null when it cannot be told: more than eight claimants, or a claimant
+ * without a #rrggbb colour.
+ */
+export function roomReplayCode(
+  puzzle: { width: number; height: number; cells: readonly (readonly { solution: string | null }[])[] },
+  replay: RoomReplay,
+  colorMap: Readonly<Record<string, string>>,
+  selfId?: string | null,
+): string | null {
+  const held = new Map<string, number>();
+  for (const e of replay.events) held.set(e.playerId, (held.get(e.playerId) ?? 0) + 1);
+  const order = [...held.keys()].sort((a, b) => held.get(b)! - held.get(a)! || Number(b === selfId) - Number(a === selfId) || a.localeCompare(b));
+  if (order.length > MAX_RACE_PLAYERS || order.some((id) => !colorMap[id])) return null;
+  const claims = replay.events.map((e) => {
+    const [row, col] = e.key.split(",").map(Number);
+    return { ms: e.ms, cell: row * puzzle.width + col, player: order.indexOf(e.playerId) };
+  });
+  return encodeRaceReplay(puzzle, claims, Math.ceil(replay.durationMs / 1000), order.map((id) => colorMap[id]));
 }

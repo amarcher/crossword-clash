@@ -33,7 +33,8 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
-import { buildRoomReplay } from "../lib/roomReplay";
+import { buildRoomReplay, roomReplayCode } from "../lib/roomReplay";
+import { createReplayShare } from "../lib/replayShare";
 import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
 
 export function MultiplayerPlayScreen() {
@@ -101,6 +102,23 @@ export function MultiplayerPlayScreen() {
     [gameStatus, isAsync, playerCells, mp.raceStartedAt],
   );
   const [replayOpen, setReplayOpen] = useState(false);
+  // The same replay filed as a share, so the link sent from the finish plays the race (api/replay.ts).
+  const [raceShareId, setRaceShareId] = useState<string>();
+  const raceCode = useMemo(
+    () => (roomReplay && puzzle && playerColorMap ? roomReplayCode(puzzle, roomReplay, playerColorMap, user?.id) : null),
+    [roomReplay, puzzle, playerColorMap, user?.id],
+  );
+  useEffect(() => {
+    setRaceShareId(undefined);
+    if (!raceCode) return;
+    let live = true;
+    void createReplayShare(raceCode).then((id) => {
+      if (live && id) setRaceShareId(id);
+    });
+    return () => {
+      live = false;
+    };
+  }, [raceCode]);
 
   useBeforeUnload(gameStatus === "active");
 
@@ -507,6 +525,7 @@ export function MultiplayerPlayScreen() {
         onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
+        replayId={raceShareId}
         onWatchRoomReplay={
           roomReplay
             ? () => {
