@@ -1,0 +1,8 @@
+This build (1.1.3, build 43) is about seeing how each game mode plays, and watching solves. Please check:
+
+1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
+2. Time trial: everyone solves their own copy, and each square another player has filled shows as a small dot in their colour. The standings show each player's percent filled until they finish.
+3. Race replay: "You vs ..." now plays on one board. Your letters fill in shaded, and the other player's squares show as dots. It should fit the screen with nothing cut off.
+4. Daily leaderboard: the Race button on a row looks like a button. Once you have solved that puzzle it becomes Watch, and plays that player's solve (Plus).
+5. Notifications after signing in or out: if you allowed notifications before signing in to an existing account, invites and friend requests should now reach this device. After signing out, the account's notifications should stop.
+6. Everything from build 42 still applies.
