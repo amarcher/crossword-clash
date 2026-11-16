@@ -11,6 +11,12 @@ vi.mock("@capacitor/status-bar", () => ({
 }));
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
+/**
+ * The plugin loads through a dynamic import, which on a busy runner can take
+ * longer than one timer tick: a call that landed late was missed by its own
+ * test and counted by the next (CI, 2026-11-16). Wait for the call itself.
+ */
+const styled = (times: number) => vi.waitFor(() => expect(setStyle).toHaveBeenCalledTimes(times));
 
 beforeEach(() => {
   vi.resetModules();
@@ -24,14 +30,14 @@ describe("lightStatusBar", () => {
     const { lightStatusBar } = await import("./statusBar");
     const lobby = lightStatusBar();
     const game = lightStatusBar();
-    await settle();
+    await styled(1);
     expect(setStyle.mock.calls).toEqual([[{ style: "DARK" }]]);
     lobby();
     lobby();
     await settle();
     expect(setStyle).toHaveBeenCalledTimes(1);
     game();
-    await settle();
+    await styled(2);
     expect(setStyle).toHaveBeenLastCalledWith({ style: "LIGHT" });
   });
 
