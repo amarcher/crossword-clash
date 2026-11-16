@@ -69,7 +69,7 @@ export function ModePreview({ mode, label, variant = "light" }: ModePreviewProps
     <div role="img" aria-label={label} data-testid="mode-preview" data-mode={mode} className="flex items-center gap-4">
       <div
         aria-hidden="true"
-        className="grid shrink-0 gap-px rounded-md bg-ink p-px"
+        className="grid shrink-0 gap-px overflow-hidden rounded-md border-2 border-ink bg-ink"
         style={{ gridTemplateColumns: `repeat(${PREVIEW_SIZE}, 1.5rem)` }}
       >
         {frame.cells.map((cell, i) => (

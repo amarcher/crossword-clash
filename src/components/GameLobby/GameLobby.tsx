@@ -131,7 +131,8 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
 
   // DOM order is phone order: Start (host) or the waiting status (joiner), the
-  // roster, then how people get in, then the host's settings. On desktop the
+  // roster, the game mode (the host's settings, or the joiner's card), then
+  // how people get in. On desktop the
   // join column moves to the right and spans the left column's rows.
   const column = shareCode ? "lg:col-start-1" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md";
   // A joiner is shown the mode the host has picked, once the host has said it.
@@ -246,6 +247,24 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
           </section>
         )}
 
+        {/* The host's settings, right under the roster (Andrew, 2026-11-16: what kind of game
+            this is belongs near the top, as the joiner's mode card is), above how people get in. */}
+        {showSettings && (
+          <section className={column}>
+            <Card className="p-5">
+              <Eyebrow as="h2">{t("lobby.gameSettings")}</Eyebrow>
+              <div className="mt-4 grid gap-5">
+                {raceMode !== undefined && onRaceModeChange && (
+                  <RaceModeSelector value={raceMode} onChange={onRaceModeChange} />
+                )}
+                {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
+                  <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
+                )}
+              </div>
+            </Card>
+          </section>
+        )}
+
         {/* How people get in: below the roster on phones, the right column on desktop. */}
         {shareCode && (
           <section className={`grid grid-cols-[minmax(0,1fr)] gap-4 lg:col-start-2 lg:row-start-1 ${joinRows}`}>
@@ -306,23 +325,6 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               <div className="min-w-0 lg:text-center">
                 <p className="font-semibold text-ink">{t("lobby.scanToJoin")}</p>
                 <p className="mt-0.5 text-sm text-muted">{t("lobby.qrHint")}</p>
-              </div>
-            </Card>
-          </section>
-        )}
-
-        {/* The host's settings, last: they are tweaked once, before Start. */}
-        {showSettings && (
-          <section className={column}>
-            <Card className="p-5">
-              <Eyebrow as="h2">{t("lobby.gameSettings")}</Eyebrow>
-              <div className="mt-4 grid gap-5">
-                {raceMode !== undefined && onRaceModeChange && (
-                  <RaceModeSelector value={raceMode} onChange={onRaceModeChange} />
-                )}
-                {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
-                  <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
-                )}
               </div>
             </Card>
           </section>
