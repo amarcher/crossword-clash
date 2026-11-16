@@ -22,6 +22,7 @@
  */
 import { supabase } from "./supabaseClient";
 import { getProgress, loadProgressStore, mergeRemoteProgress, subscribeProgressChanges, type SoloProgressRecord } from "./soloProgress";
+import { cleanEvents, clearTrace, loadTrace, saveTrace, type StoredTrace } from "./race";
 import type { CellState } from "../types/puzzle";
 
 export const PUSH_DEBOUNCE_MS = 2000;
@@ -35,6 +36,32 @@ export interface SoloProgressRow {
   total: number;
   /** ISO timestamp. */
   updated_at: string;
+  /**
+   * The solve's recording so far (race.ts), so a puzzle continued on another
+   * device can still be raced and replayed; null when the device has none or
+   * it is too large to send.
+   */
+  trace?: SyncedTrace | null;
+}
+
+export type SyncedTrace = Pick<StoredTrace, "events" | "marks" | "partial">;
+/** The largest recording sent with a row, as JSON (the column allows a little more). */
+export const MAX_TRACE_CHARS = 120_000;
+
+/** The device's recording for a puzzle, as it rides with the progress row. */
+export function traceForSync(key: string): SyncedTrace | null {
+  const stored = loadTrace(key);
+  if (!stored) return null;
+  const trace: SyncedTrace = { events: stored.events, marks: stored.marks ?? [], partial: stored.partial };
+  return JSON.stringify(trace).length <= MAX_TRACE_CHARS ? trace : null;
+}
+
+/** A row's recording, cleaned; null when there is none or it is not one. */
+export function traceFromRow(key: string, raw: unknown): StoredTrace | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { events, marks, partial } = raw as { events?: unknown; marks?: unknown; partial?: unknown };
+  if (!Array.isArray(events)) return null;
+  return { key, events: cleanEvents(events), marks: Array.isArray(marks) ? (marks as StoredTrace["marks"]) : [], partial: partial === true };
 }
 
 export function rowFromRecord(userId: string, r: SoloProgressRecord): SoloProgressRow {
@@ -46,6 +73,7 @@ export function rowFromRecord(userId: string, r: SoloProgressRecord): SoloProgre
     filled: r.filled,
     total: r.total,
     updated_at: new Date(r.updatedAt).toISOString(),
+    trace: traceForSync(r.key),
   };
 }
 
@@ -55,7 +83,7 @@ export function recordFromRow(row: Pick<SoloProgressRow, "puzzle_key" | "cells" 
   return { key: row.puzzle_key, cells: row.cells, elapsedMs: row.elapsed_ms, updatedAt, filled: row.filled, total: row.total };
 }
 
-const COLUMNS = "puzzle_key, cells, elapsed_ms, filled, total, updated_at";
+const COLUMNS = "puzzle_key, cells, elapsed_ms, filled, total, updated_at, trace";
 
 let syncUser: string | null = null;
 let unsubscribe: (() => void) | null = null;
@@ -143,8 +171,17 @@ export async function pullProgress(userId: string): Promise<string[]> {
   try {
     const { data, error } = await supabase.from("solo_progress").select(COLUMNS).eq("user_id", userId);
     if (error) throw error;
-    const records = ((data ?? []) as SoloProgressRow[]).map(recordFromRow).filter((r): r is SoloProgressRecord => r !== null);
-    return mergeRemoteProgress(records);
+    const rows = (data ?? []) as SoloProgressRow[];
+    const records = rows.map(recordFromRow).filter((r): r is SoloProgressRecord => r !== null);
+    const changed = mergeRemoteProgress(records);
+    // A puzzle whose letters just came from another device takes that device's
+    // recording too; without one, what is here no longer describes the grid.
+    for (const key of changed) {
+      const trace = traceFromRow(key, rows.find((row) => row.puzzle_key === key)?.trace);
+      if (trace) saveTrace(trace);
+      else clearTrace(key);
+    }
+    return changed;
   } catch (err) {
     console.warn("Progress sync: could not read", err);
     return [];
