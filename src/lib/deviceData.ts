@@ -16,7 +16,7 @@
  *   progress merge newest first, and the guest's finishes are offered to the
  *   account's history again (solveHistory's once-per-device upload).
  *
- * Device preferences (language, consent, settings, the push token) are not
+ * Device preferences (language, consent, the push token) are not
  * play data and never move. React state is read from storage once, so every
  * change here ends in a page load.
  *
@@ -56,6 +56,7 @@ export const ACCOUNT_KEYS: readonly string[] = [
   "crossword-clash:bonus-puzzles",
   "crossword-clash:board-friends-only",
   "crossword-clash:hidden-authors",
+  "crossword-clash:solo-settings",
   "crossword-clash:studio",
   "crossword-clash:studio-puzzles",
 ];

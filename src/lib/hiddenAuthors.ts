@@ -1,9 +1,10 @@
 /**
  * "Hide puzzles by this author" (docs/community-puzzles-spec.md §3.4, ruled
  * 2026-10-27): a list of author ids in this browser's localStorage, applied to
- * the browse results and the puzzle page on this device. No table, no sync; it
- * dies with the browser's storage like an anonymous player's best times. The
- * store notifies listeners so a screen re-renders when the list changes.
+ * the browse results and the puzzle page on this device. A guest's list dies
+ * with the browser's storage like their best times; an account's is kept with
+ * the account too (accountPrefs.ts, 2026-11-16). The store notifies listeners
+ * so a screen re-renders when the list changes.
  */
 export const HIDDEN_AUTHORS_KEY = "crossword-clash:hidden-authors";
 const MAX_HIDDEN = 200;
@@ -51,6 +52,11 @@ export function unhideAuthor(authorId: string): void {
   const list = loadHiddenAuthors();
   if (!list.includes(authorId)) return;
   write(list.filter((id) => id !== authorId));
+}
+
+/** Replace the whole list (the account's copy arriving on this device). */
+export function setHiddenAuthors(list: readonly string[]): void {
+  write([...new Set(list)].slice(0, MAX_HIDDEN));
 }
 
 export function subscribeHiddenAuthors(listener: () => void): () => void {

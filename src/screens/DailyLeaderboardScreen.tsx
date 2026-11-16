@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
@@ -42,6 +42,7 @@ import { fetchDailyForDay } from "../lib/dailyFeed";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import type { Puzzle } from "../types/puzzle";
 import { dailyPath } from "../lib/dailyChallenge";
+import { readFriendsOnly, subscribeFriendsOnly, writeFriendsOnly } from "../lib/boardPrefs";
 
 /** The viewer's own solve in a replay, as on the play screen. */
 const MY_REPLAY_COLOR = "#3a6bf0";
@@ -74,23 +75,6 @@ const WIDE_GRID: Record<number, { grid: string; width: ShellWidth }> = {
   3: { grid: "lg:grid-cols-3 lg:gap-5", width: "5xl" },
 };
 
-/** Whether the board shows only the viewer and their friends; remembered per device. */
-const FRIENDS_ONLY_KEY = "crossword-clash:board-friends-only";
-function readFriendsOnly(): boolean {
-  try {
-    return localStorage.getItem(FRIENDS_ONLY_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-function writeFriendsOnly(on: boolean) {
-  try {
-    if (on) localStorage.setItem(FRIENDS_ONLY_KEY, "1");
-    else localStorage.removeItem(FRIENDS_ONLY_KEY);
-  } catch {
-    // A blocked store only costs the memory of the choice.
-  }
-}
 
 const STEP_BUTTON =
   "grid size-11 shrink-0 place-items-center rounded-xl text-ink-soft hover:bg-surface-sunken active:bg-line disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-brand-500";
@@ -180,10 +164,9 @@ export function DailyLeaderboardScreen() {
     [friends.active, friends.friendships.friends],
   );
   const canFilter = !!user && friendIds.length > 0;
-  const [friendsOnly, setFriendsOnly] = useState(readFriendsOnly);
+  const friendsOnly = useSyncExternalStore(subscribeFriendsOnly, readFriendsOnly, () => false);
   const chooseFriendsOnly = useCallback(
     (on: boolean) => {
-      setFriendsOnly(on);
       writeFriendsOnly(on);
       track("leaderboard_filter", { friends_only: on, slot: routeSlot });
     },
