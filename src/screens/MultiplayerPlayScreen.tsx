@@ -35,6 +35,7 @@ import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
 import { buildRoomReplay, roomReplayCode } from "../lib/roomReplay";
 import { createReplayShare } from "../lib/replayShare";
+import { resolvePuzzleRef } from "../lib/gameSettings";
 import { encodeReplay } from "../lib/replayCode";
 import { useSolveRecorder } from "../hooks/useRace";
 import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
@@ -104,6 +105,7 @@ export function MultiplayerPlayScreen() {
     [gameStatus, isAsync, playerCells, mp.raceStartedAt],
   );
   const [replayOpen, setReplayOpen] = useState(false);
+  const roomPuzzleRef = useMemo(() => resolvePuzzleRef(mp.gameSettings), [mp.gameSettings]);
   // The same replay filed as a share, so the link sent from the finish plays the race (api/replay.ts).
   const [raceShareId, setRaceShareId] = useState<string>();
   const raceCode = useMemo(
@@ -543,6 +545,8 @@ export function MultiplayerPlayScreen() {
         nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
+        // A past daily or a community puzzle: the link the host's room carries (gameSettings.ts).
+        puzzleRef={roomPuzzleRef}
         onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
