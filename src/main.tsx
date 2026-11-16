@@ -13,6 +13,8 @@ import { applyPageMeta, pageMetaFor } from "./lib/pageMeta";
 import { normalizePathname } from "./lib/prerender";
 import { router } from "./router";
 import { Capacitor } from "@capacitor/core";
+import { startDeviceData } from "./lib/deviceData";
+import { supabase } from "./lib/supabaseClient";
 
 document.documentElement.classList.toggle("native-app", Capacitor.isNativePlatform());
 
@@ -32,6 +34,9 @@ window.addEventListener("vite:preloadError", (event) => {
 });
 
 initErrorReporting();
+
+// The device's play data follows the signed-in account (lib/deviceData).
+if (supabase) startDeviceData(supabase);
 
 // <title>, description and canonical per route — the same table the
 // build-time prerender writes into each static page's <head>.

@@ -798,6 +798,13 @@
     "dismiss": "Cerrar",
     "inAppPurchases": "Compras dentro de la app"
   },
+  "signedOut": {
+    "label": "Sesión cerrada",
+    "title": "Has cerrado sesión",
+    "body": "Tu racha, tu historial y tus crucigramas en curso se guardan con tu cuenta.",
+    "signIn": "Iniciar sesión",
+    "dismiss": "Ahora no"
+  },
   "update": {
     "label": "Actualización de la app",
     "available": "Crossword Clash {{version}} ya está disponible",
