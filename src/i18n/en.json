@@ -798,6 +798,13 @@
     "dismiss": "Close",
     "inAppPurchases": "In-App Purchases"
   },
+  "signedOut": {
+    "label": "Signed out",
+    "title": "You're signed out",
+    "body": "Your streak, history and puzzles in progress are kept with your account.",
+    "signIn": "Sign in",
+    "dismiss": "Not now"
+  },
   "update": {
     "label": "App update",
     "available": "Crossword Clash {{version}} is available",

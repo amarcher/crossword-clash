@@ -8,6 +8,7 @@
  * already exists, linking fails on the way back and we sign in to that
  * account instead (see resumeSignIn and accountElsewhere).
  */
+import { discardDeviceDataOnSignOut } from "./deviceData";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
 import { nativeIdToken, nativeProviders, nativeSignInAvailable } from "./nativeSignIn";
@@ -290,6 +291,7 @@ export async function signOut(): Promise<void> {
 export async function deleteAccount(): Promise<void> {
   const { error } = await client().functions.invoke("delete-account", { body: {} });
   if (error) throw error;
+  discardDeviceDataOnSignOut();
   // The server session is already gone; just drop the local one.
   await client().auth.signOut({ scope: "local" });
 }
