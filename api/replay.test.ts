@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clockText, decodeReplay, drawFrames, FRAME_COUNT, FPS, GET, H, renderVideo, W } from "./replay";
-import { decodeReplay as decodeInApp, encodeReplay } from "../src/lib/replayCode";
+import { clockText, decodeAny, decodeRace, decodeReplay, drawFrames, drawRaceFrames, FRAME_COUNT, FPS, GET, H, renderVideo, W } from "./replay";
+import { decodeRaceReplay as decodeRaceInApp, decodeReplay as decodeInApp, encodeRaceReplay, encodeReplay } from "../src/lib/replayCode";
 import type { ReplayMark, TraceEvent } from "../src/lib/race";
 
 /** A 3×3 with one black square (the centre); every answer is "A". */
@@ -171,4 +171,48 @@ describe("renderVideo", () => {
     const mp4 = await renderVideo(decodeReplay(encodeReplay(big, ev, 450)!)!);
     expect(mp4.length).toBeLessThan(400_000);
   }, 30_000);
+});
+
+describe("a shared-grid race (version 3)", () => {
+  const claims = WHITE_CELLS.map((cell, i) => ({ ms: 2000 + i * 3000, cell, player: i % 3 === 0 ? 1 : 0 }));
+  const code = encodeRaceReplay(puzzle, claims, 30, ["#3b82f6", "#ef4444"])!;
+
+  it("decodes here as it does in the app, and is not mistaken for a solve", () => {
+    const here = decodeRace(code)!;
+    const app = decodeRaceInApp(code)!;
+    expect(here.claims).toEqual(app.claims);
+    expect(here.colors).toEqual(app.colors);
+    expect(here.colors).toEqual([[59, 130, 246], [239, 68, 68]]);
+    expect(here.claims.map((c) => c.cell)).toEqual(WHITE_CELLS);
+    expect(decodeReplay(code)).toBeNull();
+    expect(decodeRace(encodeReplay(puzzle, events, 30, marks)!)).toBeNull();
+    expect("race" in decodeAny(code)!).toBe(true);
+  });
+
+  it("refuses a claim on a black square, an unknown player and an empty race", () => {
+    expect(encodeRaceReplay(puzzle, [], 30, ["#3b82f6"])).toBeNull();
+    expect(encodeRaceReplay(puzzle, claims, 30, ["blue"])).toBeNull();
+    // Square 4 is the black centre.
+    expect(decodeRace(encodeRaceReplay(puzzle, [{ ms: 0, cell: 4, player: 0 }], 30, ["#3b82f6"])!)).toBeNull();
+    expect(encodeRaceReplay(puzzle, [{ ms: 0, cell: 0, player: 5 }], 30, ["#3b82f6"])).toBeNull();
+  });
+
+  it("draws each square in its claimant's tint, empty until claimed, and holds the full grid", async () => {
+    const race = decodeRace(code)!;
+    const tintOf = ([r, g, b]: number[]) => [r, g, b].map((v) => Math.round(v * 0.72 + 255 * 0.28)).join(",");
+    const first: string[] = [];
+    const last: string[] = [];
+    await drawRaceFrames(race, (frame, i) => {
+      if (i === 0) first.push(...WHITE_CELLS.map((c) => colourAt(frame, c)));
+      if (i === FRAME_COUNT - 1) last.push(...WHITE_CELLS.map((c) => colourAt(frame, c)));
+    });
+    expect(first.every((c) => c === "255,255,255")).toBe(true);
+    expect(last).toEqual(WHITE_CELLS.map((_, i) => tintOf(race.colors[i % 3 === 0 ? 1 : 0])));
+  });
+
+  it("serves a race code as a clip", async () => {
+    const res = await GET(new Request(`https://example.test/api/replay?r=${code}&poster=1`));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("image/jpeg");
+  });
 });

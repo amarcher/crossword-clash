@@ -513,11 +513,11 @@ export function HostLayout() {
       lockout: wrongAnswerTimeout,
       narrator: tts.narratorEngine ?? "none",
     });
-    await multiplayer.startGame({ wrongAnswerTimeoutSeconds: wrongAnswerTimeout });
+    await multiplayer.startGame({ wrongAnswerTimeoutSeconds: wrongAnswerTimeout, ...(puzzle?.ref ? { puzzleRef: puzzle.ref } : {}) });
     if (gameId) {
       navigate(`/host/spectate/${gameId}`);
     }
-  }, [multiplayer, wrongAnswerTimeout, gameId, navigate, tts.narratorEngine]);
+  }, [multiplayer, wrongAnswerTimeout, puzzle, gameId, navigate, tts.narratorEngine]);
 
   const handleCloseRoom = useCallback(async () => {
     const ok = await confirm({

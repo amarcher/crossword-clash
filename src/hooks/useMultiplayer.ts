@@ -11,7 +11,7 @@ import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
 import { reportError } from "../lib/errorReporting";
 import { displayableName } from "../lib/nameFilter";
-import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
+import { DEFAULT_GAME_SETTINGS, resolvePuzzleRef, resolveRaceMode } from "../lib/gameSettings";
 import { buildFinalStandings, mergeRosters, type FinalStandings } from "../lib/finalStandings";
 import { liveRoster } from "../lib/roster";
 import { mergeRaceProgress, type RaceProgress } from "../lib/raceProgress";
@@ -267,6 +267,7 @@ export function useMultiplayer({
       setGameSettings({
         wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds,
         raceMode: resolveRaceMode(state.settings as GameSettings),
+        ...(resolvePuzzleRef(state.settings) ? { puzzleRef: resolvePuzzleRef(state.settings) } : {}),
       });
     }
 

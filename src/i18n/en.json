@@ -260,6 +260,7 @@
   },
   "completion": {
     "replayPreviewLabel": "Your solve, replayed",
+    "raceReplayPreviewLabel": "The race, replayed",
     "replayPreviewCaption": "This plays when you share the link",
     "nextYesterday": "Yesterday's {{daily}}",
     "puzzleComplete": "Puzzle complete",

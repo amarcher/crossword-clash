@@ -36,11 +36,13 @@ export function LobbyScreen() {
     await mp.startGame({
       wrongAnswerTimeoutSeconds: game.wrongAnswerTimeout,
       raceMode: game.raceMode,
+      // The puzzle's own link, so every player's finish can share the replay clip.
+      ...(game.puzzle?.ref ? { puzzleRef: game.puzzle.ref } : {}),
     });
     if (game.gameId) {
       navigate(`/play/${game.gameId}`);
     }
-  }, [mp, game.wrongAnswerTimeout, game.raceMode, game.gameId, navigate]);
+  }, [mp, game.wrongAnswerTimeout, game.raceMode, game.puzzle, game.gameId, navigate]);
 
   // Joiners see the mode before Start: the host says it on every change, and
   // again when the roster changes, so someone who just arrived hears it too.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WRONG_ANSWER_TIMEOUT_OPTIONS, DEFAULT_GAME_SETTINGS } from "./gameSettings";
+import { WRONG_ANSWER_TIMEOUT_OPTIONS, DEFAULT_GAME_SETTINGS, resolvePuzzleRef } from "./gameSettings";
 
 describe("gameSettings", () => {
   describe("WRONG_ANSWER_TIMEOUT_OPTIONS", () => {
@@ -37,5 +37,18 @@ describe("gameSettings", () => {
     it("defaults to no timeout", () => {
       expect(DEFAULT_GAME_SETTINGS.wrongAnswerTimeoutSeconds).toBe(0);
     });
+  });
+});
+
+describe("resolvePuzzleRef", () => {
+  it("reads a past daily's or a community puzzle's link from the room's settings", () => {
+    expect(resolvePuzzleRef({ wrongAnswerTimeoutSeconds: 0, puzzleRef: { day: "2026-11-03", slot: "midi" } })).toEqual({ day: "2026-11-03", slot: "midi" });
+    expect(resolvePuzzleRef({ puzzleRef: { shortId: "ab12cd34" } })).toEqual({ shortId: "ab12cd34" });
+  });
+
+  it("takes nothing that is not a link: settings come from the database and other players", () => {
+    for (const bad of [null, undefined, {}, { puzzleRef: "x" }, { puzzleRef: { day: "yesterday", slot: "mini" } }, { puzzleRef: { day: "2026-11-03", slot: "huge" } }, { puzzleRef: { shortId: "../etc" } }, { puzzleRef: { shortId: "" } }]) {
+      expect(resolvePuzzleRef(bad)).toBeUndefined();
+    }
   });
 });
