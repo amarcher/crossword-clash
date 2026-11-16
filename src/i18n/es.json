@@ -159,11 +159,11 @@
     "shareInvite": "Comparte el código para invitar jugadores",
     "modeHeading": "Modo de juego",
     "modeVersus": "Competir",
-    "modeVersusDesc": "Una cuadrícula compartida — compite por reclamar más casillas.",
+    "modeVersusDesc": "Una cuadrícula compartida. Cada casilla es de quien la resuelve primero, y gana quien tenga más.",
     "modeCoop": "Cooperativo",
-    "modeCoopDesc": "Una cuadrícula compartida — llénenla juntos en equipo.",
+    "modeCoopDesc": "Una cuadrícula compartida. Todos la llenan juntos y terminan en equipo.",
     "modeAsync": "Contrarreloj",
-    "modeAsyncDesc": "Cada uno con su propia copia — gana el tiempo más rápido.",
+    "modeAsyncDesc": "Cada uno resuelve su propia copia al mismo tiempo. Unos puntos marcan las casillas que los demás ya llenaron, y gana quien termine primero.",
     "howItWorksStep1": "Tus amigos escanean el código QR o ingresan el código en crosswordclash.com.",
     "howItWorksStep2": "Cuando todos estén listos, presiona Iniciar.",
     "copied": "¡Copiado!",
@@ -1226,5 +1226,14 @@
     "fasterTeaser_one": "Clasificado {{count}} día. Mira a cuántos superaste.",
     "fasterTeaser_other": "Clasificado {{count}} días. Mira a cuántos superaste.",
     "fasterTeaserNone": "Mira a cuántos superaste."
+  },
+  "modePreview": {
+    "you": "Tú",
+    "friend": "Amigo",
+    "together": "Juntos: {{count}} de {{total}}",
+    "done": "Listo",
+    "earlierSolve": "Solución de {{name}}",
+    "guestHeading": "Modo de juego",
+    "ghostDesc": "Resuelves tu propia cuadrícula. Un punto marca cada casilla que la otra persona ya había llenado en ese momento de su solución."
   }
 }

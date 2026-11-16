@@ -28,6 +28,7 @@ import { leaderboardPath, postDailyResult, todayKey } from "../lib/dailyLeaderbo
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
 import { rankRaceStandings } from "../lib/raceResults";
+import { progressPercent } from "../lib/raceProgress";
 import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
@@ -87,6 +88,8 @@ export function MultiplayerPlayScreen() {
     raceMode,
     raceFinishTimes,
     finishRace,
+    raceProgress,
+    rivalTints,
   } = mp;
 
   const isAsync = raceMode === "async";
@@ -105,8 +108,8 @@ export function MultiplayerPlayScreen() {
 
   const navActions = useMemo(
     () => ({
-      // Async: validate against the LOCAL copy only (no claims/broadcasts) —
-      // one player's letters never appear on another's grid.
+      // Async: validate against the LOCAL copy only (no claims) — one
+      // player's letters never appear on another's grid, only a dot.
       inputLetter: isAsync ? asyncInputLetter : multiplayerInputLetter,
       deleteLetter: () => {}, // No deletion in multiplayer
       moveSelection,
@@ -305,8 +308,8 @@ export function MultiplayerPlayScreen() {
   const finishSeconds = isAsync ? myFinishSeconds ?? null : raceSeconds;
   const canChooseNewPuzzle = isHost;
 
-  // Async sidebar: live standings instead of the cells-claimed scoreboard
-  // (other players' grids are invisible, so cell counts are meaningless).
+  // Async sidebar: live standings instead of the cells-claimed scoreboard:
+  // a finish time, or how much of their own copy a player has filled.
   const raceStatusPanel = raceStandings && (
     <div className="space-y-2">
       <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
@@ -320,7 +323,11 @@ export function MultiplayerPlayScreen() {
           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
           <span className="font-medium text-neutral-700 truncate flex-1">{row.displayName}</span>
           <span className="tabular-nums text-neutral-500">
-            {row.seconds != null ? formatDuration(row.seconds) : t('completion.solving')}
+            {row.seconds != null
+              ? formatDuration(row.seconds)
+              : progressPercent(raceProgress, row.userId, totalWhiteCells) != null
+                ? `${progressPercent(raceProgress, row.userId, totalWhiteCells)}%`
+                : t('completion.solving')}
           </span>
         </div>
       ))}
@@ -402,6 +409,7 @@ export function MultiplayerPlayScreen() {
               navigationActions={navActions}
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
+              ghostTints={isAsync && !finished ? rivalTints : undefined}
             />
             {multiplayerActive && <LockoutOverlay lockedUntil={lockedUntil} />}
           </div>
