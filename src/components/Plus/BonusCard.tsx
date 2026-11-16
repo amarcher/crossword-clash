@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CircleCheck, Loader2, Lock, Trophy } from "lucide-react";
 import { Button, Card, Eyebrow, MiniGridThumb, TransitionLink } from "../ui";
+import { ThemeChips } from "../ui/ThemeChips";
 import { PlusBadge } from "../ui/PlusBadge";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
@@ -74,17 +75,13 @@ export function BonusCard() {
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
-          <div className="flex min-h-5 items-center gap-2">
+          <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
             {/* Plus is marked with the badge's seal; the gold chip is the theme, as on the dailies. */}
             <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
               {t("bonus.eyebrow")}
               <PlusBadge interactive={false} size="1.15em" />
             </Eyebrow>
-            {card.theme && (
-              <span className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100" title={card.theme}>
-                {card.theme}
-              </span>
-            )}
+            {card.theme && <ThemeChips theme={card.theme} />}
           </div>
           <h2 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {solved ? (

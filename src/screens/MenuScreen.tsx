@@ -41,6 +41,7 @@ import {
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../components/ui";
+import { ThemeChips } from "../components/ui/ThemeChips";
 import { PAGE_GUTTER } from "../components/PageShell";
 import { prefetchOnIntent } from "../routeModules";
 
@@ -86,19 +87,12 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
-          {/* One 20px row whatever the feed says: the theme chip is 20px and the
-              eyebrow alone 16px (min-h-5), and a long theme truncates rather
-              than wrapping, so the loaded tile is exactly the placeholder's height. */}
-          <div className="flex min-h-5 items-center gap-2">
+          {/* A 20px row (the chip is 20px, the eyebrow alone 16px: min-h-5), so the
+              loaded tile is the placeholder's height. A theme reads in full: chips
+              that do not fit beside the eyebrow wrap under it (Andrew, 2026-11-16). */}
+          <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
             <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
-            {displayTheme(daily) && (
-              <span
-                className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100"
-                title={displayTheme(daily)}
-              >
-                {displayTheme(daily)}
-              </span>
-            )}
+            {displayTheme(daily) && <ThemeChips theme={displayTheme(daily)} />}
           </div>
           {daily ? (
             <>
