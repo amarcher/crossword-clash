@@ -2,8 +2,11 @@
  * The little looping board that shows how a game mode plays (ModePreview.tsx):
  * a 4×4 word square filled in by two players, "you" (0) and a friend (1).
  *
- * - versus / coop: one shared grid. The two take turns from opposite corners
- *   and each square keeps the colour of whoever placed it.
+ * - versus / coop: one shared grid. You fill across words left to right from
+ *   the top row; the friend fills down words top to bottom from the right-hand
+ *   column. Every word goes in first letter first (Andrew, 2026-11-16: the
+ *   friend used to run backwards from the last square), and each square keeps
+ *   the colour of whoever placed it.
  * - async (time trial) / ghost: your own copy. You fill it in reading order;
  *   the friend works on theirs at a different pace, live or from a recorded
  *   solve. Their filled squares show on your grid as a dot (Cell.tsx).
@@ -51,6 +54,8 @@ export interface PreviewFrame {
 const readingOrder = Array.from({ length: PREVIEW_CELLS }, (_, i) => i);
 /** Column by column: the friend's order on their own copy, so their dots do not trail your letters. */
 const columnOrder = readingOrder.map((i) => (i % PREVIEW_SIZE) * PREVIEW_SIZE + Math.floor(i / PREVIEW_SIZE));
+/** Down each column from the right-hand one: the friend's order on a shared grid, away from your first row. */
+const downFromRight = readingOrder.map((i) => (i % PREVIEW_SIZE) * PREVIEW_SIZE + (PREVIEW_SIZE - 1 - Math.floor(i / PREVIEW_SIZE)));
 
 function letterAt(i: number): string {
   return PREVIEW_ROWS[Math.floor(i / PREVIEW_SIZE)][i % PREVIEW_SIZE];
@@ -65,8 +70,8 @@ export function modePreviewFrame(mode: PreviewMode, step: number): PreviewFrame 
   if (mode === "versus" || mode === "coop") {
     for (let t = 0; t < s; t++) {
       const who = TURNS[t] === "A" ? 0 : 1;
-      // You work down from the top-left, the friend up from the bottom-right.
-      const order = who === 0 ? readingOrder : [...readingOrder].reverse();
+      // You write across, the friend writes down; a square the other got to first is skipped.
+      const order = who === 0 ? readingOrder : downFromRight;
       const next = order.find((i) => by[i] === null);
       if (next !== undefined) by[next] = who;
     }
