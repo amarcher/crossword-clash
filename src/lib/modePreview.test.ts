@@ -32,6 +32,28 @@ describe("modePreviewFrame", () => {
     }
   });
 
+  it("a shared grid fills words forwards: you across from the top row, the friend down from the right column", () => {
+    const order = (who: 0 | 1) => {
+      const seen: number[] = [];
+      for (let s = 1; s <= PREVIEW_CELLS; s++) {
+        const cells = modePreviewFrame("versus", s).cells;
+        const before = modePreviewFrame("versus", s - 1).cells;
+        const i = cells.findIndex((c, k) => c.by !== null && before[k].by === null);
+        if (cells[i].by === who) seen.push(i);
+      }
+      return seen;
+    };
+    const mine = order(0);
+    const theirs = order(1);
+    // Reading order for you: each square is later in the grid than the one before.
+    expect(mine).toEqual([...mine].sort((a, b) => a - b));
+    expect(mine[0]).toBe(0);
+    // The friend starts at the top of the right-hand column and never moves up within a column.
+    expect(theirs[0]).toBe(PREVIEW_SIZE - 1);
+    const key = (i: number) => (PREVIEW_SIZE - 1 - (i % PREVIEW_SIZE)) * PREVIEW_SIZE + Math.floor(i / PREVIEW_SIZE);
+    expect(theirs.map(key)).toEqual([...theirs.map(key)].sort((a, b) => a - b));
+  });
+
   it("your own copy holds only your letters; the friend is slower", () => {
     for (let s = 0; s <= PREVIEW_CELLS; s++) {
       const f = modePreviewFrame("async", s);
