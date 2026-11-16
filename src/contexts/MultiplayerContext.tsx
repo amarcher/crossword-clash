@@ -11,6 +11,7 @@ import { resolveRaceMode } from "../lib/gameSettings";
 import type { Player, GameSettings, RaceMode } from "../types/game";
 import type { PlayerResult } from "../components/CompletionModal";
 import type { FinalStandings } from "../lib/finalStandings";
+import { rivalTintMap, type RaceProgress } from "../lib/raceProgress";
 
 interface MultiplayerContextValue {
   // Core multiplayer hook return
@@ -42,14 +43,27 @@ interface MultiplayerContextValue {
   raceFinishTimes: Record<string, number>;
   /** Async mode: record + broadcast the local player's finish. */
   finishRace: () => number | null;
+  /** Async mode: userId → the squares that player has filled on their own copy (useMultiplayer). */
+  raceProgress: RaceProgress;
+  announceRaceProgress: (cells: string[]) => void;
   /** The room's play mode (defaults to "versus" for legacy games). */
   raceMode: RaceMode;
+  /** The host announces its lobby choices so joiners see the mode before Start (useMultiplayer). */
+  announceLobbySettings: (settings: GameSettings) => void;
+  /** What the host last announced while the room waits; null until it has. */
+  lobbySettings: GameSettings | null;
   /** The finished game's frozen record (see useMultiplayer); null while in progress. */
   finalStandings: FinalStandings | null;
 
   // Derived values
   multiplayerActive: boolean;
   playerColorMap: Record<string, string> | undefined;
+  /**
+   * Async mode: cell key → the colour of the first other player who has that
+   * square filled on their copy. The grid draws it as the recorded-race dot
+   * (Cell.tsx ghostColor). Undefined on a shared grid.
+   */
+  rivalTints: ReadonlyMap<string, string> | undefined;
   completedClues: Set<string>;
   completedCluesByPlayer: Map<string, { playerId: string }> | undefined;
   clueCountsByPlayer: Map<string, number>;
@@ -203,6 +217,27 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     return map;
   }, [multiplayerActive, roster]);
 
+  // Time trial: everyone has their own copy, so the others show as dots on
+  // mine (Andrew, 2026-11-15) and I tell the room which squares I have.
+  const ownCopy = multiplayerActive && resolveRaceMode(multiplayer.gameSettings) === "async";
+  const raceProgress = multiplayer.raceProgress;
+  const rivalTints = useMemo(() => {
+    return ownCopy ? rivalTintMap(roster, raceProgress, user?.id) : undefined;
+  }, [ownCopy, roster, raceProgress, user]);
+
+  const myFilledKeys = useMemo(
+    () => (ownCopy ? Object.keys(playerCells).filter((k) => playerCells[k].correct) : null),
+    [ownCopy, playerCells],
+  );
+  const announceRaceProgress = multiplayer.announceRaceProgress;
+  const rosterSize = multiplayer.players.length;
+  const racing = multiplayer.gameStatus === "active";
+  // Sent again when the roster changes, so a player who joins late sees where everyone is.
+  useEffect(() => {
+    if (!racing || !myFilledKeys || myFilledKeys.length === 0) return;
+    announceRaceProgress(myFilledKeys);
+  }, [racing, myFilledKeys, rosterSize, announceRaceProgress]);
+
   const completedClues = useMemo(
     () => (puzzle ? getCompletedClues(puzzle, playerCells) : new Set<string>()),
     [puzzle, playerCells],
@@ -334,7 +369,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
   // claim/broadcast — the grid is the local player's own copy. The reducer
   // judges the letter (a room always plays with autocheck on); a refusal is
   // flashed and, through the effect above, costs the host's lockout penalty.
-  // Nothing is broadcast (nobody else can see this grid).
+  // No letter is broadcast: the room only hears which squares are filled.
   const asyncInputLetter = useCallback(
     (letter: string) => {
       if (!multiplayerActive) return;
@@ -353,6 +388,7 @@ export function MultiplayerProvider({ children }: { children: React.ReactNode })
     raceMode: resolveRaceMode(multiplayer.gameSettings),
     multiplayerActive,
     playerColorMap,
+    rivalTints,
     completedClues,
     completedCluesByPlayer,
     clueCountsByPlayer,

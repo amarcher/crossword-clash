@@ -5,6 +5,7 @@ import { PlusSeal } from "../ui/PlusBadge";
 import { Button } from "../ui";
 import { formatDuration } from "../../lib/soloStats";
 import { MAX_GHOSTS, type RaceCandidate } from "../../lib/race";
+import { ModePreview } from "../GameLobby/ModePreview";
 
 interface RaceStarterProps {
   candidates: RaceCandidate[];
@@ -68,6 +69,10 @@ export function RaceStarter({ candidates, plus, preselect, onStart, onPitch }: R
       {open && (
         <div className="mt-2">
           <p className="text-xs text-muted">{t("ghostRace.pickBody", { max: MAX_GHOSTS })}</p>
+          <div className="mt-2 rounded-lg bg-surface-sunken p-3">
+            <ModePreview mode="ghost" label={t("modePreview.ghostDesc")} />
+            <p className="mt-2 text-xs leading-snug text-muted">{t("modePreview.ghostDesc")}</p>
+          </div>
           <ul className="mt-1.5 flex max-h-48 flex-col overflow-y-auto">
             {candidates.map((c) => {
               const on = picked.includes(c.userId);
