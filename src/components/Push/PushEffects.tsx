@@ -8,11 +8,11 @@ import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Button } from "../ui";
 import { track } from "../../lib/analytics";
 
-/** localStorage: set once the first ask has been answered (or was found unnecessary) on this device. */
+/** localStorage: set once the first-open ask has been answered (or was found unnecessary) on this device. */
 export const PUSH_FIRST_ASK_KEY = "crossword-clash:push-first-ask";
 /** localStorage: set once the after-a-daily reminder ask has been shown on this device. */
 export const PUSH_REMINDER_ASK_KEY = "crossword-clash:push-reminder-ask";
-/** The screen behind has settled by then (the menu, or wherever sign-in returned to); the ask should not be the first thing on screen. */
+/** The menu has painted by then; the ask should not be the first thing on screen. */
 export const FIRST_ASK_DELAY_MS = 1500;
 
 function asked(key: string): boolean {
@@ -42,13 +42,10 @@ type Ask = "first" | "reminder";
  * It also asks for permission, with our own question before the OS sheet
  * (Andrew, 2026-11-13: the bare OS sheet 1.5 s after first open gave no reason
  * to say yes, and iOS only ever asks once):
- *  - once the player is signed in, "Crossword Clash is better with
- *    notifications", with Not now on the left and Enable on the right. Only
- *    Enable shows the OS sheet; a grant registers the token under the default
- *    preferences (room invites and friend requests on, the daily reminder
- *    off). Never while signed out (Andrew, 2026-11-16): what it promises is
- *    a friend's invite or request, and a guest has no friends to hear from.
- *    It waits for the account sheet to close, so it never covers sign-in.
+ *  - on the first open, "Crossword Clash is better with notifications", with
+ *    Not now on the left and Enable on the right. Only Enable shows the OS
+ *    sheet; a grant registers the token under the default preferences (room
+ *    invites and friend requests on, the daily reminder off).
  *  - after a daily, once its finish dialog is closed (never inside it, where
  *    sharing comes first), "Want a reminder tomorrow?", to a device the OS
  *    has not asked yet. Remind me shows the OS sheet and turns the reminder on.
@@ -57,10 +54,7 @@ type Ask = "first" | "reminder";
 export function PushEffects() {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
-  const account = useMaybeAccount();
-  const sessionUserId = account?.sessionUserId ?? null;
-  const signedIn = !!account?.user;
-  const sheetOpen = account?.sheetOpen ?? false;
+  const sessionUserId = useMaybeAccount()?.sessionUserId ?? null;
   const [ask, setAsk] = useState<Ask | null>(null);
 
   useEffect(() => {
@@ -75,10 +69,10 @@ export function PushEffects() {
     });
   }, [sessionUserId, i18n.language]);
 
-  // The first ask: signed in, one per device, never twice in a session either.
+  // The first-open ask: one per device, never twice in a session either.
   const firstAskStarted = useRef(false);
   useEffect(() => {
-    if (!pushAvailable() || !sessionUserId || !signedIn || sheetOpen || firstAskStarted.current || asked(PUSH_FIRST_ASK_KEY)) return;
+    if (!pushAvailable() || !sessionUserId || firstAskStarted.current || asked(PUSH_FIRST_ASK_KEY)) return;
     const timer = window.setTimeout(async () => {
       if (firstAskStarted.current) return;
       firstAskStarted.current = true;
@@ -94,7 +88,7 @@ export function PushEffects() {
       }
     }, FIRST_ASK_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [sessionUserId, signedIn, sheetOpen]);
+  }, [sessionUserId]);
 
   // The reminder ask: when a daily's finish dialog closes, never over it.
   useEffect(() => {

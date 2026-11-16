@@ -27,10 +27,8 @@ vi.mock("../../lib/push", () => ({
   savePushPrefs: push.savePushPrefs,
   startPushTaps: () => () => {},
 }));
-const account = vi.hoisted(() => ({ sessionUserId: "u1" as string | null, signedIn: true, sheetOpen: false }));
-vi.mock("../../contexts/AccountContext", () => ({
-  useMaybeAccount: () => ({ sessionUserId: account.sessionUserId, user: account.signedIn ? { id: account.sessionUserId } : null, sheetOpen: account.sheetOpen }),
-}));
+const account = vi.hoisted(() => ({ sessionUserId: "u1" as string | null }));
+vi.mock("../../contexts/AccountContext", () => ({ useMaybeAccount: () => ({ sessionUserId: account.sessionUserId }) }));
 const track = vi.hoisted(() => vi.fn());
 vi.mock("../../lib/analytics", () => ({ track }));
 
@@ -57,8 +55,6 @@ beforeEach(() => {
   push.registerPushToken.mockClear();
   push.savePushPrefs.mockClear();
   account.sessionUserId = "u1";
-  account.signedIn = true;
-  account.sheetOpen = false;
   track.mockClear();
 });
 afterEach(() => {
@@ -155,36 +151,6 @@ describe("PushEffects first-open ask", () => {
     await elapse(FIRST_ASK_DELAY_MS + 1);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(localStorage.getItem(PUSH_FIRST_ASK_KEY)).toBeNull();
-  });
-
-  it("waits for sign-in: a guest is never asked, and the ask follows once they sign in and the account sheet has closed", async () => {
-    account.signedIn = false;
-    const view = renderEffects();
-    await elapse(FIRST_ASK_DELAY_MS * 3);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    // Not spent: the device is still owed its one ask.
-    expect(localStorage.getItem(PUSH_FIRST_ASK_KEY)).toBeNull();
-
-    // Signed in, with the account sheet still up.
-    account.signedIn = true;
-    account.sheetOpen = true;
-    view.rerender(
-      <MemoryRouter>
-        <PushEffects />
-      </MemoryRouter>,
-    );
-    await elapse(FIRST_ASK_DELAY_MS * 3);
-    expect(screen.queryByRole("dialog")).toBeNull();
-
-    account.sheetOpen = false;
-    view.rerender(
-      <MemoryRouter>
-        <PushEffects />
-      </MemoryRouter>,
-    );
-    await elapse(FIRST_ASK_DELAY_MS + 1);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(track).toHaveBeenCalledWith("push_ask_shown", { placement: "first_open" });
   });
 });
 

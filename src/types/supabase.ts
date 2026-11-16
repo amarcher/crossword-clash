@@ -572,6 +572,8 @@ export interface Database {
       };
     };
     Functions: {
+      /** Push: stores this device's token under the caller, taking the row over from the device's previous user. */
+      register_device_token: { Args: { p_token: string; p_platform: string; p_locale: string; p_timezone: string; p_app_version?: string | null }; Returns: undefined };
       /** Friends: sends a request by username; 'pending', 'accepted' (they had asked first) or 'sent' (a block: nothing written). Refusals are `friends:<code>` exceptions. */
       send_friend_request: { Args: { p_username: string }; Returns: "pending" | "accepted" | "sent" };
       respond_friend_request: { Args: { p_requester: string; p_accept: boolean }; Returns: undefined };
