@@ -85,11 +85,12 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
     // apart by assistive tech and by the e2e suite.
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
       {/* The ribbon: which daily this is and its theme, across the card's full width so a
-          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off). */}
-      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-gold-100 bg-gold-50 px-5 py-1.5 sm:px-6">
-        <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
+          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off).
+          Quiet grey like the board strip below, so Play is the card's only strong colour. */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-line bg-surface-sunken/60 px-5 py-1.5 sm:px-6">
+        <Eyebrow className="shrink-0">{label}</Eyebrow>
         {displayTheme(daily) && (
-          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-gold-700" title={displayTheme(daily)}>
+          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={displayTheme(daily)}>
             {displayTheme(daily)}
           </span>
         )}

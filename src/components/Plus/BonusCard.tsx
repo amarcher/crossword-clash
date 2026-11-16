@@ -73,13 +73,13 @@ export function BonusCard() {
   return (
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
       {/* The ribbon, as on the dailies: Plus is marked with the badge's seal, then the theme. */}
-      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-gold-100 bg-gold-50 px-5 py-1.5 sm:px-6">
-        <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-line bg-surface-sunken/60 px-5 py-1.5 sm:px-6">
+        <Eyebrow className="inline-flex shrink-0 items-center gap-1">
           {t("bonus.eyebrow")}
           <PlusBadge interactive={false} size="1.15em" />
         </Eyebrow>
         {card.theme && (
-          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-gold-700" title={card.theme}>
+          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={card.theme}>
             {card.theme}
           </span>
         )}
