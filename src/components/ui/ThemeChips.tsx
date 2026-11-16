@@ -8,10 +8,10 @@ export function themeParts(theme: string): string[] {
 }
 
 /**
- * A puzzle's theme as gold chips beside its eyebrow, one per half of a mashup
- * (Andrew, 2026-11-16: the single chip cut the second half off). Rendered as
- * siblings for a wrapping row: a chip that does not fit moves to the next
- * line whole, and only one wider than the row itself is cut short.
+ * A puzzle's theme as gold chips under its title, one per half of a mashup
+ * (Andrew, 2026-11-16: a single chip beside the eyebrow cut the second half
+ * off). Rendered as siblings for a wrapping row: a chip that does not fit
+ * moves to the next line whole, and only one wider than the row is cut short.
  */
 export function ThemeChips({ theme }: { theme: string }) {
   return (

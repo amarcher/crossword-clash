@@ -75,15 +75,20 @@ export function BonusCard() {
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
-          <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
-            {/* Plus is marked with the badge's seal; the gold chip is the theme, as on the dailies. */}
+          <div className="flex min-h-5 items-center">
+            {/* Plus is marked with the badge's seal. */}
             <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
               {t("bonus.eyebrow")}
               <PlusBadge interactive={false} size="1.15em" />
             </Eyebrow>
-            {card.theme && <ThemeChips theme={card.theme} />}
           </div>
           <h2 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
+          {/* The theme, under the title as on the dailies. */}
+          {card.theme && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <ThemeChips theme={card.theme} />
+            </div>
+          )}
           {solved ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
               <CircleCheck className="size-4 shrink-0" aria-hidden="true" />

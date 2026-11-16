@@ -87,18 +87,21 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
       <div className="flex items-start gap-5 p-5 sm:p-6">
         <div className="min-w-0 flex-1">
-          {/* A 20px row (the chip is 20px, the eyebrow alone 16px: min-h-5), so the
-              loaded tile is the placeholder's height. A theme reads in full: chips
-              that do not fit beside the eyebrow wrap under it (Andrew, 2026-11-16). */}
-          <div className="flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="flex min-h-5 items-center">
             <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
-            {displayTheme(daily) && <ThemeChips theme={displayTheme(daily)} />}
           </div>
           {daily ? (
             <>
               <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
                 {daily.puzzle.title}
               </h1>
+              {/* The theme: chips on their own line under the title, in the same place on
+                  every tile (Andrew, 2026-11-16; beside the eyebrow they were cut off). */}
+              {displayTheme(daily) && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <ThemeChips theme={displayTheme(daily)} />
+                </div>
+              )}
               {solved ? (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
                   <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
@@ -122,6 +125,7 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
           ) : (
             <div className="animate-pulse" aria-hidden="true">
               <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
+              <div className="mt-1.5 h-5 w-1/3 rounded-full bg-surface-sunken" />
               <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
             </div>
           )}
