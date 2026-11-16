@@ -764,7 +764,8 @@ export function CompletionModal({
               </button>
             </div>
           )}
-          {replayId && linkRef && <ReplayPreview id={replayId} race={isMultiplayer} darkMode={darkMode} />}
+          {/* A room's clip is shown only when the link can carry it; a time trial's is the player's own solve. */}
+          {replayId && (linkRef || !isMultiplayer) && <ReplayPreview id={replayId} race={isMultiplayer && !isAsync} darkMode={darkMode} />}
           {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton

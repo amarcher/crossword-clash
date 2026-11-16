@@ -35,6 +35,8 @@ import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
 import { buildRoomReplay, roomReplayCode } from "../lib/roomReplay";
 import { createReplayShare } from "../lib/replayShare";
+import { encodeReplay } from "../lib/replayCode";
+import { useSolveRecorder } from "../hooks/useRace";
 import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
 
 export function MultiplayerPlayScreen() {
@@ -108,17 +110,36 @@ export function MultiplayerPlayScreen() {
     () => (roomReplay && puzzle && playerColorMap ? roomReplayCode(puzzle, roomReplay, playerColorMap, user?.id) : null),
     [roomReplay, puzzle, playerColorMap, user?.id],
   );
+  // A time trial is each player's own solve, so its clip is the solo one (replayCode.ts): this
+  // device records the letters going in on the race clock and files them at the finish. Kept
+  // under the room's own key, apart from a solo recording of the same puzzle.
+  const myFinish = user ? raceFinishTimes[user.id] : undefined;
+  const raceStartedAt = mp.raceStartedAt;
+  const getRaceElapsedMs = useCallback(() => (raceStartedAt ? Math.max(0, Date.now() - raceStartedAt) : 0), [raceStartedAt]);
+  const recorder = useSolveRecorder({
+    puzzleKey: isAsync && game.gameId ? `room:${game.gameId}` : null,
+    width: puzzle?.width ?? 0,
+    playerCells,
+    getElapsedMs: getRaceElapsedMs,
+    enabled: isAsync && gameStatus === "active" && myFinish === undefined && !!raceStartedAt,
+  });
+  const trialCode = useMemo(() => {
+    if (!isAsync || myFinish === undefined || !puzzle) return null;
+    const trace = recorder.take();
+    return trace ? encodeReplay(puzzle, trace.events, myFinish, trace.marks) : null;
+  }, [isAsync, myFinish, puzzle, recorder]);
+  const replayCode = raceCode ?? trialCode;
   useEffect(() => {
     setRaceShareId(undefined);
-    if (!raceCode) return;
+    if (!replayCode) return;
     let live = true;
-    void createReplayShare(raceCode).then((id) => {
+    void createReplayShare(replayCode).then((id) => {
       if (live && id) setRaceShareId(id);
     });
     return () => {
       live = false;
     };
-  }, [raceCode]);
+  }, [replayCode]);
 
   useBeforeUnload(gameStatus === "active");
 
