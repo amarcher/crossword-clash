@@ -41,7 +41,6 @@ import {
 } from "../lib/platform";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../components/ui";
-import { ThemeChips } from "../components/ui/ThemeChips";
 import { PAGE_GUTTER } from "../components/PageShell";
 import { prefetchOnIntent } from "../routeModules";
 
@@ -61,7 +60,7 @@ interface DailyHeroProps {
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
 
-/** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
+/** One daily's front-door tile: ribbon (eyebrow + theme), title, size line, thumb, actions, board link. */
 export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(SLOT_EYEBROW[slot]);
@@ -85,23 +84,23 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
-      <div className="flex items-start gap-5 p-5 sm:p-6">
+      {/* The ribbon: which daily this is and its theme, across the card's full width so a
+          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off). */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-gold-100 bg-gold-50 px-5 py-1.5 sm:px-6">
+        <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
+        {displayTheme(daily) && (
+          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-gold-700" title={displayTheme(daily)}>
+            {displayTheme(daily)}
+          </span>
+        )}
+      </div>
+      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
         <div className="min-w-0 flex-1">
-          <div className="flex min-h-5 items-center">
-            <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
-          </div>
           {daily ? (
             <>
-              <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
+              <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
                 {daily.puzzle.title}
               </h1>
-              {/* The theme: chips on their own line under the title, in the same place on
-                  every tile (Andrew, 2026-11-16; beside the eyebrow they were cut off). */}
-              {displayTheme(daily) && (
-                <div className="mt-1.5 -ml-2 flex flex-wrap gap-1.5">
-                  <ThemeChips theme={displayTheme(daily)} />
-                </div>
-              )}
               {solved ? (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
                   <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
@@ -124,14 +123,13 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
             </>
           ) : (
             <div className="animate-pulse" aria-hidden="true">
-              <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
-              <div className="mt-1.5 h-5 w-1/3 rounded-full bg-surface-sunken" />
+              <div className="h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
               <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
             </div>
           )}
         </div>
         {daily ? (
-          <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+          <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-20 shrink-0 sm:w-28 lg:w-36" />
         ) : (
           <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
         )}

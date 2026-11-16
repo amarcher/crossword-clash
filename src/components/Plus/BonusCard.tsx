@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CircleCheck, Loader2, Lock, Trophy } from "lucide-react";
 import { Button, Card, Eyebrow, MiniGridThumb, TransitionLink } from "../ui";
-import { ThemeChips } from "../ui/ThemeChips";
 import { PlusBadge } from "../ui/PlusBadge";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
@@ -73,22 +72,21 @@ export function BonusCard() {
 
   return (
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
-      <div className="flex items-start gap-5 p-5 sm:p-6">
+      {/* The ribbon, as on the dailies: Plus is marked with the badge's seal, then the theme. */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 border-b border-gold-100 bg-gold-50 px-5 py-1.5 sm:px-6">
+        <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
+          {t("bonus.eyebrow")}
+          <PlusBadge interactive={false} size="1.15em" />
+        </Eyebrow>
+        {card.theme && (
+          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-gold-700" title={card.theme}>
+            {card.theme}
+          </span>
+        )}
+      </div>
+      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
         <div className="min-w-0 flex-1">
-          <div className="flex min-h-5 items-center">
-            {/* Plus is marked with the badge's seal. */}
-            <Eyebrow className="inline-flex shrink-0 items-center gap-1 text-brand-600">
-              {t("bonus.eyebrow")}
-              <PlusBadge interactive={false} size="1.15em" />
-            </Eyebrow>
-          </div>
-          <h2 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
-          {/* The theme, under the title as on the dailies. */}
-          {card.theme && (
-            <div className="mt-1.5 -ml-2 flex flex-wrap gap-1.5">
-              <ThemeChips theme={card.theme} />
-            </div>
-          )}
+          <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {solved ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
               <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
@@ -100,7 +98,7 @@ export function BonusCard() {
           )}
         </div>
         {/* Locked for a viewer without Plus: the grid's shape shows through, a padlock over it. */}
-        <div className="relative w-24 shrink-0 sm:w-28 lg:w-36">
+        <div className="relative w-20 shrink-0 sm:w-28 lg:w-36">
           <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
           {!plus && (
             <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
