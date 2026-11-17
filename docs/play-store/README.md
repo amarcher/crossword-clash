@@ -11,7 +11,7 @@ locks to that account on first upload.
   `6294983081887284734` (sign in as the Fable Designer Google login, not the
   personal one; the console then lands on `/console/u/<n>/`).
 - Live since October 13, 2026: release **2 (1.0.0)**, all 178 countries.
-- Latest: **22 (1.1.2)**, sent for review November 14, 2026; see "History" below.
+- Latest: **33 (1.1.3)**, sent for review November 17, 2026; see "History" below.
 
 ## What is in this folder
 
@@ -29,7 +29,8 @@ locks to that account on first upload.
 The screenshots were replaced on November 16, 2026 with eight captioned tiles
 per set (the same series as `../app-store/README.md` describes: the app's own
 screens in a device frame on the site's crossword backdrop, invented player
-names, synthetic solves). Not uploaded to the Play Console yet. The earlier
+names, synthetic solves). Uploaded November 17, 2026 as `phone-NN-*.png` and
+`tablet-NN-*.png` so the two sets are distinct in the asset library. The earlier
 sets were emulator captures (Pixel 7 image, Android 16) of live games on
 the production backend. None of them, and none of the text, names The New York
 Times: third-party trademarks in store metadata are a common rejection. The
@@ -210,6 +211,16 @@ Done by Claude, nothing submitted or rolled out:
   testing with `whats-new-1.1.2-internal-22.txt`, then promoted to production
   (100%) with the same notes and sent for review. Managed publishing is off,
   so it goes live on approval.
+- **November 17, 2026:** 33 (1.1.3) uploaded through the console and rolled out
+  to internal testing with `whats-new-1.1.3.txt`, then promoted to production
+  (100%, all countries) with the same notes. The listing got the new short and
+  full descriptions and the eight-tile sets in the phone, 7-inch and 10-inch
+  slots. All six changes were sent for review together. The asset library
+  adds uploads to a slot in the order they finish, so upload one file per
+  call to keep the order. No promo video yet: the field takes a YouTube URL.
+  The listing's AI asset declaration already read "Label assets as created or
+  edited using AI" and was not editable on the review step; no individual
+  asset was labelled.
 
 ## Uploading without the API
 
