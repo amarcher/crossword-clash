@@ -1149,7 +1149,7 @@
     "replayAgain": "Watch again",
     "close": "Close",
     "visibilityTitle": "Who can race and replay your solves",
-    "visibilityBody": "Plus players can race a recording of your finished solves, and watch it once they've solved the puzzle themselves. Before that they see which squares you filled, never your letters.",
+    "visibilityBody": "Friends can watch your finished solves in The race, and Plus players can race a recording of them. Anyone who hasn't solved the puzzle sees which squares you filled, never your letters.",
     "visibilityEveryone": "Anyone",
     "visibilityFriends": "Friends only",
     "visibilityHidden": "No one",
@@ -1245,5 +1245,20 @@
     "earlierSolve": "{{name}}'s solve",
     "guestHeading": "Game mode",
     "ghostDesc": "You solve your own grid. A coloured corner marks each square the other solver had filled by this point in their solve."
+  },
+  "friendRace": {
+    "title": "The race",
+    "subtitle": "Everyone's solve of {{title}}, as if everyone had started together. Played at {{speed}}× speed.",
+    "showing": "Who is in the race",
+    "lanesTitle": "Down the stretch",
+    "firstTitle": "Who got there first",
+    "firstBody": "Each square takes the colour of whoever filled it soonest.",
+    "gridLabel": "The grid, coloured by who filled each square first",
+    "standingsLabel": "Squares each solver was first to",
+    "scrub": "Race clock",
+    "open_one": "Watch the race with {{name}}",
+    "open_other": "Watch the race with {{count}} friends",
+    "openYours_one": "Watch your race with {{name}}",
+    "openYours_other": "Watch your race with {{count}} friends"
   }
 }

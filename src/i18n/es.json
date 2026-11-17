@@ -1149,7 +1149,7 @@
     "replayAgain": "Ver de nuevo",
     "close": "Cerrar",
     "visibilityTitle": "Quién puede competir contra tus partidas y verlas",
-    "visibilityBody": "Los jugadores Plus pueden competir contra una grabación de tus partidas terminadas, y verla cuando ya hayan resuelto el crucigrama. Antes de eso ven qué casillas llenaste, nunca tus letras.",
+    "visibilityBody": "Tus amigos pueden ver tus partidas terminadas en La carrera, y los jugadores Plus pueden competir contra una grabación de ellas. Quien no haya resuelto el crucigrama ve qué casillas llenaste, nunca tus letras.",
     "visibilityEveryone": "Cualquiera",
     "visibilityFriends": "Solo amigos",
     "visibilityHidden": "Nadie",
@@ -1245,5 +1245,20 @@
     "earlierSolve": "Solución de {{name}}",
     "guestHeading": "Modo de juego",
     "ghostDesc": "Resuelves tu propia cuadrícula. Una esquina de color marca cada casilla que la otra persona ya había llenado en ese momento de su solución."
+  },
+  "friendRace": {
+    "title": "La carrera",
+    "subtitle": "Cómo resolvió cada quien {{title}}, como si todos hubieran empezado a la vez. A velocidad {{speed}}×.",
+    "showing": "Quién está en la carrera",
+    "lanesTitle": "La recta final",
+    "firstTitle": "Quién llegó primero",
+    "firstBody": "Cada casilla toma el color de quien la llenó antes.",
+    "gridLabel": "La cuadrícula, coloreada según quién llenó primero cada casilla",
+    "standingsLabel": "Casillas en las que cada quien fue primero",
+    "scrub": "Reloj de la carrera",
+    "open_one": "Ver la carrera con {{name}}",
+    "open_other": "Ver la carrera con {{count}} amigos",
+    "openYours_one": "Ver tu carrera con {{name}}",
+    "openYours_other": "Ver tu carrera con {{count}} amigos"
   }
 }
