@@ -1,7 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 import { checkNarratorBudget } from "../_shared/budgetGuard.ts";
-import { callerWithPlus, chargeClaudeCall, demoOnly, plusGatesOn } from "../_shared/plusAccess.ts";
+import { chargeClaudeCall, demoOnly, narratorPayer, plusGatesOn } from "../_shared/plusAccess.ts";
 import { serviceClient } from "../_shared/user.ts";
 import { logUsage } from "../_shared/usageLog.ts";
 
@@ -26,8 +26,9 @@ Deno.serve(async (req) => {
   // demo only. Before PLUS_GATES is on this block is a no-op.
   if (plusGatesOn()) {
     const admin = serviceClient();
-    const { user, plus } = await callerWithPlus(req, admin);
-    const refusal = user && plus ? await chargeClaudeCall(admin, user.id) : await demoOnly(req, "narrator-claude");
+    // The caller's own Plus, or a Plus player in the room it names (roomSponsor).
+    const payer = await narratorPayer(req, admin);
+    const refusal = payer ? await chargeClaudeCall(admin, payer) : await demoOnly(req, "narrator-claude");
     if (refusal) return refusal;
   }
 
