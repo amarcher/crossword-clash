@@ -143,6 +143,9 @@ interface UseMultiplayerReturn {
   finalStandings: FinalStandings | null;
 }
 
+/** How long a finished shared grid waits for its last claim before the record is frozen without it. */
+export const FINISH_GRACE_MS = 3000;
+
 export function useMultiplayer({
   gameId,
   userId,
@@ -182,6 +185,7 @@ export function useMultiplayer({
   // The finished game's record, keyed by room like statusState so a new room
   // never reads the last game's standings.
   const [finalState, setFinalState] = useState<{ gameId: string; standings: FinalStandings } | null>(null);
+  const [finishGraceOver, setFinishGraceOver] = useState(false);
   const finalStandings = finalState !== null && finalState.gameId === gameId ? finalState.standings : null;
   // The DB `players` rows from the last hydrate: the roster that outlives
   // presence, so the record lists a player who has already dropped.
@@ -496,7 +500,16 @@ export function useMultiplayer({
     // Only once every claim of ours has been answered (see pendingClaimsRef).
     if (pendingClaimsRef.current > 0) return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
-    if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
+    if (totalWhiteCells === 0 || filledCount !== totalWhiteCells) return;
+    // Not in this effect pass: the letter that completes the grid is sent to
+    // the server by an effect of the provider, which runs AFTER this one in
+    // the same commit, so `pendingClaimsRef` is still 0 here for the final
+    // square. Marking the game completed first made `claim_cell` refuse that
+    // square: the server kept 177 of 178 and the finisher lost the Z of ANTZ
+    // (Andrew, 2026-11-16). A task later the claim is counted; when it
+    // settles, `claimsSettled` runs this again.
+    const timer = setTimeout(() => {
+      if (pendingClaimsRef.current > 0) return;
       const completedAt = Date.now();
       setGameStatus("completed");
       setCompletedAtMs((prev) => prev ?? completedAt);
@@ -520,7 +533,8 @@ export function useMultiplayer({
               .catch(() => {});
           });
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus, claimsSettled]);
 
   // Async mode: the game is over when every player has a finish time.
@@ -561,14 +575,26 @@ export function useMultiplayer({
     if (!gameId || gameStatus !== "completed") return;
     if (finalState !== null && finalState.gameId === gameId) return;
     const mode = resolveRaceMode(gameSettings);
-    if (mode !== "async") {
+    if (mode !== "async" && !finishGraceOver) {
       const filled = Object.values(playerCells).filter((c) => c.correct).length;
       if (totalWhiteCells > 0 && filled < totalWhiteCells) return;
     }
     const roster = mergeRosters(players, dbPlayersRef.current);
     if (roster.length === 0) return;
     setFinalState({ gameId, standings: buildFinalStandings(roster, playerCells, raceFinishTimes, mode) });
-  }, [gameId, gameStatus, finalState, gameSettings, playerCells, totalWhiteCells, players, raceFinishTimes]);
+  }, [gameId, gameStatus, finalState, gameSettings, playerCells, totalWhiteCells, players, raceFinishTimes, finishGraceOver]);
+
+  // The wait for the last claim is bounded. A device whose grid stays a
+  // square short of a finished game (Andrew, 2026-11-16: the server held 177
+  // of 178, and so did the TV) never froze the record; once the players left
+  // the room its replay had no names, no counts and no colours. After the
+  // grace the record is taken from what the device has.
+  useEffect(() => {
+    setFinishGraceOver(false);
+    if (!gameId || gameStatus !== "completed") return;
+    const timer = setTimeout(() => setFinishGraceOver(true), FINISH_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [gameId, gameStatus]);
 
   /**
    * Async mode: the local player just filled their own copy. Compute the

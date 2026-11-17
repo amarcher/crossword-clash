@@ -73,6 +73,10 @@ export function HostSpectateScreen() {
   useEffect(() => {
     if (!fellBack && !exhausted && !budgetPaused) return;
     setBannerHidden(false);
+    // Why the host went quiet stays up until it is tapped away: after eight
+    // seconds of a game nobody was looking, and the host simply stopped
+    // (Andrew, 2026-11-16).
+    if (budgetPaused) return;
     const timer = setTimeout(() => setBannerHidden(true), 8000);
     return () => clearTimeout(timer);
   }, [fellBack, exhausted, budgetPaused, narrator.currentEngine]);
