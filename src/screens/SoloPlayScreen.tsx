@@ -389,10 +389,12 @@ export function SoloPlayScreen() {
       seen.add(userId);
       out.push({ userId, name });
     };
+    // Only someone just raced. Other solvers' replays are on the leaderboard's rows, and
+    // friends' are The race: two kinds of Watch here read as one feature with two rules
+    // (Andrew, 2026-11-16).
     for (const g of race) add(g.userId, g.name);
-    for (const c of raceCandidates) add(c.userId, c.username);
     return out.slice(0, 3);
-  }, [race, raceCandidates]);
+  }, [race]);
   const watchReplay = useCallback(
     async (userId: string) => {
       if (!puzzleKey || !puzzle) return;
