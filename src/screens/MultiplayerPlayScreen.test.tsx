@@ -219,7 +219,8 @@ describe("MultiplayerPlayScreen after the finish", () => {
       });
     }
     await waitFor(() => expect(mp.gameStatus).toBe("completed"));
-    expect(mp.finalStandings?.winnerIds).toEqual(["me"]);
+    // The record is frozen on the render after the completion mark (itself a task after the last claim settles).
+    await waitFor(() => expect(mp.finalStandings?.winnerIds).toEqual(["me"]));
 
     const frozen = record();
     expect(frozen.outcome).toBe("Archer wins with 5 squares!");
