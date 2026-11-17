@@ -1,4 +1,4 @@
-This build (1.1.3, build 51) is about seeing how each game mode plays, and watching solves. Please check:
+This build (1.1.3, build 52) is about seeing how each game mode plays, and watching solves. Please check:
 
 1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
 2. Time trial: everyone solves their own copy, and each square another player has filled shows a folded corner in their colour. The standings show each player's percent filled until they finish.
@@ -12,14 +12,19 @@ This build (1.1.3, build 51) is about seeing how each game mode plays, and watch
 10. Settings follow the account: Autocheck and Haptics, hidden community authors and the leaderboard's Everyone / Friends switch are the same on every device you sign in on.
 11. Sign-in buttons: Apple and Google have the same text size, logos lined up.
 12. Hosting a room: Game settings sit right under the player list.
-13. Race buttons on the leaderboard: start the mini, switch to the midi, then finish both. Both finishes should be raceable by other players (each keeps its own recording now).
-14. A puzzle across two devices: start a daily on one device, finish it on another signed in to the same account (both on this build). The finish should have a Race / Watch button on the leaderboard.
-15. Daily cards on the menu: the label and the theme sit in a strip across the top of each card (white, and light blue once the puzzle is solved), and a long theme reads in full. Tapping anywhere on the Leaderboard strip opens the leaderboard.
-16. Race share video: finish a Compete or Co-op race in a room. The finish screen should show a clip of the grid filling in each player's colour, and Share should send a link that plays it (no emoji squares). Try a room on a past daily or a community puzzle too.
-17. Time trial share: finish a time trial; the finish screen should show the clip of your own solve.
-18. Hosting a room: the Compete and Co-op preview fills words forwards, one player across and one down.
+13. Race buttons on the leaderboard: finish the mini and the midi; both should be raceable by others.
+14. A puzzle across two devices: start a daily on one, finish it on another on the same account.
+15. Daily cards on the menu: label and theme sit in a strip across the top; a long theme reads in full.
+16. Race share video: finish a Compete or Co-op room; the finish screen shows a clip of the grid filling in by colour, and Share sends a link that plays it.
+17. Time trial share: the finish screen shows the clip of your own solve.
+18. Hosting a room: the Compete and Co-op preview fills words forwards.
 19. The race (new): on a daily you and a friend have both solved, open its leaderboard and tap "Watch your race with…". Every solve plays on one clock: lanes show who was ahead, and the grid colours each square by who got there first. Tap a name to hide them. Free, and also on the finish screen and the solved home card.
-20. The race before solving: on a daily a friend has solved and you have not, the leaderboard button plays the race in colour only, with no letters.
-21. Sharing the race: Share in the race sends the puzzle's link with a clip of the grid filling in by colour (no names, no letters).
+20. The race before solving: the leaderboard button plays it in colour only, no letters.
+21. Sharing the race: Share sends the puzzle's link with a colour-only clip.
 22. Finish screen: one Watch button (the race with friends); other solvers' replays are on the leaderboard rows.
-23. Everything from build 42 still applies.
+23. TV host (new): host on a tablet nobody is signed in on, with a Plus player in the room. The AI host should talk all game, in one short sentence at a time. Test voice should make sound.
+24. TV replay: after a Compete game, leave the room on the phones, then Watch the replay on the TV: squares in each player's colour, with names and counts.
+25. Last square: whoever types a room game's final letter is credited for it.
+26. After a room game on today's daily, its leaderboard says "Played as a group in …".
+27. A corrected daily reaches the app within about 15 minutes.
+28. Everything from build 42 still applies.
