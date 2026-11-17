@@ -226,6 +226,40 @@ describe("the lobby roster and the name the player typed", () => {
     expect(lobbyRows()).toEqual(["AliciaHost", "Arch"]);
   });
 
+  it("sends the final square's claim before the game is marked completed (the lost Z of ANTZ)", async () => {
+    services.fetchGameState.mockResolvedValue({
+      cells: { "0,0": { letter: "H", correct: true, playerId: "host", at: 1_000 } },
+      players: [host, myStaleRow],
+      status: "active",
+      settings: { raceMode: "versus" },
+      startedAt: 0,
+      completedAt: null,
+    });
+    let answer: (ok: boolean) => void = () => {};
+    services.claimCellOnServer.mockReset();
+    services.claimCellOnServer.mockImplementation(() => new Promise<boolean>((resolve) => (answer = resolve)));
+    await renderLobby("Arch");
+    await waitFor(() => expect(mp.gameStatus).toBe("active"));
+    await act(async () => {
+      game.selectCell(0, 1);
+    });
+    await act(async () => {
+      mp.multiplayerInputLetter("I");
+    });
+    // The grid is whole on this device, the claim is with the server, and the game is still on.
+    await waitFor(() => expect(services.claimCellOnServer).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30));
+    });
+    expect(mp.gameStatus).toBe("active");
+    await act(async () => {
+      answer(true);
+    });
+    await waitFor(() => expect(mp.gameStatus).toBe("completed"));
+    services.claimCellOnServer.mockReset();
+    services.claimCellOnServer.mockImplementation(async () => true);
+  });
+
   it("freezes the finish record after a grace even when the grid is a square short (the TV whose replay lost its players)", async () => {
     // The server kept one square fewer than the puzzle has (2026-11-16: 177 of 178).
     services.fetchGameState.mockResolvedValue({

@@ -500,7 +500,16 @@ export function useMultiplayer({
     // Only once every claim of ours has been answered (see pendingClaimsRef).
     if (pendingClaimsRef.current > 0) return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
-    if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
+    if (totalWhiteCells === 0 || filledCount !== totalWhiteCells) return;
+    // Not in this effect pass: the letter that completes the grid is sent to
+    // the server by an effect of the provider, which runs AFTER this one in
+    // the same commit, so `pendingClaimsRef` is still 0 here for the final
+    // square. Marking the game completed first made `claim_cell` refuse that
+    // square: the server kept 177 of 178 and the finisher lost the Z of ANTZ
+    // (Andrew, 2026-11-16). A task later the claim is counted; when it
+    // settles, `claimsSettled` runs this again.
+    const timer = setTimeout(() => {
+      if (pendingClaimsRef.current > 0) return;
       const completedAt = Date.now();
       setGameStatus("completed");
       setCompletedAtMs((prev) => prev ?? completedAt);
@@ -524,7 +533,8 @@ export function useMultiplayer({
               .catch(() => {});
           });
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus, claimsSettled]);
 
   // Async mode: the game is over when every player has a finish time.
