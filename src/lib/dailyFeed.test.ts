@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import {
   ABSENT_TTL_MS,
+  PRESENT_TTL_MS,
+  refreshDailyPuzzle,
   currentDailyMini,
   currentDailyPuzzle,
   dailyFeedPath,
@@ -148,6 +150,28 @@ describe("resolveDailyMini", () => {
     expect(currentDailyMini(later)).toBe(bundled);
     await resolveDailyMini(later, fetchImpl);
     expect(calls).toHaveLength(2);
+  });
+
+  it("asks again for a remembered puzzle once it is stale, and takes a corrected copy", async () => {
+    await resolveDailyMini(NOW, respond(200, feedEntry).fetchImpl);
+    const corrected: DailyFeedEntry = { ...feedEntry, puzzle: { ...feedEntry.puzzle, clues: { ...feedEntry.puzzle.clues, across: feedEntry.puzzle.clues.across.map((c, i) => (i === 0 ? `${c} (fixed)` : c)) } } };
+    // Still fresh: the feed is not asked.
+    const soon = respond(200, corrected);
+    expect(await refreshDailyPuzzle("mini", new Date(NOW.getTime() + PRESENT_TTL_MS - 1), soon.fetchImpl)).toBeNull();
+    expect(soon.calls).toHaveLength(0);
+    // Stale and unchanged: asked, nothing to replace.
+    const later = new Date(NOW.getTime() + PRESENT_TTL_MS);
+    expect(await refreshDailyPuzzle("mini", later, respond(200, feedEntry).fetchImpl)).toBeNull();
+    // Stale again, and corrected: the new copy, which is now the remembered one.
+    const muchLater = new Date(later.getTime() + PRESENT_TTL_MS);
+    const fresh = await refreshDailyPuzzle("mini", muchLater, respond(200, corrected).fetchImpl);
+    expect(fresh?.puzzle.clues.find((c) => c.direction === "across")?.text).toContain("(fixed)");
+    expect(knownDailyMini(muchLater)).toEqual(fresh);
+    // A feed that cannot be read never costs the puzzle already in hand.
+    const last = new Date(muchLater.getTime() + PRESENT_TTL_MS);
+    expect(await refreshDailyPuzzle("mini", last, respond(404, null).fetchImpl)).toBeNull();
+    expect(await refreshDailyPuzzle("mini", last, respond(200, "html").fetchImpl)).toBeNull();
+    expect(knownDailyMini(last)).toEqual(fresh);
   });
 
   it("falls back without persisting when the feed cannot be reached", async () => {
