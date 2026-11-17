@@ -1017,6 +1017,15 @@ export function SoloPlayScreen() {
             />
           </>
         }
+        clueLists={
+          <CluePanel
+            columns
+            clues={puzzle.clues}
+            activeClue={activeClue}
+            onClueClick={handleClueClick}
+            completedClues={completedClues}
+          />
+        }
         clues={
           <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />

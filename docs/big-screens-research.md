@@ -77,13 +77,22 @@ reflows. No measurements are taken at mount that would break on resize.
 
 ## Layout work (medium)
 
-- **A "medium" native layout for 600–767 px** (Duo inner, iPad Split View,
-  small tablet portrait): grid on top with a two-row clue strip, or the
-  Across/Down lists beneath the grid when the height allows, instead of the
-  phone's single clue bar.
-- **A short-screen layout for the Duo's outer display** (aspect ≈ 1.45): a
-  compact keyboard (shorter keys, or a two-row variant) and a slimmer header,
-  triggered by aspect ratio and height rather than width.
+- **Done (2026-11-17, branch `duo-layouts`): a "medium" native layout**
+  (`MEDIUM_QUERY` in `GameLayout.tsx`: 600–767 px wide, at least 820 px tall —
+  Duo inner, iPad Split View, small tablet portrait). The Across and Down
+  lists sit side by side in a band between the clue bar and the keys
+  (`clueLists`, `.native-clue-lists`, 19% of the height, 150–230 px), each
+  scrolling on its own, and the keys drop from 60 to 50 px. The band's height
+  comes out of the grid: on the Duo's inner screen it goes from 617 to 466 px,
+  so a 15×15 has 31 px squares (a 393 px phone gives 26).
+- **Done (same branch): a short-screen layout for the Duo's outer display**
+  (portrait, at most 720 px tall, aspect at least 5:8): header padding, a
+  48 px clue bar and 44 px keys with closer rows. The grid goes from 392 to
+  424 px at 466×678. A tall phone does not match and is unchanged.
+- Both were checked in Chrome at the Duo's point sizes with the app's native
+  layout switched on (`docs/big-screens/duo-*-before|after.png`), not on the
+  Duo simulator or a device. The outer display's camera strip is not in those
+  captures.
 - **TV view in portrait** (`index.css`, `TVLayout`): stack the grid above the
   scoreboard and clues when the screen is taller than wide. Today the side
   column squeezes the grid to about 630 px on a portrait iPad.

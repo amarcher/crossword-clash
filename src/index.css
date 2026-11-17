@@ -235,6 +235,33 @@
   .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
   .puzzle-key { height: 44px; }
 }
+/* The medium layout (GameLayout's MEDIUM_QUERY: an unfolded iPhone Duo, an
+   iPad in Split View, a small tablet in portrait): the clue lists in a band
+   between the clue bar and the keys. The grid is height-bound at these sizes,
+   so the band's height comes out of the grid: a fixed share and no more. */
+.native-clue-lists {
+  height: clamp(150px, 19dvh, 230px);
+  padding: 10px 12px;
+  overflow: hidden;
+  background: #fff;
+  border-top: 1px solid var(--color-line);
+}
+/* The keys give the band part of its height back: 60px keys are tablet
+   slack, and 50px is still over the 44px floor. */
+.native-game-layout[data-size="medium"] .puzzle-key { height: 50px; }
+/* A short, squat portrait screen (the iPhone Duo's outer display, 466 × 678):
+   the grid is squeezed between the header and the keys while width goes
+   spare, so the chrome gives up what it can: a tighter header, a clue bar
+   that fits two lines without slack, and keys at the 44px floor with closer
+   rows. A tall phone is width-bound and keeps the roomy chrome. */
+@media (orientation: portrait) and (max-height: 720px) and (min-aspect-ratio: 5/8) {
+  .native-game-header { padding-block: 3px; }
+  .native-clue-bar, .native-clue-bar > button { min-height: 48px; }
+  .native-clue-bar > button > span.line-clamp-2 { font-size: 15px; line-height: 1.25; padding-block: 5px; }
+  .puzzle-keyboard { padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .puzzle-keyboard-row { margin-bottom: 5px; }
+  .puzzle-key { height: 44px; }
+}
 
 /* Cell fill pop — the letter pops in when a remote player fills a cell.
    The class goes on the letter span, never the cell: animating the cell's

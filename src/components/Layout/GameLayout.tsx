@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PAGE_GUTTER } from "../PageShell";
 import { setHardwareKeyboard, useHardwareKeyboard } from "../../lib/inputModality";
 import { useKeyboardInset } from "../../hooks/useKeyboardInset";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 
 interface GameLayoutProps {
   header: ReactNode;
@@ -11,20 +12,38 @@ interface GameLayoutProps {
   clues: ReactNode;
   mobileClueBar?: ReactNode;
   keyboard?: ReactNode;
+  /**
+   * The bare clue lists for the apps' medium layout (`MEDIUM_QUERY`): shown
+   * between the clue bar and the keys. Sized by that box, not the viewport,
+   * so pass `<CluePanel columns />`.
+   */
+  clueLists?: ReactNode;
 }
+
+/**
+ * A screen too narrow for the clue list beside the grid (that starts at
+ * 768px) but with height to spare: an unfolded iPhone Duo (669 × 951), an
+ * iPad in Split View, a small tablet in portrait. A band of clue lists
+ * under the clue bar saves opening the clue sheet for every look at the list;
+ * the grid gives up height for it and still has larger squares than a phone
+ * (Andrew, 2026-11-17).
+ */
+export const MEDIUM_QUERY = "(min-width: 600px) and (max-width: 767.98px) and (min-height: 820px)";
 
 /**
  * The apps' play screen: header, grid (with the clue list beside it from 768px),
  * and a footer with the clue bar and the in-app keyboard. Once a physical
  * keyboard is used the in-app keys give way to a "Show keyboard" button, and
  * where the clue list is on screen the clue bar goes too (Tab, Space and the
- * arrows do its job) — see `inputModality.ts`.
+ * arrows do its job) — see `inputModality.ts`. Between a phone and 768px
+ * (`MEDIUM_QUERY`) the clue lists sit in a band under the clue bar.
  */
-export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard }: GameLayoutProps) {
+export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard, clueLists }: GameLayoutProps) {
   const { t } = useTranslation();
   const hardware = useHardwareKeyboard();
+  const medium = useMediaQuery(MEDIUM_QUERY);
   return (
-    <div className="native-game-layout" data-keyboard={hardware ? "hardware" : "screen"}>
+    <div className="native-game-layout" data-keyboard={hardware ? "hardware" : "screen"} data-size={medium ? "medium" : undefined}>
       <header className="native-game-header">{header}</header>
       <main className="native-game-main">
         <div className="native-grid-slot">{grid}</div>
@@ -32,6 +51,7 @@ export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard 
       </main>
       <footer className="native-game-controls">
         {mobileClueBar}
+        {medium && clueLists && <div className="native-clue-lists">{clueLists}</div>}
         {hardware && keyboard ? (
           <div className="native-keyboard-toggle">
             <button type="button" onClick={() => setHardwareKeyboard(false)}>

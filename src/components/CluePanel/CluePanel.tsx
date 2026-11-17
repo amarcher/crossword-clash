@@ -12,6 +12,13 @@ interface CluePanelProps {
   completedCluesByPlayer?: Map<string, { playerId: string }>;
   /** Player userId → hex color */
   playerColorMap?: Record<string, string>;
+  /**
+   * Across and Down side by side, each scrolling on its own, whatever the
+   * viewport's width: for a box sized by something other than the viewport
+   * (GameLayout's `clueLists`, under the grid on a small tablet or an
+   * unfolded phone).
+   */
+  columns?: boolean;
 }
 
 export const CluePanel = memo(function CluePanel({
@@ -21,13 +28,14 @@ export const CluePanel = memo(function CluePanel({
   completedClues,
   completedCluesByPlayer,
   playerColorMap,
+  columns = false,
 }: CluePanelProps) {
   const { t } = useTranslation();
   const acrossClues = clues.filter((c) => c.direction === "across");
   const downClues = clues.filter((c) => c.direction === "down");
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 md:gap-5 md:h-full md:min-h-0">
+    <div className={columns ? "flex flex-row gap-4 h-full min-h-0" : "flex flex-col xl:flex-row gap-4 md:gap-5 md:h-full md:min-h-0"}>
       <ClueList
         title={t('cluePanel.across')}
         clues={acrossClues}
@@ -36,6 +44,7 @@ export const CluePanel = memo(function CluePanel({
         completedClues={completedClues}
         completedCluesByPlayer={completedCluesByPlayer}
         playerColorMap={playerColorMap}
+        scrolls={columns}
       />
       <ClueList
         title={t('cluePanel.down')}
@@ -45,6 +54,7 @@ export const CluePanel = memo(function CluePanel({
         completedClues={completedClues}
         completedCluesByPlayer={completedCluesByPlayer}
         playerColorMap={playerColorMap}
+        scrolls={columns}
       />
     </div>
   );
@@ -58,6 +68,7 @@ const ClueList = memo(function ClueList({
   completedClues,
   completedCluesByPlayer,
   playerColorMap,
+  scrolls,
 }: {
   title: string;
   clues: PuzzleClue[];
@@ -66,6 +77,8 @@ const ClueList = memo(function ClueList({
   completedClues?: Set<string>;
   completedCluesByPlayer?: Map<string, { playerId: string }>;
   playerColorMap?: Record<string, string>;
+  /** The list scrolls at every width, not only from `md`. */
+  scrolls: boolean;
 }) {
   const listRef = useRef<HTMLUListElement>(null);
   const activeRef = useRef<HTMLLIElement>(null);
@@ -93,7 +106,7 @@ const ClueList = memo(function ClueList({
       <h2 className="font-semibold text-xs uppercase tracking-[0.08em] text-subtle mb-1 px-2 md:mb-2 shrink-0">
         {title}
       </h2>
-      <ul ref={listRef} className="min-h-0 md:overflow-y-auto md:overscroll-contain">
+      <ul ref={listRef} className={scrolls ? "min-h-0 overflow-y-auto overscroll-contain" : "min-h-0 md:overflow-y-auto md:overscroll-contain"}>
         {clues.map((clue) => {
           const clueKey = `${clue.direction}-${clue.number}`;
           const isActive =

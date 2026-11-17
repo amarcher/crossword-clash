@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { GameLayout, NativeGameLayout } from "./GameLayout";
+import { GameLayout, MEDIUM_QUERY, NativeGameLayout } from "./GameLayout";
 import { resetInputModalityForTests, setHardwareKeyboard } from "../../lib/inputModality";
 
 function renderLayout() {
@@ -12,6 +12,7 @@ function renderLayout() {
       clues={<div>clue list</div>}
       mobileClueBar={<div className="native-clue-bar">1. A clue</div>}
       keyboard={<div role="group" aria-label="Crossword keyboard">keys</div>}
+      clueLists={<div>clue lists</div>}
     />,
   );
 }
@@ -23,6 +24,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe("NativeGameLayout", () => {
@@ -50,6 +52,30 @@ describe("NativeGameLayout", () => {
     renderLayout();
     expect(screen.getByRole("button", { name: "Show keyboard" })).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Crossword keyboard" })).toBeNull();
+  });
+});
+
+describe("NativeGameLayout between a phone and a tablet", () => {
+  const stubMedia = (matches: boolean) =>
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: matches && query === MEDIUM_QUERY,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+
+  it("puts the clue lists between the clue bar and the keys on a medium screen", () => {
+    stubMedia(true);
+    const { container } = renderLayout();
+    expect(container.querySelector(".native-game-layout")?.getAttribute("data-size")).toBe("medium");
+    const footer = container.querySelector(".native-game-controls");
+    expect([...(footer?.children ?? [])].map((el) => el.textContent)).toEqual(["1. A clue", "clue lists", "keys"]);
+  });
+
+  it("leaves a phone and a tablet as they were", () => {
+    stubMedia(false);
+    const { container } = renderLayout();
+    expect(container.querySelector(".native-game-layout")?.hasAttribute("data-size")).toBe(false);
+    expect(screen.queryByText("clue lists")).toBeNull();
   });
 });
 
