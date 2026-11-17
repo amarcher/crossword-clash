@@ -223,7 +223,11 @@ Done by Claude, nothing submitted or rolled out:
   asset was labelled. Later the same day the listing's Video field was set to
   the 16:9 reel (https://www.youtube.com/watch?v=XmGX4YKABBs, see
   `../marketing/README.md`). Sending that change cancelled and restarted the
-  review that was in progress, so all seven changes are in one review.
+  review that was in progress, so all seven changes are in one review. Then tile 06 was swapped in the
+  phone, 7-inch and 10-inch slots (`06-keyboard` out, `06-studio` in: "Make
+  your own crossword") and the review was restarted once more with those three
+  screenshot changes. To keep the order, tiles 06 to 08 were removed and
+  uploaded again one file at a time.
 
 ## Uploading without the API
 

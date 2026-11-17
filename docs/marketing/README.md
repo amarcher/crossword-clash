@@ -62,6 +62,7 @@ ran. They expect:
 | `studio-community.mjs` | The community list with a local, made-up response |
 | `reel.mjs`, `reel-wide.mjs` | Render the reel's frames, vertical and 16:9 |
 | `reel-studio.mjs`, `reel-studio-wide.mjs` | Render the studio video's frames |
+| `studio-tiles-cap.mjs`, `compose.mjs` | The studio screen at the four store sizes, and the store tiles (`06-studio` in `../app-store` and `../play-store`) |
 | `banner.mjs` | Renders the channel banner |
 | `music.py` | Writes `music.wav` |
 
