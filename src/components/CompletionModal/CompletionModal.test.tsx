@@ -580,6 +580,24 @@ describe("CompletionModal", () => {
     fireEvent.click(getByRole("button", { name: "Sign in" }));
     expect(onSignIn).toHaveBeenCalledTimes(1);
   });
+
+  it("offers the race with friends as one button, beside any single replays", () => {
+    const onWatchFriendRace = vi.fn();
+    const { getByTestId, getByRole } = render(
+      <CompletionModal {...SOLO_PROPS} friendRace={{ count: 2, name: "ann" }} onWatchFriendRace={onWatchFriendRace} replays={[{ userId: "u1", name: "Zed" }]} onWatchReplay={() => {}} />,
+    );
+    fireEvent.click(getByRole("button", { name: "Watch your race with 2 friends" }));
+    expect(onWatchFriendRace).toHaveBeenCalledTimes(1);
+    expect(getByTestId("race-replays").textContent).toContain("Watch you vs Zed");
+    cleanup();
+
+    const one = render(<CompletionModal {...SOLO_PROPS} friendRace={{ count: 1, name: "ann" }} onWatchFriendRace={onWatchFriendRace} />);
+    expect(one.getByRole("button", { name: "Watch your race with ann" })).toBeTruthy();
+    cleanup();
+
+    const none = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(none.queryByTestId("friend-race")).toBeNull();
+  });
 });
 
 vi.mock("../Push", () => ({ ReminderSwitch: () => null }));

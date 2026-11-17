@@ -16,6 +16,7 @@ import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
 import { RaceRepliesCard } from "../components/Race/RaceRepliesCard";
+import { FriendRaceLink } from "../components/Race/FriendRaceLink";
 import { StreakRepairCard } from "../components/Plus/StreakRepairCard";
 import { BonusCard } from "../components/Plus/BonusCard";
 import { useAuth } from "../contexts/AuthContext";
@@ -29,7 +30,7 @@ import { studioRouteEnabled } from "../lib/studioGate";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
-import { leaderboardPath } from "../lib/dailyLeaderboard";
+import { todayKey, leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
 import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
 import {
@@ -122,6 +123,8 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
                   })}
                 </p>
               )}
+              {/* Solved, and friends have too: the race among them, from the card (friendRace.ts). */}
+              {solved && key && multiplayer && <FriendRaceLink puzzle={daily.puzzle} puzzleKey={key} seconds={best} shareRef={{ day: todayKey(), slot }} placement="menu" className="-mb-2 mt-0.5" />}
             </>
           ) : (
             <div className="animate-pulse" aria-hidden="true">

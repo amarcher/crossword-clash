@@ -51,6 +51,8 @@ import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
 import { encodeReplay } from "../lib/replayCode";
 import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, rememberedReplay } from "../lib/replayShare";
 import { replyToRace } from "../lib/raceReplies";
@@ -427,6 +429,33 @@ export function SoloPlayScreen() {
     },
     [puzzleKey, puzzle, plus, openRacePitch, replayable, race, withMine],
   );
+
+  // The race (friendRace.ts): this solve and every friend's recorded one on a
+  // single clock, free. One button on the finish dialog; friends it covers
+  // are not also listed one by one.
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const [friendRace, setFriendRace] = useState<{ solves: RaceSolve[]; letters: boolean } | null>(null);
+  const watchFriendRace = useCallback(async () => {
+    if (!puzzleKey || !user) return;
+    try {
+      let found = await fetchFriendRace(puzzleKey);
+      // The finish that unlocks the letters may still be on its way to the server: one more try.
+      if (found.friends.length > 0 && !found.withLetters) {
+        await new Promise((r) => setTimeout(r, 1500));
+        found = await fetchFriendRace(puzzleKey);
+      }
+      if (found.friends.length === 0) return;
+      const mine = soloResult ? recorder.take() : null;
+      const own = mine && soloResult && !mine.partial ? { seconds: soloResult.finishSeconds, events: mine.events } : await fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null);
+      const solves = raceSolves(found, own ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
+      setFriendRace({ solves, letters: found.withLetters });
+      track("friend_race_opened", { placement: "completion", racers: solves.length, own: !!own });
+    } catch {
+      // A race that can't load just doesn't open.
+    }
+  }, [puzzleKey, user, soloResult, recorder, t]);
+  const friendIds = useMemo(() => new Set(racingFriends.map((c) => c.userId)), [racingFriends]);
+  const listedReplays = useMemo(() => (racingFriends.length > 0 ? replayable.filter((r) => !friendIds.has(r.userId)) : replayable), [racingFriends, replayable, friendIds]);
 
   // Autocheck off and the grid full but not right: a quiet notice over the
   // grid with the three ways out. Dismissed until the grid changes again.
@@ -1032,8 +1061,10 @@ export function SoloPlayScreen() {
               }
             : undefined
         }
-        replays={reopened ? undefined : replayable}
+        replays={reopened ? undefined : listedReplays}
         onWatchReplay={(userId) => void watchReplay(userId)}
+        friendRace={!reopened && !assisted && racingFriends.length > 0 ? { count: racingFriends.length, name: racingFriends[0].username } : undefined}
+        onWatchFriendRace={() => void watchFriendRace()}
         nextUp={nextUp}
         onNextUp={(item) => void handleNextUp(item)}
         onRaceFresh={user ? handleRaceFresh : undefined}
@@ -1044,6 +1075,7 @@ export function SoloPlayScreen() {
         leaderboardLabel={boardSlot === "bonus" ? t("bonus.boardLink") : undefined}
       />
       {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
+      {friendRace && <FriendRaceDialog puzzle={puzzle} solves={friendRace.solves} letters={friendRace.letters} shareRef={puzzleRef} onClose={() => setFriendRace(null)} />}
     </>
   );
 }

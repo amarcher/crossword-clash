@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
 import { Button, Card, Eyebrow } from "../components/ui";
@@ -37,9 +37,11 @@ import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useRaceCandidates } from "../hooks/useRace";
-import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadTrace, saveRaceIntent } from "../lib/race";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
 import type { Puzzle } from "../types/puzzle";
 import { dailyPath } from "../lib/dailyChallenge";
 import { readFriendsOnly, subscribeFriendsOnly, writeFriendsOnly } from "../lib/boardPrefs";
@@ -457,6 +459,35 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     [puzzleKey, account, daily, day, slot, user, rows, t],
   );
 
+  // The race (friendRace.ts): every friend's recorded solve of this puzzle on
+  // one clock, with the viewer's own when there is one. Free, and open before
+  // the viewer has solved it (colour only then, no letters).
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const [theRace, setTheRace] = useState<{ puzzle: Puzzle; solves: RaceSolve[]; letters: boolean } | null>(null);
+  const [raceLoading, setRaceLoading] = useState(false);
+  const openTheRace = useCallback(async () => {
+    if (!puzzleKey || raceLoading) return;
+    setRaceLoading(true);
+    try {
+      const kept = loadTrace(puzzleKey);
+      const [board, race, mine] = await Promise.all([
+        daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
+        fetchFriendRace(puzzleKey),
+        user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null,
+      ]);
+      if (!board || race.friends.length === 0) return;
+      // The account's kept recording, or this device's when the solve was never filed.
+      const own = mine && mine.events.length > 0 ? mine : typeof solvedSeconds === "number" && kept && !kept.partial && kept.events.length > 0 ? { seconds: solvedSeconds, events: kept.events } : null;
+      const solves = raceSolves(race, own && user ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
+      setTheRace({ puzzle: board, solves, letters: race.withLetters });
+      track("friend_race_opened", { slot, past, racers: solves.length, own: !!own });
+    } catch (err) {
+      console.warn("The race:", err);
+    } finally {
+      setRaceLoading(false);
+    }
+  }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, t, past]);
+
   const raceFriends = useCallback(() => {
     if (solved) {
       // Already solved: a fresh puzzle through the picker, never this one.
@@ -515,6 +546,13 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           </>
         )}
       </Card>
+
+      {racingFriends.length > 0 && (
+        <Button size="lg" variant="secondary" block onClick={openTheRace} disabled={raceLoading} data-testid="the-race">
+          {raceLoading ? <Loader2 className="size-4.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Flag className="size-4.5" aria-hidden="true" />}
+          {t(canWatch ? "friendRace.openYours" : "friendRace.open", { count: racingFriends.length, name: racingFriends[0].username })}
+        </Button>
+      )}
 
       {pending && !postsHere && (
         <p data-testid="board-not-posted" className="text-center text-xs text-muted">
@@ -578,6 +616,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           )}
         </div>
       )}
+      {theRace && <FriendRaceDialog puzzle={theRace.puzzle} solves={theRace.solves} letters={theRace.letters} shareRef={{ day, slot }} onClose={() => setTheRace(null)} />}
       {watching && <ReplayDialog puzzle={watching.puzzle} solves={watching.solves} onClose={() => setWatching(null)} />}
     </section>
   );
