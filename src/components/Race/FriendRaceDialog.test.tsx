@@ -34,6 +34,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const share = vi.hoisted(() => ({ create: vi.fn(async () => "abcdefghijk"), send: vi.fn(async (_payload: { url: string }) => ({ method: "copy", outcome: "copied" })) }));
+vi.mock("../../lib/replayShare", () => ({ createReplayShare: share.create }));
+vi.mock("../../lib/shareSheet", () => ({ shareText: share.send }));
+vi.mock("../CompletionModal/ShareResultButton", () => ({ runtimeDeps: async () => ({}) }));
+
 describe("FriendRaceDialog", () => {
   it("plays every solve on one clock: lanes in running order, squares to whoever got there first", () => {
     render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters onClose={() => {}} />);
@@ -60,6 +65,20 @@ describe("FriendRaceDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "bo" }));
     fireEvent.click(screen.getByRole("button", { name: "You" }));
     expect(lanes()).toEqual(["1You0:20Y"]);
+  });
+
+  it("shares the puzzle's link carrying a clip of whoever is showing; no Share without a link to send", async () => {
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    });
+    expect(share.create).toHaveBeenCalledTimes(1);
+    expect(share.send.mock.calls[0][0]).toMatchObject({ url: "https://crosswordclash.com/daily/2026-11-16/mini?r=abcdefghijk" });
+    expect(screen.getByRole("status").textContent).toBe("Link copied — paste it anywhere");
+    cleanup();
+
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann]} letters onClose={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
   it("shows colour and no letters to a viewer who has not solved the puzzle", () => {

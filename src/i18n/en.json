@@ -1259,6 +1259,13 @@
     "open_one": "Watch the race with {{name}}",
     "open_other": "Watch the race with {{count}} friends",
     "openYours_one": "Watch your race with {{name}}",
-    "openYours_other": "Watch your race with {{count}} friends"
+    "openYours_other": "Watch your race with {{count}} friends",
+    "share": "Share",
+    "shareText_one": "The race on {{title}}: who got to each square first.",
+    "shareText_other": "The race on {{title}}: {{count}} of us, and who got to each square first.",
+    "shareCopied": "Link copied — paste it anywhere",
+    "shareSent": "Shared",
+    "short_one": "Your race with {{name}}",
+    "short_other": "Your race with {{count}} friends"
   }
 }

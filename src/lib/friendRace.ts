@@ -12,6 +12,7 @@
  */
 import { supabase } from "./supabaseClient";
 import { getPlayerColor } from "./playerColors";
+import { encodeRaceReplay, MAX_RACE_PLAYERS } from "./replayCode";
 import { cleanEvents, type TraceEvent } from "./race";
 
 /** One solver in the race. */
@@ -103,6 +104,25 @@ export function runningOrder(lanes: readonly RaceLane[], ms: number, total: numb
       if (done(la)) return la.solve.seconds - lb.solve.seconds || a - b;
       return progressAt(lb, ms, total) - progressAt(la, ms, total) || a - b;
     });
+}
+
+/**
+ * The race as a share code (encodeRaceReplay): the clip a shared link plays,
+ * the grid filling in the colour of whoever settled each square first, with a
+ * bar per solver counting their squares. Solvers are ordered by squares won,
+ * so the bars read as the final standings. Colours only: no names and no
+ * letters leave with it. Null when it cannot be told (more than eight
+ * solvers, nothing settled).
+ */
+export function raceShareCode(puzzle: { width: number; height: number; cells: readonly (readonly { solution: string | null }[])[] }, lanes: readonly RaceLane[]): string | null {
+  if (lanes.length === 0 || lanes.length > MAX_RACE_PLAYERS) return null;
+  const first = firstToSquare(lanes);
+  const won = squaresFirst(first, lanes.length, Infinity);
+  const order = lanes.map((_, i) => i).sort((a, b) => won[b] - won[a] || a - b);
+  const claims = [...first].map(([cell, { lane, ms }]) => ({ ms, cell, player: order.indexOf(lane) }));
+  if (claims.length === 0) return null;
+  const lastMs = Math.max(...claims.map((c) => c.ms));
+  return encodeRaceReplay(puzzle, claims, Math.ceil(lastMs / 1000), order.map((i) => lanes[i].solve.color));
 }
 
 export interface FriendRace {

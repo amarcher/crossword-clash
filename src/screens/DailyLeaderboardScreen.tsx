@@ -616,7 +616,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           )}
         </div>
       )}
-      {theRace && <FriendRaceDialog puzzle={theRace.puzzle} solves={theRace.solves} letters={theRace.letters} onClose={() => setTheRace(null)} />}
+      {theRace && <FriendRaceDialog puzzle={theRace.puzzle} solves={theRace.solves} letters={theRace.letters} shareRef={{ day, slot }} onClose={() => setTheRace(null)} />}
       {watching && <ReplayDialog puzzle={watching.puzzle} solves={watching.solves} onClose={() => setWatching(null)} />}
     </section>
   );
