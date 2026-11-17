@@ -38,8 +38,7 @@ import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useRaceCandidates } from "../hooks/useRace";
 import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadTrace, saveRaceIntent } from "../lib/race";
-import { fetchFriendRace, type RaceSolve } from "../lib/friendRace";
-import { getPlayerColor } from "../lib/playerColors";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
@@ -479,11 +478,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
       if (!board || race.friends.length === 0) return;
       // The account's kept recording, or this device's when the solve was never filed.
       const own = mine && mine.events.length > 0 ? mine : typeof solvedSeconds === "number" && kept && !kept.partial && kept.events.length > 0 ? { seconds: solvedSeconds, events: kept.events } : null;
-      const solves: RaceSolve[] = [
-        ...(own && user ? [{ id: user.id, name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: own.seconds, events: own.events }] : []),
-        // Blue is the viewer's; friends take the rest of the players' palette in turn.
-        ...race.friends.map((f, i) => ({ id: f.userId, name: f.username, color: getPlayerColor(1 + (i % 7)), seconds: f.seconds, events: f.events })),
-      ];
+      const solves = raceSolves(race, own && user ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
       setTheRace({ puzzle: board, solves, letters: race.withLetters });
       track("friend_race_opened", { slot, past, racers: solves.length, own: !!own });
     } catch (err) {

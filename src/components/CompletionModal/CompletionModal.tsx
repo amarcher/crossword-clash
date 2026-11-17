@@ -2,7 +2,7 @@ import { puzzleIdentity } from "../../lib/soloStats";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChartLine, ChevronRight, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
+import { CalendarDays, ChartLine, ChevronRight, Flag, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
 import { buttonClass, PlusName } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
@@ -159,6 +159,9 @@ interface CompletionModalProps {
   /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
   replays?: { userId: string; name: string }[];
   onWatchReplay?: (userId: string) => void;
+  /** The race (friendRace.ts): friends have recorded solves of this puzzle; one button opens them all on one clock. */
+  friendRace?: { count: number; name: string };
+  onWatchFriendRace?: () => void;
   /** A finished shared-grid race this device can play back (roomReplay.ts): opens the room's replay. */
   onWatchRoomReplay?: () => void;
   /**
@@ -230,6 +233,8 @@ export function CompletionModal({
   shareBack,
   replays,
   onWatchReplay,
+  friendRace,
+  onWatchFriendRace,
   onWatchRoomReplay,
   nextUp,
   onNextUp,
@@ -708,9 +713,20 @@ export function CompletionModal({
               </ul>
             )}
 
-            {replays && replays.length > 0 && onWatchReplay && (
+            {((replays && replays.length > 0 && onWatchReplay) || (friendRace && onWatchFriendRace)) && (
               <div className="mb-5 flex flex-wrap justify-center gap-2" data-testid="race-replays">
-                {replays.map((r) => (
+                {friendRace && onWatchFriendRace && (
+                  <button
+                    type="button"
+                    data-testid="friend-race"
+                    onClick={onWatchFriendRace}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+                  >
+                    <Flag className="size-4" aria-hidden="true" />
+                    {t("friendRace.openYours", friendRace)}
+                  </button>
+                )}
+                {onWatchReplay && replays?.map((r) => (
                   <button
                     key={r.userId}
                     type="button"
