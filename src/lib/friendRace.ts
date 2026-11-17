@@ -11,7 +11,6 @@
  * or empty, so there a square settles when it was last filled from empty.
  */
 import { supabase } from "./supabaseClient";
-import { getPlayerColor } from "./playerColors";
 import { encodeRaceReplay, MAX_RACE_PLAYERS } from "./replayCode";
 import { cleanEvents, type TraceEvent } from "./race";
 
@@ -24,14 +23,22 @@ export interface RaceSolve {
   events: TraceEvent[];
 }
 
-/** The viewer's colour in the race; friends take the rest of the players' palette in turn. */
+/** The viewer's colour in the race. */
 export const RACE_SELF_COLOR = "#3a6bf0";
+/**
+ * Friends' colours, in turn: the players' palette without its blue (the
+ * viewer's), then four more, so all eleven friends the server returns are
+ * told apart.
+ */
+export const RACE_FRIEND_COLORS = ["#ef4444", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#0d9488", "#65a30d", "#92400e", "#475569"] as const;
+/** Solvers showing when the race opens, and the most a shared clip holds (replayCode's MAX_RACE_PLAYERS). */
+export const RACE_SHOWN_AT_FIRST = 8;
 
 /** The race's solvers: the viewer's own solve first when there is one, then friends as the server ordered them. */
 export function raceSolves(race: FriendRace, own: { id: string; name: string; seconds: number; events: TraceEvent[] } | null): RaceSolve[] {
   return [
     ...(own && own.events.length > 0 ? [{ ...own, color: RACE_SELF_COLOR }] : []),
-    ...race.friends.map((f, i) => ({ id: f.userId, name: f.username, color: getPlayerColor(1 + (i % 7)), seconds: f.seconds, events: f.events })),
+    ...race.friends.map((f, i) => ({ id: f.userId, name: f.username, color: RACE_FRIEND_COLORS[i % RACE_FRIEND_COLORS.length], seconds: f.seconds, events: f.events })),
   ];
 }
 
