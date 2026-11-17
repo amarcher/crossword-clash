@@ -30,7 +30,8 @@ import { friendsEnabled } from "../lib/friends";
 import { useFriends } from "../contexts/FriendsContext";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
-import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
+import { groupFinishSeconds } from "../lib/groupFinish";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
@@ -409,6 +410,13 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const identity = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
   const solvedSeconds = pending?.entry.seconds ?? myEntry?.seconds ?? (identity ? bestTimes[identity] : undefined);
   const solved = typeof solvedSeconds === "number";
+  // Finished in a room on a shared grid: no time of one's own, so no row on
+  // the board, but the day is done and the board should say so rather than
+  // offer the puzzle as untouched (Andrew, 2026-11-16). From the account's
+  // history (any device) or this device's record of the room's time.
+  const { rows: historyRows } = useSolveHistory();
+  const groupSeconds = !solved ? groupFinishSeconds(identity) : null;
+  const playedAsGroup = !solved && !!identity && (groupSeconds !== null || !!historyRows?.some((r) => r.puzzle_key === identity && r.mode !== "solo" && r.mode !== "import" && r.seconds === null));
   const myRank = !privateFinish && myEntry && myEntry.rank > 0 ? myEntry.rank : null;
 
   // A past board the viewer was not on, for a puzzle they have since solved:
@@ -489,7 +497,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, t, past]);
 
   const raceFriends = useCallback(() => {
-    if (solved) {
+    if (solved || playedAsGroup) {
       // Already solved: a fresh puzzle through the picker, never this one.
       track("mode_selected", { mode: "daily-race-fresh", slot });
       navigate(pickerPath("race"));
@@ -501,7 +509,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     if (!daily) return;
     game.setUrlPuzzle(daily.puzzle);
     navigate("/host-game/name");
-  }, [game, daily, slot, solved, navigate]);
+  }, [game, daily, slot, solved, playedAsGroup, navigate]);
 
   const theme = past ? info?.theme || info?.title || "" : displayTheme(daily);
   const emptyMessage = only ? "leaderboard.emptyFriends" : past ? "leaderboard.emptyPast" : "leaderboard.empty";
@@ -603,13 +611,26 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
                 {myRank !== null && ` · ${t("leaderboard.rankToday", { rank: myRank })}`}
               </span>
             </p>
+          ) : playedAsGroup ? (
+            <>
+              <p data-testid="group-line" className="rounded-xl bg-brand-50 px-4 py-3 text-center text-sm text-brand-700 ring-1 ring-brand-100">
+                <span className="flex items-center justify-center gap-2 font-semibold tabular-nums">
+                  <Check className="size-4 shrink-0" aria-hidden="true" />
+                  {groupSeconds !== null ? t("leaderboard.groupPlayedIn", { time: formatDuration(groupSeconds) }) : t("leaderboard.groupPlayed")}
+                </span>
+                <span className="mt-0.5 block text-pretty">{t("leaderboard.groupNotRanked")}</span>
+              </p>
+              <Button size="lg" variant="secondary" block onClick={playToday} disabled={!daily}>
+                {t("menu.dailyPlaySolo")}
+              </Button>
+            </>
           ) : (
             <Button size="lg" block onClick={playToday} disabled={!daily}>
               {t(PLAY_TODAY[slot])}
             </Button>
           )}
           {user && (
-            <Button size="lg" variant={solved ? "primary" : "secondary"} block onClick={raceFriends} disabled={!solved && !daily}>
+            <Button size="lg" variant={solved || playedAsGroup ? "primary" : "secondary"} block onClick={raceFriends} disabled={!solved && !daily}>
               <Swords className="size-4.5" aria-hidden="true" />
               {t("leaderboard.raceFriends")}
             </Button>
