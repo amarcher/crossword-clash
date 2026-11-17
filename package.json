@@ -30,6 +30,7 @@
     "seedgrid:feed-dir": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/feedToDir.mts",
     "seedgrid:refix": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/refix.mts",
     "seedgrid:crosscheck": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/crosscheck.mts",
+    "seedgrid:fitcheck": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/fitcheck.mts",
     "seedgrid:unrepeat": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/unrepeat.mts",
     "build:native-import": "node scripts/build-native-import.mjs",
     "mobile:sync": "pnpm build:native-import && pnpm build --mode mobile && cap sync",
