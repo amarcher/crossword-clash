@@ -47,7 +47,7 @@ export type AnalyticsEvent =
   | "room_replay_opened"
   /** A recorded solve was replayed after the finish. Params `racing`: the viewer's own solve played with it; `placement`: "leaderboard" from a board row. */
   | "replay_watched"
-  /** The race (friendRace.ts) opened from a daily board. Params `slot`, `past`, `racers`, `own`: the viewer's solve is in it. */
+  /** The race (friendRace.ts) opened. Params `racers`, `own`: the viewer's solve is in it; from a daily board `slot`, `past`; from the finish dialog `placement`: "completion". */
   | "friend_race_opened"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"

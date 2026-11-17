@@ -11,6 +11,7 @@
  * or empty, so there a square settles when it was last filled from empty.
  */
 import { supabase } from "./supabaseClient";
+import { getPlayerColor } from "./playerColors";
 import { cleanEvents, type TraceEvent } from "./race";
 
 /** One solver in the race. */
@@ -20,6 +21,17 @@ export interface RaceSolve {
   color: string;
   seconds: number;
   events: TraceEvent[];
+}
+
+/** The viewer's colour in the race; friends take the rest of the players' palette in turn. */
+export const RACE_SELF_COLOR = "#3a6bf0";
+
+/** The race's solvers: the viewer's own solve first when there is one, then friends as the server ordered them. */
+export function raceSolves(race: FriendRace, own: { id: string; name: string; seconds: number; events: TraceEvent[] } | null): RaceSolve[] {
+  return [
+    ...(own && own.events.length > 0 ? [{ ...own, color: RACE_SELF_COLOR }] : []),
+    ...race.friends.map((f, i) => ({ id: f.userId, name: f.username, color: getPlayerColor(1 + (i % 7)), seconds: f.seconds, events: f.events })),
+  ];
 }
 
 /** Friends the server returns, fastest first (the viewer makes twelve). */
