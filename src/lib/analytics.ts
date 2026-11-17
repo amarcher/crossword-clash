@@ -49,6 +49,8 @@ export type AnalyticsEvent =
   | "replay_watched"
   /** The race (friendRace.ts) opened. Params `racers`, `own`: the viewer's solve is in it; from a daily board `slot`, `past`; from the finish dialog `placement`: "completion". */
   | "friend_race_opened"
+  /** The race shared from its dialog. Params `method`, `racers`, `clip`: the link carries the clip. */
+  | "friend_race_shared"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"
   /** "Send X your solve" after racing a shared link's sender. Params `method`, `outcome`, `verdict` (beat | lost | tied). */

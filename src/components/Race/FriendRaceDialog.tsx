@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Pause, Play, RotateCcw, X } from "lucide-react";
+import { Check, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
 import { Button } from "../ui";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import { replaySpeed, whiteCellCount } from "../../lib/race";
-import { firstToSquare, progressAt, raceLane, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
-import type { Puzzle } from "../../types/puzzle";
+import { firstToSquare, progressAt, raceLane, raceShareCode, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
+import { buildPuzzleLink } from "../../lib/dailyChallenge";
+import { createReplayShare } from "../../lib/replayShare";
+import { SHARE_URL } from "../../lib/resultCard";
+import { shareText } from "../../lib/shareSheet";
+import { runtimeDeps } from "../CompletionModal/ShareResultButton";
+import { track } from "../../lib/analytics";
+import type { Puzzle, PuzzleRef } from "../../types/puzzle";
 
 interface FriendRaceDialogProps {
   puzzle: Puzzle;
@@ -15,6 +21,8 @@ interface FriendRaceDialogProps {
   solves: RaceSolve[];
   /** The viewer has solved the puzzle: squares show their letters. Otherwise colour only, so nothing is given away. */
   letters: boolean;
+  /** Where the site links to this puzzle, when the puzzle does not carry it (today's daily): what Share sends. */
+  shareRef?: PuzzleRef | null;
   onClose: () => void;
 }
 
@@ -27,8 +35,12 @@ const TRACK = 24;
  * the grid below takes the colour of whoever settled each square first, with
  * the count of squares each was first to. Names at the top show or hide a
  * solver, and both readings are worked out again for whoever is left.
+ *
+ * Share (a puzzle with a link of its own, up to eight solvers showing) sends
+ * that link carrying a clip of the grid filling in by who got there first:
+ * colours only, no names and no letters.
  */
-export function FriendRaceDialog({ puzzle, solves, letters, onClose }: FriendRaceDialogProps) {
+export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, onClose }: FriendRaceDialogProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -79,6 +91,32 @@ export function FriendRaceDialog({ puzzle, solves, letters, onClose }: FriendRac
       else if (solves.length - next.size > 1) next.add(id);
       return next;
     });
+
+  // The clip is of whoever is showing now; filed once per selection.
+  const shareRef = givenRef ?? puzzle.ref;
+  const shareCode = useMemo(() => (shareRef ? raceShareCode(puzzle, lanes) : null), [shareRef, puzzle, lanes]);
+  const filed = useRef<{ code: string; id: string } | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const share = async () => {
+    if (!shareRef || !shareCode || sharing) return;
+    setSharing(true);
+    try {
+      const id = filed.current?.code === shareCode ? filed.current.id : await createReplayShare(shareCode);
+      if (id) filed.current = { code: shareCode, id };
+      const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined });
+      const body = t("friendRace.shareText", { title: puzzle.title, count: lanes.length });
+      const result = await shareText({ text: `${body}\n${url}`, body, url, title: t("friendRace.title") }, await runtimeDeps());
+      if (result.outcome === "dismissed") return;
+      track("friend_race_shared", { method: result.method, racers: lanes.length, clip: !!id });
+      setToast(t(result.outcome === "failed" ? "completion.shareFailed" : result.outcome === "copied" ? "friendRace.shareCopied" : "friendRace.shareSent"));
+      setTimeout(() => setToast(null), 2200);
+    } catch {
+      // Sharing must never break the race.
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const order = runningOrder(lanes, ms, total);
   const counts = squaresFirst(first, lanes.length, ms);
@@ -197,9 +235,15 @@ export function FriendRaceDialog({ puzzle, solves, letters, onClose }: FriendRac
         </div>
 
         <div className="flex items-center gap-3 border-t border-line px-5 py-3">
-          <Button variant="secondary" size="sm" onClick={() => (ms >= endMs ? (setMs(0), setPlaying(true)) : setPlaying((p) => !p))}>
+          {/* Icon only: the clock bar and Share need the width on a phone. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="size-11 shrink-0 px-0!"
+            aria-label={playing ? t("ghostRace.replayPause") : ms >= endMs ? t("ghostRace.replayAgain") : t("ghostRace.replayPlay")}
+            onClick={() => (ms >= endMs ? (setMs(0), setPlaying(true)) : setPlaying((p) => !p))}
+          >
             {playing ? <Pause className="size-4" aria-hidden="true" /> : ms >= endMs ? <RotateCcw className="size-4" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />}
-            {playing ? t("ghostRace.replayPause") : ms >= endMs ? t("ghostRace.replayAgain") : t("ghostRace.replayPlay")}
           </Button>
           <input
             type="range"
@@ -212,7 +256,18 @@ export function FriendRaceDialog({ puzzle, solves, letters, onClose }: FriendRac
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
           <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
+          {shareCode && (
+            <Button variant="primary" size="sm" onClick={() => void share()} disabled={sharing} data-testid="race-share">
+              <Share2 className="size-4" aria-hidden="true" />
+              {t("friendRace.share")}
+            </Button>
+          )}
         </div>
+        {toast && (
+          <p role="status" className="border-t border-line px-5 py-2 text-center text-xs font-semibold text-ink-soft">
+            {toast}
+          </p>
+        )}
       </div>
     </div>
   );
