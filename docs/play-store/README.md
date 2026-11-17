@@ -217,10 +217,13 @@ Done by Claude, nothing submitted or rolled out:
   full descriptions and the eight-tile sets in the phone, 7-inch and 10-inch
   slots. All six changes were sent for review together. The asset library
   adds uploads to a slot in the order they finish, so upload one file per
-  call to keep the order. No promo video yet: the field takes a YouTube URL.
+  call to keep the order.
   The listing's AI asset declaration already read "Label assets as created or
   edited using AI" and was not editable on the review step; no individual
-  asset was labelled.
+  asset was labelled. Later the same day the listing's Video field was set to
+  the 16:9 reel (https://www.youtube.com/watch?v=XmGX4YKABBs, see
+  `../marketing/README.md`). Sending that change cancelled and restarted the
+  review that was in progress, so all seven changes are in one review.
 
 ## Uploading without the API
 
