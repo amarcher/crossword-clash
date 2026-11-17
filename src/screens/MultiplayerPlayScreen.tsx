@@ -27,6 +27,7 @@ import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, postDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
+import { recordGroupFinish } from "../lib/groupFinish";
 import { rankRaceStandings } from "../lib/raceResults";
 import { progressPercent } from "../lib/raceProgress";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -246,6 +247,13 @@ export function MultiplayerPlayScreen() {
     if (!finished) return;
     setNytStreak(recordNytPlay().current);
   }, [fromNyt, nytStreak, isAsync, myFinishSeconds, gameStatus]);
+
+  // A shared grid's time is the room's, kept on this device for the
+  // leaderboard's "Played as a group in 5:16" (groupFinish.ts).
+  useEffect(() => {
+    if (isAsync || gameStatus !== "completed" || !puzzle || typeof raceSeconds !== "number") return;
+    recordGroupFinish(puzzleIdentity(puzzle), raceSeconds);
+  }, [isAsync, gameStatus, puzzle, raceSeconds]);
 
   // Signed-in solvers: file the finish in the account's solve history. An
   // async race carries a personal time; a shared-grid finish (versus, co-op)
