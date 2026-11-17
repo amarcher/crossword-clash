@@ -433,9 +433,9 @@
     "narratorBudgetPaused": "El presentador con IA se toma un breve descanso para controlar los costes. ¡Vuelve pronto!",
     "spokenEvents": "Anunciar pistas completadas",
     "spokenEventsHint": "Anuncios cortos como \"5 horizontal por Alice\" cuando no hay presentador IA. Desactivado por defecto.",
-    "narratorPlusRequired": "El presentador con IA forma parte de Crossword Clash Plus. Esa era la muestra gratuita.",
+    "narratorPlusRequired": "El presentador con IA forma parte de Crossword Clash Plus. Esa era la muestra gratuita. Sigue cuando alguien de la sala tiene Plus.",
     "narratorAllowanceSpent": "Has agotado tus minutos de presentador con IA de este mes. Se renuevan el día 1.",
-    "narratorPlusNote": "El presentador con IA es una función de Crossword Clash Plus. Cualquiera puede escuchar una breve muestra gratuita.",
+    "narratorPlusNote": "El presentador con IA es una función de Crossword Clash Plus: funciona cuando tú o alguien de la sala tiene Plus. Cualquiera puede escuchar una breve muestra gratuita.",
     "narratorPlusIncluded": "Incluido en tu Plus: 60 minutos de presentador con IA al mes."
   },
   "hostView": {

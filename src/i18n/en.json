@@ -433,9 +433,9 @@
     "narratorBudgetPaused": "The AI host is taking a short break to keep costs in check. It'll be back soon!",
     "spokenEvents": "Speak completed clues",
     "spokenEventsHint": "Short \"5 across by Alice\" announcements when no AI host is active. Off by default.",
-    "narratorPlusRequired": "The AI host is part of Crossword Clash Plus. That was the free sample.",
+    "narratorPlusRequired": "The AI host is part of Crossword Clash Plus. That was the free sample. It keeps going when anyone in the room has Plus.",
     "narratorAllowanceSpent": "Your AI host minutes for this month are used up. They reset on the 1st.",
-    "narratorPlusNote": "The AI host is a Crossword Clash Plus feature. Everyone can hear a short free sample.",
+    "narratorPlusNote": "The AI host is a Crossword Clash Plus feature: it runs when you or anyone in the room has Plus. Everyone can hear a short free sample.",
     "narratorPlusIncluded": "Included in your Plus: 60 AI host minutes a month."
   },
   "hostView": {

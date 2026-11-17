@@ -190,7 +190,7 @@ export function useNarrator({
     // Already connected with the right config
     if (narratorRef.current) return;
 
-    const narrator = createNarratorBackend(currentEngine, { ttsEngine, voiceName, rate, pitch, elevenLabsVoiceId });
+    const narrator = createNarratorBackend(currentEngine, { ttsEngine, voiceName, rate, pitch, elevenLabsVoiceId, gameId: gameIdRef.current });
     if (!narrator) return;
 
     narratorRef.current = narrator;

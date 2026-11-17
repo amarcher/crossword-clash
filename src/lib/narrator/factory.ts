@@ -8,6 +8,7 @@ export interface NarratorBackendOptions {
   rate?: number;
   pitch?: number;
   elevenLabsVoiceId?: string | null;
+  gameId?: string | null;
 }
 
 export function createNarratorBackend(engine: NarratorEngine, options?: NarratorBackendOptions): NarratorBackend | null {

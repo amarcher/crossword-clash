@@ -13,16 +13,26 @@ interface Message {
   content: string;
 }
 
+/** The functions' query string: the room (a Plus player in it covers the host; plusAccess.ts roomSponsor) and the demo flag. */
+function narratorQuery(gameId: string | null, demo: boolean): string {
+  const params = new URLSearchParams();
+  if (gameId) params.set("game", gameId);
+  if (demo) params.set("demo", "1");
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
 async function fetchCommentary(
   messages: Message[],
   demo = false,
+  gameId: string | null = null,
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
     throw new Error("Claude narrator not configured");
   }
 
-  const url = `${supabaseUrl}/functions/v1/narrator-claude${demo ? "?demo=1" : ""}`;
+  const url = `${supabaseUrl}/functions/v1/narrator-claude${narratorQuery(gameId, demo)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: await narratorHeaders(),
@@ -59,14 +69,15 @@ async function fetchCommentary(
  */
 async function requestCommentary(
   messages: Message[],
+  gameId: string | null = null,
 ): Promise<{ text: string; demo: boolean }> {
   try {
-    return { text: await fetchCommentary(messages, false), demo: false };
+    return { text: await fetchCommentary(messages, false, gameId), demo: false };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     // Over budget, or not a subscriber: the same bounded sample either way.
     if ((msg === NARRATOR_UNAVAILABLE_BUDGET || msg === NARRATOR_UNAVAILABLE_PLUS) && consumeNarratorDemo()) {
-      return { text: await fetchCommentary(messages, true), demo: true };
+      return { text: await fetchCommentary(messages, true, gameId), demo: true };
     }
     throw err;
   }
@@ -76,6 +87,7 @@ function fetchTTSAudio(
   text: string,
   voiceId: string,
   demo = false,
+  gameId: string | null = null,
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
@@ -86,7 +98,7 @@ function fetchTTSAudio(
   // fail-closed demo grant so the sample plays in the real premium voice.
   return narratorHeaders()
     .then((headers) =>
-      fetch(`${supabaseUrl}/functions/v1/tts${demo ? "?demo=1" : ""}`, {
+      fetch(`${supabaseUrl}/functions/v1/tts${narratorQuery(gameId, demo)}`, {
         method: "POST",
         headers,
         body: JSON.stringify({ text, voice_id: voiceId }),
@@ -121,6 +133,8 @@ export interface ClaudeNarratorOptions {
   rate?: number;
   pitch?: number;
   elevenLabsVoiceId?: string | null;
+  /** The room being narrated: a Plus player in it covers the host on a device that has none. */
+  gameId?: string | null;
 }
 
 export class ClaudeNarratorBackend implements NarratorBackend {
@@ -130,6 +144,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private rate: number;
   private pitch: number;
   private elevenLabsVoiceId: string | null;
+  private gameId: string | null;
   private messages: Message[] = [];
   private _isConnected = false;
   private _connectionError: string | null = null;
@@ -150,6 +165,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.rate = options?.rate ?? 1;
     this.pitch = options?.pitch ?? 1;
     this.elevenLabsVoiceId = options?.elevenLabsVoiceId ?? null;
+    this.gameId = options?.gameId ?? null;
   }
 
   setVoiceSettings(opts: Pick<ClaudeNarratorOptions, "voiceName" | "rate" | "pitch" | "elevenLabsVoiceId">): void {
@@ -276,7 +292,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.messages.push({ role: "user", content: userText });
 
     try {
-      const { text: commentary, demo } = await requestCommentary(this.messages);
+      const { text: commentary, demo } = await requestCommentary(this.messages, this.gameId);
       if (this.intentionalDisconnect) return;
 
       console.log("[ClaudeNarrator] Commentary:", commentary);
@@ -351,7 +367,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       }
 
       const voiceId = this.elevenLabsVoiceId || DEFAULT_VOICE_ID;
-      const audioData = await fetchTTSAudio(text, voiceId, demo);
+      const audioData = await fetchTTSAudio(text, voiceId, demo, this.gameId);
       if (this.intentionalDisconnect || !this.audioContext) return;
 
       const audioBuffer = await this.audioContext.decodeAudioData(audioData);
