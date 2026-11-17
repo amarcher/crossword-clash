@@ -9,6 +9,7 @@ import { ConfirmProvider } from "../components/ConfirmDialog";
 import { LobbyScreen } from "../screens/LobbyScreen";
 import type { Puzzle } from "../types/puzzle";
 import type { Player } from "../types/game";
+import { FINISH_GRACE_MS } from "./useMultiplayer";
 
 /**
  * The lobby roster over the real GameProvider + MultiplayerProvider (the room
@@ -224,4 +225,26 @@ describe("the lobby roster and the name the player typed", () => {
     expect(fake.track).toHaveBeenCalledWith({ user_id: "me", display_name: "Arch", color: "#3b82f6", visible: true });
     expect(lobbyRows()).toEqual(["AliciaHost", "Arch"]);
   });
+
+  it("freezes the finish record after a grace even when the grid is a square short (the TV whose replay lost its players)", async () => {
+    // The server kept one square fewer than the puzzle has (2026-11-16: 177 of 178).
+    services.fetchGameState.mockResolvedValue({
+      cells: { "0,0": { letter: "H", correct: true, playerId: "host", at: 1_000 } },
+      players: [host, myStaleRow],
+      status: "completed",
+      settings: { raceMode: "versus" },
+      startedAt: 0,
+      completedAt: 5_000,
+    });
+    await renderLobby("Arch");
+    await waitFor(() => expect(mp.gameStatus).toBe("completed"));
+    expect(mp.finalStandings).toBeNull();
+    await waitFor(() => expect(mp.finalStandings).not.toBeNull(), { timeout: FINISH_GRACE_MS + 2000 });
+    // Everyone has left the room: the record still names them, with their colours and squares.
+    await syncPresence([]);
+    expect(mp.finalStandings!.players.map((p) => [p.displayName, p.color, p.cellsClaimed])).toEqual([
+      ["Alicia", "#ef4444", 1],
+      ["Arch", "#3b82f6", 0],
+    ]);
+  }, 15_000);
 });
