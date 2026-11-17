@@ -43,7 +43,17 @@ captured from the web build running in native mode at the device's pixel
 size, set in a device frame on the site's crossword backdrop. Player names
 are invented and their solves are synthetic, so no real player appears. The
 race tile uses the November 15 Midi because the November 16 one has NYT as an
-answer. Not uploaded to App Store Connect yet.
+answer.
+
+## 1.1.3 (November 17, 2026): sent for review with build 52
+
+Through the App Store Connect API, on Andrew's go-ahead: version 1.1.3 created
+with build 52 attached (release after approval, as 1.1.2 was), then the
+description, promotional text, `whats-new-1.1.3.txt`, the review notes and both
+eight-tile screenshot sets (all sixteen processed), then a review submission
+with the version as its one item. State after the submit: WAITING_FOR_REVIEW.
+The review notes are capped at 4000 characters; the Plus paragraph now lists
+the benefits the paywall shows in this build.
 
 `../marketing/crossword-clash-reel.mp4` is the matching 28.5-second promo
 reel (1080×1920, 30 fps). Its music was synthesized for it, so nothing is
