@@ -26,7 +26,11 @@ locks to that account on first upload.
 | `screenshots/phone/` | Phone screenshots, 1080×2160 |
 | `screenshots/tablet-10/` | Tablet screenshots, 1600×2560 (used for both the 7-inch and 10-inch slots) |
 
-Screenshots are emulator captures (Pixel 7 image, Android 16) of live games on
+The screenshots were replaced on November 16, 2026 with eight captioned tiles
+per set (the same series as `../app-store/README.md` describes: the app's own
+screens in a device frame on the site's crossword backdrop, invented player
+names, synthetic solves). Not uploaded to the Play Console yet. The earlier
+sets were emulator captures (Pixel 7 image, Android 16) of live games on
 the production backend. None of them, and none of the text, names The New York
 Times: third-party trademarks in store metadata are a common rejection. The
 importer is disclosed only in reviewer notes (the iOS text in

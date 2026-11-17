@@ -8,9 +8,11 @@ PLAY TOGETHER
 • Friends can join from any phone, tablet or computer at crosswordclash.com, with no download and no account
 • Put the board on a TV for game night while everyone plays from their phone
 • Optional wrong-answer penalty to keep the guessers honest
+• After a race, watch the replay: the grid fills in again, each square in the color of whoever got it, and you can share it as a clip
 
 SOLVE ON YOUR OWN
 • Three new crosswords every day: a Mini, a Midi and a Large, each with its own leaderboard and streak
+• After you solve a daily, watch your friends' solves replayed against yours on one clock
 • Open your own .puz, .ipuz, .jpz and .xd puzzle files
 • Your progress is saved automatically
 • Share a spoiler-free picture of your solve with a link that challenges friends to beat your time
@@ -20,4 +22,13 @@ MADE FOR TOUCH
 • Phones and tablets, portrait or landscape
 • English and Spanish
 
-Free to play. No account, no ads and no in-app purchases.
+Free to play, with no ads and no account needed.
+
+CROSSWORD CLASH PLUS (optional subscription)
+• The full daily archive: play every past daily
+• The Daily Plus: an extra 11×11 puzzle every day
+• Full stats: trends, ranks and head-to-heads with friends
+• Race anyone's solve from the leaderboard, or watch the replay
+• Repair a broken streak the day after you miss
+• An AI game-show host on the TV view, covered for the whole room when any player has Plus
+• The construction studio: build your own crossword and publish it for everyone
