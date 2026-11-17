@@ -6,7 +6,7 @@ import { blendOnWhite } from "../CrosswordGrid/Cell";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import { replaySpeed, whiteCellCount } from "../../lib/race";
-import { firstToSquare, progressAt, raceLane, raceShareCode, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
+import { firstToSquare, progressAt, raceLane, raceShareCode, RACE_SHOWN_AT_FIRST, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
 import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { createReplayShare } from "../../lib/replayShare";
 import { SHARE_URL } from "../../lib/resultCard";
@@ -47,7 +47,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   const handleEscape = useCallback(() => onClose(), [onClose]);
   useFocusTrap(panelRef, handleEscape);
 
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+  // A big circle opens on its first eight (the viewer and the fastest friends); the rest are a tap away.
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set(solves.slice(RACE_SHOWN_AT_FIRST).map((s) => s.id)));
   const shown = useMemo(() => solves.filter((s) => !hidden.has(s.id)), [solves, hidden]);
   const lanes = useMemo(() => shown.map(raceLane), [shown]);
   const first = useMemo(() => firstToSquare(lanes), [lanes]);
@@ -99,7 +100,13 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   const [sharing, setSharing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const share = async () => {
-    if (!shareRef || !shareCode || sharing) return;
+    if (!shareRef || sharing) return;
+    if (!shareCode) {
+      // A clip holds eight solvers: say so instead of a button that does nothing.
+      setToast(t("friendRace.shareTooMany", { max: RACE_SHOWN_AT_FIRST }));
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     setSharing(true);
     try {
       const id = filed.current?.code === shareCode ? filed.current.id : await createReplayShare(shareCode);
@@ -130,7 +137,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{t("friendRace.title")}</h2>
-              <p className="text-sm text-muted text-balance">{t("friendRace.subtitle", { title: puzzle.title, speed })}</p>
+              <p className="text-sm text-muted text-balance">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name, title: puzzle.title, speed }) : t("friendRace.subtitle", { title: puzzle.title, speed })}</p>
             </div>
             <button type="button" onClick={onClose} aria-label={t("ghostRace.close")} className="-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-surface-sunken active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500">
               <X className="size-5" aria-hidden="true" />
@@ -147,7 +154,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggle(s.id)}
-                    className={`inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${on ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted line-through"}`}
+                    className={`inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${on ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted line-through"}`}
                   >
                     <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: on ? s.color : "transparent", boxShadow: on ? undefined : "inset 0 0 0 1.5px currentColor" }} aria-hidden="true" />
                     <span className="truncate">{s.name}</span>
@@ -256,7 +263,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
           <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
-          {shareCode && (
+          {shareRef && (
             <Button variant="primary" size="sm" onClick={() => void share()} disabled={sharing} data-testid="race-share">
               <Share2 className="size-4" aria-hidden="true" />
               {t("friendRace.share")}

@@ -81,6 +81,21 @@ describe("FriendRaceDialog", () => {
     expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
+  it("opens a big circle on its first eight, and says why nine cannot be shared", async () => {
+    const many = Array.from({ length: 10 }, (_, i): RaceSolve => ({ ...ann, id: `f${i}`, name: `f${i}`, seconds: 12 + i }));
+    render(<FriendRaceDialog puzzle={puzzle} solves={many} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(8);
+    expect(screen.getByRole("button", { name: "f9" }).getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "f9" }));
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(9);
+    share.create.mockClear();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    });
+    expect(share.create).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toContain("up to 8 people");
+  });
+
   it("shows colour and no letters to a viewer who has not solved the puzzle", () => {
     const blind = (s: RaceSolve): RaceSolve => ({ ...s, events: s.events.map(([ms, cell]) => [ms, cell, 1]) });
     render(<FriendRaceDialog puzzle={puzzle} solves={[blind(ann), blind(bo)]} letters={false} onClose={() => {}} />);

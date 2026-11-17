@@ -1266,6 +1266,8 @@
     "shareCopied": "Enlace copiado: pégalo donde quieras",
     "shareSent": "Compartido",
     "short_one": "Tu carrera con {{name}}",
-    "short_other": "Tu carrera con {{count}} amigos"
+    "short_other": "Tu carrera con {{count}} amigos",
+    "subtitleOne": "Cómo resolvió {{name}} {{title}}. A velocidad {{speed}}×.",
+    "shareTooMany": "Un clip compartido muestra hasta {{max}} personas. Oculta algunas y vuelve a compartir."
   }
 }
