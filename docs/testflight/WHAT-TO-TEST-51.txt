@@ -1,4 +1,4 @@
-This build (1.1.3, build 50) is about seeing how each game mode plays, and watching solves. Please check:
+This build (1.1.3, build 51) is about seeing how each game mode plays, and watching solves. Please check:
 
 1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
 2. Time trial: everyone solves their own copy, and each square another player has filled shows a folded corner in their colour. The standings show each player's percent filled until they finish.
@@ -10,8 +10,8 @@ This build (1.1.3, build 50) is about seeing how each game mode plays, and watch
 8. Signed out means empty: sign out and the menu restarts with no streak, solved marks or puzzles in progress, and a "You're signed out" card. Sign back in and they return. (A phone that was already signed out before this build tidies itself after the next sign-in.)
 9. Puzzles in progress follow any account, not only Plus: start a puzzle signed in, then open the same account on another device or the website and continue it.
 10. Settings follow the account: Autocheck and Haptics, hidden community authors and the leaderboard's Everyone / Friends switch are the same on every device you sign in on.
-11. Sign-in buttons: "Continue with Apple" and "Continue with Google" have the same text size, with the logos lined up.
-12. Hosting a room: Game settings (the mode picker and its preview) sit right under the player list, and the little preview board has all four rounded corners.
+11. Sign-in buttons: Apple and Google have the same text size, logos lined up.
+12. Hosting a room: Game settings sit right under the player list.
 13. Race buttons on the leaderboard: start the mini, switch to the midi, then finish both. Both finishes should be raceable by other players (each keeps its own recording now).
 14. A puzzle across two devices: start a daily on one device, finish it on another signed in to the same account (both on this build). The finish should have a Race / Watch button on the leaderboard.
 15. Daily cards on the menu: the label and the theme sit in a strip across the top of each card (white, and light blue once the puzzle is solved), and a long theme reads in full. Tapping anywhere on the Leaderboard strip opens the leaderboard.
@@ -21,4 +21,5 @@ This build (1.1.3, build 50) is about seeing how each game mode plays, and watch
 19. The race (new): on a daily you and a friend have both solved, open its leaderboard and tap "Watch your race with…". Every solve plays on one clock: lanes show who was ahead, and the grid colours each square by who got there first. Tap a name to hide them. Free, and also on the finish screen and the solved home card.
 20. The race before solving: on a daily a friend has solved and you have not, the leaderboard button plays the race in colour only, with no letters.
 21. Sharing the race: Share in the race sends the puzzle's link with a clip of the grid filling in by colour (no names, no letters).
-22. Everything from build 42 still applies.
+22. Finish screen: one Watch button (the race with friends); other solvers' replays are on the leaderboard rows.
+23. Everything from build 42 still applies.
