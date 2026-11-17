@@ -1,4 +1,4 @@
-This build (1.1.3, build 49) is about seeing how each game mode plays, and watching solves. Please check:
+This build (1.1.3, build 50) is about seeing how each game mode plays, and watching solves. Please check:
 
 1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
 2. Time trial: everyone solves their own copy, and each square another player has filled shows a folded corner in their colour. The standings show each player's percent filled until they finish.
@@ -18,4 +18,7 @@ This build (1.1.3, build 49) is about seeing how each game mode plays, and watch
 16. Race share video: finish a Compete or Co-op race in a room. The finish screen should show a clip of the grid filling in each player's colour, and Share should send a link that plays it (no emoji squares). Try a room on a past daily or a community puzzle too.
 17. Time trial share: finish a time trial; the finish screen should show the clip of your own solve.
 18. Hosting a room: the Compete and Co-op preview fills words forwards, one player across and one down.
-19. Everything from build 42 still applies.
+19. The race (new): on a daily you and a friend have both solved, open its leaderboard and tap "Watch your race with…". Every solve plays on one clock: lanes show who was ahead, and the grid colours each square by who got there first. Tap a name to hide that person. It is free, and also offered on the finish screen and on the solved card on the home page.
+20. The race before solving: on a daily a friend has solved and you have not, the leaderboard button plays the race in colour only, with no letters.
+21. Sharing the race: Share in the race sends the puzzle's link with a clip of the grid filling in by colour (no names, no letters).
+22. Everything from build 42 still applies.
