@@ -616,6 +616,8 @@ export interface Database {
       race_candidates: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number | null; friend: boolean }[] };
       /** A recording to race or replay (Plus); letters stripped to 1/0 until the caller has finished the puzzle. */
       solve_trace: { Args: { p_user: string; p_puzzle_key: string }; Returns: { seconds: number; events: unknown; with_letters: boolean }[] };
+      /** The race: the caller's friends' recordings of a puzzle, fastest first (up to 11). Free; letters stripped to 1/0 until the caller has finished the puzzle. */
+      friend_race: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number; events: unknown; with_letters: boolean }[] };
       /** Which of a room's players have finished its puzzle before (the host or a player may ask): the mode, never a time. */
       room_solves: { Args: { p_game_id: string; p_puzzle_key: string }; Returns: { user_id: string; mode: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */
