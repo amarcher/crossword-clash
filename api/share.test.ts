@@ -167,6 +167,29 @@ describe("daily link", () => {
   });
 });
 
+describe("add-me link", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", async () => ({ ok: true, text: async () => INDEX }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("says who is asking, and serves the app", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=add&u=archer_1"));
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("@archer_1 wants to be friends on Crossword Clash");
+    expect(meta(html, "og:url")).toBe("https://x.test/add/archer_1");
+    expect(new URL(meta(html, "og:image")!).searchParams.get("title")).toBe("@archer_1");
+    expect(html).toContain("/assets/index-abc.js");
+  });
+
+  it("refuses a name that could not be a username", async () => {
+    expect((await handler(new Request("https://x.test/api/share?t=add&u=a%20b"))).status).toBe(404);
+  });
+});
+
 describe("community puzzle link", () => {
   const calls: string[] = [];
   let rows: unknown[] = [{ title: "Farm", author: "ada", width: 5, height: 5, difficulty: "easy" }];

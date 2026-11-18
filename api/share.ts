@@ -277,6 +277,27 @@ export default async function handler(req: Request): Promise<Response> {
     return serveShell({ title: pageTitle, description, image, url: `${origin}${dest}`, ...(replayUrl ? { video: replayUrl } : {}) }, origin);
   }
 
+  if (type === "add") {
+    // A player's add-me link (friends.ts): the preview says who is asking, so the message can be the link alone.
+    const username = clean(url, "u", 20);
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
+    }
+    og.set("heading", "Friend invite");
+    og.set("title", `@${username}`);
+    og.set("detail", "Add me as a friend");
+    og.set("glyph", "🤝");
+    return serveShell(
+      {
+        title: `@${username} wants to be friends on Crossword Clash`,
+        description: `Add @${username} to challenge each other on the daily crosswords and race live in the same grid.`,
+        image: `${origin}/api/og?${og.toString()}`,
+        url: `${origin}/add/${username}`,
+      },
+      origin,
+    );
+  }
+
   if (type === "race") {
     const code = clean(url, "code", 6).toUpperCase().replace(/[^A-Z0-9]/g, "");
     pageTitle = title

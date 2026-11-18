@@ -114,8 +114,8 @@ export function ChallengeScreen() {
   const forward = useCallback(async () => {
     if (!puzzle || !challenge?.ref) return "failed" as const;
     const url = buildPuzzleLink(SHARE_URL, challenge.ref, { seconds: challenge.seconds, name: challenge.name, replay: challenge.replay });
-    const body = t("challenge.forwardText", { name: challenge.name, title: puzzle.title, time: formatDuration(challenge.seconds) });
-    const result = await shareText({ text: `${body}\n${url}`, body, url, title: puzzle.title }, await runtimeDeps());
+    // The link alone: its preview names the solver and the time.
+    const result = await shareText({ text: url, body: "", url, title: puzzle.title }, await runtimeDeps());
     if (result.outcome === "shared" || result.outcome === "copied") track("challenge_forwarded", { method: result.method });
     return result.outcome;
   }, [puzzle, challenge, t]);

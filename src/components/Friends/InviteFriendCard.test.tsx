@@ -20,13 +20,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("InviteFriendCard", () => {
-  it("sends the viewer's own link through the share sheet, with the words around it", async () => {
+  it("sends the viewer's own link through the share sheet, alone", async () => {
     const webShare = vi.fn(async () => {});
     share.deps = { nativePlatform: false, canWebShare: true, canCopy: true, webShare, copy: vi.fn() };
     render(<InviteFriendCard username="archer" />);
     fireEvent.click(screen.getByRole("button", { name: "Share my link" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Link sent"));
-    expect(webShare).toHaveBeenCalledWith({ text: `Add me on Crossword Clash: ${LINK}`, title: "Crossword Clash" });
+    expect(webShare).toHaveBeenCalledWith({ text: LINK, title: "Crossword Clash" });
     expect(track).toHaveBeenCalledWith("friend_link_shared", { method: "webshare", outcome: "shared", placement: "friends" });
   });
 
@@ -36,7 +36,7 @@ describe("InviteFriendCard", () => {
     render(<InviteFriendCard username="archer" />);
     fireEvent.click(screen.getByRole("button", { name: "Share my link" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Link copied"));
-    expect(copy).toHaveBeenCalledWith(`Add me on Crossword Clash: ${LINK}`);
+    expect(copy).toHaveBeenCalledWith(LINK);
 
     cleanup();
     track.mockClear();

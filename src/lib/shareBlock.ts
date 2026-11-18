@@ -84,6 +84,13 @@ export interface ShareBlockInput {
    * solve, og:video): the emoji rows are left out (Andrew, 2026-11-13).
    */
   rows?: boolean;
+  /**
+   * The link's preview says what the block would (the puzzle's own link: its
+   * card names the solver and the time, or plays the solve), so the shared
+   * text is the link alone (Andrew, 2026-11-18). The block is still built
+   * for the screen's preview.
+   */
+  linkOnly?: boolean;
   labels: ShareBlockLabels;
 }
 
@@ -267,6 +274,6 @@ export function buildShareBlock(input: ShareBlockInput): ShareBlock {
 
   const cta = `${labels.cta} →`;
   const body = [header, stats, ...grid].filter((line): line is string => line !== null).join("\n");
-  const text = `${body}\n${cta} ${input.link}`;
+  const text = input.linkOnly ? input.link : `${body}\n${cta} ${input.link}`;
   return { header, stats, grid, cta, link: input.link, body, text };
 }

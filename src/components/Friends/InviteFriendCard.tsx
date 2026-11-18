@@ -21,8 +21,8 @@ export function useShareFriendLink(username: string, placement: string) {
     setBusy(true);
     setNote(null);
     try {
-      const text = t("friends.linkShareText", { link });
-      const result = await shareText({ text, body: text, url: link, title: "Crossword Clash" }, await runtimeDeps());
+      // The link alone: its preview says who is asking (api/share.ts).
+      const result = await shareText({ text: link, body: "", url: link, title: "Crossword Clash" }, await runtimeDeps());
       if (result.outcome === "dismissed") return;
       track("friend_link_shared", { method: result.method, outcome: result.outcome, placement });
       setNote(t(result.outcome === "shared" ? "friends.linkShared" : result.outcome === "copied" ? "friends.linkCopied" : "friends.linkFailed"));

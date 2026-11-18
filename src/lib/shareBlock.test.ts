@@ -255,6 +255,14 @@ describe("buildShareBlock", () => {
     expect([...block.grid[0]]).toHaveLength(15);
   });
 
+  it("is the link alone when the link's preview says it all, still built for the screen", () => {
+    const input = dailyInput({});
+    const block = buildShareBlock({ ...input, rows: false, linkOnly: true });
+    expect(block.text).toBe(input.link);
+    expect(block.header).not.toBe("");
+    expect(block.grid).toEqual([]);
+  });
+
   it("keeps a nine-wide grid as rows", () => {
     const puzzle = buildPuzzle({ title: "Midi", grid: Array.from({ length: 9 }, () => "abcdefghi"), clueTexts: {} });
     const block = buildShareBlock(dailyInput({ puzzle, cells: fillInOrder(puzzle) }));
