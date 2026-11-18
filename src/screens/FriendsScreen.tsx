@@ -172,9 +172,9 @@ export function FriendsScreen() {
 
   const shell = (children: React.ReactNode) => (
     <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("race.title"), backTo: "/race" }}>
-      <header className="mb-5">
+      <header className="mb-5 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("friends.title")}</h1>
-        <p className="mt-1 text-muted">{t("friends.subtitle")}</p>
+        <p className="mt-1 text-sm text-muted">{t("friends.subtitle")}</p>
       </header>
       {children}
     </PageShell>
@@ -205,7 +205,7 @@ export function FriendsScreen() {
     // buttons) must shrink, not widen every card past the screen (2026-11-03).
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid">
       {notice && (
-        <p role={notice.error ? "alert" : "status"} className={`rounded-xl px-4 py-3 text-sm font-medium ${notice.error ? "bg-red-50 text-red-700" : "bg-brand-50 text-brand-700"}`}>
+        <p role={notice.error ? "alert" : "status"} className={`rounded-xl border px-4 py-2.5 text-sm font-medium ${notice.error ? "border-red-200 bg-red-50 text-red-700" : "border-brand-100 bg-brand-50 text-brand-700"}`}>
           {notice.text}
         </p>
       )}

@@ -435,7 +435,7 @@ export function CompletionModal({
             type="button"
             onClick={onBackToMenu}
             aria-label={t('completion.close')}
-            className={`absolute right-3 top-3 grid size-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand-500 ${
+            className={`absolute right-3 top-3 grid size-11 place-items-center rounded-xl focus-visible:outline-2 focus-visible:outline-brand-500 ${
               darkMode ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted hover:bg-surface-sunken hover:text-ink"
             }`}
           >

@@ -192,9 +192,9 @@ export function RaceScreen() {
 
   return (
     <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
-      <header className="mb-5">
+      <header className="mb-5 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("race.title")}</h1>
-        <p className="mt-1 text-muted">{t("race.subtitle")}</p>
+        <p className="mt-1 text-sm text-muted">{t("race.subtitle")}</p>
         {game.urlPuzzle && (
           <p className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700">
             <span className="truncate">{t("race.racingChip", { title: game.urlPuzzle.title })}</span>

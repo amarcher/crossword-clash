@@ -45,22 +45,22 @@ export function MobileClueSheet({
     <div className={`fixed inset-0 z-50 ${native ? "native-clue-sheet" : "md:hidden"}`}>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-stage/30"
         onClick={close}
       />
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className="absolute inset-x-0 bottom-0 max-h-[60dvh] bg-white rounded-t-2xl shadow-xl flex flex-col"
+        className="absolute inset-x-0 bottom-0 max-h-[60dvh] bg-surface rounded-t-2xl shadow-xl flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-label={t('clueSheet.ariaLabel')}
       >
         {/* Handle */}
         <div className="flex justify-center py-2 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-neutral-300" />
+          <div className="w-10 h-1 rounded-full bg-line-strong" />
         </div>
-        {native && <button type="button" onClick={close} className="self-end px-4 py-2 text-blue-700 font-semibold">{t("keyboard.backToPuzzle")}</button>}
+        {native && <button type="button" onClick={close} className="self-end px-4 py-2 text-brand-700 font-semibold">{t("keyboard.backToPuzzle")}</button>}
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0 flex flex-col gap-3">
           {scoreboard}

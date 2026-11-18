@@ -13,6 +13,8 @@ import { extractPuzzleFromUrl, hasImportHash } from "../lib/puzzleUrl";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useFriends } from "../contexts/FriendsContext";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { buttonClass } from "../components/ui/buttonStyles";
 import { useAuth } from "../contexts/AuthContext";
 import { loadMpSession, clearMpSession, saveMpSession, isRecentMpSession } from "../lib/sessionPersistence";
 import { rejoinGame } from "../lib/puzzleService";
@@ -131,6 +133,8 @@ export function RoutingEffects({ children }: { children: React.ReactNode }) {
 
 function RoomClosedModal({ onDismiss }: { onDismiss: () => void }) {
   const { t } = useTranslation();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, onDismiss);
   return (
     <div
       role="dialog"
@@ -138,17 +142,13 @@ function RoomClosedModal({ onDismiss }: { onDismiss: () => void }) {
       aria-labelledby="room-closed-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
-      <div className="absolute inset-0 bg-black/60" onClick={onDismiss} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 sm:p-8 text-center">
-        <h2 id="room-closed-title" className="text-xl font-bold mb-2 text-neutral-900">
+      <div className="absolute inset-0 bg-stage/60 backdrop-blur-[2px]" onClick={onDismiss} />
+      <div ref={panelRef} className="relative z-10 w-full max-w-sm rounded-2xl bg-surface p-6 text-center shadow-2xl ring-1 ring-line sm:p-8">
+        <h2 id="room-closed-title" className="mb-2 font-display text-xl font-bold text-ink">
           {t("lobby.roomClosedTitle")}
         </h2>
-        <p className="text-neutral-600 mb-6">{t("lobby.roomClosedNotice")}</p>
-        <button
-          autoFocus
-          onClick={onDismiss}
-          className="w-full px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-        >
+        <p className="mb-6 text-muted">{t("lobby.roomClosedNotice")}</p>
+        <button onClick={onDismiss} className={buttonClass("primary", "lg", "w-full")}>
           {t("lobby.roomClosedAction")}
         </button>
       </div>
