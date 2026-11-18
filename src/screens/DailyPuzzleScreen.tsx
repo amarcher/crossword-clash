@@ -49,7 +49,7 @@ export function DailyPuzzleScreen() {
       setUrlChallenge(challenge ? { ...challenge, ref: { day, slot } } : null);
       // A shared race (`?r=` with no time to beat) opens over the puzzle's page.
       const race = challenge ? null : parseRaceLink(search);
-      navigate(challenge ? "/challenge" : "/puzzle-ready", { replace: true, state: race ? { race: { id: race, ref: { day, slot } } } : undefined });
+      navigate(challenge ? "/challenge" : "/puzzle-ready", { replace: true, state: race ? { race: { ...race, ref: { day, slot } } } : undefined });
     });
     return () => {
       alive = false;

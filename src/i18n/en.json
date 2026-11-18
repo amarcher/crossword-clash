@@ -1273,6 +1273,9 @@
     "subtitleOne": "{{name}}'s solve of {{title}}. Played at {{speed}}× speed.",
     "shareTooMany": "A shared clip holds up to {{max}} people. Hide a few and share again.",
     "sharedSubtitle": "The race someone shared: each square takes the colour of whoever filled it first. Solve it to see the letters.",
+    "viewLabel": "How the grid is shown",
+    "viewBoth": "Both solves",
+    "bothBody": "{{a}}'s letters as they went in. A corner mark shows each square {{b}} had filled.",
     "sharedSolver": "Solver {{n}}"
   }
 }

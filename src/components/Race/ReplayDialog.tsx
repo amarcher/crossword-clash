@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Pause, Play, RotateCcw, X } from "lucide-react";
+import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { CrosswordGrid } from "../CrosswordGrid";
 import { Button } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
-import { ghostAt, replaySpeed, WRONG_LETTER, type TraceEvent } from "../../lib/race";
-import type { CellState, Puzzle } from "../../types/puzzle";
+import { replaySpeed, type TraceEvent } from "../../lib/race";
+import { cellsAt, dotsAt } from "../../lib/replayCells";
+import type { RaceSolve } from "../../lib/friendRace";
+import { FriendRaceDialog } from "./FriendRaceDialog";
+import type { Puzzle } from "../../types/puzzle";
 
 /** One solve to play back: who, in which colour, how long it took, and its letters. */
 export interface ReplaySolve {
@@ -18,7 +21,7 @@ export interface ReplaySolve {
 
 interface ReplayDialogProps {
   puzzle: Puzzle;
-  /** One solve, or two played on one board and one clock: a race, watched by either side. */
+  /** One solve, or a race: two on one clock, watched by either side. */
   solves: ReplaySolve[];
   onClose: () => void;
 }
@@ -26,41 +29,25 @@ interface ReplayDialogProps {
 const NO_HIGHLIGHT = new Set<string>();
 
 /**
- * Where a solve is `ms` into the replay. Its time is in whole seconds and its
- * last letter went in a fraction of a second after that, so once its clock
- * has stopped the solve is shown whole: the replay used to end one square
- * short of a finished grid (Andrew, 2026-11-16).
+ * Solves played back, sped up (race.ts). Two or more are a race, and a race
+ * has one view wherever it is watched (Andrew, 2026-11-17): the race dialog,
+ * lanes and who got to each square first, with both solves on one board as
+ * its other reading. One solve plays here with its letters.
  */
-const solveAt = (solve: ReplaySolve, ms: number) => ghostAt(solve, ms >= solve.seconds * 1000 ? Infinity : ms);
-
-/** The letters a solve shows `ms` into it, in the solve's colour (a wrong one rebuilt from a share code as checked-wrong). */
-function cellsAt(solve: ReplaySolve, ms: number, width: number): Record<string, CellState> {
-  const out: Record<string, CellState> = {};
-  for (const [cell, letter] of solveAt(solve, ms).filled) {
-    if (typeof letter !== "string") continue;
-    out[`${Math.floor(cell / width)},${cell % width}`] = letter === WRONG_LETTER ? { letter, correct: false, checked: "wrong" } : { letter, correct: true, playerId: "replay" };
-  }
-  return out;
-}
-
-/** The squares a solve has filled `ms` into it, as the grid's dot map (cell key → colour). */
-function dotsAt(solve: ReplaySolve, ms: number, width: number): Map<string, string> {
-  const out = new Map<string, string>();
-  for (const cell of solveAt(solve, ms).filled.keys()) out.set(`${Math.floor(cell / width)},${cell % width}`, solve.color);
-  return out;
+export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
+  const racers = useMemo<RaceSolve[]>(() => solves.map((s, i) => ({ id: `solve-${i}`, ...s })), [solves]);
+  if (solves.length < 2) return <SoloReplay puzzle={puzzle} solves={solves} onClose={onClose} />;
+  // Letters only from recordings the server gave with letters (the viewer has finished the puzzle).
+  const letters = solves.every((s) => s.events.every((e) => typeof e[2] === "string"));
+  return <FriendRaceDialog puzzle={puzzle} solves={racers} letters={letters} onClose={onClose} />;
 }
 
 /**
- * Solves played back, sped up (race.ts). One solve shows its letters. A race
- * is two solves on ONE board and one clock (Andrew, 2026-11-16: two boards do
- * not fit a phone and cannot be watched at once): the first solve's letters
- * fill in, shaded in its colour, and the second's squares show as the dot a
- * live race draws, each stopping at its finish, the winner marked. Letters
- * only ever come from a recording the server gave with letters (the viewer
- * has finished the puzzle); one without them plays as dots, so nothing is
- * given away.
+ * One solve played back: its letters, or dots when the recording came
+ * without them (the viewer has not solved the puzzle), so nothing is given
+ * away.
  */
-export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
+function SoloReplay({ puzzle, solves, onClose }: ReplayDialogProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -92,20 +79,13 @@ export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `ms` is the starting point when play begins, not a trigger
   }, [playing, endMs, speed]);
 
-  const race = solves.length > 1;
-  const [a, b] = solves;
+  const [a] = solves;
   const letters = useMemo(() => cellsAt(a, ms, puzzle.width), [a, ms, puzzle.width]);
-  // A lone recording without letters (the viewer has not solved the puzzle) plays as dots too.
-  const dotted = b ?? (a.events.some((e) => typeof e[2] !== "string") ? a : null);
-  const dots = useMemo(() => (dotted ? dotsAt(dotted, ms, puzzle.width) : undefined), [dotted, ms, puzzle.width]);
-  const fastest = race ? Math.min(...solves.map((s) => s.seconds)) : null;
-  const winners = race ? solves.filter((s) => s.seconds === fastest) : [];
-  const title = race ? t("ghostRace.raceTitle", { a: a.name, b: b.name }) : t("ghostRace.replayTitle", { name: a.name });
-  const subtitle = race
-    ? winners.length > 1
-      ? t("ghostRace.raceTied", { speed })
-      : t("ghostRace.raceWon", { name: winners[0].name, delta: formatDuration(Math.abs(a.seconds - b.seconds)), speed })
-    : t("ghostRace.replaySubtitle", { time: formatDuration(a.seconds), speed });
+  // A recording without letters (the viewer has not solved the puzzle) plays as dots.
+  const dotted = a.events.some((e) => typeof e[2] !== "string");
+  const dots = useMemo(() => (dotted ? dotsAt(a, ms, puzzle.width) : undefined), [dotted, a, ms, puzzle.width]);
+  const title = t("ghostRace.replayTitle", { name: a.name });
+  const subtitle = t("ghostRace.replaySubtitle", { time: formatDuration(a.seconds), speed });
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center overscroll-contain sm:items-center" style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}>
@@ -120,33 +100,8 @@ export function ReplayDialog({ puzzle, solves, onClose }: ReplayDialogProps) {
             <X className="size-5" aria-hidden="true" />
           </button>
         </div>
-        {race && (
-          <ul className="mt-4 grid grid-cols-2 gap-x-4 text-xs">
-            {solves.map((s, i) => {
-              const done = ms >= s.seconds * 1000;
-              const won = done && s.seconds === fastest;
-              return (
-                <li key={`${s.name}-${i}`} data-testid="replay-racer" className="flex min-w-0 items-center gap-1.5">
-                  {/* The key to the board: a shaded square for the solve whose letters show, a square with the folded corner for the other. */}
-                  {i === 0 ? (
-                    <span className="size-3 shrink-0 rounded-[3px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: `color-mix(in srgb, ${s.color} 18%, white)` }} aria-hidden="true" />
-                  ) : (
-                    <span className="size-3 shrink-0 rounded-[3px] border border-line-strong bg-surface" aria-hidden="true">
-                      <span className="block size-full opacity-85" style={{ backgroundColor: s.color, clipPath: "polygon(100% 20%, 100% 100%, 20% 100%)" }} />
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">{s.name}</span>
-                  <span className={`inline-flex items-center gap-0.5 font-mono tabular-nums ${won ? "font-bold text-emerald-700" : "text-muted"}`}>
-                    {won && <Check className="size-3.5" aria-hidden="true" />}
-                    {formatDuration(Math.floor(Math.min(ms, s.seconds * 1000) / 1000))}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
         {/* The grid sizes itself from the viewport, as in the room's replay: as big as the width or the height leaves, capped, and the panel wraps it. */}
-        <div className={race ? "mt-2" : "mt-4"} style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 17rem), 30rem)" } as React.CSSProperties}>
+        <div className="mt-4" style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 17rem), 30rem)" } as React.CSSProperties}>
           <CrosswordGrid puzzle={puzzle} playerCells={letters} selectedCell={null} highlightedCells={NO_HIGHLIGHT} onCellClick={() => undefined} interactive={false} playerColorMap={{ replay: a.color }} ghostTints={dots} />
         </div>
         <div className="mt-4 flex items-center gap-3">

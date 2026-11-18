@@ -122,11 +122,22 @@ function raceCount(url: URL): number {
   return Number.isInteger(n) && n >= 1 && n <= 8 ? n : 0;
 }
 
-function raceHeadline(racers: number): string {
+/** A shared race link's `who`: its solvers' names in the clip's order, only when there is one for each of them. */
+function raceNames(url: URL, racers: number): string[] {
+  const names = clean(url, "who", 200).split(",").map((n) => n.replace(/\s+/g, " ").trim().slice(0, 20)).filter(Boolean);
+  return racers > 0 && names.length === racers ? names : [];
+}
+
+/** "archer vs minna" for two named solvers; else how many raced. */
+function raceHeadline(racers: number, names: string[]): string {
+  if (names.length === 2) return `${names[0]} vs ${names[1]}`;
   return racers === 2 ? "A head-to-head race" : racers > 2 ? `A ${racers}-way race` : "A race";
 }
 
-const RACE_DESCRIPTION = "Watch who got to each square first, then solve it and join the race on Crossword Clash.";
+function raceDescription(names: string[]): string {
+  const rest = "Watch who got to each square first, then solve it and join the race on Crossword Clash.";
+  return names.length > 2 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}. ${rest}` : rest;
+}
 
 /**
  * Replace the page's own title and social tags with the card's, so crawlers
@@ -196,15 +207,17 @@ export default async function handler(req: Request): Promise<Response> {
     // A shared race (FriendRaceDialog): the clip is everyone's solve on one grid, and the link opens it.
     const isRace = hasReplay && !time;
     const racers = isRace ? raceCount(url) : 0;
+    const racing = raceNames(url, racers);
     if (isRace) {
-      pageTitle = `${raceHeadline(racers)} on the ${label} for ${date}`;
-      description = RACE_DESCRIPTION;
+      pageTitle = `${raceHeadline(racers, racing)} on the ${label} for ${date}`;
+      description = raceDescription(racing);
     }
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
     if (hasReplay) query.set("r", replay);
     if (racers) query.set("race", String(racers));
+    if (racing.length) query.set("who", racing.join(","));
     dest = `/daily/${day}/${slot}${query.size ? `?${query.toString()}` : ""}`;
     og.set("heading", `${label} · ${date}`);
     if (by) og.set("title", by);
@@ -242,15 +255,17 @@ export default async function handler(req: Request): Promise<Response> {
       : `${about} Play it free on Crossword Clash, solo or racing friends.`;
     const isRace = hasReplay && !time;
     const racers = isRace ? raceCount(url) : 0;
+    const racing = raceNames(url, racers);
     if (isRace) {
-      pageTitle = `${raceHeadline(racers)} on ${named}`;
-      description = RACE_DESCRIPTION;
+      pageTitle = `${raceHeadline(racers, racing)} on ${named}`;
+      description = raceDescription(racing);
     }
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
     if (hasReplay) query.set("r", replay);
     if (racers) query.set("race", String(racers));
+    if (racing.length) query.set("who", racing.join(","));
     dest = `/puzzles/${id}${query.size ? `?${query.toString()}` : ""}`;
     og.set("heading", "Community puzzle");
     if (facts) og.set("title", facts.title);

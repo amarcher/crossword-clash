@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
+import { useRaceName } from "../../hooks/useRaceName";
 import type { RaceSolve } from "../../lib/friendRace";
 import { loadViewerRace } from "../../lib/viewerRace";
 import { decodeRaceReplay } from "../../lib/replayCode";
@@ -19,6 +20,8 @@ interface SharedRaceProps {
   puzzleKey: string;
   /** The link's replay share ID (dailyChallenge.parseRaceLink). */
   shareId: string;
+  /** The link's names for the clip's solvers, in its order; "Solver 1…" without them. */
+  names?: readonly string[];
   /** Where the site links to this puzzle, for sharing the race on. */
   shareRef?: PuzzleRef | null;
   onClose: () => void;
@@ -34,13 +37,14 @@ const hex = ([r, g, b]: [number, number, number]) => `#${[r, g, b].map((n) => n.
  * A shared race link, opened (Andrew, 2026-11-17: the link went to the
  * puzzle, not the race). Someone whose friends have solved the puzzle gets
  * the race itself (FriendRaceDialog), as the menu's link would open it: for
- * the sender and their friends that is the race that was shared, names and
- * all. Anyone else gets the clip the link carries, played over the puzzle's
- * page: colours only, no names and no letters, as it left the sender.
+ * the sender and their friends that is the race that was shared. Anyone else
+ * gets the clip the link carries, played over the puzzle's page: colours and
+ * the link's names, no letters.
  * Renders nothing when the ID is not a race's (a solve's replay, or gone).
  */
-export function SharedRace({ puzzle, puzzleKey, shareId, shareRef, onClose }: SharedRaceProps) {
+export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClose }: SharedRaceProps) {
   const { t } = useTranslation();
+  const ownName = useRaceName();
   const { user, loading } = useAuth();
   const best = useBestTimes()[puzzleKey];
   const [shown, setShown] = useState<Shown | null>(null);
@@ -57,12 +61,13 @@ export function SharedRace({ puzzle, puzzleKey, shareId, shareRef, onClose }: Sh
         onClose();
         return;
       }
-      const mine = userId ? await loadViewerRace(userId, puzzleKey, best, t("ghostRace.you")).catch(() => null) : null;
+      const mine = userId ? await loadViewerRace(userId, puzzleKey, best, ownName).catch(() => null) : null;
       if (!alive) return;
       if (mine) {
         setShown({ kind: "race", solves: mine.solves, letters: mine.letters });
       } else {
-        const players = clip.colors.map((c, i) => ({ userId: `solver-${i}`, displayName: t("friendRace.sharedSolver", { n: i + 1 }), color: hex(c) }));
+        const named = names?.length === clip.colors.length;
+        const players = clip.colors.map((c, i) => ({ userId: `solver-${i}`, displayName: named ? (names as readonly string[])[i] : t("friendRace.sharedSolver", { n: i + 1 }), color: hex(c) }));
         const events = clip.claims.map((c) => ({ ms: c.ms, key: `${Math.floor(c.cell / clip.width)},${c.cell % clip.width}`, letter: "", playerId: `solver-${c.player}` }));
         const durationMs = Math.max(1000, clip.seconds * 1000, ...events.map((e) => e.ms));
         setShown({ kind: "clip", replay: { events, durationMs }, players, colors: Object.fromEntries(players.map((p) => [p.userId, p.color])) });
@@ -72,7 +77,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, shareRef, onClose }: Sh
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- opened once per link and viewer; `best`, `t` and `onClose` are read when it opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- opened once per link and viewer; `best`, the names, `t` and `onClose` are read when it opens
   }, [loading, userId, shareId, puzzleKey, puzzle.width, puzzle.height]);
 
   if (!shown) return null;

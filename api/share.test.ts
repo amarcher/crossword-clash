@@ -112,6 +112,16 @@ describe("daily link", () => {
     expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2");
   });
 
+  it("names the two in a head-to-head, so the preview reads the same to both", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=2&who=minna,archer"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("minna vs archer on the Daily Mini for Oct 20");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2&who=minna%2Carcher");
+    // A name short of the count names nobody.
+    const short = await (await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=3&who=minna,archer"))).text();
+    expect(meta(short, "og:title")).toBe("A 3-way race on the Daily Mini for Oct 20");
+  });
+
   it("reads a clip with no time to beat as a race, for links sent before the count was added", async () => {
     const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=99"));
     const html = await res.text();

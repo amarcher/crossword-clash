@@ -15,7 +15,7 @@ export function PuzzleReadyScreen() {
   const { user } = useAuth();
   const game = useGame();
   // A shared race's link (DailyPuzzleScreen): the race plays over this page until it is closed.
-  const linked = (useLocation().state as { race?: { id: string; ref: PuzzleRef } } | null)?.race ?? null;
+  const linked = (useLocation().state as { race?: { id: string; names: string[]; ref: PuzzleRef } } | null)?.race ?? null;
   const [raceOpen, setRaceOpen] = useState(true);
   const closeRace = useCallback(() => setRaceOpen(false), []);
 
@@ -75,7 +75,7 @@ export function PuzzleReadyScreen() {
         onHostOnTV={handleHostOnTV}
         onBack={handleBack}
       />
-      {linked && raceOpen && <SharedRace puzzle={game.urlPuzzle} puzzleKey={puzzleIdentity(game.urlPuzzle)} shareId={linked.id} shareRef={linked.ref} onClose={closeRace} />}
+      {linked && raceOpen && <SharedRace puzzle={game.urlPuzzle} puzzleKey={puzzleIdentity(game.urlPuzzle)} shareId={linked.id} names={linked.names} shareRef={linked.ref} onClose={closeRace} />}
     </>
   );
 }

@@ -46,7 +46,7 @@ describe("RaceReplyScreen", () => {
     expect(replies.markRepliesSeen).toHaveBeenCalledWith([ID]);
   });
 
-  it("plays the race on one board when the viewer's own shared solve loads too", async () => {
+  it("opens the race when the viewer's own shared solve loads too", async () => {
     replies.fetchRaceReply.mockResolvedValueOnce({ id: ID, shareId: "E0Gqr8Iw09i", name: "Sam", ref: { day: "2026-11-12", slot: "mini" }, title: null, seconds: 90, toSeconds: 102, replyShareId: "VJ0ncnWyJ9j", createdAt: "", seen: false });
     feed.fetchDailyForDay.mockResolvedValueOnce({ puzzle: { width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A", number: 1 }]], clues: [] } });
     share.fetchReplayShare.mockImplementation(async (id: string) => (id === "VJ0ncnWyJ9j" ? "THEIRS" : "MINE"));
@@ -54,9 +54,9 @@ describe("RaceReplyScreen", () => {
     renderAt();
     fireEvent.click(await screen.findByRole("button", { name: "Watch the race" }));
     expect(await screen.findByRole("dialog", { name: "You vs Sam" })).toBeTruthy();
-    expect(screen.getByText("Sam won by 0:12 · played at 6× speed")).toBeTruthy();
-    expect(screen.getAllByTestId("replay-racer").map((li) => li.textContent?.replace(/\d+:\d+$/, ""))).toEqual(["You", "Sam"]);
-    expect(screen.getAllByRole("grid")).toHaveLength(1);
+    // A race opens the race: a lane each, the viewer's first.
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(2);
+    expect(screen.getAllByTestId("race-lane")[0].textContent).toContain("You");
   });
 
   it("names a community puzzle by title and races back on its page", async () => {

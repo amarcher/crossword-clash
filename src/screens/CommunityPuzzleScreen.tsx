@@ -333,7 +333,7 @@ export function CommunityPuzzleScreen() {
     <PageShell as="main" width="2xl" bar={{ backLabel: t("community.title"), backTo: tv ? withTvIntent("/puzzles") : "/puzzles" }}>
       {body}
       {reporting && row && <ReportDialog puzzleId={row.id} onClose={() => setReporting(false)} />}
-      {raceLink && raceOpen && puzzle && row?.status === "published" && <SharedRace puzzle={puzzle} puzzleKey={row.puzzle_key} shareId={raceLink} shareRef={{ shortId }} onClose={closeRace} />}
+      {raceLink && raceOpen && puzzle && row?.status === "published" && <SharedRace puzzle={puzzle} puzzleKey={row.puzzle_key} shareId={raceLink.id} names={raceLink.names} shareRef={{ shortId }} onClose={closeRace} />}
     </PageShell>
   );
 }

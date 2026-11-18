@@ -72,12 +72,17 @@ describe("a shared race's link", () => {
   it("carries the clip and how many are in it, and is read back as a race", () => {
     const url = buildPuzzleLink("https://crosswordclash.com", { day: "2026-11-17", slot: "mini" }, { replay: "yESHp2hxuzp", race: 2 });
     expect(url).toBe("https://crosswordclash.com/daily/2026-11-17/mini?r=yESHp2hxuzp&race=2");
-    expect(parseRaceLink(new URL(url).search)).toBe("yESHp2hxuzp");
+    expect(parseRaceLink(new URL(url).search)).toEqual({ id: "yESHp2hxuzp", names: [] });
+    const named = buildPuzzleLink("https://crosswordclash.com", { day: "2026-11-17", slot: "mini" }, { replay: "yESHp2hxuzp", race: 2, who: ["minna", "archer"] });
+    expect(named).toBe("https://crosswordclash.com/daily/2026-11-17/mini?r=yESHp2hxuzp&race=2&who=minna%2Carcher");
+    expect(parseRaceLink(new URL(named).search)).toEqual({ id: "yESHp2hxuzp", names: ["minna", "archer"] });
+    // Everyone named, or nobody.
+    expect(buildPuzzleLink("https://x.test", { day: "2026-11-17", slot: "mini" }, { replay: "yESHp2hxuzp", race: 3, who: ["minna", "archer"] })).toBe("https://x.test/daily/2026-11-17/mini?r=yESHp2hxuzp&race=3");
   });
 
   it("leaves the count off without a clip, and reads an older link by its clip alone", () => {
     expect(buildPuzzleLink("https://x.test", { shortId: "ab12cd34" }, { race: 2 })).toBe("https://x.test/puzzles/ab12cd34");
-    expect(parseRaceLink("?r=yESHp2hxuzp")).toBe("yESHp2hxuzp");
+    expect(parseRaceLink("?r=yESHp2hxuzp")).toEqual({ id: "yESHp2hxuzp", names: [] });
   });
 
   it("is not a challenge link, or a link without a clip", () => {

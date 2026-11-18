@@ -2,11 +2,13 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next";
 import { Check, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
 import { Button } from "../ui";
+import { CrosswordGrid } from "../CrosswordGrid";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import { replaySpeed, whiteCellCount } from "../../lib/race";
-import { firstToSquare, progressAt, raceLane, raceShareCode, RACE_SHOWN_AT_FIRST, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
+import { firstToSquare, progressAt, raceLane, raceShareCode, raceShareOrder, RACE_SHOWN_AT_FIRST, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
+import { cellsAt, dotsAt } from "../../lib/replayCells";
 import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { createReplayShare } from "../../lib/replayShare";
 import { SHARE_URL } from "../../lib/resultCard";
@@ -28,17 +30,25 @@ interface FriendRaceDialogProps {
 
 /** Squares in a lane's track. */
 const TRACK = 24;
+const NO_HIGHLIGHT = new Set<string>();
 
 /**
  * The race (friendRace.ts): everyone's recorded solve of one puzzle on one
- * clock. Lanes show how much of the grid each had settled, in running order;
- * the grid below takes the colour of whoever settled each square first, with
- * the count of squares each was first to. Names at the top show or hide a
- * solver, and both readings are worked out again for whoever is left.
+ * clock, and the one view every replay of a race opens (Andrew, 2026-11-17:
+ * two different race views were one too many). Lanes show how much of the
+ * grid each had settled; a lane keeps its row for the whole race and only its
+ * place number changes, since rows trading places was jarring. The grid
+ * takes the colour of whoever settled each square first, with the count of
+ * squares each was first to. Names at the top show or hide a solver, and both
+ * readings are worked out again for whoever is left.
+ *
+ * Two solvers with their letters can also be watched as both solves at once:
+ * the first's letters filling in, the second's squares as the corner mark a
+ * live race draws (what the head-to-head replay used to be).
  *
  * Share (a puzzle with a link of its own, up to eight solvers showing) sends
- * that link carrying a clip of the grid filling in by who got there first:
- * colours only, no names and no letters.
+ * that link carrying a clip of the grid filling in by who got there first,
+ * and the solvers' names, so it reads the same to each of them. No letters.
  */
 export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, onClose }: FriendRaceDialogProps) {
   const { t } = useTranslation();
@@ -111,7 +121,10 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     try {
       const id = filed.current?.code === shareCode ? filed.current.id : await createReplayShare(shareCode);
       if (id) filed.current = { code: shareCode, id };
-      const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined, race: lanes.length });
+      // Named only when everyone is: a viewer without a username is "You", which means nothing to the others.
+      const you = t("ghostRace.you");
+      const who = raceShareOrder(lanes).map((i) => lanes[i].solve.name);
+      const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined, race: lanes.length, who: who.includes(you) ? undefined : who });
       const body = t("friendRace.shareText", { title: puzzle.title, count: lanes.length });
       const result = await shareText({ text: `${body}\n${url}`, body, url, title: t("friendRace.title") }, await runtimeDeps());
       if (result.outcome === "dismissed") return;
@@ -126,6 +139,11 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   };
 
   const order = runningOrder(lanes, ms, total);
+  // Both solves on one board, for a head-to-head whose recordings carry their letters.
+  const [both, setBoth] = useState(false);
+  const canShowBoth = letters && lanes.length === 2;
+  const showBoth = both && canShowBoth;
+  const [a, b] = lanes.map((l) => l.solve);
   const counts = squaresFirst(first, lanes.length, ms);
   const standings = lanes.map((_, i) => i).sort((a, b) => counts[b] - counts[a] || a - b);
 
@@ -136,7 +154,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
         <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{t("friendRace.title")}</h2>
+              <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : t("friendRace.title")}</h2>
               <p className="text-sm text-muted text-balance">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name, title: puzzle.title, speed }) : t("friendRace.subtitle", { title: puzzle.title, speed })}</p>
             </div>
             <button type="button" onClick={onClose} aria-label={t("ghostRace.close")} className="-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-surface-sunken active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500">
@@ -169,8 +187,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             <section className="min-w-0">
               <h3 className="text-sm font-bold">{t("friendRace.lanesTitle")}</h3>
               <ol className="mt-1.5 grid gap-2">
-                {order.map((i, place) => {
-                  const { solve } = lanes[i];
+                {lanes.map(({ solve }, i) => {
+                  const place = order.indexOf(i);
                   const done = ms >= solve.seconds * 1000;
                   const p = progressAt(lanes[i], ms, total);
                   const lit = Math.round(p * TRACK);
@@ -203,8 +221,29 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             </section>
 
             <section className="min-w-0">
-              <h3 className="text-sm font-bold">{t("friendRace.firstTitle")}</h3>
-              <p className="text-xs text-muted">{t("friendRace.firstBody")}</p>
+              {canShowBoth ? (
+                <div role="group" aria-label={t("friendRace.viewLabel")} className="flex gap-1.5">
+                  {([false, true] as const).map((v) => (
+                    <button
+                      key={String(v)}
+                      type="button"
+                      aria-pressed={both === v}
+                      onClick={() => setBoth(v)}
+                      className={`min-h-11 rounded-full border px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${both === v ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted"}`}
+                    >
+                      {t(v ? "friendRace.viewBoth" : "friendRace.firstTitle")}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <h3 className="text-sm font-bold">{t("friendRace.firstTitle")}</h3>
+              )}
+              <p className={`text-xs text-muted text-balance ${canShowBoth ? "mt-1.5" : ""}`}>{showBoth ? t("friendRace.bothBody", { a: a.name, b: b.name }) : t("friendRace.firstBody")}</p>
+              {showBoth ? (
+                <div className="mx-auto mt-2 w-fit" style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 24rem), 21rem)" } as React.CSSProperties}>
+                  <CrosswordGrid puzzle={puzzle} playerCells={cellsAt(a, ms, puzzle.width)} selectedCell={null} highlightedCells={NO_HIGHLIGHT} onCellClick={() => undefined} interactive={false} playerColorMap={{ replay: a.color }} ghostTints={dotsAt(b, ms, puzzle.width)} />
+                </div>
+              ) : (
               <div
                 role="img"
                 aria-label={t("friendRace.gridLabel")}
@@ -228,6 +267,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   );
                 })}
               </div>
+              )}
               <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label={t("friendRace.standingsLabel")}>
                 {standings.map((i) => (
                   <li key={lanes[i].solve.id} data-testid="race-standing" className="inline-flex min-w-0 items-center gap-1.5">

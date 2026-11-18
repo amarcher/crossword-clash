@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Flag, Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRaceCandidates } from "../../hooks/useRace";
+import { useRaceName } from "../../hooks/useRaceName";
 import type { RaceSolve } from "../../lib/friendRace";
 import { loadViewerRace } from "../../lib/viewerRace";
 import { track } from "../../lib/analytics";
@@ -31,6 +32,7 @@ interface FriendRaceLinkProps {
 export function FriendRaceLink({ puzzle, puzzleKey, seconds, shareRef, placement, className = "" }: FriendRaceLinkProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const ownName = useRaceName();
   const candidates = useRaceCandidates(puzzleKey, true);
   const friends = useMemo(() => candidates.filter((c) => c.friend), [candidates]);
   const [race, setRace] = useState<{ solves: RaceSolve[]; letters: boolean } | null>(null);
@@ -40,7 +42,7 @@ export function FriendRaceLink({ puzzle, puzzleKey, seconds, shareRef, placement
     if (loading || !user) return;
     setLoading(true);
     try {
-      const found = await loadViewerRace(user.id, puzzleKey, seconds, t("ghostRace.you"));
+      const found = await loadViewerRace(user.id, puzzleKey, seconds, ownName);
       if (!found) return;
       setRace({ solves: found.solves, letters: found.letters });
       track("friend_race_opened", { placement, racers: found.solves.length, own: found.own });
@@ -49,7 +51,7 @@ export function FriendRaceLink({ puzzle, puzzleKey, seconds, shareRef, placement
     } finally {
       setLoading(false);
     }
-  }, [loading, user, puzzleKey, seconds, placement, t]);
+  }, [loading, user, puzzleKey, seconds, placement, ownName]);
 
   if (friends.length === 0 || !user) return null;
   return (
