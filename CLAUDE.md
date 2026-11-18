@@ -18,6 +18,7 @@ Real-time multiplayer crossword puzzle game. Supports solo play with localStorag
 - `pnpm preview` — preview production build
 - `pnpm test` — run unit tests (vitest)
 - `pnpm test:watch` — run tests in watch mode
+- `pnpm store:shots [sets]` — rebuild the App Store / Play screenshot tiles from the running app (`docs/app-store/README.md`; plays a test room on production, uploads nothing)
 
 ## Architecture
 
