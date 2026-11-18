@@ -285,18 +285,18 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   return (
                     <li key={solve.id} data-testid="race-lane">
                       <div className="flex items-baseline gap-2 text-xs">
-                        {!alone && <span className="w-3 shrink-0 font-mono tabular-nums text-muted">{place + 1}</span>}
+                        {!alone && <span className="w-3 shrink-0 tabular-nums text-muted">{place + 1}</span>}
                         <span className="min-w-0 flex-1 truncate font-semibold">{solve.name}</span>
                         {/* Squares this solver was first to, so far: the grid's count, on the solver's own row. */}
                         {!alone && (
-                          <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center font-mono tabular-nums text-muted">
+                          <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center tabular-nums text-muted">
                             <span className="size-2.5 shrink-0 rounded-[2px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(solve.color, 0.4) }} aria-hidden="true" />
                             <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
                             {counts[i]}
                           </span>
                         )}
                         {!clip && (
-                          <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
+                          <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
                             {done && <Check className="size-3.5" aria-hidden="true" />}
                             {done ? formatDuration(solve.seconds) : `${Math.floor(p * 100)}%`}
                           </span>
@@ -375,7 +375,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             aria-label={t("friendRace.scrub")}
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
-          <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
+          <span className="text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
           {/* On a phone the action takes its own row, so the scrubber keeps its width. */}
           {cta && (
             <div className="flex items-center gap-2 max-sm:basis-full">

@@ -246,6 +246,17 @@ describe("CompletionModal", () => {
     expect(onBackToMenu).toHaveBeenCalledOnce();
   });
 
+  it("closes to the solved grid, not the menu, when the screen gives it a close", () => {
+    const onBackToMenu = vi.fn();
+    const onClose = vi.fn();
+    const { getByRole } = render(<CompletionModal {...SOLO_PROPS} onBackToMenu={onBackToMenu} onClose={onClose} />);
+    fireEvent.click(getByRole("button", { name: "Close" }));
+    fireEvent.keyDown(getByRole("dialog"), { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(2);
+    fireEvent.click(getByRole("button", { name: "Back to menu" }));
+    expect(onBackToMenu).toHaveBeenCalledOnce();
+  });
+
   it("has no close control without a way back", () => {
     const { queryByRole } = render(<CompletionModal {...SOLO_PROPS} />);
     expect(queryByRole("button", { name: "Close" })).toBeNull();

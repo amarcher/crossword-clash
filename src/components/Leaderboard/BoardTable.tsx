@@ -89,7 +89,7 @@ export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch 
                   )}
                 </div>
               </td>
-              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right font-mono tabular-nums">
+              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right tabular-nums">
                 <span className="inline-flex items-center justify-end gap-2">
                   {!isMe && onRace && raceable?.has(e.userId) && (
                     <button

@@ -89,7 +89,7 @@ export function RoomReplayDialog({ puzzle, replay, players, playerColorMap, dark
             <li key={p.userId} className="flex min-w-0 items-center gap-1.5">
               <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} aria-hidden="true" />
               <span className="min-w-0 truncate font-semibold">{p.displayName}</span>
-              <span className={`font-mono tabular-nums ${sub}`} data-testid={`replay-count-${p.userId}`}>
+              <span className={`tabular-nums ${sub}`} data-testid={`replay-count-${p.userId}`}>
                 {counts[p.userId] ?? 0}
               </span>
             </li>
@@ -113,7 +113,7 @@ export function RoomReplayDialog({ puzzle, replay, players, playerColorMap, dark
           <span className={`h-1.5 flex-1 overflow-hidden rounded-full ${darkMode ? "bg-white/15" : "bg-line"}`} aria-hidden="true">
             <span className="block h-full rounded-full bg-brand-500" style={{ width: `${(ms / endMs) * 100}%` }} />
           </span>
-          <span className={`font-mono text-xs tabular-nums ${sub}`}>{formatDuration(Math.floor(ms / 1000))}</span>
+          <span className={`text-xs tabular-nums ${sub}`}>{formatDuration(Math.floor(ms / 1000))}</span>
         </div>
       </div>
     </div>

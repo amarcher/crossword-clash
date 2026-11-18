@@ -557,6 +557,7 @@ export function MultiplayerPlayScreen() {
         puzzleRef={roomPuzzleRef}
         onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
+        onClose={() => setCompletionModalDismissed(true)}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
         replayId={raceShareId}
         onWatchRoomReplay={

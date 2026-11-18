@@ -88,7 +88,7 @@ export function RaceStarter({ candidates, plus, preselect, onStart, onPitch }: R
                     />
                     <span className="min-w-0 flex-1 truncate font-semibold text-ink">{c.username}</span>
                     {c.friend && <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">{t("ghostRace.friend")}</span>}
-                    {c.seconds !== null && <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(c.seconds)}</span>}
+                    {c.seconds !== null && <span className="text-xs tabular-nums text-muted">{formatDuration(c.seconds)}</span>}
                   </label>
                 </li>
               );

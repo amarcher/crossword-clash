@@ -1084,6 +1084,7 @@ export function SoloPlayScreen() {
         onRaceFresh={user ? handleRaceFresh : undefined}
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onBackToMenu={handleBackToMenu}
+        onClose={() => setCompletionModalDismissed(true)}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
         onSeeStats={account.available && account.user ? handleSeeStats : undefined}
       />

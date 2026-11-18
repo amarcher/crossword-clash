@@ -22,7 +22,7 @@ export function SoloPause({ title, seconds, error, idle = false, onResume, onExi
         <Pause className="mx-auto mb-5 size-8 text-brand-600" aria-hidden="true" />
         <h1 id="solo-pause-title" className="font-display text-3xl font-bold text-ink">{t("soloPause.paused")}</h1>
         <p className="mt-3 break-words text-lg font-semibold text-ink">{title}</p>
-        <p className="mt-1 font-mono text-lg tabular-nums text-ink-soft">{formatDuration(seconds)}</p>
+        <p className="mt-1 text-lg tabular-nums text-ink-soft">{formatDuration(seconds)}</p>
         <p className="mt-4 text-sm text-muted" role={error ? "alert" : undefined}>{t(error ? "soloPause.saveError" : "soloPause.saved")}</p>
         <div className="mt-7 grid gap-3">
           <Button size="lg" onClick={onResume}>{t("soloPause.resume")}</Button>
