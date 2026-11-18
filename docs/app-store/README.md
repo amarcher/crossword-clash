@@ -96,18 +96,24 @@ Sets: `iphone`, `ipad`, `duoOuter`, `duoInner` (this folder) and `android`,
   race are invented (`stage.mjs`). Before changing the day, read its puzzles'
   titles and clues: store art must not show another company's trademark.
 - **The room tiles are a real room** on production, hosted on a TV and played
-  to the end by the test accounts: one finished test room per three sets,
-  removed by the retention sweep.
+  to the end by the test accounts: one finished test room per two sets,
+  removed by the retention sweep. Each set always plays as the same account
+  (`seat` in `cap.mjs`), so its tiles show the same player's view whichever
+  sets a run names. A room that fails part-way is closed, and its tiles are
+  reported instead of being composed from an older capture.
+- **Nothing reaches the daily boards:** native mode would let a finish post
+  from localhost, so every write to `daily_results` is blocked in the capture.
 - **The studio tile** comes from this checkout when its word list is built
   (`pnpm seedgrid:studio-dict`), otherwise from the live site; the run says
   which.
 - **It uploads nothing.** Look at the tiles, commit them, then upload.
 
-The Duo sets were made this way. The iPhone, iPad and Play sets in the repo
+The Duo sets were made this way (the studio draft's clue on screen was
+reworded first; it named Monopoly). The iPhone, iPad and Play sets in the repo
 are still the November 16 captures; a full run on November 18 reproduced them
 except for tile 03, where the race dialog has since changed, and tile 01,
 whose clue bar now always shows 1 Across (the live sets show "Looney Tunes
-duck" there).
+duck" there, and their studio tile the Monopoly clue).
 
 ## Still to do, in order
 
