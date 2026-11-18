@@ -15,10 +15,12 @@ import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { fetchBonusCards, loadBonusPuzzle, type BonusCard } from "../lib/bonus";
 import {
   boardPostsHere,
+  cachedDailyLeaderboard,
   fetchDailyLeaderboard,
   leaderboardPath,
   mergeOwnResult,
   pendingResultFor,
+  prefetchDailyLeaderboards,
   todayKey,
   withUnpostedTime,
   type RankedDailyEntry,
@@ -103,7 +105,14 @@ export function BonusLeaderboardScreen() {
     };
   }, [day, pending]);
 
-  const loaded = !supabase ? [] : entries?.day === day ? entries.rows : null;
+  // Fetch the other tabs' boards ahead of the tap, so switching draws at once.
+  useEffect(() => {
+    if (!supabase) return;
+    prefetchDailyLeaderboards(day, ["bonus"]);
+  }, [day]);
+
+  // A day already fetched this session shows that answer while the fetch corrects it.
+  const loaded = !supabase ? [] : entries?.day === day ? entries.rows : cachedDailyLeaderboard(day, "bonus");
   const shown = useMemo<RankedDailyEntry[] | null>(() => {
     if (loaded !== null) return own ? mergeOwnResult(loaded, own) : loaded;
     return own ? [{ ...own, rank: 0 }] : null;

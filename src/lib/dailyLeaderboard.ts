@@ -386,6 +386,50 @@ export function signDailyResult(pending: PendingDailyResult, name: string): Pend
   return { ...pending, entry, posted: true, settled };
 }
 
+// The last answer for each board this session, so switching tabs or filters
+// draws at once and the fetch only corrects it (stale-while-revalidate).
+const boardCache = new Map<string, RankedDailyEntry[]>();
+const boardKey = (day: string, slot: BoardSlot, limit: number, onlyUsers?: readonly string[] | null) =>
+  `${day}|${slot}|${limit}|${onlyUsers ? [...onlyUsers].sort().join(",") : "*"}`;
+
+/**
+ * The board as last fetched this session, or null when it has not been. A
+ * friends-only board not fetched yet is drawn from the everyone board's rows
+ * (which may miss a friend outside the fastest `limit` until the fetch lands).
+ */
+export function cachedDailyLeaderboard(
+  day: string,
+  slot: BoardSlot = "mini",
+  limit = 50,
+  onlyUsers?: readonly string[] | null,
+): RankedDailyEntry[] | null {
+  const exact = boardCache.get(boardKey(day, slot, limit, onlyUsers));
+  if (exact || !onlyUsers) return exact ?? null;
+  if (onlyUsers.length === 0) return [];
+  const everyone = boardCache.get(boardKey(day, slot, limit, null));
+  if (!everyone) return null;
+  const ids = new Set(onlyUsers);
+  return rankEntries(everyone.filter((e) => ids.has(e.userId)).map(({ rank: _rank, ...entry }) => entry));
+}
+
+/**
+ * Fetch the day's boards the session has not seen, ahead of the tap on their
+ * tab, so switching draws at once. `shown` are the boards on screen, which
+ * fetch for themselves.
+ */
+export function prefetchDailyLeaderboards(day: string, shown: readonly BoardSlot[], onlyUsers?: readonly string[] | null): void {
+  for (const slot of [...DAILY_SLOTS, "bonus"] as BoardSlot[]) {
+    if (shown.includes(slot)) continue;
+    const only = slot === "bonus" ? null : onlyUsers;
+    if (!boardCache.has(boardKey(day, slot, 50, only))) void fetchDailyLeaderboard(day, slot, 50, only);
+  }
+}
+
+/** Test seam: forget every cached board. */
+export function clearDailyLeaderboardCache(): void {
+  boardCache.clear();
+}
+
 /**
  * Today's board for a slot: entries ranked by time, capped at `limit` fastest.
  * Returns [] offline or on error.
@@ -412,7 +456,7 @@ export async function fetchDailyLeaderboard(
     if (onlyUsers) query = query.in("user_id", [...onlyUsers]);
     const { data, error } = await query.order("seconds", { ascending: true }).order("created_at", { ascending: true }).limit(limit);
     if (error || !data) return [];
-    return rankEntries(
+    const rows = rankEntries(
       data.map((r) => ({
         userId: r.user_id,
         displayName: displayableName(r.display_name),
@@ -422,6 +466,8 @@ export async function fetchDailyLeaderboard(
         autocheck: r.autocheck !== false,
       })),
     );
+    boardCache.set(boardKey(day, slot, limit, onlyUsers), rows);
+    return rows;
   } catch {
     return [];
   }

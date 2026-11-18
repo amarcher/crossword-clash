@@ -15,7 +15,9 @@ import type { DailyMini } from "../lib/dailyMinis";
 import {
   boardDay,
   boardPostsHere,
+  cachedDailyLeaderboard,
   fetchDailyLeaderboard,
+  prefetchDailyLeaderboards,
   mergeOwnResult,
   pendingResultFor,
   shiftDay,
@@ -180,6 +182,7 @@ export function DailyLeaderboardScreen() {
   const only = useMemo(() => (canFilter && friendsOnly && user ? [user.id, ...friendIds] : null), [canFilter, friendsOnly, user, friendIds]);
   const onlyKey = only ? only.join(",") : "";
 
+
   // Undefined while a feed answers; null when the slot has nothing today.
   const dailies: Record<DailySlot, DailyMini | null | undefined> = {
     mini: useDailyPuzzle("mini"),
@@ -196,6 +199,12 @@ export function DailyLeaderboardScreen() {
   // the slots the index lists). Phone: the route's.
   const wideSlots = past ? DAILY_SLOTS.filter((slot) => pastBySlot[slot]) : DAILY_SLOTS.filter((slot) => dailies[slot] !== null);
   const slots: readonly DailySlot[] = wide && wideSlots.length > 0 ? wideSlots : [routeSlot];
+  // The tabs not on screen are fetched ahead of the tap.
+  const shownKey = slots.join(",");
+  useEffect(() => {
+    if (supabase) prefetchDailyLeaderboards(day, slots, only);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day, onlyKey, shownKey]);
   const layout = WIDE_GRID[slots.length] ?? WIDE_GRID[3];
   const sideBySide = slots.length > 1;
   const routeDaily = dailies[routeSlot];
@@ -280,7 +289,7 @@ export function DailyLeaderboardScreen() {
 
         <div data-testid="boards" className={`grid items-start gap-4 ${layout.grid}`}>
           {slots.map((slot) => (
-            // Keyed by what the board shows, so a new day or filter starts from its loading state.
+            // Keyed by what the board shows, so a new day or filter starts from that board's last answer, or its loading state.
             <SlotBoard
               key={`${slot}:${day}:${onlyKey}`}
               slot={slot}
@@ -329,9 +338,10 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const privateFinish = pending && !pending.posted ? pending.entry : null;
   const postingNotice = dailyPostingNotice(pending);
 
-  // null = loading; [] = loaded empty.
-  const [entries, setEntries] = useState<RankedDailyEntry[] | null>(
-    supabase ? null : [],
+  // null = loading; [] = loaded empty. A board already fetched this session
+  // starts from that answer, and the fetch below corrects it.
+  const [entries, setEntries] = useState<RankedDailyEntry[] | null>(() =>
+    supabase ? cachedDailyLeaderboard(day, slot, 50, only) : [],
   );
 
   useEffect(() => {
