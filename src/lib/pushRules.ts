@@ -139,6 +139,7 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     mini: "mini",
     midi: "midi",
     large: "large",
+    bonus: "Daily Plus",
   },
   es: {
     reminderTitle: "El mini de hoy está listo",
@@ -171,6 +172,7 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     mini: "mini",
     midi: "midi",
     large: "grande",
+    bonus: "Daily Plus",
   },
 };
 
@@ -212,21 +214,23 @@ export function inviteNotification(input: { name: string; title: string; width: 
   };
 }
 
-export type BeatLink = { seconds: number | null; race: boolean } & ({ day: string; slot: "mini" | "midi" | "large" } | { shortId: string });
+export type BeatLink = { seconds: number | null; race: boolean } & ({ day: string; slot: "mini" | "midi" | "large" | "bonus" } | { shortId: string });
 
 /**
  * The challenge link an invite carries: a day's daily
- * (`/daily/:day/:slot?beat=<seconds>&by=<name>&r=<replay>`) or a community
- * puzzle (`/puzzles/:shortId?…`). `race` when it carries the sender's replay.
+ * (`/daily/:day/:slot?beat=<seconds>&by=<name>&r=<replay>`), a Daily Plus day
+ * (`/bonus/:day?…`, slot "bonus") or a community puzzle (`/puzzles/:shortId?…`). `race` when it carries the sender's replay.
  */
 export function parseBeatLink(link: string): BeatLink | null {
   const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\/(mini|midi|large)(?:\?(.*))?$/.exec(link);
-  const community = daily ? null : /^\/puzzles\/([a-z0-9]{8})(?:\?(.*))?$/.exec(link);
-  if (!daily && !community) return null;
-  const params = new URLSearchParams((daily ? daily[3] : community![2]) ?? "");
+  const bonus = daily ? null : /^\/bonus\/(\d{4}-\d{2}-\d{2})(?:\?(.*))?$/.exec(link);
+  const community = daily || bonus ? null : /^\/puzzles\/([a-z0-9]{8})(?:\?(.*))?$/.exec(link);
+  if (!daily && !bonus && !community) return null;
+  const params = new URLSearchParams((daily ? daily[3] : bonus ? bonus[2] : community![2]) ?? "");
   const raw = params.get("beat");
   const seconds = raw !== null && /^\d+$/.test(raw) ? Number(raw) : null;
   const race = /^[A-Za-z0-9_-]{11}$/.test(params.get("r") ?? "");
+  if (bonus) return { day: bonus[1], slot: "bonus", seconds, race };
   return daily ? { day: daily[1], slot: daily[2] as "mini" | "midi" | "large", seconds, race } : { shortId: community![1], seconds, race };
 }
 
@@ -320,7 +324,7 @@ export function roomNudgeNotification(input: RoomSideInput, locale: PushLocale):
  * 20261113100000_race_replies.sql, 20261114000000_races_anywhere.sql); a tap
  * opens the reply's page, which plays their solve.
  */
-export function raceReplyNotification(input: { id: string; name: string; slot: "mini" | "midi" | "large" | null; title?: string | null; seconds: number; toSeconds: number }, locale: PushLocale): Notification {
+export function raceReplyNotification(input: { id: string; name: string; slot: "mini" | "midi" | "large" | "bonus" | null; title?: string | null; seconds: number; toSeconds: number }, locale: PushLocale): Notification {
   const t = STRINGS[locale];
   const delta = formatSeconds(Math.abs(input.seconds - input.toSeconds));
   const body = input.seconds < input.toSeconds ? fill(t.replyWon, { name: input.name, delta }) : input.seconds > input.toSeconds ? fill(t.replyLost, { delta }) : t.replyTied;
@@ -424,14 +428,14 @@ export interface RaceReplyRecord {
 }
 
 /** The webhook body of a race_replies INSERT, when it is one. */
-export function raceReplyFromWebhook(body: { type?: string; table?: string; record?: Partial<RaceReplyRecord> | null }): { id: string; toUserId: string; name: string; slot: "mini" | "midi" | "large" | null; title: string | null; seconds: number; toSeconds: number } | null {
+export function raceReplyFromWebhook(body: { type?: string; table?: string; record?: Partial<RaceReplyRecord> | null }): { id: string; toUserId: string; name: string; slot: "mini" | "midi" | "large" | "bonus" | null; title: string | null; seconds: number; toSeconds: number } | null {
   const r = body.record;
   if (body.type !== "INSERT" || body.table !== "race_replies" || !r) return null;
   if (typeof r.id !== "string" || typeof r.to_user_id !== "string" || typeof r.name !== "string") return null;
-  const daily = r.slot === "mini" || r.slot === "midi" || r.slot === "large";
+  const daily = r.slot === "mini" || r.slot === "midi" || r.slot === "large" || r.slot === "bonus";
   if (!daily && typeof r.short_id !== "string") return null;
   if (typeof r.seconds !== "number" || typeof r.to_seconds !== "number") return null;
-  const slot = daily ? (r.slot as "mini" | "midi" | "large") : null;
+  const slot = daily ? (r.slot as "mini" | "midi" | "large" | "bonus") : null;
   return { id: r.id, toUserId: r.to_user_id, name: r.name, slot, title: daily || typeof r.title !== "string" ? null : r.title, seconds: r.seconds, toSeconds: r.to_seconds };
 }
 
