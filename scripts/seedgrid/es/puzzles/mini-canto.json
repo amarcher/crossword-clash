@@ -1,0 +1,33 @@
+{
+ "slot": "mini",
+ "title": "Do, re, mi",
+ "theme": "No theme; 5A and 6A nod to the day.",
+ "rows": [
+  "##PEZ",
+  "#PUSO",
+  "CANTO",
+  "ARTE#",
+  "LEO##"
+ ],
+ "clues": {
+  "1A": "Animal con aletas y escamas",
+  "4A": "Colocó",
+  "5A": "Lo ensaya un coro",
+  "6A": "La música es uno, y la pintura otro",
+  "7A": "Signo de quien nace a inicios de agosto",
+  "1D": "Cierra la oración",
+  "2D": "Por donde sale el sol",
+  "3D": "Parque con jirafas y leones",
+  "4D": "Detenga (usted)",
+  "5D": "Polvo blanco para pintar muros"
+ },
+ "unsure": {
+  "PARE": "Now clued as the verb ('Detenga'), not the road sign (PARE in most of Latin America, STOP in Spain, ALTO in Mexico). With PUSO that is two conjugated verbs, over the mini's budget of one, which is why the set's mini was rebuilt.",
+  "PUSO": "A conjugation (pretérito of poner), very common; the clue is the bare synonym 'Colocó'."
+ },
+ "build": [
+  "Pattern ##.../#..../...../....#/...## (6 blocks, rotational), CANTO locked in the middle row.",
+  "Engine: 80 fills at floor 55 gave 11 distinct grids; this one has no entry below 55.",
+  "Other music words tried in the middle row: NOTAS (22 grids), COROS (29), TANGO (7), RITMO (3), PIANO (1). A fully open 5×5 filled only around NOTAS (3 grids) and those needed CAVAR/AMABA."
+ ]
+}

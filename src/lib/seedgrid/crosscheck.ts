@@ -6,6 +6,7 @@
  * Across days: no clue repeats, word for word, a clue its answer had in any
  * slot within the previous `CLUE_REPEAT_DAYS` days (`repeatedClues`).
  */
+import { foldAccents, gridSpelling } from "../gridLetters";
 import { CLUE_MAX, clueGivesAway } from "./audit";
 import type { DailySlot } from "../dailyFeed";
 import type { TransferPuzzle } from "../puzzleNormalizer";
@@ -75,7 +76,7 @@ export function sharedEntries(a: string[], b: string[], minLength = SHARED_MIN_L
 
 /** A title squashed to letters ("Sunken Treasure" → SUNKENTREASURE), for comparing with entries. */
 export function titleAsEntry(title: string): string {
-  return title.toUpperCase().replace(/[^A-Z]/g, "");
+  return gridSpelling(title);
 }
 
 /** The feed stores clues as "12. Clue text"; the number is not part of the clue. */
@@ -168,13 +169,13 @@ export const CLUE_REPEAT_FROM = "2026-11-08";
 
 /**
  * A clue as the repeat rule compares it: without its number, lower case,
- * letters, digits and single spaces only. So "Pub pint" and "Pub pint." are
+ * letters (accents folded, ñ kept), digits and single spaces only. So "Pub pint" and "Pub pint." are
  * the same clue, while "Rainbow shape" and "Rainbow's shape" are not.
  */
 export function clueKey(clue: string): string {
-  return stripClueNumber(clue)
+  return foldAccents(stripClueNumber(clue))
     .toLowerCase()
-    .replace(/[^a-z0-9 ]+/g, "")
+    .replace(/[^a-zñ0-9 ]+/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

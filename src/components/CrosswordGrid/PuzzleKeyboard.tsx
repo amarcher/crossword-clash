@@ -6,6 +6,8 @@ interface PuzzleKeyboardProps {
   actions: NavigationActions;
   disabled?: boolean;
   allowDelete?: boolean;
+  /** The puzzle has an Ñ (a Spanish grid): the home row gains the key, where a Spanish keyboard has it. */
+  enye?: boolean;
 }
 
 /**
@@ -61,13 +63,13 @@ function usePressHandlers(disabled: boolean) {
 }
 
 /** Always-visible game controls: no text field, OS keyboard, or autocomplete. */
-export function PuzzleKeyboard({ actions, disabled = false, allowDelete = true }: PuzzleKeyboardProps) {
+export function PuzzleKeyboard({ actions, disabled = false, allowDelete = true, enye = false }: PuzzleKeyboardProps) {
   const { t } = useTranslation();
   const press = usePressHandlers(disabled);
   return (
     <div className="puzzle-keyboard" role="group" aria-label={t("keyboard.label")}>
-      {["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"].map((row, index) => (
-        <div className={`puzzle-keyboard-row puzzle-keyboard-row-${index}`} key={row}>
+      {["QWERTYUIOP", enye ? "ASDFGHJKLÑ" : "ASDFGHJKL", "ZXCVBNM"].map((row, index) => (
+        <div className={`puzzle-keyboard-row puzzle-keyboard-row-${index}${index === 1 && enye ? " puzzle-keyboard-row-full" : ""}`} key={row}>
           {index === 2 && (
             <button type="button" className="puzzle-key puzzle-key-action" disabled={disabled}
               {...press("direction", actions.toggleDirection)}

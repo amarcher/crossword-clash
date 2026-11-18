@@ -10,7 +10,7 @@
  * Slots whose squares are all lettered (theme entries, hand-typed words) are
  * fixed and need not be in the dictionary.
  */
-import { bitIndices, intersects, popcount, popcount32, type Bits, type LengthBucket, type WordIndex } from "./dictionary";
+import { bitIndices, intersects, letterIndex, LETTERS, popcount, popcount32, type Bits, type LengthBucket, type WordIndex } from "./dictionary";
 import { cloneGrid, crossingsOf, slotsOf, slotText, type Crossing, type Grid, type Slot } from "./grid";
 
 export interface FillOptions {
@@ -87,7 +87,7 @@ export class FillEngine {
       s.cells.forEach((cell, pos) => {
         const ch = grid.cells[cell];
         if (!ch) return;
-        const mask = b.posLetter[pos * 26 + ch.charCodeAt(0) - 65];
+        const mask = b.posLetter[pos * LETTERS + letterIndex(ch)];
         for (let i = 0; i < dom.length; i++) dom[i] &= mask[i];
       });
       const allowed = options.approved?.[s.id];
@@ -113,7 +113,7 @@ export class FillEngine {
     const b = this.buckets[si];
     if (!b) return 0; // no words of this length
     let mask = 0;
-    for (let l = 0; l < 26; l++) if (intersects(dom, b.posLetter[pos * 26 + l])) mask |= 1 << l;
+    for (let l = 0; l < LETTERS; l++) if (intersects(dom, b.posLetter[pos * LETTERS + l])) mask |= 1 << l;
     return mask;
   }
 
@@ -122,9 +122,9 @@ export class FillEngine {
     const b = this.buckets[si];
     if (!b) return false;
     const allowed = new Uint32Array(dom.length);
-    for (let l = 0; l < 26; l++) {
+    for (let l = 0; l < LETTERS; l++) {
       if (!(mask & (1 << l))) continue;
-      const bits = b.posLetter[pos * 26 + l];
+      const bits = b.posLetter[pos * LETTERS + l];
       for (let i = 0; i < allowed.length; i++) allowed[i] |= bits[i];
     }
     let changed = false;
@@ -259,7 +259,7 @@ export class FillEngine {
         const other = doms[c.other];
         if (!other) continue;
         const ob = this.buckets[c.other]!;
-        const bits = ob.posLetter[c.otherPos * 26 + word.charCodeAt(c.pos) - 65];
+        const bits = ob.posLetter[c.otherPos * LETTERS + letterIndex(word[c.pos])];
         let n = 0;
         for (let i = 0; i < other.length; i++) {
           const v = other[i] & bits[i];

@@ -170,6 +170,8 @@
 .puzzle-keyboard-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
 .puzzle-keyboard-row:last-child { margin-bottom: 0; }
 .puzzle-keyboard-row-1 { padding-inline: 5%; }
+/* Ten keys (the Ñ row of a Spanish grid) take the full width, as the top row does. */
+.puzzle-keyboard-row-1.puzzle-keyboard-row-full { padding-inline: 0; }
 .puzzle-key {
   display: flex;
   align-items: center;

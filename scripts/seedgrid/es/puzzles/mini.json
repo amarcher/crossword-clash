@@ -1,0 +1,33 @@
+{
+ "slot": "mini",
+ "title": "Do, re, mi",
+ "theme": "No theme; 5A nods to the day.",
+ "rows": [
+  "##MAL",
+  "#POLO",
+  "NOTAS",
+  "OSOS#",
+  "SER##"
+ ],
+ "clues": {
+  "1A": "Lo contrario de «bien»",
+  "4A": "Extremo norte o sur del planeta",
+  "5A": "Hay siete en la escala musical",
+  "6A": "Los hay pardos, negros y panda",
+  "7A": "«___ o no ___», duda de Hamlet",
+  "1D": "Va bajo el capó",
+  "2D": "Las baten los pájaros",
+  "3D": "Artículo: «___ músicos»",
+  "4D": "Postura para la foto",
+  "5D": "«___ vemos mañana»"
+ },
+ "unsure": {
+  "LOS / NOS": "Two short function words; clued with fill-in-the-blank.",
+  "OSOS": "The 15×15 has OSO and OSA. Three-letter repeats are allowed across the set, but a reader may notice the bears."
+ },
+ "build": [
+  "Pattern ##.../#..../...../....#/...## (6 blocks, rotational), NOTAS locked in the middle row.",
+  "Rebuilt 2026-11-13 under the new rules. The first mini (CANTO in the middle, kept as scripts/seedgrid/es/puzzles/mini-canto.json) had PUSO and PARE: two conjugated verbs against a budget of one.",
+  "Engine with Ñ as a letter: 300 fills at floor 55 with no conjugated verb allowed gave 25 distinct grids around NOTAS (6 around CANTO, 17 COROS, 2 RITMO, 1 TANGO). 21 of those share no entry of four or more letters with the other three puzzles; this one was chosen by hand over grids with MATON, SATAN, IRAS or COÑA."
+ ]
+}

@@ -8,15 +8,27 @@
  * 50 leaves out entirely.
  */
 
+import { gridSpelling } from "../gridLetters";
+
 export interface DictEntry {
   word: string;
   score: number;
   tags: string;
 }
 
-/** Strips everything but letters and uppercases: "Hat tip" → "HATTIP". */
+/** Strips everything but letters and uppercases: "Hat tip" → "HATTIP", "Año" → "AÑO", "Canción" → "CANCION". */
 export function normalizeEntry(text: string): string {
-  return text.toUpperCase().replace(/[^A-Z]/g, "");
+  return gridSpelling(text);
+}
+
+/** Letters a square can hold: A–Z, then Ñ (Spanish lists; an English list never sets its bitsets). */
+export const LETTERS = 27;
+const A = 65;
+/** A grid letter's column in the per-position bitsets, or -1 for anything else (an open square). */
+export function letterIndex(ch: string): number {
+  if (ch === "Ñ") return 26;
+  const code = ch.charCodeAt(0) - A;
+  return code >= 0 && code < 26 ? code : -1;
 }
 
 export function parseDict(text: string): DictEntry[] {
@@ -99,12 +111,10 @@ export interface LengthBucket {
   tags: string[];
   /** Index of each word in `words`. */
   lookup: Map<string, number>;
-  /** `posLetter[pos * 26 + letter]`: the words with that letter at that position. */
+  /** `posLetter[pos * LETTERS + letterIndex(letter)]`: the words with that letter at that position. */
   posLetter: Bits[];
   all: Bits;
 }
-
-const A = 65;
 
 /**
  * Words grouped by length with a bitset per (position, letter), so that
@@ -125,11 +135,11 @@ export class WordIndex {
     for (const [len, list] of grouped) {
       list.sort((a, b) => b.score - a.score || (a.word < b.word ? -1 : 1));
       const blocks = Math.ceil(list.length / 32);
-      const posLetter = Array.from({ length: len * 26 }, () => new Uint32Array(blocks));
+      const posLetter = Array.from({ length: len * LETTERS }, () => new Uint32Array(blocks));
       const all = new Uint32Array(blocks);
       list.forEach((e, i) => {
         all[i >>> 5] |= 1 << (i & 31);
-        for (let p = 0; p < len; p++) posLetter[p * 26 + e.word.charCodeAt(p) - A][i >>> 5] |= 1 << (i & 31);
+        for (let p = 0; p < len; p++) posLetter[p * LETTERS + letterIndex(e.word[p])][i >>> 5] |= 1 << (i & 31);
       });
       this.buckets.set(len, {
         len,
@@ -159,9 +169,9 @@ export class WordIndex {
     if (!b) return [];
     const bits = b.all.slice();
     for (let p = 0; p < pattern.length; p++) {
-      const code = pattern.charCodeAt(p) - A;
-      if (code < 0 || code > 25) continue;
-      const mask = b.posLetter[p * 26 + code];
+      const code = letterIndex(pattern[p]);
+      if (code < 0) continue;
+      const mask = b.posLetter[p * LETTERS + code];
       for (let i = 0; i < bits.length; i++) bits[i] &= mask[i];
     }
     return [...bitIndices(bits)].map((i) => b.words[i]);

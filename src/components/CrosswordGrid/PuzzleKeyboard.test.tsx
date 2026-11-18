@@ -20,6 +20,18 @@ describe("puzzle keyboard", () => {
     fireEvent.click(ui.getByRole("button", { name: "Switch Across / Down" }));
     expect(a.toggleDirection).toHaveBeenCalledOnce();
   });
+  it("adds the Ñ key to the home row only for a puzzle that needs it", () => {
+    const a = actions();
+    const ui = render(<PuzzleKeyboard actions={a} />);
+    expect(ui.queryByRole("button", { name: "Ñ" })).toBeNull();
+    expect(ui.container.querySelector(".puzzle-keyboard-row-full")).toBeNull();
+    ui.rerender(<PuzzleKeyboard actions={a} enye />);
+    const row = ui.getByRole("button", { name: "Ñ" }).parentElement!;
+    expect([...row.querySelectorAll("button")].map((b) => b.textContent).join("")).toBe("ASDFGHJKLÑ");
+    expect(row.className).toContain("puzzle-keyboard-row-full");
+    fireEvent.click(ui.getByRole("button", { name: "Ñ" }));
+    expect(a.inputLetter.mock.calls).toEqual([["Ñ"]]);
+  });
   it("preserves multiplayer's no-delete rule and disables entry behind a sheet", () => {
     const a = actions();
     const ui = render(<PuzzleKeyboard actions={a} allowDelete={false} />);
