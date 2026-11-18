@@ -11,9 +11,10 @@ import type { CellState } from "../types/puzzle";
 import type { RealtimeChannel, RealtimePresenceState } from "@supabase/supabase-js";
 import { reportError } from "../lib/errorReporting";
 import { displayableName } from "../lib/nameFilter";
-import { DEFAULT_GAME_SETTINGS, resolveRaceMode } from "../lib/gameSettings";
+import { DEFAULT_GAME_SETTINGS, resolvePuzzleRef, resolveRaceMode } from "../lib/gameSettings";
 import { buildFinalStandings, mergeRosters, type FinalStandings } from "../lib/finalStandings";
 import { liveRoster } from "../lib/roster";
+import { mergeRaceProgress, type RaceProgress } from "../lib/raceProgress";
 
 interface TrackedPresence {
   user_id: string;
@@ -92,6 +93,10 @@ interface UseMultiplayerReturn {
     direction: "across" | "down",
   ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
+  /** The host tells the lobby what it has chosen so far, so joiners see the mode before Start. */
+  announceLobbySettings: (settings: GameSettings) => void;
+  /** What the host last announced while the room waits; null until it has (or from a host on an older build). */
+  lobbySettings: GameSettings | null;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
   leaveGame: () => Promise<void>;
@@ -120,6 +125,14 @@ interface UseMultiplayerReturn {
    */
   finishRace: () => number | null;
   /**
+   * Async mode: userId → the squares ("row,col") that player has filled on
+   * their own copy. Keys only, never letters: the grid marks them with a dot.
+   * Empty for a player on a build that does not send it.
+   */
+  raceProgress: RaceProgress;
+  /** Async mode: tell the room which squares the local player has filled. */
+  announceRaceProgress: (cells: string[]) => void;
+  /**
    * The frozen record of the finished game (finalStandings.ts): every player
    * who was in it, their colour, squares and finish time, and the winner.
    * Taken once when the room completes (or when a completed room is
@@ -129,6 +142,9 @@ interface UseMultiplayerReturn {
    */
   finalStandings: FinalStandings | null;
 }
+
+/** How long a finished shared grid waits for its last claim before the record is frozen without it. */
+export const FINISH_GRACE_MS = 3000;
 
 export function useMultiplayer({
   gameId,
@@ -155,6 +171,7 @@ export function useMultiplayer({
   const [isRoomClosed, setIsRoomClosed] = useState(false);
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [lobbySettings, setLobbySettings] = useState<GameSettings | null>(null);
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor !== null && hydratedFor === gameId;
   // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
@@ -163,9 +180,12 @@ export function useMultiplayer({
   const [completedAtMs, setCompletedAtMs] = useState<number | null>(null);
   // Async ("time trial") mode: per-player finish times, userId → seconds.
   const [raceFinishTimes, setRaceFinishTimes] = useState<Record<string, number>>({});
+  // Async mode: the squares each other player has filled on their own copy.
+  const [raceProgress, setRaceProgress] = useState<RaceProgress>({});
   // The finished game's record, keyed by room like statusState so a new room
   // never reads the last game's standings.
   const [finalState, setFinalState] = useState<{ gameId: string; standings: FinalStandings } | null>(null);
+  const [finishGraceOver, setFinishGraceOver] = useState(false);
   const finalStandings = finalState !== null && finalState.gameId === gameId ? finalState.standings : null;
   // The DB `players` rows from the last hydrate: the roster that outlives
   // presence, so the record lists a player who has already dropped.
@@ -251,6 +271,7 @@ export function useMultiplayer({
       setGameSettings({
         wrongAnswerTimeoutSeconds: state.settings.wrongAnswerTimeoutSeconds,
         raceMode: resolveRaceMode(state.settings as GameSettings),
+        ...(resolvePuzzleRef(state.settings) ? { puzzleRef: resolvePuzzleRef(state.settings) } : {}),
       });
     }
 
@@ -293,7 +314,9 @@ export function useMultiplayer({
     setStartedAtMs(null);
     setCompletedAtMs(null);
     setRaceFinishTimes({});
+    setRaceProgress({});
     setGameSettings(DEFAULT_GAME_SETTINGS);
+    setLobbySettings(null);
 
     // Fetch short_code
     supabase
@@ -353,6 +376,13 @@ export function useMultiplayer({
       refreshRoster();
     });
 
+    // The host's choices while the room waits (a hint for the lobby; game_started carries the real ones).
+    channel.on("broadcast", { event: "lobby_settings" }, ({ payload }) => {
+      const s = payload?.settings;
+      if (!s || typeof s.wrongAnswerTimeoutSeconds !== "number") return;
+      setLobbySettings({ wrongAnswerTimeoutSeconds: s.wrongAnswerTimeoutSeconds, raceMode: resolveRaceMode(s) });
+    });
+
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
       setGameStatus("active");
       if (payload?.settings) {
@@ -377,6 +407,13 @@ export function useMultiplayer({
           ? prev
           : { ...prev, [payload.playerId]: payload.seconds },
       );
+    });
+
+    // Async mode: the squares another player has filled so far. Each message
+    // carries the whole list, so a missed one (or a late join) heals on the
+    // next letter; nothing is ever erased in a room, so the longer list wins.
+    channel.on("broadcast", { event: "race_progress" }, ({ payload }) => {
+      setRaceProgress((prev) => mergeRaceProgress(prev, payload?.playerId, payload?.cells, userId));
     });
 
     channel.on("broadcast", { event: "room_closed" }, () => {
@@ -422,6 +459,7 @@ export function useMultiplayer({
     setStartedAtMs(null);
     setCompletedAtMs(null);
     setRaceFinishTimes({});
+    setRaceProgress({});
     setGameSettings(DEFAULT_GAME_SETTINGS);
     setIsHost(false);
     setIsRoomClosed(false);
@@ -462,7 +500,16 @@ export function useMultiplayer({
     // Only once every claim of ours has been answered (see pendingClaimsRef).
     if (pendingClaimsRef.current > 0) return;
     const filledCount = Object.values(playerCells).filter((c) => c.correct).length;
-    if (totalWhiteCells > 0 && filledCount === totalWhiteCells) {
+    if (totalWhiteCells === 0 || filledCount !== totalWhiteCells) return;
+    // Not in this effect pass: the letter that completes the grid is sent to
+    // the server by an effect of the provider, which runs AFTER this one in
+    // the same commit, so `pendingClaimsRef` is still 0 here for the final
+    // square. Marking the game completed first made `claim_cell` refuse that
+    // square: the server kept 177 of 178 and the finisher lost the Z of ANTZ
+    // (Andrew, 2026-11-16). A task later the claim is counted; when it
+    // settles, `claimsSettled` runs this again.
+    const timer = setTimeout(() => {
+      if (pendingClaimsRef.current > 0) return;
       const completedAt = Date.now();
       setGameStatus("completed");
       setCompletedAtMs((prev) => prev ?? completedAt);
@@ -486,7 +533,8 @@ export function useMultiplayer({
               .catch(() => {});
           });
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [playerCells, totalWhiteCells, gameStatus, gameId, gameSettings, setGameStatus, claimsSettled]);
 
   // Async mode: the game is over when every player has a finish time.
@@ -527,14 +575,26 @@ export function useMultiplayer({
     if (!gameId || gameStatus !== "completed") return;
     if (finalState !== null && finalState.gameId === gameId) return;
     const mode = resolveRaceMode(gameSettings);
-    if (mode !== "async") {
+    if (mode !== "async" && !finishGraceOver) {
       const filled = Object.values(playerCells).filter((c) => c.correct).length;
       if (totalWhiteCells > 0 && filled < totalWhiteCells) return;
     }
     const roster = mergeRosters(players, dbPlayersRef.current);
     if (roster.length === 0) return;
     setFinalState({ gameId, standings: buildFinalStandings(roster, playerCells, raceFinishTimes, mode) });
-  }, [gameId, gameStatus, finalState, gameSettings, playerCells, totalWhiteCells, players, raceFinishTimes]);
+  }, [gameId, gameStatus, finalState, gameSettings, playerCells, totalWhiteCells, players, raceFinishTimes, finishGraceOver]);
+
+  // The wait for the last claim is bounded. A device whose grid stays a
+  // square short of a finished game (Andrew, 2026-11-16: the server held 177
+  // of 178, and so did the TV) never froze the record; once the players left
+  // the room its replay had no names, no counts and no colours. After the
+  // grace the record is taken from what the device has.
+  useEffect(() => {
+    setFinishGraceOver(false);
+    if (!gameId || gameStatus !== "completed") return;
+    const timer = setTimeout(() => setFinishGraceOver(true), FINISH_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [gameId, gameStatus]);
 
   /**
    * Async mode: the local player just filled their own copy. Compute the
@@ -662,6 +722,18 @@ export function useMultiplayer({
     }
   }, [gameId, setGameStatus]);
 
+  const announceLobbySettings = useCallback((settings: GameSettings) => {
+    void channelRef.current
+      ?.send({ type: "broadcast", event: "lobby_settings", payload: { settings } })
+      .catch(() => {});
+  }, []);
+
+  const announceRaceProgress = useCallback((cells: string[]) => {
+    void channelRef.current
+      ?.send({ type: "broadcast", event: "race_progress", payload: { playerId: userId, cells } })
+      .catch(() => {});
+  }, [userId]);
+
   const broadcastNewGame = useCallback((newGameId: string) => {
     void channelRef.current
       ?.send({
@@ -717,6 +789,8 @@ export function useMultiplayer({
     claimCell,
     broadcastWrongLetter,
     startGame,
+    announceLobbySettings,
+    lobbySettings,
     closeRoom,
     broadcastNewGame,
     leaveGame,
@@ -732,6 +806,8 @@ export function useMultiplayer({
     raceStartedAt: startedAtMs,
     raceFinishTimes,
     finishRace,
+    raceProgress,
+    announceRaceProgress,
     finalStandings,
   };
 }

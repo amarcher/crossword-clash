@@ -41,6 +41,8 @@ interface CrosswordGridProps {
   navigationActions?: NavigationActions;
   rejectedCell?: string | null;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** A friend race's ghosts (race.ts): cell key → the colour of the ghost that has it filled. */
+  ghostTints?: ReadonlyMap<string, string>;
 }
 
 export function CrosswordGrid({
@@ -56,6 +58,7 @@ export function CrosswordGrid({
   navigationActions,
   rejectedCell,
   inputRef: externalInputRef,
+  ghostTints,
 }: CrosswordGridProps) {
   const { t } = useTranslation();
   const nativeKeyboard = Capacitor.isNativePlatform();
@@ -328,6 +331,7 @@ export function CrosswordGrid({
                   animateFill={animateFill}
                   wordCompleteColor={wcInfo?.color}
                   wordCompleteDelay={wcInfo?.delay}
+                  ghostColor={ghostTints?.get(key)}
                 />
               );
             })}

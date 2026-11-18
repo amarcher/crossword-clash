@@ -1,11 +1,10 @@
-import { Ellipsis, Grid3x3, ListOrdered, Type } from "lucide-react";
+import { Ellipsis, Grid3x3, ListOrdered } from "lucide-react";
 
-/** The studio's four phone tabs. */
-export type StudioTab = "grid" | "words" | "clues" | "more";
+/** The studio's phone tabs. The word list is a sheet pulled up over the Grid tab, not a tab (2026-11-12). */
+export type StudioTab = "grid" | "clues" | "more";
 
 export const STUDIO_TABS: { id: StudioTab; label: string; icon: typeof Grid3x3 }[] = [
   { id: "grid", label: "Grid", icon: Grid3x3 },
-  { id: "words", label: "Words", icon: Type },
   { id: "clues", label: "Clues", icon: ListOrdered },
   { id: "more", label: "More", icon: Ellipsis },
 ];
@@ -32,7 +31,7 @@ export function StudioTabBar({ tab, onChange, counts }: StudioTabBarProps) {
       aria-label="Studio sections"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-surface/85 lg:hidden"
     >
-      <div role="tablist" aria-label="Studio sections" className="mx-auto grid max-w-md grid-cols-4 px-2">
+      <div role="tablist" aria-label="Studio sections" className="mx-auto grid max-w-md grid-cols-3 px-2">
         {STUDIO_TABS.map(({ id, label, icon: Icon }) => {
           const selected = id === tab;
           const count = counts?.[id];

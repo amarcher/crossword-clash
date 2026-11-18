@@ -9,6 +9,7 @@ import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useBeforeUnload } from "../hooks/useBeforeUnload";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { tStatic } from "../i18n/i18n";
+import { resolveRaceMode } from "../lib/gameSettings";
 import { useConfirm } from "../components/ConfirmDialog";
 import { LobbyInvites } from "../components/Friends";
 import { useFriends } from "../contexts/FriendsContext";
@@ -35,11 +36,22 @@ export function LobbyScreen() {
     await mp.startGame({
       wrongAnswerTimeoutSeconds: game.wrongAnswerTimeout,
       raceMode: game.raceMode,
+      // The puzzle's own link, so every player's finish can share the replay clip.
+      ...(game.puzzle?.ref ? { puzzleRef: game.puzzle.ref } : {}),
     });
     if (game.gameId) {
       navigate(`/play/${game.gameId}`);
     }
-  }, [mp, game.wrongAnswerTimeout, game.raceMode, game.gameId, navigate]);
+  }, [mp, game.wrongAnswerTimeout, game.raceMode, game.puzzle, game.gameId, navigate]);
+
+  // Joiners see the mode before Start: the host says it on every change, and
+  // again when the roster changes, so someone who just arrived hears it too.
+  const { isHost, announceLobbySettings } = mp;
+  const rosterSize = mp.players.length;
+  useEffect(() => {
+    if (!isHost || mp.gameStatus !== "waiting") return;
+    announceLobbySettings({ wrongAnswerTimeoutSeconds: game.wrongAnswerTimeout, raceMode: game.raceMode });
+  }, [isHost, mp.gameStatus, announceLobbySettings, game.wrongAnswerTimeout, game.raceMode, rosterSize]);
 
   const handleCloseRoom = useCallback(async () => {
     const ok = await confirm({
@@ -91,7 +103,7 @@ export function LobbyScreen() {
       onLeave={handleLeave}
       wrongAnswerTimeout={game.wrongAnswerTimeout}
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
-      raceMode={game.raceMode}
+      raceMode={mp.isHost ? game.raceMode : mp.lobbySettings ? resolveRaceMode(mp.lobbySettings) : undefined}
       onRaceModeChange={game.setRaceMode}
       invites={game.gameId ? <LobbyInvites gameId={game.gameId} players={mp.players} puzzleKey={game.puzzle ? puzzleIdentity(game.puzzle) : null} /> : null}
       onNudgeHost={friendsEnabled() && game.gameId && !mp.isHost ? handleNudge : undefined}

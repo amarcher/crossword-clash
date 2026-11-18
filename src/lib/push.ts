@@ -54,6 +54,9 @@ function toPermission(state: string): PushPermission {
   return "prompt";
 }
 
+/** Fired on `window` when a solo daily's finish dialog closes: the moment for the reminder ask (PushEffects). */
+export const DAILY_FINISH_CLOSED_EVENT = "crossword-clash:daily-finish-closed";
+
 export async function checkPushPermission(): Promise<PushPermission> {
   if (!pushAvailable()) return "denied";
   const m = await loadSdk();
@@ -85,6 +88,12 @@ function deviceTimezone(): string {
  * Registers with the store and writes the token to `device_tokens` for the
  * session user (anonymous included). Resolves with the token, or null when
  * the store never answered (`registrationError`, or 10 s without a token).
+ *
+ * The write goes through `register_device_token`, which moves the row to the
+ * caller: a plain upsert is refused when the row belongs to the device's
+ * previous user, which left a guest's token behind when they signed in to an
+ * existing account (the account then had no token), and left an account's
+ * token in place after sign-out (the device kept its notifications).
  */
 export async function registerPushToken(userId: string, opts: { locale?: string; appVersion?: string } = {}): Promise<string | null> {
   if (!pushAvailable() || !supabase) return null;
@@ -118,8 +127,18 @@ export async function registerPushToken(userId: string, opts: { locale?: string;
     last_seen_at: new Date().toISOString(),
     failed_at: null,
   };
-  const { error } = await supabase.from("device_tokens").upsert(row, { onConflict: "token" });
-  if (error) console.warn("Push: could not store the device token", error.message);
+  const claimed = await supabase.rpc("register_device_token", {
+    p_token: token,
+    p_platform: row.platform,
+    p_locale: row.locale,
+    p_timezone: row.timezone,
+    p_app_version: row.app_version,
+  });
+  if (claimed.error) {
+    // A database without the function yet: the upsert still serves a device whose user never changed.
+    const { error } = await supabase.from("device_tokens").upsert(row, { onConflict: "token" });
+    if (error) console.warn("Push: could not store the device token", error.message);
+  }
   try {
     localStorage.setItem(PUSH_TOKEN_KEY, token);
   } catch {

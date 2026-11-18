@@ -1,0 +1,11 @@
+This build (1.1.3, build 53) is about watching and sharing solves. Please check:
+
+1. One race view: every "Watch" opens the same screen. The top line names the puzzle ("Daily Mini · Nov 17 · Bread Basket"), then who raced. Lanes sit right above the grid, each with that player's count of squares they reached first. Your own lane shows your username, not "You".
+2. Lanes stay put: the rows no longer swap places as the lead changes; the number on the left is the current place.
+3. The "?" button beside Close: a short key to the marks on screen. It changes between "Who got there first" and "Both solves".
+4. Watching one player: from a leaderboard row, Watch plays that player alone: no place number, no squares count. If you have not solved the puzzle it says "Replayed, letters hidden" and shows colour only.
+5. Sharing a race: in a race with a friend, tap Share and send the link to yourself. The preview should name both of you ("archer vs minna on the Daily Mini for Nov 17") and tapping it should open the race in the app, not the puzzle's start page.
+6. Sharing your solve to someone who has NOT solved it: finish a daily, Share, and open the link on a phone or account that has not solved that puzzle. It should open on your solve filling in with no letters, with one button, "Let me solve it", and a small share icon. The button starts the puzzle as a race against your solve.
+7. Sharing your solve to someone who HAS solved it: open the same link on an account that has solved the puzzle. It should open the head-to-head, their solve against yours, with letters.
+8. Closing any of these leaves you on the page underneath (the challenge page or the puzzle page), never a blank screen.
+9. Everything from build 52 still applies.

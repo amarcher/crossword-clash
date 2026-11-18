@@ -6,8 +6,10 @@ import QRCode from "react-qr-code";
 import { BellRing, Check, Link2, Loader2, Share2, Users } from "lucide-react";
 import { TimeoutSelector } from "./TimeoutSelector";
 import { RaceModeSelector } from "./RaceModeSelector";
+import { ModePreview } from "./ModePreview";
+import { RACE_MODE_OPTIONS } from "../../lib/gameSettings";
 import { FlowPage } from "../Flow";
-import { Button, Card, Eyebrow } from "../ui";
+import { Button, Card, Eyebrow, PlusName } from "../ui";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
 import { formatCountdown, FriendsError, nextNudgeAt } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
@@ -129,10 +131,13 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
     ((raceMode !== undefined && onRaceModeChange) || (wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange));
 
   // DOM order is phone order: Start (host) or the waiting status (joiner), the
-  // roster, then how people get in, then the host's settings. On desktop the
+  // roster, the game mode (the host's settings, or the joiner's card), then
+  // how people get in. On desktop the
   // join column moves to the right and spans the left column's rows.
   const column = shareCode ? "lg:col-start-1" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md";
-  const joinRows = showSettings ? "lg:row-span-3" : "lg:row-span-2";
+  // A joiner is shown the mode the host has picked, once the host has said it.
+  const guestMode = !isHost && raceMode !== undefined ? RACE_MODE_OPTIONS.find((o) => o.value === raceMode) : undefined;
+  const joinRows = showSettings || guestMode ? "lg:row-span-3" : "lg:row-span-2";
 
   return (
     <FlowPage
@@ -202,7 +207,9 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                     style={{ backgroundColor: player.color }}
                     aria-hidden="true"
                   />
-                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>{player.displayName}</span>
+                  <span className={`min-w-0 flex-1 truncate font-semibold ${player.away ? "text-muted" : "text-ink"}`}>
+                    <PlusName userId={player.userId}>{player.displayName}</PlusName>
+                  </span>
                   {priorSolveChip(solves[player.userId]) === "solved" && (
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">{t("lobby.solvedBefore")}</span>
                   )}
@@ -226,6 +233,37 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             </ul>
           </Card>
         </section>
+
+        {guestMode && (
+          <section className={column}>
+            <Card className="p-5">
+              <Eyebrow as="h2">{t("modePreview.guestHeading")}</Eyebrow>
+              <p className="mt-3 font-semibold text-ink">{t(guestMode.labelKey)}</p>
+              <p className="mt-1 text-sm leading-snug text-muted">{t(guestMode.descriptionKey)}</p>
+              <div className="mt-3">
+                <ModePreview mode={guestMode.value} label={t(guestMode.descriptionKey)} />
+              </div>
+            </Card>
+          </section>
+        )}
+
+        {/* The host's settings, right under the roster (Andrew, 2026-11-16: what kind of game
+            this is belongs near the top, as the joiner's mode card is), above how people get in. */}
+        {showSettings && (
+          <section className={column}>
+            <Card className="p-5">
+              <Eyebrow as="h2">{t("lobby.gameSettings")}</Eyebrow>
+              <div className="mt-4 grid gap-5">
+                {raceMode !== undefined && onRaceModeChange && (
+                  <RaceModeSelector value={raceMode} onChange={onRaceModeChange} />
+                )}
+                {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
+                  <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
+                )}
+              </div>
+            </Card>
+          </section>
+        )}
 
         {/* How people get in: below the roster on phones, the right column on desktop. */}
         {shareCode && (
@@ -287,23 +325,6 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               <div className="min-w-0 lg:text-center">
                 <p className="font-semibold text-ink">{t("lobby.scanToJoin")}</p>
                 <p className="mt-0.5 text-sm text-muted">{t("lobby.qrHint")}</p>
-              </div>
-            </Card>
-          </section>
-        )}
-
-        {/* The host's settings, last: they are tweaked once, before Start. */}
-        {showSettings && (
-          <section className={column}>
-            <Card className="p-5">
-              <Eyebrow as="h2">{t("lobby.gameSettings")}</Eyebrow>
-              <div className="mt-4 grid gap-5">
-                {raceMode !== undefined && onRaceModeChange && (
-                  <RaceModeSelector value={raceMode} onChange={onRaceModeChange} />
-                )}
-                {wrongAnswerTimeout !== undefined && onWrongAnswerTimeoutChange && (
-                  <TimeoutSelector value={wrongAnswerTimeout} onChange={onWrongAnswerTimeoutChange} />
-                )}
               </div>
             </Card>
           </section>

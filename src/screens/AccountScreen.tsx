@@ -1,9 +1,12 @@
 import { LeaderboardSettings } from "../components/Account/LeaderboardSettings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, CalendarDays, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, Sparkles, UserPlus, Users } from "lucide-react";
+import { BookOpen, CalendarDays, ChartLine, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, UserPlus, Users } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
+import { RaceVisibilityCard } from "../components/Race/RaceVisibility";
+import { PlusSeal } from "../components/ui/PlusBadge";
+import { PlusBadgeSwitch } from "../components/Plus/PlusBadgeSwitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { NotificationSettings } from "../components/Push";
 import { PendingRequests } from "../components/Friends";
@@ -156,7 +159,7 @@ export function AccountScreen() {
   const solveCount = history.summary?.solveCount ?? null;
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu") }}>
       <h1 className="sr-only">{t("account.pageTitle")}</h1>
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-6 lg:mt-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-8">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
@@ -213,14 +216,20 @@ export function AccountScreen() {
                 </dd>
               </Card>
             </dl>
+            {plusEnabled() && (
+              <Button variant="secondary" block onClick={() => navigate("/stats")} {...prefetchOnIntent("/stats")}>
+                <ChartLine className="size-4" aria-hidden="true" />
+                {t("stats.open")}
+              </Button>
+            )}
           </section>
 
           {/* Plus: only once the launch switch is on. */}
           {plusEnabled() && (
             <Card className="p-5 sm:p-6" aria-labelledby="account-plus">
               <div className="flex items-start gap-3.5">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                  <Sparkles className="size-5" aria-hidden="true" />
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold-50">
+                  <PlusSeal size="1.625rem" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 id="account-plus" className="font-display text-lg font-bold leading-snug tracking-tight text-ink">
@@ -230,6 +239,11 @@ export function AccountScreen() {
                 </div>
               </div>
               <div className="mt-4">
+                {account.plus && userId && profile && (
+                  <div className="mb-4 border-b border-line pb-2">
+                    <PlusBadgeSwitch userId={userId} username={profile.username} />
+                  </div>
+                )}
                 {account.plus ? (
                   <PlusPurchaseControls
                     account={{ signedIn: true, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}
@@ -283,6 +297,7 @@ export function AccountScreen() {
                       {friends.friendships.friends.length === 0 ? t("race.addFriends") : t("account.manageFriends")}
                     </Button>
                   </Card>
+                  {userId && <RaceVisibilityCard userId={userId} />}
                 </>
               )}
             </section>

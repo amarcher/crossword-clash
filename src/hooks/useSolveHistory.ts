@@ -3,6 +3,7 @@ import { useMaybeAccount } from "../contexts/AccountContext";
 import { useHydrated } from "../lib/hydration";
 import { getSolveHistoryState, subscribeSolveHistory, type SolveHistoryState, type SolveRow, type SolveSummary } from "../lib/solveHistory";
 import { dayKey, effectiveStreak, getDisplayNytStreak, getDisplayStreak, loadSoloStats } from "../lib/soloStats";
+import { repairOfferFromRows, repairOfferFromStats, type RepairOffer } from "../lib/streakRepair";
 
 export interface SolveHistory {
   /** True when a real account is signed in (so the server is the source of truth). */
@@ -57,4 +58,20 @@ export function useBestTimes(): Record<string, number> {
   const { summary } = useSolveHistory();
   const hydrated = useHydrated();
   return useMemo(() => summary?.bestTimes ?? (hydrated ? loadSoloStats().bestTimes : NO_TIMES), [summary, hydrated]);
+}
+
+/**
+ * Today's streak repair offer (streakRepair.ts): yesterday was missed right
+ * after a streak. From the account's rows when signed in and loaded, else
+ * from this device's stats; null otherwise, and before hydration.
+ */
+export function useRepairOffer(): RepairOffer | null {
+  const { rows, signedIn, loading } = useSolveHistory();
+  const hydrated = useHydrated();
+  return useMemo(() => {
+    const today = dayKey(new Date());
+    if (rows) return repairOfferFromRows(rows, today);
+    if (!hydrated || (signedIn && loading)) return null;
+    return repairOfferFromStats(loadSoloStats(), today);
+  }, [rows, signedIn, loading, hydrated]);
 }

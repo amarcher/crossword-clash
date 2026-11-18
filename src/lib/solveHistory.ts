@@ -35,7 +35,7 @@ import type { Database } from "../types/supabase";
 
 // --- Types ---
 
-export type SolveSource = "daily" | "nyt" | "community" | "other";
+export type SolveSource = "daily" | "nyt" | "community" | "bonus" | "other";
 export type SolveMode = "solo" | "versus" | "coop" | "async" | "import";
 
 /** One stored finish: the `solves` row without its owner. */
@@ -448,6 +448,11 @@ export async function recordSolve(userId: string, input: SolveInput, now: Date =
     console.warn("Solve history: could not save a finish", err);
   }
   return outcome;
+}
+
+/** Rows the server already holds (a streak repair's marker): merged into the loaded history so every screen updates. */
+export function addHistoryRows(userId: string, rows: SolveRow[]): void {
+  if (state?.userId === userId && state.rows) setRows(userId, mergeRows(state.rows, rows), "ready");
 }
 
 /** Test hook: forget everything, including the in-flight load. */

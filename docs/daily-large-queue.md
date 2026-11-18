@@ -143,6 +143,12 @@ WEK/APOLLOI) were cleared with `pnpm seedgrid:refix … --apply` + `reclue
    for word, a clue its answer had in any daily within 14 days.
    `pnpm seedgrid:crosscheck` reports repeats, `pnpm seedgrid:unrepeat <from> <to>`
    rewrites them, and `feedRepeats.test.ts` fails CI on any left.
+7. Run `pnpm seedgrid:fitcheck <from> <to>`: every clue is read against its own answer and each
+   pass is recorded in `scripts/seedgrid/fit-ledger.json`; `feedFit.test.ts` fails CI for a daily
+   without one (see `docs/daily-mini-queue.md`).
+
+Each batch also builds that day's Plus bonus (11×11, from the database, not the feed) after its
+three dailies, with their answers rejected: see `docs/daily-bonus-queue.md`.
 
 ## Daily Midi queue
 

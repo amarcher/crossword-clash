@@ -58,9 +58,12 @@ export interface RankedDailyEntry extends DailyResultEntry {
  * signs it (`signDailyResult`), so the public board never fills with
  * "Player" rows.
  */
+/** A board: one per daily slot, plus the Plus bonus puzzle's (migration 20261120000000_bonus_board.sql). */
+export type BoardSlot = DailySlot | "bonus";
+
 export interface PendingDailyResult {
   day: string;
-  slot: DailySlot;
+  slot: BoardSlot;
   entry: DailyResultEntry;
   /** The room the finish came from (a race); null for a solo finish. */
   gameId: string | null;
@@ -108,9 +111,9 @@ export function isTodaysDaily(
   return todaysDailySlot(puzzle, now) !== null;
 }
 
-/** The leaderboard route for a slot; the mini keeps its original URL. */
-export function leaderboardPath(slot: DailySlot, day?: string | null): string {
-  const path = slot === "mini" ? "/daily/leaderboard" : `/daily/leaderboard/${slot}`;
+/** The leaderboard route for a slot; the mini keeps its original URL, the bonus has its own page. */
+export function leaderboardPath(slot: BoardSlot, day?: string | null): string {
+  const path = slot === "bonus" ? "/bonus/leaderboard" : slot === "mini" ? "/daily/leaderboard" : `/daily/leaderboard/${slot}`;
   return day ? `${path}?day=${day}` : path;
 }
 
@@ -226,7 +229,7 @@ export function boardPostsHere(): boolean {
 export function pendingResultFor(
   pending: PendingDailyResult | null | undefined,
   day: string,
-  slot: DailySlot,
+  slot: BoardSlot,
 ): PendingDailyResult | null {
   return pending && pending.day === day && pending.slot === slot ? pending : null;
 }
@@ -244,7 +247,7 @@ export function shouldReplace(existingSeconds: number | null, newSeconds: number
 export interface SubmitDailyResultInput {
   day: string;
   /** Which daily board; defaults to the mini. */
-  slot?: DailySlot;
+  slot?: BoardSlot;
   userId: string;
   displayName: string;
   mode: DailyMode;
@@ -306,7 +309,7 @@ export async function updateDailyDisplayName(
   day: string,
   userId: string,
   displayName: string,
-  slot: DailySlot = "mini",
+  slot: BoardSlot = "mini",
 ): Promise<void> {
   if (!supabase || !boardPostsHere()) return;
   if (!displayName.trim()) return;
@@ -333,7 +336,7 @@ export async function updateDailyDisplayName(
  */
 export function postDailyResult(
   day: string,
-  slot: DailySlot,
+  slot: BoardSlot,
   entry: DailyResultEntry,
   gameId: string | null = null,
 ): PendingDailyResult {
@@ -346,7 +349,7 @@ export function postDailyResult(
 /** Prepare a solo finish without treating a remembered guest name as permission to post. */
 export async function prepareSoloDailyResult(
   day: string,
-  slot: DailySlot,
+  slot: BoardSlot,
   entry: DailyResultEntry,
   user: Pick<User, "id" | "is_anonymous">,
 ): Promise<PendingDailyResult> {
@@ -389,7 +392,7 @@ export function signDailyResult(pending: PendingDailyResult, name: string): Pend
  */
 export async function fetchDailyLeaderboard(
   day: string,
-  slot: DailySlot = "mini",
+  slot: BoardSlot = "mini",
   limit = 50,
   /**
    * Only these players' rows (the friends-only board: the viewer and their

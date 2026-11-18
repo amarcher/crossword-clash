@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useHydrated } from "../lib/hydration";
 import { todaysDailySlot } from "../lib/dailyLeaderboard";
-import { DAILY_SLOTS, knownDailyPuzzle, resolveDailyPuzzle, type DailySlot } from "../lib/dailyFeed";
+import { DAILY_SLOTS, knownDailyPuzzle, refreshDailyPuzzle, resolveDailyPuzzle, type DailySlot } from "../lib/dailyFeed";
 import type { DailyMini } from "../lib/dailyMinis";
 import type { Puzzle } from "../types/puzzle";
 
@@ -23,8 +23,16 @@ export function useDailyPuzzle(slot: DailySlot): DailyMini | null | undefined {
     // never shows under the new slot's name.
     const ready = knownDailyPuzzle(slot);
     setDaily(ready);
-    if (ready !== undefined) return;
     let alive = true;
+    if (ready !== undefined) {
+      // A remembered puzzle paints at once; a copy corrected since (dailyFeed's PRESENT_TTL_MS) replaces it.
+      void refreshDailyPuzzle(slot).then((fresh) => {
+        if (alive && fresh) setDaily(fresh);
+      });
+      return () => {
+        alive = false;
+      };
+    }
     void resolveDailyPuzzle(slot).then((resolved) => {
       if (alive) setDaily(resolved);
     });

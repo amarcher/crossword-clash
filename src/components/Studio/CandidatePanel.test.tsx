@@ -32,8 +32,10 @@ function renderPanel(over: Partial<React.ComponentProps<typeof CandidatePanel>> 
 const listed = () => screen.getAllByRole("button").map((b) => b.textContent ?? "").filter((t) => /^[A-Z]{5}$/.test(t));
 
 describe("CandidatePanel", () => {
-  it("explains the dots and the two buttons in a legend", () => {
+  it("explains the dots and the two buttons in a legend behind the info button", () => {
     renderPanel();
+    expect(screen.queryByLabelText("Legend")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "What the dots and buttons mean" }));
     const legend = screen.getByLabelText("Legend");
     expect(legend.textContent).toContain("fills a whole grid");
     expect(legend.textContent).toContain("not checked yet");
@@ -55,6 +57,14 @@ describe("CandidatePanel", () => {
     expect(restore.length).toBe(3);
     fireEvent.click(restore[restore.length - 1]);
     expect(props.onReject).toHaveBeenCalledWith("GONER");
+  });
+
+  it("narrows the list to words containing the letters typed in the filter", () => {
+    renderPanel();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter words" }), { target: { value: "at" } });
+    expect(listed()).toEqual(["SLATE", "SPATE"]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter words" }), { target: { value: "xq" } });
+    expect(screen.getByText("No word here contains XQ.")).toBeTruthy();
   });
 
   it("says what red and white squares mean when nothing fits", () => {

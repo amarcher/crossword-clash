@@ -167,11 +167,66 @@ export interface Database {
           /** Generated: lower(username), unique. */
           username_lower: string;
           display_name: string | null;
+          /** Who may race or replay this account's recorded solves (race.ts). */
+          race_visibility: "everyone" | "friends" | "hidden";
+          /** The owner's "Show my Plus badge" switch. */
+          show_plus_badge: boolean;
+          /** Derived on the server (Plus and show_plus_badge); whatever a client writes is recomputed. */
+          plus_badge: boolean;
           created_at: string;
           updated_at: string;
         };
-        Insert: { user_id: string; username: string; display_name?: string | null; created_at?: string; updated_at?: string };
-        Update: { user_id?: string; username?: string; display_name?: string | null; created_at?: string; updated_at?: string };
+        Insert: { user_id: string; username: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; show_plus_badge?: boolean; created_at?: string; updated_at?: string };
+        Update: { user_id?: string; username?: string; display_name?: string | null; race_visibility?: "everyone" | "friends" | "hidden"; show_plus_badge?: boolean; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
+      race_replies: {
+        Row: {
+          id: string;
+          share_id: string;
+          to_user_id: string;
+          from_user_id: string;
+          reply_share_id: string | null;
+          name: string;
+          /** A daily's day and slot, or a community puzzle's short ID and title. */
+          day: string | null;
+          slot: "mini" | "midi" | "large" | null;
+          short_id: string | null;
+          title: string | null;
+          seconds: number;
+          to_seconds: number;
+          created_at: string;
+          seen_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      replay_shares: {
+        Row: {
+          /** 11 characters: the start of the code's SHA-256 in base64url. */
+          id: string;
+          /** The replay code (src/lib/replayCode.ts). */
+          code: string;
+          user_id: string | null;
+          created_at: string;
+        };
+        Insert: { id: string; code: string; user_id?: string | null; created_at?: string };
+        Update: { id?: string; code?: string; user_id?: string | null; created_at?: string };
+        Relationships: [];
+      };
+      solve_traces: {
+        Row: {
+          user_id: string;
+          puzzle_key: string;
+          /** The recorded finish, whole seconds. */
+          seconds: number;
+          /** `[[ms, cell, letter], …]` (race.ts TraceEvent). */
+          events: unknown;
+          created_at: string;
+        };
+        Insert: { user_id: string; puzzle_key: string; seconds: number; events: unknown; created_at?: string };
+        Update: { user_id?: string; puzzle_key?: string; seconds?: number; events?: unknown; created_at?: string };
         Relationships: [];
       };
       solves: {
@@ -180,7 +235,7 @@ export interface Database {
           /** soloStats.puzzleIdentity() of the puzzle. */
           puzzle_key: string;
           title: string;
-          source: "daily" | "nyt" | "community" | "other";
+          source: "daily" | "nyt" | "community" | "bonus" | "other";
           /** 'solo', a race mode, or 'import' for rows uploaded from pre-account localStorage. */
           mode: "solo" | "versus" | "coop" | "async" | "import";
           /** Personal finish time in whole seconds; null for a shared-grid race finish. */
@@ -193,7 +248,7 @@ export interface Database {
           user_id: string;
           puzzle_key: string;
           title?: string;
-          source: "daily" | "nyt" | "community" | "other";
+          source: "daily" | "nyt" | "community" | "bonus" | "other";
           mode: "solo" | "versus" | "coop" | "async" | "import";
           seconds?: number | null;
           completed_day: string;
@@ -290,9 +345,17 @@ export interface Database {
           filled: number;
           total: number;
           updated_at: string;
+          trace: unknown;
         };
-        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string };
-        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
+        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string; trace?: unknown };
+        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string; trace?: unknown };
+        Relationships: [];
+      };
+      /** An account's small preferences (accountPrefs.ts): one row per preference, owner-only. */
+      account_preferences: {
+        Row: { user_id: string; key: string; value: unknown; updated_at: string };
+        Insert: { user_id: string; key: string; value: unknown; updated_at?: string };
+        Update: { value?: unknown; updated_at?: string };
         Relationships: [];
       };
       /** Community puzzles (docs/community-puzzles-spec.md): one row per author, read-own. Written by accept_publishing_terms() and the admin. */
@@ -482,6 +545,11 @@ export interface Database {
       };
     };
     Views: {
+      /** Released bonus puzzles' cards (bonus.ts); the puzzle itself is bonus_puzzle(). */
+      bonus_cards: {
+        Row: { day: string; title: string; theme: string | null; author: string; width: number; height: number; blocks: string; identity: string };
+        Relationships: [];
+      };
       /** published_puzzles joined with the author's username (security_invoker: the table's RLS applies). */
       community_puzzles: {
         Row: {
@@ -512,6 +580,8 @@ export interface Database {
       };
     };
     Functions: {
+      /** Push: stores this device's token under the caller, taking the row over from the device's previous user. */
+      register_device_token: { Args: { p_token: string; p_platform: string; p_locale: string; p_timezone: string; p_app_version?: string | null }; Returns: undefined };
       /** Friends: sends a request by username; 'pending', 'accepted' (they had asked first) or 'sent' (a block: nothing written). Refusals are `friends:<code>` exceptions. */
       send_friend_request: { Args: { p_username: string }; Returns: "pending" | "accepted" | "sent" };
       respond_friend_request: { Args: { p_requester: string; p_accept: boolean }; Returns: undefined };
@@ -519,6 +589,35 @@ export interface Database {
       recent_opponents: { Args: Record<string, never>; Returns: { user_id: string; username: string; games: number; last_at: string }[] };
       /** Which of the caller's accepted friends have finished a puzzle, by its `puzzleIdentity()` key (spec §3.8): the mode and the day, never a time. */
       friend_solves: { Args: { p_puzzle_key: string }; Returns: { user_id: string; mode: string; completed_day: string }[] };
+      /** Files the racer's reply to a raced share link; its id, or null (own link, unknown sender, already replied). */
+      reply_to_race: {
+        Args: { p_share_id: string; p_reply_share_id: string | null; p_name: string; p_day: string | null; p_slot: string | null; p_short_id?: string | null; p_seconds: number; p_to_seconds: number };
+        Returns: string | null;
+      };
+      /** The day's bonus puzzle (transfer JSON) for a Plus caller; null otherwise. */
+      bonus_puzzle: { Args: { p_day: string }; Returns: unknown };
+      /** The caller's daily results; `faster_than` (the share of solvers they beat) only for Plus. */
+      my_daily_results: { Args: { p_since: string | null }; Returns: { day: string; slot: string; seconds: number; solvers: number; faster_than: number | string | null }[] };
+      /** Each accepted friend and the dailies both finished; the wins, losses and ties only for Plus. */
+      my_head_to_head: { Args: { p_since: string | null }; Returns: { friend_id: string; username: string; played: number; wins: number | null; losses: number | null; ties: number | null }[] };
+      /** How many of the caller's clues took over a minute (the free stats page's teaser). */
+      my_slow_clue_count: { Args: { p_since: string | null }; Returns: number };
+      /** The caller's ten slowest clues from their play sessions (Plus). */
+      my_slow_clues: { Args: { p_since: string | null }; Returns: { puzzle_title: string; clue: string; seconds: number; played_on: string }[] };
+      /** Repairs the caller's daily streak (Plus): yesterday, missed right after a streak, counts again; true when it now does. */
+      repair_streak: { Args: { p_day: string; p_puzzle_key: string; p_today: string }; Returns: boolean };
+      /** The sender marks replies to their links seen. */
+      mark_race_replies_seen: { Args: { p_ids: string[] }; Returns: undefined };
+      /** Files a replay code and returns its 11-character share ID (the same code, the same ID). */
+      create_replay_share: { Args: { p_code: string }; Returns: string };
+      /** Files a finished solve's race recording; true when it replaced a slower one (or was the first). */
+      save_solve_trace: { Args: { p_puzzle_key: string; p_seconds: number; p_events: unknown }; Returns: boolean };
+      /** Raceable recordings of a puzzle: friends first, then up to 10 fastest public ones; `seconds` only for Plus callers. */
+      race_candidates: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number | null; friend: boolean }[] };
+      /** A recording to race or replay (Plus); letters stripped to 1/0 until the caller has finished the puzzle. */
+      solve_trace: { Args: { p_user: string; p_puzzle_key: string }; Returns: { seconds: number; events: unknown; with_letters: boolean }[] };
+      /** The race: the caller's friends' recordings of a puzzle, fastest first (up to 11). Free; letters stripped to 1/0 until the caller has finished the puzzle. */
+      friend_race: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number; events: unknown; with_letters: boolean }[] };
       /** Which of a room's players have finished its puzzle before (the host or a player may ask): the mode, never a time. */
       room_solves: { Args: { p_game_id: string; p_puzzle_key: string }; Returns: { user_id: string; mode: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */

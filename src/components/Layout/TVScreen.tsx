@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLightStatusBar } from "../../lib/statusBar";
 import { TVBrand } from "./TVBrand";
 
 /** The quiet link under a TV screen's main action (back to the menu, another puzzle). */
@@ -7,6 +8,7 @@ export const TV_QUIET_LINK =
 
 /** Centered stage shell for the simple /host screens (menu, importing, rejoin, puzzle-ready); `footer` holds the way out. */
 export function TVScreen({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+  useLightStatusBar();
   return (
     <div
       className="tv-stage tv-stage-scroll flex flex-col items-center justify-center text-center"

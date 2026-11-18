@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { RACE_MODE_OPTIONS } from "../../lib/gameSettings";
 import type { RaceMode } from "../../types/game";
 import { SegmentedControl } from "./SegmentedControl";
+import { ModePreview } from "./ModePreview";
 
 interface RaceModeSelectorProps {
   value: RaceMode;
@@ -35,6 +36,10 @@ export function RaceModeSelector({ value, onChange, variant = "light" }: RaceMod
       <p className={`mt-2 text-sm leading-snug ${isDark ? "text-neutral-400" : "text-muted"}`}>
         {t(selectedOption.descriptionKey)}
       </p>
+      {/* What the board will look like in this mode, filling in. */}
+      <div className="mt-3">
+        <ModePreview mode={selectedOption.value} label={t(selectedOption.descriptionKey)} variant={variant} />
+      </div>
     </div>
   );
 }

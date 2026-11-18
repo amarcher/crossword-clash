@@ -3,7 +3,8 @@
  * come from cluePrompt.ts (shared with the CLI), and drafts get the same
  * checks and one fix pass as `pnpm seedgrid`.
  */
-import { alternativesRequest, clueProblems, cluesRequest, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest, type ClueRow, type Difficulty } from "./cluePrompt";
+import { clueOptionsRequest, OPTIONS_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest, type Difficulty } from "./cluePrompt";
+import { CLUE_MAX } from "./audit";
 import { slotsOf, slotText, type Grid } from "./grid";
 import { studioHeaders } from "../studioAuth";
 
@@ -82,46 +83,35 @@ export function entryAnswers(grid: Grid): Record<string, string> {
 }
 
 /**
- * Standard + speed clues for `slots` (default: every entry). Clues that fail the
- * blocking checks get one fix request; any still failing are left out.
+ * `OPTIONS_COUNT` vetted standard clues per entry for `slots` (default: every
+ * complete entry), best first, in one call. Entries left with no clue that
+ * passes the checks get one more call; any still empty are left out.
  */
-export async function draftClues(
+export async function draftClueOptions(
   call: ClaudeCaller,
   grid: Grid,
   context: string,
   opts: { slots?: string[]; difficulty?: Difficulty } = {},
-): Promise<Record<string, { standard: string; speed: string }>> {
+): Promise<Record<string, string[]>> {
   const answers = entryAnswers(grid);
   const wanted = (opts.slots ?? Object.keys(answers)).filter((id) => answers[id]);
-  const out: Record<string, { standard: string; speed: string }> = {};
-  const take = (rows: ClueRow[]) => {
-    for (const r of rows) if (wanted.includes(r.slot)) out[r.slot] = { standard: r.standard.trim(), speed: r.speed.trim() };
+  const out: Record<string, string[]> = {};
+  const take = (rows: unknown) => {
+    for (const r of Array.isArray(rows) ? (rows as { slot?: unknown; options?: unknown }[]) : []) {
+      const slot = typeof r?.slot === "string" ? r.slot : "";
+      if (!wanted.includes(slot) || out[slot]?.length) continue;
+      const vetted = vetAlternatives(answers[slot], Array.isArray(r.options) ? r.options : []);
+      if (vetted.length) out[slot] = vetted.slice(0, OPTIONS_COUNT);
+    }
   };
-  take((await call<{ clues: ClueRow[] }>(cluesRequest(grid, context, { slots: wanted, difficulty: opts.difficulty }))).clues);
-  const problems = clueProblems(Object.fromEntries(wanted.map((id) => [id, answers[id]])), out);
-  if (problems.length) {
-    take((await call<{ clues: ClueRow[] }>(cluesRequest(grid, context, { fix: problems, difficulty: opts.difficulty }))).clues);
-    for (const { slot } of clueProblems(Object.fromEntries(problems.map((p) => [p.slot, answers[p.slot]])), out)) delete out[slot];
+  if (!wanted.length) return out;
+  take((await call<{ clues: unknown }>(clueOptionsRequest(grid, context, { slots: wanted, difficulty: opts.difficulty }))).clues);
+  const empty = wanted.filter((id) => !out[id]);
+  if (empty.length) {
+    const fix = empty.map((slot) => ({ slot, problem: `keep each clue at most ${CLUE_MAX} characters and never use ${answers[slot]} or its words` }));
+    take((await call<{ clues: unknown }>(clueOptionsRequest(grid, context, { fix, difficulty: opts.difficulty }))).clues);
   }
   return out;
-}
-
-/**
- * A redraft of one entry: `ALTERNATIVES_COUNT` alternative standard clues in
- * one call (one allowance unit however many come back), vetted by
- * `vetAlternatives` so every one offered passes the checks.
- */
-export async function suggestClues(
-  call: ClaudeCaller,
-  grid: Grid,
-  context: string,
-  slotId: string,
-  opts: { difficulty?: Difficulty; current?: string } = {},
-): Promise<string[]> {
-  const answer = entryAnswers(grid)[slotId];
-  if (!answer) return [];
-  const { clues } = await call<{ clues: unknown }>(alternativesRequest(grid, context, slotId, opts));
-  return vetAlternatives(answer, Array.isArray(clues) ? clues : [], opts.current);
 }
 
 /**

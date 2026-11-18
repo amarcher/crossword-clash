@@ -34,6 +34,12 @@ export interface SoloStats {
    * its own return loop. Missing in stats saved before it existed.
    */
   nytStreak: StreakState;
+  /**
+   * The streak a single missed day just broke (the first play after the gap
+   * rolled it back to 1): the missed day and the run before it, so a Plus
+   * repair the next day can restore it (streakRepair.ts). Absent otherwise.
+   */
+  streakBreak?: { day: string; before: number };
 }
 
 export interface SoloCompletionResult {
@@ -268,12 +274,32 @@ export function loadSoloStats(): SoloStats {
   if (!raw || typeof raw !== "object") {
     return { version: 1, bestTimes: {}, streak: { ...EMPTY_STREAK }, nytStreak: { ...EMPTY_STREAK } };
   }
+  const brk = raw.streakBreak;
   return {
     version: 1,
     bestTimes: raw.bestTimes && typeof raw.bestTimes === "object" ? raw.bestTimes : {},
     streak: sanitizeStreak(raw.streak),
     nytStreak: sanitizeStreak(raw.nytStreak),
+    ...(brk && typeof brk.day === "string" && typeof brk.before === "number" ? { streakBreak: { day: brk.day, before: brk.before } } : {}),
   };
+}
+
+/**
+ * What a play on `today` leaves of a streak break: a new one when this play
+ * comes after exactly one missed day (the run it ended and that day), the
+ * standing one while it is still yesterday's, nothing otherwise.
+ */
+export function noteStreakBreak(prev: StreakState, today: string, standing: SoloStats["streakBreak"]): SoloStats["streakBreak"] {
+  if (prev.lastPlayedDay && daysBetween(prev.lastPlayedDay, today) === 2 && prev.current > 0) {
+    return { day: shiftDayKey(today, -1), before: prev.current };
+  }
+  return standing && standing.day === shiftDayKey(today, -1) ? standing : undefined;
+}
+
+/** The "YYYY-MM-DD" key `n` days after `day` (negative: before). */
+export function shiftDayKey(day: string, n: number): string {
+  const t = Date.parse(`${day}T00:00:00Z`) + n * 86_400_000;
+  return Number.isNaN(t) ? day : new Date(t).toISOString().slice(0, 10);
 }
 
 export function saveSoloStats(stats: SoloStats): void {
@@ -324,7 +350,8 @@ export function recordSoloCompletion(
   );
   const today = dayKey(now);
   const streak = rollStreak(stats.streak, today);
-  saveSoloStats({ version: 1, bestTimes, streak, nytStreak: stats.nytStreak });
+  const streakBreak = noteStreakBreak(stats.streak, today, stats.streakBreak);
+  saveSoloStats({ version: 1, bestTimes, streak, nytStreak: stats.nytStreak, ...(streakBreak ? { streakBreak } : {}) });
   const streakAdvanced = streak.lastPlayedDay === today && stats.streak.lastPlayedDay !== today;
   return { finishSeconds, bestSeconds: best, isNewBest: beat, previousBest, streak, streakAdvanced };
 }
@@ -335,8 +362,11 @@ export function recordSoloCompletion(
  */
 export function recordDailyPlay(now: Date = new Date()): StreakState {
   const stats = loadSoloStats();
-  const streak = rollStreak(stats.streak, dayKey(now));
-  saveSoloStats({ ...stats, streak });
+  const today = dayKey(now);
+  const streak = rollStreak(stats.streak, today);
+  const streakBreak = noteStreakBreak(stats.streak, today, stats.streakBreak);
+  const { streakBreak: _old, ...rest } = stats;
+  saveSoloStats({ ...rest, streak, ...(streakBreak ? { streakBreak } : {}) });
   return streak;
 }
 

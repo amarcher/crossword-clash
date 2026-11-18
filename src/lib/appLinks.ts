@@ -50,6 +50,8 @@ export function appLinkTarget(url: string): AppLinkTarget | null {
   if (path === "/puzzles" || path.startsWith("/puzzles/")) return { kind: "navigate", to: path + parsed.search };
   // A player's "add me" link: the page with the one Add button (friends.ts).
   if (/^\/add\/[A-Za-z0-9_%@]{1,64}$/.test(path)) return { kind: "navigate", to: path };
+  // A race-reply push lands on the reply's page (pushRules.ts raceReplyNotification).
+  if (/^\/reply\/[0-9a-f-]{36}$/i.test(path)) return { kind: "navigate", to: path };
   // A friend-request push lands on the Race friends screen (pushRules.ts).
   if (path === "/race" || path === "/race/friends") return { kind: "navigate", to: path };
   // The plain home link, or an invite with no code: the menu.

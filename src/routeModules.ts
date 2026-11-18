@@ -43,6 +43,9 @@ export const screenModules = {
   race: () => import("./screens/RaceScreen"),
   friends: () => import("./screens/FriendsScreen"),
   addFriend: () => import("./screens/AddFriendScreen"),
+  raceReply: () => import("./screens/RaceReplyScreen"),
+  stats: () => import("./screens/StatsScreen"),
+  bonusLeaderboard: () => import("./screens/BonusLeaderboardScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -81,6 +84,8 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/daily": screenModules.dailyPuzzle,
   "/archive": screenModules.archive,
   "/account": screenModules.account,
+  "/stats": screenModules.stats,
+  "/bonus/leaderboard": screenModules.bonusLeaderboard,
   // One prefix for both community chunks: a link to a page or the list warms the pair (both are small).
   "/puzzles": () => Promise.all([screenModules.communityBrowse(), screenModules.communityPuzzle()]),
   "/pick-puzzle": screenModules.puzzlePicker,

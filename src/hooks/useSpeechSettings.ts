@@ -11,6 +11,7 @@ import {
 } from "../lib/elevenLabsClient";
 import type { ElevenLabsVoice } from "../lib/elevenLabsClient";
 import { AudioQueue } from "../lib/audioQueue";
+import { narratorHeaders } from "../lib/narrator/narratorAuth";
 
 export interface SpeechSettings {
   muted: boolean;
@@ -58,15 +59,18 @@ function fetchElevenLabsAudio(
     return Promise.reject(new Error("ElevenLabs not configured"));
   }
 
-  return fetch(`${supabaseUrl}/functions/v1/tts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${supabaseAnonKey}`,
-      apikey: supabaseAnonKey,
-    },
-    body: JSON.stringify({ text, voice_id: voiceId }),
-  }).then((res) => {
+  // The session's token, as the AI host sends (narratorAuth.ts): with the
+  // anon key the function could not tell a subscriber, refused every request
+  // once Plus was live, and Test voice did nothing (Andrew, 2026-11-16).
+  return narratorHeaders()
+    .then((headers) =>
+      fetch(`${supabaseUrl}/functions/v1/tts`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text, voice_id: voiceId }),
+      }),
+    )
+    .then((res) => {
     if (!res.ok) throw new Error(`TTS request failed: ${res.status}`);
     return res.arrayBuffer();
   });
@@ -90,7 +94,12 @@ export function useSpeechSettings(): SpeechSettings {
           const voiceId =
             settingsRef.current.elevenLabsVoiceId ||
             ELEVENLABS_VOICES[0].id;
-          return fetchElevenLabsAudio(text, voiceId);
+          // A line the premium voice will not speak (not a subscriber, the
+          // budget cap, offline) is spoken by the device instead of dropped.
+          return fetchElevenLabsAudio(text, voiceId).catch((err) => {
+            speakBrowserRef.current(text);
+            throw err;
+          });
         },
       });
     }
@@ -154,21 +163,7 @@ export function useSpeechSettings(): SpeechSettings {
     setSettings((prev) => ({ ...prev, elevenLabsVoiceId }));
   }, []);
 
-  const speak = useCallback(
-    (text: string) => {
-      if (settingsRef.current.muted) return;
-
-      // Agent narrators (ElevenLabs, OpenAI) handle their own audio — speak() is a no-op.
-      // Claude narrator uses a separate pipeline during gameplay, but Test Voice should still work.
-      const narrator = settingsRef.current.narratorEngine;
-      if (narrator === "elevenlabs-agent" || narrator === "openai-agent") return;
-
-      if (settingsRef.current.engine === "elevenlabs" && elAvailable) {
-        getAudioQueue().enqueue(text);
-        return;
-      }
-
-      // Browser TTS fallback
+  const speakBrowser = useCallback((text: string) => {
       if (!hasSpeech()) return;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = settingsRef.current.rate;
@@ -179,8 +174,24 @@ export function useSpeechSettings(): SpeechSettings {
         if (voice) utterance.voice = voice;
       }
       speechSynthesis.speak(utterance);
+  }, []);
+  const speakBrowserRef = useRef(speakBrowser);
+  speakBrowserRef.current = speakBrowser;
+
+  const speak = useCallback(
+    (text: string) => {
+      if (settingsRef.current.muted) return;
+
+      // The AI host speaks through its own pipeline during a game; Test voice still comes through here.
+
+      if (settingsRef.current.engine === "elevenlabs" && elAvailable) {
+        getAudioQueue().enqueue(text);
+        return;
+      }
+
+      speakBrowser(text);
     },
-    [elAvailable, getAudioQueue],
+    [elAvailable, getAudioQueue, speakBrowser],
   );
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);

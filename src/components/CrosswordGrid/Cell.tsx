@@ -50,6 +50,8 @@ interface CellProps {
   wordCompleteColor?: string;
   /** Stagger delay (ms) for the word-completion sweep */
   wordCompleteDelay?: number;
+  /** A race ghost has this square filled (race.ts): a folded corner in its colour, never a letter. */
+  ghostColor?: string;
 }
 
 /**
@@ -72,6 +74,7 @@ export const Cell = memo(function Cell({
   animateFill,
   wordCompleteColor,
   wordCompleteDelay,
+  ghostColor,
 }: CellProps) {
   if (cell.solution === null) {
     return <div className="bg-ink min-h-0 min-w-0 overflow-hidden" role="gridcell" aria-hidden="true" />;
@@ -145,6 +148,17 @@ export const Cell = memo(function Cell({
       )}
       {wrong && <span aria-hidden="true" className="cell-wrong-slash pointer-events-none absolute inset-0" />}
       {revealed && !wrong && <span aria-hidden="true" className="cell-revealed-mark pointer-events-none absolute top-0 right-0" />}
+      {/* A race ghost's square: a folded corner in its colour, never a fill (Andrew, 2026-11-16: the
+          dot it replaced read as decoration). Bottom-right: the clue number has the top-left and a
+          revealed square's mark the top-right. */}
+      {ghostColor && (
+        <span
+          aria-hidden="true"
+          data-ghost
+          className="pointer-events-none absolute right-0 bottom-0 opacity-85"
+          style={{ width: "max(6px, 30cqi)", height: "max(6px, 30cqi)", backgroundColor: ghostColor, clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
+        />
+      )}
       {cellState?.letter && (
         <span
           aria-hidden="true"

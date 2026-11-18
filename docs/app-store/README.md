@@ -32,8 +32,40 @@ Saved to the App Store Connect draft through the API: all text fields above,
 the category, the review contact (copied from the TestFlight review record) and
 notes, and both screenshot sets. Nothing has been submitted for review.
 
-Screenshots are real simulator captures (iPhone 17 Pro Max, iPad Pro 13-inch
+The October screenshots were real simulator captures (iPhone 17 Pro Max, iPad Pro 13-inch
 M5) of live games on the production backend, with the alpha channel removed.
+
+## Screenshots and reel for 1.1.3 (November 16, 2026)
+
+Both sets were replaced with eight captioned tiles each (01-race-friends …
+08-archive; 06-studio, 07 and 08 are the Plus tiles). Each tile is the app's own screen,
+captured from the web build running in native mode at the device's pixel
+size, set in a device frame on the site's crossword backdrop. Player names
+are invented and their solves are synthetic, so no real player appears. The
+race tile uses the November 15 Midi because the November 16 one has NYT as an
+answer.
+
+## 1.1.3 (November 17, 2026): sent for review with build 52
+
+Through the App Store Connect API, on Andrew's go-ahead: version 1.1.3 created
+with build 52 attached (release after approval, as 1.1.2 was), then the
+description, promotional text, `whats-new-1.1.3.txt`, the review notes and both
+eight-tile screenshot sets (all sixteen processed), then a review submission
+with the version as its one item. State after the submit: WAITING_FOR_REVIEW.
+The review notes are capped at 4000 characters; the Plus paragraph now lists
+the benefits the paywall shows in this build.
+
+Later the same day, at Andrew's request, the submission was withdrawn before a
+reviewer picked it up, tile 06 was swapped in both sets (`06-keyboard` out,
+`06-studio` in: "Make your own crossword", a third Plus tile showing the
+studio with a finished 9×9) and the version was submitted again. Nothing else
+changed. Apple's API answered 500 to about half the calls that afternoon; every
+step is safe to repeat.
+
+`../marketing/crossword-clash-reel.mp4` is the matching 28.5-second promo
+reel (1080×1920, 30 fps). Its music was synthesized for it, so nothing is
+licensed. It is a marketing video, not an App Preview: it shows a TV, device
+frames and store badges, which App Previews do not allow.
 
 ## Still to do, in order
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PLAYER_COLORS } from "../../lib/playerColors";
+import { PlusName } from "../ui/PlusBadge";
 
 /** A stable colour per username, from the room colour pool. */
 export function personColor(username: string): string {
@@ -34,7 +35,9 @@ export function PersonRow({ username, detail, children }: PersonRowProps) {
     <li className="flex min-h-14 items-center gap-3 px-4 py-2.5">
       <Avatar username={username} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold leading-snug text-ink">@{username}</span>
+        <span className="block truncate font-semibold leading-snug text-ink">
+          <PlusName username={username}>@{username}</PlusName>
+        </span>
         {detail && <span className="mt-0.5 block truncate text-sm leading-snug text-muted">{detail}</span>}
       </span>
       {children && <span className="flex shrink-0 items-center gap-1.5">{children}</span>}

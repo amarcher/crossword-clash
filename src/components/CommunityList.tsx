@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Check, Swords } from "lucide-react";
-import { Button, TransitionLink } from "./ui";
+import { Button, PlusBadgeFor, TransitionLink } from "./ui";
 import { withTvIntent } from "../lib/tvHandoff";
 import { authorPath, puzzlePath, sizeBucketOf, type CommunityPuzzle } from "../lib/communityPuzzles";
 import { formatDuration } from "../lib/soloStats";
@@ -73,7 +73,8 @@ export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, on
               <p className="text-sm text-muted">
                 <TransitionLink to={link(authorPath(entry.author))} className="rounded-md hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
                   {t("community.by", { author: entry.author })}
-                </TransitionLink>
+                </TransitionLink>{" "}
+                <PlusBadgeFor username={entry.author} />
               </p>
             )}
             {entry.notes && <p className="mt-2 line-clamp-3 text-sm leading-snug text-ink-soft">{entry.notes}</p>}

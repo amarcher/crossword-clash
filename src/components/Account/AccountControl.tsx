@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { PlusSeal } from "../ui/PlusBadge";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
-import { CalendarDays, LogOut, Pencil, PencilRuler, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, ChartLine, LogOut, Pencil, PencilRuler, UserRound, Users } from "lucide-react";
 import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useFriends } from "../../contexts/FriendsContext";
 import { friendsEnabled } from "../../lib/friends";
@@ -9,6 +10,7 @@ import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { accountName, signOut } from "../../lib/account";
 import { useHydrated } from "../../lib/hydration";
 import { plusEnabled } from "../../lib/plus";
+import { PlusName } from "../ui/PlusBadge";
 import { studioRouteEnabled } from "../../lib/studioGate";
 import { prefetchRoute } from "../../routeModules";
 
@@ -120,9 +122,10 @@ export function AccountControl({ placement = "header", className = "" }: Account
     items.push({ key: "studio", icon: PencilRuler, label: t("account.menuStudio"), run: () => navigate("/studio"), warm: "/studio" });
   }
   if (plusEnabled()) {
+    items.push({ key: "stats", icon: ChartLine, label: t("stats.open"), run: () => navigate("/stats"), warm: "/stats" });
     items.push({
       key: "plus",
-      icon: Sparkles,
+      icon: UserRound, // drawn as the Plus seal below
       label: account.plus ? t("account.menuPlusManage") : t("account.menuPlusAbout"),
       run: () => account.openPaywall({ placement, returnTo: pathname }),
     });
@@ -190,7 +193,9 @@ export function AccountControl({ placement = "header", className = "" }: Account
               {avatarInitial(name)}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold leading-snug">{name}</span>
+              <span className="block truncate text-sm font-semibold leading-snug">
+                <PlusName userId={user?.id} interactive={false}>{name}</PlusName>
+              </span>
               <span className="block truncate text-xs leading-snug text-muted">{username ? accountName(user) : t("account.noUsernameYet")}</span>
             </span>
           </div>
@@ -209,7 +214,7 @@ export function AccountControl({ placement = "header", className = "" }: Account
                 run();
               }}
             >
-              <Icon className={`size-4 shrink-0 ${key === "plus" ? "text-brand-600" : "text-muted"}`} aria-hidden="true" />
+              {key === "plus" ? <PlusSeal size="1rem" /> : <Icon className="size-4 shrink-0 text-muted" aria-hidden="true" />}
               <span className="min-w-0 flex-1 truncate">{label}</span>
               {badge !== undefined && (
                 <span aria-hidden="true" className="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold tabular-nums text-white">

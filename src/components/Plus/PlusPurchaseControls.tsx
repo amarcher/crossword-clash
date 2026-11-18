@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { Check, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui";
 import { track } from "../../lib/analytics";
 import type { EntitlementRow } from "../../lib/entitlements";
-import { formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
+import { annualSavingPercent, formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { openBillingPortal, reconcileEntitlements, startCheckout, storeManagementUrl, type PlusPlan } from "../../lib/plusPurchase";
 import { nativePurchaseAvailable, purchaseNativePlan, purchasePlatform, restoreNativePurchases } from "../../lib/nativePurchase";
 import { SITE_ORIGIN } from "../../lib/pageMeta";
@@ -34,18 +34,22 @@ const LINK = "min-h-11 inline-flex items-center rounded-lg px-1 underline-offset
 /**
  * The buy / manage / restore controls under the Plus pitch
  * (docs/monetization-spec.md §3.3): Stripe Checkout on the web, RevenueCat in
- * the apps, both ending in the same `entitlements` rows. Shows the two plans
- * (annual first; worded "1 month free, then …" when the purchase starts with
- * the free month, `useFreeMonth`), "Restore purchases" in the apps, "Manage subscription"
- * (Customer Portal or the store's own settings), and the Terms / Privacy
- * links Apple's Schedule 2 requires on every paywall. The apps never link to
- * the web checkout.
+ * the apps, both ending in the same `entitlements` rows. For a visitor
+ * without Plus it is one module (Andrew, 2026-11-13): the two plans as tiles
+ * to choose between (annual first and preselected, each with its price and
+ * "1 month free" when the purchase starts with one, `useFreeMonth`), one
+ * button for the chosen plan, then a line that states what will be charged
+ * and when, with "Restore purchases" (apps) and the Terms / Privacy links
+ * Apple's Schedule 2 requires on every paywall. A subscriber gets "Manage
+ * subscription" (Customer Portal or the store's own settings). The apps
+ * never link to the web checkout.
  */
 export function PlusPurchaseControls({ account, placement, returnTo, signInPrompt }: PlusPurchaseControlsProps) {
   const { t, i18n } = useTranslation();
   const native = nativePurchaseAvailable();
   const channel = native ? "revenuecat" : "stripe";
   const [busy, setBusy] = useState<string | null>(null);
+  const [plan, setPlan] = useState<PlusPlan>("annual");
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const prices = useStorePrices();
   const free = useFreeMonth();
@@ -109,19 +113,6 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
   // In the apps a relative link opens nothing on iOS (WebKit hands capacitor://localhost/terms
   // to UIApplication.open) and replaces the app on Android; the public site opens in the browser.
   const legalHref = (path: string) => (native ? `${SITE_ORIGIN}${path}` : path);
-  const legal = (
-    <p className="text-center text-xs leading-relaxed text-subtle">
-      {t(free.annual || free.monthly ? "plus.legalNoteFreeMonth" : "plus.legalNote")}{" "}
-      <a className={LINK} href={legalHref("/terms")} target="_blank" rel="noopener">
-        {t("plus.terms")}
-      </a>{" "}
-      ·{" "}
-      <a className={LINK} href={legalHref("/privacy")} target="_blank" rel="noopener">
-        {t("plus.privacy")}
-      </a>
-    </p>
-  );
-
   if (account.plus) {
     const row = account.plusRow;
     const when = row?.expires_at ? new Date(row.expires_at).toLocaleDateString(i18n.language, { month: "long", day: "numeric", year: "numeric" }) : null;
@@ -144,21 +135,70 @@ export function PlusPurchaseControls({ account, placement, returnTo, signInPromp
     );
   }
 
+  const annual = prices.find((p) => p.plan === "annual");
+  const monthly = prices.find((p) => p.plan === "monthly");
+  const saving = annual && monthly && monthly.price > 0 ? annualSavingPercent(monthly.price, annual.price) : annualSavingPercent();
+  const tiles: { plan: PlusPlan; name: string; price: string }[] = [
+    { plan: "annual", name: t("plus.yearly"), price: t("plus.priceYear", { price: priceFor("annual") }) },
+    { plan: "monthly", name: t("plus.monthly"), price: t("plus.priceMonth", { price: priceFor("monthly") }) },
+  ];
+  const terms = `plus.terms${plan === "annual" ? "Annual" : "Monthly"}${free[plan] ? "Free" : ""}`;
+
   return (
-    <div className="flex flex-col gap-2.5">
-      <Button size="lg" block disabled={busy !== null} aria-busy={busy === "annual" || undefined} onClick={() => buy("annual")}>
-        {t(free.annual ? "plus.subscribeAnnualFree" : "plus.subscribeAnnual", { price: priceFor("annual") })}
+    <div className="flex flex-col gap-3">
+      <div role="radiogroup" aria-label={t("plus.choosePlan")} className="grid grid-cols-2 gap-2.5">
+        {tiles.map((tile) => {
+          const on = plan === tile.plan;
+          return (
+            <button
+              key={tile.plan}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              disabled={busy !== null}
+              onClick={() => setPlan(tile.plan)}
+              className={`relative flex min-h-[5.25rem] flex-col rounded-xl p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${on ? "bg-brand-50 ring-2 ring-brand-600" : "bg-surface ring-1 ring-line-strong hover:bg-surface-sunken"}`}
+            >
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className={`grid size-4 shrink-0 place-items-center rounded-full ${on ? "bg-brand-600 text-white" : "ring-1 ring-inset ring-line-strong"}`}>
+                  {on && <Check className="size-3" strokeWidth={3} />}
+                </span>
+                <span className="text-sm font-semibold text-ink">{tile.name}</span>
+                {tile.plan === "annual" && saving > 0 && (
+                  <span className="ml-auto whitespace-nowrap rounded-full bg-gold-100 px-1.5 py-1 text-[11px] font-semibold leading-none text-gold-700">{t("plus.annualSave", { percent: saving })}</span>
+                )}
+              </span>
+              {/* The price leads and the free month is the quieter line under it: Apple's review (3.1.2) refuses a paywall where the trial outweighs what is billed. */}
+              <span className="mt-2 font-semibold text-ink tabular-nums">{tile.price}</span>
+              {free[tile.plan] && <span className="mt-0.5 text-xs text-muted">{t("plus.freeMonthChip")}</span>}
+            </button>
+          );
+        })}
+      </div>
+      <Button size="lg" block disabled={busy !== null} aria-busy={busy === plan || undefined} onClick={() => buy(plan)}>
+        {t(free[plan] ? "plus.startFreeMonth" : "plus.getPlus")}
       </Button>
-      <Button variant="secondary" size="lg" block disabled={busy !== null} aria-busy={busy === "monthly" || undefined} onClick={() => buy("monthly")}>
-        {t(free.monthly ? "plus.subscribeMonthlyFree" : "plus.subscribeMonthly", { price: priceFor("monthly") })}
-      </Button>
-      {native && (
-        <Button variant="ghost" size="md" block disabled={busy !== null} aria-busy={busy === "restore" || undefined} onClick={restore}>
-          {t("plus.restore")}
-        </Button>
-      )}
       {notice && <Notice notice={notice} />}
-      {legal}
+      <div className="text-center leading-relaxed">
+        <p className="text-balance text-sm text-ink-soft">{t(terms, { price: priceFor(plan) })}</p>
+        <p className="text-xs text-subtle">
+          {native && (
+            <>
+              <button type="button" className={LINK} disabled={busy !== null} aria-busy={busy === "restore" || undefined} onClick={restore}>
+                {t("plus.restore")}
+              </button>{" "}
+              ·{" "}
+            </>
+          )}
+          <a className={LINK} href={legalHref("/terms")} target="_blank" rel="noopener">
+            {t("plus.terms")}
+          </a>{" "}
+          ·{" "}
+          <a className={LINK} href={legalHref("/privacy")} target="_blank" rel="noopener">
+            {t("plus.privacy")}
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

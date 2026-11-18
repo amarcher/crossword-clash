@@ -24,10 +24,20 @@ export interface PuzzleClue {
 /**
  * Where a puzzle came from, when it matters after import. The NYT bookmarklet
  * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
- * (docs/community-puzzles-spec.md) records its solves under its own source.
+ * (docs/community-puzzles-spec.md) records its solves under its own source;
+ * a bonus (bonus.ts) is Plus only, so its share link never carries it.
  * Absent for file uploads, dailies and samples.
  */
-export type PuzzleOrigin = "nyt-bookmarklet" | "community";
+export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
+
+/**
+ * Which shared puzzle this is, where the site can name it by link: a day's
+ * daily (`/daily/:day/:slot`) or a community puzzle (`/puzzles/:shortId`).
+ * Set where the puzzle is fetched (dailyFeed.fetchDailyForDay,
+ * communityPuzzles.toPlayablePuzzle); what a finish's friend invite, replay
+ * and race reply point at. Absent for imports, which have no such link.
+ */
+export type PuzzleRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
 
 export interface Puzzle {
   /** Provenance for subscriber-directed imports; contains no account or session data. */
@@ -39,6 +49,9 @@ export interface Puzzle {
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
+  ref?: PuzzleRef;
+  /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on. Never a link. */
+  bonusDay?: string;
 }
 
 export interface CellState {

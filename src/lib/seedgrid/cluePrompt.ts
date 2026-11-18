@@ -94,26 +94,50 @@ ${slots.map((s) => `${s.id} ${slotText(grid, s)}`).join("\n")}`,
   };
 }
 
-/** How many alternatives one redraft asks for: enough to choose from, cheap enough for one allowance unit. */
-export const ALTERNATIVES_COUNT = 3;
+/** How many standard clues a whole-puzzle draft asks for per entry: the best is written in, the rest offered. */
+export const OPTIONS_COUNT = 3;
 
-/** Several different standard clues for one entry, so the constructor can pick. */
-export function alternativesRequest(grid: Grid, context: string, slotId: string, opts: { count?: number; difficulty?: Difficulty; current?: string } = {}): ClaudeJsonRequest {
-  const slot = slotsOf(grid).find((s) => s.id === slotId);
-  const answer = slot ? slotText(grid, slot) : "";
+/**
+ * `OPTIONS_COUNT` different standard clues for every listed entry, best first,
+ * in one call. The studio's only clue request (2026-11-12): a per-entry call
+ * resends the whole grid for one entry's clues, about three times the cost per
+ * clue, so options arrive with the draft instead. No speed clue: no player sees
+ * one (see `StudioState.speedClues`). `fix` re-asks for entries whose clues all
+ * failed the checks.
+ */
+export function clueOptionsRequest(
+  grid: Grid,
+  context: string,
+  opts: { slots?: string[]; difficulty?: Difficulty; count?: number; fix?: { slot: string; problem: string }[] } = {},
+): ClaudeJsonRequest {
+  const count = opts.count ?? OPTIONS_COUNT;
+  const wanted = new Set(opts.slots ?? opts.fix?.map((f) => f.slot) ?? slotsOf(grid).map((s) => s.id));
+  const slots = slotsOf(grid).filter((s) => wanted.has(s.id));
+  const fix = opts.fix?.length ? `\nEvery clue for these entries was rejected; write new ones that fix the problems:\n${opts.fix.map((f) => `${f.slot}: ${f.problem}`).join("\n")}\n` : "";
   return {
     system: CONSTRUCTOR,
     prompt: `${header(grid, context)}
 
-Write ${opts.count ?? ALTERNATIVES_COUNT} different clues for ${slotId} ${answer}, each taking a distinct angle (definition, wordplay, pop culture, fill-in-the-blank...).
-Style: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}.
-${opts.current ? `The current clue is "${opts.current}"; do not repeat it.\n` : ""}${RULES}`,
+Write ${count} different clues for every entry below, each taking a distinct angle (definition, wordplay, pop culture, fill-in-the-blank...). List your best first: it goes straight into the puzzle, and the others are offered as alternatives.
+Style: ${STANDARD_STYLE[opts.difficulty ?? "medium"]}. Theme entries may nod to the theme when one is stated above.
+${RULES}
+${fix}
+${slots.map((s) => `${s.id} ${slotText(grid, s)}`).join("\n")}`,
     schema: {
       type: "object",
-      properties: { clues: { type: "array", items: { type: "string" } } },
+      properties: {
+        clues: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { slot: { type: "string" }, options: { type: "array", items: { type: "string" } } },
+            required: ["slot", "options"],
+          },
+        },
+      },
       required: ["clues"],
     },
-    maxTokens: 1500,
+    maxTokens: Math.min(16000, 1000 + slots.length * 40 * count),
   };
 }
 

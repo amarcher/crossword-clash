@@ -31,9 +31,18 @@ vi.mock("@capacitor/core", () => ({
 }));
 vi.mock("@capacitor/push-notifications", () => ({ PushNotifications: pluginLike(impl, calls) }));
 
-const db = vi.hoisted(() => ({ ops: [] as { table: string; op: string; args: unknown[] }[], result: { data: null as unknown, error: null as unknown } }));
+const db = vi.hoisted(() => ({
+  ops: [] as { table: string; op: string; args: unknown[] }[],
+  result: { data: null as unknown, error: null as unknown },
+  rpcs: [] as { name: string; args: unknown }[],
+  rpcError: null as unknown,
+}));
 vi.mock("./supabaseClient", () => ({
   supabase: {
+    rpc: (name: string, args: unknown) => {
+      db.rpcs.push({ name, args });
+      return Promise.resolve({ data: null, error: db.rpcError });
+    },
     from: (table: string) => {
       const api: Record<string, unknown> = {};
       for (const op of ["upsert", "delete", "eq", "select", "maybeSingle"]) {
@@ -60,6 +69,8 @@ beforeEach(async () => {
   vi.stubEnv("VITE_PUSH", "1");
   calls.length = 0;
   db.ops.length = 0;
+  db.rpcs.length = 0;
+  db.rpcError = null;
   db.result = { data: null, error: null };
   Object.keys(impl).forEach((k) => delete impl[k]);
   Object.keys(listeners).forEach((k) => delete listeners[k]);
@@ -111,13 +122,26 @@ describe("registerPushToken", () => {
     };
     const token = await settles(mod.registerPushToken("user-1", { locale: "es-MX", appVersion: "1.2.0" }));
     expect(token).toBe("apns-token-1234567890");
+    // Through the function that moves the row to the caller, so a token first stored under the device's previous user follows the device.
+    expect(db.rpcs).toHaveLength(1);
+    expect(db.rpcs[0].name).toBe("register_device_token");
+    expect(db.rpcs[0].args).toMatchObject({ p_token: "apns-token-1234567890", p_platform: "ios", p_locale: "es", p_app_version: "1.2.0" });
+    expect(typeof (db.rpcs[0].args as { p_timezone: string }).p_timezone).toBe("string");
+    expect(db.ops.find((o) => o.op === "upsert")).toBeUndefined();
+    expect(localStorage.getItem("crossword-clash:push-token")).toBe("apns-token-1234567890");
+    expect(calls).not.toContain("then");
+  });
+
+  it("falls back to the plain upsert on a database that does not have the function yet", async () => {
+    db.rpcError = { code: "PGRST202", message: "function not found" };
+    impl.register = async () => {
+      listeners.registration?.forEach((cb) => cb({ value: "apns-token-1234567890" }));
+    };
+    await settles(mod.registerPushToken("user-1", { locale: "es-MX", appVersion: "1.2.0" }));
     const upsert = db.ops.find((o) => o.op === "upsert")!;
     expect(upsert.table).toBe("device_tokens");
     expect(upsert.args[0]).toMatchObject({ user_id: "user-1", platform: "ios", token: "apns-token-1234567890", locale: "es", app_version: "1.2.0", failed_at: null });
-    expect(typeof (upsert.args[0] as { timezone: string }).timezone).toBe("string");
     expect(upsert.args[1]).toEqual({ onConflict: "token" });
-    expect(localStorage.getItem("crossword-clash:push-token")).toBe("apns-token-1234567890");
-    expect(calls).not.toContain("then");
   });
 
   it("resolves null on a registration error and writes nothing", async () => {

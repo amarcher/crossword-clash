@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Download, Flame, Globe, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
+import { CircleHelp, Download, Flame, Globe, LayoutGrid, Play, Save, Sparkles, Square, Undo2 } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, Select } from "../components/ui";
 import { StudioGrid } from "../components/Studio/StudioGrid";
 import { TitleField } from "../components/Studio/TitleField";
 import type { HiddenGridInputHandlers } from "../hooks/useHiddenGridInput";
 import { CandidatePanel } from "../components/Studio/CandidatePanel";
-import { CluePanel } from "../components/Studio/CluePanel";
+import { CluePanel, type CluePanelHandle } from "../components/Studio/CluePanel";
 import { PuzzleList } from "../components/Studio/PuzzleList";
 import { DailyQueue } from "../components/Studio/DailyQueue";
 import { Insights } from "../components/Studio/Insights";
@@ -15,6 +15,11 @@ import { Reports } from "../components/Studio/Reports";
 import { StudioAccount } from "../components/Studio/StudioAccount";
 import { EngineError } from "../components/Studio/EngineError";
 import { WordListDownload } from "../components/Studio/WordListDownload";
+import { StudioPopover } from "../components/Studio/StudioPopover";
+import { StudioSection } from "../components/Studio/StudioSection";
+import { CandidateStrip } from "../components/Studio/CandidateStrip";
+import { ActiveClueBar } from "../components/Studio/ActiveClueBar";
+import { WordSheet } from "../components/Studio/WordSheet";
 import { StudioTabBar, studioPanelId, studioTabId, type StudioTab } from "../components/Studio/StudioTabBar";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useStudioAccount } from "../hooks/useStudioAccount";
@@ -40,7 +45,9 @@ import {
   activeSlot,
   cellHeat,
   duplicateEntries,
+  clueOptionsFor,
   initialStudioState,
+  layoutSymmetry,
   newPuzzleId,
   rulesFor,
   slotKey,
@@ -55,6 +62,8 @@ const CLASSIFY_BATCH = 4;
 const CLASSIFY_MS = 250;
 /** Tailwind's `lg`: from here up the studio is the three-column desk; below it, one screen with tabs. */
 const DESKTOP_QUERY = "(min-width: 64rem)";
+/** A secondary tool's label: hidden on a narrow phone and in a narrow desk centre, where the icon and its title stand alone. */
+const TOOL_LABEL = "max-sm:sr-only @max-[28rem]:sr-only";
 
 function loadDraft(): StudioState {
   try {
@@ -68,6 +77,11 @@ function loadDraft(): StudioState {
     // A missing or unreadable draft just means a fresh grid.
   }
   return initialStudioState(5);
+}
+
+/** "4A" → "4 Across", for messages. */
+function entryName(id: string): string {
+  return `${id.slice(0, -1)} ${id.endsWith("A") ? "Across" : "Down"}`;
 }
 
 /** The grid with only the curator's letters: what the engine reasons from. */
@@ -102,6 +116,12 @@ export function StudioScreen() {
   const navigate = useTransitionNavigate();
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const [tab, setTab] = useState<StudioTab>("grid");
+  // The desk's right column: the word list or the clues.
+  const [sideTab, setSideTab] = useState<"words" | "clues">("words");
+  const cluePanelRef = useRef<CluePanelHandle>(null);
+  // The phone's pull-up word list, and the grid box it rises to meet.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const gridBox = useRef<HTMLDivElement>(null);
   // The daily queue, reports and insights are the constructor's: a Plus-only visitor never sees them, and the apps never show them.
   const adminPanels = (account.admin || !!studioToken || !account.plus) && studioAdminPanelsAllowed();
   const access = { admin: account.admin, plus: account.plus };
@@ -222,7 +242,12 @@ export function StudioScreen() {
   const base = useMemo(() => committed(state.grid), [state.grid]);
   const rulesJson = JSON.stringify(rules);
   const dupes = useMemo(() => duplicateEntries(base), [base]);
-  useEffect(() => setStuck([]), [base, rulesJson]);
+  // Set when a fill proved this grid can't be filled under these rules; any change to either clears it.
+  const [unfillable, setUnfillable] = useState(false);
+  useEffect(() => {
+    setStuck([]);
+    setUnfillable(false);
+  }, [base, rulesJson]);
 
   // Heatmap, candidates for the selected entry, then background proofs for the top candidates.
   useEffect(() => {
@@ -288,6 +313,7 @@ export function StudioScreen() {
           fill: (g, r) => client.fill(g, r, PROBE_MS, fillSeed.current++),
         });
         if (latestGrid.current !== started) return;
+        setUnfillable(true);
         setStuck(verdict.cells);
         setMessage(verdict.message);
       }
@@ -319,7 +345,8 @@ export function StudioScreen() {
     const started = state.grid;
     try {
       // Approvals belong to the current grid's slots, so a new layout only uses score and rejections.
-      const res = await client.skeleton(gridSize, state.symmetry, seeds, { minScore: state.minScore, rejected: state.rejected });
+      // Theme entries pair up in mirrored rows, which takes a symmetry: with none chosen, lay out rotationally.
+      const res = await client.skeleton(gridSize, layoutSymmetry(state.symmetry), seeds, { minScore: state.minScore, rejected: state.rejected });
       if (latestGrid.current !== started) setMessage("The grid changed during layout, so that layout was dropped.");
       else if (res.grid) {
         setSize(gridSize);
@@ -354,6 +381,18 @@ export function StudioScreen() {
   );
 
   const heat = useMemo(() => (showHeat && heatCounts ? cellHeat(base, heatCounts) : undefined), [showHeat, heatCounts, base]);
+  // Why Fill can't run right now, if it can't: it is offered from the start and disabled only then.
+  const fillBlocked = useMemo(() => {
+    if (dupes.length) return `${dupes.map(entryName).join(", ")} repeat a word. Change one to fill.`;
+    const dead = slotsOf(base).find((s) => s.cells.some((c) => base.cells[c] === "") && heatCounts?.[s.id] === 0);
+    if (dead) return `No word fits ${entryName(dead.id)}. Change a crossing letter or a black square to fill.`;
+    if (unfillable) return "These rules can't fill this grid. Change a square, an approval or the score floor to try again.";
+    return null;
+  }, [dupes, base, heatCounts, unfillable]);
+  const fewest = useMemo(() => {
+    const known = (heat ?? []).filter((n): n is number => n !== undefined);
+    return known.length ? Math.min(...known) : null;
+  }, [heat]);
   const stats = gridStats(state.grid);
   const slots = slotsOf(state.grid);
   const complete = state.grid.cells.every((c) => c !== "");
@@ -417,124 +456,253 @@ export function StudioScreen() {
 
   const engineNotice =
     engine.kind === "error" ? (
-      <EngineError className={desktop ? "lg:col-span-3" : ""} listUrl={STUDIO_WORD_LIST_URL} message={engine.message} onRetry={startEngine} />
+      <EngineError listUrl={STUDIO_WORD_LIST_URL} message={engine.message} onRetry={startEngine} />
     ) : engine.kind === "loading" && engine.progress ? (
-      <WordListDownload className={desktop ? "lg:col-span-3" : ""} progress={engine.progress} />
+      <WordListDownload progress={engine.progress} />
     ) : null;
 
   const playTestButton = (block = false) => (
-    <Button variant={block ? "secondary" : "ghost"} block={block} onClick={playTest} disabled={!complete} title={Capacitor.isNativePlatform() ? "Open this puzzle in the solver" : "Open this puzzle in the solver, in a new tab"}>
-      <Play className="size-4" aria-hidden="true" /> Play test
+    <Button variant={block ? "secondary" : "ghost"} size={block ? "md" : "sm"} block={block} onClick={playTest} disabled={!complete} title={Capacitor.isNativePlatform() ? "Open this puzzle in the solver" : "Open this puzzle in the solver, in a new tab"}>
+      <Play className="size-4" aria-hidden="true" /> <span className={block ? "" : TOOL_LABEL}>Play test</span>
     </Button>
   );
   const publishButton = (block = false) =>
     communityEnabled() ? (
-      <Button variant={block ? "secondary" : "ghost"} block={block} onClick={() => setPublishOpen(true)} disabled={!complete} title="Publish this puzzle for other players to find and play">
-        <Globe className="size-4" aria-hidden="true" /> {published[state.id]?.status === "published" ? "Published" : "Publish"}
+      <Button variant={block ? "secondary" : "ghost"} size={block ? "md" : "sm"} block={block} onClick={() => setPublishOpen(true)} disabled={!complete} title="Publish this puzzle for other players to find and play">
+        <Globe className="size-4" aria-hidden="true" /> <span className={block ? "" : TOOL_LABEL}>{published[state.id]?.status === "published" ? "Published" : "Publish"}</span>
       </Button>
     ) : null;
 
-  const gridPanel = (
-    <section aria-label="Grid" className={desktop ? "order-1 lg:order-2" : ""}>
-      <div className="mx-auto w-full max-w-[36rem]">
-        <TitleField state={state} dispatch={dispatch} access={access} />
-        <StudioGrid
-          grid={state.grid}
-          cursor={state.cursor}
-          direction={state.dir}
-          activeCells={slot?.cells ?? []}
-          heat={heat}
-          stuck={stuck}
-          onSelect={(cell) => dispatch({ type: "SELECT", cell })}
-          onToggleBlock={(cell) => dispatch({ type: "TOGGLE_BLOCK", cell })}
-          onToggleDirection={() => dispatch({ type: "TOGGLE_DIR" })}
-          onShowWords={(cell, dir) => {
-            dispatch({ type: "SELECT", cell });
-            dispatch({ type: "SET_DIR", dir });
-            if (!desktop) setTab("words");
+  const slotLabel = slot ? `${slot.number} ${slot.dir === "across" ? "Across" : "Down"}` : "";
+  const slotWords = candidates?.key === key ? candidates.words : null;
+  const placeWord = (word: string) => dispatch({ type: "PLACE_WORD", word });
+  const toolSize = desktop ? "sm" : "md";
+
+  // Fill first (the one primary action), then the grid tools; the help and legends wait behind "?".
+  const toolbar = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {busy ? (
+        <Button variant="secondary" size={toolSize} onClick={stop}>
+          <Square className="size-4" aria-hidden="true" /> Stop
+        </Button>
+      ) : (
+        <Button size={toolSize} onClick={runFill} disabled={engine.kind !== "ready" || busy !== null || !!fillBlocked} title={fillBlocked ?? undefined}>
+          <Sparkles className="size-4" aria-hidden="true" /> {complete ? "New fill" : "Fill"}
+        </Button>
+      )}
+      <Button variant="secondary" size={toolSize} onClick={() => dispatch({ type: "CLEAR_FILL" })} disabled={busy !== null} title="Clear fill: keep your own letters and the black squares">
+        <Undo2 className="size-4" aria-hidden="true" /> <span className={TOOL_LABEL}>Clear fill</span>
+      </Button>
+      <Button variant="ghost" size={toolSize} onClick={() => dispatch({ type: "TOGGLE_BLOCK" })} aria-label="Toggle black square" title="Toggle black square (.)">
+        <LayoutGrid className="size-4" aria-hidden="true" /> <span className={TOOL_LABEL} aria-hidden="true">Block</span>
+      </Button>
+      <Button variant="ghost" size={toolSize} aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""} title="Heatmap: how many words fit through each square">
+        <Flame className="size-4" aria-hidden="true" /> <span className={TOOL_LABEL}>Heatmap</span>
+      </Button>
+      {/* AI clues, offered where the constructor is looking once there's something to clue; the draft runs in the clue panel, which opens. */}
+      {complete && missingClues > 0 && (
+        <Button
+          variant="soft"
+          size={toolSize}
+          disabled={busy !== null}
+          title="Write a clue for every entry without one, with AI"
+          onClick={() => {
+            if (desktop) setSideTab("clues");
+            else setTab("clues");
+            cluePanelRef.current?.draftAll();
           }}
-          input={gridInput}
-        />
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {busy ? (
-            <Button variant="secondary" onClick={stop}>
-              <Square className="size-4" aria-hidden="true" /> Stop
-            </Button>
-          ) : (
-            <Button onClick={runFill} disabled={engine.kind !== "ready" || busy !== null}>
-              <Sparkles className="size-4" aria-hidden="true" /> {complete ? "New fill" : "Fill"}
-            </Button>
-          )}
-          <Button variant="secondary" onClick={() => dispatch({ type: "CLEAR_FILL" })} disabled={busy !== null}>
-            <Undo2 className="size-4" aria-hidden="true" /> Clear fill
-          </Button>
-          <Button variant="ghost" onClick={() => dispatch({ type: "TOGGLE_BLOCK" })} aria-label="Toggle black square">
-            <LayoutGrid className="size-4" aria-hidden="true" /> Block
-          </Button>
-          {desktop && playTestButton()}
-          {desktop && publishButton()}
-          <Button variant="ghost" aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""}>
-            <Flame className="size-4" aria-hidden="true" /> Heatmap
-          </Button>
-        </div>
-        {message && <p role="status" className="mt-3 rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
-        <p className="mt-3 text-sm text-muted">
-          {stats.words} words · {stats.blocks} blocks ({Math.round(stats.blockPct * 100)}%) · average {stats.avgLength.toFixed(1)}
-          {stats.shortRuns > 0 && <span className="text-red-600"> · {stats.shortRuns} two-letter runs</span>}
-          {!stats.connected && <span className="text-red-600"> · grid is split</span>}
-        </p>
-        {showHeat && (
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-label="Heatmap legend">
-            <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-red-200" aria-hidden="true" /> no word fits through this square</span>
-            <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-brand-100" aria-hidden="true" /> only a few</span>
-            <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-surface-sunken ring-1 ring-line" aria-hidden="true" /> some</span>
-            <span>· on the gold word the same shows as a corner dot</span>
-          </p>
-        )}
-        <p className="mt-1 text-xs text-subtle">
+        >
+          <Sparkles className="size-4" aria-hidden="true" /> Draft {missingClues === slots.length ? "all" : missingClues} clues
+        </Button>
+      )}
+      {desktop && playTestButton()}
+      {desktop && publishButton()}
+      <StudioPopover label="How the studio works" icon={<CircleHelp className="size-4" aria-hidden="true" />} className="ml-auto">
+        <p>
           {desktop
             ? 'Type to write (your letters are bold and kept). Right-click a square for black / white, direction and the words through it; "." also toggles a black square, and a letter typed on one opens it again. Space, Enter or a second tap switches between across and down.'
             : "Tap a square and type (your letters are bold and kept). Hold a square for black / white, direction and the words through it; typing a letter on a black square opens it again. A second tap switches between across and down."}
         </p>
+        <ul className="mt-2 flex flex-col gap-1" aria-label="Heatmap legend">
+          <li>Heatmap: how many words still fit through each square, given the letters you typed. Darker means fewer.</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-red-200" aria-hidden="true" /> none: no word fits</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-200" aria-hidden="true" /> 1–5 words</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-100" aria-hidden="true" /> 6–20</li>
+          <li className="flex items-center gap-1.5"><span className="size-2.5 shrink-0 rounded-sm bg-brand-50 ring-1 ring-line" aria-hidden="true" /> 21–100; white is more</li>
+          <li>On the gold word the same shows as a corner dot.</li>
+        </ul>
+      </StudioPopover>
+    </div>
+  );
+
+  // Says why Fill is greyed out, unless a message from the last fill already does.
+  const blockedNote = fillBlocked && !message && busy === null ? <p className="text-sm text-red-700">{fillBlocked}</p> : null;
+
+  // The clue bar's ‹ ›: the previous or next entry, across then down, wrapping around.
+  const stepEntry = (delta: 1 | -1) => {
+    const order = [...slots.filter((s) => s.dir === "across"), ...slots.filter((s) => s.dir === "down")];
+    const at = order.findIndex((s) => slotKey(s) === key);
+    const next = order[(at + delta + order.length) % order.length];
+    if (!next) return;
+    dispatch({ type: "SELECT", cell: next.cells[0] });
+    dispatch({ type: "SET_DIR", dir: next.dir });
+  };
+
+  const statsLine = (
+    <p className="text-sm text-muted">
+      {stats.words} words · {stats.blocks} blocks ({Math.round(stats.blockPct * 100)}%) · average {stats.avgLength.toFixed(1)}
+      {stats.shortRuns > 0 && <span className="text-red-600"> · {stats.shortRuns} two-letter runs</span>}
+      {!stats.connected && <span className="text-red-600"> · grid is split</span>}
+      {/* The heatmap's own readout, so turning it on always says something even when no square is tight. */}
+      {heat && (fewest !== null || complete) && (
+        <span className={fewest === 0 ? "text-red-600" : ""}>
+          {" · "}
+          {fewest === null ? "every entry is written" : `tightest square: ${fewest.toLocaleString()} ${fewest === 1 ? "word" : "words"}`}
+        </span>
+      )}
+    </p>
+  );
+
+  const grid = (
+    <StudioGrid
+      grid={state.grid}
+      cursor={state.cursor}
+      direction={state.dir}
+      activeCells={slot?.cells ?? []}
+      heat={heat}
+      stuck={stuck}
+      onSelect={(cell) => dispatch({ type: "SELECT", cell })}
+      onToggleBlock={(cell) => dispatch({ type: "TOGGLE_BLOCK", cell })}
+      onToggleDirection={() => dispatch({ type: "TOGGLE_DIR" })}
+      onShowWords={(cell, dir) => {
+        dispatch({ type: "SELECT", cell });
+        dispatch({ type: "SET_DIR", dir });
+        if (desktop) setSideTab("words");
+        else setSheetOpen(true);
+      }}
+      input={gridInput}
+    />
+  );
+  // Squares stop growing at 4rem, so a mini is a tidy block rather than a wall of 115 px squares.
+  const gridCap = `${state.grid.width * 4}rem`;
+
+  const gridPanel = desktop ? (
+    // The desk's centre: title and tools on top, then the grid as large as the space left allows.
+    <section aria-label="Grid" className="@container flex min-h-0 flex-col gap-2">
+      <TitleField state={state} dispatch={dispatch} access={access} />
+      {toolbar}
+      <div className="min-h-0 flex-1 [container-type:size]">
+        <div className="mx-auto" style={{ width: `min(100cqw, calc(100cqh * ${state.grid.width / state.grid.height}), ${gridCap})` }}>
+          {grid}
+        </div>
       </div>
+      {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
+      {blockedNote}
+      {statsLine}
+    </section>
+  ) : (
+    <section aria-label="Grid" className="flex flex-col gap-2">
+      <TitleField state={state} dispatch={dispatch} access={access} />
+      {/* A tablet in portrait would otherwise get a grid taller than the screen; leave room for the strip, tools and tab bar. */}
+      <div ref={gridBox} className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 31rem)))` }}>
+        {grid}
+      </div>
+      {slot && key && (
+        <CandidateStrip
+          slotLabel={slotLabel}
+          words={slotWords}
+          viability={viability}
+          rejected={state.rejected}
+          onPlace={placeWord}
+          onMore={() => setSheetOpen(true)}
+          filled={!slotText(state.grid, slot).includes(".")}
+        />
+      )}
+      {slot && key && (
+        <ActiveClueBar
+          slotLabel={slotLabel}
+          answer={slotText(state.grid, slot)}
+          clue={state.clues[key] ?? ""}
+          onChange={(clue) => dispatch({ type: "SET_CLUE", key, clue })}
+          onPrev={() => stepEntry(-1)}
+          onNext={() => stepEntry(1)}
+          options={clueOptionsFor(state, slot)}
+        />
+      )}
+      {toolbar}
+      {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
+      {blockedNote}
+      {statsLine}
     </section>
   );
 
-  const wordsPanel = (
-    <aside className={desktop ? "order-2 flex flex-col gap-4 lg:order-3" : "flex flex-col gap-4"} aria-label="Words">
-      <Card className="flex max-h-[calc(100dvh-12rem)] flex-col p-4 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-8rem)]">
-        {slot && key ? (
-          <CandidatePanel
-            slotLabel={`${slot.number} ${slot.dir === "across" ? "Across" : "Down"}`}
-            pattern={slotText(base, slot)}
-            words={candidates?.key === key ? candidates.words : null}
-            viability={viability}
-            approved={state.approved[key] ?? []}
-            rejected={state.rejected}
-            onPlace={(word) => {
-              dispatch({ type: "PLACE_WORD", word });
-              // On a phone the word is written out of sight: show it.
-              if (!desktop) setTab("grid");
-            }}
-            onApprove={(word) => dispatch({ type: "TOGGLE_APPROVE", key, word })}
-            onReject={(word) => dispatch({ type: "TOGGLE_REJECT", word })}
-            onClearApprovals={() => dispatch({ type: "CLEAR_APPROVALS", key })}
-          />
-        ) : (
-          <p className="text-sm text-muted">{desktop ? "Select a square to see what fits there." : "Select a square on the Grid tab to see what fits there."}</p>
-        )}
+  const candidatePanel =
+    slot && key ? (
+      <CandidatePanel
+        key={key}
+        slotLabel={slotLabel}
+        pattern={slotText(base, slot)}
+        words={slotWords}
+        viability={viability}
+        approved={state.approved[key] ?? []}
+        rejected={state.rejected}
+        onPlace={placeWord}
+        onApprove={(word) => dispatch({ type: "TOGGLE_APPROVE", key, word })}
+        onReject={(word) => dispatch({ type: "TOGGLE_REJECT", word })}
+        onClearApprovals={() => dispatch({ type: "CLEAR_APPROVALS", key })}
+      />
+    ) : (
+      <p className="text-sm text-muted">Select a square to see what fits there.</p>
+    );
+
+  const cluePanel = (
+    <CluePanel
+      ref={cluePanelRef}
+      state={state}
+      dispatch={dispatch}
+      onExport={(format) => void exportFile(format)}
+      showExport={desktop}
+      access={access}
+      userId={account.user?.id ?? null}
+      activeKey={key}
+      onSelectSlot={(s) => {
+        dispatch({ type: "SELECT", cell: s.cells[0] });
+        dispatch({ type: "SET_DIR", dir: s.dir });
+      }}
+    />
+  );
+
+  // The desk's right column: the word list and the clues share it, a tab each, both kept mounted.
+  const sidePanel = (
+    <aside aria-label="Words and clues" className="flex min-h-0 flex-col gap-2">
+      <div role="tablist" aria-label="Words or clues" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sunken p-1">
+        {(["words", "clues"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`studio-side-tab-${id}`}
+            aria-selected={sideTab === id}
+            aria-controls={`studio-side-panel-${id}`}
+            className={`min-h-8 rounded-lg text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${sideTab === id ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"}`}
+            onClick={() => setSideTab(id)}
+          >
+            {id === "words" ? "Words" : "Clues"}
+            {id === "clues" && missingClues > 0 && <span className="ml-1.5 rounded-full bg-gold-100 px-1.5 text-xs text-gold-700 tabular-nums">{missingClues}</span>}
+          </button>
+        ))}
+      </div>
+      <Card id="studio-side-panel-words" role="tabpanel" aria-labelledby="studio-side-tab-words" hidden={sideTab !== "words"} className="flex min-h-0 flex-1 flex-col p-4">
+        {candidatePanel}
       </Card>
+      <div id="studio-side-panel-clues" role="tabpanel" aria-labelledby="studio-side-tab-clues" hidden={sideTab !== "clues"} className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl">
+        {cluePanel}
+      </div>
     </aside>
   );
 
-  const cluesPanel = (
-    <section aria-label="Clues" className={desktop ? "order-4 lg:col-span-3" : ""}>
-      <CluePanel state={state} dispatch={dispatch} onExport={(format) => void exportFile(format)} showExport={desktop} access={access} userId={account.user?.id ?? null} />
-    </section>
-  );
-
   const setupPanel = (
-    <aside className={desktop ? "order-3 flex flex-col gap-4 lg:order-1" : "flex flex-col gap-4"} aria-label="Setup">
+    <aside className={desktop ? "flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pb-1" : "flex flex-col gap-4"} aria-label="Setup">
       <PuzzleList
         entries={library}
         currentId={state.id}
@@ -561,14 +729,11 @@ export function StudioScreen() {
           {!complete && <p className="mt-2 text-xs text-muted">Fill the grid first.</p>}
         </Card>
       )}
-      {adminPanels && <DailyQueue state={state} admin={account.admin} />}
-      {adminPanels && communityEnabled() && <Reports admin={account.admin} />}
-      <Card className="p-4">
-        <Eyebrow as="h2">Theme entries</Eyebrow>
-        <p className="mt-1 text-sm text-muted">The words to build around. Lay out places them in a fresh grid and adds the black squares.</p>
+      <StudioSection title="Theme entries" defaultOpen={isBlank(state)}>
+        <p className="text-sm text-muted">The words to build around. Lay out places them in a fresh grid and adds the black squares.</p>
         <textarea
           className="mt-2 w-full rounded-xl border border-line-strong bg-surface px-3 py-2 text-base md:text-sm text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500"
-          rows={3}
+          rows={2}
           placeholder="starfish, devil ray"
           value={seedsText}
           onChange={(e) => setSeedsText(e.target.value)}
@@ -585,11 +750,10 @@ export function StudioScreen() {
             {busy === "layout" ? "Laying out…" : "Lay out"}
           </Button>
         </div>
-      </Card>
+      </StudioSection>
 
-      <Card className="p-4">
-        <Eyebrow as="h2">Rules</Eyebrow>
-        <label className="mt-3 block text-sm font-medium text-ink-soft" htmlFor="studio-symmetry">Symmetry</label>
+      <StudioSection title="Rules">
+        <label className="block text-sm font-medium text-ink-soft" htmlFor="studio-symmetry">Symmetry</label>
         <Select
           id="studio-symmetry"
           block
@@ -603,6 +767,9 @@ export function StudioScreen() {
           ]}
           onChange={(symmetry: Symmetry) => dispatch({ type: "SET_SYMMETRY", symmetry })}
         />
+        <p className="mt-1 text-xs text-subtle">
+          {state.symmetry === "none" ? "Black squares go only where you put them. Lay out still builds a rotationally symmetric grid." : "A black square also places its mirrored partner."}
+        </p>
         <label className="mt-3 flex items-baseline justify-between text-sm font-medium text-ink-soft" htmlFor="studio-score">
           Minimum word score <span className="tabular-nums text-ink">{state.minScore}</span>
         </label>
@@ -635,23 +802,20 @@ export function StudioScreen() {
             </ul>
           </>
         )}
-      </Card>
+      </StudioSection>
 
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <Eyebrow as="h2">Versions</Eyebrow>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => dispatch({ type: "SAVE_VERSION", name: `Version ${state.versions.length + 1}`, at: Date.now() })}
-          >
+      <StudioSection
+        title={state.versions.length ? `Versions (${state.versions.length})` : "Versions"}
+        action={
+          <Button variant="ghost" size="sm" onClick={() => dispatch({ type: "SAVE_VERSION", name: `Version ${state.versions.length + 1}`, at: Date.now() })}>
             <Save className="size-4" aria-hidden="true" /> Save
           </Button>
-        </div>
+        }
+      >
         {state.versions.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">Save a skeleton before filling to come back to it.</p>
+          <p className="text-sm text-muted">Save a skeleton before filling to come back to it.</p>
         ) : (
-          <ul className="mt-2 flex flex-col">
+          <ul className="flex flex-col">
             {state.versions.map((v, i) => (
               <li key={v.at}>
                 <button
@@ -669,12 +833,14 @@ export function StudioScreen() {
             ))}
           </ul>
         )}
-      </Card>
+      </StudioSection>
+      {adminPanels && <DailyQueue state={state} admin={account.admin} />}
+      {adminPanels && communityEnabled() && <Reports admin={account.admin} />}
     </aside>
   );
 
   const insightsPanel = adminPanels ? (
-    <section aria-label="Puzzle insights" className={desktop ? "order-5 lg:col-span-3" : ""}>
+    <section aria-label="Puzzle insights">
       <Insights admin={account.admin} />
     </section>
   ) : null;
@@ -701,22 +867,23 @@ export function StudioScreen() {
       }}
     >
       {desktop ? (
-        <main className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_20rem]">
+        <main className="mt-3 flex flex-col gap-4">
           {engineNotice}
-          {gridPanel}
-          {setupPanel}
-          {wordsPanel}
-          {cluesPanel}
+          {/* The desk is one screen tall and never scrolls as a page: each column scrolls on its own. */}
+          <div className="grid h-[calc(100dvh-7rem)] min-h-[32rem] grid-cols-[15rem_minmax(0,1fr)_22rem] gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_24rem]">
+            {setupPanel}
+            {gridPanel}
+            {sidePanel}
+          </div>
           {insightsPanel}
         </main>
       ) : (
         <>
           {/* The tab bar is fixed above the home indicator; the page keeps clear of it. */}
-          <main className="mt-4 flex flex-col gap-4 pb-24">
+          <main className="mt-3 flex flex-col gap-4 pb-[calc(3rem+env(safe-area-inset-bottom))]">
             {engineNotice}
             {tabPanel("grid", gridPanel)}
-            {tabPanel("words", wordsPanel)}
-            {tabPanel("clues", cluesPanel)}
+            {tabPanel("clues", cluePanel)}
             {tabPanel(
               "more",
               <>
@@ -726,6 +893,10 @@ export function StudioScreen() {
             )}
           </main>
           <StudioTabBar tab={tab} onChange={setTab} counts={{ clues: missingClues }} />
+          {/* Over the Grid tab only: the grid stays above it, in view and in reach. */}
+          <WordSheet open={sheetOpen && tab === "grid"} onClose={() => setSheetOpen(false)} label={`Words for ${slotLabel}`} anchor={gridBox}>
+            {candidatePanel}
+          </WordSheet>
         </>
       )}
       {publishOpen && (

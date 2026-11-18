@@ -7,6 +7,7 @@ import { track } from "../../lib/analytics";
 import type { NarratorEngine } from "../../lib/ttsSettings";
 import { usePlusStatus } from "../../hooks/usePlus";
 import { plusEnabled } from "../../lib/plus";
+import { unlockNarratorAudio } from "../../lib/narrator/audioUnlock";
 import { Select } from "../ui";
 
 type TTSMuteButtonProps = Pick<SpeechSettings, "muted" | "toggleMute" | "openSettings">;
@@ -19,7 +20,13 @@ export function TTSMuteButton({ muted, toggleMute, openSettings }: TTSMuteButton
 
   return (
     <div className="flex items-center gap-2">
-      <button onClick={toggleMute} className={btn}>
+      <button
+        onClick={() => {
+          unlockNarratorAudio();
+          toggleMute();
+        }}
+        className={btn}
+      >
         {muted ? <VolumeX className="size-[1.3em]" aria-hidden /> : <Volume2 className="size-[1.3em]" aria-hidden />}
         {muted ? t('tts.unmute') : t('tts.mute')}
       </button>
@@ -115,41 +122,31 @@ export function TTSSettingsModal({
       >
         <h2 className="text-lg font-bold text-white mb-4">{t('tts.voiceSettings')}</h2>
 
-        {/* Narrator engine selector — only shown when ElevenLabs gate is set */}
+        {/* The AI host: one switch (Claude writes the line, the chosen voice speaks it). */}
         {elevenLabsAvailable && (
-          <label className="block mb-4">
-            <span className="text-sm text-slate-400 block mb-1">{t('tts.narratorLabel')}</span>
-            <Select
-              variant="stage"
-              block
-              value={narratorEngine ?? ""}
-              options={[
-                { value: "", label: t('tts.narratorNone') },
-                { value: "elevenlabs-agent", label: t('tts.narratorElevenLabs') },
-                { value: "openai-agent", label: t('tts.narratorOpenAI') },
-                { value: "claude", label: t('tts.narratorClaude') },
-              ]}
-              onChange={(val) => {
-                const next = val === "" ? null : (val as NarratorEngine);
+          <label className="flex items-start gap-2 mb-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasNarrator}
+              onChange={(e) => {
+                // The tap that turns the host on is the one that may make sound (audioUnlock.ts).
+                unlockNarratorAudio();
+                const next: NarratorEngine = e.target.checked ? "claude" : null;
                 if (next) track("narrator_enabled", { engine: next });
                 setNarratorEngine(next);
               }}
+              className="mt-1 accent-brand-500"
             />
+            <span>
+              <span className="text-sm text-slate-100 block">{t("tts.narratorLabel")}</span>
+              <span className="text-xs text-slate-400 block">{t("tts.narratorDesc")}</span>
+            </span>
           </label>
         )}
 
         {/* Plus (docs/monetization-spec.md §2.3): the AI host is a Plus feature
             once the launch switch is on; everyone still gets the free sample. */}
         {elevenLabsAvailable && plusNote && <p className="mb-3 text-xs text-gold-400">{plusNote}</p>}
-
-        {/* Narrator description */}
-        {hasNarrator && elevenLabsAvailable && (
-          <p className="text-xs text-slate-400 mb-4">
-            {narratorEngine === "elevenlabs-agent" && t('tts.narratorElevenLabsDesc')}
-            {narratorEngine === "openai-agent" && t('tts.narratorOpenAIDesc')}
-            {narratorEngine === "claude" && t('tts.narratorClaudeDesc')}
-          </p>
-        )}
 
         {/* Per-clue announcer toggle — only meaningful when no AI narrator
             is active (the narrator already handles commentary). */}
@@ -173,10 +170,10 @@ export function TTSSettingsModal({
         )}
 
         {/* TTS voice controls — only shown when narrator is NOT active (Claude narrator uses its own TTS) */}
-        {(!hasNarrator || narratorEngine === "claude") && (
+        {(
           <>
             {/* Engine toggle — only shown when ElevenLabs gate is set and no agent narrator (Claude narrator also uses TTS) */}
-            {elevenLabsAvailable && (!hasNarrator || narratorEngine === "claude") && (
+            {elevenLabsAvailable && (
               <label className="block mb-4">
                 <span className="text-sm text-slate-400 block mb-1">{t('tts.engineLabel')}</span>
                 <Select
@@ -256,9 +253,12 @@ export function TTSSettingsModal({
         {/* Buttons */}
         <div className="flex gap-2">
           {/* Test Voice — hidden for agent narrators that handle their own audio */}
-          {narratorEngine !== "elevenlabs-agent" && narratorEngine !== "openai-agent" && (
+          {(
             <button
-              onClick={() => speak(t('tts.testText'))}
+              onClick={() => {
+                unlockNarratorAudio();
+                speak(t('tts.testText'));
+              }}
               className="flex-1 text-sm px-3 py-2 rounded-lg text-slate-200 border border-stage-line hover:bg-stage transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stage-raised"
             >
               {t('tts.testVoice')}

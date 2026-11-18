@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { Player } from "../../types/game";
+import { PlusName } from "../ui/PlusBadge";
 
 interface MultiplayerScoreboardProps {
   players: Player[];
@@ -67,7 +68,7 @@ export function MultiplayerScoreboard({
               />
               <span className="text-sm font-medium text-neutral-700 flex-1 truncate">
                 {isComplete && i === 0 && ranked[0].score > (ranked[1]?.score ?? 0) ? "🏆 " : ""}
-                {player.displayName}
+                <PlusName userId={player.userId}>{player.displayName}</PlusName>
               </span>
               <span className="text-sm text-neutral-400 tabular-nums">
                 {showClues

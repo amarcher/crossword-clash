@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { TransitionLink } from "./TransitionLink";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
 interface ListRowProps {
-  icon: LucideIcon;
+  /** A lucide icon, or any component that draws one in its place (the Plus seal). */
+  icon: LucideIcon | ComponentType<{ className?: string; "aria-hidden"?: "true" }>;
   title: ReactNode;
   subtitle?: ReactNode;
   to?: string;
@@ -12,6 +13,7 @@ interface ListRowProps {
   onClick?: () => void;
   disabled?: boolean;
   tone?: "brand" | "gold" | "neutral";
+  className?: string;
 }
 
 const TONES = {
@@ -27,11 +29,11 @@ const ROW =
   "group flex w-full items-center gap-3.5 px-4 py-3 min-h-16 text-left transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-surface-sunken/70 active:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 aria-disabled:pointer-events-none aria-disabled:opacity-45";
 
 /** One tappable row inside a ListGroup: icon tile, title + subtitle, chevron. */
-export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabled, tone = "brand" }: ListRowProps) {
+export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabled, tone = "brand", className = "" }: ListRowProps) {
   const body = (
     <>
       <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${TONES[tone]}`}>
-        <Icon className="size-5" strokeWidth={2} aria-hidden="true" />
+        <Icon className="size-5" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold leading-snug text-ink">{title}</span>
@@ -43,20 +45,20 @@ export function ListRow({ icon: Icon, title, subtitle, to, href, onClick, disabl
   );
   if (href) {
     return (
-      <a href={href} onClick={onClick} className={ROW}>
+      <a href={href} onClick={onClick} className={`${ROW} ${className}`}>
         {body}
       </a>
     );
   }
   if (to) {
     return (
-      <TransitionLink to={to} onClick={onClick} aria-disabled={disabled || undefined} className={ROW}>
+      <TransitionLink to={to} onClick={onClick} aria-disabled={disabled || undefined} className={`${ROW} ${className}`}>
         {body}
       </TransitionLink>
     );
   }
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-disabled={disabled || undefined} className={ROW}>
+    <button type="button" onClick={onClick} disabled={disabled} aria-disabled={disabled || undefined} className={`${ROW} ${className}`}>
       {body}
     </button>
   );

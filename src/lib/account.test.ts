@@ -165,6 +165,12 @@ describe("signInWith on the web", () => {
     expect(names()).toContain("signInWithOAuth");
   });
 
+  it("signs out of this device only, never the account's other devices", async () => {
+    sessionUser = { is_anonymous: false, app_metadata: { provider: "google" } };
+    await signOut();
+    expect(calls.filter((c) => c.method === "signOut").map((c) => c.args)).toEqual([[{ scope: "local" }]]);
+  });
+
   it("still links an unknown provider after a sign-out with another one", async () => {
     sessionUser = { is_anonymous: false, app_metadata: { provider: "google" } };
     await signOut();

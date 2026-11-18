@@ -17,8 +17,13 @@
  */
 import type { CellState, Direction, Puzzle, PuzzleClue } from "../types/puzzle";
 
-/** Input more than this far apart counts as idle, not solving. */
-export const IDLE_GAP_SECONDS = 30;
+/**
+ * Input more than this far apart counts as idle, not solving. The solo clock
+ * uses the same figure (useSoloTimer): it never holds more than this past the
+ * last input and pauses there, so "active" here and the solve time agree.
+ * 30 until 2026-11-13; rows from before then cap each gap at 30 s.
+ */
+export const IDLE_GAP_SECONDS = 60;
 
 export type PlaySource = "daily" | "nyt" | "community" | "other";
 export type PlayMode = "solo" | "versus" | "coop" | "async";

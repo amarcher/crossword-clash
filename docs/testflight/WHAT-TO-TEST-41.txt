@@ -1,0 +1,10 @@
+This build (1.1.2, build 41) is a polish pass from driving the whole app signed in. Please check:
+
+1. Notifications: on a fresh install the app asks in its own words first ("Crossword Clash is better with notifications", Not now / Enable). The system prompt only appears after Enable. If you say Not now, a "Want a reminder tomorrow?" question appears once, after you close the finish screen of a daily.
+2. Finish screen: nothing competes with Share. The reminder row only shows if notifications are already allowed, and the NYT link is gone.
+3. Keyboard: touches in the gaps between keys and at the screen edges land on the nearest key.
+4. Clues on a phone: the lists run full length and the page scrolls, instead of a small scrolling box.
+5. Race friends: a code typed there joins the room directly; you are not asked for it again. Rooms are called rooms everywhere ("Start a room", "Join a room").
+6. iPad: Race friends, Friends, Stats, Past puzzles, Account and the leaderboards use the screen's width, and the logo and back link stay in one place.
+7. Leaderboards on a phone: names no longer collapse to a few letters.
+8. Everything from build 40 still applies.

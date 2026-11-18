@@ -55,13 +55,70 @@ describe("useSoloTimer + per-puzzle progress", () => {
   });
 });
 
+describe("solo idle pause", () => {
+  beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); vi.setSystemTime(100_000); });
+  afterEach(() => { vi.useRealTimers(); });
+  const key = () => act(() => { window.dispatchEvent(new Event("keydown")); });
+
+  it("pauses a minute after the last input and keeps that minute, however long the solver stays away", () => {
+    const { result } = renderHook(() => useSoloTimer(one, false));
+    act(() => vi.advanceTimersByTime(20_000));
+    key();
+    act(() => vi.advanceTimersByTime(59_000));
+    expect(result.current.running).toBe(true);
+    act(() => vi.advanceTimersByTime(3 * 3600_000));
+    expect(result.current.running).toBe(false);
+    expect(result.current.idlePaused).toBe(true);
+    expect(result.current.getElapsedSeconds()).toBe(80); // 20 s of play + the idle minute
+    expect(loadSoloTimer()?.elapsedMs).toBe(80_000);
+    act(() => result.current.resume());
+    expect(result.current.idlePaused).toBe(false);
+    act(() => vi.advanceTimersByTime(5_000));
+    expect(result.current.getElapsedSeconds()).toBe(85);
+  });
+
+  it("keeps running while the solver keeps typing, tapping or scrolling", () => {
+    const { result } = renderHook(() => useSoloTimer(one, false));
+    for (const type of ["keydown", "pointerdown", "scroll", "wheel", "touchstart"]) {
+      act(() => vi.advanceTimersByTime(50_000));
+      act(() => { window.dispatchEvent(new Event(type)); });
+    }
+    expect(result.current.running).toBe(true);
+    expect(result.current.getElapsedSeconds()).toBe(250);
+  });
+
+  it("caps the clock when no timer ran (a sleeping computer): the key on waking pauses and counts nothing more", () => {
+    const { result } = renderHook(() => useSoloTimer(one, false));
+    act(() => vi.advanceTimersByTime(10_000));
+    key();
+    vi.setSystemTime(Date.now() + 8 * 3600_000); // asleep: the clock jumps, no timer fires
+    expect(result.current.getElapsedSeconds()).toBe(70);
+    key();
+    expect(result.current.running).toBe(false);
+    expect(result.current.idlePaused).toBe(true);
+    expect(result.current.getElapsedSeconds()).toBe(70);
+  });
+
+  it("finishes with the capped time when the last letter is the first thing typed on coming back", () => {
+    const { result, rerender } = renderHook(({ done }) => useSoloTimer(one, done), { initialProps: { done: false } });
+    act(() => vi.advanceTimersByTime(10_000));
+    vi.setSystemTime(Date.now() + 3600_000);
+    rerender({ done: true });
+    expect(result.current.result?.finishSeconds).toBe(60);
+  });
+});
+
 describe("solo pause clock", () => {
   beforeEach(() => { localStorage.clear(); vi.useFakeTimers(); vi.setSystemTime(100_000); });
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("excludes a ten-minute break and survives repeated pause events", () => {
     const { result, unmount } = renderHook(() => useSoloTimer(one, false));
-    act(() => vi.advanceTimersByTime(651_000));
+    // 651 s of play: a key every 31 s, so the idle pause stays out of it.
+    for (let i = 0; i < 21; i++) {
+      act(() => vi.advanceTimersByTime(31_000));
+      act(() => { window.dispatchEvent(new Event("keydown")); });
+    }
     act(() => { result.current.pause(); result.current.pause(); });
     expect(result.current.getElapsedSeconds()).toBe(651);
     act(() => vi.advanceTimersByTime(600_000));

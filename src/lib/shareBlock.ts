@@ -79,6 +79,11 @@ export interface ShareBlockInput {
   playerColors?: Record<string, string>;
   /** The challenge link, already built. */
   link: string;
+  /**
+   * False when the link carries the solve's replay (its preview plays the
+   * solve, og:video): the emoji rows are left out (Andrew, 2026-11-13).
+   */
+  rows?: boolean;
   labels: ShareBlockLabels;
 }
 
@@ -258,7 +263,7 @@ export function buildShareBlock(input: ShareBlockInput): ShareBlock {
   if (labels.standing) statsParts.push(labels.standing);
   const stats = statsParts.length ? statsParts.join(" · ") : null;
 
-  const grid = input.puzzle.width > MAX_ROW_WIDTH ? [paceBar(input)] : gridRows(input);
+  const grid = input.rows === false ? [] : input.puzzle.width > MAX_ROW_WIDTH ? [paceBar(input)] : gridRows(input);
 
   const cta = `${labels.cta} →`;
   const body = [header, stats, ...grid].filter((line): line is string => line !== null).join("\n");

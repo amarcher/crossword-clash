@@ -1,3 +1,4 @@
+import { narratorAudioContext } from "./audioUnlock";
 import { formatEvent } from "./events";
 import { CLAUDE_SYSTEM_PROMPT } from "./prompts";
 import { NARRATOR_UNAVAILABLE, NARRATOR_UNAVAILABLE_BUDGET, NARRATOR_UNAVAILABLE_PLUS } from "../narratorBudget";
@@ -12,16 +13,26 @@ interface Message {
   content: string;
 }
 
+/** The functions' query string: the room (a Plus player in it covers the host; plusAccess.ts roomSponsor) and the demo flag. */
+function narratorQuery(gameId: string | null, demo: boolean): string {
+  const params = new URLSearchParams();
+  if (gameId) params.set("game", gameId);
+  if (demo) params.set("demo", "1");
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
 async function fetchCommentary(
   messages: Message[],
   demo = false,
+  gameId: string | null = null,
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
     throw new Error("Claude narrator not configured");
   }
 
-  const url = `${supabaseUrl}/functions/v1/narrator-claude${demo ? "?demo=1" : ""}`;
+  const url = `${supabaseUrl}/functions/v1/narrator-claude${narratorQuery(gameId, demo)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: await narratorHeaders(),
@@ -58,14 +69,15 @@ async function fetchCommentary(
  */
 async function requestCommentary(
   messages: Message[],
+  gameId: string | null = null,
 ): Promise<{ text: string; demo: boolean }> {
   try {
-    return { text: await fetchCommentary(messages, false), demo: false };
+    return { text: await fetchCommentary(messages, false, gameId), demo: false };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     // Over budget, or not a subscriber: the same bounded sample either way.
     if ((msg === NARRATOR_UNAVAILABLE_BUDGET || msg === NARRATOR_UNAVAILABLE_PLUS) && consumeNarratorDemo()) {
-      return { text: await fetchCommentary(messages, true), demo: true };
+      return { text: await fetchCommentary(messages, true, gameId), demo: true };
     }
     throw err;
   }
@@ -75,6 +87,7 @@ function fetchTTSAudio(
   text: string,
   voiceId: string,
   demo = false,
+  gameId: string | null = null,
 ): Promise<ArrayBuffer> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   if (!supabaseUrl || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
@@ -85,7 +98,7 @@ function fetchTTSAudio(
   // fail-closed demo grant so the sample plays in the real premium voice.
   return narratorHeaders()
     .then((headers) =>
-      fetch(`${supabaseUrl}/functions/v1/tts${demo ? "?demo=1" : ""}`, {
+      fetch(`${supabaseUrl}/functions/v1/tts${narratorQuery(gameId, demo)}`, {
         method: "POST",
         headers,
         body: JSON.stringify({ text, voice_id: voiceId }),
@@ -112,9 +125,6 @@ function fetchTTSAudio(
 /** Default ElevenLabs voice for Claude narrator TTS */
 const DEFAULT_VOICE_ID = "TxGEqnHWrfWFTfGW9XjX"; // Josh — deep, young male
 
-/** How long after the last commentary before we auto-disconnect (ms) */
-const IDLE_DISCONNECT_MS = 30_000;
-
 export type TTSEngine = "browser" | "elevenlabs";
 
 export interface ClaudeNarratorOptions {
@@ -123,6 +133,8 @@ export interface ClaudeNarratorOptions {
   rate?: number;
   pitch?: number;
   elevenLabsVoiceId?: string | null;
+  /** The room being narrated: a Plus player in it covers the host on a device that has none. */
+  gameId?: string | null;
 }
 
 export class ClaudeNarratorBackend implements NarratorBackend {
@@ -132,12 +144,12 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private rate: number;
   private pitch: number;
   private elevenLabsVoiceId: string | null;
+  private gameId: string | null;
   private messages: Message[] = [];
   private _isConnected = false;
   private _connectionError: string | null = null;
   private onStateChange: (() => void) | null = null;
   private onIdle: (() => void) | null = null;
-  private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private processing = false;
   private eventQueue: AgentGameEvent[] = [];
   private audioContext: AudioContext | null = null;
@@ -153,6 +165,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.rate = options?.rate ?? 1;
     this.pitch = options?.pitch ?? 1;
     this.elevenLabsVoiceId = options?.elevenLabsVoiceId ?? null;
+    this.gameId = options?.gameId ?? null;
   }
 
   setVoiceSettings(opts: Pick<ClaudeNarratorOptions, "voiceName" | "rate" | "pitch" | "elevenLabsVoiceId">): void {
@@ -181,9 +194,11 @@ export class ClaudeNarratorBackend implements NarratorBackend {
       if (!supabaseUrl) {
         throw new Error("Claude narrator not configured");
       }
-      // Create AudioContext for ElevenLabs TTS (during user interaction so it's unlocked)
+      // The shared context a tap unlocked (audioUnlock.ts): one made here, as
+      // the game starts, is suspended for good on iOS.
       if (this.ttsEngine === "elevenlabs") {
-        this.audioContext = new AudioContext();
+        this.audioContext = narratorAudioContext();
+        if (!this.audioContext) throw new Error("No audio output");
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.value = this._volume;
         this.gainNode.connect(this.audioContext.destination);
@@ -215,13 +230,13 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.messages = [];
     this.eventQueue = [];
     this.processing = false;
-    this.clearIdleTimer();
     if (this.currentSource) {
       this.currentSource.stop();
       this.currentSource = null;
     }
     if (this.audioContext) {
-      await this.audioContext.close().catch(() => {});
+      // The context is shared and stays unlocked for the next game.
+      this.gainNode?.disconnect();
       this.audioContext = null;
       this.gainNode = null;
     }
@@ -240,7 +255,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
 
     const text = formatEvent(event);
     console.log("[ClaudeNarrator] Sending:", text);
-    this.clearIdleTimer();
 
     this.eventQueue.push(event);
     if (!this.processing) {
@@ -266,7 +280,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async processQueue(): Promise<void> {
     if (this.eventQueue.length === 0 || !this._isConnected) {
       this.processing = false;
-      this.resetIdleTimer();
       this.onIdle?.();
       return;
     }
@@ -279,7 +292,7 @@ export class ClaudeNarratorBackend implements NarratorBackend {
     this.messages.push({ role: "user", content: userText });
 
     try {
-      const { text: commentary, demo } = await requestCommentary(this.messages);
+      const { text: commentary, demo } = await requestCommentary(this.messages, this.gameId);
       if (this.intentionalDisconnect) return;
 
       console.log("[ClaudeNarrator] Commentary:", commentary);
@@ -345,14 +358,16 @@ export class ClaudeNarratorBackend implements NarratorBackend {
   private async speakElevenLabs(text: string, demo = false): Promise<void> {
     if (!this.audioContext || !this.gainNode) return;
 
-    // Resume AudioContext if suspended (browser autoplay policy)
-    if (this.audioContext.state === "suspended") {
-      await this.audioContext.resume();
-    }
-
     try {
+      // Resume if suspended (autoplay policy). Never wait on it for long: on
+      // WebKit a resume with no gesture behind it can stay pending, which
+      // froze the whole queue.
+      if (this.audioContext.state === "suspended") {
+        await Promise.race([this.audioContext.resume(), new Promise((r) => setTimeout(r, 1500))]);
+      }
+
       const voiceId = this.elevenLabsVoiceId || DEFAULT_VOICE_ID;
-      const audioData = await fetchTTSAudio(text, voiceId, demo);
+      const audioData = await fetchTTSAudio(text, voiceId, demo, this.gameId);
       if (this.intentionalDisconnect || !this.audioContext) return;
 
       const audioBuffer = await this.audioContext.decodeAudioData(audioData);
@@ -378,22 +393,6 @@ export class ClaudeNarratorBackend implements NarratorBackend {
         throw err;
       }
       console.error("[ClaudeNarrator] TTS failed:", err);
-    }
-  }
-
-  private resetIdleTimer(): void {
-    this.clearIdleTimer();
-    this.idleTimer = setTimeout(() => {
-      console.log("[ClaudeNarrator] Idle timeout — disconnecting");
-      this.disconnect();
-      this.onStateChange?.();
-    }, IDLE_DISCONNECT_MS);
-  }
-
-  private clearIdleTimer(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
     }
   }
 }

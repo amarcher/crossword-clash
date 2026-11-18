@@ -14,7 +14,13 @@ export interface AgentGameEvent {
   data: Record<string, unknown>;
 }
 
-export type NarratorEngine = "elevenlabs-agent" | "openai-agent" | "claude" | null;
+/**
+ * One AI host (Andrew, 2026-11-14: "we expose too many different ways to
+ * have an AI host. I think we need to just settle on one"): Claude writes the
+ * line and a voice speaks it. The two realtime agents (ElevenLabs, OpenAI)
+ * are gone from the client; a stored choice of either reads as "claude".
+ */
+export type NarratorEngine = "claude" | null;
 
 export interface NarratorBackend {
   readonly name: string;

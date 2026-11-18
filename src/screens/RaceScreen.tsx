@@ -1,12 +1,15 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Swords, UserPlus, Users } from "lucide-react";
+import { Share2, Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
 import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
+import { useShareFriendLink } from "../components/Friends/InviteFriendCard";
 import { useFriendSolves } from "../hooks/useFriendSolves";
 import { puzzleIdentity } from "../lib/soloStats";
+import { todayKey } from "../lib/dailyLeaderboard";
+import { formatShareDay } from "../lib/shareBlock";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame } from "../contexts/GameContext";
 import { useFriends } from "../contexts/FriendsContext";
@@ -26,7 +29,7 @@ export const FRIENDS_PATH = "/race/friends";
  * never pass through here: a scanned QR still lands on /join with the code.
  */
 export function RaceScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useTransitionNavigate();
   const game = useGame();
   const account = useAccountContext();
@@ -67,6 +70,13 @@ export function RaceScreen() {
     else account.openAccount({ placement: "race", returnTo: "/race" });
   };
 
+  // A beat invite's line: today's daily, another day's, or a community puzzle.
+  const beatDetail = (link: string | null) => {
+    const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\//.exec(link ?? "");
+    if (daily && daily[1] !== todayKey()) return t("race.inviteBeatDay", { date: formatShareDay(daily[1], i18n.language) });
+    return link?.startsWith("/puzzles/") ? t("race.inviteBeatPuzzle") : t("race.inviteBeat");
+  };
+
   const render = (block: (typeof blocks)[number], index: number) => {
     switch (block) {
       case "invites":
@@ -81,7 +91,7 @@ export function RaceScreen() {
                   detail={
                     invite.kind === "room"
                       ? t("race.inviteRoom", { title: invite.room?.title ?? "", size: invite.room ? `${invite.room.width}×${invite.room.height}` : "" })
-                      : t("race.inviteBeat")
+                      : beatDetail(invite.link)
                   }
                 >
                   {invite.kind === "room" && (
@@ -137,9 +147,13 @@ export function RaceScreen() {
                 <p className="mt-1 text-sm text-muted">{t("race.addFriendsBody")}</p>
               </div>
             </div>
-            <Button variant="secondary" size="lg" block className="mt-4" onClick={() => { track("race_action", { action: "add-friend", signed_in: true }); navigate(FRIENDS_PATH); }}>
-              {t("race.addFriends")}
-            </Button>
+            <div className="mt-4 grid gap-2.5">
+              {/* The quickest way to a first friend: send your own add-me link, no usernames to type. */}
+              {account.profile && <ShareMyLink username={account.profile.username} />}
+              <Button variant="secondary" size="lg" block onClick={() => { track("race_action", { action: "add-friend", signed_in: true }); navigate(FRIENDS_PATH); }}>
+                {t("race.addFriends")}
+              </Button>
+            </div>
           </Card>
         );
       case "start":
@@ -177,7 +191,7 @@ export function RaceScreen() {
   };
 
   return (
-    <PageShell width="md" bar={{ backLabel: t("common.back"), backTo: "/menu" }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
       <header className="mb-5">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("race.title")}</h1>
         <p className="mt-1 text-muted">{t("race.subtitle")}</p>
@@ -190,9 +204,28 @@ export function RaceScreen() {
           </p>
         )}
       </header>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4" aria-busy={!friends.ready || undefined}>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid" aria-busy={!friends.ready || undefined}>
         {blocks.map(render)}
       </div>
     </PageShell>
+  );
+}
+
+/** "Share my link" on the add-friends prompt: the same add-me link as the Friends screen's invite card. */
+function ShareMyLink({ username }: { username: string }) {
+  const { t } = useTranslation();
+  const { share, busy, note } = useShareFriendLink(username, "race");
+  return (
+    <>
+      <Button size="lg" block onClick={() => void share()} disabled={busy} aria-busy={busy || undefined}>
+        <Share2 className="size-4" aria-hidden="true" />
+        {t("friends.linkShare")}
+      </Button>
+      {note && (
+        <p role="status" className="text-center text-sm font-medium text-brand-700">
+          {note}
+        </p>
+      )}
+    </>
   );
 }

@@ -22,6 +22,11 @@ describe("appLinkTarget", () => {
     expect(appLinkTarget("https://crosswordclash.com/add")).toBeNull();
   });
 
+  it("opens a race-reply push on its page, and nothing that isn't a reply id", () => {
+    expect(appLinkTarget("https://crosswordclash.com/reply/0a1b2c3d-4e5f-6789-abcd-ef0123456789")).toEqual({ kind: "navigate", to: "/reply/0a1b2c3d-4e5f-6789-abcd-ef0123456789" });
+    expect(appLinkTarget("https://crosswordclash.com/reply/not-a-reply")).toBeNull();
+  });
+
   it("hands a puzzle payload to the hash listener", () => {
     expect(appLinkTarget("https://crosswordclash.com/#puzzle=abc")).toEqual({ kind: "hash", hash: "#puzzle=abc" });
     expect(appLinkTarget("https://crosswordclash.com/#import")).toEqual({ kind: "hash", hash: "#import" });

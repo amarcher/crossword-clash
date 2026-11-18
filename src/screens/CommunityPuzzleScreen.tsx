@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { isTvIntent, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
 import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine, Swords } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { ReportDialog } from "../components/ReportDialog";
-import { Button, Card, MiniGridThumb, TransitionLink } from "../components/ui";
+import { Button, Card, MiniGridThumb, PlusBadgeFor, TransitionLink } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
@@ -16,6 +16,8 @@ import { authorPath, fetchCommunityPuzzle, puzzlePath, toPlayablePuzzle, type Co
 import { hideAuthor, unhideAuthor } from "../lib/hiddenAuthors";
 import { shareOrigin } from "../lib/shareOrigin";
 import { getProgress } from "../lib/soloProgress";
+import { parseDailyChallenge, parseRaceLink } from "../lib/dailyChallenge";
+import { SharedRace } from "../components/Race/SharedRace";
 import { formatDuration } from "../lib/soloStats";
 import { emitToast } from "../lib/toastBus";
 
@@ -36,7 +38,8 @@ export function CommunityPuzzleScreen() {
   const navigate = useTransitionNavigate();
   const { shortId = "" } = useParams<{ shortId: string }>();
   const { user, loading: authLoading } = useAuth();
-  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, setUrlChallenge } = useGame();
+  const replaceRoute = useNavigate();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [busy, setBusy] = useState<"play" | "race" | "tv" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +79,22 @@ export function CommunityPuzzleScreen() {
       return null;
     }
   }, [row]);
+
+  // A friend's challenge (`?beat=102&by=Archer&r=…`, dailyChallenge.buildPuzzleLink):
+  // straight on to the challenge screen, which offers to race their solve.
+  const [params] = useSearchParams();
+  const challenge = useMemo(() => parseDailyChallenge(params.toString(), t("challenge.unsignedName")), [params, t]);
+  useEffect(() => {
+    if (!puzzle || !challenge || row?.status !== "published") return;
+    setUrlPuzzle(puzzle);
+    setUrlChallenge({ ...challenge, ref: { shortId } });
+    replaceRoute("/challenge", { replace: true });
+  }, [puzzle, challenge, row?.status, shortId, setUrlPuzzle, setUrlChallenge, replaceRoute]);
+
+  // A shared race (`?r=…` with no time to beat) plays over this page until it is closed.
+  const raceLink = useMemo(() => (challenge ? null : parseRaceLink(params.toString())), [challenge, params]);
+  const [raceOpen, setRaceOpen] = useState(true);
+  const closeRace = useCallback(() => setRaceOpen(false), []);
 
   const hidden = useHiddenAuthors();
   const bestTimes = useBestTimes();
@@ -146,7 +165,6 @@ export function CommunityPuzzleScreen() {
 
   const date = row ? new Date(row.published_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" }) : "";
   // Reached from the TV's chooser: the one action hands the puzzle to the TV (tvHandoff.ts).
-  const [params] = useSearchParams();
   const tv = isTvIntent(params);
   const canRace = (Boolean(user) || authLoading) && !tv;
 
@@ -192,7 +210,8 @@ export function CommunityPuzzleScreen() {
             <p className="mt-1 text-sm text-muted">
               <TransitionLink to={authorPath(row.author)} className="rounded-md font-medium hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500">
                 {t("community.by", { author: row.author })}
-              </TransitionLink>
+              </TransitionLink>{" "}
+              <PlusBadgeFor username={row.author} />
               {" · "}
               {t("community.published", { date })}
             </p>
@@ -314,6 +333,7 @@ export function CommunityPuzzleScreen() {
     <PageShell as="main" width="2xl" bar={{ backLabel: t("community.title"), backTo: tv ? withTvIntent("/puzzles") : "/puzzles" }}>
       {body}
       {reporting && row && <ReportDialog puzzleId={row.id} onClose={() => setReporting(false)} />}
+      {raceLink && raceOpen && puzzle && row?.status === "published" && <SharedRace puzzle={puzzle} puzzleKey={row.puzzle_key} shareId={raceLink.id} names={raceLink.names} shareRef={{ shortId }} onClose={closeRace} />}
     </PageShell>
   );
 }

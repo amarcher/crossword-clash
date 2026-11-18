@@ -140,7 +140,7 @@ describe("CompletionModal", () => {
         <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={colors} challengerName="Alice" />,
       );
       expect(getByTestId("share-legend").textContent).toBe(
-        "Each square is a fifteenth of the race, coloured by who solved most then: 🟦 Alice, 🟥 Bob",
+        "Each square is a fifteenth of the race, colored by who solved most then: 🟦 Alice, 🟥 Bob",
       );
       expect([...getByTestId("share-block-preview").querySelectorAll("div[aria-hidden] > div")]).toHaveLength(1);
     });
@@ -195,6 +195,16 @@ describe("CompletionModal", () => {
     expect(queryByTestId("share-block-preview")).toBeNull();
   });
 
+  it("offers a signed-in solver their stats, and names a board that isn't a daily's", () => {
+    const onSeeStats = vi.fn();
+    const { getByRole, queryByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} onViewLeaderboard={vi.fn()} leaderboardLabel="Bonus leaderboard" onSeeStats={onSeeStats} />);
+    fireEvent.click(getByRole("button", { name: "See your stats" }));
+    expect(onSeeStats).toHaveBeenCalledOnce();
+    expect(getByRole("button", { name: "Bonus leaderboard" })).toBeTruthy();
+    rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
+    expect(queryByRole("button", { name: "See your stats" })).toBeNull();
+  });
+
   it("shows the leaderboard and Save image as the secondary row; the share link itself is the challenge", () => {
     const onViewLeaderboard = vi.fn();
     const { getByRole, getByTestId, queryByRole } = render(
@@ -244,13 +254,13 @@ describe("CompletionModal", () => {
   it("says when the streak already counted today, and nothing when the finish advanced it", () => {
     const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced={false} />);
     expect(counted.getByText("6-day streak")).toBeTruthy();
-    expect(counted.getByText(/Today already counted/)).toBeTruthy();
+    expect(counted.getByText(/already counted today/)).toBeTruthy();
     counted.unmount();
     const advanced = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced />);
-    expect(advanced.queryByText(/Today already counted/)).toBeNull();
+    expect(advanced.queryByText(/already counted today/)).toBeNull();
     advanced.unmount();
     const unknown = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
-    expect(unknown.queryByText(/Today already counted/)).toBeNull();
+    expect(unknown.queryByText(/already counted today/)).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {
@@ -342,15 +352,15 @@ describe("CompletionModal", () => {
 
   it("hides the fresh race row when onRaceFresh is undefined (multiplayer unavailable)", () => {
     const { queryByText } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
-    expect(queryByText("Race a friend live")).toBeNull();
+    expect(queryByText("Race friends")).toBeNull();
   });
 
-  it("'Race a friend live' calls onRaceFresh and emits the live_bridge funnel event", () => {
+  it("'Race friends' calls onRaceFresh and emits the live_bridge funnel event", () => {
     const onRaceFresh = vi.fn();
     const { getByRole } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleSize="15x15" onRaceFresh={onRaceFresh} />,
     );
-    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    fireEvent.click(getByRole("button", { name: /Race friends/ }));
     expect(onRaceFresh).toHaveBeenCalledOnce();
     expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "solo", size: "15x15" });
   });
@@ -365,7 +375,7 @@ describe("CompletionModal", () => {
         challengeOutcome={{ outcome: "beat", deltaSeconds: 12, challengerName: "Alex" }}
       />,
     );
-    fireEvent.click(getByRole("button", { name: /Race a friend live/ }));
+    fireEvent.click(getByRole("button", { name: /Race friends/ }));
     expect(track).toHaveBeenCalledWith("live_bridge", { mode: "live", from: "challenge_result", size: "15x15" });
   });
 
@@ -396,7 +406,7 @@ describe("CompletionModal", () => {
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} nextUp={[]} onNextUp={() => {}} onRaceFresh={() => {}} />,
     );
     expect(queryByText("Up next")).toBeNull();
-    expect(getByRole("button", { name: /Race a friend live/ })).toBeTruthy();
+    expect(getByRole("button", { name: /Race friends/ })).toBeTruthy();
   });
 
   it("hides the sign-the-board form when dailySign is absent", () => {
@@ -472,6 +482,73 @@ describe("CompletionModal", () => {
     }
   });
 
+  it("links a community puzzle's or a past daily's share to its page, with the solve's replay and no emoji rows", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      for (const [puzzleRef, path] of [
+        [{ shortId: "abcdefgh" }, "/puzzles/abcdefgh?beat=90&by=Sam&r=E0Gqr8Iw09i"],
+        [{ day: "2026-11-03", slot: "midi" }, "/daily/2026-11-03/midi?beat=90&by=Sam&r=E0Gqr8Iw09i"],
+      ] as const) {
+        const { getByTestId } = render(
+          <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleRef={puzzleRef} replayId="E0Gqr8Iw09i"
+            challengePuzzle={fakePuzzle("Deep Blue", 5)} challengerName="Player" />,
+        );
+        const sharing = within(getByTestId("share-result"));
+        fireEvent.click(sharing.getByRole("button", { name: /^Share/ }));
+        const name = sharing.getByPlaceholderText("Your name");
+        fireEvent.change(name, { target: { value: "Sam" } });
+        fireEvent.keyDown(name, { key: "Enter" });
+        await waitFor(() => expect(share).toHaveBeenCalled());
+        expect(share.mock.lastCall![0].text).toContain(path);
+        // The link's preview plays the solve, so no emoji rows go with it, nor in the preview.
+        expect(share.mock.lastCall![0].text).not.toMatch(/[🟩🟨🟧🟥🟦⬛⬜]/u);
+        expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
+        share.mockClear();
+        cleanup();
+      }
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
+  it("a finished room race with its replay filed shows the clip and shares the link without emoji rows", () => {
+    const { getByTestId, unmount } = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90} replayId="E0Gqr8Iw09i"
+        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
+    );
+    expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
+    expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("aria-label")).toBe("The race, replayed");
+    expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
+    unmount();
+    // Without a filed replay the race shares its squares, as before.
+    const plain = render(
+      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90}
+        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
+    );
+    expect(plain.queryByTestId("replay-preview")).toBeNull();
+  });
+
+  it("never puts a bonus puzzle in its share link (Plus only)", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={{ ...fakePuzzle("Deep Blue", 5), origin: "bonus" }} challengerName="Player" />,
+      );
+      const sharing = within(getByTestId("share-result"));
+      fireEvent.click(sharing.getByRole("button", { name: /^Share/ }));
+      const name = sharing.getByPlaceholderText("Your name");
+      fireEvent.change(name, { target: { value: "Sam" } });
+      fireEvent.keyDown(name, { key: "Enter" });
+      await waitFor(() => expect(share).toHaveBeenCalled());
+      expect(share.mock.lastCall![0].text).not.toContain("#puzzle=");
+      expect(share.mock.lastCall![0].text).toMatch(/→ https?:\/\/[^/\s]+\/$/m);
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
   it("says quietly that a preview's finish was not posted, instead of offering a signature", () => {
     const { getByTestId, queryByPlaceholderText } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} boardNotPosted />,
@@ -502,6 +579,24 @@ describe("CompletionModal", () => {
     expect(getByTestId("account-hook").textContent).toContain("Keep this solve");
     fireEvent.click(getByRole("button", { name: "Sign in" }));
     expect(onSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers the race with friends as one button, beside any single replays", () => {
+    const onWatchFriendRace = vi.fn();
+    const { getByTestId, getByRole } = render(
+      <CompletionModal {...SOLO_PROPS} friendRace={{ count: 2, name: "ann" }} onWatchFriendRace={onWatchFriendRace} replays={[{ userId: "u1", name: "Zed" }]} onWatchReplay={() => {}} />,
+    );
+    fireEvent.click(getByRole("button", { name: "Watch your race with 2 friends" }));
+    expect(onWatchFriendRace).toHaveBeenCalledTimes(1);
+    expect(getByTestId("race-replays").textContent).toContain("Watch you vs Zed");
+    cleanup();
+
+    const one = render(<CompletionModal {...SOLO_PROPS} friendRace={{ count: 1, name: "ann" }} onWatchFriendRace={onWatchFriendRace} />);
+    expect(one.getByRole("button", { name: "Watch your race with ann" })).toBeTruthy();
+    cleanup();
+
+    const none = render(<CompletionModal {...SOLO_PROPS} />);
+    expect(none.queryByTestId("friend-race")).toBeNull();
   });
 });
 

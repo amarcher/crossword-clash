@@ -1,0 +1,9 @@
+<en-US>
+See how each game mode plays before you start: the lobby shows a small sample board for each one.
+
+In a time trial you now see the other players' progress on your own grid, square by square.
+
+Race replays play on one board, and on the daily leaderboard you can watch how any player solved once you have finished the puzzle (Plus).
+
+On a TV, the AI host keeps going when anyone in the room has Plus, and the replay shows who got each square.
+</en-US>

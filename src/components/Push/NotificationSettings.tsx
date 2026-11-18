@@ -13,7 +13,7 @@ function hourLabel(h: number): string {
 
 interface SwitchRowProps {
   id: string;
-  title: string;
+  title: React.ReactNode;
   hint?: string;
   checked: boolean;
   disabled?: boolean;

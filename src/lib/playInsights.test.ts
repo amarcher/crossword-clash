@@ -50,7 +50,7 @@ describe("play session tracker", () => {
     const t = new PlaySessionTracker(puzzle, {}, meta, T0);
     t.selectClue(clue(1, "across"), sec(0));
     t.selectClue(clue(4, "across"), sec(600));
-    expect(t.record(sec(600)).active_seconds).toBe(30);
+    expect(t.record(sec(600)).active_seconds).toBe(60);
   });
 
   it("attributes another player's letters as not the clue's own", () => {

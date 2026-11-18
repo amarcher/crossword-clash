@@ -1,0 +1,7 @@
+<en-US>
+Watch the replay after a race: the grid fills in again, each square in the colour of whoever got it.
+
+Hosting on a TV is smoother. Turn the AI host on from the lobby, and the TV follows along when you pick the next puzzle.
+
+Also: room links join at once, and finished dailies are marked on the home screen.
+</en-US>

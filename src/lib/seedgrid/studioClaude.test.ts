@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { gridFromRows } from "./grid";
-import { draftClues, entryAnswers, puzzleContext, suggestClues, suggestTitles, type ClaudeCaller } from "./studioClaude";
-import { ALTERNATIVES_COUNT, alternativesRequest, clueProblems, cluesRequest, NO_THEME, repeatsRecent, TITLE_MAX, TITLES_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest } from "./cluePrompt";
+import { draftClueOptions, entryAnswers, puzzleContext, suggestTitles, type ClaudeCaller } from "./studioClaude";
+import { clueOptionsRequest, OPTIONS_COUNT, clueProblems, cluesRequest, NO_THEME, repeatsRecent, TITLE_MAX, TITLES_COUNT, titlesRequest, vetAlternatives, vetTitles, type ClaudeJsonRequest } from "./cluePrompt";
 
 const grid = gridFromRows(["BAT", "ORE", "WED"]);
 
@@ -26,23 +26,22 @@ describe("clue prompts", () => {
     expect(req.prompt).toContain("Theme: bats");
   });
 
-  it("asks for alternatives that differ from the current clue", () => {
-    const req = alternativesRequest(grid, "", "1A", { current: "Cave flier", count: 5 });
-    expect(req.prompt).toContain("5 different clues for 1A BAT");
-    expect(req.prompt).toContain('"Cave flier"');
-  });
-
-  it("asks for a small fixed number of alternatives by default, in one call", () => {
-    expect(ALTERNATIVES_COUNT).toBe(3);
-    const req = alternativesRequest(grid, "", "1A");
-    expect(req.prompt).toContain(`${ALTERNATIVES_COUNT} different clues for 1A BAT`);
-    expect(req.schema).toMatchObject({ properties: { clues: { type: "array", items: { type: "string" } } }, required: ["clues"] });
+  it("asks for three clues per entry, best first, in one call and with no speed clue", () => {
+    expect(OPTIONS_COUNT).toBe(3);
+    const req = clueOptionsRequest(grid, "", { slots: ["1A", "2D"], difficulty: "hard" });
+    expect(req.prompt).toContain(`Write ${OPTIONS_COUNT} different clues for every entry below`);
+    expect(req.prompt).toContain("List your best first");
+    expect(req.prompt).toContain("1A BAT");
+    expect(req.prompt).not.toContain("5A WED");
+    expect(req.prompt).toMatch(/Saturday/);
+    expect(req.prompt).not.toMatch(/speed/i);
+    expect(req.schema).toMatchObject({ properties: { clues: { items: { properties: { options: { type: "array" } }, required: ["slot", "options"] } } } });
   });
 
   it("tells the writer there is no theme unless the note states one", () => {
     expect(cluesRequest(grid, "").prompt).toContain(NO_THEME);
     expect(cluesRequest(grid, "Title: Bats\nTheme entries: BAT").prompt).toContain(NO_THEME);
-    expect(alternativesRequest(grid, "", "1A").prompt).toContain(NO_THEME);
+    expect(clueOptionsRequest(grid, "").prompt).toContain(NO_THEME);
     const themed = cluesRequest(grid, "Theme: cave dwellers");
     expect(themed.prompt).not.toContain(NO_THEME);
     expect(themed.prompt).toContain("when one is stated above");
@@ -127,46 +126,34 @@ describe("drafting clues", () => {
     expect(entryAnswers(gridFromRows(["BA.", "ORE", "WED"]))).toEqual({ "4A": "ORE", "5A": "WED", "1D": "BOW", "2D": "ARE" });
   });
 
-  it("re-asks for clues that fail the checks, and drops any still failing", async () => {
+  it("keeps each entry's clues that pass the checks, best first, in one call when every entry has one", async () => {
+    const call = fake({
+      clues: [
+        { slot: "1A", options: ["Cave flier", "Bat signal?", "Club for Ruth", "Dugout tool", "Cave flier"] }, // "Bat signal?" gives it away
+        { slot: "4A", options: ["Lode load"] },
+        { slot: "9Z", options: ["Invented"] },
+      ],
+    });
+    expect(await draftClueOptions(call, grid, "", { slots: ["1A", "4A"] })).toEqual({ "1A": ["Cave flier", "Club for Ruth", "Dugout tool"], "4A": ["Lode load"] });
+    expect(call.prompts).toHaveLength(1);
+  });
+
+  it("re-asks once for entries left with no clue that passes, and leaves out any still empty", async () => {
     const call = fake(
-      {
-        clues: [
-          { slot: "1A", standard: "Cave flier", speed: "Night flier" },
-          { slot: "4A", standard: "Ore deposit, e.g.", speed: "Mined rock" }, // gives away ORE
-          { slot: "5A", standard: "x".repeat(50), speed: "Got hitched" }, // too long
-        ],
-      },
-      {
-        clues: [
-          { slot: "4A", standard: "Lode load", speed: "Mined rock" },
-          { slot: "5A", standard: "Got wed", speed: "Married" }, // still gives the answer away
-        ],
-      },
+      { clues: [{ slot: "1A", options: ["Cave flier"] }, { slot: "4A", options: ["Ore deposit, e.g."] }, { slot: "5A", options: ["x".repeat(60)] }] },
+      { clues: [{ slot: "4A", options: ["Lode load", "Mined rock"] }, { slot: "5A", options: ["Got wed"] }] },
     );
-    const out = await draftClues(call, grid, "", { slots: ["1A", "4A", "5A"] });
-    expect(out).toEqual({ "1A": { standard: "Cave flier", speed: "Night flier" }, "4A": { standard: "Lode load", speed: "Mined rock" } });
+    const out = await draftClueOptions(call, grid, "", { slots: ["1A", "4A", "5A"] });
+    expect(out).toEqual({ "1A": ["Cave flier"], "4A": ["Lode load", "Mined rock"] });
     expect(call.prompts).toHaveLength(2);
-    expect(call.prompts[1]).toMatch(/4A: .*contains its answer/);
-    expect(call.prompts[1]).toMatch(/5A: .*characters/);
+    expect(call.prompts[1]).toContain("4A: ");
+    expect(call.prompts[1]).toContain("5A: ");
+    expect(call.prompts[1]).not.toContain("1A: ");
   });
 
-  it("ignores slots Claude invents and makes one call when everything passes", async () => {
-    const call = fake({ clues: [{ slot: "1A", standard: "Cave flier", speed: "Night flier" }, { slot: "9Z", standard: "?", speed: "?" }] });
-    expect(await draftClues(call, grid, "", { slots: ["1A"] })).toEqual({ "1A": { standard: "Cave flier", speed: "Night flier" } });
-    expect(call.prompts).toHaveLength(1);
-  });
-
-  it("filters suggestions that repeat the current clue or fail the checks", async () => {
-    const call = fake({ clues: ["Cave flier", "Club for Ruth", "Bat signal?", "Dugout tool", "Club for Ruth"] });
-    // "Bat signal?" gives the answer away.
-    expect(await suggestClues(call, grid, "", "1A", { current: "Cave flier" })).toEqual(["Club for Ruth", "Dugout tool"]);
-    expect(call.prompts).toHaveLength(1);
-  });
-
-  it("answers nothing for a malformed reply or an incomplete entry, without a second call", async () => {
-    const call = fake({ clues: "not a list" });
-    expect(await suggestClues(call, grid, "", "1A")).toEqual([]);
-    expect(await suggestClues(call, gridFromRows(["BA.", "ORE", "WED"]), "", "1A")).toEqual([]);
-    expect(call.prompts).toHaveLength(1);
+  it("answers nothing for a malformed reply or incomplete entries", async () => {
+    const call = fake({ clues: "not a list" }, { clues: null });
+    expect(await draftClueOptions(call, grid, "", { slots: ["1A"] })).toEqual({});
+    expect(await draftClueOptions(fake(), gridFromRows(["BA.", "ORE", "WED"]), "", { slots: ["1A"] })).toEqual({});
   });
 });

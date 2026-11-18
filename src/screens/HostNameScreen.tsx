@@ -90,6 +90,10 @@ export function HostNameScreen() {
         if (result) {
           game.setGameId(result.gameId);
           game.setIsMultiplayer(true);
+          // This room's finish gets its own modal: a dismissal left by an
+          // earlier puzzle (a solved daily reopened, a closed finish screen)
+          // hid the host's winner screen (Andrew, 2026-11-14).
+          game.setCompletionModalDismissed(false);
           // Consumed — a stale urlPuzzle must not hijack later "/" visits.
           game.setUrlPuzzle(null);
           navigate(`/lobby/${result.gameId}`);
@@ -123,7 +127,7 @@ export function HostNameScreen() {
       title={t('hostName.heading')}
       subtitle={game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
       onBack={handleReset}
-      backLabel={t('hostName.back')}
+      backLabel={t("completion.backToMenu")}
     >
       <form onSubmit={handleSubmit} className="grid gap-5" autoComplete="off">
         {game.urlPuzzle && (

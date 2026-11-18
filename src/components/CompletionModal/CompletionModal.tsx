@@ -1,9 +1,9 @@
 import { puzzleIdentity } from "../../lib/soloStats";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { displayTheme } from "../../lib/dailyFeed";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, Flame, Newspaper, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
-import { buttonClass } from "../ui";
+import { CalendarDays, ChartLine, ChevronRight, Flag, Flame, Newspaper, PlayCircle, Swords, Trophy, UserRound, X, type LucideIcon } from "lucide-react";
+import { buttonClass, PlusName } from "../ui";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
 import {
@@ -15,13 +15,16 @@ import { playWinSound } from "../../lib/winSound";
 import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
+import { ReplayPreview } from "./ReplayPreview";
+import { ShareBackButton } from "./ShareBackButton";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
+import { DAILY_FINISH_CLOSED_EVENT } from "../../lib/push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
-import { buildDailyLink } from "../../lib/dailyChallenge";
+import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { compressPuzzleToHash } from "../../lib/puzzleUrl";
 import { todayKey } from "../../lib/dailyLeaderboard";
@@ -29,9 +32,9 @@ import { Capacitor } from "@capacitor/core";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
-import { NytRecommendation } from "../NytRecommendation";
-import type { CellState, Puzzle } from "../../types/puzzle";
+import type { CellState, Puzzle, PuzzleRef } from "../../types/puzzle";
 import type { ChallengeComparison } from "../../lib/challenge";
+import type { RaceResult } from "../../lib/race";
 import type { RaceStandingRow } from "../../lib/raceResults";
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
@@ -91,6 +94,12 @@ interface CompletionModalProps {
   /** Which daily this was ("mini" | "midi" | "large"), so the share text can say so. */
   dailySlot?: DailySlot;
   /**
+   * The shared puzzle this was, where the site can link to it (Puzzle.ref):
+   * any day's daily, or a community puzzle. Its link carries the share, the
+   * replay and the friend invite; without it, today's daily (`dailySlot`).
+   */
+  puzzleRef?: PuzzleRef;
+  /**
    * Explicitly post a private daily finish, or rename an older default-name
    * entry. Sharing may rename an already posted entry, but cannot post one.
    * `signedAs` shows confirmation; `unposted` requires a separate Post action.
@@ -138,6 +147,23 @@ interface CompletionModalProps {
    * against the challenger's ghost — drives the personal outcome banner.
    */
   challengeOutcome?: ChallengeComparison & { challengerName: string };
+  /** A race against recorded solves (race.ts): the verdict against each ghost. */
+  raceResults?: RaceResult[];
+  /** The finished daily's replay share ID (replayShare.ts): previewed above Share, and carried by the daily link. */
+  replayId?: string;
+  /**
+   * After racing a shared link's sender: send them this solve back, in the
+   * thread the link came from (their name, this solve's own link, the verdict).
+   */
+  shareBack?: ChallengeComparison & { name: string; link: string };
+  /** Recorded solves of this puzzle the finisher may watch replayed, and the handler. */
+  replays?: { userId: string; name: string }[];
+  onWatchReplay?: (userId: string) => void;
+  /** The race (friendRace.ts): friends have recorded solves of this puzzle; one button opens them all on one clock. */
+  friendRace?: { count: number; name: string };
+  onWatchFriendRace?: () => void;
+  /** A finished shared-grid race this device can play back (roomReplay.ts): opens the room's replay. */
+  onWatchRoomReplay?: () => void;
   /**
    * "Up next" rows (at most two): today's unsolved dailies, then yesterday's
    * — from `nextUpSuggestions`. Solo/daily only.
@@ -164,6 +190,10 @@ interface CompletionModalProps {
    * wherever accounts aren't on offer, so the modal shows nothing extra.
    */
   onSignIn?: () => void;
+  /** A signed-in solver's way to the Stats page (`/stats`); omit where there is no account. */
+  onSeeStats?: () => void;
+  /** The board button's label when the board isn't a daily's (the bonus board). */
+  leaderboardLabel?: string;
   darkMode?: boolean;
 }
 
@@ -184,6 +214,7 @@ export function CompletionModal({
   raceSeconds,
   onViewLeaderboard,
   dailySlot,
+  puzzleRef,
   dailySign,
   boardNotPosted,
   dailyPostingNotice,
@@ -197,6 +228,14 @@ export function CompletionModal({
   playerColors,
   challengerName,
   challengeOutcome,
+  raceResults,
+  replayId,
+  shareBack,
+  replays,
+  onWatchReplay,
+  friendRace,
+  onWatchFriendRace,
+  onWatchRoomReplay,
   nextUp,
   onNextUp,
   onRaceFresh,
@@ -204,6 +243,8 @@ export function CompletionModal({
   onNextPuzzle,
   onBackToMenu,
   onSignIn,
+  onSeeStats,
+  leaderboardLabel,
   darkMode,
 }: CompletionModalProps) {
   const { t, i18n } = useTranslation();
@@ -241,6 +282,15 @@ export function CompletionModal({
 
   const isAsync = !!raceStandings && raceStandings.length > 0;
   const isMultiplayer = (players && players.length > 0) || isAsync;
+  // The reminder ask waits for this dialog to close, so it never competes with Share. A dialog
+  // that was up for under a second was not read (and StrictMode's remount is not a close).
+  useEffect(() => {
+    if (!open || !dailySlot || isMultiplayer) return;
+    const openedAt = Date.now();
+    return () => {
+      if (Date.now() - openedAt > 1000) window.dispatchEvent(new Event(DAILY_FINISH_CLOSED_EVENT));
+    };
+  }, [open, dailySlot, isMultiplayer]);
   const ranked = players && players.length > 0
     ? [...players].sort((a, b) => b.cellsClaimed - a.cellsClaimed)
     : [];
@@ -307,7 +357,9 @@ export function CompletionModal({
     : isMultiplayer && playerColors
       ? t(wideGrid ? "completion.legendRaceBar" : "completion.legendRace", { players: claimantLegend(ranked) })
       : t(wideGrid ? "completion.legendSoloBar" : "completion.legendSolo");
-  const shareDaily = dailySlot ? t(SLOT_EYEBROW[dailySlot]) : undefined;
+  const linkRef = useMemo<PuzzleRef | undefined>(() => puzzleRef ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : undefined), [puzzleRef, dailySlot]);
+  const refDaily = linkRef && "day" in linkRef ? linkRef : undefined;
+  const shareDaily = refDaily ? t(SLOT_EYEBROW[refDaily.slot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
   // The spoiler-free result block for a given challenger name: the link
@@ -315,9 +367,12 @@ export function CompletionModal({
   const blockFor = useCallback(
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
-      const link = dailySlot
-        ? buildDailyLink(SHARE_URL, { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name })
-        : shareSeconds !== undefined
+      // A bonus is Plus only: its link is the site, never the puzzle in a #puzzle= hash.
+      const link = linkRef
+        ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: replayId })
+        : puzzle.origin === "bonus"
+          ? `${SHARE_URL}/`
+          : shareSeconds !== undefined
           ? buildChallengeUrl(SHARE_URL, puzzle, { name, seconds: shareSeconds })
           : `${SHARE_URL}/${compressPuzzleToHash(puzzle)}`;
       return buildShareBlock({
@@ -325,10 +380,12 @@ export function CompletionModal({
         cells: playerCells ?? {},
         wrongCells,
         seconds: shareSeconds,
-        day: dailySlot ? todayKey() : undefined,
+        day: refDaily?.day,
         locale: i18n.language,
         playerColors,
         link,
+        // A link that carries the replay unfurls as the solve itself: no emoji rows.
+        rows: !replayId || !linkRef,
         labels: {
           brand: t("completion.shareBrand"),
           daily: shareDaily,
@@ -338,7 +395,7 @@ export function CompletionModal({
         },
       });
     },
-    [challengePuzzle, dailySlot, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language],
+    [challengePuzzle, linkRef, refDaily, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayId],
   );
 
   if (!open) return null;
@@ -366,7 +423,8 @@ export function CompletionModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`modal-enter scroll-quiet relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
+        tabIndex={-1}
+        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
@@ -452,7 +510,9 @@ export function CompletionModal({
                               className="w-2.5 h-2.5 rounded-full shrink-0"
                               style={{ backgroundColor: row.color }}
                             />
-                            <span className="font-medium truncate">{row.displayName}</span>
+                            <span className="font-medium truncate">
+                              <PlusName userId={row.userId}>{row.displayName}</PlusName>
+                            </span>
                           </div>
                         </td>
                         <td className="py-2 px-3 text-right tabular-nums">
@@ -485,7 +545,7 @@ export function CompletionModal({
                               style={{ backgroundColor: player.color }}
                             />
                             <span className="font-medium truncate">
-                              {player.displayName}
+                              <PlusName userId={player.userId}>{player.displayName}</PlusName>
                             </span>
                           </div>
                         </td>
@@ -635,6 +695,50 @@ export function CompletionModal({
                     : t("challenge.resultTied", { name: challengeOutcome.challengerName })}
               </div>
             )}
+
+            {raceResults && raceResults.length > 0 && (
+              <ul data-testid="race-results" aria-label={t("ghostRace.resultsLabel")} className={`mb-4 flex flex-col gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold ${darkMode ? "bg-white/5 text-white/90" : "bg-surface-sunken text-ink"}`}>
+                {raceResults.map((r) => (
+                  <li key={r.name} className="flex items-center gap-2">
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.color }} aria-hidden="true" />
+                    <span className={r.outcome === "beat" ? (darkMode ? "text-emerald-300" : "text-emerald-700") : r.outcome === "lost" ? (darkMode ? "text-rose-300" : "text-rose-700") : ""}>
+                      {r.outcome === "beat"
+                        ? t("challenge.resultBeat", { name: r.name, delta: formatDuration(r.deltaSeconds) })
+                        : r.outcome === "lost"
+                          ? t("challenge.resultLost", { name: r.name, delta: formatDuration(r.deltaSeconds) })
+                          : t("challenge.resultTied", { name: r.name })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {((replays && replays.length > 0 && onWatchReplay) || (friendRace && onWatchFriendRace)) && (
+              <div className="mb-5 flex flex-wrap justify-center gap-2" data-testid="race-replays">
+                {friendRace && onWatchFriendRace && (
+                  <button
+                    type="button"
+                    data-testid="friend-race"
+                    onClick={onWatchFriendRace}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+                  >
+                    <Flag className="size-4" aria-hidden="true" />
+                    {t("friendRace.openYours", friendRace)}
+                  </button>
+                )}
+                {onWatchReplay && replays?.map((r) => (
+                  <button
+                    key={r.userId}
+                    type="button"
+                    onClick={() => onWatchReplay(r.userId)}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+                  >
+                    <PlayCircle className="size-4" aria-hidden="true" />
+                    {t("ghostRace.watchVs", { name: r.name })}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -664,6 +768,21 @@ export function CompletionModal({
         <div className="flex flex-col gap-2.5">
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
+          {onWatchRoomReplay && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={onWatchRoomReplay}
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+              >
+                <PlayCircle className="size-4" aria-hidden="true" />
+                {t("roomReplay.watch")}
+              </button>
+            </div>
+          )}
+          {/* A room's clip is shown only when the link can carry it; a time trial's is the player's own solve. */}
+          {replayId && (linkRef || !isMultiplayer) && <ReplayPreview id={replayId} race={isMultiplayer && !isAsync} darkMode={darkMode} />}
+          {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton
               mode={isMultiplayer ? "multiplayer" : "solo"}
@@ -671,29 +790,35 @@ export function CompletionModal({
               challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
               hasTime={shareSeconds !== undefined}
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
-              daily={!!dailySlot && !isMultiplayer}
+              daily={!!refDaily && !isMultiplayer}
               legend={shareLegend}
               onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}
             />
           )}
-          {/* A daily finish with friends: the beat-my-time link delivered in-app
+          {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
               (docs/friends-spec.md §3.2). Renders nothing without friends. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
           {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
-          {dailySlot && !isMultiplayer && shareSeconds !== undefined && (
+          {linkRef && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
-              link={buildDailyLink("", { day: todayKey(), slot: dailySlot, seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName") })}
+              link={buildPuzzleLink("", linkRef, { seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayId })}
               puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}
               darkMode={darkMode}
             />
           )}
-          {(onViewLeaderboard || (challengePuzzle && !Capacitor.isNativePlatform())) && (
+          {(onViewLeaderboard || onSeeStats || (challengePuzzle && !Capacitor.isNativePlatform())) && (
             <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
               {onViewLeaderboard && (
                 <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
                   <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-                  {t('completion.viewLeaderboard')}
+                  {leaderboardLabel ?? t('completion.viewLeaderboard')}
+                </button>
+              )}
+              {onSeeStats && (
+                <button onClick={onSeeStats} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
+                  <ChartLine className="size-4" aria-hidden="true" />
+                  {t('completion.seeStats')}
                 </button>
               )}
               {/* The canvas card stays as a secondary "Save image" (the app's
@@ -777,11 +902,6 @@ export function CompletionModal({
         {/* Ad */}
         <div className="flex justify-center mt-4">
           <AdSlot placement="completion-footer" darkMode={darkMode} />
-        </div>
-
-        {/* NYT affiliate */}
-        <div className="mt-4">
-          <NytRecommendation variant="inline" darkMode={darkMode} />
         </div>
       </div>
     </div>

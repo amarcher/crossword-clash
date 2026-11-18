@@ -1,8 +1,13 @@
+import { useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CalendarDays, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, CircleCheck, Users } from "lucide-react";
 import { Eyebrow, MiniGridThumb, TransitionLink } from "../../components/ui";
 import { IMPORTER_CARD } from "../../components/PuzzleImporter/PuzzleImporter";
 import { useTodaysDailies } from "../../hooks/useNextUp";
+import { useBestTimes } from "../../hooks/useSolveHistory";
+import { useHostContext } from "../../layouts/HostLayout";
+import { ensureSolveHistory, getSolveHistoryState, subscribeSolveHistory } from "../../lib/solveHistory";
+import { formatDuration, puzzleIdentity } from "../../lib/soloStats";
 import { communityEnabled } from "../../lib/community";
 import { track } from "../../lib/analytics";
 import { withTvIntent } from "../../lib/tvHandoff";
@@ -20,10 +25,24 @@ const SLOTS: DailySlot[] = ["mini", "midi", "large"];
  * community pages with `?intent=tv`, where "Host on TV" hands the puzzle back
  * (`tvHandoff.ts`). A slot with nothing published shows no tile; the feed's
  * first answer of the day is awaited with a placeholder.
+ *
+ * A daily the host has finished says so (Andrew, 2026-11-14: "I want to be
+ * able to see that I've solved those puzzles to know which one to choose").
+ * The TV pages sit outside AccountProvider, so a signed-in host's history is
+ * loaded here from the session user; without an account it is this device's.
  */
 export function TVPuzzleSources({ onPick }: { onPick: (puzzle: Puzzle) => void }) {
   const { t } = useTranslation();
   const dailies = useTodaysDailies();
+  const { user } = useHostContext();
+  const accountId = user && !user.is_anonymous ? user.id : null;
+  useEffect(() => {
+    if (accountId) void ensureSolveHistory(accountId);
+  }, [accountId]);
+  const history = useSyncExternalStore(subscribeSolveHistory, getSolveHistoryState, () => null);
+  const own = accountId && history?.userId === accountId && history.status === "ready" ? history : null;
+  const deviceBest = useBestTimes();
+  const bestTimes = own?.summary.bestTimes ?? deviceBest;
   const tiles = SLOTS.map((slot) => ({ slot, daily: dailies[slot] })).filter((x): x is { slot: DailySlot; daily: DailyMini | undefined } => x.daily !== null);
 
   return (
@@ -40,7 +59,13 @@ export function TVPuzzleSources({ onPick }: { onPick: (puzzle: Puzzle) => void }
                 <span className="h-5 w-40 rounded bg-surface-sunken" />
                 <span className="h-4 w-28 rounded bg-surface-sunken" />
               </div>
-            ) : (
+            ) : (() => {
+              const key = puzzleIdentity(daily.puzzle);
+              const best = bestTimes[key];
+              const solved = typeof best === "number";
+              // A shared-grid race leaves no time, only the finish.
+              const raced = !solved && !!own?.rows?.some((r) => r.puzzle_key === key && r.mode !== "solo" && r.mode !== "import");
+              return (
               <button
                 key={slot}
                 type="button"
@@ -53,13 +78,20 @@ export function TVPuzzleSources({ onPick }: { onPick: (puzzle: Puzzle) => void }
               >
                 <span className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">{t(SLOT_EYEBROW[slot])}</span>
                 <span className="flex w-full items-center gap-3">
-                  <MiniGridThumb puzzle={daily.puzzle} className="w-14 shrink-0" />
+                  <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-14 shrink-0" />
                   <span className="block min-w-0">
                     <span className="block truncate font-display text-base font-semibold leading-snug text-ink">{daily.puzzle.title}</span>
-                    <span className="mt-0.5 block truncate text-xs tabular-nums text-muted">
-                      {t("menu.dailyMeta", { width: daily.puzzle.width, height: daily.puzzle.height, count: daily.puzzle.clues.length })}
-                      {daily.theme ? ` · ${daily.theme}` : ""}
-                    </span>
+                    {solved || raced ? (
+                      <span className="mt-0.5 flex items-center gap-1 truncate text-xs font-semibold tabular-nums text-brand-700">
+                        <CircleCheck className="size-3.5 shrink-0" aria-hidden="true" />
+                        {solved ? t("menu.dailySolvedIn", { time: formatDuration(best) }) : t("menu.dailyRaced")}
+                      </span>
+                    ) : (
+                      <span className="mt-0.5 block truncate text-xs tabular-nums text-muted">
+                        {t("menu.dailyMeta", { width: daily.puzzle.width, height: daily.puzzle.height, count: daily.puzzle.clues.length })}
+                        {daily.theme ? ` · ${daily.theme}` : ""}
+                      </span>
+                    )}
                   </span>
                 </span>
                 <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
@@ -67,7 +99,8 @@ export function TVPuzzleSources({ onPick }: { onPick: (puzzle: Puzzle) => void }
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </span>
               </button>
-            ),
+              );
+            })(),
           )}
         </div>
       </section>

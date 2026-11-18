@@ -27,7 +27,7 @@ export function FlowPage({ title, subtitle, eyebrow, onBack, backLabel, action, 
   return (
     <PageShell
       width="md"
-      widthLg={wide ? "4xl" : undefined}
+      widthLg={wide ? "5xl" : undefined}
       bar={{ onBack, backLabel: onBack ? (backLabel ?? t("common.back")) : undefined, right: action }}
     >
       <header className="mt-4 sm:mt-6">

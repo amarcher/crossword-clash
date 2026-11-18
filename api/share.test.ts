@@ -92,6 +92,50 @@ describe("daily link", () => {
     expect(html).not.toContain("http-equiv");
   });
 
+  it("plays the solve in the preview when the link carries a replay share ID (og:video, the clip's poster)", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&by=Archer&r=VJ0ncnWyJ9j"));
+    const html = await res.text();
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:video:secure_url")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:video:type")).toBe("video/mp4");
+    expect(meta(html, "og:image")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1");
+    expect(meta(html, "og:image:width")).toBe("1280");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?beat=102&by=Archer&r=VJ0ncnWyJ9j");
+  });
+
+  it("calls a shared race a race, and keeps it one on the way into the app", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=2"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("A head-to-head race on the Daily Mini for Oct 20");
+    expect(meta(html, "og:description")).toContain("who got to each square first");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2");
+  });
+
+  it("names the two in a head-to-head, so the preview reads the same to both", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=2&who=minna,archer"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("minna vs archer on the Daily Mini for Oct 20");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2&who=minna%2Carcher");
+    // A name short of the count names nobody.
+    const short = await (await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=3&who=minna,archer"))).text();
+    expect(meta(short, "og:title")).toBe("A 3-way race on the Daily Mini for Oct 20");
+  });
+
+  it("reads a clip with no time to beat as a race, for links sent before the count was added", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=99"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("A race on the Daily Mini for Oct 20");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j");
+  });
+
+  it("ignores an r that isn't a share ID", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&r=%22%3E%3Cscript%3Exyz"));
+    const html = await res.text();
+    expect(meta(html, "og:video")).toBeNull();
+    expect(new URL(meta(html, "og:image")!).pathname).toBe("/api/og");
+  });
+
   it("describes a plain daily link (no time) as an invitation to play", async () => {
     const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=large"));
     const html = await res.text();
@@ -119,6 +163,63 @@ describe("daily link", () => {
     const html = await res.text();
     expect(meta(html, "og:title")).toBe("I solved “Deep Blue” in 1:42");
     expect(html).toContain('http-equiv="refresh" content="0;url=https://x.test/"');
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe("community puzzle link", () => {
+  const calls: string[] = [];
+  let rows: unknown[] = [{ title: "Farm", author: "ada", width: 5, height: 5, difficulty: "easy" }];
+
+  beforeEach(() => {
+    calls.length = 0;
+    rows = [{ title: "Farm", author: "ada", width: 5, height: 5, difficulty: "easy" }];
+    vi.stubEnv("VITE_SUPABASE_URL", "https://db.test");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon");
+    vi.stubGlobal("fetch", async (url: string) => {
+      calls.push(url);
+      return url.startsWith("https://db.test") ? { ok: true, json: async () => rows } : { ok: true, text: async () => INDEX };
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("unfurls a community puzzle by title, author and size, and serves the app", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=puzzle&id=ab12cd34"));
+    const html = await res.text();
+    expect(calls[0]).toBe("https://db.test/rest/v1/community_puzzles?short_id=eq.ab12cd34&status=eq.published&select=title,author,width,height,difficulty");
+    expect(meta(html, "og:title")).toBe("“Farm” by @ada — Crossword Clash");
+    expect(meta(html, "og:description")).toBe("A 5×5 community crossword by @ada · Easy. Play it free on Crossword Clash, solo or racing friends.");
+    expect(meta(html, "og:url")).toBe("https://x.test/puzzles/ab12cd34");
+    const image = new URL(meta(html, "og:image")!);
+    expect(image.pathname).toBe("/api/og");
+    expect(image.searchParams.get("title")).toBe("Farm");
+    expect(html).toContain("/assets/index-abc.js");
+  });
+
+  it("plays the sender's solve for a race link, and names their time", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=puzzle&id=ab12cd34&beat=75&by=Archer&r=VJ0ncnWyJ9j"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("Archer solved “Farm” in 1:15 — race my solve");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:image")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1");
+    expect(meta(html, "og:url")).toBe("https://x.test/puzzles/ab12cd34?beat=75&by=Archer&r=VJ0ncnWyJ9j");
+  });
+
+  it("still serves the app with a plain card when the puzzle isn't published or can't be read", async () => {
+    rows = [];
+    const res = await handler(new Request("https://x.test/api/share?t=puzzle&id=ab12cd34&beat=75"));
+    const html = await res.text();
+    expect(res.status).toBe(200);
+    expect(meta(html, "og:title")).toBe("I solved a community crossword in 1:15 — beat my time");
+    expect(html).toContain("/assets/index-abc.js");
+  });
+
+  it("refuses an id that isn't a short ID", async () => {
+    expect((await handler(new Request("https://x.test/api/share?t=puzzle&id=..%2Fx"))).status).toBe(404);
     expect(calls).toHaveLength(0);
   });
 });

@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 interface ScoreboardProps {
   score: number;
   totalCells: number;
-  isComplete: boolean;
+  /** Unused: kept so callers need not change. */
+  isComplete?: boolean;
 }
 
-export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
+// The header's "Solved" chip says a puzzle is finished; this only counts cells.
+export function Scoreboard({ score, totalCells }: ScoreboardProps) {
   const { t } = useTranslation();
   const pct = totalCells > 0 ? Math.round((score / totalCells) * 100) : 0;
 
@@ -24,11 +26,6 @@ export function Scoreboard({ score, totalCells, isComplete }: ScoreboardProps) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      {isComplete && (
-        <div className="text-center py-3 px-4 rounded-xl bg-gold-50 border border-gold-100">
-          <p className="text-gold-700 font-semibold">{t('scoreboard.puzzleComplete')}</p>
-        </div>
-      )}
     </div>
   );
 }

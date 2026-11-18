@@ -78,7 +78,8 @@ describe("AccountSheet Plus view", () => {
   it("shows the plan tiles to a non-subscriber and only the benefits + renewal line to a subscriber", () => {
     renderSheet("plus");
     expect(screen.getByText(/Save \d+%/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Yearly · 1 month free/ })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Yearly/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start my free month" })).toBeTruthy();
     cleanup();
     const plusRow = {
       user_id: "u1",
@@ -95,7 +96,7 @@ describe("AccountSheet Plus view", () => {
     expect(screen.getByText(/Renews on November 27, 2026/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Manage subscription" })).toBeTruthy();
     expect(screen.queryByText(/Save \d+%/)).toBeNull();
-    expect(screen.queryByText("per year")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
     expect(screen.queryByRole("button", { name: /Get Plus|Monthly/ })).toBeNull();
   });
 

@@ -10,10 +10,15 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { AdSlot } from "../components/AdSlot";
 import { LegalLinks } from "../components/LegalLinks";
 import { UpdateBanner } from "../components/UpdateBanner";
+import { SignedOutNotice } from "../components/Account/SignedOutNotice";
 import { AppStoreBanner } from "../components/AppStoreBanner";
 import { AccountControl, AccountMenuRow } from "../components/Account";
 import { accountsAvailable } from "../lib/account";
 import { PendingRequests } from "../components/Friends";
+import { RaceRepliesCard } from "../components/Race/RaceRepliesCard";
+import { FriendRaceLink } from "../components/Race/FriendRaceLink";
+import { StreakRepairCard } from "../components/Plus/StreakRepairCard";
+import { BonusCard } from "../components/Plus/BonusCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { useGame } from "../contexts/GameContext";
@@ -25,9 +30,9 @@ import { studioRouteEnabled } from "../lib/studioGate";
 import { useHydrated } from "../lib/hydration";
 import { useDailyMini, useDailyPuzzle } from "../hooks/useDailyMini";
 import { displayTheme, type DailySlot } from "../lib/dailyFeed";
-import { leaderboardPath } from "../lib/dailyLeaderboard";
+import { todayKey, leaderboardPath } from "../lib/dailyLeaderboard";
 import type { DailyMini } from "../lib/dailyMinis";
-import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
 import {
   ANDROID_PLAY_STORE_URL,
   IOS_APP_STORE_URL,
@@ -56,7 +61,7 @@ interface DailyHeroProps {
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
 
-/** One daily's front-door tile: eyebrow + theme chip, title, size line, thumb, actions, board link. */
+/** One daily's front-door tile: ribbon (eyebrow + theme), title, size line, thumb, actions, board link. */
 export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(SLOT_EYEBROW[slot]);
@@ -68,38 +73,46 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
   // thumbnail and its own fill, and Play becomes View — the puzzle opens on
   // its solved grid, where "Clear & redo" is the explicit way to do it again.
   const solved = typeof best === "number";
+  // Finished in a room (a shared grid has no personal time, so no best): the
+  // tile says the day is done instead of offering it as untouched (Andrew,
+  // 2026-11-14). Solo is still open, for a time of one's own.
+  const { rows } = useSolveHistory();
+  const raced = !solved && !!key && !!rows?.some((r) => r.puzzle_key === key && r.mode !== "solo" && r.mode !== "import");
   const attempt = key ? progress[key] : undefined;
   // A solved puzzle is "in progress" again only once its new attempt has a letter.
   const resumable = !!attempt && (!solved || attempt.filled > 0);
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
-    <Card role="region" aria-label={label} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined}>
-      <div className="flex items-start gap-5 p-5 sm:p-6">
+    <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
+      {/* The ribbon: which daily this is and its theme, across the card's full width so a
+          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off).
+          No fill of its own (Andrew, 2026-11-16): white on an open card, and the card's blue once
+          the puzzle is solved, so Play is the card's only strong colour. */}
+      <div className={`flex min-h-8 flex-wrap items-center gap-x-2.5 border-b px-5 py-1.5 sm:px-6 ${solved || raced ? "border-brand-200" : "border-line"}`}>
+        <Eyebrow className="shrink-0">{label}</Eyebrow>
+        {displayTheme(daily) && (
+          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={displayTheme(daily)}>
+            {displayTheme(daily)}
+          </span>
+        )}
+      </div>
+      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
         <div className="min-w-0 flex-1">
-          {/* One 20px row whatever the feed says: the theme chip is 20px and the
-              eyebrow alone 16px (min-h-5), and a long theme truncates rather
-              than wrapping, so the loaded tile is exactly the placeholder's height. */}
-          <div className="flex min-h-5 items-center gap-2">
-            <Eyebrow className="shrink-0 text-brand-600">{label}</Eyebrow>
-            {displayTheme(daily) && (
-              <span
-                className="min-w-0 truncate rounded-full bg-gold-50 px-2 py-0.5 text-xs font-semibold text-gold-700 ring-1 ring-gold-100"
-                title={displayTheme(daily)}
-              >
-                {displayTheme(daily)}
-              </span>
-            )}
-          </div>
           {daily ? (
             <>
-              <h1 className="mt-2 font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
+              <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
                 {daily.puzzle.title}
               </h1>
               {solved ? (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
                   <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
                   {t("menu.dailySolvedIn", { time: formatDuration(best) })}
+                </p>
+              ) : raced ? (
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+                  <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
+                  {t("menu.dailyRaced")}
                 </p>
               ) : (
                 <p className="mt-1 text-sm text-muted tabular-nums">
@@ -110,24 +123,26 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
                   })}
                 </p>
               )}
+              {/* Solved, and friends have too: the race among them, from the card (friendRace.ts). */}
+              {solved && key && multiplayer && <FriendRaceLink puzzle={daily.puzzle} puzzleKey={key} seconds={best} shareRef={{ day: todayKey(), slot }} placement="menu" className="-mb-2 mt-0.5" />}
             </>
           ) : (
             <div className="animate-pulse" aria-hidden="true">
-              <div className="mt-2 h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
+              <div className="h-[35px] w-3/4 rounded-lg bg-surface-sunken sm:h-10" />
               <div className="mt-1 h-5 w-1/2 rounded bg-surface-sunken" />
             </div>
           )}
         </div>
         {daily ? (
-          <MiniGridThumb puzzle={daily.puzzle} solved={solved} className="w-24 shrink-0 sm:w-28 lg:w-36" />
+          <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-20 shrink-0 sm:w-28 lg:w-36" />
         ) : (
           <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
         )}
       </div>
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
-        <Button size="lg" variant={solved && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
-          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : "menu.dailyPlay")}
+        <Button size="lg" variant={(solved || raced) && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
+          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : raced ? "menu.dailyPlaySolo" : "menu.dailyPlay")}
         </Button>
         {multiplayer && (
           <Button
@@ -143,11 +158,12 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
           </Button>
         )}
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 sm:px-6">
+      {/* The whole strip opens the board, not just the words (Andrew, 2026-11-16): the link's ::after covers it. */}
+      <div className="relative flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
         <TransitionLink
           to={leaderboardPath(slot)}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft after:absolute after:inset-0 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
           <Trophy className="size-4 text-gold-500" aria-hidden="true" />
           {t("menu.dailyLeaderboard")}
@@ -259,6 +275,7 @@ export function MenuScreen() {
       <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
       {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
       <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
+      <SignedOutNotice className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
       <SoloContinue />
 
       <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
@@ -298,9 +315,12 @@ export function MenuScreen() {
               onRace={() => raceDaily(dailyLarge, "large")}
             />
           )}
+          <BonusCard />
         </div>
 
         <div className="grid gap-8">
+          <StreakRepairCard />
+          <RaceRepliesCard />
           {multiplayer && (
             <section className="grid gap-3" aria-busy={loading || undefined}>
               <Eyebrow as="h2" className="px-1">{t("menu.friendsHeading")}</Eyebrow>
@@ -356,18 +376,20 @@ export function MenuScreen() {
                     />
                   </>
                 )}
+                {/* A TV board is for a big screen: tablets and wider only (Andrew, 2026-11-13), as is the watch link below. */}
                 <ListRow
                   icon={Tv}
                   to="/host"
                   title={t("menu.tvMode")}
                   subtitle={t("menu.tvModeHint")}
                   disabled={disabled}
+                  className="max-md:hidden"
                   onClick={() => track("mode_selected", { mode: "tv" })}
                 />
               </ListGroup>
               <TransitionLink
                 to="/watch"
-                className="justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
+                className="max-md:hidden justify-self-center inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500"
               >
                 {t("menu.watchLink")}
               </TransitionLink>

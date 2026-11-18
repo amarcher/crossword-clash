@@ -2,15 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
-import { Check, ChevronLeft, ChevronRight, Clock, Lock, Play, Swords, Trophy } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Flame, Lock, Play, Swords, Trophy } from "lucide-react";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusNudge } from "../components/Plus/PlusNudge";
+import { BonusArchive } from "../components/Plus/BonusArchive";
 import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
-import { useBestTimes } from "../hooks/useSolveHistory";
+import { useBestTimes, useRepairOffer } from "../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { track } from "../lib/analytics";
 import { fetchDailyForDay, type DailySlot } from "../lib/dailyFeed";
@@ -57,23 +58,31 @@ const DOT_ON_SELECTED: Record<ArchiveStatus, string> = {
 };
 
 /** MiniGridThumb's look, drawn from the index's block string so no puzzle is fetched to show a shape. */
-function ShapeThumb({ blocks, className = "" }: { blocks: string; className?: string }) {
+function ShapeThumb({ blocks, className = "", solved = false }: { blocks: string; className?: string; solved?: boolean }) {
   const rows = blocks.split("/");
   const width = rows[0]?.length || 1;
   const last = rows.length - 1;
   return (
     <div
       aria-hidden="true"
-      className={`grid gap-px rounded-md bg-ink p-px ${className}`}
+      className={`relative grid gap-px rounded-md bg-ink p-px ${className}`}
       style={{ gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))`, aspectRatio: `${width} / ${rows.length}` }}
     >
       {rows.flatMap((row, r) =>
         [...row].map((ch, c) => (
           <div
             key={`${r}-${c}`}
-            className={`${ch === "#" ? "bg-ink" : "bg-surface"} ${r === 0 && c === 0 ? "rounded-tl-[5px]" : ""} ${r === 0 && c === width - 1 ? "rounded-tr-[5px]" : ""} ${r === last && c === 0 ? "rounded-bl-[5px]" : ""} ${r === last && c === width - 1 ? "rounded-br-[5px]" : ""}`}
+            className={`${ch === "#" ? "bg-ink" : solved ? "bg-brand-200" : "bg-surface"} ${r === 0 && c === 0 ? "rounded-tl-[5px]" : ""} ${r === 0 && c === width - 1 ? "rounded-tr-[5px]" : ""} ${r === last && c === 0 ? "rounded-bl-[5px]" : ""} ${r === last && c === width - 1 ? "rounded-br-[5px]" : ""}`}
           />
         )),
+      )}
+      {/* Solved: the squares filled and a check over the grid, as on the menu's daily cards (MiniGridThumb). */}
+      {solved && (
+        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+          <span className="grid size-[42%] place-items-center rounded-full bg-brand-600 text-white shadow-raised ring-2 ring-white">
+            <Check className="size-[62%]" strokeWidth={3.5} />
+          </span>
+        </span>
       )}
     </div>
   );
@@ -165,7 +174,12 @@ export function ArchiveScreen() {
     const day = search.get("day");
     return day && /^\d{4}-\d{2}-\d{2}$/.test(day) && day <= today ? { day, month: monthOf(day) } : null;
   });
-  const opening = selected ?? defaultSelection(items, today);
+  // Streak repair (streakRepair.ts): for the one day after a single missed
+  // day, the missed day is where the archive opens, and its panel says what
+  // solving one of its puzzles today does (Plus), or would do (the pitch).
+  const repairOffer = useRepairOffer();
+  const repair = plusEnabled() && account?.plusReady && repairOffer && items.some((it) => it.day === repairOffer.day) ? repairOffer : null;
+  const opening = selected ?? (repair ? { day: repair.day, month: monthOf(repair.day) } : defaultSelection(items, today));
   const month = opening?.month ?? monthOf(today);
   const selectedDay = opening?.day ?? null;
   const firstMonth = items.length > 0 ? monthOf(items[0].day) : month;
@@ -269,7 +283,7 @@ export function ArchiveScreen() {
         : t("archive.unsolved").toLowerCase();
 
   return (
-    <PageShell width="md" widthLg="4xl" bar={tv ? { backLabel: t("importer.tvBack"), backTo: TV_CHOOSER_PATH } : { backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={tv ? { backLabel: t("importer.tvBack"), backTo: TV_CHOOSER_PATH } : { backLabel: t("completion.backToMenu") }}>
       <div className="pb-10 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("archive.title")}</h1>
         <p className="mt-1 min-h-5 text-sm text-muted tabular-nums" aria-live="polite">
@@ -391,7 +405,7 @@ export function ArchiveScreen() {
                               onKeyDown={(e) => onGridKey(e, day)}
                               className={`flex h-12 w-full max-w-12 flex-col items-center justify-center gap-1 rounded-xl text-sm font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
                                 isSelected ? "bg-brand-600 text-white" : empty ? "text-subtle/60" : "text-ink hover:bg-surface-sunken active:bg-line"
-                              } ${isToday && !isSelected ? "ring-1 ring-inset ring-brand-500" : ""}`}
+                              } ${isToday && !isSelected ? "ring-1 ring-inset ring-brand-500" : ""} ${repair?.day === day && !isSelected ? "bg-gold-50 ring-1 ring-inset ring-gold-500" : ""}`}
                             >
                               <span>{toDate(day).getDate()}</span>
                               <span className="flex h-1.5 items-center gap-1" aria-hidden="true">
@@ -465,12 +479,32 @@ export function ArchiveScreen() {
                         )}
                       </li>
                     )}
+                    {repair && account && selectedDay === repair.day && (
+                      <li data-testid="archive-repair" className="flex items-center gap-3 rounded-2xl bg-gold-50 p-3 ring-1 ring-gold-100">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-gold-700 ring-1 ring-gold-100">
+                          <Flame className="size-5" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold leading-snug text-ink">{t("streakRepair.title", { count: repair.streak })}</p>
+                          <p className="mt-0.5 text-sm leading-snug text-muted">{t(account.plus ? "streakRepair.archiveBody" : "streakRepair.archiveBodyFree")}</p>
+                        </div>
+                        {!account.plus && (
+                          <Button size="sm" onClick={() => account.openPaywall({ placement: "streak-archive", feature: "streak", returnTo: "/archive" })}>
+                            {t("streakRepair.withPlus")}
+                          </Button>
+                        )}
+                      </li>
+                    )}
                     {dayItems.map((it) => {
                       const primary = it.status === "unsolved" || it.status === "inprogress";
                       const locked = isLockedDay(it.day, today, window);
                       return (
-                        <li key={it.slot} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-card">
-                          <ShapeThumb blocks={it.blocks} className="w-14 shrink-0" />
+                        <li
+                          key={it.slot}
+                          data-solved={it.status === "solved" || undefined}
+                          className={`flex items-center gap-3 rounded-2xl border p-3 shadow-card ${it.status === "solved" ? "border-brand-200 bg-brand-50" : "border-line bg-surface"}`}
+                        >
+                          <ShapeThumb blocks={it.blocks} solved={it.status === "solved"} className="w-14 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="flex min-h-5 items-center gap-2">
                               <Eyebrow className="shrink-0 text-brand-600">{t(SLOT_EYEBROW[it.slot])}</Eyebrow>
@@ -479,7 +513,8 @@ export function ArchiveScreen() {
                             <p className="mt-0.5 truncate font-display text-base font-semibold leading-snug text-ink">{it.title}</p>
                             <p className="truncate text-xs text-muted tabular-nums">
                               {t("menu.dailyMeta", { width: it.width, height: it.height, count: it.clues })}
-                              {it.theme ? ` · ${it.theme}` : ""}
+                              {/* A phone's row has no room for the theme beside the board link and the buttons: it cut off after a few letters. */}
+                              {it.theme ? <span className="max-sm:hidden">{` · ${it.theme}`}</span> : null}
                             </p>
                           </div>
                           {!locked && !tv && (
@@ -546,6 +581,7 @@ export function ArchiveScreen() {
             </div>
           </>
         )}
+        <BonusArchive />
       </div>
     </PageShell>
   );

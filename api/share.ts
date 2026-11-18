@@ -4,7 +4,7 @@
  * GET /share?t=race&code=ABC123&title=…        → invite card + redirect to /?join=ABC123
  * GET /share?t=result&title=…&time=1:42&rank=1&total=4&name=…
  *                                              → boast card + redirect to /
- * GET /daily/2026-10-20/mini?beat=102&by=Archer (rewritten here by vercel.json
+ * GET /daily/2026-10-20/mini?beat=102&by=Archer[&r=<replay share id>] (rewritten here by vercel.json
  *     as ?t=daily&day=…&slot=…, the original query merged in)
  *                                              → "beat my time" card, and the
  *                                                SPA itself: the built
@@ -12,6 +12,12 @@
  *                                                tags spliced into its head,
  *                                                so the short daily link both
  *                                                unfurls and plays.
+ * GET /puzzles/ab12cd34[?beat=75&by=Archer&r=<replay share id>] (rewritten here as
+ *     ?t=puzzle&id=…, the query merged in)    → the community puzzle's card
+ *                                                (title, author, size; the
+ *                                                race-my-solve card and clip
+ *                                                with a challenge), spliced
+ *                                                into the SPA the same way.
  *
  * Crawlers (iMessage/Slack/Twitter/…) read the OG meta tags — including a
  * per-link og:image rendered by /api/og — and never follow the redirect.
@@ -40,6 +46,34 @@ function clean(url: URL, key: string, max: number): string {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const SHORT_ID = /^[a-z0-9]{8}$/;
+const DIFFICULTY: Record<string, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
+
+/** What a community puzzle's card says about it (the public `community_puzzles` view). */
+export interface CommunityFacts {
+  title: string;
+  author: string;
+  width: number;
+  height: number;
+  difficulty: string;
+}
+
+/** A published community puzzle's facts over REST with the anon key; null when it isn't one or can't be read. */
+async function communityFacts(id: string): Promise<CommunityFacts | null> {
+  const base = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(`${base}/rest/v1/community_puzzles?short_id=eq.${id}&status=eq.published&select=title,author,width,height,difficulty`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as CommunityFacts[];
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 const SLOT_LABEL: Record<string, string> = { mini: "Daily Mini", midi: "Daily Midi", large: "Daily Large" };
 
 /** "1:42" from whole seconds; "" for anything unusable. */
@@ -67,6 +101,42 @@ export interface HeadTags {
   description: string;
   image: string;
   url: string;
+  /**
+   * A daily link with a replay (`r`, a share ID): the solve as an MP4 from
+   * /api/replay, for `og:video` (iMessage plays it in the preview); `image`
+   * is then that clip's poster frame, 1280×720.
+   */
+  video?: string;
+}
+
+/** A replay share ID's shape (src/lib/replayShare.ts); api/replay.ts looks the code up. */
+export const REPLAY_ID = /^[A-Za-z0-9_-]{11}$/;
+
+/**
+ * A shared race link's `race`: how many solvers its clip holds
+ * (dailyChallenge.buildPuzzleLink), or 0. A clip with no time to beat is a
+ * race's with or without it: links sent before `race` existed carry `r` alone.
+ */
+function raceCount(url: URL): number {
+  const n = Number(url.searchParams.get("race") ?? "");
+  return Number.isInteger(n) && n >= 1 && n <= 8 ? n : 0;
+}
+
+/** A shared race link's `who`: its solvers' names in the clip's order, only when there is one for each of them. */
+function raceNames(url: URL, racers: number): string[] {
+  const names = clean(url, "who", 200).split(",").map((n) => n.replace(/\s+/g, " ").trim().slice(0, 20)).filter(Boolean);
+  return racers > 0 && names.length === racers ? names : [];
+}
+
+/** "archer vs minna" for two named solvers; else how many raced. */
+function raceHeadline(racers: number, names: string[]): string {
+  if (names.length === 2) return `${names[0]} vs ${names[1]}`;
+  return racers === 2 ? "A head-to-head race" : racers > 2 ? `A ${racers}-way race` : "A race";
+}
+
+function raceDescription(names: string[]): string {
+  const rest = "Watch who got to each square first, then solve it and join the race on Crossword Clash.";
+  return names.length > 2 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}. ${rest}` : rest;
 }
 
 /**
@@ -85,9 +155,18 @@ export function spliceHead(html: string, tags: HeadTags): string {
 <meta property="og:description" content="${esc(tags.description)}" />
 <meta property="og:url" content="${esc(tags.url)}" />
 <meta property="og:image" content="${esc(tags.image)}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:image:width" content="${tags.video ? 1280 : 1200}" />
+<meta property="og:image:height" content="${tags.video ? 720 : 630}" />
+${
+  tags.video
+    ? `<meta property="og:video" content="${esc(tags.video)}" />
+<meta property="og:video:secure_url" content="${esc(tags.video)}" />
+<meta property="og:video:type" content="video/mp4" />
+<meta property="og:video:width" content="1280" />
+<meta property="og:video:height" content="720" />
+`
+    : ""
+}<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${esc(tags.title)}" />
 <meta name="twitter:description" content="${esc(tags.description)}" />
 <meta name="twitter:image" content="${esc(tags.image)}" />
@@ -123,9 +202,22 @@ export default async function handler(req: Request): Promise<Response> {
     description = time
       ? `Same puzzle, your clock. Tap to race ${by ? `${by}'s` : "this"} time on Crossword Clash.`
       : "Tap to play this daily on Crossword Clash — solo, or race friends live.";
+    const replay = clean(url, "r", 11);
+    const hasReplay = REPLAY_ID.test(replay);
+    // A shared race (FriendRaceDialog): the clip is everyone's solve on one grid, and the link opens it.
+    const isRace = hasReplay && !time;
+    const racers = isRace ? raceCount(url) : 0;
+    const racing = raceNames(url, racers);
+    if (isRace) {
+      pageTitle = `${raceHeadline(racers, racing)} on the ${label} for ${date}`;
+      description = raceDescription(racing);
+    }
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
+    if (hasReplay) query.set("r", replay);
+    if (racers) query.set("race", String(racers));
+    if (racing.length) query.set("who", racing.join(","));
     dest = `/daily/${day}/${slot}${query.size ? `?${query.toString()}` : ""}`;
     og.set("heading", `${label} · ${date}`);
     if (by) og.set("title", by);
@@ -133,24 +225,56 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("detail", time ? "Beat my time" : "Play it");
     og.set("glyph", time ? "⏱" : "🧩");
 
-    const image = `${origin}/api/og?${og.toString()}`;
-    const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}` };
-    // Serve the real app with the card's tags: humans play, crawlers unfurl.
-    try {
-      const res = await fetch(`${origin}/index.html`, { headers: { accept: "text/html" } });
-      if (res.ok) {
-        const html = await res.text();
-        return new Response(spliceHead(html, tags), {
-          status: 200,
-          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, s-maxage=300" },
-        });
-      }
-    } catch {
-      // Fall back to the card-plus-redirect page below (the front door, since
-      // redirecting to the daily path would land back here).
+    // With a replay the preview plays the solve (og:video), its last frame as the poster.
+    const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
+    const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
+    const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) };
+    return serveShell(tags, origin);
+  }
+
+  if (type === "puzzle") {
+    const id = clean(url, "id", 8);
+    if (!SHORT_ID.test(id)) {
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
     }
-    dest = "/";
-    return redirectPage(tags, dest, origin);
+    const facts = await communityFacts(id);
+    const time = formatSeconds(clean(url, "beat", 6));
+    const by = clean(url, "by", 40);
+    const replay = clean(url, "r", 11);
+    const hasReplay = REPLAY_ID.test(replay);
+    const named = facts ? `“${facts.title}”` : "a community crossword";
+    const who = by || "I";
+    pageTitle = time
+      ? `${who} solved ${named} in ${time} — ${hasReplay ? "race my solve" : "beat my time"}`
+      : facts
+        ? `${named} by @${facts.author} — Crossword Clash`
+        : "A community crossword on Crossword Clash";
+    const about = facts ? `A ${facts.width}×${facts.height} community crossword by @${facts.author}${DIFFICULTY[facts.difficulty] ? ` · ${DIFFICULTY[facts.difficulty]}` : ""}.` : "A community crossword.";
+    description = time
+      ? `${about} Same puzzle, your clock: tap to race ${by ? `${by}'s` : "this"} ${hasReplay ? "solve" : "time"}.`
+      : `${about} Play it free on Crossword Clash, solo or racing friends.`;
+    const isRace = hasReplay && !time;
+    const racers = isRace ? raceCount(url) : 0;
+    const racing = raceNames(url, racers);
+    if (isRace) {
+      pageTitle = `${raceHeadline(racers, racing)} on ${named}`;
+      description = raceDescription(racing);
+    }
+    const query = new URLSearchParams();
+    if (time) query.set("beat", clean(url, "beat", 6));
+    if (by) query.set("by", by);
+    if (hasReplay) query.set("r", replay);
+    if (racers) query.set("race", String(racers));
+    if (racing.length) query.set("who", racing.join(","));
+    dest = `/puzzles/${id}${query.size ? `?${query.toString()}` : ""}`;
+    og.set("heading", "Community puzzle");
+    if (facts) og.set("title", facts.title);
+    if (time) og.set("metric", time);
+    og.set("detail", time ? (hasReplay ? `Race ${by || "my"}${by ? "'s" : ""} solve` : "Beat my time") : facts ? `by @${facts.author} · ${facts.width}×${facts.height}` : "Play it");
+    og.set("glyph", time ? "⏱" : "🧩");
+    const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
+    const image = replayUrl ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
+    return serveShell({ title: pageTitle, description, image, url: `${origin}${dest}`, ...(replayUrl ? { video: replayUrl } : {}) }, origin);
   }
 
   if (type === "race") {
@@ -199,6 +323,27 @@ export default async function handler(req: Request): Promise<Response> {
 
   const image = `${origin}/api/og?${og.toString()}`;
   return redirectPage({ title: pageTitle, description, image, url: `${origin}${dest}` }, dest, origin);
+}
+
+/**
+ * The real app with the card's tags: humans play, crawlers unfurl. Falls back
+ * to the card-plus-redirect page (to the front door, since redirecting to the
+ * link's own path would land back here) when the shell can't be fetched.
+ */
+async function serveShell(tags: HeadTags, origin: string): Promise<Response> {
+  try {
+    const res = await fetch(`${origin}/index.html`, { headers: { accept: "text/html" } });
+    if (res.ok) {
+      const html = await res.text();
+      return new Response(spliceHead(html, tags), {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, s-maxage=300" },
+      });
+    }
+  } catch {
+    // The redirect page below.
+  }
+  return redirectPage(tags, "/", origin);
 }
 
 /** The card page for crawlers plus an instant redirect into the SPA for humans. */

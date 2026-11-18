@@ -21,10 +21,13 @@ import { useSoloSettings } from "../lib/soloSettings";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useRaceName } from "../hooks/useRaceName";
 import { useAccountContext } from "../contexts/AccountContext";
 
-import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay } from "../lib/soloStats";
-import { recordSolve, type SolveOutcome } from "../lib/solveHistory";
+import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay, shiftDayKey } from "../lib/soloStats";
+import { repairAccountStreak, repairLocalStreak, repairRow } from "../lib/streakRepair";
+import { emitToast } from "../lib/toastBus";
+import { addHistoryRows, getSolveHistoryState, recordSolve, type SolveOutcome } from "../lib/solveHistory";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
@@ -37,16 +40,32 @@ import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type PendingDailyResult } from "../lib/dailyLeaderboard";
+import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
-import type { PuzzleClue } from "../types/puzzle";
+import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
+import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
+import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { RaceStarter } from "../components/Race/RaceStarter";
+import { RaceGhosts } from "../components/Race/RaceGhosts";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
+import { encodeReplay } from "../lib/replayCode";
+import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, rememberedReplay } from "../lib/replayShare";
+import { replyToRace } from "../lib/raceReplies";
+import { buildPuzzleLink } from "../lib/dailyChallenge";
+import { SHARE_URL } from "../lib/resultCard";
+
+/** The viewer's own solve beside someone else's in a race replay: the brand blue. */
+const MY_REPLAY_COLOR = "#3a6bf0";
 
 export function SoloPlayScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const ownName = useRaceName();
   const navigate = useNavigate();
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
@@ -127,7 +146,7 @@ export function SoloPlayScreen() {
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
   const reopened = !!key && game.reopenedSolved?.key === key;
-  const { getElapsedSeconds, running: timerRunning, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
+  const { getElapsedSeconds, getElapsedMs, running: timerRunning, idlePaused, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
@@ -200,6 +219,9 @@ export function SoloPlayScreen() {
   // accounts honor their saved leaderboard preference.
   const dailySlot = useTodaysDailySlot(puzzle);
   const isDaily = dailySlot !== null;
+  // The board a finish here belongs on: a daily's, or the bonus board for
+  // today's bonus (bonus.ts; a bonus played on a later day ranks nowhere).
+  const boardSlot: BoardSlot | null = dailySlot ?? (puzzle?.origin === "bonus" && puzzle.bonusDay === todayKey() ? "bonus" : null);
   // Whether this solve was ever typed freely: Autocheck off while the grid was
   // unfinished, or wrong letters restored from such a visit. Recorded with the
   // play-insights row and the daily board entry; reset per puzzle below.
@@ -225,7 +247,7 @@ export function SoloPlayScreen() {
   const setPendingDailyResult = game.setPendingDailyResult;
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
-    if (reopened || !dailySlot || !user) return;
+    if (reopened || !boardSlot || !user) return;
     dailySubmittedRef.current = true;
     // A second solve of a puzzle already solved is made knowing the answers:
     // it may set a personal best, it never goes on the day's board.
@@ -234,13 +256,13 @@ export function SoloPlayScreen() {
     if (soloResult.assisted) return;
     const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
     const day = todayKey();
-    const pending: PendingDailyResult = { day, slot: dailySlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
-    pending.settled = prepareSoloDailyResult(day, dailySlot, entry, user).then(result => {
+    const pending: PendingDailyResult = { day, slot: boardSlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
+    pending.settled = prepareSoloDailyResult(day, boardSlot, entry, user).then(result => {
       setPendingDailyResult(current => current === pending ? result : current);
       return result.settled;
     });
     setPendingDailyResult(pending);
-  }, [soloResult, freshResult, reopened, dailySlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
+  }, [soloResult, freshResult, reopened, boardSlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
   // The share block's red squares (shareBlock.ts): with Autocheck on, the
   // squares where a wrong letter was refused; off, every square a check
@@ -256,6 +278,7 @@ export function SoloPlayScreen() {
     dailySubmittedRef.current = false;
     solvedBeforeRef.current = !!puzzleKey && solvedSeconds(puzzleKey) !== null;
     historyRecordedRef.current = false;
+    traceFiledRef.current = false;
     completionReportedRef.current = false;
     setServerOutcome(null);
     setBoardSignedAs(null);
@@ -288,6 +311,155 @@ export function SoloPlayScreen() {
     () => (flaggedCells.length ? [...new Set([...wrongCells, ...flaggedCells])] : wrongCells),
     [wrongCells, flaggedCells],
   );
+
+  // Races and replays of recorded solves (race.ts; Plus). Every solo solve is
+  // recorded; an account's finish files its recording for others to race.
+  const width = puzzle?.width ?? 0;
+  const recorder = useSolveRecorder({ puzzleKey, width, playerCells, getElapsedMs, enabled: !reopened });
+  // For the share replay: the clue the solver is on, and each letter Autocheck
+  // refuses (counted as it happens, on the square under the cursor).
+  const recordMark = recorder.mark;
+  useEffect(() => {
+    if (!activeClue || !timerRunning || isComplete) return;
+    recordMark(activeClue.row * width + activeClue.col, activeClue.direction === "across" ? "a" : "d");
+  }, [activeClue, timerRunning, isComplete, width, recordMark]);
+  const refusals = useRef(wrongLetters);
+  useEffect(() => {
+    const before = refusals.current;
+    refusals.current = wrongLetters;
+    if (wrongLetters > before && selectedCell && !isComplete) recordMark(selectedCell.row * width + selectedCell.col, "r");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new refusal is the trigger; the cursor is read at that moment
+  }, [wrongLetters]);
+  const [race, setRace] = useState<Ghost[]>([]);
+  useEffect(() => {
+    setRace(puzzleKey ? loadRace(puzzleKey)?.ghosts ?? [] : []);
+  }, [puzzleKey, attempt]);
+  // A Race tap on the daily board names who to race once the puzzle opens.
+  const [raceIntent, setRaceIntent] = useState<string[]>([]);
+  useEffect(() => {
+    setRaceIntent(puzzleKey ? takeRaceIntent(puzzleKey) : []);
+  }, [puzzleKey]);
+  const raceCandidates = useRaceCandidates(puzzleKey, !reopened);
+  const plus = account.plus;
+  const racing = race.length > 0 && !isComplete;
+  const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);
+  const openRacePitch = useCallback(() => account.openPaywall({ placement: "race", feature: "race" }), [account]);
+  const startRace = useCallback(
+    async (userIds: string[]): Promise<boolean> => {
+      if (!puzzleKey) return false;
+      try {
+        const traces = await Promise.all(userIds.map((id) => fetchSolveTrace(id, puzzleKey)));
+        const ghosts: Ghost[] = [];
+        traces.forEach((trace, i) => {
+          const who = raceCandidates.find((c) => c.userId === userIds[i]);
+          if (!trace || !who || trace.events.length === 0) return;
+          ghosts.push({ userId: who.userId, name: who.username, color: GHOST_COLORS[ghosts.length % GHOST_COLORS.length], seconds: trace.seconds, events: trace.events });
+        });
+        if (ghosts.length === 0) return false;
+        saveRace({ key: puzzleKey, ghosts });
+        setRace(ghosts);
+        // The race starts with the grid untouched: both clocks from zero.
+        restartTimer();
+        recorder.reset();
+        track("race_started", { ghosts: ghosts.length, friends: ghosts.filter((g) => raceCandidates.find((c) => c.userId === g.userId)?.friend).length });
+        requestAnimationFrame(() => gridInputRef.current?.focus());
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [puzzleKey, raceCandidates, restartTimer, recorder],
+  );
+  const showRaceStarter =
+    raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
+
+  // Watching a recorded solve, letters and all, once this one is finished.
+  const [replay, setReplay] = useState<ReplaySolve[] | null>(null);
+  // Watching someone just raced: their solve beside this one, on one clock (both sides have finished).
+  const withMine = useCallback(
+    (theirs: ReplaySolve): ReplaySolve[] => {
+      const mine = soloResult ? recorder.take() : null;
+      return mine && soloResult ? [{ name: ownName, color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
+    },
+    [soloResult, recorder, ownName],
+  );
+  const replayable = useMemo(() => {
+    const seen = new Set<string>();
+    const out: { userId: string; name: string }[] = [];
+    const add = (userId: string, name: string) => {
+      if (seen.has(userId)) return;
+      seen.add(userId);
+      out.push({ userId, name });
+    };
+    // Only someone just raced. Other solvers' replays are on the leaderboard's rows, and
+    // friends' are The race: two kinds of Watch here read as one feature with two rules
+    // (Andrew, 2026-11-16).
+    for (const g of race) add(g.userId, g.name);
+    return out.slice(0, 3);
+  }, [race]);
+  const watchReplay = useCallback(
+    async (userId: string) => {
+      if (!puzzleKey || !puzzle) return;
+      const who = replayable.find((r) => r.userId === userId);
+      const color = race.find((g) => g.userId === userId)?.color ?? GHOST_COLORS[0];
+      // A shared link's sender (userId "link:<share id>"), free like the race:
+      // their letters are rebuilt from the replay code and the puzzle.
+      if (userId.startsWith("link:")) {
+        const code = await fetchReplayShare(userId.slice(5));
+        const rebuilt = code ? letteredReplay(code, puzzle) : null;
+        if (rebuilt) {
+          setReplay(withMine({ name: who?.name ?? "", color, ...rebuilt }));
+          track("replay_watched", { racing: true });
+        }
+        return;
+      }
+      if (!plus) {
+        openRacePitch();
+        return;
+      }
+      try {
+        let trace = await fetchSolveTrace(userId, puzzleKey);
+        // The finish this unlocks may still be on its way to the server: one more try.
+        if (trace && !trace.withLetters) {
+          await new Promise((r) => setTimeout(r, 1500));
+          trace = await fetchSolveTrace(userId, puzzleKey);
+        }
+        if (!trace || !trace.withLetters) return;
+        setReplay(withMine({ name: who?.name ?? "", color, seconds: trace.seconds, events: trace.events }));
+        track("replay_watched", { racing: race.some((g) => g.userId === userId) });
+      } catch {
+        // A replay that can't load just doesn't open.
+      }
+    },
+    [puzzleKey, puzzle, plus, openRacePitch, replayable, race, withMine],
+  );
+
+  // The race (friendRace.ts): this solve and every friend's recorded one on a
+  // single clock, free. One button on the finish dialog; friends it covers
+  // are not also listed one by one.
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const [friendRace, setFriendRace] = useState<{ solves: RaceSolve[]; letters: boolean } | null>(null);
+  const watchFriendRace = useCallback(async () => {
+    if (!puzzleKey || !user) return;
+    try {
+      let found = await fetchFriendRace(puzzleKey);
+      // The finish that unlocks the letters may still be on its way to the server: one more try.
+      if (found.friends.length > 0 && !found.withLetters) {
+        await new Promise((r) => setTimeout(r, 1500));
+        found = await fetchFriendRace(puzzleKey);
+      }
+      if (found.friends.length === 0) return;
+      const mine = soloResult ? recorder.take() : null;
+      const own = mine && soloResult && !mine.partial ? { seconds: soloResult.finishSeconds, events: mine.events } : await fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null);
+      const solves = raceSolves(found, own ? { id: user.id, name: ownName, ...own } : null);
+      setFriendRace({ solves, letters: found.withLetters });
+      track("friend_race_opened", { placement: "completion", racers: solves.length, own: !!own });
+    } catch {
+      // A race that can't load just doesn't open.
+    }
+  }, [puzzleKey, user, soloResult, recorder, ownName]);
+  const friendIds = useMemo(() => new Set(racingFriends.map((c) => c.userId)), [racingFriends]);
+  const listedReplays = useMemo(() => (racingFriends.length > 0 ? replayable.filter((r) => !friendIds.has(r.userId)) : replayable), [racingFriends, replayable, friendIds]);
 
   // Autocheck off and the grid full but not right: a quiet notice over the
   // grid with the three ways out. Dismissed until the grid changes again.
@@ -336,6 +508,8 @@ export function SoloPlayScreen() {
   const accountId = account.user?.id;
   const history = useSolveHistory();
   const [serverOutcome, setServerOutcome] = useState<SolveOutcome | null>(null);
+  // The account's write of this finish is over (whatever came of it): a streak repair goes after it.
+  const [historySettled, setHistorySettled] = useState(false);
   const historyRecordedRef = useRef(false);
   useEffect(() => {
     if (!soloResult || !freshResult || !accountId || !puzzle || historyRecordedRef.current) return;
@@ -343,14 +517,141 @@ export function SoloPlayScreen() {
     void recordSolve(accountId, {
       puzzleKey: puzzleIdentity(puzzle),
       title: puzzle.title,
-      source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : "other",
+      source: isDaily ? "daily" : fromNyt ? "nyt" : puzzle?.origin === "community" ? "community" : puzzle?.origin === "bonus" ? "bonus" : "other",
       mode: "solo",
       seconds: soloResult.finishSeconds,
       assisted: soloResult.assisted,
-    }).then((outcome) => outcome && setServerOutcome(outcome));
+    })
+      .then((outcome) => outcome && setServerOutcome(outcome))
+      .finally(() => setHistorySettled(true));
   }, [soloResult, freshResult, accountId, puzzle, isDaily, fromNyt]);
+  useEffect(() => {
+    if (soloResult && freshResult && puzzle?.origin === "bonus") track("bonus_completed", { seconds: soloResult.finishSeconds, assisted: soloResult.assisted });
+  }, [soloResult, freshResult, puzzle]);
 
-  const shownResult = useMemo(() => {
+  // Streak repair (streakRepair.ts; Plus): yesterday's daily, solved today
+  // after a single missed day, makes yesterday count again. The account's
+  // history gets the server's marker row; this device's stats are repaired
+  // too, so a signed-out Plus session (an app purchase) works the same way.
+  const [repairedStreak, setRepairedStreak] = useState<number | null>(null);
+  const repairTriedRef = useRef(false);
+  useEffect(() => {
+    setRepairedStreak(null);
+    repairTriedRef.current = false;
+  }, [puzzleKey, attempt]);
+  useEffect(() => {
+    if (!soloResult || !freshResult || soloResult.assisted || !account.plus || !puzzle || repairTriedRef.current) return;
+    if (accountId && !historySettled) return;
+    const ref = puzzle.ref;
+    const today = dayKey(new Date());
+    if (!ref || !("day" in ref) || ref.day !== shiftDayKey(today, -1)) return;
+    repairTriedRef.current = true;
+    void (async () => {
+      const local = repairLocalStreak();
+      let streak = local?.current ?? null;
+      if (accountId && serverOutcome) {
+        try {
+          if (await repairAccountStreak(ref.day, puzzleIdentity(puzzle), today)) {
+            addHistoryRows(accountId, [repairRow(ref.day, puzzleIdentity(puzzle), new Date().toISOString())]);
+            const summary = getSolveHistoryState()?.summary;
+            if (summary) streak = effectiveStreak(summary.streak, today);
+          } else streak = null;
+        } catch {
+          streak = null;
+        }
+      }
+      if (streak === null) return;
+      setRepairedStreak(streak);
+      const weekday = new Date(`${ref.day}T12:00:00`).toLocaleDateString(i18n.language, { weekday: "long" });
+      emitToast({ message: t("streakRepair.done", { day: weekday }) });
+    })();
+  }, [soloResult, freshResult, account.plus, puzzle, accountId, historySettled, serverOutcome, t, i18n.language]);
+
+  // The shared puzzle this is, where the site can link to it (Puzzle.ref):
+  // any day's daily, or a community puzzle. Imports have none.
+  const puzzleRef = useMemo<PuzzleRef | null>(() => puzzle?.ref ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : null), [puzzle, dailySlot]);
+
+  // A fresh finish's replay (replayCode.ts) on a linkable puzzle, filed under
+  // a short share ID (replayShare.ts): previewed on the completion screen and
+  // carried by the share link and friend invites, for every solver. No ID
+  // (offline, say), no replay.
+  const [replayId, setReplayId] = useState<string | null>(null);
+  const replayFiledRef = useRef(false);
+  useEffect(() => {
+    setReplayId(null);
+    replayFiledRef.current = false;
+  }, [puzzleKey, attempt]);
+  // A solve reopened later shares with the replay this device filed for it,
+  // when the time it shows is that finish's.
+  const reopenedSeconds = reopened ? soloResult?.finishSeconds : undefined;
+  useEffect(() => {
+    if (!puzzleKey || reopenedSeconds === undefined) return;
+    const remembered = rememberedReplay(puzzleKey, reopenedSeconds);
+    setReplayId(remembered);
+    // Solved on another device, or before a reinstall: this one never filed
+    // the replay, and the share fell back to the squares alone (Andrew,
+    // 2026-11-16). The account's kept recording of that same finish makes it
+    // again; it has no refusals or clue changes, only the letters going in.
+    if (remembered || !accountId || !puzzle || !puzzleRef) return;
+    let live = true;
+    void (async () => {
+      try {
+        const kept = await fetchOwnSolveTrace(accountId, puzzleKey);
+        if (!live || !kept || kept.events.length === 0 || kept.seconds !== Math.floor(reopenedSeconds)) return;
+        const code = encodeReplay(puzzle, kept.events, kept.seconds);
+        const id = code ? await createReplayShare(code) : null;
+        if (!id) return;
+        rememberReplay(puzzleKey, id, kept.seconds);
+        if (live) setReplayId(id);
+      } catch {
+        // Best-effort: the share still goes out with its squares.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per reopened finish; the puzzle object is that finish's
+  }, [puzzleKey, reopenedSeconds, accountId]);
+  // Racing a shared link's sender (ChallengeScreen): their puzzle, for the reply.
+  const linkGhost = race.find((g) => g.link) ?? null;
+  useEffect(() => {
+    if (!soloResult || !freshResult || !(puzzleRef || linkGhost) || !puzzle || soloResult.assisted || replayFiledRef.current) return;
+    replayFiledRef.current = true;
+    const trace = recorder.take();
+    const code = trace ? encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks) : null;
+    void (async () => {
+      const id = code ? await createReplayShare(code) : null;
+      if (id) {
+        setReplayId(id);
+        if (puzzleKey) rememberReplay(puzzleKey, id, soloResult.finishSeconds);
+      }
+      // Close the loop: the link's sender hears how this racer did (raceReplies.ts).
+      if (linkGhost?.link) {
+        await replyToRace({
+          shareId: linkGhost.link.shareId,
+          replyShareId: id,
+          name: isRealPlayerName(game.displayName) ? game.displayName : t("common.defaultPlayerName"),
+          ref: linkGhost.link.ref,
+          seconds: soloResult.finishSeconds,
+          toSeconds: linkGhost.seconds,
+        });
+      }
+    })();
+  }, [soloResult, freshResult, puzzleRef, linkGhost, puzzle, puzzleKey, recorder, game.displayName, t]);
+
+  // File the finish's recording for others to race (race.ts): an account's
+  // own first solve only, nothing revealed, recorded from the first letter.
+  const traceFiledRef = useRef(false);
+  useEffect(() => {
+    if (!soloResult || !freshResult || !accountId || !puzzleKey || traceFiledRef.current) return;
+    traceFiledRef.current = true;
+    const trace = recorder.take();
+    clearTrace(puzzleKey);
+    if (!trace || soloResult.assisted || solvedBeforeRef.current) return;
+    void saveSolveTrace(puzzleKey, soloResult.finishSeconds, trace.events).catch(() => undefined);
+  }, [soloResult, freshResult, accountId, puzzleKey, recorder]);
+
+  const baseResult = useMemo(() => {
     if (!soloResult) return null;
     if (serverOutcome) {
       return {
@@ -382,12 +683,16 @@ export function SoloPlayScreen() {
       nytStreak: null,
     };
   }, [soloResult, serverOutcome, freshResult, history.summary, puzzle]);
+  const shownResult = useMemo(
+    () => (baseResult && repairedStreak !== null ? { ...baseResult, streak: repairedStreak, streakAdvanced: true } : baseResult),
+    [baseResult, repairedStreak],
+  );
 
   // Guests explicitly sign each finish, even with a remembered name. Account
   // opt-outs stay private. The confirmation latches after a successful sign;
   // previews show a notice instead of offering to post.
   const [boardSignedAs, setBoardSignedAs] = useState<string | null>(null);
-  const pendingDaily = dailySlot ? pendingResultFor(game.pendingDailyResult, todayKey(), dailySlot) : null;
+  const pendingDaily = boardSlot ? pendingResultFor(game.pendingDailyResult, todayKey(), boardSlot) : null;
   const handleSignBoard = useCallback(
     (name: string) => {
       const trimmed = name.trim();
@@ -401,9 +706,9 @@ export function SoloPlayScreen() {
     },
     [game, pendingDaily],
   );
-  const boardNotPosted = isDaily && !!user && !!soloResult && !boardPostsHere();
+  const boardNotPosted = !!boardSlot && !!user && !!soloResult && !boardPostsHere();
   const dailySign =
-    isDaily && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
+    boardSlot && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
       ? { signedAs: boardSignedAs, onSign: handleSignBoard, unposted: !pendingDaily?.posted }
       : undefined;
 
@@ -457,15 +762,21 @@ export function SoloPlayScreen() {
   // the celebration: coming back shows the solved grid with the slim finished
   // header, whose Share button re-opens the modal on demand.
   const handleViewLeaderboard = useCallback(() => {
-    if (!dailySlot) return;
+    if (!boardSlot) return;
     setCompletionModalDismissed(true);
-    navigate(leaderboardPath(dailySlot));
-  }, [dailySlot, setCompletionModalDismissed, navigate]);
+    navigate(leaderboardPath(boardSlot));
+  }, [boardSlot, setCompletionModalDismissed, navigate]);
 
   const handleSignIn = useCallback(() => {
     setCompletionModalDismissed(true);
     account.openAccount({ returnTo: "/menu", placement: "completion" });
   }, [setCompletionModalDismissed, account]);
+
+  const handleSeeStats = useCallback(() => {
+    setCompletionModalDismissed(true);
+    track("stats_opened", { from: "completion" });
+    navigate("/stats");
+  }, [setCompletionModalDismissed, navigate]);
 
   const reopenCompletion = useCallback(() => setCompletionModalDismissed(false), [setCompletionModalDismissed]);
 
@@ -481,10 +792,13 @@ export function SoloPlayScreen() {
     });
     if (!ok || !restartSolo()) return;
     restartTimer();
+    recorder.reset();
+    saveRace(null);
+    setRace([]);
     setAttempt((n) => n + 1);
     track("solo_solve_again", { size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined });
     requestAnimationFrame(() => gridInputRef.current?.focus());
-  }, [confirm, t, restartSolo, restartTimer, puzzle]);
+  }, [confirm, t, restartSolo, restartTimer, puzzle, recorder]);
 
   // "Up next" (audit §2, item 8): today's other dailies, then yesterday's.
   // A daily loads straight into this screen, the same path the menu's
@@ -562,7 +876,7 @@ export function SoloPlayScreen() {
                   <FinishedBar
                     seconds={soloResult?.finishSeconds ?? getElapsedSeconds()}
                     onShare={reopenCompletion}
-                    onLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+                    onLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
                   />
                 ) : (
                   <div className="flex flex-col items-end leading-tight">
@@ -581,13 +895,32 @@ export function SoloPlayScreen() {
                   className={buttonClass("secondary", "md")}
                 >
                   {!isComplete && <Pause className="size-4" aria-hidden="true" />}
-                  {t(isComplete ? "soloPause.choose" : "soloPause.pause")}
+                  {/* A phone's header has no room for "Choose another puzzle" beside the finish chip: it pushed the title off the row. */}
+                  {isComplete ? (
+                    <>
+                      <span className="lg:hidden">{t("soloPause.chooseShort")}</span>
+                      <span className="max-lg:hidden">{t("soloPause.choose")}</span>
+                    </>
+                  ) : (
+                    t("soloPause.pause")
+                  )}
                 </button>
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
             </div>
             {isComplete && (
               <SolvedStrip onSolveAgain={handleSolveAgain} />
+            )}
+            {racing && <RaceGhosts ghosts={race} frames={ghostFrames} totalCells={totalWhiteCells} />}
+            {showRaceStarter && (
+              <RaceStarter
+                key={`${puzzleKey}:${raceIntent.join(",")}`}
+                candidates={raceCandidates}
+                plus={plus}
+                preselect={raceIntent}
+                onStart={startRace}
+                onPitch={openRacePitch}
+              />
             )}
           </>
         }
@@ -603,6 +936,7 @@ export function SoloPlayScreen() {
               navigationActions={guardedActions}
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
+              ghostTints={racing ? ghostTintMap : undefined}
             />
             {showWrongNotice && (
               <div
@@ -674,7 +1008,7 @@ export function SoloPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 md:gap-4 h-full">
+          <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />
             <div className="flex-1 min-h-0">
             <CluePanel
@@ -693,7 +1027,7 @@ export function SoloPlayScreen() {
         }
       />
       </div>
-      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError}
+      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
         onResume={handleResume} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
         open={showCompletionModal}
@@ -709,8 +1043,9 @@ export function SoloPlayScreen() {
         streakCount={shownResult?.streak}
         streakAdvanced={shownResult?.streakAdvanced}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
-        onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
+        onViewLeaderboard={boardSlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
+        puzzleRef={puzzleRef ?? undefined}
         dailySign={dailySign}
         boardNotPosted={boardNotPosted}
         dailyPostingNotice={!boardNotPosted && dailyPostingNotice(pendingDaily) ? t(dailyPostingNotice(pendingDaily)!) : undefined}
@@ -719,13 +1054,32 @@ export function SoloPlayScreen() {
         wrongCells={shareWrongCells}
         challengerName={game.displayName}
         challengeOutcome={challengeOutcome}
+        raceResults={race.length && soloResult ? raceResults(race, soloResult.finishSeconds) : undefined}
+        replayId={replayId ?? undefined}
+        shareBack={
+          linkGhost?.link && replayId && soloResult
+            ? {
+                name: linkGhost.name,
+                link: buildPuzzleLink(SHARE_URL, linkGhost.link.ref, { seconds: soloResult.finishSeconds, name: isRealPlayerName(game.displayName) ? game.displayName : undefined, replay: replayId }),
+                ...compareToChallenge(linkGhost.seconds, soloResult.finishSeconds),
+              }
+            : undefined
+        }
+        replays={reopened ? undefined : listedReplays}
+        onWatchReplay={(userId) => void watchReplay(userId)}
+        friendRace={!reopened && !assisted && racingFriends.length > 0 ? { count: racingFriends.length, name: racingFriends[0].username } : undefined}
+        onWatchFriendRace={() => void watchFriendRace()}
         nextUp={nextUp}
         onNextUp={(item) => void handleNextUp(item)}
         onRaceFresh={user ? handleRaceFresh : undefined}
         puzzleSize={`${puzzle.width}x${puzzle.height}`}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
+        onSeeStats={account.available && account.user ? handleSeeStats : undefined}
+        leaderboardLabel={boardSlot === "bonus" ? t("bonus.boardLink") : undefined}
       />
+      {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
+      {friendRace && <FriendRaceDialog puzzle={puzzle} solves={friendRace.solves} letters={friendRace.letters} shareRef={puzzleRef} onClose={() => setFriendRace(null)} />}
     </>
   );
 }

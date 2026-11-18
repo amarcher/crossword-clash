@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { X } from "lucide-react";
@@ -13,6 +13,9 @@ import { TTSMuteButton, TTSSettingsModal } from "../../components/TTSControls";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useKeepAwake } from "../../lib/keepAwake";
 import { useHostContext } from "../../layouts/HostLayout";
+import { buildRoomReplay } from "../../lib/roomReplay";
+import { RoomReplayDialog } from "../../components/Race/RoomReplayDialog";
+import { track } from "../../lib/analytics";
 
 export function HostSpectateScreen() {
   const { t } = useTranslation();
@@ -45,6 +48,13 @@ export function HostSpectateScreen() {
   // The scoreboard on a propped-up tablet or TV stays lit for the whole game and its finish.
   useKeepAwake(true);
 
+  // The room's replay (roomReplay.ts), for the whole room to watch on the big screen.
+  const roomReplay = useMemo(
+    () => (multiplayer.gameStatus === "completed" ? buildRoomReplay(playerCells, multiplayer.raceStartedAt) : null),
+    [multiplayer.gameStatus, playerCells, multiplayer.raceStartedAt],
+  );
+  const [replayOpen, setReplayOpen] = useState(false);
+
   // Show a transient banner when the narrator falls back to another backend.
   // Auto-dismisses after 8s; the user can click to dismiss sooner.
   const [bannerHidden, setBannerHidden] = useState(false);
@@ -63,6 +73,10 @@ export function HostSpectateScreen() {
   useEffect(() => {
     if (!fellBack && !exhausted && !budgetPaused) return;
     setBannerHidden(false);
+    // Why the host went quiet stays up until it is tapped away: after eight
+    // seconds of a game nobody was looking, and the host simply stopped
+    // (Andrew, 2026-11-16).
+    if (budgetPaused) return;
     const timer = setTimeout(() => setBannerHidden(true), 8000);
     return () => clearTimeout(timer);
   }, [fellBack, exhausted, budgetPaused, narrator.currentEngine]);
@@ -180,8 +194,19 @@ export function HostSpectateScreen() {
         players={playerResults}
         onNextPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
+        onWatchRoomReplay={
+          roomReplay
+            ? () => {
+                track("room_replay_opened", { placement: "tv" });
+                setReplayOpen(true);
+              }
+            : undefined
+        }
         darkMode
       />
+      {replayOpen && roomReplay && puzzle && (
+        <RoomReplayDialog puzzle={puzzle} replay={roomReplay} players={playerResults} playerColorMap={playerColorMap} darkMode onClose={() => setReplayOpen(false)} />
+      )}
     </>
   );
 }

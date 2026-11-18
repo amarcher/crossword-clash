@@ -1,0 +1,5 @@
+See who got there first. After a daily, watch your friends' solves replayed against yours on one clock, with every square in the colour of whoever filled it soonest. A race in a room has its own replay, and you can share it as a clip.
+
+Hosting on a TV is smoother. Turn the AI host on from the lobby, mirror your iPad to the TV, and the TV follows along when you pick the next puzzle. If anyone in the room has Plus, the host is covered for everyone.
+
+Also: room links join at once, finished dailies are marked on the home screen, and a daily you played as a group shows your group's time on the leaderboard.

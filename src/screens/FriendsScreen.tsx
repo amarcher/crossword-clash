@@ -166,7 +166,7 @@ export function FriendsScreen() {
   };
 
   const shell = (children: React.ReactNode) => (
-    <PageShell width="md" bar={{ backLabel: t("race.title"), backTo: "/race" }}>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("race.title"), backTo: "/race" }}>
       <header className="mb-5">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("friends.title")}</h1>
         <p className="mt-1 text-muted">{t("friends.subtitle")}</p>
@@ -198,7 +198,7 @@ export function FriendsScreen() {
   return shell(
     // minmax(0,1fr): a row's non-wrapping text (a truncated name beside two
     // buttons) must shrink, not widen every card past the screen (2026-11-03).
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid">
       {notice && (
         <p role={notice.error ? "alert" : "status"} className={`rounded-xl px-4 py-3 text-sm font-medium ${notice.error ? "bg-red-50 text-red-700" : "bg-brand-50 text-brand-700"}`}>
           {notice.text}
