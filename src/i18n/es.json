@@ -392,6 +392,8 @@
     "shareBackTied": "¡Empate! Mira cómo lo hice:",
     "raceButton": "Compite contra la partida de {{name}}",
     "raceHint": "Sus casillas se llenan como lo hicieron, con tu reloj. Nunca ves sus letras.",
+    "solveYourself": "Resuélvelo tú",
+    "forwardText": "{{name}} resolvió {{title}} en {{time}}. Mira cómo lo hizo y resuélvelo tú.",
     "justSolve": "Solo resolverlo",
     "loadingRace": "Cargando su partida…",
     "heading": "¡{{name}} te desafía!",

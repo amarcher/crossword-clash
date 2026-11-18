@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flag, Loader2, Timer } from "lucide-react";
@@ -11,6 +11,14 @@ import { clearChallenge, saveChallenge } from "../lib/challenge";
 import { fetchReplayShare, ghostFromReplay } from "../lib/replayShare";
 import { saveRace, type Ghost } from "../lib/race";
 import { track } from "../lib/analytics";
+import { buildPuzzleLink } from "../lib/dailyChallenge";
+import { SHARE_URL } from "../lib/resultCard";
+import { shareText } from "../lib/shareSheet";
+import { runtimeDeps } from "../components/CompletionModal/ShareResultButton";
+import type { RaceSolve } from "../lib/friendRace";
+
+// Loaded once the sender's solve has arrived: a link without one never needs it.
+const FriendRaceDialog = lazy(() => import("../components/Race/FriendRaceDialog").then((m) => ({ default: m.FriendRaceDialog })));
 
 /**
  * Landing screen for an incoming "challenge a friend" link. Shows who challenged
@@ -22,6 +30,12 @@ import { track } from "../lib/analytics";
  * filled them, never their letters (race.ts). Free for whoever got the link
  * (Andrew, 2026-11-12): it is how a share turns into a new player. "Just solve
  * it" is the time-only challenge, and the only offer when the replay can't load.
+ *
+ * With a replay the link opens on the solve itself (Andrew, 2026-11-17: what a
+ * share unfurls as is what it should open as): the race dialog plays the
+ * sender's squares going in, no letters, with "Solve it yourself" as its one
+ * primary action (the race) and passing the link on as a quiet icon. Closing
+ * it leaves this page and its two offers.
  */
 export function ChallengeScreen() {
   const { t } = useTranslation();
@@ -43,6 +57,21 @@ export function ChallengeScreen() {
       live = false;
     };
   }, [replayId, challenge]);
+
+  // The sender's solve, played as the link opens. Closed, it stays closed.
+  const [watching, setWatching] = useState(true);
+  const loaded = ghost && ghost !== "loading" ? ghost : null;
+  const solves = useMemo<RaceSolve[]>(() => (loaded ? [{ id: loaded.userId, name: loaded.name, color: loaded.color, seconds: loaded.seconds, events: loaded.events }] : []), [loaded]);
+  useEffect(() => {
+    if (loaded) track("challenge_replay_shown", { seconds: loaded.seconds });
+  }, [loaded]);
+  const forward = useCallback(async () => {
+    if (!puzzle || !challenge?.ref) return;
+    const url = buildPuzzleLink(SHARE_URL, challenge.ref, { seconds: challenge.seconds, name: challenge.name, replay: challenge.replay });
+    const body = t("challenge.forwardText", { name: challenge.name, title: puzzle.title, time: formatDuration(challenge.seconds) });
+    await shareText({ text: `${body}\n${url}`, body, url, title: puzzle.title }, await runtimeDeps());
+    track("challenge_forwarded", {});
+  }, [puzzle, challenge, t]);
 
   const handleRace = useCallback(async () => {
     if (!puzzle || !challenge || !ghost || ghost === "loading") return;
@@ -123,6 +152,19 @@ export function ChallengeScreen() {
       <div className="mt-6 flex justify-center">
         <AdSlot placement="puzzle-ready-bottom" />
       </div>
+      {watching && loaded && (
+        <Suspense fallback={null}>
+          <FriendRaceDialog
+            puzzle={puzzle}
+            solves={solves}
+            letters={false}
+            shareRef={challenge.ref}
+            cta={{ label: t("challenge.solveYourself"), onClick: () => void handleRace() }}
+            onForward={challenge.ref ? () => void forward() : undefined}
+            onClose={() => setWatching(false)}
+          />
+        </Suspense>
+      )}
     </FlowPage>
   );
 }

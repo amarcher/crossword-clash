@@ -32,6 +32,14 @@ interface FriendRaceDialogProps {
    * squares it was first to, so a lane counts squares won and has no finish.
    */
   clip?: boolean;
+  /**
+   * What a visitor who has not solved the puzzle does next (ChallengeScreen:
+   * "Solve it yourself"). The dialog's one primary action; sharing steps back
+   * to an icon beside it.
+   */
+  cta?: { label: string; onClick: () => void };
+  /** Pass the link on, for a viewer with a `cta`: the quiet icon. */
+  onForward?: () => void;
   onClose: () => void;
 }
 
@@ -63,7 +71,7 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
  * that link carrying a clip of the grid filling in by who got there first,
  * and the solvers' names, so it reads the same to each of them. No letters.
  */
-export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, clip, onClose }: FriendRaceDialogProps) {
+export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, clip, cta, onForward, onClose }: FriendRaceDialogProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -337,7 +345,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-t border-line px-5 py-3">
+        <div className={`flex items-center gap-3 border-t border-line px-5 py-3 ${cta ? "max-sm:flex-wrap" : ""}`}>
           {/* Icon only: the clock bar and Share need the width on a phone. */}
           <Button
             variant="secondary"
@@ -359,7 +367,20 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
           <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
-          {shareRef && !clip && !alone && (
+          {/* On a phone the action takes its own row, so the scrubber keeps its width. */}
+          {cta && (
+            <div className="flex items-center gap-2 max-sm:basis-full">
+              {onForward && (
+                <Button variant="ghost" size="sm" className="size-11 shrink-0 px-0!" onClick={onForward} aria-label={t("friendRace.share")} title={t("friendRace.share")} data-testid="race-forward">
+                  <Share2 className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+              <Button variant="primary" size="sm" className="max-sm:h-11 max-sm:flex-1" onClick={cta.onClick} data-testid="race-cta">
+                {cta.label}
+              </Button>
+            </div>
+          )}
+          {!cta && shareRef && !clip && !alone && (
             <Button variant="primary" size="sm" onClick={() => void share()} disabled={sharing} data-testid="race-share">
               <Share2 className="size-4" aria-hidden="true" />
               {t("friendRace.share")}

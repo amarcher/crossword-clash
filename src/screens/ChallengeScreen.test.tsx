@@ -61,6 +61,20 @@ describe("ChallengeScreen", () => {
     expect(raceSaved()).toEqual({ ghosts: [{ ...ghost, link: { shareId: "E0Gqr8Iw09i", ref: { day: "2026-11-12", slot: "large" } } }] });
   });
 
+  it("opens on the sender's solve, letters hidden, with Solve it yourself as the one primary action and sharing as an icon", async () => {
+    game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i", ref: { day: "2026-11-12", slot: "large" } };
+    share.fetchReplayShare.mockResolvedValueOnce("CODE");
+    share.ghostFromReplay.mockReturnValueOnce(ghost);
+    renderScreen();
+    const dialog = await screen.findByRole("dialog", { name: "Andrew's solve" });
+    expect(dialog.textContent).toContain("Replayed, letters hidden");
+    expect(screen.getByTestId("race-forward").getAttribute("aria-label")).toBe("Share");
+    expect(screen.queryByTestId("race-share")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Solve it yourself" }));
+    await screen.findByText("playing");
+    expect(raceSaved()).toEqual({ ghosts: [ghost] });
+  });
+
   it("falls back to the time-only challenge when the replay can't load", async () => {
     game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i" };
     share.fetchReplayShare.mockResolvedValueOnce(null);
