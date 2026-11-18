@@ -44,28 +44,33 @@ const html = (t, dev, W, H) => {
 export async function compose(url, devs, raw, outFor, { room = true } = {}) {
   const skipped = [];
   const browser = await chromium.launch({ channel: "chrome" });
-  for (const dev of devs) {
-    const [W, H] = DEVICES[dev].tile;
-    const out = outFor(dev);
-    mkdirSync(out, { recursive: true });
-    const page = await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
-    await page.route("**/__store/**", (r) => r.fulfill({ path: join(raw, r.request().url().split("/__store/")[1]) }));
-    await page.goto(url + "/support");
-    await page.waitForTimeout(1200);
-    for (const t of TILES) {
-      if (!room && t.shot === "room-mid") continue;
-      const needs = [t.shot, ...(t.tv ? ["tv-game-mid"] : [])].filter((n) => !existsSync(join(raw, dev, `${n}.png`)));
-      if (needs.length) { skipped.push(`${dev} ${t.id}: no ${needs.join(", ")} capture`); continue; }
-      await page.evaluate((h) => { document.getElementById("tile")?.remove(); document.body.insertAdjacentHTML("beforeend", h); }, html(t, dev, W, H));
-      await page.evaluate(async () => {
-        await Promise.all([document.fonts.load("800 40px 'Bricolage Grotesque Variable'"), document.fonts.load("500 20px 'Figtree Variable'"), document.fonts.load("800 20px 'Figtree Variable'")]);
-        await Promise.all([...document.querySelectorAll("#tile img")].map((i) => i.decode()));
-      });
-      await page.waitForTimeout(150);
-      await page.screenshot({ path: join(out, `${t.id}.png`), clip: { x: 0, y: 0, width: W, height: H } });
+  try {
+    for (const dev of devs) {
+      const [W, H] = DEVICES[dev].tile;
+      const out = outFor(dev);
+      mkdirSync(out, { recursive: true });
+      const page = await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
+      await page.route("**/__store/**", (r) => r.fulfill({ path: join(raw, r.request().url().split("/__store/")[1]) }));
+      await page.goto(url + "/support");
+      await page.waitForTimeout(1200);
+      for (const t of TILES) {
+        if (!room && t.shot === "room-mid") continue;
+        const needs = [t.shot, ...(t.tv ? ["tv-game-mid"] : [])].filter((n) => !existsSync(join(raw, dev, `${n}.png`)));
+        if (needs.length) { skipped.push(`${dev} ${t.id}: no ${needs.join(", ")} capture`); continue; }
+        await page.evaluate((h) => { document.getElementById("tile")?.remove(); document.body.insertAdjacentHTML("beforeend", h); }, html(t, dev, W, H));
+        try {
+          await page.evaluate(async () => {
+            await Promise.all([document.fonts.load("800 40px 'Bricolage Grotesque Variable'"), document.fonts.load("500 20px 'Figtree Variable'"), document.fonts.load("800 20px 'Figtree Variable'")]);
+            await Promise.all([...document.querySelectorAll("#tile img")].map((i) => i.decode()));
+          });
+        } catch (e) { skipped.push(`${dev} ${t.id}: ${String(e).split("\n")[0].slice(0, 160)}`); continue; }
+        await page.waitForTimeout(150);
+        await page.screenshot({ path: join(out, `${t.id}.png`), clip: { x: 0, y: 0, width: W, height: H } });
+      }
+      await page.close();
     }
-    await page.close();
+  } finally {
+    await browser.close();
   }
-  await browser.close();
   return skipped;
 }

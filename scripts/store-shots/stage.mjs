@@ -1,4 +1,5 @@
 // Staged, invented data for store captures: believable names, synthetic solves.
+// From docs/marketing/scripts/stage.mjs (kept there as it ran for the 1.1.3 reel).
 import { readFileSync } from "node:fs";
 export const NAMES = ["maya", "theo", "priya", "jules", "nora", "leo", "ines", "sam", "ben", "ruth", "omar", "kit"];
 export function feed(day, slot) {
@@ -43,7 +44,7 @@ export async function stageRace(page, p, { own = 248, friends = [["maya", 231], 
 export async function stageBoard(page, { selfId, selfName = "archer", times, selfRank = 2, modes = [] }) {
   await page.route("**/rest/v1/daily_results*", async (route) => {
     const req = route.request();
-    if (req.method() !== "GET") return route.continue();
+    if (req.method() !== "GET") return route.fallback();
     const res = await route.fetch(); let rows;
     try { rows = await res.json(); } catch { return route.fulfill({ response: res }); }
     if (!Array.isArray(rows) || rows.length === 0 || !("display_name" in rows[0])) return route.fulfill({ response: res });
