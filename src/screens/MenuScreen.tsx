@@ -1,4 +1,5 @@
 import { SoloContinue } from "../components/SoloContinue";
+import { isStarted } from "../lib/soloProgress";
 import { useSoloProgress } from "../hooks/useSoloProgress";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useCallback, useMemo } from "react";
@@ -80,7 +81,7 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
   const raced = !solved && !!key && !!rows?.some((r) => r.puzzle_key === key && r.mode !== "solo" && r.mode !== "import");
   const attempt = key ? progress[key] : undefined;
   // A solved puzzle is "in progress" again only once its new attempt has a letter.
-  const resumable = !!attempt && (!solved || attempt.filled > 0);
+  const resumable = !!attempt && isStarted(attempt) && (!solved || attempt.filled > 0);
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gridCell } from "./helpers";
+import { gridCell, startNow } from "./helpers";
 
 interface StoredCell {
   row: number;
@@ -16,6 +16,7 @@ test("solo: complete today's mini", async ({ page }) => {
     .getByRole("region", { name: "Daily Mini" })
     .getByRole("button", { name: "Play", exact: true })
     .click();
+  await startNow(page);
   await expect(page).toHaveURL(/\/solo\/play/);
   await expect(page.getByRole("grid").first()).toBeVisible();
 

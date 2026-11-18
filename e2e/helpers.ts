@@ -74,3 +74,8 @@ export async function waitForAnonAuth(page: Page, role: string): Promise<void> {
   mkdirSync(AUTH_DIR, { recursive: true });
   writeFileSync(join(AUTH_DIR, `${role}.json`), JSON.stringify({ cookies: [], origins }, null, 2));
 }
+
+/** Skip a fresh puzzle's start countdown (SoloStartGate). */
+export async function startNow(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Start now", exact: true }).click();
+}

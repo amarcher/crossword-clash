@@ -7,7 +7,7 @@ import type { Puzzle } from "../types/puzzle";
 import { puzzleIdentity } from "../lib/soloStats";
 
 /** The menu's daily tile alone: what it says for an unsolved, a solved and a re-attempted daily. */
-const state = vi.hoisted(() => ({ best: {} as Record<string, number>, progress: {} as Record<string, { filled: number }>, rows: null as { puzzle_key: string; mode: string }[] | null }));
+const state = vi.hoisted(() => ({ best: {} as Record<string, number>, progress: {} as Record<string, { filled: number; elapsedMs: number; cells: Record<string, unknown> }>, rows: null as { puzzle_key: string; mode: string }[] | null }));
 vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
 vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => state.best, useSolveHistory: () => ({ rows: state.rows }), useStreaks: () => ({ daily: 0, nyt: 0 }) }));
 vi.mock("../hooks/useSoloProgress", () => ({ useSoloProgress: () => state.progress }));
@@ -75,18 +75,22 @@ describe("the menu's daily tile", () => {
 
   it("solved and being solved again: Resume once the new attempt has a letter, View while it has none", () => {
     state.best = { [key]: 84 };
-    state.progress = { [key]: { filled: 0 } };
+    state.progress = { [key]: { filled: 0, elapsedMs: 0, cells: {} } };
     tile();
     expect(screen.getByRole("button", { name: "View" })).toBeTruthy();
     cleanup();
-    state.progress = { [key]: { filled: 2 } };
+    state.progress = { [key]: { filled: 2, elapsedMs: 9000, cells: {} } };
     tile();
     expect(screen.getByRole("button", { name: "Resume" })).toBeTruthy();
     expect(screen.getByText("Solved in 1:24")).toBeTruthy();
   });
 
-  it("an unsolved puzzle with an attempt record still offers Resume", () => {
-    state.progress = { [key]: { filled: 0 } };
+  it("an unsolved puzzle offers Resume once its attempt has time on the clock, and Play while it was only opened", () => {
+    state.progress = { [key]: { filled: 0, elapsedMs: 0, cells: {} } };
+    tile();
+    expect(screen.queryByRole("button", { name: "Resume" })).toBeNull();
+    cleanup();
+    state.progress = { [key]: { filled: 0, elapsedMs: 4000, cells: {} } };
     tile();
     expect(screen.getByRole("button", { name: "Resume" })).toBeTruthy();
   });

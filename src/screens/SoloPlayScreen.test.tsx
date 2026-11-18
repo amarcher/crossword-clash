@@ -32,6 +32,11 @@ vi.mock("../contexts/AccountContext", () => ({
   useAccountContext: () => ({ user: null, available: false, ready: true, profileReady: posting.profileReady, profile: posting.username ? { username: posting.username } : null, openAccount: vi.fn() }),
   useMaybeAccount: () => (posting.username ? { profile: { username: posting.username } } : null),
 }));
+// The start countdown (SoloStartGate.test.tsx) is skipped: these tests begin at "Start now".
+vi.mock("../components/SoloStartGate", async () => {
+  const { useEffect } = await import("react");
+  return { SoloStartGate: ({ onStart }: { onStart: () => void }) => { useEffect(() => onStart(), []); return null; } };
+});
 vi.mock("../hooks/useDailyMini", () => ({ useTodaysDailySlot: () => posting.daily ? "mini" : null }));
 vi.mock("../hooks/useNextUp", () => ({ useNextUp: () => [] }));
 vi.mock("../hooks/useSolveHistory", () => ({
