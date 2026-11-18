@@ -235,6 +235,10 @@ Done by Claude, nothing submitted or rolled out:
   the Studio with `ANDROID_HOME=~/Library/Android/sdk` and
   `JAVA_HOME=/opt/homebrew/opt/openjdk@21`.
 
+- **November 18, 2026:** 35 (1.1.4) uploaded through the console and rolled out
+  to internal testing with `whats-new-1.1.4-internal-35.txt` (the consistency
+  and audit passes, #320 to #328). Not promoted to production.
+
 ## Uploading without the API
 
 The play-publisher service-account key and `play-upload.mjs` live on the

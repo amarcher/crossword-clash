@@ -1,0 +1,9 @@
+<en-US>
+A polish pass over the whole app.
+
+Buttons say the same thing everywhere: Play, Race friends, Leaderboard. Each leaderboard has tabs for Mini, Midi, Large and Daily Plus, and tied times list whoever posted first.
+
+Closing the finish screen leaves you on your solved grid. Race friends from a daily starts a room for that puzzle first.
+
+Times now read cleanly ("0:26", not "0 : 26"), and Spanish clue lists say Horizontales and Verticales.
+</en-US>
