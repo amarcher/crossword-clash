@@ -8,12 +8,34 @@ Clash YouTube channel (`@crosswordclashapp`, channel ID
 | --- | --- | --- |
 | `crossword-clash-reel.mp4` | The reel, 1080×1920, 28.5 s, both store badges | https://youtube.com/shorts/hI9UOU5muq0 |
 | `crossword-clash-reel-wide.mp4` | The reel, 1920×1080, Google Play badge only | https://youtu.be/XmGX4YKABBs |
+| `crossword-clash-reel-wide-social.mp4` | The wide reel with both store badges, for social posts | Facebook only, see below |
 | `crossword-clash-studio-short.mp4` | The studio video, 1080×1920, 26.5 s | https://youtube.com/shorts/mI40utmWlug |
 | `crossword-clash-studio-wide.mp4` | The studio video, 1920×1080 | https://youtu.be/Gn352Mn2-XE |
 
 The wide reel is the Play listing's video (`../play-store/README.md`). Play
 shows listing videos in a landscape player and does not want a listing to point
 at another store, hence the separate cut with one badge.
+
+## Facebook and Instagram
+
+The Page is https://www.facebook.com/crosswordclash and the Instagram profile
+is https://www.instagram.com/crosswordclash/ (a business account, connected to
+the Page). Both use the channel picture; the Page cover is the banner cropped
+with `crop=2200:837:180:480`.
+
+| Post | Facebook | Instagram |
+| --- | --- | --- |
+| The reel, vertical | https://www.facebook.com/reel/1004278149389730/ | https://www.instagram.com/crosswordclash/reel/Df23tWwJFm7/ |
+| The studio video, vertical | https://www.facebook.com/reel/1436828244769037/ | https://www.instagram.com/crosswordclash/reel/Df24CbSJVnF/ |
+| The reel, 16:9, pinned on the Page | https://www.facebook.com/reel/2142981769924527 | |
+
+The two vertical Facebook links are matched to their videos by posting order.
+A vertical video sits in a tall black box in the Page's feed, so the pinned
+post is the 16:9 cut. `reel-fb.mjs` is `reel-wide.mjs` with the App Store
+badge back on the end card (frames 751 to 855; the rest are the wide reel's).
+Uploads through the browser are capped at 10 MB, so the social copies are
+encoded at `-crf 21`. On Instagram, upload a cover image with the reel: the
+web composer's frame picker left the first reel with a blank cover.
 
 `youtube/` holds the channel picture (the app icon at 80% on its own blue, so
 the circle crop keeps both tiles) and the 2560×1440 banner.
@@ -61,6 +83,7 @@ ran. They expect:
 | `studio-race.mjs` | A room on the studio puzzle with three players |
 | `studio-community.mjs` | The community list with a local, made-up response |
 | `reel.mjs`, `reel-wide.mjs` | Render the reel's frames, vertical and 16:9 |
+| `reel-fb.mjs` | The 16:9 reel with both badges on the end card |
 | `reel-studio.mjs`, `reel-studio-wide.mjs` | Render the studio video's frames |
 | `studio-tiles-cap.mjs`, `compose.mjs` | The studio screen at the four store sizes, and the store tiles (`06-studio` in `../app-store` and `../play-store`) |
 | `banner.mjs` | Renders the channel banner |
