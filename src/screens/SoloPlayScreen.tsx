@@ -258,13 +258,18 @@ export function SoloPlayScreen() {
   useEffect(() => {
     if (!soloResult || dailySubmittedRef.current) return;
     if (reopened || !boardSlot || !user) return;
+    // An account's profile arrives after a cold start. Parked before it, a
+    // restored finish went under the default name and the dialog asked a
+    // signed-in solver, already on the board, to add a name.
+    if (!user.is_anonymous && !account.profileReady) return;
     dailySubmittedRef.current = true;
     // A second solve of a puzzle already solved is made knowing the answers:
     // it may set a personal best, it never goes on the day's board.
     if (freshResult && solvedBeforeRef.current) return;
     // A finish that used Reveal posts no time: the board is for solves.
     if (soloResult.assisted) return;
-    const entry = { userId: user.id, displayName: game.displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
+    const displayName = isRealPlayerName(game.displayName) ? game.displayName : account.profile?.username ?? game.displayName;
+    const entry = { userId: user.id, displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
     const day = todayKey();
     const pending: PendingDailyResult = { day, slot: boardSlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
     pending.settled = prepareSoloDailyResult(day, boardSlot, entry, user).then(result => {
@@ -272,7 +277,7 @@ export function SoloPlayScreen() {
       return result.settled;
     });
     setPendingDailyResult(pending);
-  }, [soloResult, freshResult, reopened, boardSlot, user, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
+  }, [soloResult, freshResult, reopened, boardSlot, user, account.profileReady, account.profile?.username, game.displayName, game.gameId, setPendingDailyResult, usedFreeTyping]);
 
   // The share block's red squares (shareBlock.ts): with Autocheck on, the
   // squares where a wrong letter was refused; off, every square a check
