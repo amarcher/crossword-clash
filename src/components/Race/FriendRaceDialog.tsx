@@ -284,12 +284,13 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   const lit = Math.round(p * TRACK);
                   return (
                     <li key={solve.id} data-testid="race-lane">
-                      <div className="flex items-baseline gap-2 text-xs">
+                      {/* A fixed height: the finish check is taller than the row's text and grew the dialog as each solver finished. */}
+                      <div className="flex h-4 items-center gap-2 text-xs leading-4">
                         {!alone && <span className="w-3 shrink-0 tabular-nums text-muted">{place + 1}</span>}
                         <span className="min-w-0 flex-1 truncate font-semibold">{solve.name}</span>
                         {/* Squares this solver was first to, so far: the grid's count, on the solver's own row. */}
                         {!alone && (
-                          <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center tabular-nums text-muted">
+                          <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 tabular-nums text-muted">
                             <span className="size-2.5 shrink-0 rounded-[2px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(solve.color, 0.4) }} aria-hidden="true" />
                             <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
                             {counts[i]}
