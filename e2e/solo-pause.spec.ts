@@ -60,13 +60,13 @@ test("hidden tab freezes the clock and returns paused; browser Back preserves wo
     document.dispatchEvent(new Event("visibilitychange"));
   });
   await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible();
-  const clock = await page.getByRole("dialog").locator(".font-mono").textContent();
+  const clock = await page.getByTestId("pause-clock").textContent();
   await page.clock.fastForward(600_000);
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect(page.getByRole("dialog").locator(".font-mono")).toHaveText(clock!);
+  await expect(page.getByTestId("pause-clock")).toHaveText(clock!);
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await page.goBack();
   await expect(page).toHaveURL(/\/puzzle-ready/);
