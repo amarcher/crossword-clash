@@ -40,7 +40,9 @@ export function SendToFriend({ link, darkMode, puzzleKey = null }: SendToFriendP
       await beat(friendId, link);
       setSent((prev) => ({ ...prev, [friendId]: true }));
     } catch (err) {
-      setError(t(err instanceof FriendsError && err.kind === "rate_limited" ? "friends.errorRateLimited" : "friends.errorGeneric"));
+      // `invalid`: a link the server does not take (yet): say to share it instead, not that something broke.
+      const kind = err instanceof FriendsError ? err.kind : null;
+      setError(t(kind === "rate_limited" ? "friends.errorRateLimited" : kind === "invalid" ? "friends.errorCantSend" : "friends.errorGeneric"));
     } finally {
       setBusy(null);
     }

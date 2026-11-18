@@ -12,6 +12,7 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
 /** What a reply raced, for "Sam raced your …": "Mini", or a community puzzle's title. */
 export function replyPuzzleLabel(t: (key: string, params?: Record<string, unknown>) => string, reply: Pick<RaceReply, "ref" | "title">): string {
   if ("slot" in reply.ref) return t(SLOT_LABEL[reply.ref.slot]);
+  if ("bonusDay" in reply.ref) return t("bonus.eyebrow");
   return reply.title ? t("raceReplies.titleQuoted", { title: reply.title }) : t("raceReplies.communityPuzzle");
 }
 

@@ -1050,6 +1050,7 @@
     "errorRateLimited": "Son muchas solicitudes para un día. Inténtalo mañana.",
     "errorTooMany": "Hay demasiadas solicitudes esperando respuesta.",
     "errorGeneric": "No se pudo completar. Inténtalo de nuevo.",
+    "errorCantSend": "Este aún no se puede enviar a amigos. Comparte el enlace.",
     "sendToFriend": "Enviar a un amigo",
     "sendToFriendHint": "Recibe tu tiempo a superar en la app, sin hoja de compartir.",
     "send": "Enviar",

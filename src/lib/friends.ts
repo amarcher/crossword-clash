@@ -211,8 +211,12 @@ export function formatCountdown(ms: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** The daily challenge link an invite may carry (the only link the server accepts). */
-export const BEAT_LINK = /^\/daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)(\?[A-Za-z0-9=&%._+-]*)?$/;
+/**
+ * The challenge links an invite may carry, as send_beat accepts them: a day's
+ * daily, a community puzzle, or a Daily Plus day (the last once migration
+ * 20261130000000_bonus_links.sql is applied; refused as `invalid` before).
+ */
+export const BEAT_LINK = /^\/(daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)|puzzles\/[a-z0-9]{8}|bonus\/\d{4}-\d{2}-\d{2})(\?[A-Za-z0-9=&%._+-]*)?$/;
 
 // --- Pending challenge (Challenge → host flow → lobby) -------------------------
 

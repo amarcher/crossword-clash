@@ -19,7 +19,7 @@
  *                                                with a challenge), spliced
  *                                                into the SPA the same way.
  *
- * GET /bonus/2026-11-18?beat=102&by=Archer[&r=<replay share id>] (rewritten here as
+ * GET /bonus/2026-11-18?beat=102&by=Archer[&r=<replay share id>], or a shared race's ?r=…&race=2&who=… (rewritten here as
  *     ?t=bonus&day=…, the query merged in)    → a Daily Plus finish's card (the
  *                                                clip with a replay), spliced
  *                                                into the SPA the same way. The
@@ -259,10 +259,20 @@ export default async function handler(req: Request): Promise<Response> {
     description = hasReplay && time
       ? `Watch ${by ? `${by}'s` : "this"} solve square by square, then race it. The Daily Plus is an extra crossword every day with Crossword Clash Plus.`
       : "The Daily Plus is an extra crossword every day with Crossword Clash Plus.";
+    // A shared race (FriendRaceDialog), as on a daily: everyone's squares on one grid.
+    const isRace = hasReplay && !time;
+    const racers = isRace ? raceCount(url) : 0;
+    const racing = raceNames(url, racers);
+    if (isRace) {
+      pageTitle = `${raceHeadline(racers, racing)} on the Daily Plus for ${date}`;
+      description = raceDescription(racing);
+    }
     const query = new URLSearchParams();
     if (time) query.set("beat", clean(url, "beat", 6));
     if (by) query.set("by", by);
     if (hasReplay) query.set("r", replay);
+    if (racers) query.set("race", String(racers));
+    if (racing.length) query.set("who", racing.join(","));
     dest = `/bonus/${day}${query.size ? `?${query.toString()}` : ""}`;
     og.set("heading", `Daily Plus · ${date}`);
     if (by) og.set("title", by);

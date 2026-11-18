@@ -20,6 +20,7 @@ import {
   takeRaceIntent,
   type Ghost,
   type TraceEvent,
+  squaresOnly,
 } from "./race";
 
 const cell = (letter: string): CellState => ({ letter, correct: true });
@@ -63,6 +64,10 @@ describe("the ghost at a moment", () => {
     const frame = ghostAt(ghost, 3000);
     expect([...frame.filled]).toEqual([[0, "C"], [1, "O"], [2, "T"]]);
     expect(frame.finished).toBe(true);
+  });
+
+  it("reduces a recording to squares only: filled or emptied, never with what", () => {
+    expect(squaresOnly([[100, 0, "C"], [200, 0, ""], [300, 1, "?"], [400, 2, 1], [500, 2, 0]])).toEqual([[100, 0, 1], [200, 0, 0], [300, 1, 1], [400, 2, 1], [500, 2, 0]]);
   });
 
   it("plays a stripped recording (1 filled / 0 emptied) the same way, with no letters", () => {

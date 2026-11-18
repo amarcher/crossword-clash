@@ -26,6 +26,17 @@ vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => best.value }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("../components/PageShell", () => ({ PageShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("../components/ui/PlusBadge", () => ({ PlusBadge: () => null, PlusBadgeFor: () => null }));
+const races = vi.hoisted(() => ({
+  candidates: [] as { userId: string; username: string; seconds: number | null; friend: boolean }[],
+  fetchFriendRace: vi.fn(),
+  fetchOwnSolveTrace: vi.fn(async () => null),
+  fetchSolveTrace: vi.fn(),
+  saveRaceIntent: vi.fn(),
+}));
+vi.mock("../hooks/useRace", () => ({ useRaceCandidates: () => races.candidates }));
+vi.mock("../hooks/useRaceName", () => ({ useRaceName: () => "archer" }));
+vi.mock("../lib/friendRace", async (orig) => ({ ...(await orig<typeof import("../lib/friendRace")>()), fetchFriendRace: races.fetchFriendRace }));
+vi.mock("../lib/race", async (orig) => ({ ...(await orig<typeof import("../lib/race")>()), fetchOwnSolveTrace: races.fetchOwnSolveTrace, fetchSolveTrace: races.fetchSolveTrace, saveRaceIntent: races.saveRaceIntent }));
 
 const { BonusLeaderboardScreen } = await import("./BonusLeaderboardScreen");
 
@@ -44,6 +55,9 @@ beforeEach(() => {
   account.value = { available: true, plus: false, plusReady: true, openPaywall: vi.fn() };
   best.value = {};
   navigate.mockClear();
+  races.candidates = [];
+  races.fetchFriendRace.mockReset();
+  races.saveRaceIntent.mockClear();
 });
 afterEach(cleanup);
 
@@ -76,6 +90,40 @@ describe("BonusLeaderboardScreen", () => {
     expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith("2026-11-12", "bonus");
     expect(screen.getByText("Not on the board")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Play/ })).toBeNull();
+  });
+
+  it("plays a free player their friends' Daily Plus race as squares on the card's shape, never the puzzle, with the paywall behind every way in", async () => {
+    races.candidates = [{ userId: "a", username: "alicia", seconds: null, friend: true }];
+    // Even a server that sent letters: nothing of them reaches the page.
+    races.fetchFriendRace.mockResolvedValue({ friends: [{ userId: "a", username: "alicia", seconds: 300, events: [[1000, 0, "Q"], [2000, 1, "Z"], [3000, 1, ""]] }], withLetters: true });
+    show();
+    await screen.findByText("alicia");
+    // A row's Race is a way to solve it: the paywall.
+    fireEvent.click(screen.getByRole("button", { name: /Race/ }));
+    expect(account.value.openPaywall).toHaveBeenCalledWith({ placement: "bonus-board", feature: "bonus", returnTo: "/bonus/leaderboard" });
+    expect(races.saveRaceIntent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("the-race"));
+    const dialog = await screen.findByRole("dialog", { name: "alicia's solve" });
+    expect(races.fetchFriendRace).toHaveBeenCalledWith("today-key");
+    expect(screen.getByTestId("race-puzzle").textContent).toBe("Daily Plus · Nov 13 · Tempting Fate");
+    expect(dialog.querySelectorAll("span.aspect-square")).toHaveLength(121);
+    expect([...dialog.querySelectorAll("span.aspect-square")].map((c) => c.textContent).join("")).toBe("");
+    expect(dialog.textContent).not.toMatch(/[QZ]/);
+    expect(screen.queryAllByRole("gridcell")).toHaveLength(0);
+    fireEvent.click(screen.getByTestId("race-cta"));
+    expect(account.value.openPaywall).toHaveBeenCalledTimes(2);
+    expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
+  });
+
+  it("races a row for Plus by opening the puzzle with that player picked", async () => {
+    account.value = { ...account.value, plus: true };
+    races.candidates = [{ userId: "a", username: "alicia", seconds: 300, friend: false }];
+    bonus.loadBonusPuzzle.mockResolvedValue({ title: "Tempting Fate", origin: "bonus" });
+    show();
+    await screen.findByText("alicia");
+    fireEvent.click(screen.getByRole("button", { name: /Race/ }));
+    expect(races.saveRaceIntent).toHaveBeenCalledWith({ key: "today-key", userIds: ["a"] });
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
   });
 
   it("falls back to today for a day with no bonus, and steps back a day", async () => {

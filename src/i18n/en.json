@@ -1050,6 +1050,7 @@
     "errorRateLimited": "That's a lot of requests for one day. Try again tomorrow.",
     "errorTooMany": "Too many requests are waiting for an answer.",
     "errorGeneric": "That didn't go through. Please try again.",
+    "errorCantSend": "This one can't be sent to friends yet. Share the link instead.",
     "sendToFriend": "Send to a friend",
     "sendToFriendHint": "They get your time to beat in the app, no share sheet needed.",
     "send": "Send",

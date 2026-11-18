@@ -815,10 +815,10 @@ export function CompletionModal({
             />
           )}
           {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
-              (docs/friends-spec.md §3.2). Renders nothing without friends. Not a Daily Plus: send_beat takes no such link. */}
+              (docs/friends-spec.md §3.2). Renders nothing without friends. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
           {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
-          {linkRef && !refBonus && !isMultiplayer && shareSeconds !== undefined && (
+          {linkRef && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
               link={buildPuzzleLink("", linkRef, { seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayId })}
               puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}

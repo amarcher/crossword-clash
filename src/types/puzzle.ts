@@ -35,25 +35,25 @@ export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
  * Which shared puzzle this is, where the site can name it by link: a day's
  * daily (`/daily/:day/:slot`) or a community puzzle (`/puzzles/:shortId`).
  * Set where the puzzle is fetched (dailyFeed.fetchDailyForDay,
- * communityPuzzles.toPlayablePuzzle); what a finish's friend invite, replay
- * and race reply point at. Absent for imports, which have no such link.
+ * communityPuzzles.toPlayablePuzzle). Absent for imports, which have no such link.
  */
-export type ReplyRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
+export type PageRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
 
 /**
- * A day's Daily Plus (`/bonus/:day`, BonusLinkScreen). Never on `Puzzle.ref`:
- * the solo screen makes it from `Puzzle.bonusDay` for the finish's share
- * link, and the link's challenge carries it. Its key is not `day`, so every
- * `"day" in ref` still means a daily.
+ * A day's Daily Plus (`/bonus/:day`, BonusLinkScreen). Never on `Puzzle.ref`
+ * (room settings carry that, and a bonus is not a room's to name): the solo
+ * screen makes it from `Puzzle.bonusDay`, and the link's challenge carries
+ * it. Its key is not `day`, so every `"day" in ref` still means a daily.
  */
 export type BonusRef = { bonusDay: string };
 
 /**
- * Anything a share link can name. A bonus link is a challenge and nothing
- * more: no race reply, no friend invite and no shared race point at one (the
- * server's `reply_to_race` and `send_beat` know only a ReplyRef).
+ * Anything a share link can name: what a finish's share, friend invite,
+ * replay, shared race and race reply point at. A Daily Plus link works as the
+ * others do, with one rule (Andrew, 2026-11-18): a viewer without Plus only
+ * ever sees squares filling, and "Let me solve it" opens the paywall.
  */
-export type PuzzleRef = ReplyRef | BonusRef;
+export type PuzzleRef = PageRef | BonusRef;
 
 export interface Puzzle {
   /** Provenance for subscriber-directed imports; contains no account or session data. */
@@ -65,7 +65,7 @@ export interface Puzzle {
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
-  ref?: ReplyRef;
+  ref?: PageRef;
   /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on, and the day its share link names. */
   bonusDay?: string;
 }

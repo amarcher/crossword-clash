@@ -14,7 +14,7 @@
  * The pure helpers (recording diffs, the ghost at a moment, outcomes) are
  * unit-tested in race.test.ts; storage and the RPC calls sit at the bottom.
  */
-import type { CellState, Puzzle, ReplyRef } from "../types/puzzle";
+import type { CellState, Puzzle, PuzzleRef } from "../types/puzzle";
 import { compareToChallenge, type ChallengeComparison } from "./challenge";
 import { supabase } from "./supabaseClient";
 
@@ -51,7 +51,7 @@ export interface Ghost {
   seconds: number;
   events: TraceEvent[];
   /** A shared link's sender (replayShare.ts): the share raced, and the puzzle it named, for the reply at the finish. */
-  link?: { shareId: string; ref: ReplyRef };
+  link?: { shareId: string; ref: PuzzleRef };
 }
 
 // --- Pure: recording ---
@@ -147,6 +147,15 @@ export function replaySpeed(seconds: number): number {
 }
 
 /** Normalize a recording from the server: well-formed events in time order, capped. */
+/**
+ * A recording as squares only: each event says a square was filled (1) or
+ * emptied (0), never with what. What a viewer without Plus gets of a Daily
+ * Plus solve, whatever the server sent.
+ */
+export function squaresOnly(events: readonly TraceEvent[]): TraceEvent[] {
+  return events.map((e) => [e[0], e[1], e[2] === "" || e[2] === 0 ? 0 : 1]);
+}
+
 export function cleanEvents(raw: unknown): TraceEvent[] {
   if (!Array.isArray(raw)) return [];
   const out: TraceEvent[] = [];

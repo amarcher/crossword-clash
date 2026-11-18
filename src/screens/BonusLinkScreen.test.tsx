@@ -11,7 +11,7 @@ vi.mock("../lib/bonus", async (orig) => ({ ...(await orig<typeof import("../lib/
 vi.mock("../lib/dailyLeaderboard", async (orig) => ({ ...(await orig<typeof import("../lib/dailyLeaderboard")>()), todayKey: () => "2026-11-18" }));
 const account = vi.hoisted(() => ({ value: { available: true, plus: false, plusReady: true, openPaywall: vi.fn() } as { available: boolean; plus: boolean; plusReady: boolean; openPaywall: (o: unknown) => void } | null }));
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => account.value }));
-const game = vi.hoisted(() => ({ setUrlPuzzle: vi.fn(), setUrlChallenge: vi.fn() }));
+const game = vi.hoisted(() => ({ setUrlPuzzle: vi.fn(), setUrlChallenge: vi.fn(), handleSoloPuzzleLoaded: vi.fn(async () => true) }));
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 vi.mock("../components/Flow", () => ({
   FlowPage: ({ title, subtitle, children }: { title: React.ReactNode; subtitle?: React.ReactNode; children: React.ReactNode }) => (
@@ -23,6 +23,14 @@ vi.mock("../components/Flow", () => ({
   ),
 }));
 vi.mock("../components/ui/PlusBadge", () => ({ PlusBadge: () => null }));
+// The shared race is its own component (SharedRace.test): here, what it is given.
+const shared = vi.hoisted(() => ({ props: null as null | { puzzle: { title: string; cells: { solution: string | null }[][]; clues: unknown[] }; puzzleKey: string; shareId: string; names: string[]; shareRef: unknown; locked: boolean; onSolve: () => void } }));
+vi.mock("../components/Race/SharedRace", () => ({
+  SharedRace: (props: NonNullable<typeof shared.props>) => {
+    shared.props = props;
+    return <button onClick={props.onSolve}>shared race: solve</button>;
+  },
+}));
 const share = vi.hoisted(() => ({ fetchReplayShare: vi.fn() }));
 vi.mock("../lib/replayShare", async (orig) => ({ ...(await orig<typeof import("../lib/replayShare")>()), ...share }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
@@ -48,6 +56,7 @@ const show = (path: string) =>
         <Route path="/bonus/leaderboard" element={<Where id="board" />} />
         <Route path="/bonus/:day" element={<BonusLinkScreen />} />
         <Route path="/challenge" element={<Where id="challenge" />} />
+        <Route path="/solo/play" element={<Where id="playing" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -60,6 +69,8 @@ beforeEach(() => {
   account.value = { available: true, plus: false, plusReady: true, openPaywall: vi.fn() };
   game.setUrlPuzzle.mockClear();
   game.setUrlChallenge.mockClear();
+  game.handleSoloPuzzleLoaded.mockClear();
+  shared.props = null;
 });
 afterEach(cleanup);
 
@@ -116,6 +127,34 @@ describe("BonusLinkScreen (/bonus/:day)", () => {
       share.fetchReplayShare.mockClear();
       cleanup();
     }
+  });
+
+  it("opens a shared race for a visitor without Plus on the card's shape, squares only, 'Let me solve it' opening the paywall", async () => {
+    show(`/bonus/${DAY}?r=E0Gqr8Iw09i&race=2&who=minna,archer`);
+    await screen.findByRole("heading", { name: "Play the Daily Plus" });
+    expect(shared.props).toMatchObject({ puzzleKey: "bonus-key", shareId: "E0Gqr8Iw09i", names: ["minna", "archer"], shareRef: { bonusDay: DAY }, locked: true });
+    // The grid it is given holds no answers and no clues.
+    expect(shared.props!.puzzle.cells.flat().every((c) => c.solution === "")).toBe(true);
+    expect(shared.props!.puzzle.clues).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "shared race: solve" }));
+    expect(account.value!.openPaywall).toHaveBeenCalledWith({ placement: "bonus-link", feature: "bonus", returnTo: `/bonus/${DAY}?r=E0Gqr8Iw09i&race=2&who=minna,archer` });
+    expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
+    expect(share.fetchReplayShare).not.toHaveBeenCalled();
+  });
+
+  it("opens a shared race for Plus on the puzzle itself, 'Let me solve it' starting it", async () => {
+    account.value = { available: true, plus: true, plusReady: true, openPaywall: vi.fn() };
+    const puzzle = { title: "Tempting Fate", author: "", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]], clues: [], origin: "bonus", bonusDay: DAY };
+    bonus.loadBonusPuzzle.mockResolvedValue(puzzle);
+    show(`/bonus/${DAY}?r=E0Gqr8Iw09i&race=2`);
+    await screen.findByRole("heading", { name: "Play the Daily Plus" });
+    expect(shared.props).toMatchObject({ shareId: "E0Gqr8Iw09i", shareRef: { bonusDay: DAY }, locked: false });
+    expect(shared.props!.puzzle).toBe(puzzle);
+    fireEvent.click(screen.getByRole("button", { name: "Let me solve it" }));
+    await waitFor(() => expect(screen.getByTestId("playing")).toBeTruthy());
+    expect(game.handleSoloPuzzleLoaded).toHaveBeenCalledWith(puzzle);
+    expect(account.value.openPaywall).not.toHaveBeenCalled();
+    expect(bonus.fetchBonusCard).not.toHaveBeenCalled();
   });
 
   it("waits for the entitlement before deciding, fetching nothing", () => {

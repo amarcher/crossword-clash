@@ -109,6 +109,14 @@ describe("Daily Plus link", () => {
     expect(meta(plain, "og:url")).toBe("https://x.test/bonus/2026-11-18");
   });
 
+  it("calls a shared Daily Plus race a race and names its solvers", async () => {
+    const html = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&r=VJ0ncnWyJ9j&race=2&who=minna,archer"))).text();
+    expect(meta(html, "og:title")).toBe("minna vs archer on the Daily Plus for Nov 18");
+    expect(meta(html, "og:description")).toContain("who got to each square first");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:url")).toBe("https://x.test/bonus/2026-11-18?r=VJ0ncnWyJ9j&race=2&who=minna%2Carcher");
+  });
+
   it("refuses a malformed day", async () => {
     expect((await handler(new Request("https://x.test/api/share?t=bonus&day=leaderboard"))).status).toBe(404);
     expect((await handler(new Request("https://x.test/api/share?t=bonus"))).status).toBe(404);

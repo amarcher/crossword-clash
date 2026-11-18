@@ -127,9 +127,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     });
 
   // The clip is of whoever is showing now; filed once per selection.
-  // A Daily Plus day's link is a challenge only (BonusLinkScreen): no shared race points at one.
-  const linked = givenRef ?? puzzle.ref;
-  const shareRef = linked && "bonusDay" in linked ? null : linked;
+  const shareRef = givenRef ?? puzzle.ref;
   const shareCode = useMemo(() => (shareRef ? raceShareCode(puzzle, lanes) : null), [shareRef, puzzle, lanes]);
   const filed = useRef<{ code: string; id: string } | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -179,7 +177,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     setTimeout(() => setToast(null), 2200);
   };
   // Which puzzle: "Daily Mini · Nov 17 · Bread Basket" for a daily, the title alone otherwise.
-  const about = [...(linked && "bonusDay" in linked ? [t("bonus.eyebrow"), formatShareDay(linked.bonusDay, i18n.language)] : shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
+  const about = [...(shareRef && "bonusDay" in shareRef ? [t("bonus.eyebrow"), formatShareDay(shareRef.bonusDay, i18n.language)] : shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
   const counts = squaresFirst(first, lanes.length, ms);
 
   return (

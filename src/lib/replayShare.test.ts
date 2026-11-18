@@ -56,9 +56,9 @@ describe("racing a shared link's sender", () => {
     expect(ghost).toMatchObject({ userId: "link:E0Gqr8Iw09i", name: "Andrew", seconds: 4 });
     expect(ghost.events).toEqual([[1000, 0, 1], [1500, 0, 0], [2000, 0, 1], [3000, 1, 1]]);
     expect(ghostFromReplay("nope", "E0Gqr8Iw09i", "Andrew")).toBeNull();
-    // A daily's or community puzzle's ghost names its link for the race reply; a Daily Plus link's has none.
+    // The ghost names the link it came from, for the race reply: a daily's, a community puzzle's or a Daily Plus day's.
     expect(ghostFromReplay(code, "E0Gqr8Iw09i", "Andrew", { day: "2026-11-18", slot: "mini" })!.link).toEqual({ shareId: "E0Gqr8Iw09i", ref: { day: "2026-11-18", slot: "mini" } });
-    expect(ghostFromReplay(code, "E0Gqr8Iw09i", "Andrew", { bonusDay: "2026-11-18" })!.link).toBeUndefined();
+    expect(ghostFromReplay(code, "E0Gqr8Iw09i", "Andrew", { bonusDay: "2026-11-18" })!.link).toEqual({ shareId: "E0Gqr8Iw09i", ref: { bonusDay: "2026-11-18" } });
   });
 });
 
