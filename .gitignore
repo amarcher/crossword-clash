@@ -28,6 +28,9 @@ tests.json
 public/native/
 artifacts/mobile/
 
+# Raw captures behind the store tiles (pnpm store:shots)
+artifacts/store-shots/
+
 # Playwright
 /test-results/
 /playwright-report/

@@ -16,6 +16,8 @@ Build and signing mechanics live in [../testflight/README.md](../testflight/READ
 | `review-notes.txt` | Version → App Review Information → Notes |
 | `screenshots/iphone-6.9/` | 6.9" iPhone set, 1320×2868 |
 | `screenshots/ipad-13/` | 13" iPad set, 2064×2752 |
+| `screenshots/iphone-duo-outer/` | iPhone Duo outer display set, 1398×2034 |
+| `screenshots/iphone-duo-inner/` | iPhone Duo inner display set, 2007×2853 |
 
 Other values saved on the draft: category Games (Word, Puzzle), copyright
 `2026 Andrew Archer`, marketing URL `https://crosswordclash.com`, support URL
@@ -66,6 +68,52 @@ step is safe to repeat.
 reel (1080×1920, 30 fps). Its music was synthesized for it, so nothing is
 licensed. It is a marketing video, not an App Preview: it shows a TV, device
 frames and store badges, which App Previews do not allow.
+
+## Regenerating the screenshots (`pnpm store:shots`)
+
+Added November 18, 2026 with the two iPhone Duo sets (Apple requires Duo
+screenshots from April 2027; these are not uploaded yet). One command rebuilds
+the tiles from the app as it is in the checkout, so a set can be refreshed
+before any submission:
+
+```sh
+pnpm store:shots                      # all six sets, into the docs folders
+pnpm store:shots duoOuter,duoInner    # only those sets
+pnpm store:shots --out /tmp/tiles     # somewhere else, to look before replacing
+pnpm store:shots --no-room            # skip the room; tiles 01 and 04 stay as they are
+```
+
+Sets: `iphone`, `ipad`, `duoOuter`, `duoInner` (this folder) and `android`,
+`tablet` (`../play-store/screenshots`). The scripts are in
+`scripts/store-shots/`; raw captures land in `artifacts/store-shots/`
+(ignored).
+
+- **What it needs:** `.env.local`, Chrome, and the test accounts in
+  `~/.config/crossword-clash/shots-accounts.json` (as `pnpm shots`).
+- **Same content every run:** the app's clock is pinned to the showcase day
+  (`SHOW_DAY` in `cap.mjs`, November 16, 2026), so the tiles always show that
+  day's dailies whatever today's are. Names and times on the board and in the
+  race are invented (`stage.mjs`). Before changing the day, read its puzzles'
+  titles and clues: store art must not show another company's trademark.
+- **The room tiles are a real room** on production, hosted on a TV and played
+  to the end by the test accounts: one finished test room per two sets,
+  removed by the retention sweep. Each set always plays as the same account
+  (`seat` in `cap.mjs`), so its tiles show the same player's view whichever
+  sets a run names. A room that fails part-way is closed, and its tiles are
+  reported instead of being composed from an older capture.
+- **Nothing reaches the daily boards:** native mode would let a finish post
+  from localhost, so every write to `daily_results` is blocked in the capture.
+- **The studio tile** comes from this checkout when its word list is built
+  (`pnpm seedgrid:studio-dict`), otherwise from the live site; the run says
+  which.
+- **It uploads nothing.** Look at the tiles, commit them, then upload.
+
+The Duo sets were made this way (the studio draft's clue on screen was
+reworded first; it named Monopoly). The iPhone, iPad and Play sets in the repo
+are still the November 16 captures; a full run on November 18 reproduced them
+except for tile 03, where the race dialog has since changed, and tile 01,
+whose clue bar now always shows 1 Across (the live sets show "Looney Tunes
+duck" there, and their studio tile the Monopoly clue).
 
 ## Still to do, in order
 
