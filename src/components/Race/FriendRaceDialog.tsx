@@ -148,8 +148,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
       const you = t("ghostRace.you");
       const who = raceShareOrder(lanes).map((i) => lanes[i].solve.name);
       const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined, race: lanes.length, who: who.includes(you) ? undefined : who });
-      const body = t("friendRace.shareText", { title: puzzle.title, count: lanes.length });
-      const result = await shareText({ text: `${body}\n${url}`, body, url, title: t("friendRace.title") }, await runtimeDeps());
+      // The link alone: its preview (the clip, the headline) says what it is, and a message that is only a link is the one iMessage plays.
+      const result = await shareText({ text: url, body: "", url, title: t("friendRace.title") }, await runtimeDeps());
       if (result.outcome === "dismissed") return;
       track("friend_race_shared", { method: result.method, racers: lanes.length, clip: !!id });
       setToast(t(result.outcome === "failed" ? "completion.shareFailed" : result.outcome === "copied" ? "friendRace.shareCopied" : "friendRace.shareSent"));

@@ -34,6 +34,10 @@
       "destination": "/api/share?t=puzzle&id=:id"
     },
     {
+      "source": "/add/:username([A-Za-z0-9_]{3,20})",
+      "destination": "/api/share?t=add&u=:username"
+    },
+    {
       "source": "/daily-puzzles/midi/:day.json",
       "destination": "/api/daily?day=:day&slot=midi"
     },

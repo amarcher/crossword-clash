@@ -388,8 +388,11 @@ export function CompletionModal({
         locale: i18n.language,
         playerColors,
         link,
-        // A link that carries the replay unfurls as the solve itself: no emoji rows.
-        rows: !replayId || !linkRef,
+        // The puzzle's own link unfurls as the result (the solve itself, with a
+        // replay): it is sent alone, with no emoji rows. A puzzle carried in
+        // the link's hash has only the site's card, so its block goes along.
+        rows: !linkRef,
+        linkOnly: !!linkRef,
         labels: {
           brand: t("completion.shareBrand"),
           daily: shareDaily,
