@@ -139,7 +139,9 @@ export function ShareResultButton({
 
   return (
     <div className="col-span-2 flex flex-col gap-2" data-testid="share-result">
-      <ShareBlockPreview block={block} legend={legend} darkMode={darkMode} />
+      {/* The preview shows what will be sent. A link sent alone (its page unfurls as the
+          solve, shown above as the clip) has no text to preview. */}
+      {block.text !== block.link && <ShareBlockPreview block={block} legend={legend} darkMode={darkMode} />}
       {signing && (
         <input
           type="text"

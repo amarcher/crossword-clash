@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup, within, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, within, waitFor } from "@testing-library/react";
 import { CompletionModal } from "./CompletionModal";
 import type { PlayerResult } from "./CompletionModal";
 import { track } from "../../lib/analytics";
@@ -178,7 +178,7 @@ describe("CompletionModal", () => {
   it("makes Share the primary action, labelled 'Share your time' after a daily, with the block previewed above it", () => {
     // A real grid: the non-daily share link carries the whole puzzle.
     const puzzle = buildPuzzle({ title: "Deep Blue", grid: ["#whom", "trace", "holes", "atlas", "neon#"], clueTexts: {} });
-    const { getByRole, getByTestId, queryByTestId, rerender } = render(
+    const { getByRole, getByTestId, rerender } = render(
       <CompletionModal {...SOLO_PROPS} finishSeconds={90} challengePuzzle={puzzle} challengerName="Andy" />,
     );
     const share = getByRole("button", { name: "Share" });
@@ -188,11 +188,12 @@ describe("CompletionModal", () => {
 
     rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} dailySlot="mini" challengePuzzle={puzzle} challengerName="Andy" />);
     expect(getByRole("button", { name: "Share your time" }).className).toContain("bg-brand-600");
-    expect(getByTestId("share-block-preview").textContent).toContain("Crossword Clash · Daily Mini ·");
+    // A daily's link is sent alone, so there is no text block to preview.
+    expect(screen.queryByTestId("share-block-preview")).toBeNull();
 
     // No puzzle, nothing to share: the section is absent rather than broken.
     rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
-    expect(queryByTestId("share-block-preview")).toBeNull();
+    expect(screen.queryByTestId("share-block-preview")).toBeNull();
   });
 
   it("offers a signed-in solver their stats, beside the board button", () => {
@@ -207,7 +208,7 @@ describe("CompletionModal", () => {
 
   it("shows the leaderboard and Save image as the secondary row; the share link itself is the challenge", () => {
     const onViewLeaderboard = vi.fn();
-    const { getByRole, getByTestId, queryByRole } = render(
+    const { getByRole, queryByRole } = render(
       <CompletionModal
         {...SOLO_PROPS}
         finishSeconds={90}
@@ -221,7 +222,7 @@ describe("CompletionModal", () => {
     expect(onViewLeaderboard).toHaveBeenCalledOnce();
     expect(getByRole("button", { name: "Save image" })).toBeTruthy();
     expect(queryByRole("button", { name: /Challenge a friend/ })).toBeNull();
-    expect(getByTestId("share-block-preview").textContent).toMatch(/Beat my time → crosswordclash\.com\/daily\/\d{4}-\d{2}-\d{2}\/mini\?beat=90&by=Andy/);
+    expect(screen.queryByTestId("share-block-preview")).toBeNull();
   });
 
   it("calls onBackToMenu when button clicked", () => {
@@ -514,7 +515,7 @@ describe("CompletionModal", () => {
         expect(share.mock.lastCall![0].text).toContain(path);
         // The link's preview plays the solve, so no emoji rows go with it, nor in the preview.
         expect(share.mock.lastCall![0].text).not.toMatch(/[🟩🟨🟧🟥🟦⬛⬜]/u);
-        expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
+        expect(screen.queryByTestId("share-block-preview")).toBeNull();
         share.mockClear();
         cleanup();
       }
@@ -530,7 +531,7 @@ describe("CompletionModal", () => {
     );
     expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
     expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("aria-label")).toBe("The race, replayed");
-    expect(getByTestId("share-block-preview").querySelector("div[aria-hidden]")).toBeNull();
+    expect(screen.queryByTestId("share-block-preview")).toBeNull();
     unmount();
     // Without a filed replay the race shares its squares, as before.
     const plain = render(

@@ -41,7 +41,7 @@ import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
-import { useRaceCandidates } from "../hooks/useRace";
+import { prefetchRaceCandidates, useRaceCandidates } from "../hooks/useRace";
 import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadTrace, saveRaceIntent } from "../lib/race";
 import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
 import { fetchDailyForDay } from "../lib/dailyFeed";
@@ -206,6 +206,20 @@ export function DailyLeaderboardScreen() {
     if (supabase) prefetchDailyLeaderboards(day, slots, only);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, onlyKey, shownKey]);
+  // So are the friends' race buttons of every tab, which would otherwise
+  // arrive after the board and push the page down.
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let live = true;
+    void loadPublishedIndex(todayKey())
+      .then((entries) => {
+        if (live && entries) prefetchRaceCandidates(entries.filter((e) => e.day === day).map((e) => e.identity));
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [day, user]);
   const layout = WIDE_GRID[slots.length] ?? WIDE_GRID[3];
   const sideBySide = slots.length > 1;
   const routeDaily = dailies[routeSlot];

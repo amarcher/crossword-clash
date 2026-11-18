@@ -17,7 +17,7 @@ interface SendToFriendProps {
 }
 
 /**
- * The completion modal's "Send to a friend" (docs/friends-spec.md §3.2): the
+ * The completion modal's "Challenge a friend" (docs/friends-spec.md §3.2): the
  * daily "beat my time" link delivered in-app instead of through the share
  * sheet. A toggle row, then the friends with Send; each send is one `beat`
  * invite the friend sees as a banner or in their Race friends inbox. Renders
@@ -56,6 +56,7 @@ export function SendToFriend({ link, darkMode, puzzleKey = null }: SendToFriendP
       </button>
       {open && (
         <div>
+          <p className={`mb-2 text-xs ${darkMode ? "text-stage-line" : "text-muted"}`}>{t("friends.sendToFriendHint")}</p>
           <PersonList>
             {friendships.friends.map((f) => (
               <PersonRow key={f.userId} username={f.username}>
@@ -78,7 +79,6 @@ export function SendToFriend({ link, darkMode, puzzleKey = null }: SendToFriendP
               {error}
             </p>
           )}
-          <p className={`mt-2 text-xs ${darkMode ? "text-stage-line" : "text-muted"}`}>{t("friends.sendToFriendHint")}</p>
         </div>
       )}
     </div>
