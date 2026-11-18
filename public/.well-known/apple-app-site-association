@@ -31,6 +31,10 @@
           {
             "/": "/puzzles/*",
             "comment": "Community puzzle pages"
+          },
+          {
+            "/": "/add/*",
+            "comment": "A player's add-me link: /add/USERNAME"
           }
         ]
       }
