@@ -86,7 +86,7 @@ describe("CommunityPuzzleScreen (/puzzles/:shortId)", () => {
     expect(screen.getByText("3×3 · 6 clues · Hard")).toBeTruthy();
     expect(screen.getByText("12 plays · 7 solved")).toBeTruthy();
     expect(screen.getByText("A tiny one.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Play solo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
     expect((game.handleSoloPuzzleLoaded.mock.calls as unknown[][])[0][0]).toMatchObject({ origin: "community", author: "ada" });
   });

@@ -32,7 +32,12 @@ function errorKey(err: unknown): string {
  * friends list with Remove and Block. An anonymous visitor is sent to sign in.
  */
 export function FriendsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // "Nov 17", with the year only when it is not this one: short enough for a phone row.
+  const shortDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString(i18n.language, { month: "short", day: "numeric", ...(d.getFullYear() === new Date().getFullYear() ? {} : { year: "numeric" }) });
+  };
   const account = useAccountContext();
   const friends = useFriends();
   const confirm = useConfirm();
@@ -259,7 +264,7 @@ export function FriendsScreen() {
             {opponents
               .filter((o) => relation(o.userId) !== "friend")
               .map((o) => (
-                <PersonRow key={o.userId} username={o.username} detail={t("friends.racedDetail", { count: o.games, when: new Date(o.lastAt).toLocaleDateString() })}>
+                <PersonRow key={o.userId} username={o.username} detail={t("friends.racedDetail", { count: o.games, when: shortDate(o.lastAt) })}>
                   {actionFor(o, "raced")}
                 </PersonRow>
               ))}
@@ -274,7 +279,7 @@ export function FriendsScreen() {
         ) : (
           <PersonList className="mt-3">
             {list.map((p) => (
-              <PersonRow key={p.userId} username={p.username} detail={t("friends.since", { when: new Date(p.since).toLocaleDateString() })}>
+              <PersonRow key={p.userId} username={p.username} detail={t("friends.since", { when: shortDate(p.since) })}>
                 <Button size="sm" variant="ghost" onClick={() => void remove(p)} disabled={busy !== null}>
                   {t("friends.remove")}
                 </Button>

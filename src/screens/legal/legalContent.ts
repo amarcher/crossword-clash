@@ -121,7 +121,7 @@ const en: LegalContent = {
           "The TV/host view can optionally provide an AI narrator and spoken clue announcements. If a host turns these on, text describing the game is sent to third-party providers through our backend functions or directly from the host's device:",
         ],
         items: [
-          "Game events: puzzle title, the display names of players, the clues that were completed, and scores. These go to the provider of the narrator you choose: Anthropic (Claude) for generated commentary, OpenAI (Realtime voice), or ElevenLabs (conversational agent).",
+          "Game events: puzzle title, the display names of players, the clues that were completed, and scores. These go to the provider of the narrator you choose: Anthropic for generated commentary, OpenAI (Realtime voice), or ElevenLabs (conversational agent).",
           "Text to be spoken (commentary or clue text) is sent to ElevenLabs for text-to-speech when the ElevenLabs voice is selected.",
           "Each provider handles this data under its own terms and privacy policy. Do not put personal information in display names if you use the narrator.",
         ],
@@ -463,7 +463,7 @@ const es: LegalContent = {
           "La vista TV/anfitrión puede ofrecer opcionalmente un narrador con IA y anuncios de pistas en voz alta. Si el anfitrión los activa, se envía texto sobre la partida a proveedores externos a través de nuestras funciones de servidor o directamente desde el dispositivo del anfitrión:",
         ],
         items: [
-          "Eventos de la partida: título del crucigrama, nombres visibles de los jugadores, las pistas completadas y las puntuaciones. Van al proveedor del narrador que elijas: Anthropic (Claude) para comentarios generados, OpenAI (voz en tiempo real) o ElevenLabs (agente conversacional).",
+          "Eventos de la partida: título del crucigrama, nombres visibles de los jugadores, las pistas completadas y las puntuaciones. Van al proveedor del narrador que elijas: Anthropic para comentarios generados, OpenAI (voz en tiempo real) o ElevenLabs (agente conversacional).",
           "El texto que se va a pronunciar (comentarios o pistas) se envía a ElevenLabs para la síntesis de voz cuando se selecciona la voz de ElevenLabs.",
           "Cada proveedor trata estos datos según sus propios términos y política de privacidad. No pongas datos personales en los nombres visibles si usas el narrador.",
         ],

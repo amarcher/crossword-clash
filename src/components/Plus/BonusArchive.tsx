@@ -7,7 +7,7 @@ import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 import { fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../../lib/bonus";
-import { leaderboardPath } from "../../lib/dailyLeaderboard";
+import { leaderboardPath, todayKey } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
 import { dayKey } from "../../lib/soloStats";
 import { formatDuration } from "../../lib/soloStats";
@@ -106,6 +106,14 @@ export function BonusArchive() {
                   {typeof best === "number" ? ` · ${formatDuration(best)}` : ""}
                 </span>
               </span>
+              {/* That day's board, as on the daily rows above. */}
+              <TransitionLink
+                to={leaderboardPath("bonus", card.day === todayKey() ? null : card.day)}
+                aria-label={t("archive.leaderboardLabel", { title: card.title })}
+                className="grid size-11 shrink-0 place-items-center rounded-xl text-gold-500 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500"
+              >
+                <Trophy className="size-5" aria-hidden="true" />
+              </TransitionLink>
               <Button size="sm" variant={plus ? "secondary" : "soft"} onClick={() => void play(card)} disabled={busy !== null} aria-busy={busy === card.day || undefined}>
                 {!plus && <Lock className="size-3.5" aria-hidden="true" />}
                 {plus ? t(typeof best === "number" ? "archive.view" : "archive.play") : t("bonus.unlock")}

@@ -269,7 +269,7 @@ describe("race replies", () => {
     const won = raceReplyNotification({ ...reply, seconds: 90 }, "en");
     expect(won).toMatchObject({ kind: "race_reply", title: "Sam raced your mini", body: "Sam won by 0:12 · Watch", url: `https://crosswordclash.com/reply/${reply.id}`, collapseId: `reply-${reply.id}` });
     expect(raceReplyNotification({ ...reply, seconds: 130 }, "en").body).toBe("You won by 0:28 · Watch");
-    expect(raceReplyNotification({ ...reply, seconds: 102 }, "en").body).toBe("Dead heat · Watch");
+    expect(raceReplyNotification({ ...reply, seconds: 102 }, "en").body).toBe("It's a tie · Watch");
     expect(raceReplyNotification({ ...reply, seconds: 90 }, "es").title).toBe("Sam compitió contra tu mini");
     expect(raceReplyNotification({ ...reply, slot: null, title: "Farm", seconds: 90 }, "en").title).toBe("Sam raced your “Farm”");
     expect(raceReplyNotification({ ...reply, slot: null, title: null, seconds: 90 }, "en").title).toBe("Sam raced your community puzzle");

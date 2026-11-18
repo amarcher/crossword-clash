@@ -17,7 +17,7 @@ describe("TimeoutSelector", () => {
 
   it("renders the heading", () => {
     render(<TimeoutSelector value={0} onChange={() => {}} />);
-    expect(screen.getByText("Wrong Answer Penalty")).toBeDefined();
+    expect(screen.getByText("Wrong answer penalty")).toBeDefined();
   });
 
   it("highlights the selected option", () => {
@@ -61,7 +61,7 @@ describe("TimeoutSelector", () => {
 
   it("applies dark variant styles to heading", () => {
     render(<TimeoutSelector value={0} onChange={() => {}} variant="dark" />);
-    const heading = screen.getByText("Wrong Answer Penalty");
+    const heading = screen.getByText("Wrong answer penalty");
     expect(heading.className).toContain("text-neutral-400");
   });
 });

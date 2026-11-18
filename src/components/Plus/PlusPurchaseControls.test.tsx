@@ -59,11 +59,11 @@ describe("PlusPurchaseControls on the web", () => {
     expect(tiles[0].getAttribute("aria-checked")).toBe("true");
     expect(tiles[1].textContent).toBe("Monthly$3.99 a month1 month free");
     expect(screen.getByRole("button", { name: "Start my free month" })).toBeTruthy();
-    expect(screen.getByText("Free for 1 month, then $24.99 a year. Renews until cancelled; cancel any time.")).toBeTruthy();
+    expect(screen.getByText("Free for 1 month, then $24.99 a year. Renews until canceled; cancel any time.")).toBeTruthy();
     fireEvent.click(tiles[1]);
-    expect(screen.getByText("Free for 1 month, then $3.99 a month. Renews until cancelled; cancel any time.")).toBeTruthy();
+    expect(screen.getByText("Free for 1 month, then $3.99 a month. Renews until canceled; cancel any time.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Restore purchases" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Terms of Service" }).getAttribute("href")).toBe("/terms");
+    expect(screen.getByRole("link", { name: "Terms of Use" }).getAttribute("href")).toBe("/terms");
     expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("/privacy");
   });
 
@@ -133,7 +133,7 @@ describe("PlusPurchaseControls in the apps", () => {
     expect(screen.getByText(/^Free for 1 month, then \$24.99 a year/)).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: /Monthly/ }));
     expect(screen.getByRole("button", { name: "Get Plus" })).toBeTruthy();
-    expect(screen.getByText("$3.99 a month. Renews until cancelled; cancel any time.")).toBeTruthy();
+    expect(screen.getByText("$3.99 a month. Renews until canceled; cancel any time.")).toBeTruthy();
   });
 
   it("doesn't claim Plus when the store took the payment but no Plus row has landed yet", async () => {
@@ -146,7 +146,7 @@ describe("PlusPurchaseControls in the apps", () => {
 
   it("links Terms and Privacy to the public site, since a relative link opens nothing in the app", () => {
     render(<PlusPurchaseControls account={{ signedIn: true, plus: false, plusRow: null, refreshEntitlements: refresh }} placement="sheet" />);
-    expect(screen.getByRole("link", { name: "Terms of Service" }).getAttribute("href")).toBe("https://crosswordclash.com/terms");
+    expect(screen.getByRole("link", { name: "Terms of Use" }).getAttribute("href")).toBe("https://crosswordclash.com/terms");
     expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("https://crosswordclash.com/privacy");
   });
 

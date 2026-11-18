@@ -333,7 +333,7 @@ describe("pause and resume", () => {
     type("c");
     const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
-    expect(screen.getByRole("alert").textContent).toContain("couldn’t save");
+    expect(screen.getByRole("alert").textContent).toContain("couldn't save");
     expect(screen.queryByRole("button", { name: "Save & exit" })).toBeNull();
     expect(game.playerCells["0,0"].letter).toBe("C");
     write.mockRestore();
@@ -393,7 +393,7 @@ it("today's bonus posts to the bonus board; a past bonus posts nowhere but links
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ slot: "bonus", day: today, posted: true }));
-  expect(screen.getByRole("button", { name: "Daily Plus leaderboard" })).toBeTruthy();
+  expect(within(screen.getByRole("dialog", { name: "Puzzle complete" })).getByRole("button", { name: "Leaderboard" })).toBeTruthy();
   cleanup();
   localStorage.clear();
 
@@ -405,7 +405,7 @@ it("today's bonus posts to the bonus board; a past bonus posts nowhere but links
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   expect(game.pendingDailyResult).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Daily Plus leaderboard" }));
+  fireEvent.click(within(screen.getByRole("dialog", { name: "Puzzle complete" })).getByRole("button", { name: "Leaderboard" }));
   expect(`${location.pathname}${location.search}`).toBe("/bonus/leaderboard?day=2020-01-01");
 });
 

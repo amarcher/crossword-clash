@@ -1086,7 +1086,6 @@ export function SoloPlayScreen() {
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
         onSeeStats={account.available && account.user ? handleSeeStats : undefined}
-        leaderboardLabel={boardView?.slot === "bonus" ? t("bonus.boardLink") : undefined}
       />
       {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
       {friendRace && <FriendRaceDialog puzzle={puzzle} solves={friendRace.solves} letters={friendRace.letters} shareRef={puzzleRef} onClose={() => setFriendRace(null)} />}

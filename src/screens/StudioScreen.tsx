@@ -856,7 +856,7 @@ export function StudioScreen() {
       width="7xl"
       background="canvas"
       bar={{
-        backLabel: "Menu",
+        backLabel: "Back to menu",
         backTo: "/menu",
         right: (
           <div className="flex items-center gap-3">

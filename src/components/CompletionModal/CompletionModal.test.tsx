@@ -75,7 +75,7 @@ describe("CompletionModal", () => {
   it("renders solo variant with score", () => {
     const { getByText } = render(<CompletionModal {...SOLO_PROPS} />);
     expect(getByText("Puzzle complete")).toBeTruthy();
-    expect(getByText("8/8 cells filled")).toBeTruthy();
+    expect(getByText("8/8 squares filled")).toBeTruthy();
   });
 
   it("shows the NYT 'same time tomorrow' hook only for bookmarklet puzzles", () => {
@@ -195,12 +195,12 @@ describe("CompletionModal", () => {
     expect(queryByTestId("share-block-preview")).toBeNull();
   });
 
-  it("offers a signed-in solver their stats, and names a board that isn't a daily's", () => {
+  it("offers a signed-in solver their stats, beside the board button", () => {
     const onSeeStats = vi.fn();
-    const { getByRole, queryByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} onViewLeaderboard={vi.fn()} leaderboardLabel="Bonus leaderboard" onSeeStats={onSeeStats} />);
+    const { getByRole, queryByRole, rerender } = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} onViewLeaderboard={vi.fn()} onSeeStats={onSeeStats} />);
     fireEvent.click(getByRole("button", { name: "See your stats" }));
     expect(onSeeStats).toHaveBeenCalledOnce();
-    expect(getByRole("button", { name: "Bonus leaderboard" })).toBeTruthy();
+    expect(getByRole("button", { name: "Leaderboard" })).toBeTruthy();
     rerender(<CompletionModal {...SOLO_PROPS} finishSeconds={90} />);
     expect(queryByRole("button", { name: "See your stats" })).toBeNull();
   });
@@ -217,7 +217,7 @@ describe("CompletionModal", () => {
         challengerName="Andy"
       />,
     );
-    fireEvent.click(getByRole("button", { name: "Daily leaderboard" }));
+    fireEvent.click(getByRole("button", { name: "Leaderboard" }));
     expect(onViewLeaderboard).toHaveBeenCalledOnce();
     expect(getByRole("button", { name: "Save image" })).toBeTruthy();
     expect(queryByRole("button", { name: /Challenge a friend/ })).toBeNull();

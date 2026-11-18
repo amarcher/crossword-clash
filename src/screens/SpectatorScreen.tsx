@@ -51,7 +51,7 @@ export function SpectatorScreen() {
           {code && loading && user && <p role="status" className="text-slate-300">{t("playing.reconnecting")}</p>}
           {(error || (!authLoading && !user)) && <p role="alert" className="text-gold-400">{t("spectator.error")}</p>}
         </form>
-        <Link className="tv-t-md inline-flex min-h-11 items-center text-slate-300 underline underline-offset-4 hover:text-white" to="/menu">{t("join.back")}</Link>
+        <Link className="tv-t-md inline-flex min-h-11 items-center text-slate-300 underline underline-offset-4 hover:text-white" to="/menu">{t("completion.backToMenu")}</Link>
       </TVScreen>
     );
   }

@@ -77,7 +77,7 @@ describe("i18n", () => {
     });
 
     it("interpolates variables", () => {
-      expect(tStatic("scoreboard.cells", { score: 5, total: 10 })).toBe("5/10 cells");
+      expect(tStatic("scoreboard.cells", { score: 5, total: 10 })).toBe("5/10 squares");
     });
 
     it("follows language changes", () => {
@@ -93,12 +93,12 @@ describe("i18n", () => {
 
     it("switches to Spanish", () => {
       i18n.changeLanguage("es");
-      expect(i18n.t("menu.playSolo")).toBe("Jugar solo");
+      expect(i18n.t("menu.playSolo")).toBe("Jugar");
     });
 
     it("falls back to English for unsupported language", () => {
       i18n.changeLanguage("fr");
-      expect(i18n.t("menu.playSolo")).toBe("Play solo");
+      expect(i18n.t("menu.playSolo")).toBe("Play");
     });
 
     it("persists language to localStorage", () => {

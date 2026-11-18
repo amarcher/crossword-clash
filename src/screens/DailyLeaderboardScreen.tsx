@@ -34,6 +34,7 @@ import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
 import { groupFinishSeconds } from "../lib/groupFinish";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
+import { BoardTabs } from "../components/Leaderboard/BoardTabs";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
@@ -220,6 +221,8 @@ export function DailyLeaderboardScreen() {
             </p>
           )}
         </div>
+
+        <BoardTabs active={routeSlot} day={past ? day : null} slots={wideSlots.length > 0 ? wideSlots : DAILY_SLOTS} />
 
         {/* Which day, and whose times. The stepper is bounded by the first
             published daily and by today; both controls are 44 px targets. */}

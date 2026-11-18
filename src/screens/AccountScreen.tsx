@@ -147,7 +147,7 @@ export function AccountScreen() {
     return (
       <PageShell width="md" bar={{ backLabel: t("completion.backToMenu") }} grow>
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-muted">{t("account.recentLoading")}</p>
+          <p className="text-sm text-muted">{t("friends.loading")}</p>
         </div>
       </PageShell>
     );
