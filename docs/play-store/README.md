@@ -222,6 +222,12 @@ Done by Claude, nothing submitted or rolled out:
   edited using AI" and was not editable on the review step; no individual
   asset was labelled.
 
+- **November 18, 2026:** 34 (1.1.3) uploaded through the console and rolled out
+  to internal testing with `whats-new-1.1.3-internal-34.txt` (the one race
+  dialog and the shared-link landings). Not promoted to production. Built on
+  the Studio with `ANDROID_HOME=~/Library/Android/sdk` and
+  `JAVA_HOME=/opt/homebrew/opt/openjdk@21`.
+
 ## Uploading without the API
 
 The play-publisher service-account key and `play-upload.mjs` live on the
