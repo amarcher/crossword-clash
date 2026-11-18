@@ -33,11 +33,12 @@ import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { fetchDailyForDay } from "../lib/dailyFeed";
-import { getProgress, saveAttempt } from "../lib/soloProgress";
+import { getProgress, isStarted, saveAttempt } from "../lib/soloProgress";
 import { consumeSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { watchSoloLifecycle } from "../lib/soloLifecycle";
 import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
+import { SoloStartGate } from "../components/SoloStartGate";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
@@ -147,11 +148,22 @@ export function SoloPlayScreen() {
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
   const openedSolved = !!key && game.reopenedSolved?.key === key;
+  // A puzzle with nothing on it yet opens behind the start countdown
+  // (SoloStartGate): the clock waits for it, so no time passes before the
+  // grid can be read. A resumed attempt starts at once, as before.
+  const [startGate, setStartGate] = useState(false);
+  const takeSoloStart = useCallback((k: string) => {
+    const start = consumeSoloStart(k);
+    const attempt = start ? getProgress(k) : null;
+    if (!attempt || isStarted(attempt)) return start;
+    setStartGate(true);
+    return false;
+  }, []);
   const { getElapsedSeconds, getElapsedMs, running: timerRunning, idlePaused, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
     assisted,
-    consumeSoloStart,
+    takeSoloStart,
     game.reopenedSolved,
   );
   // A finished session restored after the app was closed (the tab reloaded on
@@ -873,7 +885,8 @@ export function SoloPlayScreen() {
   return (
     <>
       {dataRouter && <SoloNavigationGuard saveBeforeLeave={saveBeforeLeave} />}
-      <div inert={paused} aria-hidden={paused || undefined} className={paused ? "hidden" : undefined}>
+      {/* Behind the start countdown the grid stays drawn, blurred past reading by the gate's backdrop. */}
+      <div inert={paused} aria-hidden={paused || undefined} className={paused && !startGate ? "hidden" : undefined}>
       <GameLayout
         keyboard={<PuzzleKeyboard actions={guardedActions} disabled={isComplete || clueSheetOpen} />}
         header={
@@ -1048,7 +1061,21 @@ export function SoloPlayScreen() {
         }
       />
       </div>
-      {paused && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
+      {startGate && !isComplete && (
+        <SoloStartGate
+          title={puzzle.title}
+          detail={t("menu.dailyMeta", { width: puzzle.width, height: puzzle.height, count: puzzle.clues.length })}
+          onStart={() => { setStartGate(false); handleResume(); }}
+          onBack={() => {
+            setStartGate(false);
+            rememberSoloLanding("menu");
+            // Back to wherever Play was pressed; a puzzle opened with no page behind it goes to the menu.
+            if (window.history.state?.idx > 0) window.history.back();
+            else navigate("/menu");
+          }}
+        />
+      )}
+      {paused && !startGate && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
         onResume={handleResume} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
         open={showCompletionModal}

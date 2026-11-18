@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Play, Trash2 } from "lucide-react";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useSoloProgress } from "../hooks/useSoloProgress";
-import { clearProgress, type SoloProgressRecord } from "../lib/soloProgress";
+import { clearProgress, isStarted, type SoloProgressRecord } from "../lib/soloProgress";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
 import { fetchDailyForDay } from "../lib/dailyFeed";
@@ -16,7 +16,7 @@ export function SoloContinue() {
   const game = useGame();
   const navigate = useTransitionNavigate();
   const store = useSoloProgress();
-  const records = Object.values(store).sort((a, b) => b.updatedAt - a.updatedAt);
+  const records = Object.values(store).filter(isStarted).sort((a, b) => b.updatedAt - a.updatedAt);
   const [expanded, setExpanded] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState(false);
