@@ -7,9 +7,9 @@ import type { Puzzle } from "../types/puzzle";
 import type { ChallengePayload } from "../lib/challenge";
 
 const share = vi.hoisted(() => ({ fetchReplayShare: vi.fn(), ghostFromReplay: vi.fn(), letteredReplay: vi.fn() }));
-const viewer = vi.hoisted(() => ({ best: {} as Record<string, number>, fetchOwnSolveTrace: vi.fn(async () => null as { seconds: number; events: [number, number, string][] } | null) }));
+const viewer = vi.hoisted(() => ({ best: {} as Record<string, number>, history: { signedIn: false, loading: false }, fetchOwnSolveTrace: vi.fn(async () => null as { seconds: number; events: [number, number, string][] } | null) }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
-vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => viewer.best }));
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => viewer.best, useSolveHistory: () => viewer.history }));
 vi.mock("../hooks/useRaceName", () => ({ useRaceName: () => "archer" }));
 vi.mock("../lib/replayShare", () => share);
 const race = vi.hoisted(() => ({ saveRace: vi.fn() }));
@@ -45,6 +45,7 @@ beforeEach(() => {
   game.urlPuzzle = puzzle;
   localStorage.clear();
   viewer.best = {};
+  viewer.history = { signedIn: false, loading: false };
   share.letteredReplay.mockReturnValue(null);
 });
 afterEach(() => {
@@ -76,6 +77,10 @@ describe("ChallengeScreen", () => {
     expect(dialog.textContent).toContain("Replayed, letters hidden");
     expect(screen.getByTestId("race-forward").getAttribute("aria-label")).toBe("Share");
     expect(screen.queryByTestId("race-share")).toBeNull();
+    // Nothing of the answer is on the page.
+    expect(dialog.querySelectorAll("span.aspect-square")).toHaveLength(2);
+    expect([...dialog.querySelectorAll("span.aspect-square")].map((c) => c.textContent).join("")).toBe("");
+    expect(screen.queryAllByRole("gridcell")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Let me solve it" }));
     await screen.findByText("playing");
     expect(raceSaved()).toEqual({ ghosts: [ghost] });
@@ -94,6 +99,16 @@ describe("ChallengeScreen", () => {
     expect(screen.getAllByTestId("race-lane")).toHaveLength(2);
     expect(screen.queryByTestId("race-cta")).toBeNull();
     expect(screen.getByTestId("race-share")).toBeTruthy();
+  });
+
+  it("waits for a signed-in viewer's history before choosing: a solve made on another device is not shown the solve button first", async () => {
+    viewer.history = { signedIn: true, loading: true };
+    game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i", ref: { day: "2026-11-12", slot: "large" } };
+    share.fetchReplayShare.mockResolvedValueOnce("CODE");
+    share.ghostFromReplay.mockReturnValueOnce(ghost);
+    renderScreen();
+    await screen.findByRole("button", { name: "Race Andrew's solve" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("falls back to the time-only challenge when the replay can't load", async () => {

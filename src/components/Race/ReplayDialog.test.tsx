@@ -52,13 +52,13 @@ describe("ReplayDialog", () => {
     expect(dots()).toBe(4);
   });
 
-  it("plays one solve in the same dialog: its own lane, its letters going in", () => {
+  it("plays one solve in the same dialog: its own lane, the letters as they were typed", () => {
     render(<ReplayDialog puzzle={puzzle} solves={[ann]} onClose={() => {}} />);
     expect(screen.getByRole("dialog", { name: "Ann's solve" })).toBeTruthy();
     expect(screen.getAllByTestId("race-lane")).toHaveLength(1);
     frame(0);
     frame(10_000);
-    expect([...document.querySelectorAll("[data-owner]")].map((c) => c.textContent).join("|")).toBe("A|B|C|D");
+    expect(letters()).toBe("A|B|C|D");
     expect(dots()).toBe(0);
   });
 

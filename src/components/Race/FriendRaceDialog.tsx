@@ -38,8 +38,8 @@ interface FriendRaceDialogProps {
    * to an icon beside it.
    */
   cta?: { label: string; onClick: () => void };
-  /** Pass the link on, for a viewer with a `cta`: the quiet icon. */
-  onForward?: () => void;
+  /** Pass the link on, for a viewer with a `cta`: the quiet icon. Answers how it went, for the toast. */
+  onForward?: () => Promise<"shared" | "copied" | "failed" | "dismissed">;
   onClose: () => void;
 }
 
@@ -167,6 +167,15 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   const canShowBoth = letters && lanes.length === 2;
   const showBoth = both && canShowBoth;
   const [a, b] = lanes.map((l) => l.solve);
+  // One solve with its letters plays as it was typed: wrong letters, erases and all.
+  const typed = alone && letters;
+  const forward = async () => {
+    if (!onForward) return;
+    const outcome = await onForward().catch(() => "failed" as const);
+    if (outcome === "dismissed") return;
+    setToast(t(outcome === "failed" ? "completion.shareFailed" : outcome === "copied" ? "friendRace.shareCopied" : "friendRace.shareSent"));
+    setTimeout(() => setToast(null), 2200);
+  };
   // Which puzzle: "Daily Mini · Nov 17 · Bread Basket" for a daily, the title alone otherwise.
   const about = [...(shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
   const counts = squaresFirst(first, lanes.length, ms);
@@ -199,7 +208,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                     <span className="mx-0.5 grid size-5 shrink-0 place-items-center rounded-[3px] text-[11px] font-bold leading-none text-ink ring-1 ring-inset ring-ink/25" style={{ backgroundColor: blendOnWhite(solve.color, showBoth ? 0.18 : letters ? 0.4 : 0.6) }} aria-hidden="true">
                       {letters && "A"}
                     </span>
-                    {t(showBoth ? "friendRace.legendLetters" : alone ? "friendRace.bothBody" : "friendRace.legendFirst", { name: solve.name, b: solve.name })}
+                    {t(showBoth || typed ? "friendRace.legendLetters" : alone ? "friendRace.bothBody" : "friendRace.legendFirst", { name: solve.name, b: solve.name })}
                   </li>
                 ))}
                 {showBoth && (
@@ -312,9 +321,9 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             </section>
 
             <section className="min-w-0" aria-label={t(showBoth ? "friendRace.viewBoth" : "friendRace.firstTitle")}>
-              {showBoth ? (
+              {showBoth || typed ? (
                 <div className="mx-auto w-fit" style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 24rem), 21rem)" } as React.CSSProperties}>
-                  <CrosswordGrid puzzle={puzzle} playerCells={cellsAt(a, ms, puzzle.width)} selectedCell={null} highlightedCells={NO_HIGHLIGHT} onCellClick={() => undefined} interactive={false} playerColorMap={{ replay: a.color }} ghostTints={dotsAt(b, ms, puzzle.width)} />
+                  <CrosswordGrid puzzle={puzzle} playerCells={cellsAt(a, ms, puzzle.width)} selectedCell={null} highlightedCells={NO_HIGHLIGHT} onCellClick={() => undefined} interactive={false} playerColorMap={{ replay: a.color }} ghostTints={showBoth ? dotsAt(b, ms, puzzle.width) : undefined} />
                 </div>
               ) : (
               <div
@@ -371,7 +380,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
           {cta && (
             <div className="flex items-center gap-2 max-sm:basis-full">
               {onForward && (
-                <Button variant="ghost" size="sm" className="size-11 shrink-0 px-0!" onClick={onForward} aria-label={t("friendRace.share")} title={t("friendRace.share")} data-testid="race-forward">
+                <Button variant="ghost" size="sm" className="size-11 shrink-0 px-0!" onClick={() => void forward()} aria-label={t("friendRace.share")} title={t("friendRace.share")} data-testid="race-forward">
                   <Share2 className="size-4" aria-hidden="true" />
                 </Button>
               )}

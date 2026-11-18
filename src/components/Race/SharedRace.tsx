@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
-import { useBestTimes } from "../../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory } from "../../hooks/useSolveHistory";
 import { useRaceName } from "../../hooks/useRaceName";
 import type { RaceSolve } from "../../lib/friendRace";
 import { loadViewerRace } from "../../lib/viewerRace";
@@ -50,6 +50,9 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
   const ownName = useRaceName();
   const { user, loading } = useAuth();
   const best = useBestTimes()[puzzleKey];
+  // "Not solved" is only known once a signed-in viewer's history has loaded.
+  const history = useSolveHistory();
+  const unsolved = typeof best !== "number" && !(history.signedIn && history.loading);
   const [shown, setShown] = useState<Shown | null>(null);
   const userId = user?.id;
 
@@ -92,7 +95,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
   if (!shown) return null;
   return (
     <Suspense fallback={null}>
-      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={shown.clip && onSolve && typeof best !== "number" ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
+      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={shown.clip && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
     </Suspense>
   );
 }
