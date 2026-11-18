@@ -1,8 +1,7 @@
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { PageShell } from "../../components/PageShell";
-import { Card } from "../../components/ui";
+import { Card, TransitionLink } from "../../components/ui";
 import { LEGAL_CONTENT, LEGAL_LAST_UPDATED, type LegalDoc } from "./legalContent";
 
 interface LegalPageProps {
@@ -49,13 +48,13 @@ export function LegalPage({ kind }: LegalPageProps) {
             {(["privacy", "terms", "support", "copyright"] as const)
               .filter((other) => other !== kind)
               .map((other) => (
-                <Link
+                <TransitionLink
                   key={other}
                   to={`/${other}`}
                   className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-500 focus-visible:outline-2 focus-visible:outline-brand-500"
                 >
                   {t(`legal.${other}`)}
-                </Link>
+                </TransitionLink>
               ))}
           </nav>
         </article>

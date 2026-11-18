@@ -19,6 +19,7 @@ import { tStatic } from "../i18n/i18n";
 import { track } from "../lib/analytics";
 import type { DailySlot } from "../lib/dailyFeed";
 import type { Puzzle } from "../types/puzzle";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 /** What picking a puzzle means: host it fresh (name → lobby), or make it the room's next game. */
 export type PickerIntent = "race" | "next";
@@ -44,7 +45,8 @@ export function pickerPath(intent: PickerIntent): string {
  */
 export function PuzzlePickerScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  const goBack = useNavigate();
   const [params] = useSearchParams();
   const intent: PickerIntent = params.get("intent") === "next" ? "next" : "race";
   const { user } = useAuth();
@@ -106,7 +108,7 @@ export function PuzzlePickerScreen() {
   );
 
   return (
-    <PageShell width="5xl" bar={{ backLabel: t("picker.back"), onBack: () => navigate(-1) }}>
+    <PageShell width="5xl" bar={{ backLabel: t("picker.back"), onBack: () => goBack(-1) }}>
       <div className="pb-5 pt-4 text-center sm:pt-6">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("picker.title")}</h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">

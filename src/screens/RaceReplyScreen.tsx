@@ -1,9 +1,9 @@
 import { useRaceName } from "../hooks/useRaceName";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flag, Loader2, PlayCircle, Reply } from "lucide-react";
-import { Button, Card, buttonClass } from "../components/ui";
+import { Button, Card, TransitionLink, buttonClass } from "../components/ui";
 import { FlowPage } from "../components/Flow";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { replyPuzzleLabel, replyVerdict } from "../components/Race/RaceRepliesCard";
@@ -89,9 +89,9 @@ export function RaceReplyScreen() {
   if (state.kind === "missing") {
     return (
       <FlowPage title={t("raceReplies.missingTitle")} subtitle={t("raceReplies.missingBody")} backLabel={t("common.back")} onBack={() => history.back()}>
-        <Link to="/menu" className={buttonClass("primary", "lg", "w-full")}>
+        <TransitionLink to="/menu" className={buttonClass("primary", "lg", "w-full")}>
           {t("completion.backToMenu")}
-        </Link>
+        </TransitionLink>
       </FlowPage>
     );
   }
@@ -121,10 +121,10 @@ export function RaceReplyScreen() {
           </Button>
         )}
         {raceBack && (
-          <Link to={raceBack} className={buttonClass(solves.length ? "secondary" : "primary", "lg", "w-full")}>
+          <TransitionLink to={raceBack} className={buttonClass(solves.length ? "secondary" : "primary", "lg", "w-full")}>
             <Flag className="size-4" aria-hidden="true" />
             {t("challenge.raceButton", { name: reply.name })}
-          </Link>
+          </TransitionLink>
         )}
       </Card>
       {watching && solves.length > 0 && puzzle && <ReplayDialog puzzle={puzzle} solves={solves} onClose={() => setWatching(false)} />}

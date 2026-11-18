@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { PuzzleImporter } from "../components/PuzzleImporter";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,10 +11,11 @@ import {
 } from "../lib/puzzleService";
 import { tStatic } from "../i18n/i18n";
 import type { Puzzle } from "../types/puzzle";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function HostImportScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { user } = useAuth();
   const game = useGame();
   const mp = useMultiplayerContext();

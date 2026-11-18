@@ -7,6 +7,7 @@ import "../i18n/i18n";
 /** The page a player's "add me" link opens, over a mocked account, friends list and profile lookup. */
 const navigate = vi.fn();
 vi.mock("react-router", async () => ({ ...(await vi.importActual<typeof import("react-router")>("react-router")), useNavigate: () => navigate }));
+vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/supabaseClient", () => ({ supabase: {} }));
 const track = vi.fn();
 vi.mock("../lib/analytics", () => ({ track: (...a: unknown[]) => track(...a) }));

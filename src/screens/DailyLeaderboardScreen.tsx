@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
@@ -50,6 +50,7 @@ import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
 import type { Puzzle } from "../types/puzzle";
 import { dailyPath } from "../lib/dailyChallenge";
 import { readFriendsOnly, subscribeFriendsOnly, writeFriendsOnly } from "../lib/boardPrefs";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 /** The viewer's own solve in a replay, as on the play screen. */
 const MY_REPLAY_COLOR = "#3a6bf0";
@@ -326,7 +327,7 @@ interface SlotBoardProps {
 function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardProps) {
   const { t } = useTranslation();
   const ownName = useRaceName();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { user } = useAuth();
   const game = useGame();
   const bestTimes = useBestTimes();

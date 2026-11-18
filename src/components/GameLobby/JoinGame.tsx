@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
 import { Loader2, Tv } from "lucide-react";
 import { loadPlayerName } from "../../lib/playerName";
 import { LegalLinks } from "../LegalLinks";
 import { FlowPage, TextField } from "../Flow";
-import { Button, buttonClass } from "../ui";
+import { Button, TransitionLink, buttonClass } from "../ui";
 
 interface JoinGameProps {
   onJoin: (code: string, displayName: string) => void;
@@ -177,13 +176,13 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
       </form>
 
       <div className="mt-6 border-t border-line pt-4">
-        <Link
+        <TransitionLink
           to={code.length === CODE_LENGTH ? `/watch/${code}` : "/watch"}
           className={buttonClass("ghost", "md", "w-full")}
         >
           <Tv className="size-4.5" aria-hidden="true" />
           {t("spectator.join")}
-        </Link>
+        </TransitionLink>
       </div>
       <LegalLinks className="mt-2" />
     </FlowPage>

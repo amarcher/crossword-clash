@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { Play, Trash2 } from "lucide-react";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useSoloProgress } from "../hooks/useSoloProgress";
@@ -10,11 +9,12 @@ import { loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { todayKey } from "../lib/dailyLeaderboard";
 import { Card, Button, Eyebrow } from "./ui";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function SoloContinue() {
   const { t } = useTranslation();
   const game = useGame();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const store = useSoloProgress();
   const records = Object.values(store).sort((a, b) => b.updatedAt - a.updatedAt);
   const [expanded, setExpanded] = useState(false);

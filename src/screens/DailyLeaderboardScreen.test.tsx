@@ -15,6 +15,7 @@ vi.mock("react-router", async () => {
   const actual = await vi.importActual<typeof import("react-router")>("react-router");
   return { ...actual, useNavigate: () => navigate, useParams: () => ({}) };
 });
+vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 
 // A configured client, so the board takes the online path (the I/O itself is mocked below).
 vi.mock("../lib/supabaseClient", () => ({ supabase: {} }));

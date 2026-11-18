@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import { JoinGame } from "../components/GameLobby";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccountContext } from "../contexts/AccountContext";
@@ -9,9 +9,10 @@ import { friendsEnabled, notifyRoomJoined } from "../lib/friends";
 import { clearMpSession } from "../lib/sessionPersistence";
 import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function JoinScreen() {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const typedCode = (useLocation().state as { auto?: boolean } | null)?.auto === true;
   const { user, loading: authLoading } = useAuth();
   const game = useGame();

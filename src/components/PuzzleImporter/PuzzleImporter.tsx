@@ -1,5 +1,4 @@
 import { useState, useCallback, type ReactNode } from "react";
-import { Link } from "react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { ArrowRight, ExternalLink, FileUp, Loader2, Newspaper, Puzzle as PuzzleIcon } from "lucide-react";
 import { parse } from "@xwordly/xword-parser";
@@ -9,6 +8,7 @@ import { NytRecommendation } from "../NytRecommendation";
 import { AdSlot } from "../AdSlot";
 import type { Puzzle } from "../../types/puzzle";
 import { nativeNytImportAvailable } from "../../lib/nativeNytImport";
+import { TransitionLink } from "../ui";
 
 interface PuzzleImporterProps {
   onPuzzleLoaded: (puzzle: Puzzle, fileBuffer?: ArrayBuffer) => void;
@@ -64,7 +64,7 @@ function SourceCard({
     </>
   );
   if (link.to) {
-    return <Link to={link.to} className={IMPORTER_CARD}>{body}</Link>;
+    return <TransitionLink to={link.to} className={IMPORTER_CARD}>{body}</TransitionLink>;
   }
   return (
     <a href={link.href} target="_blank" rel="noopener noreferrer" className={IMPORTER_CARD}>
@@ -149,7 +149,7 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel, title, subti
               i18nKey="importer.rightsNote"
               components={{
                 anchor: (
-                  <Link
+                  <TransitionLink
                     to="/copyright"
                     className="underline decoration-line underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-500"
                   />

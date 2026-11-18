@@ -7,10 +7,12 @@ import { FlowPage } from "../components/Flow";
 import { useGame } from "../contexts/GameContext";
 import { listenForImportedPuzzle, readPuzzleFromClipboard } from "../lib/puzzleUrl";
 import { emitToast } from "../lib/toastBus";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function ImportingScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  const redirect = useNavigate();
   const game = useGame();
 
   // The opening tab (the NYT page) keeps its postMessage listener alive for
@@ -22,13 +24,13 @@ export function ImportingScreen() {
     listenForImportedPuzzle().then((puzzle) => {
       if (puzzle) {
         game.setUrlPuzzle(puzzle);
-        navigate("/puzzle-ready", { replace: true });
+        redirect("/puzzle-ready", { replace: true });
       } else {
         game.setImportFailed(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, [redirect]);
 
   useEffect(() => {
     attemptImport();

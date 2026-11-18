@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CheckCircle2, Newspaper } from "lucide-react";
 import { PageShell } from "../components/PageShell";
@@ -8,6 +7,7 @@ import { useGame } from "../contexts/GameContext";
 import { importNativeNytPuzzle, loadNativeNytImport, nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { isPuzzleDate, nytPuzzleUrl } from "../lib/nytImport";
 import type { NytPuzzleKind } from "../lib/nytImport";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 function newYorkDate(): string {
   const parts = new Intl.DateTimeFormat("en", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -20,7 +20,7 @@ const FIELD =
 export function NytImportScreen() {
   const { t } = useTranslation();
   const game = useGame();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [date, setDate] = useState(newYorkDate);
   const [kind, setKind] = useState<NytPuzzleKind>("daily");
   const [saved, setSaved] = useState(loadNativeNytImport);

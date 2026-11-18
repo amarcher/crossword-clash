@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate, UNSAFE_DataRouterContext } from "react-router";
+import { Navigate, UNSAFE_DataRouterContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
 import { Flag, Pause, X } from "lucide-react";
@@ -59,6 +59,7 @@ import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, re
 import { replyToRace } from "../lib/raceReplies";
 import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 /** The viewer's own solve beside someone else's in a race replay: the brand blue. */
 const MY_REPLAY_COLOR = "#3a6bf0";
@@ -66,7 +67,7 @@ const MY_REPLAY_COLOR = "#3a6bf0";
 export function SoloPlayScreen() {
   const { t, i18n } = useTranslation();
   const ownName = useRaceName();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
   const mp = useMultiplayerContext();

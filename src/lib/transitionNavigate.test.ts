@@ -99,4 +99,32 @@ describe("navigateWithTransition", () => {
     expect(mockWith).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/archive", {});
   });
+
+  it("joins a navigation already on its way to the same target instead of starting a second", async () => {
+    let resolveChunk!: () => void;
+    mockPrefetch.mockReturnValue(new Promise<void>((r) => (resolveChunk = r)));
+    const navigate = vi.fn(async () => {});
+    const first = navigateWithTransition(navigate, "/play/abc", { replace: true });
+    const second = navigateWithTransition(navigate, "/play/abc");
+    resolveChunk();
+    await Promise.all([first, second]);
+    expect(mockWith).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith("/play/abc", { replace: true, flushSync: true });
+  });
+
+  it("navigates again once the first has finished, and at once for another target", async () => {
+    const navigate = vi.fn(async () => {});
+    await navigateWithTransition(navigate, "/menu");
+    await navigateWithTransition(navigate, "/menu");
+    expect(navigate).toHaveBeenCalledTimes(2);
+    let resolveChunk!: () => void;
+    mockPrefetch.mockReturnValueOnce(new Promise<void>((r) => (resolveChunk = r)));
+    const slow = navigateWithTransition(navigate, "/archive");
+    await navigateWithTransition(navigate, "/stats");
+    expect(navigate).toHaveBeenLastCalledWith("/stats", { flushSync: true });
+    resolveChunk();
+    await slow;
+    expect(navigate).toHaveBeenCalledTimes(4);
+  });
 });

@@ -7,10 +7,12 @@ import { buttonClass } from "../../components/ui";
 import { useHostContext } from "../../layouts/HostLayout";
 import { listenForImportedPuzzle, readPuzzleFromClipboard } from "../../lib/puzzleUrl";
 import { emitToast } from "../../lib/toastBus";
+import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 
 export function HostImportingScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  const redirect = useNavigate();
   const host = useHostContext();
 
   // The opening tab (the NYT page) keeps its postMessage listener alive for
@@ -22,13 +24,13 @@ export function HostImportingScreen() {
     listenForImportedPuzzle().then((puzzle) => {
       if (puzzle) {
         host.setUrlPuzzle(puzzle);
-        navigate("/host/puzzle-ready", { replace: true });
+        redirect("/host/puzzle-ready", { replace: true });
       } else {
         host.setImportFailed(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, [redirect]);
 
   useEffect(() => {
     attemptImport();

@@ -1,8 +1,8 @@
-import { Link, Navigate } from "react-router";
+import { Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
 import { TVScreen, TV_QUIET_LINK } from "../../components/Layout/TVScreen";
-import { buttonClass } from "../../components/ui";
+import { TransitionLink, buttonClass } from "../../components/ui";
 import { useHostContext } from "../../layouts/HostLayout";
 
 export function HostPuzzleReadyScreen() {
@@ -21,12 +21,12 @@ export function HostPuzzleReadyScreen() {
     <TVScreen
       footer={
         <>
-          <Link to="/host/import" className={TV_QUIET_LINK}>
+          <TransitionLink to="/host/import" className={TV_QUIET_LINK}>
             {t("puzzleReady.chooseAnother")}
-          </Link>
-          <Link to="/menu" className={TV_QUIET_LINK}>
+          </TransitionLink>
+          <TransitionLink to="/menu" className={TV_QUIET_LINK}>
             {t("completion.backToMenu")}
-          </Link>
+          </TransitionLink>
         </>
       }
     >
