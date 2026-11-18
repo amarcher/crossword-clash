@@ -1,16 +1,23 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import { PuzzleReady } from "../components/PuzzleReady";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { compressPuzzleToHash } from "../lib/puzzleUrl";
 import { useStreaks } from "../hooks/useSolveHistory";
 import { track } from "../lib/analytics";
+import { puzzleIdentity } from "../lib/soloStats";
+import { SharedRace } from "../components/Race/SharedRace";
+import type { PuzzleRef } from "../types/puzzle";
 
 export function PuzzleReadyScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
+  // A shared race's link (DailyPuzzleScreen): the race plays over this page until it is closed.
+  const linked = (useLocation().state as { race?: { id: string; names: string[]; ref: PuzzleRef } } | null)?.race ?? null;
+  const [raceOpen, setRaceOpen] = useState(true);
+  const closeRace = useCallback(() => setRaceOpen(false), []);
 
   // A puzzle reached this screen via the bookmarklet (postMessage/clipboard,
   // tagged origin) or a shared/challenge #puzzle= URL. Report once, and tell
@@ -58,14 +65,17 @@ export function PuzzleReadyScreen() {
   }
 
   return (
-    <PuzzleReady
-      puzzle={game.urlPuzzle}
-      showHostOptions={!!user}
-      nytStreak={nytStreak}
-      onPlaySolo={handlePlaySolo}
-      onHostGame={handleHostGame}
-      onHostOnTV={handleHostOnTV}
-      onBack={handleBack}
-    />
+    <>
+      <PuzzleReady
+        puzzle={game.urlPuzzle}
+        showHostOptions={!!user}
+        nytStreak={nytStreak}
+        onPlaySolo={handlePlaySolo}
+        onHostGame={handleHostGame}
+        onHostOnTV={handleHostOnTV}
+        onBack={handleBack}
+      />
+      {linked && raceOpen && <SharedRace puzzle={game.urlPuzzle} puzzleKey={puzzleIdentity(game.urlPuzzle)} shareId={linked.id} names={linked.names} shareRef={linked.ref} onClose={closeRace} />}
+    </>
   );
 }

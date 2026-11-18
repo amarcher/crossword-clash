@@ -41,7 +41,7 @@ describe("FriendRaceLink", () => {
     mocks.candidates = [{ userId: "ann", username: "ann", seconds: null, friend: true }];
     render(<FriendRaceLink puzzle={puzzle} puzzleKey="k" placement="test" />);
     fireEvent.click(screen.getByRole("button", { name: "Your race with ann" }));
-    await waitFor(() => expect(screen.getByRole("dialog", { name: "The race" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "You vs ann" })).toBeTruthy());
     expect(screen.getAllByTestId("race-lane")).toHaveLength(2);
   });
 });

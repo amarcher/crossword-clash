@@ -69,7 +69,9 @@ export interface RaceLane {
 }
 
 export function raceLane(solve: RaceSolve): RaceLane {
-  const bySquare = settledAt(solve.events);
+  // A time is whole seconds and the last letter can land a fraction after it: no square settles later than the finish.
+  const end = solve.seconds * 1000;
+  const bySquare = new Map([...settledAt(solve.events)].map(([cell, ms]) => [cell, Math.min(ms, end)]));
   return { solve, bySquare, times: [...bySquare.values()].sort((a, b) => a - b) };
 }
 
@@ -113,19 +115,24 @@ export function runningOrder(lanes: readonly RaceLane[], ms: number, total: numb
     });
 }
 
+/** The lanes as a shared clip orders them: most squares won first, so its bars (and the link's names) read as the standings. */
+export function raceShareOrder(lanes: readonly RaceLane[]): number[] {
+  const won = squaresFirst(firstToSquare(lanes), lanes.length, Infinity);
+  return lanes.map((_, i) => i).sort((a, b) => won[b] - won[a] || a - b);
+}
+
 /**
  * The race as a share code (encodeRaceReplay): the clip a shared link plays,
  * the grid filling in the colour of whoever settled each square first, with a
  * bar per solver counting their squares. Solvers are ordered by squares won,
- * so the bars read as the final standings. Colours only: no names and no
- * letters leave with it. Null when it cannot be told (more than eight
+ * so the bars read as the final standings. Colours only: no letters leave
+ * with it, and the names ride on the link (buildPuzzleLink's `who`). Null when it cannot be told (more than eight
  * solvers, nothing settled).
  */
 export function raceShareCode(puzzle: { width: number; height: number; cells: readonly (readonly { solution: string | null }[])[] }, lanes: readonly RaceLane[]): string | null {
   if (lanes.length === 0 || lanes.length > MAX_RACE_PLAYERS) return null;
   const first = firstToSquare(lanes);
-  const won = squaresFirst(first, lanes.length, Infinity);
-  const order = lanes.map((_, i) => i).sort((a, b) => won[b] - won[a] || a - b);
+  const order = raceShareOrder(lanes);
   const claims = [...first].map(([cell, { lane, ms }]) => ({ ms, cell, player: order.indexOf(lane) }));
   if (claims.length === 0) return null;
   const lastMs = Math.max(...claims.map((c) => c.ms));
