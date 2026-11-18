@@ -1,0 +1,7 @@
+<en-US>
+A puzzle now starts behind a 3-2-1 countdown, so the clock never runs before you can see the grid. Start now skips it; Go back leaves nothing started.
+
+Shares send just a link, and the link's preview plays your solve. The Daily Plus can be shared, sent to a friend and raced like any other puzzle; friends without Plus see squares, never letters.
+
+Leaderboard tabs switch without a loading flash, and screens cross-fade.
+</en-US>
