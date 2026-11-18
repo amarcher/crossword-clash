@@ -1,0 +1,7 @@
+<en-US>
+Every Watch opens one race view: the puzzle's name, lanes that stay in place, and each player's count of squares they reached first. A "?" button explains the marks.
+
+A shared race link opens the race, and its preview names the players.
+
+A shared solve opens on the solve: the head-to-head if you have solved the puzzle, or the squares filling in with no letters and a "Let me solve it" button if you have not.
+</en-US>
