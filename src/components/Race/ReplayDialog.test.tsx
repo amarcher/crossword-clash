@@ -65,6 +65,11 @@ describe("ReplayDialog", () => {
   it("gives nothing away from a recording without letters: color only", () => {
     const blind: ReplaySolve = { ...ann, events: ann.events.map(([ms, cell]) => [ms, cell, 1]) };
     render(<ReplayDialog puzzle={puzzle} solves={[blind]} onClose={() => {}} />);
+    // No race to speak of: no place, no squares won, and the header says the letters are held back.
+    expect(screen.getByText("Replayed, letters hidden")).toBeTruthy();
+    expect(screen.getByTestId("race-lane").textContent).toBe("Ann0%A");
+    expect(screen.queryByTestId("race-standing")).toBeNull();
+    expect(screen.queryByTestId("race-share")).toBeNull();
     frame(0);
     frame(10_000);
     expect([...document.querySelectorAll("[data-owner]")].map((c) => c.textContent).join("|")).toBe("|||");

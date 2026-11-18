@@ -1280,6 +1280,9 @@
     "legendLabel": "Cómo leer la carrera",
     "legendLanes": "Parte de la cuadrícula rellena",
     "legendSpeed": "Velocidad {{speed}}×, misma salida",
+    "subtitleHidden": "Repetición, letras ocultas",
+    "legendHidden": "Las letras se ven al resolverlo",
+    "legendSpeedOne": "Velocidad {{speed}}×",
     "legendLanesClip": "Casillas ganadas hasta ahora",
     "sharedSolver": "Jugador {{n}}"
   }

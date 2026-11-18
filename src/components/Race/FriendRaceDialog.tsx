@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, CircleHelp, FastForward, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
+import { Check, CircleHelp, EyeOff, FastForward, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
 import { Button } from "../ui";
 import { CrosswordGrid } from "../CrosswordGrid";
 import { StudioPopover } from "../Studio/StudioPopover";
@@ -80,6 +80,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   // One clock for every solver, whoever is shown: hiding someone never changes the pace.
   const longest = Math.max(1, ...solves.map((s) => s.seconds));
   const speed = replaySpeed(longest);
+  // One solve watched on its own is no race: no places, no squares won, nobody to be first against.
+  const alone = solves.length === 1;
   const endMs = longest * 1000;
   const [ms, setMs] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -170,7 +172,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-muted" data-testid="race-puzzle">{about}</p>
               <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : solves.length === 1 ? t("ghostRace.replayTitle", { name: solves[0].name }) : t("friendRace.title")}</h2>
-              <p className="text-sm text-muted">{solves.length === 1 ? t("friendRace.subtitleOne") : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
+              <p className="text-sm text-muted">{alone ? t(letters ? "friendRace.subtitleOne" : "friendRace.subtitleHidden") : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
             </div>
             <StudioPopover label={t("friendRace.legendLabel")} icon={<CircleHelp className="size-5" aria-hidden="true" />} className="-mt-2 ml-auto shrink-0" large narrow>
               {/* A key, not a paragraph: each mark as it is drawn, and a few words. */}
@@ -189,7 +191,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                     <span className="mx-0.5 grid size-5 shrink-0 place-items-center rounded-[3px] text-[11px] font-bold leading-none text-ink ring-1 ring-inset ring-ink/25" style={{ backgroundColor: blendOnWhite(solve.color, showBoth ? 0.18 : letters ? 0.4 : 0.6) }} aria-hidden="true">
                       {letters && "A"}
                     </span>
-                    {t(showBoth ? "friendRace.legendLetters" : "friendRace.legendFirst", { name: solve.name })}
+                    {t(showBoth ? "friendRace.legendLetters" : alone ? "friendRace.bothBody" : "friendRace.legendFirst", { name: solve.name, b: solve.name })}
                   </li>
                 ))}
                 {showBoth && (
@@ -200,9 +202,15 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                     {t("friendRace.bothBody", { b: b.name })}
                   </li>
                 )}
+                {!letters && (
+                  <li className="flex items-center gap-2.5">
+                    <EyeOff className="mx-1 size-4 shrink-0 text-muted" aria-hidden="true" />
+                    {t("friendRace.legendHidden")}
+                  </li>
+                )}
                 <li className="flex items-center gap-2.5">
                   <FastForward className="mx-1 size-4 shrink-0 text-muted" aria-hidden="true" />
-                  {t("friendRace.legendSpeed", { speed })}
+                  {t(alone ? "friendRace.legendSpeedOne" : "friendRace.legendSpeed", { speed })}
                 </li>
               </ul>
             </StudioPopover>
@@ -260,14 +268,16 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   return (
                     <li key={solve.id} data-testid="race-lane">
                       <div className="flex items-baseline gap-2 text-xs">
-                        <span className="w-3 shrink-0 font-mono tabular-nums text-muted">{place + 1}</span>
+                        {!alone && <span className="w-3 shrink-0 font-mono tabular-nums text-muted">{place + 1}</span>}
                         <span className="min-w-0 flex-1 truncate font-semibold">{solve.name}</span>
                         {/* Squares this solver was first to, so far: the grid's count, on the solver's own row. */}
-                        <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center font-mono tabular-nums text-muted">
-                          <span className="size-2.5 shrink-0 rounded-[2px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(solve.color, 0.4) }} aria-hidden="true" />
-                          <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
-                          {counts[i]}
-                        </span>
+                        {!alone && (
+                          <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center font-mono tabular-nums text-muted">
+                            <span className="size-2.5 shrink-0 rounded-[2px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(solve.color, 0.4) }} aria-hidden="true" />
+                            <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
+                            {counts[i]}
+                          </span>
+                        )}
                         {!clip && (
                           <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
                             {done && <Check className="size-3.5" aria-hidden="true" />}
@@ -349,7 +359,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
           <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
-          {shareRef && !clip && (
+          {shareRef && !clip && !alone && (
             <Button variant="primary" size="sm" onClick={() => void share()} disabled={sharing} data-testid="race-share">
               <Share2 className="size-4" aria-hidden="true" />
               {t("friendRace.share")}

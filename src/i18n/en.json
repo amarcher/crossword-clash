@@ -1280,6 +1280,9 @@
     "legendLabel": "How to read the race",
     "legendLanes": "Share of the grid filled",
     "legendSpeed": "{{speed}}× speed, same start",
+    "subtitleHidden": "Replayed, letters hidden",
+    "legendHidden": "Letters show once you solve it",
+    "legendSpeedOne": "{{speed}}× speed",
     "legendLanesClip": "Squares won so far",
     "sharedSolver": "Solver {{n}}"
   }
