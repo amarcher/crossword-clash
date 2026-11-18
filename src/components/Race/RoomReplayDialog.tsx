@@ -18,6 +18,9 @@ interface RoomReplayDialogProps {
   playerColorMap: Record<string, string>;
   /** The TV's finish screen is on the dark stage. */
   darkMode?: boolean;
+  /** In place of "Race replay" and its line, when the replay is not a room's (SharedRace). */
+  title?: string;
+  subtitle?: string;
   onClose: () => void;
 }
 
@@ -29,7 +32,7 @@ const NO_HIGHLIGHT = new Set<string>();
  * grows. Sped up like a solo replay (race.ts). Offered after the finish, on
  * the phones and the TV.
  */
-export function RoomReplayDialog({ puzzle, replay, players, playerColorMap, darkMode, onClose }: RoomReplayDialogProps) {
+export function RoomReplayDialog({ puzzle, replay, players, playerColorMap, darkMode, title, subtitle, onClose }: RoomReplayDialogProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -77,8 +80,8 @@ export function RoomReplayDialog({ puzzle, replay, players, playerColorMap, dark
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`lf-pop-in relative max-h-full w-fit max-w-full overflow-y-auto rounded-2xl border p-5 shadow-overlay ${panel}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{t("roomReplay.title")}</h2>
-            <p className={`text-sm ${sub}`}>{t("roomReplay.subtitle", { time: formatDuration(seconds), speed })}</p>
+            <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{title ?? t("roomReplay.title")}</h2>
+            <p className={`text-sm text-balance ${sub}`}>{subtitle ?? t("roomReplay.subtitle", { time: formatDuration(seconds), speed })}</p>
           </div>
           <button type="button" onClick={onClose} aria-label={t("ghostRace.close")} className={`-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-xl focus-visible:outline-2 focus-visible:outline-brand-500 ${closeTone}`}>
             <X className="size-5" aria-hidden="true" />

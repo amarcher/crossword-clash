@@ -1271,6 +1271,8 @@
     "short_one": "Tu carrera con {{name}}",
     "short_other": "Tu carrera con {{count}} amigos",
     "subtitleOne": "Cómo resolvió {{name}} {{title}}. A velocidad {{speed}}×.",
-    "shareTooMany": "Un clip compartido muestra hasta {{max}} personas. Oculta algunas y vuelve a compartir."
+    "shareTooMany": "Un clip compartido muestra hasta {{max}} personas. Oculta algunas y vuelve a compartir.",
+    "sharedSubtitle": "La carrera que te han enviado: cada casilla toma el color de quien la rellenó primero. Resuélvelo para ver las letras.",
+    "sharedSolver": "Jugador {{n}}"
   }
 }

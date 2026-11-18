@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Flag, Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRaceCandidates } from "../../hooks/useRace";
-import { fetchOwnSolveTrace, loadTrace } from "../../lib/race";
-import { fetchFriendRace, raceSolves, type RaceSolve } from "../../lib/friendRace";
+import type { RaceSolve } from "../../lib/friendRace";
+import { loadViewerRace } from "../../lib/viewerRace";
 import { track } from "../../lib/analytics";
 import type { Puzzle, PuzzleRef } from "../../types/puzzle";
 
@@ -40,14 +40,10 @@ export function FriendRaceLink({ puzzle, puzzleKey, seconds, shareRef, placement
     if (loading || !user) return;
     setLoading(true);
     try {
-      const kept = loadTrace(puzzleKey);
-      const [found, mine] = await Promise.all([fetchFriendRace(puzzleKey), fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null)]);
-      if (found.friends.length === 0) return;
-      // The account's kept recording, or this device's when the solve was never filed.
-      const own = mine && mine.events.length > 0 ? mine : typeof seconds === "number" && kept && !kept.partial && kept.events.length > 0 ? { seconds, events: kept.events } : null;
-      const solves = raceSolves(found, own ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
-      setRace({ solves, letters: found.withLetters });
-      track("friend_race_opened", { placement, racers: solves.length, own: !!own });
+      const found = await loadViewerRace(user.id, puzzleKey, seconds, t("ghostRace.you"));
+      if (!found) return;
+      setRace({ solves: found.solves, letters: found.letters });
+      track("friend_race_opened", { placement, racers: found.solves.length, own: found.own });
     } catch (err) {
       console.warn("The race:", err);
     } finally {

@@ -1271,6 +1271,8 @@
     "short_one": "Your race with {{name}}",
     "short_other": "Your race with {{count}} friends",
     "subtitleOne": "{{name}}'s solve of {{title}}. Played at {{speed}}× speed.",
-    "shareTooMany": "A shared clip holds up to {{max}} people. Hide a few and share again."
+    "shareTooMany": "A shared clip holds up to {{max}} people. Hide a few and share again.",
+    "sharedSubtitle": "The race someone shared: each square takes the colour of whoever filled it first. Solve it to see the letters.",
+    "sharedSolver": "Solver {{n}}"
   }
 }

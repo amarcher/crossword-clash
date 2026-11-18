@@ -111,7 +111,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     try {
       const id = filed.current?.code === shareCode ? filed.current.id : await createReplayShare(shareCode);
       if (id) filed.current = { code: shareCode, id };
-      const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined });
+      const url = buildPuzzleLink(SHARE_URL, shareRef, { replay: id ?? undefined, race: lanes.length });
       const body = t("friendRace.shareText", { title: puzzle.title, count: lanes.length });
       const result = await shareText({ text: `${body}\n${url}`, body, url, title: t("friendRace.title") }, await runtimeDeps());
       if (result.outcome === "dismissed") return;

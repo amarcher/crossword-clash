@@ -51,6 +51,8 @@ export type AnalyticsEvent =
   | "friend_race_opened"
   /** The race shared from its dialog. Params `method`, `racers`, `clip`: the link carries the clip. */
   | "friend_race_shared"
+  /** A shared race's link opened (SharedRace). Params `view`: "race" (the viewer's own friends' race) or "clip" (the link's colours-only clip), `racers`. */
+  | "shared_race_opened"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"
   /** "Send X your solve" after racing a shared link's sender. Params `method`, `outcome`, `verdict` (beat | lost | tied). */

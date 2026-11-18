@@ -18,6 +18,7 @@ import type { PuzzleRef } from "../types/puzzle";
 const BEAT_PARAM = "beat";
 const BY_PARAM = "by";
 const REPLAY_PARAM = "r";
+const RACE_PARAM = "race";
 const MAX_NAME_LENGTH = 40;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -39,6 +40,8 @@ export interface DailyLinkInput {
   name?: string;
   /** The solve's replay share ID (replayShare.ts): the link's preview plays it (api/share.ts → og:video). */
   replay?: string;
+  /** The link is to the race (friendRace.ts), not a solve to beat: how many solvers its clip holds. */
+  race?: number;
 }
 
 /** `https://crosswordclash.com/daily/2026-10-20/mini?beat=102&by=Archer`. */
@@ -56,7 +59,7 @@ export function puzzleRefPath(ref: PuzzleRef): string {
  * community puzzle's `/puzzles/ab12cd34?beat=102&by=Archer&r=…`, which
  * CommunityPuzzleScreen turns into the same challenge.
  */
-export function buildPuzzleLink(origin: string, ref: PuzzleRef, input: Pick<DailyLinkInput, "seconds" | "name" | "replay">): string {
+export function buildPuzzleLink(origin: string, ref: PuzzleRef, input: Pick<DailyLinkInput, "seconds" | "name" | "replay" | "race">): string {
   const base = origin.replace(/\/+$/, "");
   const params = new URLSearchParams();
   if (input.seconds !== undefined && Number.isFinite(input.seconds)) {
@@ -64,7 +67,10 @@ export function buildPuzzleLink(origin: string, ref: PuzzleRef, input: Pick<Dail
   }
   const name = (input.name ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
   if (name) params.set(BY_PARAM, name);
-  if (input.replay && /^[A-Za-z0-9_-]{11}$/.test(input.replay)) params.set(REPLAY_PARAM, input.replay);
+  const hasReplay = !!input.replay && /^[A-Za-z0-9_-]{11}$/.test(input.replay);
+  if (hasReplay) params.set(REPLAY_PARAM, input.replay as string);
+  // Only beside its clip: the count is what the link's preview says, the clip is what it opens.
+  if (hasReplay && input.race !== undefined && Number.isInteger(input.race) && input.race >= 1 && input.race <= 8) params.set(RACE_PARAM, String(input.race));
   const query = params.toString();
   return `${base}${puzzleRefPath(ref)}${query ? `?${query}` : ""}`;
 }
@@ -90,6 +96,23 @@ export function parseDailyChallenge(search: string, fallbackName: string): Chall
     const name = (params.get(BY_PARAM) ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LENGTH);
     const replay = params.get(REPLAY_PARAM) ?? "";
     return { name: name || fallbackName, seconds, ...(/^[A-Za-z0-9_-]{11}$/.test(replay) ? { replay } : {}) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The clip a link carries without a time to beat (`?r=<share id>`): the race
+ * someone shared (FriendRaceDialog), which the link opens on arrival
+ * (SharedRace). Links sent before `race` was added carry the ID alone, so the
+ * ID is enough. Null when there is none, or the link is a challenge.
+ */
+export function parseRaceLink(search: string): string | null {
+  try {
+    const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+    if (params.get(BEAT_PARAM) != null) return null;
+    const replay = params.get(REPLAY_PARAM) ?? "";
+    return /^[A-Za-z0-9_-]{11}$/.test(replay) ? replay : null;
   } catch {
     return null;
   }

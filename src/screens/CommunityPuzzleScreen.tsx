@@ -16,7 +16,8 @@ import { authorPath, fetchCommunityPuzzle, puzzlePath, toPlayablePuzzle, type Co
 import { hideAuthor, unhideAuthor } from "../lib/hiddenAuthors";
 import { shareOrigin } from "../lib/shareOrigin";
 import { getProgress } from "../lib/soloProgress";
-import { parseDailyChallenge } from "../lib/dailyChallenge";
+import { parseDailyChallenge, parseRaceLink } from "../lib/dailyChallenge";
+import { SharedRace } from "../components/Race/SharedRace";
 import { formatDuration } from "../lib/soloStats";
 import { emitToast } from "../lib/toastBus";
 
@@ -89,6 +90,11 @@ export function CommunityPuzzleScreen() {
     setUrlChallenge({ ...challenge, ref: { shortId } });
     replaceRoute("/challenge", { replace: true });
   }, [puzzle, challenge, row?.status, shortId, setUrlPuzzle, setUrlChallenge, replaceRoute]);
+
+  // A shared race (`?r=…` with no time to beat) plays over this page until it is closed.
+  const raceLink = useMemo(() => (challenge ? null : parseRaceLink(params.toString())), [challenge, params]);
+  const [raceOpen, setRaceOpen] = useState(true);
+  const closeRace = useCallback(() => setRaceOpen(false), []);
 
   const hidden = useHiddenAuthors();
   const bestTimes = useBestTimes();
@@ -327,6 +333,7 @@ export function CommunityPuzzleScreen() {
     <PageShell as="main" width="2xl" bar={{ backLabel: t("community.title"), backTo: tv ? withTvIntent("/puzzles") : "/puzzles" }}>
       {body}
       {reporting && row && <ReportDialog puzzleId={row.id} onClose={() => setReporting(false)} />}
+      {raceLink && raceOpen && puzzle && row?.status === "published" && <SharedRace puzzle={puzzle} puzzleKey={row.puzzle_key} shareId={raceLink} shareRef={{ shortId }} onClose={closeRace} />}
     </PageShell>
   );
 }

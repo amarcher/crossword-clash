@@ -73,7 +73,7 @@ describe("FriendRaceDialog", () => {
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
     });
     expect(share.create).toHaveBeenCalledTimes(1);
-    expect(share.send.mock.calls[0][0]).toMatchObject({ url: "https://crosswordclash.com/daily/2026-11-16/mini?r=abcdefghijk" });
+    expect(share.send.mock.calls[0][0]).toMatchObject({ url: "https://crosswordclash.com/daily/2026-11-16/mini?r=abcdefghijk&race=3" });
     expect(screen.getByRole("status").textContent).toBe("Link copied — paste it anywhere");
     cleanup();
 

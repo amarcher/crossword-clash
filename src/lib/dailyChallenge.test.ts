@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDailyLink, dailyPath, isDailyDay, parseDailyChallenge, parseDailyRoute } from "./dailyChallenge";
+import { buildDailyLink, buildPuzzleLink, dailyPath, isDailyDay, parseDailyChallenge, parseDailyRoute, parseRaceLink } from "./dailyChallenge";
 
 describe("buildDailyLink", () => {
   it("builds the short date link with the ghost time and name", () => {
@@ -65,5 +65,24 @@ describe("parseDailyChallenge", () => {
     expect(parseDailyChallenge("?beat=fast", "A friend")).toBeNull();
     expect(parseDailyChallenge("?beat=-3", "A friend")).toBeNull();
     expect(parseDailyChallenge("?beat=1.5", "A friend")).toBeNull();
+  });
+});
+
+describe("a shared race's link", () => {
+  it("carries the clip and how many are in it, and is read back as a race", () => {
+    const url = buildPuzzleLink("https://crosswordclash.com", { day: "2026-11-17", slot: "mini" }, { replay: "yESHp2hxuzp", race: 2 });
+    expect(url).toBe("https://crosswordclash.com/daily/2026-11-17/mini?r=yESHp2hxuzp&race=2");
+    expect(parseRaceLink(new URL(url).search)).toBe("yESHp2hxuzp");
+  });
+
+  it("leaves the count off without a clip, and reads an older link by its clip alone", () => {
+    expect(buildPuzzleLink("https://x.test", { shortId: "ab12cd34" }, { race: 2 })).toBe("https://x.test/puzzles/ab12cd34");
+    expect(parseRaceLink("?r=yESHp2hxuzp")).toBe("yESHp2hxuzp");
+  });
+
+  it("is not a challenge link, or a link without a clip", () => {
+    expect(parseRaceLink("?beat=102&by=Archer&r=yESHp2hxuzp")).toBeNull();
+    expect(parseRaceLink("?r=nope")).toBeNull();
+    expect(parseRaceLink("")).toBeNull();
   });
 });
