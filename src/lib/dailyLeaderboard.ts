@@ -410,7 +410,7 @@ export async function fetchDailyLeaderboard(
       .eq("day", day)
       .eq("slot", slot);
     if (onlyUsers) query = query.in("user_id", [...onlyUsers]);
-    const { data, error } = await query.order("seconds", { ascending: true }).limit(limit);
+    const { data, error } = await query.order("seconds", { ascending: true }).order("created_at", { ascending: true }).limit(limit);
     if (error || !data) return [];
     return rankEntries(
       data.map((r) => ({

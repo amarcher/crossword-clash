@@ -142,7 +142,7 @@
     "chooseAnother": "Elegir otro crucigrama",
     "importedBadge": "Crucigrama importado",
     "by": "por {{author}}",
-    "dimensions": "{{width}}×{{height}} · {{acrossCount}} →, {{downCount}} ↓",
+    "dimensions": "{{width}}×{{height}} · {{acrossCount}} horizontales, {{downCount}} verticales",
     "hostGame": "Crear una sala",
     "connecting": "Conectando al servidor…",
     "friendsHeading": "O juega con amigos",
@@ -229,8 +229,8 @@
     "solveAgainConfirm": "Borrar la cuadrícula"
   },
   "cluePanel": {
-    "across": "→",
-    "down": "↓"
+    "across": "Horizontales",
+    "down": "Verticales"
   },
   "clueSheet": {
     "ariaLabel": "Lista de pistas"
@@ -240,10 +240,10 @@
     "nextClue": "Siguiente pista",
     "directionLabel": "Dirección: {{direction}}, toca para cambiar",
     "tapToStart": "Toca una casilla para empezar",
-    "directionAbbrevAcross": "→",
-    "directionAbbrevDown": "↓",
-    "directionAcross": "→",
-    "directionDown": "↓"
+    "directionAbbrevAcross": "H",
+    "directionAbbrevDown": "V",
+    "directionAcross": "Horizontal",
+    "directionDown": "Vertical"
   },
   "scoreboard": {
     "cells": "{{score}}/{{total}} casillas",

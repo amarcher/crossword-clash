@@ -185,6 +185,11 @@ interface CompletionModalProps {
   onNextPuzzle?: () => void;
   onBackToMenu?: () => void;
   /**
+   * The close control, Escape and a tap outside: dismiss the dialog and stay on
+   * the solved grid. Without it they leave the way "Back to menu" does.
+   */
+  onClose?: () => void;
+  /**
    * Anonymous finisher in a build that offers accounts: a quiet "keep this
    * solve" nudge that opens the sign-in sheet. Omit for signed-in solvers and
    * wherever accounts aren't on offer, so the modal shows nothing extra.
@@ -240,6 +245,7 @@ export function CompletionModal({
   puzzleSize,
   onNextPuzzle,
   onBackToMenu,
+  onClose,
   onSignIn,
   onSeeStats,
   darkMode,
@@ -247,9 +253,10 @@ export function CompletionModal({
   const { t, i18n } = useTranslation();
   const modalRef = useRef<HTMLDivElement | null>(null);
 
+  const dismiss = onClose ?? onBackToMenu;
   const handleEscape = useCallback(() => {
-    onBackToMenu?.();
-  }, [onBackToMenu]);
+    dismiss?.();
+  }, [dismiss]);
 
   useFocusTrap(open ? modalRef : { current: null }, handleEscape);
 
@@ -420,7 +427,7 @@ export function CompletionModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-stage/60 backdrop-blur-[2px]"
-        onClick={onBackToMenu}
+        onClick={dismiss}
       />
 
       {/* Confetti — mounted only during the one-shot celebration window */}
@@ -435,14 +442,15 @@ export function CompletionModal({
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
       >
-        {/* The way out, where a dialog's close is expected. "Back to menu" at the
+        {/* The close, where a dialog's close is expected: on the play screens it
+            dismisses to the solved grid (`onClose`), elsewhere it leaves. "Back to menu" at the
             foot of the list stays for readers who scroll; on a phone the modal is
             taller than the screen, so a reader who only wanted out had to find it
             there or hit the sliver of backdrop. */}
-        {onBackToMenu && (
+        {dismiss && (
           <button
             type="button"
-            onClick={onBackToMenu}
+            onClick={dismiss}
             aria-label={t('completion.close')}
             className={`absolute right-3 top-3 grid size-11 place-items-center rounded-xl focus-visible:outline-2 focus-visible:outline-brand-500 ${
               darkMode ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted hover:bg-surface-sunken hover:text-ink"

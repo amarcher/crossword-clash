@@ -94,7 +94,7 @@ export function SpectatorScreen() {
                     <span className="size-4 shrink-0 rounded-full" style={{ backgroundColor: player.color }} aria-hidden />
                     <span className="truncate font-semibold text-white">{player.displayName}</span>
                   </span>
-                  <span className="font-mono tabular-nums text-slate-300">{player.raceSeconds == null ? t("completion.solving") : formatDuration(player.raceSeconds)}</span>
+                  <span className="tabular-nums text-slate-300">{player.raceSeconds == null ? t("completion.solving") : formatDuration(player.raceSeconds)}</span>
                 </div>
               ))}
             </div>
