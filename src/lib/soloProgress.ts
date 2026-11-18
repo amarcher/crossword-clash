@@ -92,9 +92,17 @@ export function withoutProgress(store: SoloProgressStore, key: string): SoloProg
   return rest;
 }
 
+/**
+ * An attempt with a letter in it or time on its clock. One opened and left
+ * before its start countdown ended (SoloStartGate) is not in progress.
+ */
+export function isStarted(record: Pick<SoloProgressRecord, "filled" | "elapsedMs" | "cells">): boolean {
+  return record.filled > 0 || record.elapsedMs > 0 || Object.keys(record.cells).length > 0;
+}
+
 /** The puzzles in progress. */
 export function inProgressKeys(store: SoloProgressStore): Set<string> {
-  return new Set(Object.keys(store));
+  return new Set(Object.values(store).filter(isStarted).map((r) => r.key));
 }
 
 /** The most recently touched record, or null. */
@@ -236,8 +244,13 @@ export type SaveAttemptResult = "saved" | "capacity" | "storage";
 
 /** Save the entire attempt before replacing it. Never evict unfinished work. */
 export function saveAttempt(record: SoloProgressRecord): SaveAttemptResult {
-  const store = loadProgressStore();
-  if (!store[record.key] && Object.keys(store).length >= MAX_PROGRESS_RECORDS) return "capacity";
+  let store = loadProgressStore();
+  if (!store[record.key] && Object.keys(store).length >= MAX_PROGRESS_RECORDS) {
+    // Attempts opened and never started hold nothing and are not listed
+    // anywhere to be removed by hand: they make room first.
+    store = Object.fromEntries(Object.entries(store).filter(([, r]) => isStarted(r)));
+    if (Object.keys(store).length >= MAX_PROGRESS_RECORDS) return "capacity";
+  }
   const next = { ...store, [record.key]: { ...record, version: 2 as const } };
   if (!saveProgressStore(next)) return "storage";
   emitProgress(record.key, next[record.key]);

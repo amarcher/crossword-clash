@@ -1,4 +1,10 @@
 {
+  "soloStart": {
+    "starting_one": "Starting in {{count}}…",
+    "starting_other": "Starting in {{count}}…",
+    "startNow": "Start now",
+    "back": "Go back"
+  },
   "soloPause": {
     "loadError": "This saved puzzle couldn't be loaded. Your progress is still here; try again when you're online.",
     "pause": "Pause",

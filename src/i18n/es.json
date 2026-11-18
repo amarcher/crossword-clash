@@ -1,4 +1,10 @@
 {
+  "soloStart": {
+    "starting_one": "Empieza en {{count}}…",
+    "starting_other": "Empieza en {{count}}…",
+    "startNow": "Empezar ya",
+    "back": "Volver"
+  },
   "soloPause": {
     "loadError": "No se pudo cargar este crucigrama. Tu progreso sigue aquí; inténtalo de nuevo cuando tengas conexión.",
     "pause": "Pausar",
