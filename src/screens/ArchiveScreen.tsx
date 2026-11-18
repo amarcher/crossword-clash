@@ -510,7 +510,7 @@ export function ArchiveScreen() {
                               <Eyebrow className="shrink-0 text-brand-600">{t(SLOT_EYEBROW[it.slot])}</Eyebrow>
                               <StatusChip item={it} />
                             </div>
-                            <p className="mt-0.5 truncate font-display text-base font-semibold leading-snug text-ink">{it.title}</p>
+                            <p className="mt-0.5 line-clamp-2 font-display text-base font-semibold leading-snug text-ink sm:line-clamp-1">{it.title}</p>
                             <p className="truncate text-xs text-muted tabular-nums">
                               {t("menu.dailyMeta", { width: it.width, height: it.height, count: it.clues })}
                               {/* A phone's row has no room for the theme beside the board link and the buttons: it cut off after a few letters. */}

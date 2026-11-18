@@ -74,7 +74,7 @@ function WebGameLayout({ header, grid, clues, mobileClueBar }: GameLayoutProps) 
       >
         {/* Phones size the grid from stable svh math (keyboard-safe). From md up
             the slot is a size container and the grid fills its shorter side. */}
-        <div className="shrink-0 [--grid-w-offset:1rem] md:flex md:flex-1 md:self-stretch md:min-w-0 md:items-center md:justify-center md:[container-type:size] md:[--native-grid-size:min(100cqw,100cqh)]">
+        <div className="shrink-0 [--grid-w-offset:1rem] md:flex md:flex-1 md:self-stretch md:min-w-0 md:items-start md:justify-center md:[container-type:size] md:[--native-grid-size:min(100cqw,100cqh)]">
           {grid}
         </div>
         {/* On a phone the clue lists run at their full height under the grid and the page (main) scrolls: squeezed into what the grid left, they were cut off mid-line with rows too small to tap. */}

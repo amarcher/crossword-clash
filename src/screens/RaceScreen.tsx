@@ -36,8 +36,8 @@ export function RaceScreen() {
   const friends = useFriends();
 
   const blocks = useMemo(
-    () => raceBlocks({ signedIn: friends.active, friends: friends.friendships.friends.length, invites: friends.openInvites.length, requests: friends.friendships.incoming.length }),
-    [friends.active, friends.friendships.friends.length, friends.openInvites.length, friends.friendships.incoming.length],
+    () => raceBlocks({ signedIn: friends.active, friends: friends.friendships.friends.length, invites: friends.openInvites.length, requests: friends.friendships.incoming.length, puzzle: !!game.urlPuzzle }),
+    [friends.active, friends.friendships.friends.length, friends.openInvites.length, friends.friendships.incoming.length, game.urlPuzzle],
   );
 
   // Start a room: the chip's puzzle goes to the host flow; otherwise the picker chooses one.
@@ -164,7 +164,11 @@ export function RaceScreen() {
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold text-ink">{t("race.startTitle")}</h2>
-              <p className="text-sm text-muted">{t(friends.active && friends.friendships.friends.length > 0 ? "race.startBodyFriends" : "race.startBody")}</p>
+              <p className="text-sm text-muted">
+                {game.urlPuzzle
+                  ? t("race.startBodyPuzzle", { title: game.urlPuzzle.title })
+                  : t(friends.active && friends.friendships.friends.length > 0 ? "race.startBodyFriends" : "race.startBody")}
+              </p>
             </div>
             <Button variant={index === 0 ? "primary" : "secondary"} onClick={() => startRoom(null)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
               {t("race.start")}
@@ -198,7 +202,7 @@ export function RaceScreen() {
         {game.urlPuzzle && (
           <p className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700">
             <span className="truncate">{t("race.racingChip", { title: game.urlPuzzle.title })}</span>
-            <button type="button" onClick={() => game.setUrlPuzzle(null)} className="shrink-0 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-500">
+            <button type="button" onClick={() => game.setUrlPuzzle(null)} className="-my-3 shrink-0 py-3 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-500">
               {t("race.changePuzzle")}
             </button>
           </p>

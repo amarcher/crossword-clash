@@ -140,11 +140,12 @@ export type RaceBlock = "invites" | "friends" | "addFriends" | "start" | "code" 
  * useful block first. A newcomer sees the code; a player with friends sees
  * them; one with invites sees those.
  */
-export function raceBlocks(state: { signedIn: boolean; friends: number; invites: number; requests: number }): RaceBlock[] {
-  if (!state.signedIn) return ["code", "start", "signIn"];
+export function raceBlocks(state: { signedIn: boolean; friends: number; invites: number; requests: number; puzzle?: boolean }): RaceBlock[] {
+  // Arriving from a puzzle's Race friends button: starting its room comes before the code field.
+  if (!state.signedIn) return state.puzzle ? ["start", "code", "signIn"] : ["code", "start", "signIn"];
   // A pending request with no friends yet still needs the friends block: its
   // "N requests" link is where the request is answered.
-  if (state.friends === 0 && state.invites === 0 && state.requests === 0) return ["code", "start", "addFriends"];
+  if (state.friends === 0 && state.invites === 0 && state.requests === 0) return state.puzzle ? ["start", "code", "addFriends"] : ["code", "start", "addFriends"];
   if (state.invites > 0) return ["invites", "friends", "start", "code"];
   return ["friends", "start", "code"];
 }
