@@ -1,0 +1,30 @@
+This build (1.1.3, build 52) is about seeing how each game mode plays, and watching solves. Please check:
+
+1. Game modes: in a room's lobby, the host's mode picker shows a small looping board for Compete, Co-op and Time trial. Players who join see a "Game mode" card with the mode the host picked.
+2. Time trial: everyone solves their own copy, and each square another player has filled shows a folded corner in their colour. The standings show each player's percent filled until they finish.
+3. Race replay: "You vs ..." now plays on one board. Your letters fill in shaded, and the other player's squares show a folded corner, and the replay ends on the whole grid. It should fit the screen with nothing cut off.
+4. Daily leaderboard: the Race button on a row looks like a button. Once you have solved that puzzle it becomes Watch, and plays that player's solve (Plus).
+5. Notifications after signing in or out: if you allowed notifications before signing in to an existing account, invites and friend requests should now reach this device. After signing out, the account's notifications should stop.
+6. Signing out: signing out on one device no longer signs your other devices out.
+7. Sharing an older solve: reopen a puzzle you solved on another device (signed in) and tap Share. It should show the replay clip, not only the coloured squares.
+8. Signed out means empty: sign out and the menu restarts with no streak, solved marks or puzzles in progress, and a "You're signed out" card. Sign back in and they return. (A phone that was already signed out before this build tidies itself after the next sign-in.)
+9. Puzzles in progress follow any account, not only Plus: start a puzzle signed in, then open the same account on another device or the website and continue it.
+10. Settings follow the account: Autocheck and Haptics, hidden community authors and the leaderboard's Everyone / Friends switch are the same on every device you sign in on.
+11. Sign-in buttons: Apple and Google have the same text size, logos lined up.
+12. Hosting a room: Game settings sit right under the player list.
+13. Race buttons on the leaderboard: finish the mini and the midi; both should be raceable by others.
+14. A puzzle across two devices: start a daily on one, finish it on another on the same account.
+15. Daily cards on the menu: label and theme sit in a strip across the top; a long theme reads in full.
+16. Race share video: finish a Compete or Co-op room; the finish screen shows a clip of the grid filling in by colour, and Share sends a link that plays it.
+17. Time trial share: the finish screen shows the clip of your own solve.
+18. Hosting a room: the Compete and Co-op preview fills words forwards.
+19. The race (new): on a daily you and a friend have both solved, open its leaderboard and tap "Watch your race with…". Every solve plays on one clock: lanes show who was ahead, and the grid colours each square by who got there first. Tap a name to hide them. Free, and also on the finish screen and the solved home card.
+20. The race before solving: the leaderboard button plays it in colour only, no letters.
+21. Sharing the race: Share sends the puzzle's link with a colour-only clip.
+22. Finish screen: one Watch button (the race with friends); other solvers' replays are on the leaderboard rows.
+23. TV host (new): host on a tablet nobody is signed in on, with a Plus player in the room. The AI host should talk all game, in one short sentence at a time. Test voice should make sound.
+24. TV replay: after a Compete game, leave the room on the phones, then Watch the replay on the TV: squares in each player's colour, with names and counts.
+25. Last square: whoever types a room game's final letter is credited for it.
+26. After a room game on today's daily, its leaderboard says "Played as a group in …".
+27. A corrected daily reaches the app within about 15 minutes.
+28. Everything from build 42 still applies.

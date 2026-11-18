@@ -94,6 +94,12 @@ clue writer, who rewrote a clue only where one fit; 13 clues across the 30 took 
   clue writer sees the feed's recent clues, and run `pnpm seedgrid:crosscheck` (it reports repeats) and
   `pnpm seedgrid:unrepeat <from> <to>` before the PR; `feedRepeats.test.ts` fails CI otherwise. The
   first run rewrote the repeats on 8 Nov – 26 Dec (table in `artifacts/unrepeat/`).
+- Every clue must fit its own answer (Andrew, 2026-11-16: that day's midi shipped with seven across
+  clues one entry early, and the 25 Nov midi had the same slip waiting). A hand-written clue list
+  that skips one entry and doubles another still has the right count, so nothing mechanical sees it.
+  Run `pnpm seedgrid:fitcheck <from> <to>` before the PR: the model reads every answer against its
+  clue and records each pass in `scripts/seedgrid/fit-ledger.json`; `feedFit.test.ts` fails CI for
+  any daily without a pass for the clues it has now. Editing a clue means running it again.
 - Keep two weeks ahead: stock runs to 2026-12-26 (all three slots and the Plus bonus); the next batch should start by 2026-12-12 and builds four lanes: mini, midi, large and the bonus 11×11 (`docs/daily-bonus-queue.md`).
 - The 13–26 Dec minis (built 2026-11-04, after each day's large) rejected the large's answers of
   4+ letters through the new `--reject` flag. A free `--theme` brainstorm proposed three seeds for

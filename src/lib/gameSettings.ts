@@ -1,4 +1,5 @@
 import type { GameSettings, RaceMode } from "../types/game";
+import type { PuzzleRef } from "../types/puzzle";
 
 export const WRONG_ANSWER_TIMEOUT_OPTIONS = [
   { label: "Off", value: 0 },
@@ -26,4 +27,18 @@ export function resolveRaceMode(
 ): RaceMode {
   const mode = settings?.raceMode;
   return mode === "coop" || mode === "async" ? mode : "versus";
+}
+
+/**
+ * The room puzzle's link from its settings, checked: settings arrive from the
+ * database and from other players' broadcasts, so anything that is not a
+ * daily's day and slot or a community puzzle's short ID is no link.
+ */
+export function resolvePuzzleRef(settings: unknown): PuzzleRef | undefined {
+  const ref = (settings as { puzzleRef?: unknown } | null | undefined)?.puzzleRef;
+  if (!ref || typeof ref !== "object") return undefined;
+  const { day, slot, shortId } = ref as { day?: unknown; slot?: unknown; shortId?: unknown };
+  if (typeof shortId === "string" && /^[A-Za-z0-9_-]{4,32}$/.test(shortId)) return { shortId };
+  if (typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) && (slot === "mini" || slot === "midi" || slot === "large")) return { day, slot };
+  return undefined;
 }

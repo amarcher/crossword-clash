@@ -13,6 +13,14 @@ const MAX_W: Record<ShellWidth, string> = {
   "5xl": "max-w-5xl",
   "7xl": "max-w-7xl",
 };
+const MAX_W_MD: Record<ShellWidth, string> = {
+  md: "md:max-w-md",
+  "2xl": "md:max-w-2xl",
+  "3xl": "md:max-w-3xl",
+  "4xl": "md:max-w-4xl",
+  "5xl": "md:max-w-5xl",
+  "7xl": "md:max-w-7xl",
+};
 const MAX_W_LG: Record<ShellWidth, string> = {
   md: "lg:max-w-md",
   "2xl": "lg:max-w-2xl",
@@ -26,12 +34,24 @@ const MAX_W_LG: Record<ShellWidth, string> = {
 export const PAGE_GUTTER = "px-4 md:px-6";
 
 /** The centred column a page lays its content in; the shell puts the site bar in the same one. */
-export function pageColumnClass(width: ShellWidth, widthLg?: ShellWidth): string {
-  return `mx-auto w-full ${MAX_W[width]} ${widthLg ? MAX_W_LG[widthLg] : ""} ${PAGE_GUTTER}`.replace(/\s+/g, " ").trim();
+export function pageColumnClass(width: ShellWidth, widthLg?: ShellWidth, widthMd?: ShellWidth): string {
+  return `mx-auto w-full ${MAX_W[width]} ${widthMd ? MAX_W_MD[widthMd] : ""} ${widthLg ? MAX_W_LG[widthLg] : ""} ${PAGE_GUTTER}`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The site bar's own column: the page's on phones, one fixed width from md up,
+ * so the logo, the back link and the avatar sit in the same place on every
+ * page (and where the menu puts its own) however narrow the content below is.
+ */
+function barColumnClass(width: ShellWidth, widthLg?: ShellWidth, widthMd?: ShellWidth): string {
+  if (width === "7xl" || widthLg === "7xl") return pageColumnClass(width, widthLg, widthMd);
+  return `mx-auto w-full ${MAX_W[width]} md:max-w-5xl ${PAGE_GUTTER}`;
 }
 
 interface PageShellProps {
   width: ShellWidth;
+  /** A wider column from md up: a tablet has room for more than the phone column. */
+  widthMd?: ShellWidth;
   /** A wider column from lg up (the lobby's two-column layout). */
   widthLg?: ShellWidth;
   /** Props for the shared bar, which is always rendered (logo only when empty). */
@@ -51,12 +71,12 @@ interface PageShellProps {
 }
 
 /**
- * Page shell for every screen outside the game and the menu: the site bar and
- * the page content share one `mx-auto max-w-* px-*` column, so the logo's
- * left edge and the right slot's right edge land on the content's edges by
- * construction, whatever width the page chose.
+ * Page shell for every screen outside the game and the menu. On phones the
+ * site bar and the content share one `mx-auto max-w-* px-*` column, so the
+ * bar's edges are the content's. From md up the bar keeps one width across
+ * pages (`barColumnClass`) and the content is centred under it.
  */
-export function PageShell({ width, widthLg, bar, background = "crossword", grow, as = "div", below, children }: PageShellProps) {
+export function PageShell({ width, widthMd, widthLg, bar, background = "crossword", grow, as = "div", below, children }: PageShellProps) {
   const Root = as;
   return (
     <Root
@@ -64,8 +84,10 @@ export function PageShell({ width, widthLg, bar, background = "crossword", grow,
         background === "canvas" ? "bg-canvas" : "crossword-bg"
       } ${grow ? "flex flex-col" : ""}`}
     >
-      <div data-page-column className={`${pageColumnClass(width, widthLg)} ${grow ? "flex flex-1 flex-col" : ""}`}>
+      <div className={`${barColumnClass(width, widthLg, widthMd)} mb-2 md:mb-3`}>
         <SiteBar {...bar} />
+      </div>
+      <div data-page-column className={`${pageColumnClass(width, widthLg, widthMd)} ${grow ? "flex flex-1 flex-col" : ""}`}>
         {children}
       </div>
       {below}

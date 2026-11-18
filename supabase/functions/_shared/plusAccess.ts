@@ -94,6 +94,49 @@ export async function callerWithPlus(req: Request, admin: SupabaseClient = servi
   return { user, plus: await hasEntitlement(admin, user.id) };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The Plus player who covers a room's AI host (Andrew, 2026-11-16: the TV is
+ * usually a tablet nobody is signed in on, so the host ran as the free sample
+ * and stopped two minutes in while a subscriber sat in the room). A request
+ * that names its room (`?game=<id>`) is covered by the first player of that
+ * room, in join order, who holds Plus; the minutes come out of that player's
+ * allowance.
+ *
+ * Only for the room's own devices: the caller must be the game's host (the
+ * TV creates the game) or one of its players, and the room must not be
+ * closed, so naming someone else's room spends nobody's minutes. Null when
+ * there is no such room or nobody in it has Plus.
+ */
+export async function roomSponsor(req: Request, caller: CallerUser | null, admin: SupabaseClient = serviceClient()): Promise<string | null> {
+  if (!caller) return null;
+  let gameId: string | null = null;
+  try {
+    gameId = new URL(req.url).searchParams.get("game");
+  } catch {
+    return null;
+  }
+  if (!gameId || !UUID.test(gameId)) return null;
+  const { data: game, error: gameError } = await admin.from("games").select("host_user_id, status").eq("id", gameId).maybeSingle();
+  if (gameError || !game || game.status === "closed") return null;
+  const { data: players, error: playersError } = await admin.from("players").select("user_id").eq("game_id", gameId).order("created_at", { ascending: true });
+  if (playersError || !players) return null;
+  const ids = players.map((p: { user_id: string }) => p.user_id);
+  if (game.host_user_id !== caller.id && !ids.includes(caller.id)) return null;
+  for (const id of ids) {
+    if (id !== caller.id && (await hasEntitlement(admin, id))) return id;
+  }
+  return null;
+}
+
+/** Whose allowance a narrator request spends: the caller's own Plus, else the room's sponsor, else nobody (the demo). */
+export async function narratorPayer(req: Request, admin: SupabaseClient = serviceClient()): Promise<string | null> {
+  const { user, plus } = await callerWithPlus(req, admin);
+  if (user && plus) return user.id;
+  return roomSponsor(req, user, admin);
+}
+
 function demoRequested(req: Request): boolean {
   try {
     return new URL(req.url).searchParams.get("demo") === "1";
@@ -107,7 +150,8 @@ function demoRequested(req: Request): boolean {
  * the global budget backstop. With PLUS_GATES on:
  *
  *   subscriber → `minutes` taken from the 60-minute allowance (402
- *                allowance_exhausted when it does not fit);
+ *                allowance_exhausted when it does not fit); a room's own
+ *                device is covered by a Plus player in it (roomSponsor);
  *   anyone else → the demo only: a `?demo=1` request on a demo-eligible
  *                endpoint, within the per-IP grant limit (the same bounded
  *                demo as before Plus); otherwise 402 reason "plus".
@@ -117,10 +161,10 @@ function demoRequested(req: Request): boolean {
  */
 export async function narratorGate(req: Request, endpoint: string, minutes: number, admin: SupabaseClient = serviceClient()): Promise<Response | null> {
   if (!plusGatesOn()) return null;
-  const { user, plus } = await callerWithPlus(req, admin);
-  if (user && plus) {
+  const payer = await narratorPayer(req, admin);
+  if (payer) {
     if (minutes <= 0) return null;
-    const result = await consumeAllowance(admin, user.id, "narrator_minutes", minutes, NARRATOR_MINUTES_PER_MONTH);
+    const result = await consumeAllowance(admin, payer, "narrator_minutes", minutes, NARRATOR_MINUTES_PER_MONTH);
     return result.allowed ? null : allowanceExhaustedResponse("narrator_minutes", result, NARRATOR_MINUTES_PER_MONTH);
   }
   return demoOnly(req, endpoint);
@@ -150,7 +194,10 @@ export async function demoOnly(req: Request, endpoint: string): Promise<Response
  * Returns the refusal, or null to proceed. Only for subscribers.
  */
 export async function chargeClaudeCall(admin: SupabaseClient, userId: string): Promise<Response | null> {
-  const calls = await consumeAllowance(admin, userId, "narrator_claude_calls", 1, Number.MAX_SAFE_INTEGER);
+  // "No limit" as the largest value consume_allowance's INTEGER p_limit holds:
+  // Number.MAX_SAFE_INTEGER matched no function signature, the call failed
+  // closed, and every subscriber was told their minutes were spent.
+  const calls = await consumeAllowance(admin, userId, "narrator_claude_calls", 1, 2147483647);
   if (!calls.allowed) return allowanceExhaustedResponse("narrator_minutes", { allowed: false, used: 0, bonus: 0, month: "" }, NARRATOR_MINUTES_PER_MONTH);
   if ((calls.used - 1) % CLAUDE_CALLS_PER_MINUTE !== 0) return null;
   const minutes = await consumeAllowance(admin, userId, "narrator_minutes", 1, NARRATOR_MINUTES_PER_MONTH);

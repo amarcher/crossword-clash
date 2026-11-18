@@ -44,8 +44,15 @@ export type AnalyticsEvent =
   | "bonus_completed"
   /** A solver opened the Stats page from somewhere other than the account page. Param `from` (completion). */
   | "stats_opened"
-  /** A recorded solve was replayed after the finish. Param `racing`: it was one of the ghosts just raced. */
+  | "room_replay_opened"
+  /** A recorded solve was replayed after the finish. Params `racing`: the viewer's own solve played with it; `placement`: "leaderboard" from a board row. */
   | "replay_watched"
+  /** The race (friendRace.ts) opened. Params `racers`, `own`: the viewer's solve is in it; from a daily board `slot`, `past`; from the finish dialog `placement`: "completion". */
+  | "friend_race_opened"
+  /** The race shared from its dialog. Params `method`, `racers`, `clip`: the link carries the clip. */
+  | "friend_race_shared"
+  /** A shared race's link opened (SharedRace). Params `view`: "race" (the viewer's own friends' race) or "clip" (the link's colours-only clip), `racers`. */
+  | "shared_race_opened"
   /** "Race" on a daily board row (race.ts). Params `slot`, `past`. */
   | "leaderboard_race"
   /** "Send X your solve" after racing a shared link's sender. Params `method`, `outcome`, `verdict` (beat | lost | tied). */
@@ -55,6 +62,8 @@ export type AnalyticsEvent =
   | "result_shared"
   | "challenge_created"
   | "challenge_accepted"
+  | "challenge_replay_shown"
+  | "challenge_forwarded"
   | "live_bridge"
   | "leaderboard_viewed"
   | "friend_link_shared"
@@ -113,6 +122,9 @@ export type AnalyticsEvent =
   | "room_invite_opened"
   /** A tap on the Race friends screen. Params `action` (invite-join | challenge | start | join-code | add-friend | sign-in), `signed_in`. */
   | "race_action"
+  /** Our own question before the OS prompt was shown / answered Not now. Param `placement` (first_open | after_daily). */
+  | "push_ask_shown"
+  | "push_ask_declined"
   /** Push (docs/friends-spec.md §7): the OS prompt was shown. Param `placement` (account | completion). */
   | "push_permission_prompted"
   /** The answer to that prompt. Params `placement`, `granted`. */

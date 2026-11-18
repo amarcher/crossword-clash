@@ -27,7 +27,7 @@ export const CluePanel = memo(function CluePanel({
   const downClues = clues.filter((c) => c.direction === "down");
 
   return (
-    <div className="flex flex-col xl:flex-row gap-3 md:gap-5 h-full min-h-0">
+    <div className="flex flex-col xl:flex-row gap-4 md:gap-5 md:h-full md:min-h-0">
       <ClueList
         title={t('cluePanel.across')}
         clues={acrossClues}
@@ -90,10 +90,10 @@ const ClueList = memo(function ClueList({
 
   return (
     <div className="flex-1 min-w-0 flex flex-col min-h-0">
-      <h2 className="font-semibold text-xs uppercase tracking-[0.08em] text-subtle mb-1 md:mb-2 md:px-2 shrink-0">
+      <h2 className="font-semibold text-xs uppercase tracking-[0.08em] text-subtle mb-1 px-2 md:mb-2 shrink-0">
         {title}
       </h2>
-      <ul ref={listRef} className="overflow-y-auto overscroll-contain min-h-0">
+      <ul ref={listRef} className="min-h-0 md:overflow-y-auto md:overscroll-contain">
         {clues.map((clue) => {
           const clueKey = `${clue.direction}-${clue.number}`;
           const isActive =
@@ -116,7 +116,7 @@ const ClueList = memo(function ClueList({
               ref={isActive ? activeRef : undefined}
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClueClick(clue); } }}
-              className={`flex gap-1.5 px-1 py-px md:px-2 md:py-1.5 rounded md:rounded-lg text-xs md:text-[15px] leading-tight md:leading-snug cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+              className={`flex gap-2 px-2 py-2 md:gap-1.5 md:py-1.5 rounded-lg text-sm md:text-[15px] leading-snug cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                 isActive
                   ? "bg-gold-100 text-ink font-medium"
                   : isCompleted && !completedBg
@@ -132,7 +132,7 @@ const ClueList = memo(function ClueList({
               }
               onClick={() => onClueClick(clue)}
             >
-              <span className="font-semibold tabular-nums md:min-w-6 md:text-right">{clue.number}</span>
+              <span className="min-w-5 text-right font-semibold tabular-nums md:min-w-6">{clue.number}</span>
               <span className="min-w-0">{clue.text}</span>
             </li>
           );

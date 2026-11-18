@@ -66,9 +66,17 @@ export function useSolveRecorder({
     if (events.length === 0) return;
     // A keystroke or a reveal changes one square. Several at once is the grid
     // being loaded (saved progress restored): keep recording only if it is the
-    // state the recording already describes.
+    // state the recording already describes, or the one that arrived with it
+    // from another device (soloProgressSync stores a row's recording first).
     if (events.length > 2) {
-      if (!matchesGrid(current, playerCells, width)) current.partial = true;
+      if (!matchesGrid(current, playerCells, width)) {
+        const arrived = loadTrace(current.key);
+        if (arrived && matchesGrid(arrived, playerCells, width)) {
+          trace.current = arrived;
+          return;
+        }
+        current.partial = true;
+      }
     } else {
       current.events = [...current.events, ...events];
       if (current.events.length > MAX_EVENTS) current.partial = true;

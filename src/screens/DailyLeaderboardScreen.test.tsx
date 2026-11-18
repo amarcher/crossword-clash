@@ -8,6 +8,7 @@ import { rankEntries, shiftDay, todayKey, type PendingDailyResult, type RankedDa
 import type { DailyIndexEntry } from "../lib/dailyIndex";
 import { getDailyMini } from "../lib/dailyMinis";
 import { puzzleIdentity } from "../lib/soloStats";
+import { recordGroupFinish } from "../lib/groupFinish";
 
 const navigate = vi.fn();
 vi.mock("react-router", async () => {
@@ -65,9 +66,11 @@ function wideViewport() {
 }
 
 let bestTimes: Record<string, number> = {};
+let historyRows: { puzzle_key: string; mode: string; seconds: number | null }[] | null = null;
 vi.mock("../hooks/useSolveHistory", () => ({
   useStreaks: () => ({ daily: 0, nyt: 0 }),
   useBestTimes: () => bestTimes,
+  useSolveHistory: () => ({ rows: historyRows }),
 }));
 
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
@@ -116,6 +119,7 @@ function renderBoard(path = "/daily/leaderboard") {
 }
 
 beforeEach(() => {
+  historyRows = null;
   bestTimes = {};
   indexEntries = [];
   friendList = [];
@@ -202,7 +206,7 @@ describe("DailyLeaderboardScreen", () => {
     await screen.findByText("Ada");
     expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:42 · #2 today");
     expect(screen.queryByRole("button", { name: /Play Today's Mini/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Race friends live/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
     expect(game.setUrlPuzzle).not.toHaveBeenCalled();
   });
@@ -214,12 +218,31 @@ describe("DailyLeaderboardScreen", () => {
     expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:05");
   });
 
+  it("played in a room: says so with the room's time, is not offered as untouched, and races a fresh puzzle", async () => {
+    recordGroupFinish(puzzleIdentity(daily.puzzle), 316);
+    renderBoard();
+    await screen.findByText("Ada");
+    expect(screen.queryByTestId("solved-line")).toBeNull();
+    expect(screen.getByTestId("group-line").textContent).toBe("Played as a group in 5:16Group games count for your streak but aren't ranked here.");
+    expect(screen.queryByRole("button", { name: /Play Today's Mini/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Play solo" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
+    expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
+  });
+
+  it("played in a room on another device: the account's history says so, without a time", async () => {
+    historyRows = [{ puzzle_key: puzzleIdentity(daily.puzzle), mode: "versus", seconds: null }];
+    renderBoard();
+    await screen.findByText("Ada");
+    expect(screen.getByTestId("group-line").textContent).toBe("Played as a group" + "Group games count for your streak but aren't ranked here.");
+  });
+
   it("not solved: keeps the play button and races today's puzzle itself", async () => {
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.queryByTestId("solved-line")).toBeNull();
     expect(screen.getByRole("button", { name: /Play Today's Mini/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Race friends live/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(game.setUrlPuzzle).toHaveBeenCalledWith(daily.puzzle);
     expect(navigate).toHaveBeenCalledWith("/host-game/name");
   });
@@ -380,7 +403,7 @@ describe("past boards (?day=)", () => {
     expect(screen.getByText("Old One")).toBeTruthy();
     expect(screen.getByText(/A past day's board is final/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Play Today's Mini" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Race friends live" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
     expect(updateName).not.toHaveBeenCalled();
   });

@@ -1,5 +1,6 @@
 /* Roboto Medium, latin only, for the "Continue with Google" label: Google's
-   sign-in branding guidelines ask for Roboto Medium 14 px. Only this face is
+   sign-in branding guidelines ask for Roboto Medium (set at the Apple
+   button's size, so the pair matches). Only this face is
    declared, and a browser fetches a font file only once text is set in it, so
    the 22 KB woff2 downloads the first time a provider button renders, never on
    a page without one. Nothing else in the app may use it. */

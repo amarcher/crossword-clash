@@ -1,27 +1,32 @@
 import { useMemo } from "react";
-import { Play, X } from "lucide-react";
+import { Play, Settings, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import QRCode from "react-qr-code";
 import { TVBrand } from "../../components/Layout/TVBrand";
 import { TVSegmented } from "../../components/Layout/TVSegmented";
+import { TTSSettingsModal } from "../../components/TTSControls";
+import { unlockNarratorAudio } from "../../lib/narrator/audioUnlock";
+import { track } from "../../lib/analytics";
 import { buttonClass, MiniGridThumb } from "../../components/ui";
 import { useRoomSolves } from "../../hooks/useRoomSolves";
 import { priorSolveChip } from "../../lib/roomSolves";
 import { puzzleIdentity } from "../../lib/soloStats";
 import { useBeforeUnload } from "../../hooks/useBeforeUnload";
 import { useKeepAwake } from "../../lib/keepAwake";
+import { useLightStatusBar } from "../../lib/statusBar";
 import { useHostContext } from "../../layouts/HostLayout";
 import { WRONG_ANSWER_TIMEOUT_OPTIONS } from "../../lib/gameSettings";
 
 export function HostLobbyScreen() {
   const { t } = useTranslation();
   const host = useHostContext();
-  const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom } = host;
+  const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom, tts } = host;
 
   useBeforeUnload(true);
   // A shared screen nobody touches: keep it from dimming while players join.
   useKeepAwake(true);
+  useLightStatusBar();
 
   // Who in the room has finished this puzzle before (room_solves): a chip on their row (Andrew, 2026-11-03).
   const playerIds = useMemo(() => multiplayer.players.map((p) => p.userId), [multiplayer.players]);
@@ -86,7 +91,7 @@ export function HostLobbyScreen() {
           </section>
 
           <div className="tv-card flex min-h-0 flex-1 flex-col" style={{ padding: "calc(var(--u) * 1.4)" }}>
-            <h2 className="tv-t-sm mb-3 font-semibold uppercase tracking-[0.12em] text-slate-400">
+            <h2 className="tv-t-sm mb-2 font-semibold uppercase tracking-[0.12em] text-slate-400">
               {t("lobby.players", { count: playerCount })}
             </h2>
             {playerCount === 0 ? (
@@ -99,14 +104,14 @@ export function HostLobbyScreen() {
                 <p role="status" className="tv-t-lg text-slate-300">{t("lobby.waitingForPlayers")}</p>
               </div>
             ) : (
-              <ul className="tv-clue-list grid min-h-0 flex-1 auto-rows-min grid-cols-1 content-start gap-3 overflow-y-auto min-[1100px]:grid-cols-2">
+              <ul className="tv-clue-list grid min-h-0 flex-1 auto-rows-min grid-cols-1 content-start gap-2 overflow-y-auto landscape:grid-cols-2">
                 {multiplayer.players.map((player) => (
                   <li
                     key={player.userId}
-                    className="tv-pop flex items-center gap-4 rounded-xl border border-stage-line bg-stage px-5 py-3"
+                    className="tv-pop flex items-center gap-3 rounded-xl border border-stage-line bg-stage px-4 py-2"
                   >
                     <span className="size-5 shrink-0 rounded-full" style={{ backgroundColor: player.color }} aria-hidden />
-                    <span className="tv-t-xl min-w-0 flex-1 truncate font-display font-semibold text-white">{player.displayName}</span>
+                    <span className="tv-t-lg min-w-0 flex-1 truncate font-display font-semibold text-white">{player.displayName}</span>
                     {priorSolveChip(solves[player.userId]) === "solved" && (
                       <span className="tv-t-sm shrink-0 rounded-full bg-emerald-500/20 px-3 py-1 font-semibold text-emerald-200">{t("lobby.solvedBefore")}</span>
                     )}
@@ -119,19 +124,55 @@ export function HostLobbyScreen() {
             )}
           </div>
 
-          <div className="tv-card shrink-0" style={{ padding: "calc(var(--u) * 1.4)" }}>
+          {/* The two settings share a row on a landscape screen: stacked, they
+              left the player list one clipped row on a 720p TV, so nobody
+              could see who had joined (2026-11-16). */}
+          <div className="tv-card grid shrink-0 gap-y-[calc(var(--u)*1.2)] landscape:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start landscape:gap-x-[calc(var(--u)*1.6)]" style={{ padding: "calc(var(--u) * 1.4)" }}>
             <TVSegmented
               label={t("timeout.wrongAnswerPenalty")}
               value={wrongAnswerTimeout}
               onChange={setWrongAnswerTimeout}
               options={WRONG_ANSWER_TIMEOUT_OPTIONS.map((o) => ({ value: o.value, label: o.value === 0 ? t("timeout.off") : o.label }))}
             />
+            {/* The AI host is set up here, before the game, not only from the
+                game screen's settings (Andrew, 2026-11-14). The tap also
+                unlocks the audio it will speak through. */}
+            {tts.elevenLabsAvailable && (
+              <div className="flex items-end gap-2">
+                <div className="min-w-0 flex-1">
+                  <TVSegmented
+                    label={t("tts.narratorLabel")}
+                    value={tts.narratorEngine ? "on" : "off"}
+                    onChange={(v) => {
+                      unlockNarratorAudio();
+                      if (v === "on") {
+                        track("narrator_enabled", { engine: "claude" });
+                        // The host's own voice by default; Voice settings can pick the device's.
+                        tts.setEngine("elevenlabs");
+                      }
+                      tts.setNarratorEngine(v === "on" ? "claude" : null);
+                    }}
+                    options={[
+                      { value: "off", label: t("timeout.off") },
+                      { value: "on", label: t("tts.narratorOn") },
+                    ]}
+                  />
+                </div>
+                <button type="button" onClick={tts.openSettings} aria-label={t("tts.voiceSettings")} title={t("tts.voiceSettings")} className={buttonClass("stage", "lg", "tv-t-md h-auto! min-h-11 shrink-0 px-3! py-2")}>
+                  <Settings className="size-[1.2em]" aria-hidden />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-4">
             <button
               type="button"
-              onClick={handleStartGame}
+              onClick={() => {
+                // The tap the host's voice needs (audioUnlock.ts).
+                unlockNarratorAudio();
+                handleStartGame();
+              }}
               disabled={!canStart}
               className={buttonClass("primary", "lg", "tv-t-lg h-auto! min-h-14 flex-1 py-4")}
             >
@@ -148,6 +189,7 @@ export function HostLobbyScreen() {
           )}
         </section>
       </div>
+      <TTSSettingsModal {...tts} />
     </div>
   );
 }

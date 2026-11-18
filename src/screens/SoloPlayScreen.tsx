@@ -21,6 +21,7 @@ import { useSoloSettings } from "../lib/soloSettings";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useRaceName } from "../hooks/useRaceName";
 import { useAccountContext } from "../contexts/AccountContext";
 
 import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay, shiftDayKey } from "../lib/soloStats";
@@ -47,10 +48,12 @@ import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
-import { fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, saveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
 import { encodeReplay } from "../lib/replayCode";
 import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, rememberedReplay } from "../lib/replayShare";
 import { replyToRace } from "../lib/raceReplies";
@@ -62,6 +65,7 @@ const MY_REPLAY_COLOR = "#3a6bf0";
 
 export function SoloPlayScreen() {
   const { t, i18n } = useTranslation();
+  const ownName = useRaceName();
   const navigate = useNavigate();
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
@@ -385,9 +389,9 @@ export function SoloPlayScreen() {
   const withMine = useCallback(
     (theirs: ReplaySolve): ReplaySolve[] => {
       const mine = soloResult ? recorder.take() : null;
-      return mine && soloResult ? [{ name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
+      return mine && soloResult ? [{ name: ownName, color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
     },
-    [soloResult, recorder, t],
+    [soloResult, recorder, ownName],
   );
   const replayable = useMemo(() => {
     const seen = new Set<string>();
@@ -397,10 +401,12 @@ export function SoloPlayScreen() {
       seen.add(userId);
       out.push({ userId, name });
     };
+    // Only someone just raced. Other solvers' replays are on the leaderboard's rows, and
+    // friends' are The race: two kinds of Watch here read as one feature with two rules
+    // (Andrew, 2026-11-16).
     for (const g of race) add(g.userId, g.name);
-    for (const c of raceCandidates) add(c.userId, c.username);
     return out.slice(0, 3);
-  }, [race, raceCandidates]);
+  }, [race]);
   const watchReplay = useCallback(
     async (userId: string) => {
       if (!puzzleKey || !puzzle) return;
@@ -437,6 +443,33 @@ export function SoloPlayScreen() {
     },
     [puzzleKey, puzzle, plus, openRacePitch, replayable, race, withMine],
   );
+
+  // The race (friendRace.ts): this solve and every friend's recorded one on a
+  // single clock, free. One button on the finish dialog; friends it covers
+  // are not also listed one by one.
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const [friendRace, setFriendRace] = useState<{ solves: RaceSolve[]; letters: boolean } | null>(null);
+  const watchFriendRace = useCallback(async () => {
+    if (!puzzleKey || !user) return;
+    try {
+      let found = await fetchFriendRace(puzzleKey);
+      // The finish that unlocks the letters may still be on its way to the server: one more try.
+      if (found.friends.length > 0 && !found.withLetters) {
+        await new Promise((r) => setTimeout(r, 1500));
+        found = await fetchFriendRace(puzzleKey);
+      }
+      if (found.friends.length === 0) return;
+      const mine = soloResult ? recorder.take() : null;
+      const own = mine && soloResult && !mine.partial ? { seconds: soloResult.finishSeconds, events: mine.events } : await fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null);
+      const solves = raceSolves(found, own ? { id: user.id, name: ownName, ...own } : null);
+      setFriendRace({ solves, letters: found.withLetters });
+      track("friend_race_opened", { placement: "completion", racers: solves.length, own: !!own });
+    } catch {
+      // A race that can't load just doesn't open.
+    }
+  }, [puzzleKey, user, soloResult, recorder, ownName]);
+  const friendIds = useMemo(() => new Set(racingFriends.map((c) => c.userId)), [racingFriends]);
+  const listedReplays = useMemo(() => (racingFriends.length > 0 ? replayable.filter((r) => !friendIds.has(r.userId)) : replayable), [racingFriends, replayable, friendIds]);
 
   // Autocheck off and the grid full but not right: a quiet notice over the
   // grid with the three ways out. Dismissed until the grid changes again.
@@ -562,8 +595,33 @@ export function SoloPlayScreen() {
   // when the time it shows is that finish's.
   const reopenedSeconds = reopened ? soloResult?.finishSeconds : undefined;
   useEffect(() => {
-    if (puzzleKey && reopenedSeconds !== undefined) setReplayId(rememberedReplay(puzzleKey, reopenedSeconds));
-  }, [puzzleKey, reopenedSeconds]);
+    if (!puzzleKey || reopenedSeconds === undefined) return;
+    const remembered = rememberedReplay(puzzleKey, reopenedSeconds);
+    setReplayId(remembered);
+    // Solved on another device, or before a reinstall: this one never filed
+    // the replay, and the share fell back to the squares alone (Andrew,
+    // 2026-11-16). The account's kept recording of that same finish makes it
+    // again; it has no refusals or clue changes, only the letters going in.
+    if (remembered || !accountId || !puzzle || !puzzleRef) return;
+    let live = true;
+    void (async () => {
+      try {
+        const kept = await fetchOwnSolveTrace(accountId, puzzleKey);
+        if (!live || !kept || kept.events.length === 0 || kept.seconds !== Math.floor(reopenedSeconds)) return;
+        const code = encodeReplay(puzzle, kept.events, kept.seconds);
+        const id = code ? await createReplayShare(code) : null;
+        if (!id) return;
+        rememberReplay(puzzleKey, id, kept.seconds);
+        if (live) setReplayId(id);
+      } catch {
+        // Best-effort: the share still goes out with its squares.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per reopened finish; the puzzle object is that finish's
+  }, [puzzleKey, reopenedSeconds, accountId]);
   // Racing a shared link's sender (ChallengeScreen): their puzzle, for the reply.
   const linkGhost = race.find((g) => g.link) ?? null;
   useEffect(() => {
@@ -598,7 +656,7 @@ export function SoloPlayScreen() {
     if (!soloResult || !freshResult || !accountId || !puzzleKey || traceFiledRef.current) return;
     traceFiledRef.current = true;
     const trace = recorder.take();
-    saveTrace(null);
+    clearTrace(puzzleKey);
     if (!trace || soloResult.assisted || solvedBeforeRef.current) return;
     void saveSolveTrace(puzzleKey, soloResult.finishSeconds, trace.events).catch(() => undefined);
   }, [soloResult, freshResult, accountId, puzzleKey, recorder]);
@@ -847,7 +905,15 @@ export function SoloPlayScreen() {
                   className={buttonClass("secondary", "md")}
                 >
                   {!isComplete && <Pause className="size-4" aria-hidden="true" />}
-                  {t(isComplete ? "soloPause.choose" : "soloPause.pause")}
+                  {/* A phone's header has no room for "Choose another puzzle" beside the finish chip: it pushed the title off the row. */}
+                  {isComplete ? (
+                    <>
+                      <span className="lg:hidden">{t("soloPause.chooseShort")}</span>
+                      <span className="max-lg:hidden">{t("soloPause.choose")}</span>
+                    </>
+                  ) : (
+                    t("soloPause.pause")
+                  )}
                 </button>
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
@@ -952,7 +1018,7 @@ export function SoloPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 md:gap-4 h-full">
+          <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />
             <div className="flex-1 min-h-0">
             <CluePanel
@@ -1009,8 +1075,10 @@ export function SoloPlayScreen() {
               }
             : undefined
         }
-        replays={reopened ? undefined : replayable}
+        replays={reopened ? undefined : listedReplays}
         onWatchReplay={(userId) => void watchReplay(userId)}
+        friendRace={!reopened && !assisted && racingFriends.length > 0 ? { count: racingFriends.length, name: racingFriends[0].username } : undefined}
+        onWatchFriendRace={() => void watchFriendRace()}
         nextUp={nextUp}
         onNextUp={(item) => void handleNextUp(item)}
         onRaceFresh={user ? handleRaceFresh : undefined}
@@ -1021,6 +1089,7 @@ export function SoloPlayScreen() {
         leaderboardLabel={boardView?.slot === "bonus" ? t("bonus.boardLink") : undefined}
       />
       {replay && <ReplayDialog puzzle={puzzle} solves={replay} onClose={() => setReplay(null)} />}
+      {friendRace && <FriendRaceDialog puzzle={puzzle} solves={friendRace.solves} letters={friendRace.letters} shareRef={puzzleRef} onClose={() => setFriendRace(null)} />}
     </>
   );
 }

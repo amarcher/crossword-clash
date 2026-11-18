@@ -345,9 +345,17 @@ export interface Database {
           filled: number;
           total: number;
           updated_at: string;
+          trace: unknown;
         };
-        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string };
-        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string };
+        Insert: { user_id: string; puzzle_key: string; cells: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at: string; trace?: unknown };
+        Update: { cells?: unknown; elapsed_ms?: number; filled?: number; total?: number; updated_at?: string; trace?: unknown };
+        Relationships: [];
+      };
+      /** An account's small preferences (accountPrefs.ts): one row per preference, owner-only. */
+      account_preferences: {
+        Row: { user_id: string; key: string; value: unknown; updated_at: string };
+        Insert: { user_id: string; key: string; value: unknown; updated_at?: string };
+        Update: { value?: unknown; updated_at?: string };
         Relationships: [];
       };
       /** Community puzzles (docs/community-puzzles-spec.md): one row per author, read-own. Written by accept_publishing_terms() and the admin. */
@@ -572,6 +580,8 @@ export interface Database {
       };
     };
     Functions: {
+      /** Push: stores this device's token under the caller, taking the row over from the device's previous user. */
+      register_device_token: { Args: { p_token: string; p_platform: string; p_locale: string; p_timezone: string; p_app_version?: string | null }; Returns: undefined };
       /** Friends: sends a request by username; 'pending', 'accepted' (they had asked first) or 'sent' (a block: nothing written). Refusals are `friends:<code>` exceptions. */
       send_friend_request: { Args: { p_username: string }; Returns: "pending" | "accepted" | "sent" };
       respond_friend_request: { Args: { p_requester: string; p_accept: boolean }; Returns: undefined };
@@ -606,6 +616,8 @@ export interface Database {
       race_candidates: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number | null; friend: boolean }[] };
       /** A recording to race or replay (Plus); letters stripped to 1/0 until the caller has finished the puzzle. */
       solve_trace: { Args: { p_user: string; p_puzzle_key: string }; Returns: { seconds: number; events: unknown; with_letters: boolean }[] };
+      /** The race: the caller's friends' recordings of a puzzle, fastest first (up to 11). Free; letters stripped to 1/0 until the caller has finished the puzzle. */
+      friend_race: { Args: { p_puzzle_key: string }; Returns: { user_id: string; username: string; seconds: number; events: unknown; with_letters: boolean }[] };
       /** Which of a room's players have finished its puzzle before (the host or a player may ask): the mode, never a time. */
       room_solves: { Args: { p_game_id: string; p_puzzle_key: string }; Returns: { user_id: string; mode: string }[] };
       /** Invites an accepted friend into a waiting room the caller is in; the invite id, or null when a block swallowed it. */

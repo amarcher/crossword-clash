@@ -13,7 +13,7 @@ for (const width of [375, 1280]) {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(`/${hash}`);
-    await page.getByRole("button", { name: "Play Solo", exact: true }).click();
+    await page.getByRole("button", { name: "Play solo", exact: true }).click();
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     const first = imported.cells.flat().find(cell => cell.solution)!;
     await gridCell(page, first.row, first.col).click();
@@ -51,7 +51,7 @@ for (const width of [375, 1280]) {
 
 test("hidden tab freezes the clock and returns paused; browser Back preserves work", async ({ page }) => {
   await page.goto(`/${hash}`);
-  await page.getByRole("button", { name: "Play Solo", exact: true }).click();
+  await page.getByRole("button", { name: "Play solo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.clock.install();
   await page.clock.fastForward(12_000);
@@ -76,7 +76,7 @@ test("hidden tab freezes the clock and returns paused; browser Back preserves wo
 
 test("failed storage keeps the grid in memory and retry restores Save & exit", async ({ page }) => {
   await page.goto(`/${hash}`);
-  await page.getByRole("button", { name: "Play Solo", exact: true }).click();
+  await page.getByRole("button", { name: "Play solo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;

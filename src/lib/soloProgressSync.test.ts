@@ -22,14 +22,19 @@ import { clearProgress, loadProgressStore, recordProgressCells, recordProgressEl
 import {
   flushProgressSync,
   progressSyncUser,
+  MAX_TRACE_CHARS,
   pullProgress,
   PUSH_DEBOUNCE_MS,
   recordFromRow,
   resetProgressSyncForTests,
   rowFromRecord,
   startProgressSync,
+  traceForSync,
+  traceFromRow,
   stopProgressSync,
+  uploadLocalProgress,
 } from "./soloProgressSync";
+import { clearTrace, loadTrace, saveTrace } from "./race";
 
 const UID = "6f1d2c3b-4a5e-4f60-8b7c-9d0e1f2a3b4c";
 const cells = { "0,0": { letter: "C", correct: true }, "0,2": { letter: "T", correct: false } };
@@ -54,8 +59,24 @@ describe("row ↔ record", () => {
 
   it("round-trips, with the clock floored and the time as ISO", () => {
     const row = rowFromRecord(UID, record);
-    expect(row).toEqual({ user_id: UID, puzzle_key: "k", cells, elapsed_ms: 1234, filled: 2, total: 9, updated_at: "2023-11-14T22:13:20.000Z" });
+    expect(row).toEqual({ user_id: UID, puzzle_key: "k", cells, elapsed_ms: 1234, filled: 2, total: 9, updated_at: "2023-11-14T22:13:20.000Z", trace: null });
     expect(recordFromRow(row)).toEqual({ ...record, elapsedMs: 1234 });
+  });
+
+  it("carries the device's recording of the solve so far, and reads one back", () => {
+    saveTrace({ key: "k", events: [[900, 0, "A"]], marks: [[950, 1, "a"]], partial: false });
+    const row = rowFromRecord(UID, record);
+    expect(row.trace).toEqual({ events: [[900, 0, "A"]], marks: [[950, 1, "a"]], partial: false });
+    expect(traceFromRow("k", row.trace)).toEqual({ key: "k", events: [[900, 0, "A"]], marks: [[950, 1, "a"]], partial: false });
+    expect(traceFromRow("k", null)).toBeNull();
+    expect(traceFromRow("k", { events: "junk" })).toBeNull();
+    clearTrace("k");
+  });
+
+  it("leaves out a recording too large to send", () => {
+    saveTrace({ key: "k", events: Array.from({ length: 4000 }, (_, i) => [i, i % 200, "A"] as [number, number, string]), marks: Array.from({ length: 4000 }, (_, i) => [i, i % 200, "a"] as [number, number, "a"]), partial: false });
+    expect(JSON.stringify(traceForSync("k") ?? "").length).toBeLessThanOrEqual(MAX_TRACE_CHARS);
+    clearTrace("k");
   });
 
   it("refuses rows with no key, no cells or a junk time", () => {
@@ -116,7 +137,7 @@ describe("pushing", () => {
     void flushProgressSync();
   });
 
-  it("logs and keeps the local record when a write is refused (RLS: Plus lapsed)", async () => {
+  it("logs and keeps the local record when a write is refused (RLS)", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     nextResult = { data: null, error: { message: "new row violates row-level security policy" } };
     startProgressSync(UID);
@@ -124,6 +145,29 @@ describe("pushing", () => {
     await vi.advanceTimersByTimeAsync(PUSH_DEBOUNCE_MS);
     expect(warn).toHaveBeenCalled();
     expect(loadProgressStore().k).toBeTruthy();
+    warn.mockRestore();
+  });
+});
+
+describe("the device's own puzzles", () => {
+  it("are sent to the account once per device, then left to the change subscription", async () => {
+    recordProgressCells("k1", cells, 9);
+    recordProgressCells("k2", cells, 9);
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(1);
+    expect((upserts()[0] as unknown as { puzzle_key: string; user_id: string }[]).map((r) => [r.user_id, r.puzzle_key])).toEqual([[UID, "k1"], [UID, "k2"]]);
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(1);
+  });
+
+  it("are tried again after a failed send", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    recordProgressCells("k1", cells, 9);
+    nextResult = { data: null, error: { message: "offline" } };
+    await uploadLocalProgress(UID);
+    nextResult = { data: [], error: null };
+    await uploadLocalProgress(UID);
+    expect(upserts()).toHaveLength(2);
     warn.mockRestore();
   });
 });
@@ -145,6 +189,24 @@ describe("pulling", () => {
     expect(store.other.elapsedMs).toBe(42);
     expect(calls[0]).toEqual({ method: "from", args: ["solo_progress"] });
     expect(calls.find((c) => c.method === "eq")?.args).toEqual(["user_id", UID]);
+  });
+
+  it("takes the recording that comes with another device's letters, and drops its own when none does", async () => {
+    saveTrace({ key: "a", events: [[1, 5, "Z"]], partial: false });
+    saveTrace({ key: "b", events: [[1, 5, "Z"]], partial: false });
+    saveTrace({ key: "untouched", events: [[1, 5, "Z"]], partial: false });
+    const at = new Date(1_700_000_500_000).toISOString();
+    nextResult = {
+      data: [
+        { puzzle_key: "a", cells, elapsed_ms: 42, filled: 2, total: 9, updated_at: at, trace: { events: [[10, 0, "C"], [20, 2, "T"]], marks: [], partial: false } },
+        { puzzle_key: "b", cells, elapsed_ms: 42, filled: 2, total: 9, updated_at: at, trace: null },
+      ],
+      error: null,
+    };
+    expect((await pullProgress(UID)).sort()).toEqual(["a", "b"]);
+    expect(loadTrace("a")?.events).toEqual([[10, 0, "C"], [20, 2, "T"]]);
+    expect(loadTrace("b")).toBeNull();
+    expect(loadTrace("untouched")?.events).toEqual([[1, 5, "Z"]]);
   });
 
   it("is a no-op offline or when refused", async () => {

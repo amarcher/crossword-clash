@@ -199,7 +199,7 @@ export function ShareBlockPreview({ block, legend, darkMode }: { block: ShareBlo
           {legend}
         </p>
       )}
-      <p className={`mt-2 break-all text-xs ${darkMode ? "text-white/50" : "text-subtle"}`}>
+      <p className={`mt-2 truncate text-xs ${darkMode ? "text-white/50" : "text-subtle"}`}>
         {block.cta} {displayLink(block.link)}
       </p>
     </div>

@@ -116,6 +116,10 @@ describe("InviteBanner", () => {
     at("/race/friends");
     expect(screen.getByRole("button", { name: "Join" })).toBeTruthy();
     cleanup();
+    // The join screen is where Join leads: no banner over its heading.
+    friends.value = value({ openInvites: [invite], unseenInvites: [invite] });
+    expect(at("/join").container.querySelector("[role=status]")).toBeNull();
+    cleanup();
     friends.value = value({ roomJoined: { gameId: "g9", code: "ABCDEF", title: "T", joinerName: "alicia", at: 1 } });
     at("/race");
     expect(screen.getByRole("button", { name: "Go to room" })).toBeTruthy();

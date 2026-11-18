@@ -1,3 +1,4 @@
+import { useRaceName } from "../hooks/useRaceName";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -42,6 +43,7 @@ async function replyPuzzle(ref: PuzzleRef): Promise<Puzzle | null> {
  */
 export function RaceReplyScreen() {
   const { t, i18n } = useTranslation();
+  const ownName = useRaceName();
   const { id = "" } = useParams();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [watching, setWatching] = useState(false);
@@ -86,7 +88,7 @@ export function RaceReplyScreen() {
   }
   if (state.kind === "missing") {
     return (
-      <FlowPage title={t("raceReplies.missingTitle")} subtitle={t("raceReplies.missingBody")} backLabel={t("completion.backToMenu")} onBack={() => history.back()}>
+      <FlowPage title={t("raceReplies.missingTitle")} subtitle={t("raceReplies.missingBody")} backLabel={t("common.back")} onBack={() => history.back()}>
         <Link to="/menu" className={buttonClass("primary", "lg", "w-full")}>
           {t("completion.backToMenu")}
         </Link>
@@ -96,7 +98,7 @@ export function RaceReplyScreen() {
 
   const { reply, puzzle, theirs, mine } = state;
   const solves: ReplaySolve[] = theirs
-    ? [...(mine ? [{ name: t("ghostRace.you"), color: "#3a6bf0", ...mine }] : []), { name: reply.name, color: GHOST_COLORS[0], ...theirs }]
+    ? [...(mine ? [{ name: ownName, color: "#3a6bf0", ...mine }] : []), { name: reply.name, color: GHOST_COLORS[0], ...theirs }]
     : [];
   const raceBack = reply.replyShareId ? buildPuzzleLink("", reply.ref, { seconds: reply.seconds, name: reply.name, replay: reply.replyShareId }) : null;
   return (
@@ -108,7 +110,7 @@ export function RaceReplyScreen() {
       }
       title={t("raceReplies.raced", { name: reply.name, daily: replyPuzzleLabel(t, reply) })}
       subtitle={"day" in reply.ref ? `${formatShareDay(reply.ref.day, i18n.language)} · ${replyVerdict(t, reply)}` : replyVerdict(t, reply)}
-      backLabel={t("completion.backToMenu")}
+      backLabel={t("common.back")}
       onBack={() => history.back()}
     >
       <Card className="grid gap-3 p-5">

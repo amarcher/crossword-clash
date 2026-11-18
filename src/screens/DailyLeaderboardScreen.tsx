@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { useRaceName } from "../hooks/useRaceName";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -30,15 +31,25 @@ import { friendsEnabled } from "../lib/friends";
 import { useFriends } from "../contexts/FriendsContext";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
-import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory, useStreaks } from "../hooks/useSolveHistory";
+import { groupFinishSeconds } from "../lib/groupFinish";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useRaceCandidates } from "../hooks/useRace";
-import { saveRaceIntent } from "../lib/race";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadTrace, saveRaceIntent } from "../lib/race";
+import { fetchFriendRace, raceSolves, type RaceSolve } from "../lib/friendRace";
+import { fetchDailyForDay } from "../lib/dailyFeed";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
+import type { Puzzle } from "../types/puzzle";
 import { dailyPath } from "../lib/dailyChallenge";
+import { readFriendsOnly, subscribeFriendsOnly, writeFriendsOnly } from "../lib/boardPrefs";
+
+/** The viewer's own solve in a replay, as on the play screen. */
+const MY_REPLAY_COLOR = "#3a6bf0";
 
 /** Tailwind's `lg` breakpoint (64rem) — the width at which the boards spread out. */
 const LG_QUERY = "(min-width: 64rem)";
@@ -63,28 +74,11 @@ const PLAY_TODAY: Record<DailySlot, string> = {
 
 /** Column count → the lg grid and the shell width that fits it (spelled out for Tailwind's scanner). */
 const WIDE_GRID: Record<number, { grid: string; width: ShellWidth }> = {
-  1: { grid: "", width: "md" },
+  1: { grid: "", width: "2xl" },
   2: { grid: "lg:grid-cols-2 lg:gap-6", width: "5xl" },
-  3: { grid: "lg:grid-cols-3 lg:gap-6", width: "7xl" },
+  3: { grid: "lg:grid-cols-3 lg:gap-5", width: "5xl" },
 };
 
-/** Whether the board shows only the viewer and their friends; remembered per device. */
-const FRIENDS_ONLY_KEY = "crossword-clash:board-friends-only";
-function readFriendsOnly(): boolean {
-  try {
-    return localStorage.getItem(FRIENDS_ONLY_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-function writeFriendsOnly(on: boolean) {
-  try {
-    if (on) localStorage.setItem(FRIENDS_ONLY_KEY, "1");
-    else localStorage.removeItem(FRIENDS_ONLY_KEY);
-  } catch {
-    // A blocked store only costs the memory of the choice.
-  }
-}
 
 const STEP_BUTTON =
   "grid size-11 shrink-0 place-items-center rounded-xl text-ink-soft hover:bg-surface-sunken active:bg-line disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-brand-500";
@@ -174,10 +168,9 @@ export function DailyLeaderboardScreen() {
     [friends.active, friends.friendships.friends],
   );
   const canFilter = !!user && friendIds.length > 0;
-  const [friendsOnly, setFriendsOnly] = useState(readFriendsOnly);
+  const friendsOnly = useSyncExternalStore(subscribeFriendsOnly, readFriendsOnly, () => false);
   const chooseFriendsOnly = useCallback(
     (on: boolean) => {
-      setFriendsOnly(on);
       writeFriendsOnly(on);
       track("leaderboard_filter", { friends_only: on, slot: routeSlot });
     },
@@ -208,7 +201,7 @@ export function DailyLeaderboardScreen() {
   const routeTheme = past ? pastBySlot[routeSlot]?.theme || pastBySlot[routeSlot]?.title : displayTheme(routeDaily);
 
   return (
-    <PageShell width="md" widthLg={layout.width} bar={{ backLabel: t("completion.backToMenu") }}>
+    <PageShell width="md" widthMd="5xl" widthLg={layout.width} bar={{ backLabel: t("completion.backToMenu") }}>
       <div className="mt-4 grid gap-4 sm:mt-6">
         <div className="text-center">
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
@@ -320,6 +313,7 @@ interface SlotBoardProps {
 /** One slot's board: the table, the sign form when the viewer's row needs a name, and Play / Race. */
 function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardProps) {
   const { t } = useTranslation();
+  const ownName = useRaceName();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
@@ -366,8 +360,8 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const account = useMaybeAccount();
   const puzzleKey = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
   const solvedHere = !!own || !!privateFinish || (!!entries && !!user && entries.some((e) => e.userId === user.id));
-  const raceCandidates = useRaceCandidates(puzzleKey, !solvedHere);
-  const raceable = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
+  const raceCandidates = useRaceCandidates(puzzleKey, true);
+  const candidateIds = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
   const raceRow = useCallback(
     (userId: string) => {
       if (!puzzleKey || !account) return;
@@ -418,6 +412,13 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const identity = past ? info?.identity ?? null : daily ? puzzleIdentity(daily.puzzle) : null;
   const solvedSeconds = pending?.entry.seconds ?? myEntry?.seconds ?? (identity ? bestTimes[identity] : undefined);
   const solved = typeof solvedSeconds === "number";
+  // Finished in a room on a shared grid: no time of one's own, so no row on
+  // the board, but the day is done and the board should say so rather than
+  // offer the puzzle as untouched (Andrew, 2026-11-16). From the account's
+  // history (any device) or this device's record of the room's time.
+  const { rows: historyRows } = useSolveHistory();
+  const groupSeconds = !solved ? groupFinishSeconds(identity) : null;
+  const playedAsGroup = !solved && !!identity && (groupSeconds !== null || !!historyRows?.some((r) => r.puzzle_key === identity && r.mode !== "solo" && r.mode !== "import" && r.seconds === null));
   const myRank = !privateFinish && myEntry && myEntry.rank > 0 ? myEntry.rank : null;
 
   // A past board the viewer was not on, for a puzzle they have since solved:
@@ -437,8 +438,68 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     navigate("/solo/play");
   }, [game, daily, slot, navigate]);
 
+  // Race before the viewer has solved the puzzle; Watch after, here on the
+  // board (Andrew, 2026-11-16: see how anyone on it solved). The viewer's own
+  // solve plays with it when the account has a recording of it kept.
+  const canWatch = solvedHere || solved;
+  const [watching, setWatching] = useState<{ puzzle: Puzzle; solves: ReplaySolve[] } | null>(null);
+  const watchRow = useCallback(
+    async (userId: string) => {
+      if (!puzzleKey || !account) return;
+      if (!account.plus) {
+        account.openPaywall({ placement: "leaderboard_watch", feature: "race" });
+        return;
+      }
+      try {
+        const [board, theirs, mine] = await Promise.all([
+          daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
+          fetchSolveTrace(userId, puzzleKey),
+          user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null,
+        ]);
+        if (!board || !theirs || theirs.events.length === 0) return;
+        const name = rows?.find((e) => e.userId === userId)?.displayName ?? "";
+        const them: ReplaySolve = { name, color: GHOST_COLORS[0], seconds: theirs.seconds, events: theirs.events };
+        const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: ownName, color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
+        setWatching({ puzzle: board, solves: me ? [me, them] : [them] });
+        track("replay_watched", { racing: !!me, placement: "leaderboard" });
+      } catch (err) {
+        console.warn("Leaderboard replay:", err);
+      }
+    },
+    [puzzleKey, account, daily, day, slot, user, rows, ownName],
+  );
+
+  // The race (friendRace.ts): every friend's recorded solve of this puzzle on
+  // one clock, with the viewer's own when there is one. Free, and open before
+  // the viewer has solved it (colour only then, no letters).
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const [theRace, setTheRace] = useState<{ puzzle: Puzzle; solves: RaceSolve[]; letters: boolean } | null>(null);
+  const [raceLoading, setRaceLoading] = useState(false);
+  const openTheRace = useCallback(async () => {
+    if (!puzzleKey || raceLoading) return;
+    setRaceLoading(true);
+    try {
+      const kept = loadTrace(puzzleKey);
+      const [board, race, mine] = await Promise.all([
+        daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
+        fetchFriendRace(puzzleKey),
+        user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null,
+      ]);
+      if (!board || race.friends.length === 0) return;
+      // The account's kept recording, or this device's when the solve was never filed.
+      const own = mine && mine.events.length > 0 ? mine : typeof solvedSeconds === "number" && kept && !kept.partial && kept.events.length > 0 ? { seconds: solvedSeconds, events: kept.events } : null;
+      const solves = raceSolves(race, own && user ? { id: user.id, name: ownName, ...own } : null);
+      setTheRace({ puzzle: board, solves, letters: race.withLetters });
+      track("friend_race_opened", { slot, past, racers: solves.length, own: !!own });
+    } catch (err) {
+      console.warn("The race:", err);
+    } finally {
+      setRaceLoading(false);
+    }
+  }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, ownName, past]);
+
   const raceFriends = useCallback(() => {
-    if (solved) {
+    if (solved || playedAsGroup) {
       // Already solved: a fresh puzzle through the picker, never this one.
       track("mode_selected", { mode: "daily-race-fresh", slot });
       navigate(pickerPath("race"));
@@ -450,7 +511,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     if (!daily) return;
     game.setUrlPuzzle(daily.puzzle);
     navigate("/host-game/name");
-  }, [game, daily, slot, solved, navigate]);
+  }, [game, daily, slot, solved, playedAsGroup, navigate]);
 
   const theme = past ? info?.theme || info?.title || "" : displayTheme(daily);
   const emptyMessage = only ? "leaderboard.emptyFriends" : past ? "leaderboard.emptyPast" : "leaderboard.empty";
@@ -478,7 +539,14 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(emptyMessage)}</BoardMessage>
         ) : (
           <>
-            <BoardTable rows={rows} userId={user?.id} raceable={raceable} onRace={raceRow} />
+            <BoardTable
+              rows={rows}
+              userId={user?.id}
+              raceable={canWatch ? undefined : candidateIds}
+              onRace={raceRow}
+              watchable={canWatch ? candidateIds : undefined}
+              onWatch={watchRow}
+            />
             {loading && (
               <p role="status" className="flex items-center justify-center gap-2 border-t border-line px-4 py-2.5 text-center text-xs text-muted">
                 <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -488,6 +556,13 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
           </>
         )}
       </Card>
+
+      {racingFriends.length > 0 && (
+        <Button size="lg" variant="secondary" block onClick={openTheRace} disabled={raceLoading} data-testid="the-race">
+          {raceLoading ? <Loader2 className="size-4.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Flag className="size-4.5" aria-hidden="true" />}
+          {t(canWatch ? "friendRace.openYours" : "friendRace.open", { count: racingFriends.length, name: racingFriends[0].username })}
+        </Button>
+      )}
 
       {pending && !postsHere && (
         <p data-testid="board-not-posted" className="text-center text-xs text-muted">
@@ -538,19 +613,34 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
                 {myRank !== null && ` · ${t("leaderboard.rankToday", { rank: myRank })}`}
               </span>
             </p>
+          ) : playedAsGroup ? (
+            <>
+              <p data-testid="group-line" className="rounded-xl bg-brand-50 px-4 py-3 text-center text-sm text-brand-700 ring-1 ring-brand-100">
+                <span className="flex items-center justify-center gap-2 font-semibold tabular-nums">
+                  <Check className="size-4 shrink-0" aria-hidden="true" />
+                  {groupSeconds !== null ? t("leaderboard.groupPlayedIn", { time: formatDuration(groupSeconds) }) : t("leaderboard.groupPlayed")}
+                </span>
+                <span className="mt-0.5 block text-pretty">{t("leaderboard.groupNotRanked")}</span>
+              </p>
+              <Button size="lg" variant="secondary" block onClick={playToday} disabled={!daily}>
+                {t("menu.dailyPlaySolo")}
+              </Button>
+            </>
           ) : (
             <Button size="lg" block onClick={playToday} disabled={!daily}>
               {t(PLAY_TODAY[slot])}
             </Button>
           )}
           {user && (
-            <Button size="lg" variant={solved ? "primary" : "secondary"} block onClick={raceFriends} disabled={!solved && !daily}>
+            <Button size="lg" variant={solved || playedAsGroup ? "primary" : "secondary"} block onClick={raceFriends} disabled={!solved && !daily}>
               <Swords className="size-4.5" aria-hidden="true" />
               {t("leaderboard.raceFriends")}
             </Button>
           )}
         </div>
       )}
+      {theRace && <FriendRaceDialog puzzle={theRace.puzzle} solves={theRace.solves} letters={theRace.letters} shareRef={{ day, slot }} onClose={() => setTheRace(null)} />}
+      {watching && <ReplayDialog puzzle={watching.puzzle} solves={watching.solves} onClose={() => setWatching(null)} />}
     </section>
   );
 }

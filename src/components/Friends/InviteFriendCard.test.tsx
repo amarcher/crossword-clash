@@ -27,7 +27,7 @@ describe("InviteFriendCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Share my link" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Link sent"));
     expect(webShare).toHaveBeenCalledWith({ text: `Add me on Crossword Clash: ${LINK}`, title: "Crossword Clash" });
-    expect(track).toHaveBeenCalledWith("friend_link_shared", { method: "webshare", outcome: "shared" });
+    expect(track).toHaveBeenCalledWith("friend_link_shared", { method: "webshare", outcome: "shared", placement: "friends" });
   });
 
   it("copies the link where there is no share sheet, and says nothing for a dismissed one", async () => {

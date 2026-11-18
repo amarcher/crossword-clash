@@ -92,6 +92,8 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-feature-settings: "ss01" 0;
+    /* No widows, site-wide (Andrew, 2026-11-13): inherited, so every paragraph avoids a last line of one word. */
+    text-wrap: pretty;
   }
   h1, h2, h3 { text-wrap: balance; }
   /* Tailwind v4's preflight leaves buttons on the arrow cursor (v3 gave them the
@@ -116,6 +118,10 @@
   min-height: 100dvh;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+/* The TV's stage is dark to the glass: the insets `#root` pads showed the
+   app's white canvas as a strip behind the status bar and the home indicator
+   on an iPad (Andrew, 2026-11-14). Only while a stage is mounted. */
+.native-app:has(.tv-stage), .native-app:has(.tv-stage) body { background: var(--color-stage); }
 @utility min-h-app { min-height: var(--app-height); }
 .native-game-layout {
   position: fixed;
@@ -179,6 +185,13 @@
   box-shadow: 0 2px 0 #a4aab3;
   -webkit-touch-callout: none;
 }
+/* A key is pressed from anywhere in its share of the gaps around it, and the outer keys from the
+   screen edge: a thumb landing between two keys used to type nothing. */
+.puzzle-key { position: relative; }
+.puzzle-key::after { content: ""; position: absolute; inset: -4px -3px -3px; }
+.puzzle-key:first-child::after { left: -40px; }
+.puzzle-key:last-child::after { right: -40px; }
+.puzzle-keyboard-row:last-child .puzzle-key::after { bottom: -10px; }
 .puzzle-key-action { flex: 1.45; background: #bfc8d3; color: #25344b; }
 .puzzle-key:active:not(:disabled) { background: #a9cdf8; box-shadow: none; transform: translateY(1px); }
 .puzzle-key:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: -3px; }
@@ -515,7 +528,7 @@ select,
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   gap: calc(var(--u) * 2);
   padding: calc(var(--u) * 2.2);
-  height: 100dvh;
+  height: var(--app-height);
 }
 .tv-lobby-join {
   background:

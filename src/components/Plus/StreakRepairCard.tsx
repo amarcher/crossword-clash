@@ -24,7 +24,7 @@ export function StreakRepairCard() {
   const weekday = new Date(`${offer.day}T12:00:00`).toLocaleDateString(i18n.language, { weekday: "long" });
   const plus = account.plus;
   return (
-    <section aria-label={t("streakRepair.title", { count: offer.streak })} className="flex items-center gap-3 rounded-2xl bg-gold-50 p-4 text-left ring-1 ring-gold-100">
+    <section aria-label={t("streakRepair.title", { count: offer.streak })} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-2xl bg-gold-50 p-4 text-left ring-1 ring-gold-100 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-gold-700 ring-1 ring-gold-100">
         <Flame className="size-5" aria-hidden="true" />
       </span>
@@ -32,9 +32,11 @@ export function StreakRepairCard() {
         <p className="font-semibold leading-snug text-ink">{t("streakRepair.title", { count: offer.streak })}</p>
         <p className="mt-0.5 text-sm leading-snug text-muted">{plus ? t("streakRepair.body", { day: weekday }) : t("streakRepair.bodyFree", { day: weekday })}</p>
       </div>
+      {/* On a phone the button sits under the text at full width: beside it the heading had a third of the card and broke mid-phrase. */}
       {plus ? (
         <Button
           size="sm"
+          className="max-sm:col-span-2 max-sm:w-full"
           onClick={() => {
             track("streak_repair_started", { streak: offer.streak });
             navigate(dailyPath(offer.day, "mini"));
@@ -43,7 +45,7 @@ export function StreakRepairCard() {
           {t("streakRepair.play")}
         </Button>
       ) : (
-        <Button size="sm" onClick={() => account.openPaywall({ placement: "streak", feature: "streak" })}>
+        <Button size="sm" className="max-sm:col-span-2 max-sm:w-full" onClick={() => account.openPaywall({ placement: "streak", feature: "streak" })}>
           {t("streakRepair.withPlus")}
         </Button>
       )}

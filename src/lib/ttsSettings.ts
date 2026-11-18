@@ -40,7 +40,9 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-const VALID_NARRATOR_ENGINES = new Set(["elevenlabs-agent", "openai-agent", "claude"]);
+// The two realtime agents were retired on 2026-11-14: a stored choice of
+// either is the AI host, which is now one thing.
+const STORED_NARRATOR_ENGINES = new Set(["elevenlabs-agent", "openai-agent", "claude"]);
 
 export function loadTTSSettings(): TTSSettings {
   try {
@@ -57,12 +59,12 @@ export function loadTTSSettings(): TTSSettings {
     } else if (parsed.engine === "agent") {
       // Legacy: "agent" was the old ElevenLabs agent narrator conflated with TTS engine
       engine = "browser";
-      narratorEngine = "elevenlabs-agent";
+      narratorEngine = "claude";
     }
 
     // Explicit narratorEngine overrides the migration
-    if (typeof parsed.narratorEngine === "string" && VALID_NARRATOR_ENGINES.has(parsed.narratorEngine)) {
-      narratorEngine = parsed.narratorEngine as NarratorEngine;
+    if (typeof parsed.narratorEngine === "string" && STORED_NARRATOR_ENGINES.has(parsed.narratorEngine)) {
+      narratorEngine = "claude";
     } else if (parsed.narratorEngine === null) {
       // Only use migration value if narratorEngine wasn't explicitly set
       // (migration already set it above for "agent" engine)

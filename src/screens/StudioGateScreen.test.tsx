@@ -59,8 +59,7 @@ describe("StudioGateScreen", () => {
     }
     expect(screen.getByText(/Sign in first/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Continue with Apple" })).toBeTruthy();
-    expect(screen.getByText("$24.99")).toBeTruthy();
-    expect(screen.getByText("Save 48%")).toBeTruthy();
+    expect(screen.getByText("First month free, then $24.99 a year or $3.99 a month")).toBeTruthy();
     expect(screen.queryByText("The editor")).toBeNull();
     expect(track).toHaveBeenCalledWith("paywall_viewed", { placement: "studio", feature: "studio", state: "sign-in" });
   });
@@ -70,7 +69,8 @@ describe("StudioGateScreen", () => {
     renderGate();
     expect(screen.getByText("Build your own crossword")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Continue with/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /Yearly · 1 month free/ })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Yearly/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start my free month" })).toBeTruthy();
     expect(track).toHaveBeenCalledWith("paywall_viewed", { placement: "studio", feature: "studio", state: "plus" });
   });
 

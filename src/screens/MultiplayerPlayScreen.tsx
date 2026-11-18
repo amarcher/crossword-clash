@@ -27,11 +27,19 @@ import { usePlayInsights } from "../hooks/usePlayInsights";
 import { leaderboardPath, postDailyResult, todayKey } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
+import { recordGroupFinish } from "../lib/groupFinish";
 import { rankRaceStandings } from "../lib/raceResults";
+import { progressPercent } from "../lib/raceProgress";
 import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
+import { buildRoomReplay, roomReplayCode } from "../lib/roomReplay";
+import { createReplayShare } from "../lib/replayShare";
+import { resolvePuzzleRef } from "../lib/gameSettings";
+import { encodeReplay } from "../lib/replayCode";
+import { useSolveRecorder } from "../hooks/useRace";
+import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
@@ -85,10 +93,56 @@ export function MultiplayerPlayScreen() {
     raceMode,
     raceFinishTimes,
     finishRace,
+    raceProgress,
+    rivalTints,
   } = mp;
 
   const isAsync = raceMode === "async";
   const isCoop = raceMode === "coop";
+
+  // The room's replay (roomReplay.ts): a finished shared grid whose every square has a time.
+  const roomReplay = useMemo(
+    () => (gameStatus === "completed" && !isAsync ? buildRoomReplay(playerCells, mp.raceStartedAt) : null),
+    [gameStatus, isAsync, playerCells, mp.raceStartedAt],
+  );
+  const [replayOpen, setReplayOpen] = useState(false);
+  const roomPuzzleRef = useMemo(() => resolvePuzzleRef(mp.gameSettings), [mp.gameSettings]);
+  // The same replay filed as a share, so the link sent from the finish plays the race (api/replay.ts).
+  const [raceShareId, setRaceShareId] = useState<string>();
+  const raceCode = useMemo(
+    () => (roomReplay && puzzle && playerColorMap ? roomReplayCode(puzzle, roomReplay, playerColorMap, user?.id) : null),
+    [roomReplay, puzzle, playerColorMap, user?.id],
+  );
+  // A time trial is each player's own solve, so its clip is the solo one (replayCode.ts): this
+  // device records the letters going in on the race clock and files them at the finish. Kept
+  // under the room's own key, apart from a solo recording of the same puzzle.
+  const myFinish = user ? raceFinishTimes[user.id] : undefined;
+  const raceStartedAt = mp.raceStartedAt;
+  const getRaceElapsedMs = useCallback(() => (raceStartedAt ? Math.max(0, Date.now() - raceStartedAt) : 0), [raceStartedAt]);
+  const recorder = useSolveRecorder({
+    puzzleKey: isAsync && game.gameId ? `room:${game.gameId}` : null,
+    width: puzzle?.width ?? 0,
+    playerCells,
+    getElapsedMs: getRaceElapsedMs,
+    enabled: isAsync && gameStatus === "active" && myFinish === undefined && !!raceStartedAt,
+  });
+  const trialCode = useMemo(() => {
+    if (!isAsync || myFinish === undefined || !puzzle) return null;
+    const trace = recorder.take();
+    return trace ? encodeReplay(puzzle, trace.events, myFinish, trace.marks) : null;
+  }, [isAsync, myFinish, puzzle, recorder]);
+  const replayCode = raceCode ?? trialCode;
+  useEffect(() => {
+    setRaceShareId(undefined);
+    if (!replayCode) return;
+    let live = true;
+    void createReplayShare(replayCode).then((id) => {
+      if (live && id) setRaceShareId(id);
+    });
+    return () => {
+      live = false;
+    };
+  }, [replayCode]);
 
   useBeforeUnload(gameStatus === "active");
 
@@ -96,8 +150,8 @@ export function MultiplayerPlayScreen() {
 
   const navActions = useMemo(
     () => ({
-      // Async: validate against the LOCAL copy only (no claims/broadcasts) —
-      // one player's letters never appear on another's grid.
+      // Async: validate against the LOCAL copy only (no claims) — one
+      // player's letters never appear on another's grid, only a dot.
       inputLetter: isAsync ? asyncInputLetter : multiplayerInputLetter,
       deleteLetter: () => {}, // No deletion in multiplayer
       moveSelection,
@@ -193,6 +247,13 @@ export function MultiplayerPlayScreen() {
     if (!finished) return;
     setNytStreak(recordNytPlay().current);
   }, [fromNyt, nytStreak, isAsync, myFinishSeconds, gameStatus]);
+
+  // A shared grid's time is the room's, kept on this device for the
+  // leaderboard's "Played as a group in 5:16" (groupFinish.ts).
+  useEffect(() => {
+    if (isAsync || gameStatus !== "completed" || !puzzle || typeof raceSeconds !== "number") return;
+    recordGroupFinish(puzzleIdentity(puzzle), raceSeconds);
+  }, [isAsync, gameStatus, puzzle, raceSeconds]);
 
   // Signed-in solvers: file the finish in the account's solve history. An
   // async race carries a personal time; a shared-grid finish (versus, co-op)
@@ -296,8 +357,8 @@ export function MultiplayerPlayScreen() {
   const finishSeconds = isAsync ? myFinishSeconds ?? null : raceSeconds;
   const canChooseNewPuzzle = isHost;
 
-  // Async sidebar: live standings instead of the cells-claimed scoreboard
-  // (other players' grids are invisible, so cell counts are meaningless).
+  // Async sidebar: live standings instead of the cells-claimed scoreboard:
+  // a finish time, or how much of their own copy a player has filled.
   const raceStatusPanel = raceStandings && (
     <div className="space-y-2">
       <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
@@ -311,7 +372,11 @@ export function MultiplayerPlayScreen() {
           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
           <span className="font-medium text-neutral-700 truncate flex-1">{row.displayName}</span>
           <span className="tabular-nums text-neutral-500">
-            {row.seconds != null ? formatDuration(row.seconds) : t('completion.solving')}
+            {row.seconds != null
+              ? formatDuration(row.seconds)
+              : progressPercent(raceProgress, row.userId, totalWhiteCells) != null
+                ? `${progressPercent(raceProgress, row.userId, totalWhiteCells)}%`
+                : t('completion.solving')}
           </span>
         </div>
       ))}
@@ -393,6 +458,7 @@ export function MultiplayerPlayScreen() {
               navigationActions={navActions}
               rejectedCell={rejectedCell}
               inputRef={gridInputRef}
+              ghostTints={isAsync && !finished ? rivalTints : undefined}
             />
             {multiplayerActive && <LockoutOverlay lockedUntil={lockedUntil} />}
           </div>
@@ -443,7 +509,7 @@ export function MultiplayerPlayScreen() {
           </>
         }
         clues={
-          <div className="flex flex-col gap-2 md:gap-4 h-full">
+          <div className="flex flex-col gap-3 md:gap-4 md:h-full">
             <ActiveClueCard clue={activeClue} />
             <div className="flex-1 min-h-0">
             <CluePanel
@@ -487,10 +553,24 @@ export function MultiplayerPlayScreen() {
         nytHook={fromNyt ? { streak: serverNytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={dailySlot ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
+        // A past daily or a community puzzle: the link the host's room carries (gameSettings.ts).
+        puzzleRef={roomPuzzleRef}
         onNextPuzzle={canChooseNewPuzzle ? handleNextPuzzle : undefined}
         onBackToMenu={handleBackToMenu}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
+        replayId={raceShareId}
+        onWatchRoomReplay={
+          roomReplay
+            ? () => {
+                track("room_replay_opened", { placement: "player" });
+                setReplayOpen(true);
+              }
+            : undefined
+        }
       />
+      {replayOpen && roomReplay && (
+        <RoomReplayDialog puzzle={puzzle} replay={roomReplay} players={playerResults ?? []} playerColorMap={playerColorMap ?? {}} onClose={() => setReplayOpen(false)} />
+      )}
     </>
   );
 }

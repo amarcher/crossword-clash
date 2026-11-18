@@ -47,7 +47,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                      options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         let config = UISceneConfiguration(name: "Default Configuration",
                                           sessionRole: connectingSceneSession.role)
-        config.delegateClass = SceneDelegate.self
+        // Only the device's own window gets the app. A window on an external
+        // display (AirPlay, a cable) made iOS stop mirroring and show a second
+        // copy of the app there, on its menu, instead of the game on the iPad
+        // (Andrew, 2026-11-14). With no delegate, iOS mirrors the screen.
+        if connectingSceneSession.role == .windowApplication {
+            config.delegateClass = SceneDelegate.self
+        }
         return config
     }
 }

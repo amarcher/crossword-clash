@@ -26,8 +26,11 @@ interface ProviderButtonProps {
  * Interface Guidelines (App Store guideline 4.8), so both follow their brand
  * rules: the Apple logo on a black button in the system font (white with a
  * 1 px border on a dark surface), the four-colour "G" on a white button with
- * Google's #747775 border and Roboto Medium 14 px; the same height, radius
- * and width for both, so Apple's is never the less prominent one. The label
+ * Google's #747775 border and Roboto Medium; the same height, radius, width
+ * and label size for both, and each logo in the same column at the left with
+ * the label centred, so the two read as a pair and Apple's is never the less
+ * prominent one (Andrew, 2026-11-16: 17 px beside 14 px, each logo hugging
+ * its own label, looked mismatched). The label
  * keeps the `account.continueApple` / `account.continueGoogle` strings
  * ("Continue with …" is one of the HIG's permitted titles).
  */
@@ -45,17 +48,18 @@ export function ProviderButton({ provider, onClick, disabled, busy, size = "lg",
       onClick={onClick}
       className={`${BASE} ${SIZES[size]} ${STYLES[provider][scheme]} ${className}`.trim()}
     >
-      {provider === "apple" ? <AppleLogo /> : <GoogleLogo />}
+      <span className="absolute left-4 top-1/2 grid w-5 -translate-y-1/2 place-items-center">{provider === "apple" ? <AppleLogo /> : <GoogleLogo />}</span>
       <span className="min-w-0 truncate">{label}</span>
     </button>
   );
 }
 
-// Layout shared by both brands: logo at the left, label centred in the rest,
-// 12 px side padding (Google's spec), the app's corner radius, no transform or
-// shadow games — the brand guidelines ask for a plain button.
+// Layout shared by both brands: the logo in a fixed column at the left, the
+// label centred in the button (side padding keeps it clear of the logo), the
+// app's corner radius, no transform or shadow games — the brand guidelines
+// ask for a plain button.
 const BASE =
-  "relative inline-flex w-full select-none items-center justify-center gap-3 rounded-xl border px-3 whitespace-nowrap transition-[background-color,border-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:pointer-events-none disabled:opacity-45";
+  "relative inline-flex w-full select-none items-center justify-center rounded-xl border px-12 text-base whitespace-nowrap transition-[background-color,border-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:pointer-events-none disabled:opacity-45";
 
 const SIZES: Record<ProviderButtonSize, string> = {
   md: "h-11",
@@ -65,15 +69,15 @@ const SIZES: Record<ProviderButtonSize, string> = {
 const STYLES: Record<AuthProvider, Record<ProviderButtonScheme, string>> = {
   apple: {
     // HIG: black button, white logo and title, no border needed; the border colour matches the fill so both schemes share one box.
-    light: "provider-button-apple border-black bg-black text-[17px] font-semibold text-white active:bg-neutral-800",
+    light: "provider-button-apple border-black bg-black font-semibold text-white active:bg-neutral-800",
     // HIG: white button with black logo and title and a 1 px outline on dark backgrounds.
-    dark: "provider-button-apple border-black bg-white text-[17px] font-semibold text-black active:bg-neutral-200",
+    dark: "provider-button-apple border-black bg-white font-semibold text-black active:bg-neutral-200",
   },
   google: {
     // Google branding, light theme: #FFFFFF fill, #747775 1 px border, #1F1F1F label.
-    light: "provider-button-google border-[#747775] bg-white text-[14px] font-medium text-[#1F1F1F] active:bg-[#F2F2F2]",
+    light: "provider-button-google border-[#747775] bg-white font-medium text-[#1F1F1F] active:bg-[#F2F2F2]",
     // Google branding, dark theme: #131314 fill, #8E918F border, #E3E3E3 label.
-    dark: "provider-button-google border-[#8E918F] bg-[#131314] text-[14px] font-medium text-[#E3E3E3] active:bg-[#1F1F20]",
+    dark: "provider-button-google border-[#8E918F] bg-[#131314] font-medium text-[#E3E3E3] active:bg-[#1F1F20]",
   },
 };
 

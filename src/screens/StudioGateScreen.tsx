@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Grid3x3, PencilRuler, Share2, Sparkles, WandSparkles } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { ProviderButton } from "../components/Account/ProviderButton";
-import { PlusPitch } from "../components/Plus/PlusPitch";
+import { PlusPitch, PlusPriceLine } from "../components/Plus/PlusPitch";
 import { PlusPurchaseControls } from "../components/Plus/PlusPurchaseControls";
 import { useStudioAccount } from "../hooks/useStudioAccount";
 import { track } from "../lib/analytics";
@@ -86,7 +86,10 @@ export function StudioGateScreen() {
           <section aria-label={t("plus.title")} className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6 lg:sticky lg:top-6">
             <PlusPitch>
               {verdict === "sign-in" ? (
-                <SignInButtons />
+                <div className="flex flex-col gap-2.5">
+                  <PlusPriceLine />
+                  <SignInButtons />
+                </div>
               ) : (
                 <PlusPurchaseControls
                   account={{ signedIn: !!account.user, plus: account.plus, plusRow: account.plusRow, refreshEntitlements: account.refreshEntitlements }}
@@ -111,8 +114,9 @@ const FEATURES = [
 ] as const;
 
 function GateShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <PageShell width="md" widthLg="5xl" background="canvas" bar={{ backLabel: "Menu", backTo: "/menu" }}>
+    <PageShell width="md" widthLg="5xl" background="canvas" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
       <main className="mt-6 pb-8">{children}</main>
     </PageShell>
   );

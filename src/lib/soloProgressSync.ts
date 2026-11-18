@@ -1,7 +1,8 @@
 /**
- * Synced per-puzzle progress for Plus (docs/monetization-spec.md §2.4): the
- * local store (soloProgress.ts) is mirrored to the `solo_progress` table so
- * another device picks a puzzle up where it was.
+ * Synced per-puzzle progress for every account (Plus only until 2026-11-16,
+ * docs/monetization-spec.md §2.4): the local store (soloProgress.ts) is
+ * mirrored to the `solo_progress` table so another device picks a puzzle up
+ * where it was.
  *
  * - `startProgressSync(userId)` subscribes to the store's change
  *   notifications: a record is pushed (upsert) 2 s after its last change, or
@@ -9,15 +10,19 @@
  *   its row. `stopProgressSync()` flushes and unsubscribes (sign-out, lapse).
  * - `pullProgress(userId)` reads the account's rows and merges them into the
  *   local store, newer `updatedAt` wins (`mergeRemoteProgress`), and returns
- *   the keys that changed. Called when a Plus account appears and when the
+ *   the keys that changed. Called when an account appears and when the
  *   tab comes back.
+ * - `uploadLocalProgress(userId)` sends what the device already holds, once
+ *   per account per device: puzzles started before signing in, or before
+ *   every account synced. After the pull, so the local store is the newer.
  *
- * RLS decides who may write: a real account with Plus in force. A refused
+ * RLS decides who may write: a real account. A refused
  * write is logged and dropped; the local record is untouched, so nothing is
  * lost on the device. Pure parts (row ↔ record) are exported for tests.
  */
 import { supabase } from "./supabaseClient";
-import { getProgress, mergeRemoteProgress, subscribeProgressChanges, type SoloProgressRecord } from "./soloProgress";
+import { getProgress, loadProgressStore, mergeRemoteProgress, subscribeProgressChanges, type SoloProgressRecord } from "./soloProgress";
+import { cleanEvents, clearTrace, loadTrace, saveTrace, type StoredTrace } from "./race";
 import type { CellState } from "../types/puzzle";
 
 export const PUSH_DEBOUNCE_MS = 2000;
@@ -31,6 +36,32 @@ export interface SoloProgressRow {
   total: number;
   /** ISO timestamp. */
   updated_at: string;
+  /**
+   * The solve's recording so far (race.ts), so a puzzle continued on another
+   * device can still be raced and replayed; null when the device has none or
+   * it is too large to send.
+   */
+  trace?: SyncedTrace | null;
+}
+
+export type SyncedTrace = Pick<StoredTrace, "events" | "marks" | "partial">;
+/** The largest recording sent with a row, as JSON (the column allows a little more). */
+export const MAX_TRACE_CHARS = 120_000;
+
+/** The device's recording for a puzzle, as it rides with the progress row. */
+export function traceForSync(key: string): SyncedTrace | null {
+  const stored = loadTrace(key);
+  if (!stored) return null;
+  const trace: SyncedTrace = { events: stored.events, marks: stored.marks ?? [], partial: stored.partial };
+  return JSON.stringify(trace).length <= MAX_TRACE_CHARS ? trace : null;
+}
+
+/** A row's recording, cleaned; null when there is none or it is not one. */
+export function traceFromRow(key: string, raw: unknown): StoredTrace | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { events, marks, partial } = raw as { events?: unknown; marks?: unknown; partial?: unknown };
+  if (!Array.isArray(events)) return null;
+  return { key, events: cleanEvents(events), marks: Array.isArray(marks) ? (marks as StoredTrace["marks"]) : [], partial: partial === true };
 }
 
 export function rowFromRecord(userId: string, r: SoloProgressRecord): SoloProgressRow {
@@ -42,6 +73,7 @@ export function rowFromRecord(userId: string, r: SoloProgressRecord): SoloProgre
     filled: r.filled,
     total: r.total,
     updated_at: new Date(r.updatedAt).toISOString(),
+    trace: traceForSync(r.key),
   };
 }
 
@@ -51,7 +83,7 @@ export function recordFromRow(row: Pick<SoloProgressRow, "puzzle_key" | "cells" 
   return { key: row.puzzle_key, cells: row.cells, elapsedMs: row.elapsed_ms, updatedAt, filled: row.filled, total: row.total };
 }
 
-const COLUMNS = "puzzle_key, cells, elapsed_ms, filled, total, updated_at";
+const COLUMNS = "puzzle_key, cells, elapsed_ms, filled, total, updated_at, trace";
 
 let syncUser: string | null = null;
 let unsubscribe: (() => void) | null = null;
@@ -97,7 +129,7 @@ export function flushProgressSync(): void {
   }
 }
 
-/** Start mirroring the local store for this Plus account. Idempotent per user. */
+/** Start mirroring the local store for this account. Idempotent per user. */
 export function startProgressSync(userId: string): void {
   if (!supabase) return;
   if (syncUser === userId) return;
@@ -139,11 +171,53 @@ export async function pullProgress(userId: string): Promise<string[]> {
   try {
     const { data, error } = await supabase.from("solo_progress").select(COLUMNS).eq("user_id", userId);
     if (error) throw error;
-    const records = ((data ?? []) as SoloProgressRow[]).map(recordFromRow).filter((r): r is SoloProgressRecord => r !== null);
-    return mergeRemoteProgress(records);
+    const rows = (data ?? []) as SoloProgressRow[];
+    const records = rows.map(recordFromRow).filter((r): r is SoloProgressRecord => r !== null);
+    const changed = mergeRemoteProgress(records);
+    // A puzzle whose letters just came from another device takes that device's
+    // recording too; without one, what is here no longer describes the grid.
+    for (const key of changed) {
+      const trace = traceFromRow(key, rows.find((row) => row.puzzle_key === key)?.trace);
+      if (trace) saveTrace(trace);
+      else clearTrace(key);
+    }
+    return changed;
   } catch (err) {
     console.warn("Progress sync: could not read", err);
     return [];
+  }
+}
+
+/** Accounts whose puzzles in progress this device has sent once (deviceData.ts forgets one when a guest's work is folded in). */
+export const PROGRESS_UPLOADED_KEY = "crossword-clash:progress-uploaded";
+
+function uploadedIds(): string[] {
+  try {
+    const ids: unknown = JSON.parse(localStorage.getItem(PROGRESS_UPLOADED_KEY) ?? "[]");
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Send every puzzle in progress on this device to the account, once per
+ * account per device. A change after that goes through the subscription; a
+ * failed send is not marked done and is tried again the next time.
+ */
+export async function uploadLocalProgress(userId: string): Promise<void> {
+  if (!supabase || uploadedIds().includes(userId)) return;
+  const rows = Object.values(loadProgressStore())
+    .filter((r) => Object.keys(r.cells).length > 0)
+    .map((r) => rowFromRecord(userId, r));
+  try {
+    if (rows.length > 0) {
+      const { error } = await supabase.from("solo_progress").upsert(rows, { onConflict: "user_id,puzzle_key" });
+      if (error) throw error;
+    }
+    localStorage.setItem(PROGRESS_UPLOADED_KEY, JSON.stringify([...uploadedIds(), userId]));
+  } catch (err) {
+    console.warn("Progress sync: could not send this device's puzzles", err);
   }
 }
 

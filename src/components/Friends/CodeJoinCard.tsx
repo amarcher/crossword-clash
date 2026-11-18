@@ -30,7 +30,9 @@ export function CodeJoinCard({ first, onJoin }: { first: boolean; onJoin?: (code
     e.preventDefault();
     if (!ready) return;
     onJoin?.(code);
-    navigate(`/join?join=${code}`);
+    // `auto`: the join screen goes straight in when it already knows a name,
+    // so a code typed here is not asked for again one screen later.
+    navigate(`/join?join=${code}`, { state: { auto: true } });
   };
 
   return (
@@ -39,7 +41,7 @@ export function CodeJoinCard({ first, onJoin }: { first: boolean; onJoin?: (code
       {first && <p className="mt-1 text-sm text-muted">{t("race.codeIntro")}</p>}
       <form onSubmit={submit} className="mt-3 grid gap-3" autoComplete="off">
         <div className="relative">
-          <div aria-hidden="true" className="flex justify-between gap-2">
+          <div aria-hidden="true" className="flex justify-between gap-2 sm:justify-start sm:gap-2.5">
             {Array.from({ length: CODE_LENGTH }, (_, i) => {
               const active = focused && i === Math.min(code.length, CODE_LENGTH - 1);
               return (

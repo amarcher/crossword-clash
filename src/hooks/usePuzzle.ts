@@ -517,9 +517,16 @@ function reduce(state: PuzzleState, action: PuzzleAction): PuzzleState {
     }
 
     case "HYDRATE_CELLS": {
+      // A cell read back without its time (claimed before the server kept
+      // them) keeps the one this device stamped when it saw the claim.
+      const cells: Record<string, CellState> = {};
+      for (const [key, cell] of Object.entries(action.cells)) {
+        const local = state.playerCells[key];
+        cells[key] = cell.at === undefined && local?.at !== undefined && local.letter === cell.letter ? { ...cell, at: local.at } : cell;
+      }
       return {
         ...state,
-        playerCells: action.cells,
+        playerCells: cells,
         score: action.score,
       };
     }

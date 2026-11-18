@@ -9,6 +9,31 @@ import { friendLink } from "../../lib/friends";
 import { track } from "../../lib/analytics";
 
 /**
+ * Sends the viewer's own add-me link (friends.ts) through the share sheet,
+ * falling back to the clipboard; `note` is what to tell them afterwards.
+ */
+export function useShareFriendLink(username: string, placement: string) {
+  const { t } = useTranslation();
+  const link = friendLink(username);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const share = useCallback(async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      const text = t("friends.linkShareText", { link });
+      const result = await shareText({ text, body: text, url: link, title: "Crossword Clash" }, await runtimeDeps());
+      if (result.outcome === "dismissed") return;
+      track("friend_link_shared", { method: result.method, outcome: result.outcome, placement });
+      setNote(t(result.outcome === "shared" ? "friends.linkShared" : result.outcome === "copied" ? "friends.linkCopied" : "friends.linkFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }, [t, link, placement]);
+  return { link, share, busy, note };
+}
+
+/**
  * "Invite a friend" on the Friends screen: the viewer's own add-me link
  * (friends.ts), sent through the share sheet or shown as a QR code for
  * someone in the room. Finding a friend used to mean knowing and typing their
@@ -18,24 +43,8 @@ import { track } from "../../lib/analytics";
  */
 export function InviteFriendCard({ username, className = "" }: { username: string; className?: string }) {
   const { t } = useTranslation();
-  const link = friendLink(username);
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const { link, share, busy, note } = useShareFriendLink(username, "friends");
   const [showQr, setShowQr] = useState(false);
-
-  const share = useCallback(async () => {
-    setBusy(true);
-    setNote(null);
-    try {
-      const text = t("friends.linkShareText", { link });
-      const result = await shareText({ text, body: text, url: link, title: "Crossword Clash" }, await runtimeDeps());
-      if (result.outcome === "dismissed") return;
-      track("friend_link_shared", { method: result.method, outcome: result.outcome });
-      setNote(t(result.outcome === "shared" ? "friends.linkShared" : result.outcome === "copied" ? "friends.linkCopied" : "friends.linkFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }, [t, link]);
 
   return (
     <Card className={`p-5 ${className}`} data-testid="invite-friend">

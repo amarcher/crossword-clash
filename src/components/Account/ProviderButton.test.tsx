@@ -48,7 +48,10 @@ describe("ProviderButton", () => {
     expect(apple.className).toContain("provider-button-apple");
     expect(google.className).toContain("bg-white");
     expect(google.className).toContain("border-[#747775]");
-    expect(google.className).toContain("text-[14px]");
+    // One label size for the pair, and each logo in the same column.
+    expect(apple.className).toContain("text-base");
+    expect(google.className).toContain("text-base");
+    expect(apple.querySelector("svg")?.parentElement?.className).toBe(google.querySelector("svg")?.parentElement?.className);
     expect(google.className).toContain("provider-button-google");
     expect(apple.className).toContain("rounded-xl");
     expect(google.className).toContain("rounded-xl");

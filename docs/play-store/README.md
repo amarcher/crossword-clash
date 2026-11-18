@@ -11,7 +11,7 @@ locks to that account on first upload.
   `6294983081887284734` (sign in as the Fable Designer Google login, not the
   personal one; the console then lands on `/console/u/<n>/`).
 - Live since October 13, 2026: release **2 (1.0.0)**, all 178 countries.
-- Current work: **4 (1.0.2)**, see "Status" below.
+- Latest: **33 (1.1.3)**, sent for review November 17, 2026; see "History" below.
 
 ## What is in this folder
 
@@ -26,7 +26,12 @@ locks to that account on first upload.
 | `screenshots/phone/` | Phone screenshots, 1080×2160 |
 | `screenshots/tablet-10/` | Tablet screenshots, 1600×2560 (used for both the 7-inch and 10-inch slots) |
 
-Screenshots are emulator captures (Pixel 7 image, Android 16) of live games on
+The screenshots were replaced on November 16, 2026 with eight captioned tiles
+per set (the same series as `../app-store/README.md` describes: the app's own
+screens in a device frame on the site's crossword backdrop, invented player
+names, synthetic solves). Uploaded November 17, 2026 as `phone-NN-*.png` and
+`tablet-NN-*.png` so the two sets are distinct in the asset library. The earlier
+sets were emulator captures (Pixel 7 image, Android 16) of live games on
 the production backend. None of them, and none of the text, names The New York
 Times: third-party trademarks in store metadata are a common rejection. The
 importer is disclosed only in reviewer notes (the iOS text in
@@ -200,6 +205,58 @@ Done by Claude, nothing submitted or rolled out:
   API (`edits` → `tracks/production` PUT with `whats-new-1.1.0.txt` → commit).
   Release notes are capped at 500 characters; the first two drafts were
   refused at the commit for 868 and 524.
+- **November 11, 2026:** 21 (1.1.1) on the internal track and in production.
+- **November 14, 2026:** 22 (1.1.2) built on the Mac Studio, uploaded through
+  the console (see "Uploading without the API" below), rolled out to internal
+  testing with `whats-new-1.1.2-internal-22.txt`, then promoted to production
+  (100%) with the same notes and sent for review. Managed publishing is off,
+  so it goes live on approval.
+- **November 17, 2026:** 33 (1.1.3) uploaded through the console and rolled out
+  to internal testing with `whats-new-1.1.3.txt`, then promoted to production
+  (100%, all countries) with the same notes. The listing got the new short and
+  full descriptions and the eight-tile sets in the phone, 7-inch and 10-inch
+  slots. All six changes were sent for review together. The asset library
+  adds uploads to a slot in the order they finish, so upload one file per
+  call to keep the order.
+  The listing's AI asset declaration already read "Label assets as created or
+  edited using AI" and was not editable on the review step; no individual
+  asset was labelled. Later the same day the listing's Video field was set to
+  the 16:9 reel (https://www.youtube.com/watch?v=XmGX4YKABBs, see
+  `../marketing/README.md`). Sending that change cancelled and restarted the
+  review that was in progress, so all seven changes are in one review. Then tile 06 was swapped in the
+  phone, 7-inch and 10-inch slots (`06-keyboard` out, `06-studio` in: "Make
+  your own crossword") and the review was restarted once more with those three
+  screenshot changes. To keep the order, tiles 06 to 08 were removed and
+  uploaded again one file at a time.
+
+- **November 18, 2026:** 34 (1.1.3) uploaded through the console and rolled out
+  to internal testing with `whats-new-1.1.3-internal-34.txt` (the one race
+  dialog and the shared-link landings). Not promoted to production. Built on
+  the Studio with `ANDROID_HOME=~/Library/Android/sdk` and
+  `JAVA_HOME=/opt/homebrew/opt/openjdk@21`.
+
+## Uploading without the API
+
+The play-publisher service-account key and `play-upload.mjs` live on the
+MacBook only. From any other machine, upload through the console in a Chrome
+that is signed in as the Fable Designer login (it may not be account 0; try
+`/console/u/<n>/` until the app loads):
+
+1. Test and release → Internal testing → Create new release, drop the `.aab`
+   on "Upload app bundles", paste the notes, Next, Save and publish.
+2. Promote release → Production, Next, Save, then Publishing overview →
+   Submit for review.
+
+Claude in Chrome's `file_upload` refuses more than 10 MB per call and the
+bundle is about 12 MB. Split it (`split -b 6500000`), upload each part to a
+temporary `<input type=file>` added to the page, join them with
+`new File([a, b], name)`, check the SHA-256 against the bundle on disk, then
+set the result on the console's `input[accept=".aab"]` with a `DataTransfer`
+and dispatch `change`.
+
+On a machine where Android Studio bundles JDK 25, Gradle fails with
+"Unsupported class file major version 69"; build with
+`JAVA_HOME=/opt/homebrew/opt/openjdk@21` instead.
 
 ## Known gaps
 

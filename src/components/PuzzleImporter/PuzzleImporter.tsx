@@ -245,7 +245,7 @@ export function PuzzleImporter({ onPuzzleLoaded, backTo, backLabel, title, subti
         </div>
 
         <div className="mt-6 flex flex-col items-center gap-4">
-          <NytRecommendation variant="card" />
+          <NytRecommendation />
           <AdSlot placement="import-bottom" />
         </div>
       </div>

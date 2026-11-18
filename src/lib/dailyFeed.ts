@@ -55,6 +55,13 @@ const CACHE_KEYS: Record<DailySlot, string> = {
 const FETCH_TIMEOUT_MS = 2500;
 /** How long "no feed file for today" is trusted before the feed is asked again. */
 export const ABSENT_TTL_MS = 3 * 60 * 60 * 1000;
+/**
+ * How long a remembered puzzle is shown without asking the feed again. A
+ * published daily can be corrected during its day (Andrew, 2026-11-16: that
+ * day's midi had seven clues on the wrong entries, and a device that had
+ * already opened it kept the broken copy until midnight).
+ */
+export const PRESENT_TTL_MS = 15 * 60 * 1000;
 
 /** Where the feed lives: the page's own origin on the web, the public site in the apps. */
 const FEED_ORIGIN = import.meta.env?.MODE === "mobile" ? "https://crosswordclash.com" : "";
@@ -252,6 +259,48 @@ async function fetchDayEntry(day: string, slot: DailySlot, fetchImpl: FetchLike 
   }
 }
 
+const refreshing: Partial<Record<DailySlot, { day: string; promise: Promise<DailyMini | null> }>> = {};
+
+/**
+ * Ask the feed again for a slot whose remembered puzzle is older than
+ * PRESENT_TTL_MS. Resolves to the puzzle when the feed's copy has changed
+ * (it is then the remembered one), and to null otherwise: nothing remembered,
+ * still fresh, unchanged, or the feed could not be read (the remembered copy
+ * stands; a correction is never worth losing the puzzle over). Never rejects.
+ */
+export function refreshDailyPuzzle(
+  slot: DailySlot,
+  now: Date = new Date(),
+  fetchImpl: FetchLike | undefined = typeof fetch === "function" ? (fetch as unknown as FetchLike) : undefined,
+): Promise<DailyMini | null> {
+  const day = dayKey(now);
+  if (known(slot, now) === undefined) return Promise.resolve(null);
+  const k = memo[slot];
+  if (!k?.mini || !fetchImpl || now.getTime() - k.checkedAt < PRESENT_TTL_MS) return Promise.resolve(null);
+  const pending = refreshing[slot];
+  if (pending?.day === day) return pending.promise;
+  const before = JSON.stringify(k.mini);
+  const promise = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetchImpl(dailyFeedUrl(day, slot), { signal: controller.signal });
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => null);
+      if (!parseDailyFeedEntry(data)) return null;
+      const fresh = remember(slot, day, data, now.getTime(), true);
+      return fresh && JSON.stringify(fresh) !== before ? fresh : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+      refreshing[slot] = undefined;
+    }
+  })();
+  refreshing[slot] = { day, promise };
+  return promise;
+}
+
 // --- Public: the mini, which always has an answer ---
 
 /** Today's mini if it can be named without waiting; null while the feed is being asked. */
@@ -274,5 +323,6 @@ export function resetDailyFeedMemory(): void {
   for (const slot of DAILY_SLOTS) {
     memo[slot] = undefined;
     inflight[slot] = undefined;
+    refreshing[slot] = undefined;
   }
 }

@@ -55,7 +55,7 @@ describe("TTSSettingsModal", () => {
     speak: vi.fn(),
     engine: "browser" as "browser" | "elevenlabs",
     setEngine: vi.fn(),
-    narratorEngine: null as "elevenlabs-agent" | "openai-agent" | "claude" | null,
+    narratorEngine: null as "claude" | null,
     setNarratorEngine: vi.fn(),
     spokenEvents: false,
     setSpokenEvents: vi.fn(),
@@ -127,12 +127,12 @@ describe("TTSSettingsModal", () => {
 
   it("does not show narrator toggle when elevenLabsAvailable is false", () => {
     render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={false} />);
-    expect(screen.queryByText("AI Host")).toBeNull();
+    expect(screen.queryByText("AI host")).toBeNull();
   });
 
   it("shows narrator toggle when elevenLabsAvailable is true", () => {
     render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} />);
-    expect(screen.getByText("AI Host")).toBeTruthy();
+    expect(screen.getByText("AI host")).toBeTruthy();
   });
 
   it("shows browser voice controls when narrator is off", () => {
@@ -177,26 +177,20 @@ describe("TTSSettingsModal", () => {
     expect(props.setElevenLabsVoiceId).toHaveBeenCalledWith(ELEVENLABS_VOICES[1].id);
   });
 
-  it("hides TTS engine controls when narrator agent is active", () => {
-    render(
-      <TTSSettingsModal
-        {...baseProps()}
-        elevenLabsAvailable={true}
-        narratorEngine="elevenlabs-agent"
-      />,
-    );
-    // Should not show engine dropdown or voice controls
-    expect(screen.queryByText("Engine")).toBeNull();
-    expect(screen.queryByText("Voice")).toBeNull();
-    expect(screen.queryByText("Rate: 1.0")).toBeNull();
+  it("keeps the voice controls while the AI host is on: it speaks in the chosen voice", () => {
+    render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} narratorEngine="claude" />);
+    expect(screen.getByText("Voice")).toBeTruthy();
+    expect(screen.getByText("Test Voice")).toBeTruthy();
   });
 
-  it("calls setNarratorEngine when narrator engine is changed", () => {
+  it("the AI host is one switch: on sets the host, off clears it", () => {
     const props = baseProps();
     props.elevenLabsAvailable = true;
-    render(<TTSSettingsModal {...props} />);
-
-    pick("Off (per-clue announcements)", /ElevenLabs/);
-    expect(props.setNarratorEngine).toHaveBeenCalledWith("elevenlabs-agent");
+    const { rerender } = render(<TTSSettingsModal {...props} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /^AI host/ }));
+    expect(props.setNarratorEngine).toHaveBeenCalledWith("claude");
+    rerender(<TTSSettingsModal {...props} narratorEngine="claude" />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /^AI host/ }));
+    expect(props.setNarratorEngine).toHaveBeenLastCalledWith(null);
   });
 });

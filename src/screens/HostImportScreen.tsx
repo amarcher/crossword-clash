@@ -51,6 +51,7 @@ export function HostImportScreen() {
       if (result) {
         game.setGameId(result.gameId);
         game.setIsMultiplayer(true);
+        game.setCompletionModalDismissed(false);
         navigate(`/lobby/${result.gameId}`);
       }
     },
@@ -58,5 +59,5 @@ export function HostImportScreen() {
   );
 
   // The hub's own bar carries the back control, so this screen has one header like every other flow step.
-  return <PuzzleImporter onPuzzleLoaded={handleHostPuzzleLoaded} backTo="/host-game/name" backLabel={t("hostName.back")} />;
+  return <PuzzleImporter onPuzzleLoaded={handleHostPuzzleLoaded} backTo="/host-game/name" backLabel={t("hostName.heading")} />;
 }

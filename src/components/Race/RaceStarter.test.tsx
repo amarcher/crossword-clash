@@ -26,7 +26,7 @@ describe("RaceStarter", () => {
 
   it("offers the fastest public solvers when no friend has solved it", () => {
     render(<RaceStarter candidates={candidates.slice(1)} plus preselect={[]} onStart={vi.fn()} onPitch={vi.fn()} />);
-    expect(screen.getByText("Race the fastest solvers of this puzzle")).toBeTruthy();
+    expect(screen.getByText("Race the fastest solvers")).toBeTruthy();
   });
 
   it("lets Plus pick up to three and starts the race with them", async () => {

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLightStatusBar } from "../../lib/statusBar";
 import { TVBrand } from "./TVBrand";
 
 interface TVLayoutProps {
@@ -12,6 +13,7 @@ interface TVLayoutProps {
 
 /** Spectate composition: the grid takes all the room it can; scoreboard + clues live in a right rail. */
 export function TVLayout({ grid, sidebar, scoreboard, clues, controls }: TVLayoutProps) {
+  useLightStatusBar();
   return (
     <div className="tv-stage">
       <main className="tv-main">

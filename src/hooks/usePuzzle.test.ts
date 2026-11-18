@@ -304,6 +304,13 @@ describe("puzzleReducer", () => {
   });
 
   describe("HYDRATE_CELLS", () => {
+    it("keeps the time this device stamped on a claim the server row has no time for, and takes the server's when it has one", () => {
+      const seen = puzzleReducer(loadedState(), { type: "REMOTE_CELL_CLAIM", row: 0, col: 0, letter: "A", playerId: "p2", at: 111 });
+      const fromServer = (at?: number) => ({ "0,0": { letter: "A", correct: true, playerId: "p2", ...(at === undefined ? {} : { at }) } });
+      expect(puzzleReducer(seen, { type: "HYDRATE_CELLS", cells: fromServer(), score: 1 }).playerCells["0,0"].at).toBe(111);
+      expect(puzzleReducer(seen, { type: "HYDRATE_CELLS", cells: fromServer(222), score: 1 }).playerCells["0,0"].at).toBe(222);
+    });
+
     it("bulk-loads cells and score", () => {
       const cells = {
         "0,0": { letter: "C", correct: true, playerId: "p1" },
