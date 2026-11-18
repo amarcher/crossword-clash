@@ -407,7 +407,16 @@ export function CompletionModal({
   const tableHeader = darkMode ? "text-white/50" : "text-subtle";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      // In the apps the dialog sits outside #root's padding, so it keeps clear of the status bar itself.
+      style={{
+        paddingTop: "max(1rem, env(safe-area-inset-top))",
+        paddingRight: "max(1rem, env(safe-area-inset-right))",
+        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        paddingLeft: "max(1rem, env(safe-area-inset-left))",
+      }}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-stage/60 backdrop-blur-[2px]"
@@ -421,7 +430,7 @@ export function CompletionModal({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
+        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
