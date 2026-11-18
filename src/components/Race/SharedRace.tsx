@@ -22,6 +22,8 @@ interface SharedRaceProps {
   names?: readonly string[];
   /** Where the site links to this puzzle, for sharing the race on. */
   shareRef?: PuzzleRef | null;
+  /** Start the puzzle: the clip's "Let me solve it", for a viewer who has not solved it. */
+  onSolve?: () => void;
   onClose: () => void;
 }
 
@@ -43,7 +45,7 @@ const hex = ([r, g, b]: [number, number, number]) => `#${[r, g, b].map((n) => n.
  * names, no letters, lanes counting squares won.
  * Renders nothing when the ID is not a race's (a solve's replay, or gone).
  */
-export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClose }: SharedRaceProps) {
+export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolve, onClose }: SharedRaceProps) {
   const { t } = useTranslation();
   const ownName = useRaceName();
   const { user, loading } = useAuth();
@@ -90,7 +92,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClos
   if (!shown) return null;
   return (
     <Suspense fallback={null}>
-      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} onClose={onClose} />
+      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={shown.clip && onSolve && typeof best !== "number" ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
     </Suspense>
   );
 }

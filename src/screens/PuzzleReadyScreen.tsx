@@ -75,7 +75,7 @@ export function PuzzleReadyScreen() {
         onHostOnTV={handleHostOnTV}
         onBack={handleBack}
       />
-      {linked && raceOpen && <SharedRace puzzle={game.urlPuzzle} puzzleKey={puzzleIdentity(game.urlPuzzle)} shareId={linked.id} names={linked.names} shareRef={linked.ref} onClose={closeRace} />}
+      {linked && raceOpen && <SharedRace puzzle={game.urlPuzzle} puzzleKey={puzzleIdentity(game.urlPuzzle)} shareId={linked.id} names={linked.names} shareRef={linked.ref} onSolve={() => void handlePlaySolo()} onClose={closeRace} />}
     </>
   );
 }

@@ -392,7 +392,7 @@
     "shareBackTied": "Dead heat! Watch how I did it:",
     "raceButton": "Race {{name}}'s solve",
     "raceHint": "Their squares fill in as they did, on your clock. You never see their letters.",
-    "solveYourself": "Solve it yourself",
+    "solveYourself": "Let me solve it",
     "forwardText": "{{name}} solved {{title}} in {{time}}. Watch it go in, then solve it yourself.",
     "justSolve": "Just solve it",
     "loadingRace": "Loading their solve…",
