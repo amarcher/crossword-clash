@@ -2,7 +2,7 @@
 
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation, type Location } from "react-router";
 import "../i18n/i18n";
 import { todayKey } from "../lib/dailyLeaderboard";
 import { GameProvider, useGame } from "../contexts/GameContext";
@@ -72,9 +72,11 @@ const puzzle: Puzzle = {
 
 let game: ReturnType<typeof useGame>;
 let mp: ReturnType<typeof useMultiplayerContext>;
+let location: Location;
 function Probe() {
   game = useGame();
   mp = useMultiplayerContext();
+  location = useLocation();
   return null;
 }
 
@@ -382,7 +384,7 @@ it("a signed-in solver with the default setting posts after the preference resol
   await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
 });
 
-it("today's bonus posts to the bonus board; a bonus from another day posts nowhere", async () => {
+it("today's bonus posts to the bonus board; a past bonus posts nowhere but links to that day's board", async () => {
   posting.user = { id: "me", is_anonymous: false } as User;
   const today = todayKey();
   await renderSolo();
@@ -403,7 +405,21 @@ it("today's bonus posts to the bonus board; a bonus from another day posts nowhe
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   expect(game.pendingDailyResult).toBeNull();
-  expect(screen.queryByRole("button", { name: "Daily Plus leaderboard" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Daily Plus leaderboard" }));
+  expect(`${location.pathname}${location.search}`).toBe("/bonus/leaderboard?day=2020-01-01");
+});
+
+it("a past daily from the archive links to that day's board from the finished header", async () => {
+  await renderSolo();
+  await act(async () => {
+    await game.handleSoloPuzzleLoaded({ ...puzzle, title: "Old midi", ref: { day: "2020-01-01", slot: "midi" } });
+  });
+  type("catbetao");
+  await screen.findByRole("dialog", { name: "Puzzle complete" });
+  expect(game.pendingDailyResult).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  fireEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+  expect(`${location.pathname}${location.search}`).toBe("/daily/leaderboard/midi?day=2020-01-01");
 });
 
 describe("a solved puzzle stays solved", () => {
