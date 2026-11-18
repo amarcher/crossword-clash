@@ -8,6 +8,8 @@ import { isRealPlayerName, savePlayerName } from "../../lib/playerName";
 import { shareText, type ShareDeps } from "../../lib/shareSheet";
 import type { ShareBlock } from "../../lib/shareBlock";
 import type { ShareMode } from "../../lib/resultCard";
+import { linkPreviewTitle } from "../../lib/linkPreview";
+import { ReplayPreview } from "./ReplayPreview";
 
 interface ShareResultButtonProps {
   mode: ShareMode;
@@ -31,6 +33,10 @@ interface ShareResultButtonProps {
    * reuse it (e.g. claim the daily-leaderboard entry with it too).
    */
   onNameSigned?: (name: string) => void;
+  /** The solve's replay clip, when the link carries it (or the solve is the player's own). */
+  clip?: { id: string; race?: boolean };
+  /** A community puzzle's title, which its link's preview names. */
+  communityTitle?: string;
   darkMode?: boolean;
 }
 
@@ -74,6 +80,8 @@ export function ShareResultButton({
   daily,
   legend,
   onNameSigned,
+  clip,
+  communityTitle,
   darkMode,
 }: ShareResultButtonProps) {
   const { t } = useTranslation();
@@ -88,6 +96,8 @@ export function ShareResultButton({
 
   const effectiveName = (hasRealName ? presetName : name.trim()) || unsigned;
   const block = useMemo(() => blockFor(effectiveName), [blockFor, effectiveName]);
+
+  const linkOnly = block.text === block.link;
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -139,9 +149,16 @@ export function ShareResultButton({
 
   return (
     <div className="col-span-2 flex flex-col gap-2" data-testid="share-result">
-      {/* The preview shows what will be sent. A link sent alone (its page unfurls as the
-          solve, shown above as the clip) has no text to preview. */}
-      {block.text !== block.link && <ShareBlockPreview block={block} legend={legend} darkMode={darkMode} />}
+      {/* The preview shows what will be sent. A link sent alone is shown as it unfurls: the
+          clip and the title under it, in step with the name being signed. Otherwise the text block. */}
+      {linkOnly ? (
+        <ReplayPreview id={clip?.id} race={clip?.race} title={linkPreviewTitle(block.link, communityTitle)} darkMode={darkMode} />
+      ) : (
+        <>
+          {clip && <ReplayPreview id={clip.id} race={clip.race} darkMode={darkMode} />}
+          <ShareBlockPreview block={block} legend={legend} darkMode={darkMode} />
+        </>
+      )}
       {signing && (
         <input
           type="text"

@@ -533,12 +533,13 @@ describe("CompletionModal", () => {
     expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("aria-label")).toBe("The race, replayed");
     expect(screen.queryByTestId("share-block-preview")).toBeNull();
     unmount();
-    // Without a filed replay the race shares its squares, as before.
+    // Without a filed replay the link unfurls as a card: the preview is its title and the site, with no clip.
     const plain = render(
       <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90}
         challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
     );
-    expect(plain.queryByTestId("replay-preview")).toBeNull();
+    expect(plain.getByTestId("replay-preview").querySelector("video")).toBeNull();
+    expect(plain.getByTestId("link-preview-title").textContent).toMatch(/^Alice solved the \w+ \d+ Daily Mini in 1:30crosswordclash\.com$/);
   });
 
   it("shares a Daily Plus finish as its day's link alone, with the replay, under 'Share your time'", async () => {
