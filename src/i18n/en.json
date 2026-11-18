@@ -1172,6 +1172,14 @@
     "boardPlay": "Play today's Daily Plus",
     "boardPitch": "The Daily Plus is an extra puzzle every day for Plus members."
   },
+  "bonusLink": {
+    "heading": "{{name}} solved the Daily Plus",
+    "headingPlain": "Play the Daily Plus",
+    "clipLabel": "{{name}}'s solve, replayed",
+    "clipCaption": "Their squares as they filled them in. No letters.",
+    "play": "Play this puzzle",
+    "pitch": "Daily Plus puzzles come with Crossword Clash Plus."
+  },
   "stats": {
     "title": "Your stats",
     "subtitle": "Your dailies over the past year.",

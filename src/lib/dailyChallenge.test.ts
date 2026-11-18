@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDailyLink, buildPuzzleLink, dailyPath, isDailyDay, parseDailyChallenge, parseDailyRoute, parseRaceLink } from "./dailyChallenge";
+import { bonusPath, buildDailyLink, buildPuzzleLink, dailyPath, isDailyDay, parseDailyChallenge, parseDailyRoute, parseRaceLink, puzzleRefPath } from "./dailyChallenge";
 
 describe("buildDailyLink", () => {
   it("builds the short date link with the ghost time and name", () => {
@@ -65,6 +65,18 @@ describe("parseDailyChallenge", () => {
     expect(parseDailyChallenge("?beat=fast", "A friend")).toBeNull();
     expect(parseDailyChallenge("?beat=-3", "A friend")).toBeNull();
     expect(parseDailyChallenge("?beat=1.5", "A friend")).toBeNull();
+  });
+});
+
+describe("a Daily Plus finish's link", () => {
+  it("names the day and carries the time, the solver and the replay, never the puzzle", () => {
+    const url = buildPuzzleLink("https://crosswordclash.com", { bonusDay: "2026-11-18" }, { seconds: 102, name: "Archer", replay: "yESHp2hxuzp" });
+    expect(url).toBe("https://crosswordclash.com/bonus/2026-11-18?beat=102&by=Archer&r=yESHp2hxuzp");
+    expect(parseDailyChallenge(new URL(url).search, "A friend")).toEqual({ name: "Archer", seconds: 102, replay: "yESHp2hxuzp" });
+    expect(bonusPath("2026-11-18")).toBe("/bonus/2026-11-18");
+    expect(puzzleRefPath({ bonusDay: "2026-11-18" })).toBe("/bonus/2026-11-18");
+    // Without a filed replay the link still names the day and the time.
+    expect(buildPuzzleLink("https://x.test", { bonusDay: "2026-11-18" }, { seconds: 102, replay: "nope" })).toBe("https://x.test/bonus/2026-11-18?beat=102");
   });
 });
 

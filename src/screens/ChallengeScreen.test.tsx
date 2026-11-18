@@ -86,6 +86,22 @@ describe("ChallengeScreen", () => {
     expect(raceSaved()).toEqual({ ghosts: [ghost] });
   });
 
+  it("races a Daily Plus link's sender the same way, with no race reply and no race to share", async () => {
+    game.urlPuzzle = { ...puzzle, origin: "bonus", bonusDay: "2026-11-18" };
+    game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i", ref: { bonusDay: "2026-11-18" } };
+    share.fetchReplayShare.mockResolvedValueOnce("CODE");
+    share.ghostFromReplay.mockReturnValueOnce(ghost);
+    renderScreen();
+    const dialog = await screen.findByRole("dialog", { name: "Andrew's solve" });
+    expect(share.ghostFromReplay).toHaveBeenCalledWith("CODE", "E0Gqr8Iw09i", "Andrew", { bonusDay: "2026-11-18" });
+    expect([...dialog.querySelectorAll("span.aspect-square")].map((c) => c.textContent).join("")).toBe("");
+    expect(screen.queryByTestId("race-share")).toBeNull();
+    expect(screen.queryByText(/sees your time and solve/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Let me solve it" }));
+    await screen.findByText("playing");
+    expect(raceSaved()).toEqual({ ghosts: [ghost] });
+  });
+
   it("opens the head-to-head for someone who has solved it: their recording against the sender's, with letters and no solve button", async () => {
     const { puzzleIdentity } = await import("../lib/soloStats");
     viewer.best = { [puzzleIdentity(puzzle)]: 700 };

@@ -589,8 +589,12 @@ export function SoloPlayScreen() {
   }, [soloResult, freshResult, account.plus, puzzle, accountId, historySettled, serverOutcome, t, i18n.language]);
 
   // The shared puzzle this is, where the site can link to it (Puzzle.ref):
-  // any day's daily, or a community puzzle. Imports have none.
-  const puzzleRef = useMemo<PuzzleRef | null>(() => puzzle?.ref ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : null), [puzzle, dailySlot]);
+  // any day's daily, a community puzzle, or a Daily Plus by its day (the
+  // link plays the solve and offers the puzzle, never carries it). Imports have none.
+  const puzzleRef = useMemo<PuzzleRef | null>(
+    () => puzzle?.ref ?? (puzzle?.origin === "bonus" && puzzle.bonusDay ? { bonusDay: puzzle.bonusDay } : dailySlot ? { day: todayKey(), slot: dailySlot } : null),
+    [puzzle, dailySlot],
+  );
 
   // A fresh finish's replay (replayCode.ts) on a linkable puzzle, filed under
   // a short share ID (replayShare.ts): previewed on the completion screen and

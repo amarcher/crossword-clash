@@ -30,6 +30,10 @@
       "destination": "/api/share?t=daily&day=:day&slot=:slot"
     },
     {
+      "source": "/bonus/:day(\\d{4}-\\d{2}-\\d{2})",
+      "destination": "/api/share?t=bonus&day=:day"
+    },
+    {
       "source": "/puzzles/:id([a-z0-9]{8})",
       "destination": "/api/share?t=puzzle&id=:id"
     },

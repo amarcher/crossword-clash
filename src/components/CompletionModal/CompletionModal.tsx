@@ -363,6 +363,7 @@ export function CompletionModal({
       : t(wideGrid ? "completion.legendSoloBar" : "completion.legendSolo");
   const linkRef = useMemo<PuzzleRef | undefined>(() => puzzleRef ?? (dailySlot ? { day: todayKey(), slot: dailySlot } : undefined), [puzzleRef, dailySlot]);
   const refDaily = linkRef && "day" in linkRef ? linkRef : undefined;
+  const refBonus = !!linkRef && "bonusDay" in linkRef;
   const shareDaily = refDaily ? t(SLOT_EYEBROW[refDaily.slot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
@@ -371,7 +372,7 @@ export function CompletionModal({
   const blockFor = useCallback(
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
-      // A bonus is Plus only: its link is the site, never the puzzle in a #puzzle= hash.
+      // A bonus is Plus only: its link is its day's (linkRef) or, in a room, the site, never the puzzle in a #puzzle= hash.
       const link = linkRef
         ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: replayId })
         : puzzle.origin === "bonus"
@@ -807,17 +808,17 @@ export function CompletionModal({
               challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
               hasTime={shareSeconds !== undefined}
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
-              daily={!!refDaily && !isMultiplayer}
+              daily={(!!refDaily || !!refBonus) && !isMultiplayer}
               legend={shareLegend}
               onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}
             />
           )}
           {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
-              (docs/friends-spec.md §3.2). Renders nothing without friends. */}
+              (docs/friends-spec.md §3.2). Renders nothing without friends. Not a Daily Plus: send_beat takes no such link. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
           {dailySlot && !isMultiplayer && <ReminderSwitch darkMode={darkMode} />}
-          {linkRef && !isMultiplayer && shareSeconds !== undefined && (
+          {linkRef && !refBonus && !isMultiplayer && shareSeconds !== undefined && (
             <SendToFriend
               link={buildPuzzleLink("", linkRef, { seconds: shareSeconds, name: (challengerName ?? "").trim() || t("common.defaultPlayerName"), replay: replayId })}
               puzzleKey={challengePuzzle ? puzzleIdentity(challengePuzzle) : null}

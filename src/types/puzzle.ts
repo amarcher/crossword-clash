@@ -25,7 +25,8 @@ export interface PuzzleClue {
  * Where a puzzle came from, when it matters after import. The NYT bookmarklet
  * drives the "same time tomorrow" hook and the NYT streak; a community puzzle
  * (docs/community-puzzles-spec.md) records its solves under its own source;
- * a bonus (bonus.ts) is Plus only, so its share link never carries it.
+ * a bonus (bonus.ts) is Plus only, so its share link never carries it
+ * (the link names its day: `/bonus/:day`, bonusLink.ts).
  * Absent for file uploads, dailies and samples.
  */
 export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
@@ -37,7 +38,22 @@ export type PuzzleOrigin = "nyt-bookmarklet" | "community" | "bonus";
  * communityPuzzles.toPlayablePuzzle); what a finish's friend invite, replay
  * and race reply point at. Absent for imports, which have no such link.
  */
-export type PuzzleRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
+export type ReplyRef = { day: string; slot: "mini" | "midi" | "large" } | { shortId: string };
+
+/**
+ * A day's Daily Plus (`/bonus/:day`, BonusLinkScreen). Never on `Puzzle.ref`:
+ * the solo screen makes it from `Puzzle.bonusDay` for the finish's share
+ * link, and the link's challenge carries it. Its key is not `day`, so every
+ * `"day" in ref` still means a daily.
+ */
+export type BonusRef = { bonusDay: string };
+
+/**
+ * Anything a share link can name. A bonus link is a challenge and nothing
+ * more: no race reply, no friend invite and no shared race point at one (the
+ * server's `reply_to_race` and `send_beat` know only a ReplyRef).
+ */
+export type PuzzleRef = ReplyRef | BonusRef;
 
 export interface Puzzle {
   /** Provenance for subscriber-directed imports; contains no account or session data. */
@@ -49,8 +65,8 @@ export interface Puzzle {
   cells: PuzzleCell[][];
   clues: PuzzleClue[];
   origin?: PuzzleOrigin;
-  ref?: PuzzleRef;
-  /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on. Never a link. */
+  ref?: ReplyRef;
+  /** A bonus puzzle's day (bonus.ts): which bonus board its finish belongs on, and the day its share link names. */
   bonusDay?: string;
 }
 

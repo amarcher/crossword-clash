@@ -83,7 +83,8 @@ export async function fetchReplayShare(id: string): Promise<string | null> {
  * The sender of a shared link as a race ghost (race.ts): their solve's
  * squares filling and emptying on the racer's clock. Right and wrong letters
  * alike count as filled (a ghost never says which), refusals and clue changes
- * are left out. Null when the code doesn't decode or holds no fills.
+ * are left out. Null when the code doesn't decode or holds no fills. A Daily
+ * Plus link's ghost has no `link`: the sender gets no race reply (ReplyRef).
  */
 export function ghostFromReplay(code: string, shareId: string, name: string, ref?: PuzzleRef): Ghost | null {
   const replay = decodeReplay(code);
@@ -94,7 +95,7 @@ export function ghostFromReplay(code: string, shareId: string, name: string, ref
     else if (e.kind === REPLAY_KIND.emptied) events.push([e.ms, e.cell, 0]);
   }
   if (events.length === 0) return null;
-  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events, ...(ref ? { link: { shareId, ref } } : {}) };
+  return { userId: `link:${shareId}`, name, color: GHOST_COLORS[0], seconds: replay.seconds, events, ...(ref && !("bonusDay" in ref) ? { link: { shareId, ref } } : {}) };
 }
 
 /**

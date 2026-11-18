@@ -15,7 +15,7 @@ import { fetchCommunityPuzzle, toPlayablePuzzle } from "../lib/communityPuzzles"
 import { GHOST_COLORS, type TraceEvent } from "../lib/race";
 import { formatShareDay } from "../lib/shareBlock";
 import { track } from "../lib/analytics";
-import type { Puzzle, PuzzleRef } from "../types/puzzle";
+import type { Puzzle, ReplyRef } from "../types/puzzle";
 
 type State =
   | { kind: "loading" }
@@ -25,7 +25,7 @@ type State =
 type Replay = { seconds: number; events: TraceEvent[] };
 
 /** The puzzle a reply raced: the day's daily, or the community puzzle (null once it's gone). */
-async function replyPuzzle(ref: PuzzleRef): Promise<Puzzle | null> {
+async function replyPuzzle(ref: ReplyRef): Promise<Puzzle | null> {
   if ("day" in ref) return (await fetchDailyForDay(ref.day, ref.slot))?.puzzle ?? null;
   try {
     const row = await fetchCommunityPuzzle(ref.shortId);

@@ -1172,6 +1172,14 @@
     "boardPlay": "Jugar el Plus del día",
     "boardPitch": "El Plus del día es un crucigrama adicional cada día para miembros Plus."
   },
+  "bonusLink": {
+    "heading": "{{name}} resolvió el Plus del día",
+    "headingPlain": "Juega el Plus del día",
+    "clipLabel": "La resolución de {{name}}, repetida",
+    "clipCaption": "Sus casillas tal como las fue llenando. Sin letras.",
+    "play": "Jugar este crucigrama",
+    "pitch": "Los crucigramas Plus del día vienen con Crossword Clash Plus."
+  },
   "stats": {
     "title": "Tus estadísticas",
     "subtitle": "Tus diarios del último año.",

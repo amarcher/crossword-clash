@@ -127,7 +127,9 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     });
 
   // The clip is of whoever is showing now; filed once per selection.
-  const shareRef = givenRef ?? puzzle.ref;
+  // A Daily Plus day's link is a challenge only (BonusLinkScreen): no shared race points at one.
+  const linked = givenRef ?? puzzle.ref;
+  const shareRef = linked && "bonusDay" in linked ? null : linked;
   const shareCode = useMemo(() => (shareRef ? raceShareCode(puzzle, lanes) : null), [shareRef, puzzle, lanes]);
   const filed = useRef<{ code: string; id: string } | null>(null);
   const [sharing, setSharing] = useState(false);

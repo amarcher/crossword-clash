@@ -7,7 +7,7 @@
  */
 import { supabase } from "./supabaseClient";
 import { isDailySlot } from "./dailyFeed";
-import type { PuzzleRef } from "../types/puzzle";
+import type { ReplyRef } from "../types/puzzle";
 
 export interface RaceReply {
   id: string;
@@ -16,7 +16,7 @@ export interface RaceReply {
   /** The recipient's name as they finished. */
   name: string;
   /** The puzzle raced: a day's daily, or a community puzzle (with its title). */
-  ref: PuzzleRef;
+  ref: ReplyRef;
   title: string | null;
   /** The recipient's time and the sender's, whole seconds. */
   seconds: number;
@@ -32,7 +32,7 @@ type Row = { id: string; share_id: string; name: string; day: string | null; slo
 const COLUMNS = "id, share_id, name, day, slot, short_id, title, seconds, to_seconds, reply_share_id, created_at, seen_at";
 
 function toReply(row: Row): RaceReply | null {
-  const ref: PuzzleRef | null = row.short_id ? { shortId: row.short_id } : row.day && isDailySlot(row.slot) ? { day: row.day, slot: row.slot } : null;
+  const ref: ReplyRef | null = row.short_id ? { shortId: row.short_id } : row.day && isDailySlot(row.slot) ? { day: row.day, slot: row.slot } : null;
   if (!ref) return null;
   return {
     id: row.id,
@@ -49,7 +49,7 @@ function toReply(row: Row): RaceReply | null {
 }
 
 /** File the racer's reply to the link they raced. Best-effort: null when it can't be (offline, own link, limits). */
-export async function replyToRace(input: { shareId: string; replyShareId: string | null; name: string; ref: PuzzleRef; seconds: number; toSeconds: number }): Promise<string | null> {
+export async function replyToRace(input: { shareId: string; replyShareId: string | null; name: string; ref: ReplyRef; seconds: number; toSeconds: number }): Promise<string | null> {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.rpc("reply_to_race", {

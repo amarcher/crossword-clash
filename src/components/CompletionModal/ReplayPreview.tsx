@@ -7,8 +7,10 @@ import { SHARE_URL } from "../../lib/resultCard";
  * sees exactly what the link preview will play before deciding to share, and
  * loading it here renders and caches the clip before any preview asks for it.
  * Always the production URL (the link's own); hidden if it can't load.
+ * A Daily Plus link's page plays the sender's clip with its own words
+ * (`label`, `caption`; BonusLinkScreen).
  */
-export function ReplayPreview({ id, race, darkMode }: { id: string; race?: boolean; darkMode?: boolean }) {
+export function ReplayPreview({ id, race, darkMode, label, caption }: { id: string; race?: boolean; darkMode?: boolean; label?: string; caption?: string }) {
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   if (failed) return null;
@@ -22,11 +24,11 @@ export function ReplayPreview({ id, race, darkMode }: { id: string; race?: boole
         muted
         loop
         playsInline
-        aria-label={t(race ? "completion.raceReplayPreviewLabel" : "completion.replayPreviewLabel")}
+        aria-label={label ?? t(race ? "completion.raceReplayPreviewLabel" : "completion.replayPreviewLabel")}
         onError={() => setFailed(true)}
         className={`aspect-video w-full rounded-xl object-cover ${darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line"}`}
       />
-      <figcaption className={`mt-1.5 text-center text-xs ${darkMode ? "text-white/60" : "text-muted"}`}>{t("completion.replayPreviewCaption")}</figcaption>
+      <figcaption className={`mt-1.5 text-center text-xs ${darkMode ? "text-white/60" : "text-muted"}`}>{caption ?? t("completion.replayPreviewCaption")}</figcaption>
     </figure>
   );
 }

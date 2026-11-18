@@ -25,6 +25,9 @@ export type AppLinkTarget =
   | { kind: "hash"; hash: string };
 
 const DAILY_PATH = /^\/daily\/\d{4}-\d{2}-\d{2}\/(mini|midi|large)$/;
+// A Daily Plus finish's link (BonusLinkScreen). Routed here but not yet claimed
+// by the store builds' association files: those builds have no such page.
+const BONUS_PATH = /^\/bonus\/\d{4}-\d{2}-\d{2}$/;
 
 /** Where a link opened in the app should land, or null for a link the app has no page for. */
 export function appLinkTarget(url: string): AppLinkTarget | null {
@@ -46,7 +49,7 @@ export function appLinkTarget(url: string): AppLinkTarget | null {
   if (code) return { kind: "navigate", to: `/join?join=${encodeURIComponent(code.trim().toUpperCase())}` };
 
   if (path === "/join") return { kind: "navigate", to: path + parsed.search };
-  if (DAILY_PATH.test(path)) return { kind: "navigate", to: path + parsed.search };
+  if (DAILY_PATH.test(path) || BONUS_PATH.test(path)) return { kind: "navigate", to: path + parsed.search };
   if (path === "/puzzles" || path.startsWith("/puzzles/")) return { kind: "navigate", to: path + parsed.search };
   // A player's "add me" link: the page with the one Add button (friends.ts).
   if (/^\/add\/[A-Za-z0-9_%@]{1,64}$/.test(path)) return { kind: "navigate", to: path };

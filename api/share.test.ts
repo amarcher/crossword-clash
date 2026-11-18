@@ -58,6 +58,74 @@ describe("spliceHead", () => {
   });
 });
 
+describe("Daily Plus link", () => {
+  const calls: string[] = [];
+
+  beforeEach(() => {
+    calls.length = 0;
+    vi.stubGlobal("fetch", async (url: string) => {
+      calls.push(url);
+      return { ok: true, text: async () => INDEX };
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("plays the solve in the preview and says who solved the Daily Plus, in the app shell", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&beat=102&by=Archer&r=VJ0ncnWyJ9j"));
+    expect(res.status).toBe(200);
+    // The shell only: the puzzle is Plus only and never read here.
+    expect(calls).toEqual(["https://x.test/index.html"]);
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("Archer solved the Daily Plus for Nov 18 in 1:42 — race my solve");
+    expect(meta(html, "og:description")).toContain("Crossword Clash Plus");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:video:secure_url")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:video:type")).toBe("video/mp4");
+    expect(meta(html, "og:image")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1");
+    expect(meta(html, "og:image:width")).toBe("1280");
+    expect(meta(html, "og:url")).toBe("https://x.test/bonus/2026-11-18?beat=102&by=Archer&r=VJ0ncnWyJ9j");
+    expect(html).toContain("/assets/index-abc.js");
+    expect(html).not.toContain("http-equiv");
+  });
+
+  it("falls back to a card without a replay, or with an r that isn't a share ID", async () => {
+    const html = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&beat=102&by=Archer&r=%22%3E%3Cscript%3Exyz"))).text();
+    expect(meta(html, "og:title")).toBe("Archer solved the Daily Plus for Nov 18 in 1:42 — beat my time");
+    expect(meta(html, "og:video")).toBeNull();
+    expect(meta(html, "og:url")).toBe("https://x.test/bonus/2026-11-18?beat=102&by=Archer");
+    const image = new URL(meta(html, "og:image")!);
+    expect(image.pathname).toBe("/api/og");
+    expect(image.searchParams.get("heading")).toBe("Daily Plus · Nov 18");
+    expect(image.searchParams.get("metric")).toBe("1:42");
+    expect(image.searchParams.get("title")).toBe("Archer");
+    // No name and no time: the unsigned solver, and the plain card.
+    const unsigned = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&beat=60"))).text();
+    expect(meta(unsigned, "og:title")).toBe("I solved the Daily Plus for Nov 18 in 1:00 — beat my time");
+    const plain = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18"))).text();
+    expect(meta(plain, "og:title")).toBe("The Daily Plus for Nov 18 on Crossword Clash");
+    expect(meta(plain, "og:url")).toBe("https://x.test/bonus/2026-11-18");
+  });
+
+  it("refuses a malformed day", async () => {
+    expect((await handler(new Request("https://x.test/api/share?t=bonus&day=leaderboard"))).status).toBe(404);
+    expect((await handler(new Request("https://x.test/api/share?t=bonus"))).status).toBe(404);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("is rewritten from /bonus/:day by vercel.json, which leaves the bonus board to the app", async () => {
+    const { readFileSync } = await import("node:fs");
+    const vercel = JSON.parse(readFileSync(decodeURIComponent(new URL("../vercel.json", import.meta.url).pathname), "utf8")) as { rewrites: { source: string; destination: string }[] };
+    const rule = vercel.rewrites.find((r) => r.destination.startsWith("/api/share?t=bonus"));
+    expect(rule).toEqual({ source: "/bonus/:day(\\d{4}-\\d{2}-\\d{2})", destination: "/api/share?t=bonus&day=:day" });
+    const day = new RegExp(`^${/\((.+)\)$/.exec(rule!.source)![1]}$`);
+    expect(day.test("2026-11-18")).toBe(true);
+    expect(day.test("leaderboard")).toBe(false);
+  });
+});
+
 describe("daily link", () => {
   const calls: string[] = [];
   let indexOk = true;

@@ -19,6 +19,15 @@
  *                                                with a challenge), spliced
  *                                                into the SPA the same way.
  *
+ * GET /bonus/2026-11-18?beat=102&by=Archer[&r=<replay share id>] (rewritten here as
+ *     ?t=bonus&day=…, the query merged in)    → a Daily Plus finish's card (the
+ *                                                clip with a replay), spliced
+ *                                                into the SPA the same way. The
+ *                                                page plays the solve and offers
+ *                                                the puzzle (BonusLinkScreen);
+ *                                                the puzzle itself is Plus only
+ *                                                and never read here.
+ *
  * Crawlers (iMessage/Slack/Twitter/…) read the OG meta tags — including a
  * per-link og:image rendered by /api/og — and never follow the redirect.
  * Humans hit the instant meta-refresh/JS redirect into the SPA (or, for the
@@ -230,6 +239,39 @@ export default async function handler(req: Request): Promise<Response> {
     const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
     const tags: HeadTags = { title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) };
     return serveShell(tags, origin);
+  }
+
+  if (type === "bonus") {
+    // A Daily Plus finish (src/lib/dailyChallenge.ts bonusPath): the solver, the time and the solve's squares.
+    const day = clean(url, "day", 10);
+    if (!DAY.test(day)) {
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
+    }
+    const time = formatSeconds(clean(url, "beat", 6));
+    const by = clean(url, "by", 40);
+    const replay = clean(url, "r", 11);
+    const hasReplay = REPLAY_ID.test(replay);
+    const date = formatDay(day);
+    const who = by || "I";
+    pageTitle = time
+      ? `${who} solved the Daily Plus for ${date} in ${time} — ${hasReplay ? "race my solve" : "beat my time"}`
+      : `The Daily Plus for ${date} on Crossword Clash`;
+    description = hasReplay && time
+      ? `Watch ${by ? `${by}'s` : "this"} solve square by square, then race it. The Daily Plus is an extra crossword every day with Crossword Clash Plus.`
+      : "The Daily Plus is an extra crossword every day with Crossword Clash Plus.";
+    const query = new URLSearchParams();
+    if (time) query.set("beat", clean(url, "beat", 6));
+    if (by) query.set("by", by);
+    if (hasReplay) query.set("r", replay);
+    dest = `/bonus/${day}${query.size ? `?${query.toString()}` : ""}`;
+    og.set("heading", `Daily Plus · ${date}`);
+    if (by) og.set("title", by);
+    if (time) og.set("metric", time);
+    og.set("detail", time ? (hasReplay ? "Race my solve" : "Beat my time") : "Play it");
+    og.set("glyph", time ? "⏱" : "🧩");
+    const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
+    const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
+    return serveShell({ title: pageTitle, description, image, url: `${origin}${dest}`, ...(hasReplay ? { video: replayUrl } : {}) }, origin);
   }
 
   if (type === "puzzle") {
