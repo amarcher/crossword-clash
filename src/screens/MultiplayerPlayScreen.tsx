@@ -40,11 +40,15 @@ import { resolvePuzzleRef } from "../lib/gameSettings";
 import { encodeReplay } from "../lib/replayCode";
 import { useSolveRecorder } from "../hooks/useRace";
 import { RoomReplayDialog } from "../components/Race/RoomReplayDialog";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function MultiplayerPlayScreen() {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  // Exits that clear the game first stay plain: the cleared screen's own
+  // redirect runs before a cross-fade could capture it.
+  const exit = useNavigate();
   const { user } = useAuth();
   const account = useAccountContext();
   const game = useGame();
@@ -289,8 +293,8 @@ export function MultiplayerPlayScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/menu");
-  }, [mp, reset, game, navigate]);
+    exit("/menu");
+  }, [mp, reset, game, exit]);
 
   const handleCloseRoom = useCallback(async () => {
     const ok = await confirm({

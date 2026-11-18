@@ -15,6 +15,7 @@ vi.mock("react-router", async () => {
   const actual = await vi.importActual<typeof import("react-router")>("react-router");
   return { ...actual, useNavigate: () => navigate };
 });
+vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 const session = vi.hoisted(() => ({ clearMpSession: vi.fn(), clearHostSession: vi.fn(), loadHostSession: vi.fn(() => null) }));
 vi.mock("../lib/sessionPersistence", () => session);
 vi.mock("../layouts/RootLayout", () => ({ useRejoinEffect: () => {} }));

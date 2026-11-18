@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router";
 import { PuzzleImporter } from "../components/PuzzleImporter";
 import { useGame } from "../contexts/GameContext";
 import type { Puzzle } from "../types/puzzle";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function SoloImportScreen() {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { handleSoloPuzzleLoaded } = useGame();
 
   const onPuzzleLoaded = useCallback(

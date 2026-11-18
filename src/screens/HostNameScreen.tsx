@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { TransitionLink } from "../components/ui";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
@@ -17,10 +16,11 @@ import {
 import { clearMpSession } from "../lib/sessionPersistence";
 import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function HostNameScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { user, loading: authLoading } = useAuth();
   const game = useGame();
   const mp = useMultiplayerContext();

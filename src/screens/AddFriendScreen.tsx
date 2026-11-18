@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Check, UserPlus } from "lucide-react";
 import { PageShell } from "../components/PageShell";
@@ -9,6 +9,7 @@ import { useFriends } from "../contexts/FriendsContext";
 import { FriendsError, fetchProfileByUsername, friendLinkPath, friendLinkUsername, type FriendsErrorKind, type Person } from "../lib/friends";
 import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 const ERROR_KEYS: Partial<Record<FriendsErrorKind, string>> = {
   not_found: "friends.errorNotFound",
@@ -29,7 +30,7 @@ const ERROR_KEYS: Partial<Record<FriendsErrorKind, string>> = {
  */
 export function AddFriendScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const params = useParams();
   const account = useAccountContext();
   const friends = useFriends();

@@ -14,9 +14,13 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { LobbyInvites } from "../components/Friends";
 import { useFriends } from "../contexts/FriendsContext";
 import { friendsEnabled, NUDGE_BACKOFF_MS } from "../lib/friends";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function LobbyScreen() {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  // Exits that clear the game first stay plain: the cleared screen's own
+  // redirect runs before a cross-fade could capture it.
+  const exit = useNavigate();
   const game = useGame();
   const mp = useMultiplayerContext();
   const friends = useFriends();
@@ -66,8 +70,8 @@ export function LobbyScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/menu");
-  }, [mp, game, navigate, confirm]);
+    exit("/menu");
+  }, [mp, game, exit, confirm]);
 
   const handleLeave = useCallback(async () => {
     await mp.leaveGame();
@@ -76,8 +80,8 @@ export function LobbyScreen() {
     game.setIsMultiplayer(false);
     localStorage.removeItem(STORAGE_KEY);
     clearMpSession();
-    navigate("/menu");
-  }, [mp, game, navigate]);
+    exit("/menu");
+  }, [mp, game, exit]);
 
   const gameId = game.gameId;
   // Who in the room has finished this puzzle before (room_solves): a chip on their row.

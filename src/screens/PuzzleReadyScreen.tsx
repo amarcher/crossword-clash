@@ -9,9 +9,13 @@ import { track } from "../lib/analytics";
 import { puzzleIdentity } from "../lib/soloStats";
 import { SharedRace } from "../components/Race/SharedRace";
 import type { PuzzleRef } from "../types/puzzle";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function PuzzleReadyScreen() {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  // Exits that clear the game first stay plain: the cleared screen's own
+  // redirect runs before a cross-fade could capture it.
+  const exit = useNavigate();
   const { user } = useAuth();
   const game = useGame();
   // A shared race's link (DailyPuzzleScreen): the race plays over this page until it is closed.
@@ -57,8 +61,8 @@ export function PuzzleReadyScreen() {
   const handleBack = useCallback(() => {
     // Drop the imported puzzle so the index route doesn't bounce straight back here.
     game.setUrlPuzzle(null);
-    navigate("/menu");
-  }, [game, navigate]);
+    exit("/menu");
+  }, [game, exit]);
 
   if (!game.urlPuzzle) {
     return <Navigate to="/" replace />;

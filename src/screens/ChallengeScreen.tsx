@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flag, Loader2, Timer } from "lucide-react";
 import { AdSlot } from "../components/AdSlot";
@@ -19,6 +19,7 @@ import { SHARE_URL } from "../lib/resultCard";
 import { shareText } from "../lib/shareSheet";
 import { runtimeDeps } from "../components/CompletionModal/ShareResultButton";
 import type { RaceSolve } from "../lib/friendRace";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 // Loaded once the sender's solve has arrived: a link without one never needs it.
 const FriendRaceDialog = lazy(() => import("../components/Race/FriendRaceDialog").then((m) => ({ default: m.FriendRaceDialog })));
@@ -46,7 +47,7 @@ const FriendRaceDialog = lazy(() => import("../components/Race/FriendRaceDialog"
  */
 export function ChallengeScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const game = useGame();
   const puzzle = game.urlPuzzle;
   const challenge = game.urlChallenge;

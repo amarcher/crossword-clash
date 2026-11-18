@@ -1,28 +1,30 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
 import { TVScreen, TV_QUIET_LINK } from "../../components/Layout/TVScreen";
-import { buttonClass } from "../../components/ui";
+import { TransitionLink, buttonClass } from "../../components/ui";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { useHostContext } from "../../layouts/HostLayout";
+import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 
 export function HostMenuScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  const redirect = useNavigate();
   const { user } = useHostContext();
 
   // Auto-advance to import once authenticated
   useEffect(() => {
-    if (user) navigate("/host/import", { replace: true });
-  }, [user, navigate]);
+    if (user) redirect("/host/import", { replace: true });
+  }, [user, redirect]);
 
   return (
     <TVScreen
       footer={
-        <Link to="/menu" className={TV_QUIET_LINK}>
+        <TransitionLink to="/menu" className={TV_QUIET_LINK}>
           {t("completion.backToMenu")}
-        </Link>
+        </TransitionLink>
       }
     >
       <div className="max-w-[40em]">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LogOut } from "lucide-react";
 import { useSupabase } from "../hooks/useSupabase";
@@ -10,9 +10,10 @@ import { TVJoinCard } from "../components/Layout/TVJoinCard";
 import { TVLayout } from "../components/Layout/TVLayout";
 import { TVScoreboard } from "../components/Layout/TVScoreboard";
 import { TVScreen } from "../components/Layout/TVScreen";
-import { buttonClass } from "../components/ui";
+import { TransitionLink, buttonClass } from "../components/ui";
 import { getCompletedClues } from "../lib/gridUtils";
 import { formatDuration } from "../lib/soloStats";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 const NOOP = () => {};
 const EMPTY_HIGHLIGHTS = new Set<string>();
@@ -21,7 +22,7 @@ const EMPTY_HIGHLIGHTS = new Set<string>();
  * the host's computer. Sharing an auth session must not grant display controls. */
 export function SpectatorScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { code: routeCode = "" } = useParams();
   const code = routeCode.toUpperCase();
   const [entry, setEntry] = useState(code);
@@ -51,7 +52,7 @@ export function SpectatorScreen() {
           {code && loading && user && <p role="status" className="text-slate-300">{t("playing.reconnecting")}</p>}
           {(error || (!authLoading && !user)) && <p role="alert" className="text-gold-400">{t("spectator.error")}</p>}
         </form>
-        <Link className="tv-t-md inline-flex min-h-11 items-center text-slate-300 underline underline-offset-4 hover:text-white" to="/menu">{t("completion.backToMenu")}</Link>
+        <TransitionLink className="tv-t-md inline-flex min-h-11 items-center text-slate-300 underline underline-offset-4 hover:text-white" to="/menu">{t("completion.backToMenu")}</TransitionLink>
       </TVScreen>
     );
   }
@@ -69,10 +70,10 @@ export function SpectatorScreen() {
           onCellClick={NOOP} playerColorMap={colors} completedClues={completedClues} interactive={false} />
       }
       controls={
-        <Link to="/watch" className={buttonClass("stage", "md", "tv-t-sm h-auto! py-2")}>
+        <TransitionLink to="/watch" className={buttonClass("stage", "md", "tv-t-sm h-auto! py-2")}>
           <LogOut className="size-[1.3em]" aria-hidden />
           {t("spectator.leave")}
-        </Link>
+        </TransitionLink>
       }
       sidebar={<TVJoinCard code={code} joinUrl={joinUrl} />}
       scoreboard={

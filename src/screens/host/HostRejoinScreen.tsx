@@ -6,10 +6,12 @@ import { TVScreen, TV_QUIET_LINK } from "../../components/Layout/TVScreen";
 import { useHostContext } from "../../layouts/HostLayout";
 import { loadHostSession, clearHostSession } from "../../lib/sessionPersistence";
 import { rejoinGame } from "../../lib/puzzleService";
+import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
 
 export function HostRejoinScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  const redirect = useNavigate();
   const host = useHostContext();
 
   useEffect(() => {
@@ -17,7 +19,7 @@ export function HostRejoinScreen() {
 
     const session = loadHostSession();
     if (!session) {
-      navigate("/host", { replace: true });
+      redirect("/host", { replace: true });
       return;
     }
 
@@ -26,7 +28,7 @@ export function HostRejoinScreen() {
       if (!live) return;
       if (!result) {
         clearHostSession();
-        navigate("/host", { replace: true });
+        redirect("/host", { replace: true });
         return;
       }
 
@@ -37,15 +39,15 @@ export function HostRejoinScreen() {
       }
 
       if (result.status === "waiting") {
-        navigate(`/host/lobby/${result.gameId}`, { replace: true });
+        redirect(`/host/lobby/${result.gameId}`, { replace: true });
       } else {
-        navigate(`/host/spectate/${result.gameId}`, { replace: true });
+        redirect(`/host/spectate/${result.gameId}`, { replace: true });
       }
     });
     return () => {
       live = false;
     };
-  }, [host, navigate]);
+  }, [host, redirect]);
 
   // A way out while the room is looked up: dropping the host session keeps /host from walking back in.
   const leave = () => {

@@ -40,6 +40,7 @@ import type { PlayerResult } from "../components/CompletionModal";
 import type { SpeechSettings } from "../hooks/useSpeechSettings";
 import type { PuzzleAction } from "../hooks/usePuzzle";
 import type { AgentGameEvent, NarratorEngine } from "../lib/narrator/types";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export interface HostContextValue {
   // Auth
@@ -135,7 +136,9 @@ export function useHostContext(): HostContextValue {
 }
 
 export function HostLayout() {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
+  // A puzzle arriving in the page hash stays a plain navigation.
+  const arrive = useNavigate();
   const confirm = useConfirm();
   usePageViews();
   const { user } = useSupabase();
@@ -384,16 +387,16 @@ export function HostLayout() {
         const puzzle = extractPuzzleFromUrl();
         if (puzzle) {
           setUrlPuzzle(puzzle);
-          navigate("/host/puzzle-ready");
+          arrive("/host/puzzle-ready");
         }
       } else if (hasImportHash()) {
         setImportFailed(false);
-        navigate("/host/importing");
+        arrive("/host/importing");
       }
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [navigate]);
+  }, [arrive]);
 
   // Save host session to localStorage
   useEffect(() => {

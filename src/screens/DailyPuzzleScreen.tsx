@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CalendarX2, Loader2 } from "lucide-react";
 import { useGame } from "../contexts/GameContext";
@@ -8,6 +8,7 @@ import { parseDailyChallenge, parseDailyRoute, parseRaceLink } from "../lib/dail
 import { formatShareDay } from "../lib/shareBlock";
 import { NotFoundScreen } from "./NotFoundScreen";
 import { NoticeScreen, primaryButtonClass } from "./RouteErrorScreen";
+import { TransitionLink } from "../components/ui";
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
@@ -68,9 +69,9 @@ export function DailyPuzzleScreen() {
         title={t("dailyLink.missingTitle", { daily: dailyLabel, date: dateLabel })}
         body={t("dailyLink.missingBody")}
       >
-        <Link to="/menu" className={primaryButtonClass}>
+        <TransitionLink to="/menu" className={primaryButtonClass}>
           {t("errors.backToMenu")}
-        </Link>
+        </TransitionLink>
       </NoticeScreen>
     );
   }

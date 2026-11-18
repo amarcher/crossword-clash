@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import { useRejoinEffect } from "../layouts/RootLayout";
 import { clearMpSession } from "../lib/sessionPersistence";
+import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function RejoinScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
 
   // This effect handles the actual rejoin logic and navigates away on completion
   useRejoinEffect();

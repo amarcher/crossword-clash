@@ -17,6 +17,15 @@ export const TRANSITION_WAIT_MS = 150;
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
+ * The navigation on its way. Some moves are asked for twice within a frame
+ * (the lobby's Start handler and its game-started effect both go to the play
+ * screen); a second transition would cut the first one's fade short and then
+ * fade the new page into itself, so a repeat for the same target joins the
+ * first instead.
+ */
+let inFlight: { to: string; done: Promise<void> } | null = null;
+
+/**
  * Navigate inside a root cross-fade (`::view-transition-*(root)` in index.css),
  * holding any element named `site-bar` / `brand` still or morphing it.
  *
@@ -28,11 +37,20 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
  * Even then a route's FIRST render commits a few milliseconds after `navigate`
  * resolves, so the update also waits for SiteFrame's commit signal.
  */
-export async function navigateWithTransition(
+export function navigateWithTransition(
   navigate: NavigateFunction,
   to: string,
   options: NavigateOptions = {},
 ): Promise<void> {
+  if (inFlight?.to === to) return inFlight.done;
+  const done: Promise<void> = run(navigate, to, options).finally(() => {
+    if (inFlight?.done === done) inFlight = null;
+  });
+  inFlight = { to, done };
+  return done;
+}
+
+async function run(navigate: NavigateFunction, to: string, options: NavigateOptions): Promise<void> {
   const chunk = prefetchRoute(to);
   if (!canViewTransition()) {
     await navigate(to, options);
