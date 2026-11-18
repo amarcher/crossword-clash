@@ -46,6 +46,7 @@ export const screenModules = {
   raceReply: () => import("./screens/RaceReplyScreen"),
   stats: () => import("./screens/StatsScreen"),
   bonusLeaderboard: () => import("./screens/BonusLeaderboardScreen"),
+  bonusLink: () => import("./screens/BonusLinkScreen"),
   hostName: () => import("./screens/HostNameScreen"),
   hostImport: () => import("./screens/HostImportScreen"),
   lobby: () => import("./screens/LobbyScreen"),
@@ -86,6 +87,8 @@ const ROUTE_LOADERS: Record<string, Loader> = {
   "/account": screenModules.account,
   "/stats": screenModules.stats,
   "/bonus/leaderboard": screenModules.bonusLeaderboard,
+  // A Daily Plus finish's link, /bonus/:day (the board's longer prefix wins for its own path).
+  "/bonus": screenModules.bonusLink,
   // One prefix for both community chunks: a link to a page or the list warms the pair (both are small).
   "/puzzles": () => Promise.all([screenModules.communityBrowse(), screenModules.communityPuzzle()]),
   "/pick-puzzle": screenModules.puzzlePicker,

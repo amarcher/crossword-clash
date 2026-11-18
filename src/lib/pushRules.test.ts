@@ -290,3 +290,14 @@ describe("race replies", () => {
     expect(deliveryDecision(prefs({ quiet_allow_invites: true }), "race_reply", NOW)).toBe("quiet");
   });
 });
+
+describe("Daily Plus pushes", () => {
+  it("names a Daily Plus invite and reply", () => {
+    expect(parseBeatLink("/bonus/2026-11-18?beat=102&by=milo&r=abcdefghijk")).toEqual({ day: "2026-11-18", slot: "bonus", seconds: 102, race: true });
+    const beat = beatNotification({ name: "milo", link: "/bonus/2026-11-18?beat=102&by=milo", inviteId: "i1" }, "en", new Date("2026-11-18T15:00:00Z"));
+    expect(beat?.title).toBe("@milo solved today's Daily Plus in 1:42");
+    const reply = raceReplyFromWebhook({ type: "INSERT", table: "race_replies", record: { id: "r1", to_user_id: "u1", name: "Sam", slot: "bonus", short_id: null, title: null, seconds: 90, to_seconds: 102 } });
+    expect(reply?.slot).toBe("bonus");
+    expect(raceReplyNotification(reply!, "en").title).toBe("Sam raced your Daily Plus");
+  });
+});

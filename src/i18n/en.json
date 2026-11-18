@@ -1056,6 +1056,7 @@
     "errorRateLimited": "That's a lot of requests for one day. Try again tomorrow.",
     "errorTooMany": "Too many requests are waiting for an answer.",
     "errorGeneric": "That didn't go through. Please try again.",
+    "errorCantSend": "This one can't be sent to friends yet. Share the link instead.",
     "sendToFriend": "Send to a friend",
     "sendToFriendHint": "They get your time to beat in the app, no share sheet needed.",
     "send": "Send",
@@ -1177,6 +1178,11 @@
     "boardNone": "There was no Daily Plus that day.",
     "boardPlay": "Play today's Daily Plus",
     "boardPitch": "The Daily Plus is an extra puzzle every day for Plus members."
+  },
+  "bonusLink": {
+    "heading": "{{name}} solved the Daily Plus",
+    "headingPlain": "Play the Daily Plus",
+    "pitch": "Daily Plus puzzles come with Crossword Clash Plus."
   },
   "stats": {
     "title": "Your stats",

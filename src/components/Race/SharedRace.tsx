@@ -24,6 +24,12 @@ interface SharedRaceProps {
   shareRef?: PuzzleRef | null;
   /** Start the puzzle: the clip's "Let me solve it", for a viewer who has not solved it. */
   onSolve?: () => void;
+  /**
+   * A Daily Plus seen without Plus (BonusLinkScreen): `puzzle` is the card's
+   * shape, every solve is squares only, and "Let me solve it" (the paywall)
+   * is offered on the viewer's friends' race too.
+   */
+  locked?: boolean;
   onClose: () => void;
 }
 
@@ -45,7 +51,7 @@ const hex = ([r, g, b]: [number, number, number]) => `#${[r, g, b].map((n) => n.
  * names, no letters, lanes counting squares won.
  * Renders nothing when the ID is not a race's (a solve's replay, or gone).
  */
-export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolve, onClose }: SharedRaceProps) {
+export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolve, locked, onClose }: SharedRaceProps) {
   const { t } = useTranslation();
   const ownName = useRaceName();
   const { user, loading } = useAuth();
@@ -67,7 +73,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
         onClose();
         return;
       }
-      const mine = userId ? await loadViewerRace(userId, puzzleKey, best, ownName).catch(() => null) : null;
+      const mine = userId ? await loadViewerRace(userId, puzzleKey, best, ownName, locked).catch(() => null) : null;
       if (!alive) return;
       if (mine) {
         setShown({ solves: mine.solves, letters: mine.letters, clip: false });
@@ -95,7 +101,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
   if (!shown) return null;
   return (
     <Suspense fallback={null}>
-      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={shown.clip && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
+      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={(shown.clip || locked) && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
     </Suspense>
   );
 }

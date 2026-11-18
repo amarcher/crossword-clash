@@ -30,6 +30,17 @@ describe("race replies", () => {
     expect(rpc).toHaveBeenCalledWith("reply_to_race", { p_share_id: "E0Gqr8Iw09i", p_reply_share_id: "VJ0ncnWyJ9j", p_name: "Sam", p_day: "2026-11-12", p_slot: "mini", p_short_id: null, p_seconds: 90, p_to_seconds: 102 });
   });
 
+  it("files a Daily Plus reply as its day under slot 'bonus', and reads it back as that day's link", async () => {
+    rpc.mockResolvedValueOnce({ data: row.id, error: null });
+    await replyToRace({ shareId: "E0Gqr8Iw09i", replyShareId: null, name: "Sam", ref: { bonusDay: "2026-11-18" }, seconds: 90, toSeconds: 102 });
+    expect(rpc).toHaveBeenCalledWith("reply_to_race", expect.objectContaining({ p_day: "2026-11-18", p_slot: "bonus", p_short_id: null }));
+    rows.data = [{ ...row, day: "2026-11-18", slot: "bonus" }];
+    expect((await fetchRaceReplies("u1"))[0].ref).toEqual({ bonusDay: "2026-11-18" });
+    // A server from before the bonus slot refuses the row: no reply, no error.
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'violates check constraint "race_replies_slot_check"' } });
+    expect(await replyToRace({ shareId: "E0Gqr8Iw09i", replyShareId: null, name: "Sam", ref: { bonusDay: "2026-11-18" }, seconds: 90, toSeconds: 102 })).toBeNull();
+  });
+
   it("gives null when the reply can't be filed", async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: "replies:rate_limited" } });
     expect(await replyToRace({ shareId: "E0Gqr8Iw09i", replyShareId: null, name: "Sam", ref: { shortId: "ab12cd34" }, seconds: 1, toSeconds: 2 })).toBeNull();

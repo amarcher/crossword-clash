@@ -15,6 +15,7 @@ import { fetchCommunityPuzzle, toPlayablePuzzle } from "../lib/communityPuzzles"
 import { GHOST_COLORS, type TraceEvent } from "../lib/race";
 import { formatShareDay } from "../lib/shareBlock";
 import { track } from "../lib/analytics";
+import { loadBonusPuzzle } from "../lib/bonus";
 import type { Puzzle, PuzzleRef } from "../types/puzzle";
 
 type State =
@@ -26,6 +27,8 @@ type Replay = { seconds: number; events: TraceEvent[] };
 
 /** The puzzle a reply raced: the day's daily, or the community puzzle (null once it's gone). */
 async function replyPuzzle(ref: PuzzleRef): Promise<Puzzle | null> {
+  // A Daily Plus: the puzzle only for Plus (null otherwise, and the page keeps "Race X's solve", which the link gates).
+  if ("bonusDay" in ref) return loadBonusPuzzle(ref.bonusDay);
   if ("day" in ref) return (await fetchDailyForDay(ref.day, ref.slot))?.puzzle ?? null;
   try {
     const row = await fetchCommunityPuzzle(ref.shortId);
@@ -109,7 +112,7 @@ export function RaceReplyScreen() {
         </span>
       }
       title={t("raceReplies.raced", { name: reply.name, daily: replyPuzzleLabel(t, reply) })}
-      subtitle={"day" in reply.ref ? `${formatShareDay(reply.ref.day, i18n.language)} · ${replyVerdict(t, reply)}` : replyVerdict(t, reply)}
+      subtitle={"shortId" in reply.ref ? replyVerdict(t, reply) : `${formatShareDay("day" in reply.ref ? reply.ref.day : reply.ref.bonusDay, i18n.language)} · ${replyVerdict(t, reply)}`}
       backLabel={t("common.back")}
       onBack={() => history.back()}
     >

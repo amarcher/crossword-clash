@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Loader2, Lock, Trophy, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flag, Loader2, Lock, Trophy, WifiOff } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
 import { BoardTabs } from "../components/Leaderboard/BoardTabs";
@@ -12,7 +12,15 @@ import { useGame } from "../contexts/GameContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { fetchBonusCards, loadBonusPuzzle, type BonusCard } from "../lib/bonus";
+import { fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../lib/bonus";
+import { useRaceCandidates } from "../hooks/useRace";
+import { useRaceName } from "../hooks/useRaceName";
+import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
+import { RACE_SELF_COLOR, type RaceSolve } from "../lib/friendRace";
+import { loadViewerRace } from "../lib/viewerRace";
+import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
+import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
+import type { Puzzle } from "../types/puzzle";
 import {
   boardPostsHere,
   cachedDailyLeaderboard,
@@ -48,6 +56,12 @@ function BoardMessage({ icon, children }: { icon: React.ReactNode; children: Rea
  * is posted on the bonus's own day; `?day=` shows a past day's board, final.
  * Under it a Plus player who hasn't solved the day's bonus gets Play, anyone
  * else the pitch (`paywall_viewed { placement: "bonus-board" }`).
+ *
+ * Races work as on a daily's board (Andrew, 2026-11-18): Race on a row before
+ * the viewer has solved it, Watch after, and the friends' race under the
+ * table. Without Plus the puzzle is never loaded: the friends' race plays on
+ * the card's shape as squares only (free, as on a daily), and Race or "Let me
+ * solve it" opens the paywall.
  */
 export function BonusLeaderboardScreen() {
   const { t, i18n } = useTranslation();
@@ -154,6 +168,59 @@ export function BonusLeaderboardScreen() {
     navigate("/solo/play");
   };
 
+  // Races, as on a daily's board (DailyLeaderboardScreen): the same reads, keyed by the card's identity.
+  const ownName = useRaceName();
+  const puzzleKey = card?.identity ?? null;
+  const raceCandidates = useRaceCandidates(puzzleKey, true);
+  const candidateIds = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
+  const racingFriends = useMemo(() => raceCandidates.filter((c) => c.friend), [raceCandidates]);
+  const pitch = () => account?.openPaywall({ placement: "bonus-board", feature: "bonus", returnTo: leaderboardPath("bonus", past ? day : null) });
+  const raceRow = (userId: string) => {
+    if (!puzzleKey || !account) return;
+    if (!plus) {
+      pitch();
+      return;
+    }
+    saveRaceIntent({ key: puzzleKey, userIds: [userId] });
+    track("leaderboard_race", { slot: "bonus", past });
+    void play();
+  };
+  const [watching, setWatching] = useState<{ puzzle: Puzzle; solves: ReplaySolve[] } | null>(null);
+  const watchRow = async (userId: string) => {
+    if (!card || !puzzleKey || !account) return;
+    if (!plus) {
+      account.openPaywall({ placement: "leaderboard_watch", feature: "race" });
+      return;
+    }
+    try {
+      const [board, theirs, mine] = await Promise.all([loadBonusPuzzle(card.day), fetchSolveTrace(userId, puzzleKey), user ? fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null) : null]);
+      if (!board || !theirs || theirs.events.length === 0) return;
+      const them: ReplaySolve = { name: rows?.find((e) => e.userId === userId)?.displayName ?? "", color: GHOST_COLORS[0], seconds: theirs.seconds, events: theirs.events };
+      const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: ownName, color: RACE_SELF_COLOR, seconds: mine.seconds, events: mine.events } : null;
+      setWatching({ puzzle: board, solves: me ? [me, them] : [them] });
+      track("replay_watched", { racing: !!me, placement: "leaderboard" });
+    } catch (err) {
+      console.warn("Leaderboard replay:", err);
+    }
+  };
+  const [theRace, setTheRace] = useState<{ puzzle: Puzzle; solves: RaceSolve[]; letters: boolean } | null>(null);
+  const [raceLoading, setRaceLoading] = useState(false);
+  const openTheRace = async () => {
+    if (!card || !puzzleKey || !user || raceLoading) return;
+    setRaceLoading(true);
+    try {
+      // Without Plus: the card's shape and squares only, never the puzzle.
+      const [board, found] = await Promise.all([plus ? loadBonusPuzzle(card.day) : shapePuzzle(card), loadViewerRace(user.id, puzzleKey, solvedSeconds, ownName, !plus)]);
+      if (!board || !found) return;
+      setTheRace({ puzzle: board, solves: found.solves, letters: found.letters });
+      track("friend_race_opened", { slot: "bonus", past, racers: found.solves.length, own: found.own });
+    } catch (err) {
+      console.warn("The race:", err);
+    } finally {
+      setRaceLoading(false);
+    }
+  };
+
   const dayLabel = new Intl.DateTimeFormat(i18n.language, { weekday: "short", month: "short", day: "numeric" }).format(new Date(`${day}T12:00:00`));
 
   return (
@@ -204,9 +271,23 @@ export function BonusLeaderboardScreen() {
           ) : rows.length === 0 ? (
             <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(past ? "leaderboard.emptyPast" : "bonus.boardEmpty")}</BoardMessage>
           ) : (
-            <BoardTable rows={rows} userId={user?.id} />
+            <BoardTable
+              rows={rows}
+              userId={user?.id}
+              raceable={solved ? undefined : candidateIds}
+              onRace={raceRow}
+              watchable={solved ? candidateIds : undefined}
+              onWatch={(userId) => void watchRow(userId)}
+            />
           )}
         </Card>
+
+        {card && racingFriends.length > 0 && (
+          <Button size="lg" variant="secondary" block onClick={() => void openTheRace()} disabled={raceLoading} data-testid="the-race">
+            {raceLoading ? <Loader2 className="size-4.5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Flag className="size-4.5" aria-hidden="true" />}
+            {t(solved ? "friendRace.openYours" : "friendRace.open", { count: racingFriends.length, name: racingFriends[0].username })}
+          </Button>
+        )}
 
         {pending && !boardPostsHere() && (
           <p data-testid="board-not-posted" className="text-center text-xs text-muted">
@@ -244,6 +325,17 @@ export function BonusLeaderboardScreen() {
             )
           ))}
       </div>
+      {theRace && card && (
+        <FriendRaceDialog
+          puzzle={theRace.puzzle}
+          solves={theRace.solves}
+          letters={theRace.letters}
+          shareRef={{ bonusDay: card.day }}
+          cta={plus || solved ? undefined : { label: t("challenge.solveYourself"), onClick: pitch }}
+          onClose={() => setTheRace(null)}
+        />
+      )}
+      {watching && <ReplayDialog puzzle={watching.puzzle} solves={watching.solves} onClose={() => setWatching(null)} />}
     </PageShell>
   );
 }

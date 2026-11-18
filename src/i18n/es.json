@@ -1056,6 +1056,7 @@
     "errorRateLimited": "Son muchas solicitudes para un día. Inténtalo mañana.",
     "errorTooMany": "Hay demasiadas solicitudes esperando respuesta.",
     "errorGeneric": "No se pudo completar. Inténtalo de nuevo.",
+    "errorCantSend": "Este aún no se puede enviar a amigos. Comparte el enlace.",
     "sendToFriend": "Enviar a un amigo",
     "sendToFriendHint": "Recibe tu tiempo a superar en la app, sin hoja de compartir.",
     "send": "Enviar",
@@ -1177,6 +1178,11 @@
     "boardNone": "Ese día no hubo Plus del día.",
     "boardPlay": "Jugar el Plus del día",
     "boardPitch": "El Plus del día es un crucigrama adicional cada día para miembros Plus."
+  },
+  "bonusLink": {
+    "heading": "{{name}} resolvió el Plus del día",
+    "headingPlain": "Juega el Plus del día",
+    "pitch": "Los crucigramas Plus del día vienen con Crossword Clash Plus."
   },
   "stats": {
     "title": "Tus estadísticas",

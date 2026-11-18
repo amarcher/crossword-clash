@@ -106,6 +106,16 @@ describe("FriendRaceDialog", () => {
 
     render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann]} letters onClose={() => {}} />);
     expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
+    cleanup();
+
+    // A Daily Plus race shares its day's link the same way, and says which puzzle it is.
+    share.send.mockClear();
+    render(<FriendRaceDialog puzzle={puzzle} solves={[{ ...you, name: "archer" }, ann]} letters shareRef={{ bonusDay: "2026-11-18" }} onClose={() => {}} />);
+    expect(screen.getByTestId("race-puzzle").textContent).toBe("Daily Plus · Nov 18 · Tiny");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    });
+    expect(share.send.mock.calls[0][0]).toMatchObject({ url: "https://crosswordclash.com/bonus/2026-11-18?r=abcdefghijk&race=2&who=archer%2Cann" });
   });
 
   it("says which puzzle and how it was replayed, and keeps the legend behind a button", () => {

@@ -13,6 +13,9 @@ describe("appLinkTarget", () => {
     expect(appLinkTarget("https://crosswordclash.com/daily/2026-10-20/mini?beat=102&by=Archer")).toEqual({ kind: "navigate", to: "/daily/2026-10-20/mini?beat=102&by=Archer" });
     expect(appLinkTarget("https://crosswordclash.com/puzzles/a1b2c3d4")).toEqual({ kind: "navigate", to: "/puzzles/a1b2c3d4" });
     expect(appLinkTarget("https://crosswordclash.com/puzzles/by/archer?size=mini")).toEqual({ kind: "navigate", to: "/puzzles/by/archer?size=mini" });
+    // A Daily Plus finish's link by its day; the bonus board is not a link the app opens.
+    expect(appLinkTarget("https://crosswordclash.com/bonus/2026-11-18?beat=102&by=Archer&r=VJ0ncnWyJ9j")).toEqual({ kind: "navigate", to: "/bonus/2026-11-18?beat=102&by=Archer&r=VJ0ncnWyJ9j" });
+    expect(appLinkTarget("https://crosswordclash.com/bonus/leaderboard")).toBeNull();
     // A friend-request push's url (pushRules.ts) and the Race screen.
     expect(appLinkTarget("https://crosswordclash.com/race/friends")).toEqual({ kind: "navigate", to: "/race/friends" });
     expect(appLinkTarget("https://crosswordclash.com/race")).toEqual({ kind: "navigate", to: "/race" });

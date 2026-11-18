@@ -154,6 +154,8 @@ export const routes: RouteObject[] = [
           { path: "stats", lazy: () => m.stats().then((s) => ({ Component: s.StatsScreen })) },
           { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
           { path: "bonus/leaderboard", lazy: () => m.bonusLeaderboard().then((s) => ({ Component: s.BonusLeaderboardScreen })) },
+          // A Daily Plus finish's share link by its day: the challenge for Plus, the solve and the pitch for everyone else.
+          { path: "bonus/:day", lazy: () => m.bonusLink().then((s) => ({ Component: s.BonusLinkScreen })) },
           { path: "daily/leaderboard/:slot?", lazy: () => m.dailyLeaderboard().then((s) => ({ Component: s.DailyLeaderboardScreen })) },
           // A day's daily by date + slot (the short challenge link); the static
           // "leaderboard" segment above outranks the :day param.

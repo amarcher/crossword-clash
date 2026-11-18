@@ -337,6 +337,12 @@ describe("client", () => {
     expect(rpcCalls).toEqual([]);
     results = [{ data: "inv-2", error: null }];
     expect(await sendBeat("a", "/daily/2026-10-20/mini?beat=102&by=Archer")).toBe("inv-2");
+    // A community puzzle's and a Daily Plus day's links go to the server too, which has the last word.
+    results = [{ data: "inv-3", error: null }, { data: null, error: { message: "friends:invalid" } }];
+    expect(await sendBeat("a", "/puzzles/ab12cd34?beat=102&by=Archer")).toBe("inv-3");
+    await expect(sendBeat("a", "/bonus/2026-11-18?beat=102&by=Archer&r=E0Gqr8Iw09i")).rejects.toMatchObject({ kind: "invalid" });
+    expect(rpcCalls[rpcCalls.length - 1]).toMatchObject({ args: { p_link: "/bonus/2026-11-18?beat=102&by=Archer&r=E0Gqr8Iw09i" } });
+    await expect(sendBeat("a", "/bonus/leaderboard")).rejects.toMatchObject({ kind: "invalid" });
   });
 
   it("maps an invite row with its room and sender, and derives the join path", async () => {

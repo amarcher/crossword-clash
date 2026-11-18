@@ -177,7 +177,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     setTimeout(() => setToast(null), 2200);
   };
   // Which puzzle: "Daily Mini · Nov 17 · Bread Basket" for a daily, the title alone otherwise.
-  const about = [...(shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
+  const about = [...(shareRef && "bonusDay" in shareRef ? [t("bonus.eyebrow"), formatShareDay(shareRef.bonusDay, i18n.language)] : shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
   const counts = squaresFirst(first, lanes.length, ms);
 
   return (

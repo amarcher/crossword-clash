@@ -32,7 +32,8 @@ type Row = { id: string; share_id: string; name: string; day: string | null; slo
 const COLUMNS = "id, share_id, name, day, slot, short_id, title, seconds, to_seconds, reply_share_id, created_at, seen_at";
 
 function toReply(row: Row): RaceReply | null {
-  const ref: PuzzleRef | null = row.short_id ? { shortId: row.short_id } : row.day && isDailySlot(row.slot) ? { day: row.day, slot: row.slot } : null;
+  // A Daily Plus reply is kept as its day under slot "bonus", as its board's rows are.
+  const ref: PuzzleRef | null = row.short_id ? { shortId: row.short_id } : !row.day ? null : row.slot === "bonus" ? { bonusDay: row.day } : isDailySlot(row.slot) ? { day: row.day, slot: row.slot } : null;
   if (!ref) return null;
   return {
     id: row.id,
@@ -56,8 +57,8 @@ export async function replyToRace(input: { shareId: string; replyShareId: string
       p_share_id: input.shareId,
       p_reply_share_id: input.replyShareId,
       p_name: input.name,
-      p_day: "day" in input.ref ? input.ref.day : null,
-      p_slot: "slot" in input.ref ? input.ref.slot : null,
+      p_day: "bonusDay" in input.ref ? input.ref.bonusDay : "day" in input.ref ? input.ref.day : null,
+      p_slot: "bonusDay" in input.ref ? "bonus" : "slot" in input.ref ? input.ref.slot : null,
       p_short_id: "shortId" in input.ref ? input.ref.shortId : null,
       p_seconds: Math.max(0, Math.floor(input.seconds)),
       p_to_seconds: Math.max(0, Math.floor(input.toSeconds)),

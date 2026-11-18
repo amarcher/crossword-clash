@@ -76,4 +76,16 @@ describe("SendToFriend", () => {
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "That's a lot of requests for one day. Try again tomorrow.");
     expect(screen.getByRole("button", { name: "Send" })).toBeTruthy();
   });
+
+  it("says to share the link instead when the server does not take it (a Daily Plus link before its migration)", async () => {
+    friends.value = value({
+      beat: vi.fn(async () => {
+        throw new FriendsError("invalid");
+      }),
+    });
+    render(<SendToFriend link="/bonus/2026-11-18?beat=102&by=Archer" />);
+    fireEvent.click(screen.getByRole("button", { name: "Send to a friend" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "This one can't be sent to friends yet. Share the link instead.");
+  });
 });

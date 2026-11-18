@@ -21,6 +21,9 @@ import type { Puzzle } from "../types/puzzle";
  * stubbed. Keystrokes go through the window handler the grid listens to.
  */
 vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
+// Filing a finish's replay: nothing without Supabase, as in the app, unless a test gives it an ID.
+const replays = vi.hoisted(() => ({ create: vi.fn(async (): Promise<string | null> => null) }));
+vi.mock("../lib/replayShare", async original => ({ ...await original<typeof import("../lib/replayShare")>(), createReplayShare: replays.create }));
 const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn(), username: null as string | null, profileReady: true }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: posting.user, loading: false }) }));
 vi.mock("../lib/leaderboardPreference", () => ({ fetchSoloLeaderboardPreference: posting.preference }));
@@ -415,11 +418,18 @@ it("today's bonus posts to the bonus board; a past bonus posts nowhere but links
   const today = todayKey();
   await renderSolo();
   act(() => game.setDisplayName("archer"));
+  replays.create.mockClear();
+  replays.create.mockResolvedValue("E0Gqr8Iw09i");
   await act(async () => { await game.handleSoloPuzzleLoaded({ ...puzzle, title: "Bonus", origin: "bonus", bonusDay: today }); });
   type("catbetao");
   await screen.findByRole("dialog", { name: "Puzzle complete" });
   await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ slot: "bonus", day: today, posted: true }));
   expect(within(screen.getByRole("dialog", { name: "Puzzle complete" })).getByRole("button", { name: "Leaderboard" })).toBeTruthy();
+  // The finish files its replay (squares, no letters) and shares as the day's link.
+  await waitFor(() => expect(screen.getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i"));
+  expect(replays.create).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("button", { name: "Share your time" })).toBeTruthy();
+  replays.create.mockResolvedValue(null);
   cleanup();
   localStorage.clear();
 

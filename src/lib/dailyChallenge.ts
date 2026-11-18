@@ -38,6 +38,11 @@ export function dailyPath(day: string, slot: DailySlot): string {
   return `/daily/${day}/${slot}`;
 }
 
+/** The route path for a day's Daily Plus link (BonusLinkScreen), no origin. */
+export function bonusPath(day: string): string {
+  return `/bonus/${day}`;
+}
+
 export interface DailyLinkInput {
   day: string;
   slot: DailySlot;
@@ -58,15 +63,18 @@ export function buildDailyLink(origin: string, input: DailyLinkInput): string {
   return buildPuzzleLink(origin, { day: input.day, slot: input.slot }, input);
 }
 
-/** The page a shared puzzle lives at: its daily route, or its community page. */
+/** The page a shared puzzle lives at: its daily route, its community page, or its Daily Plus day. */
 export function puzzleRefPath(ref: PuzzleRef): string {
+  if ("bonusDay" in ref) return bonusPath(ref.bonusDay);
   return "shortId" in ref ? `/puzzles/${ref.shortId}` : dailyPath(ref.day, ref.slot);
 }
 
 /**
  * The challenge link to any shared puzzle (Puzzle.ref): a daily's, or a
  * community puzzle's `/puzzles/ab12cd34?beat=102&by=Archer&r=…`, which
- * CommunityPuzzleScreen turns into the same challenge.
+ * CommunityPuzzleScreen turns into the same challenge; or a Daily Plus day's
+ * `/bonus/2026-11-18?beat=102&by=Archer&r=…`, which BonusLinkScreen turns
+ * into it for Plus and into the pitch for everyone else.
  */
 export function buildPuzzleLink(origin: string, ref: PuzzleRef, input: Pick<DailyLinkInput, "seconds" | "name" | "replay" | "race" | "who">): string {
   const base = origin.replace(/\/+$/, "");

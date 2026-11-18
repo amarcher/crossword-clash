@@ -540,6 +540,27 @@ describe("CompletionModal", () => {
     expect(plain.queryByTestId("replay-preview")).toBeNull();
   });
 
+  it("shares a Daily Plus finish as its day's link alone, with the replay, under 'Share your time'", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    navigator.share = share;
+    try {
+      const { getByTestId } = render(
+        <CompletionModal {...SOLO_PROPS} finishSeconds={90} puzzleRef={{ bonusDay: "2026-11-18" }} replayId="E0Gqr8Iw09i"
+          challengePuzzle={{ ...fakePuzzle("Deep Blue", 5), origin: "bonus", bonusDay: "2026-11-18" }} challengerName="Player" />,
+      );
+      expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
+      const sharing = within(getByTestId("share-result"));
+      fireEvent.click(sharing.getByRole("button", { name: "Share your time" }));
+      const name = sharing.getByPlaceholderText("Your name");
+      fireEvent.change(name, { target: { value: "Sam" } });
+      fireEvent.keyDown(name, { key: "Enter" });
+      await waitFor(() => expect(share).toHaveBeenCalled());
+      expect(share.mock.lastCall![0].text).toMatch(/^https?:\/\/[^/\s]+\/bonus\/2026-11-18\?beat=90&by=Sam&r=E0Gqr8Iw09i$/);
+    } finally {
+      delete (navigator as Partial<Navigator>).share;
+    }
+  });
+
   it("never puts a bonus puzzle in its share link (Plus only)", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     navigator.share = share;
