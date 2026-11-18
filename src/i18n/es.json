@@ -60,6 +60,7 @@
     "ownPuzzle": "Trae tu propio crucigrama",
     "ownPuzzleSubtitle": "NYT o un archivo de crucigrama",
     "nytTile": "Compite con amigos en el crucigrama del NYT de hoy",
+    "nytTileStreak_one": "Racha NYT de {{count}} día — juega el de hoy",
     "nytTileStreak": "Racha NYT de {{count}} días — juega el de hoy",
     "nytTileSubtitle": "Importa del NYT con un clic",
     "iosApp": "Descarga la app para iPhone y iPad",
@@ -147,6 +148,7 @@
     "friendsHeading": "O juega con amigos",
     "importedFromNyt": "Importado del NYT",
     "nytTomorrow": "Funciona todos los días: abre el crucigrama de mañana en nytimes.com y vuelve a hacer clic en el marcador.",
+    "nytStreak_one": "¡Racha NYT de {{count}} día!",
     "nytStreak": "¡Racha NYT de {{count}} días!",
     "dailyBadge": "{{slot}} · {{date}}"
   },
@@ -292,6 +294,7 @@
     "standings": "Clasificación",
     "viewLeaderboard": "Clasificación",
     "nytTomorrow": "¿Mañana a la misma hora? Abre el crucigrama del NYT de mañana y vuelve a hacer clic en el marcador.",
+    "nytStreak_one": "Racha NYT de {{count}} día",
     "nytStreak": "Racha NYT de {{count}} días",
     "saveHistory": "Conserva esta partida",
     "saveHistoryHint": "Inicia sesión para guardar tus rachas y tiempos en todos tus dispositivos.",
@@ -308,7 +311,7 @@
     "raceFresh": "Compite con amigos",
     "nextPuzzleSameRoom": "Otro crucigrama, misma sala",
     "nextPuzzleSameRoomHint": "Elige un crucigrama nuevo: el código de la sala se mantiene",
-    "seeStats": "Ver tus estadísticas",
+    "seeStats": "Estadísticas",
     "raceFreshHint": "Elige uno e invita por enlace"
   },
   "leaderboardSettings": {
@@ -379,6 +382,7 @@
     "bestTime": "mejor: {{time}}",
     "newBest": "¡Nuevo récord!",
     "newBestBeat": "¡Nuevo récord! Superaste {{time}}",
+    "streakDays_one": "Racha de {{count}} día",
     "streakDays": "Racha de {{count}} días"
   },
   "challenge": {
@@ -953,6 +957,7 @@
     "startTitle": "Crear una sala",
     "startBody": "Elige un crucigrama y comparte el código o el enlace",
     "startBodyFriends": "Elige un crucigrama e invita a amigos desde la sala",
+    "startBodyPuzzle": "Compite en {{title}}: comparte el código o el enlace",
     "start": "Crear",
     "codeHeading": "Unirse con un código",
     "codeIntro": "¿Un amigo te dio un código? Escríbelo aquí.",

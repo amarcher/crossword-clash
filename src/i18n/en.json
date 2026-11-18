@@ -60,6 +60,7 @@
     "ownPuzzle": "Bring your own puzzle",
     "ownPuzzleSubtitle": "NYT or a puzzle file",
     "nytTile": "Race friends on today's NYT crossword",
+    "nytTileStreak_one": "{{count}}-day NYT streak — play today's",
     "nytTileStreak": "{{count}}-day NYT streak — play today's",
     "nytTileSubtitle": "Import NYT puzzles in one click",
     "iosApp": "Get the iPhone and iPad app",
@@ -147,6 +148,7 @@
     "friendsHeading": "Or play with friends",
     "importedFromNyt": "Imported from NYT",
     "nytTomorrow": "This works every day: open tomorrow's puzzle on nytimes.com and click the bookmark again.",
+    "nytStreak_one": "{{count}}-day NYT streak!",
     "nytStreak": "{{count}}-day NYT streak!",
     "dailyBadge": "{{slot}} · {{date}}"
   },
@@ -292,6 +294,7 @@
     "standings": "Standings",
     "viewLeaderboard": "Leaderboard",
     "nytTomorrow": "Same time tomorrow? Open tomorrow's NYT puzzle and click the bookmark again.",
+    "nytStreak_one": "{{count}}-day NYT streak",
     "nytStreak": "{{count}}-day NYT streak",
     "saveHistory": "Keep this solve",
     "saveHistoryHint": "Sign in to save your streaks and times across devices.",
@@ -379,6 +382,7 @@
     "bestTime": "best: {{time}}",
     "newBest": "New best!",
     "newBestBeat": "New best — beat {{time}}",
+    "streakDays_one": "{{count}}-day streak",
     "streakDays": "{{count}}-day streak"
   },
   "challenge": {
@@ -953,6 +957,7 @@
     "startTitle": "Start a room",
     "startBody": "Pick a puzzle, then share the code or link",
     "startBodyFriends": "Pick a puzzle and invite friends from the lobby",
+    "startBodyPuzzle": "Race {{title}}: share the code or link",
     "start": "Start",
     "codeHeading": "Join with a code",
     "codeIntro": "Got a code from a friend? Type it here.",

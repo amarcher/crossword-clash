@@ -171,6 +171,12 @@ describe("raceBlocks (spec §3.6)", () => {
     // An invite with no friends yet (the friend was removed since): still invites first.
     expect(raceBlocks({ signedIn: true, friends: 0, invites: 1, requests: 0 })).toEqual(["invites", "friends", "start", "code"]);
   });
+
+  it("puts Start a room before the code when a puzzle was already chosen", () => {
+    expect(raceBlocks({ signedIn: false, friends: 0, invites: 0, requests: 0, puzzle: true })).toEqual(["start", "code", "signIn"]);
+    expect(raceBlocks({ signedIn: true, friends: 0, invites: 0, requests: 0, puzzle: true })).toEqual(["start", "code", "addFriends"]);
+    expect(raceBlocks({ signedIn: true, friends: 3, invites: 0, requests: 0, puzzle: true })).toEqual(["friends", "start", "code"]);
+  });
 });
 
 describe("friendSuggestions", () => {

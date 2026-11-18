@@ -410,7 +410,7 @@ export function CompletionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-ink/60 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-stage/60 backdrop-blur-[2px]"
         onClick={onBackToMenu}
       />
 
@@ -897,7 +897,7 @@ export function CompletionModal({
         </div>
 
         {/* Ad */}
-        <div className="flex justify-center mt-4">
+        <div className="mt-4 flex justify-center empty:hidden">
           <AdSlot placement="completion-footer" darkMode={darkMode} />
         </div>
       </div>
