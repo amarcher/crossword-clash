@@ -111,10 +111,10 @@ describe("FriendRaceDialog", () => {
     render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann]} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);
     expect(screen.getByTestId("race-puzzle").textContent).toBe("Daily Mini · Nov 16 · Tiny");
     expect(screen.getByText("Replayed head-to-head")).toBeTruthy();
-    expect(screen.queryByText(/takes the color/)).toBeNull();
+    expect(screen.queryByText("First to the square")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "How to read the race" }));
-    expect(screen.getByRole("note").textContent).toContain("each square takes the color of whoever filled it first");
-    expect(screen.getByRole("note").textContent).toContain("Played at 4× speed");
+    // A key of four marks, a few words each.
+    expect([...screen.getByRole("note").querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Share of the grid filled", "First to the square", "Filled by ann", "4× speed, same start"]);
   });
 
   it("opens a big circle on its first eight, and says why nine cannot be shared", async () => {

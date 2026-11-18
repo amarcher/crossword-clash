@@ -1255,7 +1255,7 @@
     "showing": "Quién está en la carrera",
     "lanesTitle": "La recta final",
     "firstTitle": "Quién llegó primero",
-    "firstBody": "La cuadrícula: cada casilla toma el color de quien la rellenó primero.",
+    "firstBody": "Primero en la casilla",
     "gridLabel": "La cuadrícula, coloreada según quién llenó primero cada casilla",
     "standingsLabel": "Casillas en las que cada quien fue primero",
     "scrub": "Reloj de la carrera",
@@ -1275,11 +1275,11 @@
     "sharedSubtitle": "La carrera que te han enviado: cada casilla toma el color de quien la rellenó primero. Resuélvelo para ver las letras.",
     "viewLabel": "Cómo se muestra la cuadrícula",
     "viewBoth": "Los dos",
-    "bothBody": "Los dos: las letras de {{a}} según entraron, con una marca en la esquina de cada casilla que {{b}} tenía rellena.",
+    "bothBody": "Rellena por {{b}}",
     "subtitleTwo": "Repetición cara a cara",
     "legendLabel": "Cómo leer la carrera",
-    "legendLanes": "Los carriles: cuánto de la cuadrícula había rellenado cada jugador.",
-    "legendSpeed": "A velocidad {{speed}}×, como si todos hubieran empezado a la vez.",
+    "legendLanes": "Parte de la cuadrícula rellena",
+    "legendSpeed": "Velocidad {{speed}}×, misma salida",
     "sharedSolver": "Jugador {{n}}"
   }
 }

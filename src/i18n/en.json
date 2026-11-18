@@ -1255,7 +1255,7 @@
     "showing": "Who is in the race",
     "lanesTitle": "Down the stretch",
     "firstTitle": "Who got there first",
-    "firstBody": "The grid: each square takes the color of whoever filled it first.",
+    "firstBody": "First to the square",
     "gridLabel": "The grid, colored by who filled each square first",
     "standingsLabel": "Squares each solver was first to",
     "scrub": "Race clock",
@@ -1275,11 +1275,11 @@
     "sharedSubtitle": "The race someone shared: each square takes the color of whoever filled it first. Solve it to see the letters.",
     "viewLabel": "How the grid is shown",
     "viewBoth": "Both solves",
-    "bothBody": "Both solves: {{a}}'s letters as they went in, with a corner mark on each square {{b}} had filled.",
+    "bothBody": "Filled by {{b}}",
     "subtitleTwo": "Replayed head-to-head",
     "legendLabel": "How to read the race",
-    "legendLanes": "The lanes: how much of the grid each solver had filled.",
-    "legendSpeed": "Played at {{speed}}× speed, as if everyone had started together.",
+    "legendLanes": "Share of the grid filled",
+    "legendSpeed": "{{speed}}× speed, same start",
     "sharedSolver": "Solver {{n}}"
   }
 }

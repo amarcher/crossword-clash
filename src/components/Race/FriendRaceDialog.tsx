@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, CircleHelp, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
+import { Check, CircleHelp, FastForward, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
 import { Button } from "../ui";
 import { CrosswordGrid } from "../CrosswordGrid";
 import { StudioPopover } from "../Studio/StudioPopover";
@@ -167,12 +167,33 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
               <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : t("friendRace.title")}</h2>
               <p className="text-sm text-muted">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name }) : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
             </div>
-            <StudioPopover label={t("friendRace.legendLabel")} icon={<CircleHelp className="size-5" aria-hidden="true" />} className="-mt-2 ml-auto shrink-0" large>
-              <ul className="grid gap-1.5">
-                <li>{t("friendRace.legendLanes")}</li>
-                <li>{t("friendRace.firstBody")}</li>
-                {canShowBoth && <li>{t("friendRace.bothBody", { a: a.name, b: b.name })}</li>}
-                <li>{t("friendRace.legendSpeed", { speed })}</li>
+            <StudioPopover label={t("friendRace.legendLabel")} icon={<CircleHelp className="size-5" aria-hidden="true" />} className="-mt-2 ml-auto shrink-0" large narrow>
+              {/* A key, not a paragraph: each mark as it is drawn, and a few words. */}
+              <ul className="grid gap-2 text-sm font-medium text-ink">
+                <li className="flex items-center gap-2.5">
+                  <span className="flex h-3 w-6 shrink-0 gap-px" aria-hidden="true">
+                    {[0, 1, 2, 3].map((n) => (
+                      <span key={n} className="h-full flex-1 rounded-[2px] bg-surface-sunken" style={n < 3 ? { backgroundColor: blendOnWhite(a.color, 0.6) } : undefined} />
+                    ))}
+                  </span>
+                  {t("friendRace.legendLanes")}
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="mx-1.5 size-3 shrink-0 rounded-[3px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(a.color, 0.4) }} aria-hidden="true" />
+                  {t("friendRace.firstBody")}
+                </li>
+                {canShowBoth && (
+                  <li className="flex items-center gap-2.5">
+                    <span className="mx-1.5 size-3 shrink-0 rounded-[3px] border border-line-strong bg-surface" aria-hidden="true">
+                      <span className="block size-full opacity-85" style={{ backgroundColor: b.color, clipPath: "polygon(100% 20%, 100% 100%, 20% 100%)" }} />
+                    </span>
+                    {t("friendRace.bothBody", { b: b.name })}
+                  </li>
+                )}
+                <li className="flex items-center gap-2.5">
+                  <FastForward className="mx-1 size-4 shrink-0 text-muted" aria-hidden="true" />
+                  {t("friendRace.legendSpeed", { speed })}
+                </li>
               </ul>
             </StudioPopover>
             <button type="button" onClick={onClose} aria-label={t("ghostRace.close")} className="-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-surface-sunken active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500">

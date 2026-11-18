@@ -10,6 +10,8 @@ interface StudioPopoverProps {
   className?: string;
   /** A 44 px trigger, for touch screens outside the studio's dense toolbars. */
   large?: boolean;
+  /** A panel as wide as its content, for a short key. */
+  narrow?: boolean;
   children: ReactNode;
 }
 
@@ -18,7 +20,7 @@ interface StudioPopoverProps {
  * keeps its instructions and legends here, so they cost no height until asked
  * for; Escape, a click outside or a second click closes it.
  */
-export function StudioPopover({ label, icon, align = "right", className = "", large, children }: StudioPopoverProps) {
+export function StudioPopover({ label, icon, align = "right", className = "", large, narrow, children }: StudioPopoverProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLSpanElement>(null);
@@ -54,7 +56,7 @@ export function StudioPopover({ label, icon, align = "right", className = "", la
         <div
           id={panelId}
           role="note"
-          className={`absolute top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-surface p-3 text-xs leading-relaxed text-ink-soft shadow-overlay ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute top-full z-30 mt-1 ${narrow ? "w-max" : "w-72"} max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-surface p-3 text-xs leading-relaxed text-ink-soft shadow-overlay ${align === "right" ? "right-0" : "left-0"}`}
         >
           {children}
         </div>
