@@ -1,0 +1,11 @@
+This build (1.1.4, build 54) is a polish pass over the whole app. Please check:
+
+1. Names: buttons now say the same thing everywhere. "Play" starts a puzzle on your own, "Race friends" opens a room, and every link to a board says "Leaderboard".
+2. Leaderboards: each board has tabs for Mini, Midi, Large and Daily Plus. Players with the same time share a rank, and whoever posted first is listed first.
+3. Race friends from a daily: tap "Race friends" on a daily. "Start a room" should come first and name the puzzle you picked.
+4. Finishing a puzzle: the finish screen should sit below the clock and status bar. Tapping the X (or outside the screen) closes it and leaves you on your solved grid; "Back to menu" is the button that leaves. Share in the top bar brings it back.
+5. Keyboard: a tap in the gap between two keys, or at the screen edge beside Q, A, P or L, should type the nearest key.
+6. On a TV or iPad as the big screen: after a game, closing the results leaves the finished grid up, with a "Results" button to bring them back.
+7. On an iPad held upright, the grid sits at the top beside the clue list.
+8. In Spanish: clue lists say "Horizontales" and "Verticales", and a one-day streak reads "Racha de 1 día".
+9. Everything from build 53 still applies.
