@@ -49,7 +49,8 @@ export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch 
             <tr
               key={e.userId}
               data-unposted={e.unposted || undefined}
-              className={e.unposted ? "bg-surface-sunken/70 font-semibold text-ink" : isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}
+              // Every row is as tall as one with a Watch button, so a board is evenly spaced.
+              className={`h-14 ${e.unposted ? "bg-surface-sunken/70 font-semibold text-ink" : isMe ? "bg-brand-50 font-semibold text-ink" : "text-ink-soft"}`}
             >
               <td className="py-2.5 pl-4 pr-2">
                 <span
