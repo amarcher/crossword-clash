@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Loader2, Lock, Trophy, WifiOff } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
+import { BoardTabs } from "../components/Leaderboard/BoardTabs";
 import { Button, Card } from "../components/ui";
 import { PlusBadge } from "../components/ui/PlusBadge";
 import { useAuth } from "../contexts/AuthContext";
@@ -159,6 +160,8 @@ export function BonusLeaderboardScreen() {
           </h1>
           {card && <p className="mt-1.5 truncate text-sm text-muted">{card.theme ? `${card.title} · ${card.theme}` : card.title}</p>}
         </div>
+
+        <BoardTabs active="bonus" day={past ? day : null} />
 
         <div data-testid="board-day" className="flex items-center justify-center gap-1">
           <button type="button" className={STEP_BUTTON} onClick={() => previous && goToDay(previous.day)} disabled={!previous} aria-label={t("leaderboard.previousDay")}>

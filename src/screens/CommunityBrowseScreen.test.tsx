@@ -97,7 +97,7 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
   it("plays through the solo path with the live username and the community tag", async () => {
     renderAt("/puzzles");
     await screen.findByText("Puzzle 1");
-    fireEvent.click(screen.getAllByRole("button", { name: "Play solo" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Play" })[0]);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/solo/play"));
     expect(community.fetchCommunityPuzzle).toHaveBeenCalledWith("short1xx");
     const puzzle = (game.handleSoloPuzzleLoaded.mock.calls as unknown[][])[0][0] as { origin?: string; author: string; title: string };

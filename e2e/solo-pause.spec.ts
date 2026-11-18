@@ -13,7 +13,7 @@ for (const width of [375, 1280]) {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(`/${hash}`);
-    await page.getByRole("button", { name: "Play solo", exact: true }).click();
+    await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     const first = imported.cells.flat().find(cell => cell.solution)!;
     await gridCell(page, first.row, first.col).click();
@@ -51,7 +51,7 @@ for (const width of [375, 1280]) {
 
 test("hidden tab freezes the clock and returns paused; browser Back preserves work", async ({ page }) => {
   await page.goto(`/${hash}`);
-  await page.getByRole("button", { name: "Play solo", exact: true }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.clock.install();
   await page.clock.fastForward(12_000);
@@ -76,7 +76,7 @@ test("hidden tab freezes the clock and returns paused; browser Back preserves wo
 
 test("failed storage keeps the grid in memory and retry restores Save & exit", async ({ page }) => {
   await page.goto(`/${hash}`);
-  await page.getByRole("button", { name: "Play solo", exact: true }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -87,7 +87,7 @@ test("failed storage keeps the grid in memory and retry restores Save & exit", a
     };
   });
   await page.getByRole("button", { name: "Pause", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("couldn’t save");
+  await expect(page.getByRole("alert")).toContainText("couldn't save");
   await expect(page.getByRole("button", { name: "Save & exit" })).toHaveCount(0);
   await page.evaluate(() => (window as unknown as { restoreStorage: () => void }).restoreStorage());
   await page.getByRole("button", { name: "Try again" }).click();
@@ -123,7 +123,7 @@ test("Spanish pause controls fit a 320px screen", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.addInitScript(() => localStorage.setItem("crossword-clash:language", "es"));
   await page.goto(`/${hash}`);
-  await page.getByRole("button", { name: /Jugar solo/i }).click();
+  await page.getByRole("button", { name: /^Jugar$/i }).click();
   await page.getByRole("button", { name: "Pausar", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "En pausa" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Guardar y salir" })).toBeInViewport();

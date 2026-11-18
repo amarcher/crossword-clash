@@ -92,7 +92,15 @@ describe("PuzzleReady", () => {
     expect(screen.getByText(/15.*15.*30 across.*28 down/)).toBeTruthy();
   });
 
-  it("calls onPlaySolo when Play solo is clicked", () => {
+  it("links a daily to its board, that day's for a past one; an import has no board", () => {
+    const props = { onPlaySolo: () => {}, onHostGame: () => {}, onHostOnTV: () => {}, showHostOptions: true };
+    const { rerender } = render(<PuzzleReady {...props} puzzle={{ ...makePuzzle(), ref: { day: "2020-01-01", slot: "midi" } }} />);
+    expect(screen.getByRole("link", { name: "Leaderboard" }).getAttribute("href")).toBe("/daily/leaderboard/midi?day=2020-01-01");
+    rerender(<PuzzleReady {...props} puzzle={makePuzzle()} />);
+    expect(screen.queryByRole("link", { name: "Leaderboard" })).toBeNull();
+  });
+
+  it("calls onPlaySolo when Play is clicked", () => {
     const onPlaySolo = vi.fn();
     render(
       <PuzzleReady
@@ -104,7 +112,7 @@ describe("PuzzleReady", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("Play solo"));
+    fireEvent.click(screen.getByText("Play"));
     expect(onPlaySolo).toHaveBeenCalledOnce();
   });
 
@@ -151,7 +159,7 @@ describe("PuzzleReady", () => {
       />,
     );
 
-    expect(screen.getByText("Play solo")).toBeTruthy();
+    expect(screen.getByText("Play")).toBeTruthy();
     expect(screen.queryByText("Start a room")).toBeNull();
     expect(screen.queryByText("Start a room on a TV")).toBeNull();
   });

@@ -72,12 +72,12 @@ describe("TTSSettingsModal", () => {
 
   it("renders modal when open", () => {
     render(<TTSSettingsModal {...baseProps()} />);
-    expect(screen.getByText("Voice Settings")).toBeTruthy();
+    expect(screen.getByText("Voice settings")).toBeTruthy();
   });
 
-  it("renders voice select with System Default", () => {
+  it("renders voice select with System default", () => {
     render(<TTSSettingsModal {...baseProps()} />);
-    expect(screen.getByText("System Default")).toBeTruthy();
+    expect(screen.getByText("System default")).toBeTruthy();
   });
 
   it("renders rate and pitch sliders", () => {
@@ -86,10 +86,10 @@ describe("TTSSettingsModal", () => {
     expect(screen.getByText("Pitch: 0.7")).toBeTruthy();
   });
 
-  it("calls speak on Test Voice click", () => {
+  it("calls speak on Test voice click", () => {
     const props = baseProps();
     render(<TTSSettingsModal {...props} />);
-    fireEvent.click(screen.getByText("Test Voice"));
+    fireEvent.click(screen.getByText("Test voice"));
     expect(props.speak).toHaveBeenCalledWith("Testing voice settings");
   });
 
@@ -151,7 +151,7 @@ describe("TTSSettingsModal", () => {
         narratorEngine={null}
       />,
     );
-    expect(screen.getByText("ElevenLabs Voice")).toBeTruthy();
+    expect(screen.getByText("Voice")).toBeTruthy();
     expect(screen.getByText("Rachel (default)")).toBeTruthy();
     // Rate/pitch sliders should not be shown
     expect(screen.queryByText("Rate: 1.0")).toBeNull();
@@ -163,7 +163,7 @@ describe("TTSSettingsModal", () => {
     props.elevenLabsAvailable = true;
     render(<TTSSettingsModal {...props} />);
 
-    pick("Browser TTS", "ElevenLabs");
+    pick("Device voice", "Natural voice");
     expect(props.setEngine).toHaveBeenCalledWith("elevenlabs");
   });
 
@@ -180,7 +180,7 @@ describe("TTSSettingsModal", () => {
   it("keeps the voice controls while the AI host is on: it speaks in the chosen voice", () => {
     render(<TTSSettingsModal {...baseProps()} elevenLabsAvailable={true} narratorEngine="claude" />);
     expect(screen.getByText("Voice")).toBeTruthy();
-    expect(screen.getByText("Test Voice")).toBeTruthy();
+    expect(screen.getByText("Test voice")).toBeTruthy();
   });
 
   it("the AI host is one switch: on sets the host, off clears it", () => {

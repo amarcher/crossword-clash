@@ -15,7 +15,7 @@ export function replyPuzzleLabel(t: (key: string, params?: Record<string, unknow
   return reply.title ? t("raceReplies.titleQuoted", { title: reply.title }) : t("raceReplies.communityPuzzle");
 }
 
-/** "Sam won by 0:12", "You won by 0:12" or "Dead heat": a reply's verdict from the sender's side. */
+/** "Sam won by 0:12", "You won by 0:12" or "It's a tie": a reply's verdict from the sender's side. */
 export function replyVerdict(t: (key: string, params?: Record<string, unknown>) => string, reply: Pick<RaceReply, "name" | "seconds" | "toSeconds">): string {
   const delta = formatDuration(Math.abs(reply.seconds - reply.toSeconds));
   if (reply.seconds < reply.toSeconds) return t("raceReplies.theyWon", { name: reply.name, delta });

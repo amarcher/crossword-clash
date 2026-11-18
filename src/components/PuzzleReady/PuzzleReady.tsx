@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Check, Newspaper, Tv, Users } from "lucide-react";
+import { CalendarDays, Check, Newspaper, Trophy, Tv, Users } from "lucide-react";
 import { FlowPage } from "../Flow";
 import { AdSlot } from "../AdSlot";
-import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../ui";
+import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../ui";
 import type { Puzzle } from "../../types/puzzle";
 import { formatShareDay } from "../../lib/shareBlock";
+import { leaderboardPath, todayKey } from "../../lib/dailyLeaderboard";
 
 const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
@@ -63,7 +64,8 @@ export function PuzzleReady({
       subtitle={puzzle.author ? t("puzzleReady.by", { author: puzzle.author }) : undefined}
     >
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
-        <Card className="flex items-center gap-4 p-4 lg:flex-col lg:p-6">
+        <Card className="overflow-hidden">
+          <div className="flex items-center gap-4 p-4 lg:flex-col lg:p-6">
           <MiniGridThumb puzzle={puzzle} className="w-24 shrink-0 lg:w-56" />
           <div className="min-w-0 lg:text-center">
             <p className="text-sm text-muted tabular-nums">
@@ -87,6 +89,19 @@ export function PuzzleReady({
               </p>
             )}
           </div>
+          </div>
+          {/* A daily's board, in the strip the home cards use. */}
+          {daily && (
+            <div className="relative flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
+              <TransitionLink
+                to={leaderboardPath(daily.slot, daily.day === todayKey() ? null : daily.day)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink-soft after:absolute after:inset-0 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500"
+              >
+                <Trophy className="size-4 text-gold-500" aria-hidden="true" />
+                {t("menu.dailyLeaderboard")}
+              </TransitionLink>
+            </div>
+          )}
         </Card>
 
         <div className="grid gap-5">

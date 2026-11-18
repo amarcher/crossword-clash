@@ -115,14 +115,14 @@ describe("ChallengeScreen", () => {
     game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i" };
     share.fetchReplayShare.mockResolvedValueOnce(null);
     renderScreen();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Accept Challenge" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Accept challenge" })).toBeTruthy());
     expect(screen.queryByRole("button", { name: /Race Andrew/ })).toBeNull();
   });
 
   it("is the plain time challenge for a link without a replay", () => {
     game.urlChallenge = { name: "Andrew", seconds: 612 };
     renderScreen();
-    expect(screen.getByRole("button", { name: "Accept Challenge" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Accept challenge" })).toBeTruthy();
     expect(share.fetchReplayShare).not.toHaveBeenCalled();
   });
 });

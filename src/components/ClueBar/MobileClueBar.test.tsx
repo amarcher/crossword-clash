@@ -58,7 +58,7 @@ describe("MobileClueBar rendering", () => {
 
   it("renders placeholder text when activeClue is null", () => {
     const { container } = render(<MobileClueBar {...makeProps({ activeClue: null })} />);
-    expect(within(container).getByText("Tap a cell to start")).toBeTruthy();
+    expect(within(container).getByText("Tap a square to start")).toBeTruthy();
   });
 
   it("shows 'A' badge when direction is across", () => {

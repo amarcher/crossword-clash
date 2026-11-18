@@ -205,7 +205,7 @@ describe("DailyLeaderboardScreen", () => {
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.getByTestId("solved-line").textContent).toBe("Solved in 1:42 · #2 today");
-    expect(screen.queryByRole("button", { name: /Play Today's Mini/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Play today's Mini/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
     expect(game.setUrlPuzzle).not.toHaveBeenCalled();
@@ -224,7 +224,7 @@ describe("DailyLeaderboardScreen", () => {
     await screen.findByText("Ada");
     expect(screen.queryByTestId("solved-line")).toBeNull();
     expect(screen.getByTestId("group-line").textContent).toBe("Played as a group in 5:16Group games count for your streak but aren't ranked here.");
-    expect(screen.queryByRole("button", { name: /Play Today's Mini/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Play today's Mini/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Play solo" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
@@ -241,7 +241,7 @@ describe("DailyLeaderboardScreen", () => {
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.queryByTestId("solved-line")).toBeNull();
-    expect(screen.getByRole("button", { name: /Play Today's Mini/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Play today's Mini/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(game.setUrlPuzzle).toHaveBeenCalledWith(daily.puzzle);
     expect(navigate).toHaveBeenCalledWith("/host-game/name");
@@ -303,7 +303,7 @@ describe("DailyLeaderboardScreen", () => {
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.getAllByRole("table")).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Daily Leaderboard");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Daily Mini leaderboard");
     expect(screen.queryByText("Daily Midi")).toBeNull();
     expect(fetchBoard).toHaveBeenCalledTimes(1);
     expect(fetchBoard).toHaveBeenCalledWith(todayKey(), "mini");
@@ -319,7 +319,7 @@ describe("DailyLeaderboardScreen", () => {
     );
     renderBoard();
     await screen.findByText("large leader");
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Today's Leaderboards");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Today's leaderboards");
     expect(screen.getByTestId("boards").className).toContain("lg:grid-cols-3");
     expect(["mini", "midi", "large"].map((s) => screen.getByTestId(`board-${s}`))).toHaveLength(3);
     expect(screen.getByText("Daily Mini")).toBeTruthy();
@@ -331,7 +331,7 @@ describe("DailyLeaderboardScreen", () => {
     expect(screen.getByTestId("board-mini").textContent).toContain("Andy");
     expect(screen.getByTestId("board-midi").textContent).not.toContain("Andy");
     expect(screen.getByTestId("board-mini").textContent).toContain("Solved in 1:30");
-    expect(screen.getByTestId("board-large").textContent).toContain("Play Today's Large");
+    expect(screen.getByTestId("board-large").textContent).toContain("Play today's Large");
   });
 
   it("on a wide screen a slot with nothing published shows nothing", async () => {
@@ -402,7 +402,7 @@ describe("past boards (?day=)", () => {
     // The day is named, the board is final, and nothing can be posted or played for rank.
     expect(screen.getByText("Old One")).toBeTruthy();
     expect(screen.getByText(/A past day's board is final/)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Play Today's Mini" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Play today's Mini" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
     expect(updateName).not.toHaveBeenCalled();
@@ -453,7 +453,7 @@ describe("past boards (?day=)", () => {
       fetchBoard.mockClear();
       renderBoard(`/daily/leaderboard?day=${bad}`);
       await waitFor(() => expect(fetchBoard).toHaveBeenCalledWith(today, "mini"));
-      expect(screen.getByRole("button", { name: "Play Today's Mini" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Play today's Mini" })).toBeTruthy();
       cleanup();
     }
   });

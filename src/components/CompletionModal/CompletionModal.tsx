@@ -192,8 +192,6 @@ interface CompletionModalProps {
   onSignIn?: () => void;
   /** A signed-in solver's way to the Stats page (`/stats`); omit where there is no account. */
   onSeeStats?: () => void;
-  /** The board button's label when the board isn't a daily's (the bonus board). */
-  leaderboardLabel?: string;
   darkMode?: boolean;
 }
 
@@ -244,7 +242,6 @@ export function CompletionModal({
   onBackToMenu,
   onSignIn,
   onSeeStats,
-  leaderboardLabel,
   darkMode,
 }: CompletionModalProps) {
   const { t, i18n } = useTranslation();
@@ -812,7 +809,7 @@ export function CompletionModal({
               {onViewLeaderboard && (
                 <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
                   <Trophy className="size-4 text-gold-500" aria-hidden="true" />
-                  {leaderboardLabel ?? t('completion.viewLeaderboard')}
+                  {t('completion.viewLeaderboard')}
                 </button>
               )}
               {onSeeStats && (

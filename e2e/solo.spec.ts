@@ -35,5 +35,5 @@ test("solo: complete today's mini", async ({ page }) => {
     await page.keyboard.type(cell.solution!.charAt(0));
   }
 
-  await expect(page.getByRole("dialog", { name: /Puzzle Complete/i })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /Puzzle complete/i })).toBeVisible();
 });

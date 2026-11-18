@@ -133,7 +133,7 @@ const STRINGS: Record<PushLocale, Record<string, string>> = {
     replyTitlePuzzlePlain: "{{name}} raced your community puzzle",
     replyWon: "{{name}} won by {{delta}} · Watch",
     replyLost: "You won by {{delta}} · Watch",
-    replyTied: "Dead heat · Watch",
+    replyTied: "It's a tie · Watch",
     mini: "mini",
     midi: "midi",
     large: "large",

@@ -121,7 +121,7 @@ describe("GameLobby", () => {
     });
   });
 
-  describe("Close Room", () => {
+  describe("Close room", () => {
     it("shows Close Room button for host", () => {
       render(
         <GameLobby
@@ -132,7 +132,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(screen.getByText("Close Room")).toBeDefined();
+      expect(screen.getByText("Close room")).toBeDefined();
     });
 
     it("does not show Close Room button for non-host", () => {
@@ -145,7 +145,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(screen.queryByText("Close Room")).toBeNull();
+      expect(screen.queryByText("Close room")).toBeNull();
     });
 
     it("calls onCloseRoom when clicked", () => {
@@ -159,7 +159,7 @@ describe("GameLobby", () => {
           onCloseRoom={onCloseRoom}
         />,
       );
-      fireEvent.click(screen.getByText("Close Room"));
+      fireEvent.click(screen.getByText("Close room"));
       expect(onCloseRoom).toHaveBeenCalledOnce();
     });
   });
@@ -220,7 +220,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(screen.getByText("Waiting for host to start the game...")).toBeDefined();
+      expect(screen.getByText("Waiting for host to start the game…")).toBeDefined();
     });
 
     it("does not show Start game button for non-host", () => {
@@ -322,7 +322,7 @@ describe("GameLobby", () => {
           onWrongAnswerTimeoutChange={() => {}}
         />,
       );
-      expect(screen.getByText("Wrong Answer Penalty")).toBeDefined();
+      expect(screen.getByText("Wrong answer penalty")).toBeDefined();
     });
 
     it("does not show timeout selector when props are omitted", () => {
@@ -335,7 +335,7 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(screen.queryByText("Wrong Answer Penalty")).toBeNull();
+      expect(screen.queryByText("Wrong answer penalty")).toBeNull();
     });
 
     it("does not show timeout selector for non-host", () => {
@@ -350,7 +350,7 @@ describe("GameLobby", () => {
           onWrongAnswerTimeoutChange={() => {}}
         />,
       );
-      expect(screen.queryByText("Wrong Answer Penalty")).toBeNull();
+      expect(screen.queryByText("Wrong answer penalty")).toBeNull();
     });
 
     it("calls onWrongAnswerTimeoutChange when option clicked", () => {
