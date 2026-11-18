@@ -81,7 +81,7 @@ export function BonusArchive() {
         </TransitionLink>
       </div>
       {failed && (
-        <p role="alert" className="mt-2 text-sm text-red-700">
+        <p role="alert" className="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
           {t("bonus.loadFailed")}
         </p>
       )}

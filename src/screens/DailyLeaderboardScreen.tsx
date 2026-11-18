@@ -208,7 +208,7 @@ export function DailyLeaderboardScreen() {
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
             <Trophy className="size-6" aria-hidden="true" />
           </span>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t(sideBySide ? (past ? "leaderboard.titleAllPast" : "leaderboard.titleAll") : TITLE[routeSlot])}
           </h1>
           {!sideBySide && routeTheme && (

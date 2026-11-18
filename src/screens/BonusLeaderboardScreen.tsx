@@ -154,7 +154,7 @@ export function BonusLeaderboardScreen() {
           <span className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gold-50 text-gold-700 ring-1 ring-gold-100">
             <Trophy className="size-6" aria-hidden="true" />
           </span>
-          <h1 className="inline-flex items-center gap-2 font-display text-3xl font-bold tracking-tight text-ink">
+          <h1 className="inline-flex items-center gap-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {t("bonus.boardTitle")}
             <PlusBadge interactive={false} size="0.8em" />
           </h1>
@@ -227,7 +227,7 @@ export function BonusLeaderboardScreen() {
                 </Button>
                 {!plus && <p className="text-center text-xs text-muted">{t("bonus.boardPitch")}</p>}
                 {failed && (
-                  <p role="alert" className="text-sm text-red-700">
+                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
                     {t("bonus.loadFailed")}
                   </p>
                 )}

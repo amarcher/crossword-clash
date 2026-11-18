@@ -78,7 +78,7 @@ export function DailyPuzzleScreen() {
   return (
     <div className="flex min-h-app items-center justify-center p-6" role="status" aria-live="polite">
       <p className="flex items-center gap-2 text-sm font-medium text-muted">
-        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
         {t("dailyLink.loading", { daily: dailyLabel, date: dateLabel })}
       </p>
     </div>

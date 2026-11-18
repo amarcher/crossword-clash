@@ -155,7 +155,7 @@ export function AddFriendScreen() {
           {t(theyAsked ? "friends.addAccept" : "friends.addButton")}
         </Button>
         {error && (
-          <p role="alert" className="mt-3 text-sm font-medium text-red-700">
+          <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700">
             {error}
           </p>
         )}
