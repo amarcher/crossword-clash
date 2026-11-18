@@ -145,7 +145,7 @@ export function SoloPlayScreen() {
   // Opened already solved (GameContext.reopenedSolved): the grid is the
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
-  const reopened = !!key && game.reopenedSolved?.key === key;
+  const openedSolved = !!key && game.reopenedSolved?.key === key;
   const { getElapsedSeconds, getElapsedMs, running: timerRunning, idlePaused, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
     puzzle,
     isComplete,
@@ -153,6 +153,11 @@ export function SoloPlayScreen() {
     consumeSoloStart,
     game.reopenedSolved,
   );
+  // A finished session restored after the app was closed (the tab reloaded on
+  // the play screen) is the same look at a solve already had: its finish is
+  // not fresh, and nothing opened it from the menu. Without this it was
+  // parked for the board again and shared with no replay.
+  const reopened = openedSolved || (!!soloResult && !freshResult);
   const paused = !!puzzle && !isComplete && !timerRunning;
   const inputAllowed = useRef(false);
   inputAllowed.current = timerRunning && !isComplete;
