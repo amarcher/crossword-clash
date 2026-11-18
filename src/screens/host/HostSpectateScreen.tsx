@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
-import { X } from "lucide-react";
+import { Trophy, X } from "lucide-react";
 import { CrosswordGrid } from "../../components/CrosswordGrid";
 import { TVLayout } from "../../components/Layout/TVLayout";
 import { TVCluePanel } from "../../components/Layout/TVCluePanel";
@@ -37,6 +37,7 @@ export function HostSpectateScreen() {
     playerResults,
     isComplete,
     showCompletionModal,
+    setCompletionModalDismissed,
     joinUrl,
     handleCloseRoom,
     handleNewPuzzle,
@@ -130,14 +131,27 @@ export function HostSpectateScreen() {
             code={multiplayer.shareCode}
             joinUrl={joinUrl}
             actions={
-              <button
-                type="button"
-                onClick={handleCloseRoom}
-                className={buttonClass("stage", "md", "tv-t-sm h-auto! shrink-0 self-start py-2")}
-              >
-                <X className="size-[1.3em]" aria-hidden />
-                {t('lobby.closeRoom')}
-              </button>
+              <div className="flex shrink-0 flex-col items-stretch gap-2 self-start">
+                {/* The finish dialog closed over a finished game: the way back to the standings and Next puzzle. */}
+                {multiplayer.gameStatus === "completed" && !showCompletionModal && (
+                  <button
+                    type="button"
+                    onClick={() => setCompletionModalDismissed(false)}
+                    className={buttonClass("stage", "md", "tv-t-sm h-auto! py-2")}
+                  >
+                    <Trophy className="size-[1.3em]" aria-hidden />
+                    {t('lobby.showResults')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCloseRoom}
+                  className={buttonClass("stage", "md", "tv-t-sm h-auto! py-2")}
+                >
+                  <X className="size-[1.3em]" aria-hidden />
+                  {t('lobby.closeRoom')}
+                </button>
+              </div>
             }
           />
         }
@@ -194,6 +208,7 @@ export function HostSpectateScreen() {
         players={playerResults}
         onNextPuzzle={handleNewPuzzle}
         onBackToMenu={handleBackToMenu}
+        onClose={() => setCompletionModalDismissed(true)}
         onWatchRoomReplay={
           roomReplay
             ? () => {
