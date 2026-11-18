@@ -21,13 +21,13 @@ import type { Puzzle } from "../types/puzzle";
  * stubbed. Keystrokes go through the window handler the grid listens to.
  */
 vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
-const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn() }));
+const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn(), username: null as string | null, profileReady: true }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: posting.user, loading: false }) }));
 vi.mock("../lib/leaderboardPreference", () => ({ fetchSoloLeaderboardPreference: posting.preference }));
 vi.mock("../lib/dailyLeaderboard", async original => ({ ...await original<typeof import("../lib/dailyLeaderboard")>(), boardPostsHere: () => true }));
 vi.mock("../contexts/AccountContext", () => ({
-  useAccountContext: () => ({ user: null, available: false, ready: true, openAccount: vi.fn() }),
-  useMaybeAccount: () => null,
+  useAccountContext: () => ({ user: null, available: false, ready: true, profileReady: posting.profileReady, profile: posting.username ? { username: posting.username } : null, openAccount: vi.fn() }),
+  useMaybeAccount: () => (posting.username ? { profile: { username: posting.username } } : null),
 }));
 vi.mock("../hooks/useDailyMini", () => ({ useTodaysDailySlot: () => posting.daily ? "mini" : null }));
 vi.mock("../hooks/useNextUp", () => ({ useNextUp: () => [] }));
@@ -382,6 +382,27 @@ it("a signed-in solver with the default setting posts after the preference resol
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
   await act(async () => { resolve(true); });
   await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
+});
+
+it("an account whose profile arrives after the finish posts under its username, with no form asking for one", async () => {
+  posting.preference.mockResolvedValue(true);
+  posting.user = { id: "me", is_anonymous: false } as User;
+  posting.daily = true;
+  posting.profileReady = false;
+  try {
+    await renderSolo();
+    type("catbetao");
+    await screen.findByRole("dialog", { name: "Puzzle complete" });
+    expect(game.pendingDailyResult).toBeNull();
+    posting.profileReady = true;
+    posting.username = "archer";
+    act(() => game.setSoloTheme("profile loaded"));
+    await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ posted: true, entry: { displayName: "archer" } }));
+    expect(screen.queryByPlaceholderText("Your name")).toBeNull();
+  } finally {
+    posting.username = null;
+    posting.profileReady = true;
+  }
 });
 
 it("today's bonus posts to the bonus board; a past bonus posts nowhere but links to that day's board", async () => {
