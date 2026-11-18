@@ -52,14 +52,22 @@ describe("ReplayDialog", () => {
     expect(dots()).toBe(4);
   });
 
-  it("plays one solve with its letters and no dots", () => {
+  it("plays one solve in the same dialog: its own lane, its letters going in", () => {
     render(<ReplayDialog puzzle={puzzle} solves={[ann]} onClose={() => {}} />);
     expect(screen.getByRole("dialog", { name: "Ann's solve" })).toBeTruthy();
-    expect(screen.queryAllByTestId("replay-racer")).toHaveLength(0);
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(1);
     frame(0);
     frame(10_000);
-    expect(letters()).toBe("A|B|C|D");
+    expect([...document.querySelectorAll("[data-owner]")].map((c) => c.textContent).join("|")).toBe("A|B|C|D");
     expect(dots()).toBe(0);
+  });
+
+  it("gives nothing away from a recording without letters: color only", () => {
+    const blind: ReplaySolve = { ...ann, events: ann.events.map(([ms, cell]) => [ms, cell, 1]) };
+    render(<ReplayDialog puzzle={puzzle} solves={[blind]} onClose={() => {}} />);
+    frame(0);
+    frame(10_000);
+    expect([...document.querySelectorAll("[data-owner]")].map((c) => c.textContent).join("|")).toBe("|||");
   });
 
   it("ends on the whole grid: a last letter typed a fraction of a second after the whole-second time still goes in", () => {

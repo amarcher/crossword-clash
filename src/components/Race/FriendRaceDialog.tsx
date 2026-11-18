@@ -27,6 +27,11 @@ interface FriendRaceDialogProps {
   letters: boolean;
   /** Where the site links to this puzzle, when the puzzle does not carry it (today's daily): what Share sends. */
   shareRef?: PuzzleRef | null;
+  /**
+   * The solves are a shared link's clip (SharedRace): each holds only the
+   * squares it was first to, so a lane counts squares won and has no finish.
+   */
+  clip?: boolean;
   onClose: () => void;
 }
 
@@ -37,8 +42,9 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
 
 /**
  * The race (friendRace.ts): everyone's recorded solve of one puzzle on one
- * clock, and the one view every replay of a race opens (Andrew, 2026-11-17:
- * two different race views were one too many). Lanes show how much of the
+ * clock, and the one dialog every Watch opens (Andrew, 2026-11-17: two
+ * different race views were one too many): a race, one solve on its own, a
+ * recording without letters, and the clip a shared link carries. Lanes show how much of the
  * grid each had settled; a lane keeps its row for the whole race and only its
  * place number changes, since rows trading places was jarring. The grid
  * takes the colour of whoever settled each square first, with the count of
@@ -57,7 +63,7 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
  * that link carrying a clip of the grid filling in by who got there first,
  * and the solvers' names, so it reads the same to each of them. No letters.
  */
-export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, onClose }: FriendRaceDialogProps) {
+export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, clip, onClose }: FriendRaceDialogProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -163,8 +169,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
           <div className="flex items-start gap-1">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-muted" data-testid="race-puzzle">{about}</p>
-              <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : t("friendRace.title")}</h2>
-              <p className="text-sm text-muted">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name }) : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
+              <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : solves.length === 1 ? t("ghostRace.replayTitle", { name: solves[0].name }) : t("friendRace.title")}</h2>
+              <p className="text-sm text-muted">{solves.length === 1 ? t("friendRace.subtitleOne") : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
             </div>
             <StudioPopover label={t("friendRace.legendLabel")} icon={<CircleHelp className="size-5" aria-hidden="true" />} className="-mt-2 ml-auto shrink-0" large narrow>
               {/* A key, not a paragraph: each mark as it is drawn, and a few words. */}
@@ -175,7 +181,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                       <span key={n} className="h-full flex-1 rounded-[2px] bg-surface-sunken" style={n < 3 ? { backgroundColor: blendOnWhite(a.color, 0.6) } : undefined} />
                     ))}
                   </span>
-                  {t("friendRace.legendLanes")}
+                  {t(clip ? "friendRace.legendLanesClip" : "friendRace.legendLanes")}
                 </li>
                 {/* The grid's marks, for the reading that is showing. */}
                 {(showBoth ? [a] : lanes.map((l) => l.solve)).map((solve) => (
@@ -246,9 +252,10 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             <section className="min-w-0" aria-label={t("friendRace.lanesTitle")}>
               <ol className="grid gap-2">
                 {lanes.map(({ solve }, i) => {
-                  const place = order.indexOf(i);
-                  const done = ms >= solve.seconds * 1000;
-                  const p = progressAt(lanes[i], ms, total);
+                  // A clip's lanes run on squares won: it holds nobody's whole solve.
+                  const place = clip ? counts.filter((n, k) => n > counts[i] || (n === counts[i] && k < i)).length : order.indexOf(i);
+                  const done = !clip && ms >= solve.seconds * 1000;
+                  const p = clip ? (total > 0 ? counts[i] / total : 0) : progressAt(lanes[i], ms, total);
                   const lit = Math.round(p * TRACK);
                   return (
                     <li key={solve.id} data-testid="race-lane">
@@ -261,10 +268,12 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                           <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
                           {counts[i]}
                         </span>
-                        <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
-                          {done && <Check className="size-3.5" aria-hidden="true" />}
-                          {done ? formatDuration(solve.seconds) : `${Math.floor(p * 100)}%`}
-                        </span>
+                        {!clip && (
+                          <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
+                            {done && <Check className="size-3.5" aria-hidden="true" />}
+                            {done ? formatDuration(solve.seconds) : `${Math.floor(p * 100)}%`}
+                          </span>
+                        )}
                       </div>
                       <div className="relative mt-1 flex h-4 gap-px" role="img" aria-label={t("ghostRace.progressLabel", { name: solve.name })}>
                         {Array.from({ length: TRACK }, (_, n) => (
@@ -340,7 +349,7 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             className="h-11 min-w-0 flex-1 accent-brand-500"
           />
           <span className="font-mono text-xs tabular-nums text-muted">{formatDuration(Math.floor(ms / 1000))}</span>
-          {shareRef && (
+          {shareRef && !clip && (
             <Button variant="primary" size="sm" onClick={() => void share()} disabled={sharing} data-testid="race-share">
               <Share2 className="size-4" aria-hidden="true" />
               {t("friendRace.share")}

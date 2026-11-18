@@ -1271,9 +1271,8 @@
     "shareSent": "Compartido",
     "short_one": "Tu carrera con {{name}}",
     "short_other": "Tu carrera con {{count}} amigos",
-    "subtitleOne": "La resolución de {{name}}, repetida",
+    "subtitleOne": "Repetición",
     "shareTooMany": "Un clip compartido muestra hasta {{max}} personas. Oculta algunas y vuelve a compartir.",
-    "sharedSubtitle": "La carrera que te han enviado: cada casilla toma el color de quien la rellenó primero. Resuélvelo para ver las letras.",
     "viewLabel": "Cómo se muestra la cuadrícula",
     "viewBoth": "Los dos",
     "bothBody": "Rellena por {{b}}",
@@ -1281,6 +1280,7 @@
     "legendLabel": "Cómo leer la carrera",
     "legendLanes": "Parte de la cuadrícula rellena",
     "legendSpeed": "Velocidad {{speed}}×, misma salida",
+    "legendLanesClip": "Casillas ganadas hasta ahora",
     "sharedSolver": "Jugador {{n}}"
   }
 }

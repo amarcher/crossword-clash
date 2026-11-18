@@ -1271,9 +1271,8 @@
     "shareSent": "Shared",
     "short_one": "Your race with {{name}}",
     "short_other": "Your race with {{count}} friends",
-    "subtitleOne": "{{name}}'s solve, replayed",
+    "subtitleOne": "Replayed",
     "shareTooMany": "A shared clip holds up to {{max}} people. Hide a few and share again.",
-    "sharedSubtitle": "The race someone shared: each square takes the color of whoever filled it first. Solve it to see the letters.",
     "viewLabel": "How the grid is shown",
     "viewBoth": "Both solves",
     "bothBody": "Filled by {{b}}",
@@ -1281,6 +1280,7 @@
     "legendLabel": "How to read the race",
     "legendLanes": "Share of the grid filled",
     "legendSpeed": "{{speed}}× speed, same start",
+    "legendLanesClip": "Squares won so far",
     "sharedSolver": "Solver {{n}}"
   }
 }
