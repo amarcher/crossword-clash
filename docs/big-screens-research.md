@@ -80,10 +80,15 @@ reflows. No measurements are taken at mount that would break on resize.
 - **A "medium" native layout for 600–767 px** (Duo inner, iPad Split View,
   small tablet portrait): grid on top with a two-row clue strip, or the
   Across/Down lists beneath the grid when the height allows, instead of the
-  phone's single clue bar.
+  phone's single clue bar. **Tried and turned down (Andrew, 2026-11-18,
+  PR #322, closed):** the Across/Down lists between the clue bar and the keys
+  put more on the screen than the phone column, which he preferred.
 - **A short-screen layout for the Duo's outer display** (aspect ≈ 1.45): a
   compact keyboard (shorter keys, or a two-row variant) and a slimmer header,
-  triggered by aspect ratio and height rather than width.
+  triggered by aspect ratio and height rather than width. **Tried and turned
+  down (same day, same PR):** the grid grew, but the keys got smaller, and
+  bigger keys matter more. Both Duo screens keep the phone layout; the
+  captures are on the `duo-layouts` branch under `docs/big-screens/`.
 - **TV view in portrait** (`index.css`, `TVLayout`): stack the grid above the
   scoreboard and clues when the screen is taller than wide. Today the side
   column squeezes the grid to about 630 px on a portrait iPad.
