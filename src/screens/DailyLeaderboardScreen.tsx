@@ -6,6 +6,7 @@ import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { useRaceName } from "../hooks/useRaceName";
 import { useGame } from "../contexts/GameContext";
 import { useDailyPuzzle } from "../hooks/useDailyMini";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -312,6 +313,7 @@ interface SlotBoardProps {
 /** One slot's board: the table, the sign form when the viewer's row needs a name, and Play / Race. */
 function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardProps) {
   const { t } = useTranslation();
+  const ownName = useRaceName();
   const navigate = useNavigate();
   const { user } = useAuth();
   const game = useGame();
@@ -457,14 +459,14 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
         if (!board || !theirs || theirs.events.length === 0) return;
         const name = rows?.find((e) => e.userId === userId)?.displayName ?? "";
         const them: ReplaySolve = { name, color: GHOST_COLORS[0], seconds: theirs.seconds, events: theirs.events };
-        const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
+        const me: ReplaySolve | null = mine && mine.events.length > 0 ? { name: ownName, color: MY_REPLAY_COLOR, seconds: mine.seconds, events: mine.events } : null;
         setWatching({ puzzle: board, solves: me ? [me, them] : [them] });
         track("replay_watched", { racing: !!me, placement: "leaderboard" });
       } catch (err) {
         console.warn("Leaderboard replay:", err);
       }
     },
-    [puzzleKey, account, daily, day, slot, user, rows, t],
+    [puzzleKey, account, daily, day, slot, user, rows, ownName],
   );
 
   // The race (friendRace.ts): every friend's recorded solve of this puzzle on
@@ -486,7 +488,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
       if (!board || race.friends.length === 0) return;
       // The account's kept recording, or this device's when the solve was never filed.
       const own = mine && mine.events.length > 0 ? mine : typeof solvedSeconds === "number" && kept && !kept.partial && kept.events.length > 0 ? { seconds: solvedSeconds, events: kept.events } : null;
-      const solves = raceSolves(race, own && user ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
+      const solves = raceSolves(race, own && user ? { id: user.id, name: ownName, ...own } : null);
       setTheRace({ puzzle: board, solves, letters: race.withLetters });
       track("friend_race_opened", { slot, past, racers: solves.length, own: !!own });
     } catch (err) {
@@ -494,7 +496,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     } finally {
       setRaceLoading(false);
     }
-  }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, t, past]);
+  }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, ownName, past]);
 
   const raceFriends = useCallback(() => {
     if (solved || playedAsGroup) {

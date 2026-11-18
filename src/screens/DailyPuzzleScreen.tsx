@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarX2, Loader2 } from "lucide-react";
 import { useGame } from "../contexts/GameContext";
 import { fetchDailyForDay } from "../lib/dailyFeed";
-import { parseDailyChallenge, parseDailyRoute } from "../lib/dailyChallenge";
+import { parseDailyChallenge, parseDailyRoute, parseRaceLink } from "../lib/dailyChallenge";
 import { formatShareDay } from "../lib/shareBlock";
 import { NotFoundScreen } from "./NotFoundScreen";
 import { NoticeScreen, primaryButtonClass } from "./RouteErrorScreen";
@@ -16,7 +16,8 @@ const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebr
  * result's link. Loads that day's puzzle from the feed (past days included),
  * hands it to the game context as the URL puzzle and moves on: to the
  * challenge screen when the link carries a ghost (`?beat=102&by=Archer`), to
- * the plain puzzle-ready screen otherwise. Nothing renders here for longer
+ * the plain puzzle-ready screen otherwise, with the race over it when the
+ * link is a shared race's (`?r=…`, SharedRace). Nothing renders here for longer
  * than the fetch takes.
  */
 export function DailyPuzzleScreen() {
@@ -46,7 +47,9 @@ export function DailyPuzzleScreen() {
       const challenge = parseDailyChallenge(search, unsignedName);
       setUrlPuzzle(daily.puzzle);
       setUrlChallenge(challenge ? { ...challenge, ref: { day, slot } } : null);
-      navigate(challenge ? "/challenge" : "/puzzle-ready", { replace: true });
+      // A shared race (`?r=` with no time to beat) opens over the puzzle's page.
+      const race = challenge ? null : parseRaceLink(search);
+      navigate(challenge ? "/challenge" : "/puzzle-ready", { replace: true, state: race ? { race: { ...race, ref: { day, slot } } } : undefined });
     });
     return () => {
       alive = false;

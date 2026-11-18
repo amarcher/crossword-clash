@@ -140,7 +140,7 @@ describe("CompletionModal", () => {
         <CompletionModal {...SOLO_PROPS} players={makePlayers()} challengePuzzle={wide} playerCells={{}} playerColors={colors} challengerName="Alice" />,
       );
       expect(getByTestId("share-legend").textContent).toBe(
-        "Each square is a fifteenth of the race, coloured by who solved most then: 🟦 Alice, 🟥 Bob",
+        "Each square is a fifteenth of the race, colored by who solved most then: 🟦 Alice, 🟥 Bob",
       );
       expect([...getByTestId("share-block-preview").querySelectorAll("div[aria-hidden] > div")]).toHaveLength(1);
     });

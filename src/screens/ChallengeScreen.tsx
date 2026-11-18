@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Flag, Loader2, Timer } from "lucide-react";
@@ -8,9 +8,20 @@ import { FlowPage } from "../components/Flow";
 import { useGame } from "../contexts/GameContext";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { clearChallenge, saveChallenge } from "../lib/challenge";
-import { fetchReplayShare, ghostFromReplay } from "../lib/replayShare";
-import { saveRace, type Ghost } from "../lib/race";
+import { fetchReplayShare, ghostFromReplay, letteredReplay } from "../lib/replayShare";
+import { fetchOwnSolveTrace, loadTrace, saveRace, type Ghost, type TraceEvent } from "../lib/race";
+import { useAuth } from "../contexts/AuthContext";
+import { useBestTimes, useSolveHistory } from "../hooks/useSolveHistory";
+import { useRaceName } from "../hooks/useRaceName";
 import { track } from "../lib/analytics";
+import { buildPuzzleLink } from "../lib/dailyChallenge";
+import { SHARE_URL } from "../lib/resultCard";
+import { shareText } from "../lib/shareSheet";
+import { runtimeDeps } from "../components/CompletionModal/ShareResultButton";
+import type { RaceSolve } from "../lib/friendRace";
+
+// Loaded once the sender's solve has arrived: a link without one never needs it.
+const FriendRaceDialog = lazy(() => import("../components/Race/FriendRaceDialog").then((m) => ({ default: m.FriendRaceDialog })));
 
 /**
  * Landing screen for an incoming "challenge a friend" link. Shows who challenged
@@ -22,6 +33,16 @@ import { track } from "../lib/analytics";
  * filled them, never their letters (race.ts). Free for whoever got the link
  * (Andrew, 2026-11-12): it is how a share turns into a new player. "Just solve
  * it" is the time-only challenge, and the only offer when the replay can't load.
+ *
+ * With a replay the link opens on the solve itself (Andrew, 2026-11-17: what a
+ * share unfurls as is what it should open as), in the race dialog:
+ * - someone who has not solved the puzzle sees the sender's squares going in,
+ *   no letters, with "Let me solve it" as the one primary action (the race)
+ *   and passing the link on as a quiet icon;
+ * - someone who has solved it sees the head-to-head, their own recording
+ *   against the sender's, letters and all (the sender's alone when this
+ *   viewer has no recording of their own).
+ * Closing it leaves this page and its two offers.
  */
 export function ChallengeScreen() {
   const { t } = useTranslation();
@@ -33,16 +54,71 @@ export function ChallengeScreen() {
   // The sender's solve as a ghost, fetched as the screen opens: null while loading or when there is none.
   const replayId = challenge?.replay ?? null;
   const [ghost, setGhost] = useState<Ghost | null | "loading">(replayId ? "loading" : null);
+  // The sender's solve with its letters, for a viewer who has solved the puzzle.
+  const [lettered, setLettered] = useState<{ seconds: number; events: TraceEvent[] } | null>(null);
   useEffect(() => {
-    if (!replayId || !challenge) return;
+    if (!replayId || !challenge || !puzzle) return;
     let live = true;
     void fetchReplayShare(replayId).then((code) => {
-      if (live) setGhost(code ? ghostFromReplay(code, replayId, challenge.name, challenge.ref) : null);
+      if (!live) return;
+      setGhost(code ? ghostFromReplay(code, replayId, challenge.name, challenge.ref) : null);
+      setLettered(code ? letteredReplay(code, puzzle) : null);
     });
     return () => {
       live = false;
     };
-  }, [replayId, challenge]);
+  }, [replayId, challenge, puzzle]);
+
+  // Has this viewer solved it, and is there a recording of their solve (the account's, else this device's)?
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id;
+  // An account's history decides "solved": until it has loaded, this device's stats may say no for a solve made elsewhere.
+  const history = useSolveHistory();
+  const known = !authLoading && !(history.signedIn && history.loading);
+  const ownName = useRaceName();
+  const puzzleKey = puzzle ? puzzleIdentity(puzzle) : null;
+  const best = useBestTimes()[puzzleKey ?? ""];
+  const solved = typeof best === "number";
+  const [mine, setMine] = useState<{ seconds: number; events: TraceEvent[] } | null | "loading">("loading");
+  useEffect(() => {
+    if (!puzzleKey || !solved || !known) return;
+    let live = true;
+    const kept = loadTrace(puzzleKey);
+    const local = kept && !kept.partial && kept.events.length > 0 ? { seconds: best, events: kept.events } : null;
+    void (userId ? fetchOwnSolveTrace(userId, puzzleKey).catch(() => null) : Promise.resolve(null)).then((filed) => {
+      if (live) setMine(filed && filed.events.length > 0 ? filed : local);
+    });
+    return () => {
+      live = false;
+    };
+  }, [puzzleKey, solved, best, userId, known]);
+
+  // The sender's solve, played as the link opens. Closed, it stays closed.
+  const [watching, setWatching] = useState(true);
+  const loaded = ghost && ghost !== "loading" ? ghost : null;
+  const versus = solved && lettered !== null;
+  const ready = loaded && known && (!solved || mine !== "loading");
+  const solves = useMemo<RaceSolve[]>(() => {
+    if (!loaded) return [];
+    const theirs = { id: loaded.userId, name: loaded.name, color: loaded.color, seconds: loaded.seconds };
+    if (!versus || !lettered) return [{ ...theirs, events: loaded.events }];
+    const own = mine && mine !== "loading" ? [{ id: userId ?? "me", name: ownName, color: "#3a6bf0", ...mine }] : [];
+    return [...own, { ...theirs, seconds: lettered.seconds, events: lettered.events }];
+  }, [loaded, versus, lettered, mine, userId, ownName]);
+  const shown = useRef(false);
+  useEffect(() => {
+    if (!ready || shown.current) return;
+    shown.current = true;
+    track("challenge_replay_shown", { seconds: loaded.seconds, versus });
+  }, [ready, loaded, versus]);
+  const forward = useCallback(async () => {
+    if (!puzzle || !challenge?.ref) return "failed" as const;
+    const url = buildPuzzleLink(SHARE_URL, challenge.ref, { seconds: challenge.seconds, name: challenge.name, replay: challenge.replay });
+    const body = t("challenge.forwardText", { name: challenge.name, title: puzzle.title, time: formatDuration(challenge.seconds) });
+    const result = await shareText({ text: `${body}\n${url}`, body, url, title: puzzle.title }, await runtimeDeps());
+    if (result.outcome === "shared" || result.outcome === "copied") track("challenge_forwarded", { method: result.method });
+    return result.outcome;
+  }, [puzzle, challenge, t]);
 
   const handleRace = useCallback(async () => {
     if (!puzzle || !challenge || !ghost || ghost === "loading") return;
@@ -123,6 +199,24 @@ export function ChallengeScreen() {
       <div className="mt-6 flex justify-center">
         <AdSlot placement="puzzle-ready-bottom" />
       </div>
+      {watching && ready && (
+        <Suspense fallback={null}>
+          {versus ? (
+            <FriendRaceDialog puzzle={puzzle} solves={solves} letters shareRef={challenge.ref} onClose={() => setWatching(false)} />
+          ) : (
+            // "Let me solve it" only for someone who has not: a solver whose link could not be read with letters just watches.
+            <FriendRaceDialog
+              puzzle={puzzle}
+              solves={solves}
+              letters={false}
+              shareRef={challenge.ref}
+              cta={solved ? undefined : { label: t("challenge.solveYourself"), onClick: () => void handleRace() }}
+              onForward={challenge.ref ? forward : undefined}
+              onClose={() => setWatching(false)}
+            />
+          )}
+        </Suspense>
+      )}
     </FlowPage>
   );
 }

@@ -103,6 +103,32 @@ describe("daily link", () => {
     expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?beat=102&by=Archer&r=VJ0ncnWyJ9j");
   });
 
+  it("calls a shared race a race, and keeps it one on the way into the app", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=2"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("A head-to-head race on the Daily Mini for Oct 20");
+    expect(meta(html, "og:description")).toContain("who got to each square first");
+    expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2");
+  });
+
+  it("names the two in a head-to-head, so the preview reads the same to both", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=2&who=minna,archer"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("minna vs archer on the Daily Mini for Oct 20");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j&race=2&who=minna%2Carcher");
+    // A name short of the count names nobody.
+    const short = await (await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=3&who=minna,archer"))).text();
+    expect(meta(short, "og:title")).toBe("A 3-way race on the Daily Mini for Oct 20");
+  });
+
+  it("reads a clip with no time to beat as a race, for links sent before the count was added", async () => {
+    const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&r=VJ0ncnWyJ9j&race=99"));
+    const html = await res.text();
+    expect(meta(html, "og:title")).toBe("A race on the Daily Mini for Oct 20");
+    expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?r=VJ0ncnWyJ9j");
+  });
+
   it("ignores an r that isn't a share ID", async () => {
     const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=mini&beat=102&r=%22%3E%3Cscript%3Exyz"));
     const html = await res.text();

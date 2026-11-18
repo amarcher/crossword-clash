@@ -1,7 +1,5 @@
-See how each game mode plays before you start: the lobby shows a small sample board for Compete, Co-op and Time trial.
+See who got there first. After a daily, watch your friends' solves replayed against yours on one clock, with every square in the colour of whoever filled it soonest. A race in a room has its own replay, and you can share it as a clip.
 
-In a time trial you now see the other players' progress on your own grid, square by square.
+Hosting on a TV is smoother. Turn the AI host on from the lobby, mirror your iPad to the TV, and the TV follows along when you pick the next puzzle. If anyone in the room has Plus, the host is covered for everyone.
 
-Watch the replay after a race, on one board. On the daily leaderboard, watch how any player solved once you have finished the puzzle (Plus).
-
-Hosting on a TV is smoother. Turn the AI host on from the lobby, mirror your iPad to the TV, and the TV follows along when you pick the next puzzle.
+Also: room links join at once, finished dailies are marked on the home screen, and a daily you played as a group shows your group's time on the leaderboard.

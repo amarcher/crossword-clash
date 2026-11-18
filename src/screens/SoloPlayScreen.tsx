@@ -21,6 +21,7 @@ import { useSoloSettings } from "../lib/soloSettings";
 import { useGame } from "../contexts/GameContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useRaceName } from "../hooks/useRaceName";
 import { useAccountContext } from "../contexts/AccountContext";
 
 import { dayKey, effectiveStreak, formatDuration, puzzleIdentity, recordNytPlay, shiftDayKey } from "../lib/soloStats";
@@ -64,6 +65,7 @@ const MY_REPLAY_COLOR = "#3a6bf0";
 
 export function SoloPlayScreen() {
   const { t, i18n } = useTranslation();
+  const ownName = useRaceName();
   const navigate = useNavigate();
   const dataRouter = useContext(UNSAFE_DataRouterContext);
   const game = useGame();
@@ -377,9 +379,9 @@ export function SoloPlayScreen() {
   const withMine = useCallback(
     (theirs: ReplaySolve): ReplaySolve[] => {
       const mine = soloResult ? recorder.take() : null;
-      return mine && soloResult ? [{ name: t("ghostRace.you"), color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
+      return mine && soloResult ? [{ name: ownName, color: MY_REPLAY_COLOR, seconds: soloResult.finishSeconds, events: mine.events }, theirs] : [theirs];
     },
-    [soloResult, recorder, t],
+    [soloResult, recorder, ownName],
   );
   const replayable = useMemo(() => {
     const seen = new Set<string>();
@@ -449,13 +451,13 @@ export function SoloPlayScreen() {
       if (found.friends.length === 0) return;
       const mine = soloResult ? recorder.take() : null;
       const own = mine && soloResult && !mine.partial ? { seconds: soloResult.finishSeconds, events: mine.events } : await fetchOwnSolveTrace(user.id, puzzleKey).catch(() => null);
-      const solves = raceSolves(found, own ? { id: user.id, name: t("ghostRace.you"), ...own } : null);
+      const solves = raceSolves(found, own ? { id: user.id, name: ownName, ...own } : null);
       setFriendRace({ solves, letters: found.withLetters });
       track("friend_race_opened", { placement: "completion", racers: solves.length, own: !!own });
     } catch {
       // A race that can't load just doesn't open.
     }
-  }, [puzzleKey, user, soloResult, recorder, t]);
+  }, [puzzleKey, user, soloResult, recorder, ownName]);
   const friendIds = useMemo(() => new Set(racingFriends.map((c) => c.userId)), [racingFriends]);
   const listedReplays = useMemo(() => (racingFriends.length > 0 ? replayable.filter((r) => !friendIds.has(r.userId)) : replayable), [racingFriends, replayable, friendIds]);
 

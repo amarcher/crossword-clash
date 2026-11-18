@@ -8,10 +8,11 @@ PLAY TOGETHER
 • Friends can join from any phone, tablet or computer at crosswordclash.com, with no download and no account
 • Put the board on a TV for game night while everyone plays from their phone
 • Optional wrong-answer penalty to keep the guessers honest
+• After a race, watch the replay: the grid fills in again, each square in the color of whoever got it, and you can share it as a clip
 
 SOLVE ON YOUR OWN
 • Three fresh crosswords every day: the Mini, the Midi and the Large, each with streaks and a daily leaderboard
-• A calendar of every past daily to catch up on
+• After you solve a daily, watch your friends' solves replayed against yours on one clock
 • Puzzles made by other solvers in the community library
 • Open your own .puz, .ipuz, .jpz and .xd puzzle files
 • Autocheck on or off: have wrong letters refused, or type freely and check at the end
@@ -25,10 +26,13 @@ MADE FOR TOUCH
 Free to play, with no ads. Sign in with Apple or Google (optional) to keep your username, solve history and streaks on every device.
 
 CROSSWORD CLASH PLUS (optional subscription)
-• The full daily archive, back to the first day
+• The full daily archive: play every past daily
+• The Daily Plus: an extra 11×11 puzzle every day
+• Full stats: trends, ranks and head-to-heads with friends
+• Race anyone's solve from the leaderboard, or watch the replay
+• Repair a broken streak the day after you miss
+• An AI game-show host on the TV view, covered for the whole room when any player has Plus
 • The construction studio: build your own crossword with a word-fill engine and AI help for clues and titles, then publish it for everyone
-• Progress synced across your devices
-• More narrator time on the TV view
 Your first month is free for new subscribers. After that it is $3.99 a month or $24.99 a year, billed to your Apple ID and renewing automatically until cancelled in Settings.
 
 Terms of Use: https://crosswordclash.com/terms

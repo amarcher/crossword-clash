@@ -10,7 +10,7 @@ export function TVSegmented<T extends number | string>({ label, value, options, 
   return (
     <div>
       <p className="tv-t-sm mb-2 font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+      <div className="flex gap-2" role="radiogroup" aria-label={label}>
         {options.map((o) => {
           const selected = o.value === value;
           return (
@@ -20,7 +20,7 @@ export function TVSegmented<T extends number | string>({ label, value, options, 
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(o.value)}
-              className={`tv-t-md min-h-11 flex-1 rounded-full px-5 py-2 font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
+              className={`tv-t-md min-h-11 min-w-0 flex-1 rounded-full px-2 py-2 font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
                 selected
                   ? "bg-brand-600 text-white shadow-[0_0_0_1px_rgb(58_107_240/0.6)]"
                   : "border border-stage-line bg-stage text-slate-300 hover:bg-stage-line active:bg-stage-line"
