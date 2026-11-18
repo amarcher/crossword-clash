@@ -52,14 +52,27 @@ describe("ReplayDialog", () => {
     expect(dots()).toBe(4);
   });
 
-  it("plays one solve with its letters and no dots", () => {
+  it("plays one solve in the same dialog: its own lane, the letters as they were typed", () => {
     render(<ReplayDialog puzzle={puzzle} solves={[ann]} onClose={() => {}} />);
     expect(screen.getByRole("dialog", { name: "Ann's solve" })).toBeTruthy();
-    expect(screen.queryAllByTestId("replay-racer")).toHaveLength(0);
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(1);
     frame(0);
     frame(10_000);
     expect(letters()).toBe("A|B|C|D");
     expect(dots()).toBe(0);
+  });
+
+  it("gives nothing away from a recording without letters: color only", () => {
+    const blind: ReplaySolve = { ...ann, events: ann.events.map(([ms, cell]) => [ms, cell, 1]) };
+    render(<ReplayDialog puzzle={puzzle} solves={[blind]} onClose={() => {}} />);
+    // No race to speak of: no place, no squares won, and the header says the letters are held back.
+    expect(screen.getByText("Replayed, letters hidden")).toBeTruthy();
+    expect(screen.getByTestId("race-lane").textContent).toBe("Ann0%A");
+    expect(screen.queryByTestId("race-standing")).toBeNull();
+    expect(screen.queryByTestId("race-share")).toBeNull();
+    frame(0);
+    frame(10_000);
+    expect([...document.querySelectorAll("[data-owner]")].map((c) => c.textContent).join("|")).toBe("|||");
   });
 
   it("ends on the whole grid: a last letter typed a fraction of a second after the whole-second time still goes in", () => {

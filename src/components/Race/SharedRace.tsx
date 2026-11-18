@@ -1,19 +1,17 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
-import { useBestTimes } from "../../hooks/useSolveHistory";
+import { useBestTimes, useSolveHistory } from "../../hooks/useSolveHistory";
 import { useRaceName } from "../../hooks/useRaceName";
 import type { RaceSolve } from "../../lib/friendRace";
 import { loadViewerRace } from "../../lib/viewerRace";
 import { decodeRaceReplay } from "../../lib/replayCode";
 import { fetchReplayShare } from "../../lib/replayShare";
-import type { RoomReplay } from "../../lib/roomReplay";
 import { track } from "../../lib/analytics";
 import type { Puzzle, PuzzleRef } from "../../types/puzzle";
 
-// Loaded when a link asks for them: the page under the race carries neither.
+// Loaded when a link asks for it: the page under the race does not carry it.
 const FriendRaceDialog = lazy(() => import("./FriendRaceDialog").then((m) => ({ default: m.FriendRaceDialog })));
-const RoomReplayDialog = lazy(() => import("./RoomReplayDialog").then((m) => ({ default: m.RoomReplayDialog })));
 
 interface SharedRaceProps {
   puzzle: Puzzle;
@@ -24,12 +22,17 @@ interface SharedRaceProps {
   names?: readonly string[];
   /** Where the site links to this puzzle, for sharing the race on. */
   shareRef?: PuzzleRef | null;
+  /** Start the puzzle: the clip's "Let me solve it", for a viewer who has not solved it. */
+  onSolve?: () => void;
   onClose: () => void;
 }
 
-type Shown =
-  | { kind: "race"; solves: RaceSolve[]; letters: boolean }
-  | { kind: "clip"; replay: RoomReplay; players: { userId: string; displayName: string; color: string }[]; colors: Record<string, string> };
+interface Shown {
+  solves: RaceSolve[];
+  letters: boolean;
+  /** The link's clip, not the viewer's own race. */
+  clip: boolean;
+}
 
 const hex = ([r, g, b]: [number, number, number]) => `#${[r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
 
@@ -38,15 +41,18 @@ const hex = ([r, g, b]: [number, number, number]) => `#${[r, g, b].map((n) => n.
  * puzzle, not the race). Someone whose friends have solved the puzzle gets
  * the race itself (FriendRaceDialog), as the menu's link would open it: for
  * the sender and their friends that is the race that was shared. Anyone else
- * gets the clip the link carries, played over the puzzle's page: colours and
- * the link's names, no letters.
+ * gets the clip the link carries in the same dialog: colours and the link's
+ * names, no letters, lanes counting squares won.
  * Renders nothing when the ID is not a race's (a solve's replay, or gone).
  */
-export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClose }: SharedRaceProps) {
+export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolve, onClose }: SharedRaceProps) {
   const { t } = useTranslation();
   const ownName = useRaceName();
   const { user, loading } = useAuth();
   const best = useBestTimes()[puzzleKey];
+  // "Not solved" is only known once a signed-in viewer's history has loaded.
+  const history = useSolveHistory();
+  const unsolved = typeof best !== "number" && !(history.signedIn && history.loading);
   const [shown, setShown] = useState<Shown | null>(null);
   const userId = user?.id;
 
@@ -64,13 +70,19 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClos
       const mine = userId ? await loadViewerRace(userId, puzzleKey, best, ownName).catch(() => null) : null;
       if (!alive) return;
       if (mine) {
-        setShown({ kind: "race", solves: mine.solves, letters: mine.letters });
+        setShown({ solves: mine.solves, letters: mine.letters, clip: false });
       } else {
+        // The clip as lanes: each solver's squares are the ones they were first to, on the clip's one clock.
         const named = names?.length === clip.colors.length;
-        const players = clip.colors.map((c, i) => ({ userId: `solver-${i}`, displayName: named ? (names as readonly string[])[i] : t("friendRace.sharedSolver", { n: i + 1 }), color: hex(c) }));
-        const events = clip.claims.map((c) => ({ ms: c.ms, key: `${Math.floor(c.cell / clip.width)},${c.cell % clip.width}`, letter: "", playerId: `solver-${c.player}` }));
-        const durationMs = Math.max(1000, clip.seconds * 1000, ...events.map((e) => e.ms));
-        setShown({ kind: "clip", replay: { events, durationMs }, players, colors: Object.fromEntries(players.map((p) => [p.userId, p.color])) });
+        const seconds = Math.max(1, clip.seconds, Math.ceil(Math.max(...clip.claims.map((c) => c.ms)) / 1000));
+        const solves = clip.colors.map((c, i): RaceSolve => ({
+          id: `solver-${i}`,
+          name: named ? (names as readonly string[])[i] : t("friendRace.sharedSolver", { n: i + 1 }),
+          color: hex(c),
+          seconds,
+          events: clip.claims.filter((claim) => claim.player === i).map((claim) => [claim.ms, claim.cell, 1]),
+        }));
+        setShown({ solves, letters: false, clip: true });
       }
       track("shared_race_opened", { view: mine ? "race" : "clip", racers: mine ? mine.solves.length : clip.colors.length });
     })();
@@ -83,11 +95,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onClos
   if (!shown) return null;
   return (
     <Suspense fallback={null}>
-      {shown.kind === "race" ? (
-        <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} shareRef={shareRef} onClose={onClose} />
-      ) : (
-        <RoomReplayDialog puzzle={puzzle} replay={shown.replay} players={shown.players} playerColorMap={shown.colors} title={t("friendRace.title")} subtitle={t("friendRace.sharedSubtitle")} onClose={onClose} />
-      )}
+      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={shown.clip && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
     </Suspense>
   );
 }

@@ -62,6 +62,8 @@ export type AnalyticsEvent =
   | "result_shared"
   | "challenge_created"
   | "challenge_accepted"
+  | "challenge_replay_shown"
+  | "challenge_forwarded"
   | "live_bridge"
   | "leaderboard_viewed"
   | "friend_link_shared"
