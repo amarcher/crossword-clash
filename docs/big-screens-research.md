@@ -80,10 +80,15 @@ reflows. No measurements are taken at mount that would break on resize.
 - **A "medium" native layout for 600–767 px** (Duo inner, iPad Split View,
   small tablet portrait): grid on top with a two-row clue strip, or the
   Across/Down lists beneath the grid when the height allows, instead of the
-  phone's single clue bar.
+  phone's single clue bar. **Tried and turned down (Andrew, 2026-11-18,
+  PR #322, closed):** the Across/Down lists between the clue bar and the keys
+  put more on the screen than the phone column, which he preferred.
 - **A short-screen layout for the Duo's outer display** (aspect ≈ 1.45): a
   compact keyboard (shorter keys, or a two-row variant) and a slimmer header,
-  triggered by aspect ratio and height rather than width.
+  triggered by aspect ratio and height rather than width. **Tried and turned
+  down (same day, same PR):** the grid grew, but the keys got smaller, and
+  bigger keys matter more. Both Duo screens keep the phone layout; the
+  captures are on the `duo-layouts` branch under `docs/big-screens/`.
 - **TV view in portrait** (`index.css`, `TVLayout`): stack the grid above the
   scoreboard and clues when the screen is taller than wide. Today the side
   column squeezes the grid to about 630 px on a portrait iPad.
@@ -97,13 +102,22 @@ behind flags, so on the Duo, fold state needs a small native bridge to
 
 - **Tabletop** (half-open, horizontal fold; Flip, Duo, Fold): grid on the
   upright half, clue and keyboard on the flat half. This is the same split
-  Apple's showcase apps use (Tiny Computers, MLB, Prime Video).
+  Apple's showcase apps use (Tiny Computers, MLB, Prime Video). **Built and
+  turned down (Andrew, 2026-11-18):** against today's layout on a flip phone
+  and a Galaxy Fold on their sides he preferred today's each time. On the Fold
+  the grid shrank from 642 to 423 px to stay above the fold; the Duo's upright
+  half (334 px) was too short for it at all.
 - **Book** (vertical fold): grid | Across + Down, split exactly at the hinge
-  (`env(viewport-segment-*)`).
+  (`env(viewport-segment-*)`). **Built and turned down (Andrew, 2026-11-17):**
+  it is a bent version of the tablet's portrait layout; the clue, the keys and
+  the grid end up far apart, and typing on one half is awkward.
 - **Face-to-face race on one device**: a tablet or half-open foldable laid
   flat between two players, each with their own keyboard and half of the
   clues, the far side rotated 180°. This is Battlefleet Duo's trick, and it
   turns the app into a table game with no second phone or room code.
+  **Built and parked (Andrew, 2026-11-17):** two boards facing opposite ways
+  are hard to look at, and on a Duo each player's keys came out about
+  28×50 px. The fold work was never merged and its branch is deleted.
 - **Outer screen as a glance**: on the Duo, the closed phone shows today's
   dailies and the live race scoreboard, and unfolding continues the same
   puzzle. The app already keeps running across the fold.
