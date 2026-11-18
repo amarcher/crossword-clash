@@ -154,7 +154,6 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   // Which puzzle: "Daily Mini · Nov 17 · Bread Basket" for a daily, the title alone otherwise.
   const about = [...(shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
   const counts = squaresFirst(first, lanes.length, ms);
-  const standings = lanes.map((_, i) => i).sort((a, b) => counts[b] - counts[a] || a - b);
 
   return (
     <div className="fixed inset-0 z-[65] flex items-end justify-center overscroll-contain sm:items-center" style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}>
@@ -256,7 +255,13 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                       <div className="flex items-baseline gap-2 text-xs">
                         <span className="w-3 shrink-0 font-mono tabular-nums text-muted">{place + 1}</span>
                         <span className="min-w-0 flex-1 truncate font-semibold">{solve.name}</span>
-                        <span className={`inline-flex items-center gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
+                        {/* Squares this solver was first to, so far: the grid's count, on the solver's own row. */}
+                        <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 self-center font-mono tabular-nums text-muted">
+                          <span className="size-2.5 shrink-0 rounded-[2px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(solve.color, 0.4) }} aria-hidden="true" />
+                          <span className="sr-only">{t("friendRace.standingsLabel")}: </span>
+                          {counts[i]}
+                        </span>
+                        <span className={`inline-flex min-w-9 items-center justify-end gap-0.5 font-mono tabular-nums ${done ? "font-bold text-ink" : "text-muted"}`}>
                           {done && <Check className="size-3.5" aria-hidden="true" />}
                           {done ? formatDuration(solve.seconds) : `${Math.floor(p * 100)}%`}
                         </span>
@@ -309,15 +314,6 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                 })}
               </div>
               )}
-              <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label={t("friendRace.standingsLabel")}>
-                {standings.map((i) => (
-                  <li key={lanes[i].solve.id} data-testid="race-standing" className="inline-flex min-w-0 items-center gap-1.5">
-                    <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: lanes[i].solve.color }} aria-hidden="true" />
-                    <span className="truncate font-semibold">{lanes[i].solve.name}</span>
-                    <span className="font-mono tabular-nums text-muted">{counts[i]}</span>
-                  </li>
-                ))}
-              </ul>
             </section>
           </div>
         </div>

@@ -19,7 +19,7 @@ const frame = (now: number) =>
     for (const cb of queued) cb?.(now);
   });
 const lanes = () => screen.getAllByTestId("race-lane").map((li) => li.textContent);
-const standings = () => screen.getAllByTestId("race-standing").map((li) => li.textContent);
+const standings = () => screen.getAllByTestId("race-standing").map((el) => el.textContent?.replace(/^.*: /, ""));
 const owners = () => [...document.querySelectorAll("[data-owner]")].map((c) => `${c.getAttribute("data-owner")}:${c.textContent}`);
 
 beforeEach(() => {
@@ -47,12 +47,13 @@ describe("FriendRaceDialog", () => {
     // Dragged to 5 s: Ann has two squares, you one, Bo one.
     fireEvent.change(screen.getByRole("slider", { name: "Race clock" }), { target: { value: "5000" } });
     // Rows stay as they were given; only the place numbers move.
-    expect(lanes()).toEqual(["2You25%Y", "1ann50%A", "3bo25%B"]);
+    expect(lanes()).toEqual(["2YouSquares each solver was first to: 125%Y", "1annSquares each solver was first to: 250%A", "3boSquares each solver was first to: 125%B"]);
     expect(owners()).toEqual(["me:A", "bo:B", "ann:C", "ann:D"]);
-    expect(standings()).toEqual(["ann2", "You1", "bo1"]);
+    // Each lane carries its own count of squares won.
+    expect(standings()).toEqual(["1", "2", "1"]);
 
     fireEvent.change(screen.getByRole("slider", { name: "Race clock" }), { target: { value: "30000" } });
-    expect(lanes()).toEqual(["2You0:20Y", "1ann0:12A", "3bo0:30B"]);
+    expect(lanes()).toEqual(["2YouSquares each solver was first to: 10:20Y", "1annSquares each solver was first to: 20:12A", "3boSquares each solver was first to: 10:30B"]);
   });
 
   it("offers a head-to-head as both solves on one board: the first's letters, the second's squares as corner marks", () => {
@@ -76,13 +77,13 @@ describe("FriendRaceDialog", () => {
     render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters onClose={() => {}} />);
     fireEvent.change(screen.getByRole("slider", { name: "Race clock" }), { target: { value: "30000" } });
     fireEvent.click(screen.getByRole("button", { name: "ann" }));
-    expect(lanes()).toEqual(["1You0:20Y", "2bo0:30B"]);
+    expect(lanes()).toEqual(["1YouSquares each solver was first to: 30:20Y", "2boSquares each solver was first to: 10:30B"]);
     // Ann's two squares go to whoever of the rest was first to them.
     expect(owners()).toEqual(["me:A", "bo:B", "me:C", "me:D"]);
     // The last one showing cannot be hidden.
     fireEvent.click(screen.getByRole("button", { name: "bo" }));
     fireEvent.click(screen.getByRole("button", { name: "You" }));
-    expect(lanes()).toEqual(["1You0:20Y"]);
+    expect(lanes()).toEqual(["1YouSquares each solver was first to: 40:20Y"]);
   });
 
   it("shares the puzzle's link carrying a clip of whoever is showing; no Share without a link to send", async () => {
