@@ -1243,8 +1243,6 @@
     "openYours_one": "Ver tu carrera con {{name}}",
     "openYours_other": "Ver tu carrera con {{count}} amigos",
     "share": "Compartir",
-    "shareText_one": "La carrera en {{title}}: quién llegó primero a cada casilla.",
-    "shareText_other": "La carrera en {{title}}: {{count}} de nosotros, y quién llegó primero a cada casilla.",
     "shareCopied": "Enlace copiado: pégalo donde quieras",
     "shareSent": "Compartido",
     "short_one": "Tu carrera con {{name}}",
