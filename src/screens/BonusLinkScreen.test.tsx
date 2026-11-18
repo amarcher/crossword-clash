@@ -23,6 +23,17 @@ vi.mock("../components/Flow", () => ({
   ),
 }));
 vi.mock("../components/ui/PlusBadge", () => ({ PlusBadge: () => null }));
+const share = vi.hoisted(() => ({ fetchReplayShare: vi.fn() }));
+vi.mock("../lib/replayShare", async (orig) => ({ ...(await orig<typeof import("../lib/replayShare")>()), ...share }));
+vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
+const sheet = vi.hoisted(() => ({ shareText: vi.fn(async () => ({ outcome: "copied", method: "clipboard" })) }));
+vi.mock("../lib/shareSheet", () => sheet);
+vi.mock("../components/CompletionModal/ShareResultButton", () => ({ runtimeDeps: async () => ({}) }));
+
+const { encodeReplay } = await import("../lib/replayCode");
+// The sender's solve of the card's 5×5 grid, as the link's code holds it: squares and times, and the letters only as right or wrong.
+const solved = (size: number) => ({ width: size, height: size, cells: Array.from({ length: size }, () => Array.from({ length: size }, () => ({ solution: "Q" }))) });
+const CODE = encodeReplay(solved(5), [[1000, 0, "Q"], [2000, 6, "Z"], [3000, 24, "Q"]], 102)!;
 
 const { BonusLinkScreen } = await import("./BonusLinkScreen");
 
@@ -44,6 +55,8 @@ const show = (path: string) =>
 beforeEach(() => {
   bonus.fetchBonusCard.mockReset().mockResolvedValue(card);
   bonus.loadBonusPuzzle.mockReset().mockResolvedValue({ title: "Tempting Fate", origin: "bonus", bonusDay: DAY });
+  share.fetchReplayShare.mockReset().mockResolvedValue(CODE);
+  sheet.shareText.mockClear();
   account.value = { available: true, plus: false, plusReady: true, openPaywall: vi.fn() };
   game.setUrlPuzzle.mockClear();
   game.setUrlChallenge.mockClear();
@@ -51,29 +64,58 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("BonusLinkScreen (/bonus/:day)", () => {
-  it("shows a visitor without Plus who solved it, their time and their solve, and never loads the puzzle", async () => {
+  it("opens on the sender's squares for a visitor without Plus, 'Let me solve it' opening the paywall, and never loads the puzzle", async () => {
     show(`/bonus/${DAY}?beat=102&by=Archer&r=E0Gqr8Iw09i`);
-    expect(await screen.findByRole("heading", { name: "Archer solved the Daily Plus" })).toBeTruthy();
+    const dialog = await screen.findByRole("dialog", { name: "Archer's solve" });
+    expect(share.fetchReplayShare).toHaveBeenCalledWith("E0Gqr8Iw09i");
+    expect(screen.getByTestId("race-puzzle").textContent).toBe("Daily Plus · Nov 18 · Tempting Fate");
+    expect(dialog.textContent).toContain("Replayed, letters hidden");
+    // The card's shape and nothing of the answer: 25 squares, none with a letter.
+    expect(dialog.querySelectorAll("span.aspect-square")).toHaveLength(25);
+    expect([...dialog.querySelectorAll("span.aspect-square")].map((c) => c.textContent).join("")).toBe("");
+    expect(screen.queryAllByRole("gridcell")).toHaveLength(0);
+    expect(screen.queryByTestId("race-share")).toBeNull();
+    fireEvent.click(screen.getByTestId("race-cta"));
+    expect(screen.getByTestId("race-cta").textContent).toBe("Let me solve it");
+    const gate = { placement: "bonus-link", feature: "bonus", returnTo: `/bonus/${DAY}?beat=102&by=Archer&r=E0Gqr8Iw09i` };
+    expect(account.value!.openPaywall).toHaveBeenCalledWith(gate);
+    // Passing the link on sends the same link.
+    fireEvent.click(screen.getByTestId("race-forward"));
+    await waitFor(() => expect(sheet.shareText).toHaveBeenCalled());
+    expect((sheet.shareText.mock.calls[0] as unknown as [{ text: string }])[0].text).toMatch(/\/bonus\/2026-11-18\?beat=102&by=Archer&r=E0Gqr8Iw09i$/);
+    // Closed, the page says the same two things and keeps the one gated action.
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Archer solved the Daily Plus" })).toBeTruthy();
     expect(screen.getByText("Nov 18 · Tempting Fate · Superstitions")).toBeTruthy();
     expect(screen.getByText("Archer solved it in 1:42")).toBeTruthy();
-    const clip = screen.getByTestId("replay-preview").querySelector("video")!;
-    expect(clip.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
-    expect(clip.getAttribute("aria-label")).toBe("Archer's solve, replayed");
     expect(screen.getByText("Daily Plus puzzles come with Crossword Clash Plus.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Play this puzzle" }));
-    expect(account.value!.openPaywall).toHaveBeenCalledWith({ placement: "bonus-link", feature: "bonus", returnTo: `/bonus/${DAY}?beat=102&by=Archer&r=E0Gqr8Iw09i` });
+    fireEvent.click(screen.getByRole("button", { name: "Let me solve it" }));
+    expect(account.value!.openPaywall).toHaveBeenCalledTimes(2);
     expect(bonus.fetchBonusCard).toHaveBeenCalledWith(DAY);
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
     expect(game.setUrlPuzzle).not.toHaveBeenCalled();
   });
 
-  it("is the same page without the clip when the link has no valid replay, or no account provider", async () => {
+  it("is the page alone when the link has no valid replay, the replay can't be read or isn't of this grid, or there is no account provider", async () => {
     account.value = null;
     show(`/bonus/${DAY}?beat=102&by=Archer&r=nope`);
     expect(await screen.findByRole("heading", { name: "Archer solved the Daily Plus" })).toBeTruthy();
-    expect(screen.queryByTestId("replay-preview")).toBeNull();
-    expect(screen.getByRole("button", { name: "Play this puzzle" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Let me solve it" })).toBeTruthy();
+    expect(share.fetchReplayShare).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
+    cleanup();
+    for (const code of [null, encodeReplay(solved(7), [[1000, 40, "Q"]], 60)!]) {
+      share.fetchReplayShare.mockResolvedValue(code);
+      show(`/bonus/${DAY}?beat=102&by=Archer&r=E0Gqr8Iw09i`);
+      expect(await screen.findByRole("heading", { name: "Archer solved the Daily Plus" })).toBeTruthy();
+      await waitFor(() => expect(share.fetchReplayShare).toHaveBeenCalled());
+      await new Promise((r) => setTimeout(r, 20));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      share.fetchReplayShare.mockClear();
+      cleanup();
+    }
   });
 
   it("waits for the entitlement before deciding, fetching nothing", () => {

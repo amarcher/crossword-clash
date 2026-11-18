@@ -1,20 +1,28 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CalendarX2, Loader2, Lock, Timer } from "lucide-react";
+import { CalendarX2, Loader2, Timer } from "lucide-react";
 import { Button, Card, MiniGridThumb, TransitionLink } from "../components/ui";
 import { PlusBadge } from "../components/ui/PlusBadge";
 import { FlowPage } from "../components/Flow";
-import { ReplayPreview } from "../components/CompletionModal/ReplayPreview";
+import { runtimeDeps } from "../components/CompletionModal/ShareResultButton";
 import { useGame } from "../contexts/GameContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../lib/bonus";
-import { bonusPath, isDailyDay, parseDailyChallenge } from "../lib/dailyChallenge";
+import { bonusPath, buildPuzzleLink, isDailyDay, parseDailyChallenge } from "../lib/dailyChallenge";
+import { fetchReplayShare, ghostFromReplay } from "../lib/replayShare";
+import type { Ghost } from "../lib/race";
+import { SHARE_URL } from "../lib/resultCard";
+import { shareText } from "../lib/shareSheet";
+import { track } from "../lib/analytics";
 import { leaderboardPath, todayKey } from "../lib/dailyLeaderboard";
 import { formatShareDay } from "../lib/shareBlock";
 import { formatDuration } from "../lib/soloStats";
 import { NotFoundScreen } from "./NotFoundScreen";
 import { NoticeScreen, primaryButtonClass } from "./RouteErrorScreen";
+
+// Loaded once the sender's solve has arrived: a link without one never needs it.
+const FriendRaceDialog = lazy(() => import("../components/Race/FriendRaceDialog").then((m) => ({ default: m.FriendRaceDialog })));
 
 /**
  * `/bonus/:day` — a Daily Plus finish's share link
@@ -25,9 +33,13 @@ import { NoticeScreen, primaryButtonClass } from "./RouteErrorScreen";
  *   daily link's is (DailyPuzzleScreen → ChallengeScreen): the sender's
  *   squares to race, or the head-to-head for someone who has solved it. A
  *   link with no time opens that day's bonus board.
- * - Everyone else: the puzzle is never requested. The page says who solved it
- *   and how fast, plays their solve as squares (the link's own clip, no
- *   letters) and offers the puzzle through the paywall.
+ * - Everyone else gets what a daily link gives someone who has not solved it
+ *   (Andrew, 2026-11-18): the race dialog playing the sender's squares, no
+ *   letters, with "Let me solve it" as its one action, which here opens the
+ *   paywall. The puzzle is never requested: the dialog's grid is the public
+ *   card's shape (`shapePuzzle`, no answers and no clues) and the solve is
+ *   the link's replay code, which holds squares and times only. Closing the
+ *   dialog leaves the page: who, how fast, and the same action.
  */
 export function BonusLinkScreen() {
   const { t, i18n } = useTranslation();
@@ -44,6 +56,7 @@ export function BonusLinkScreen() {
   // No account provider means nobody here can be Plus.
   const known = !account || account.plusReady;
   const plus = !!account?.plus;
+  const challenge = useMemo(() => parseDailyChallenge(search, unsignedName), [search, unsignedName]);
   const [missing, setMissing] = useState(false);
   const [card, setCard] = useState<BonusCard | null>(null);
 
@@ -64,7 +77,6 @@ export function BonusLinkScreen() {
           setMissing(true);
           return;
         }
-        const challenge = parseDailyChallenge(search, unsignedName);
         if (!challenge) {
           navigate(leaderboardPath("bonus", day === todayKey() ? null : day), { replace: true });
           return;
@@ -77,7 +89,41 @@ export function BonusLinkScreen() {
     return () => {
       alive = false;
     };
-  }, [day, released, known, plus, search, unsignedName, setUrlPuzzle, setUrlChallenge, navigate]);
+  }, [day, released, known, plus, challenge, setUrlPuzzle, setUrlChallenge, navigate]);
+
+  // The sender's solve for a viewer without Plus, from the link's replay code: null while loading or when there is none.
+  const replayId = challenge?.replay ?? null;
+  const senderName = challenge?.name ?? "";
+  const [ghost, setGhost] = useState<Ghost | null>(null);
+  const [watching, setWatching] = useState(true);
+  const shape = useMemo(() => (card ? shapePuzzle(card) : null), [card]);
+  useEffect(() => {
+    if (!replayId || !card || plus) return;
+    let live = true;
+    void fetchReplayShare(replayId).then((code) => {
+      if (!live || !code) return;
+      const found = ghostFromReplay(code, replayId, senderName);
+      // A clip of some other grid is not this puzzle's solve.
+      if (!found || found.events.some((e) => e[1] >= card.width * card.height || card.blocks[e[1]] === "#")) return;
+      setGhost(found);
+      track("challenge_replay_shown", { seconds: found.seconds, versus: false });
+    });
+    return () => {
+      live = false;
+    };
+  }, [replayId, senderName, card, plus]);
+  const openPaywall = account?.openPaywall;
+  const unlock = useCallback(() => {
+    if (day) openPaywall?.({ placement: "bonus-link", feature: "bonus", returnTo: bonusPath(day) + search });
+  }, [openPaywall, day, search]);
+  const forward = useCallback(async () => {
+    if (!day || !challenge) return "failed" as const;
+    const url = buildPuzzleLink(SHARE_URL, { bonusDay: day }, { seconds: challenge.seconds, name: challenge.name, replay: challenge.replay });
+    // The link alone: its preview names the solver and the time.
+    const result = await shareText({ text: url, body: "", url, title: card?.title ?? "" }, await runtimeDeps());
+    if (result.outcome === "shared" || result.outcome === "copied") track("challenge_forwarded", { method: result.method });
+    return result.outcome;
+  }, [day, challenge, card]);
 
   if (!day) return <NotFoundScreen />;
 
@@ -94,7 +140,7 @@ export function BonusLinkScreen() {
     );
   }
 
-  if (!known || plus || !card) {
+  if (!known || plus || !card || !shape) {
     return (
       <div className="flex min-h-app items-center justify-center p-6" role="status" aria-live="polite">
         <p className="flex items-center gap-2 text-sm font-medium text-muted">
@@ -105,7 +151,6 @@ export function BonusLinkScreen() {
     );
   }
 
-  const challenge = parseDailyChallenge(search, unsignedName);
   return (
     <FlowPage
       eyebrow={<PlusBadge interactive={false} size="2.5rem" />}
@@ -115,22 +160,33 @@ export function BonusLinkScreen() {
       backLabel={t("completion.backToMenu")}
     >
       <Card className="grid gap-5 p-5" data-testid="bonus-link-landing">
-        {challenge?.replay && <ReplayPreview id={challenge.replay} label={t("bonusLink.clipLabel", { name: challenge.name })} caption={t("bonusLink.clipCaption")} />}
         <div className="flex items-center gap-4">
-          {!challenge?.replay && <MiniGridThumb puzzle={shapePuzzle(card)} className="w-20 shrink-0" />}
+          <MiniGridThumb puzzle={shape} className="w-20 shrink-0" />
           <p className="flex items-center gap-2 text-[15px] font-semibold text-ink">
             {challenge && <Timer className="size-5 shrink-0 text-gold-500" aria-hidden="true" />}
             {challenge ? t("challenge.targetTime", { name: challenge.name, time: formatDuration(challenge.seconds) }) : t("bonus.meta", { width: card.width, height: card.height })}
           </p>
         </div>
         <div className="grid gap-2">
-          <Button size="lg" block onClick={() => account?.openPaywall({ placement: "bonus-link", feature: "bonus", returnTo: bonusPath(day) + search })}>
-            <Lock className="size-4" aria-hidden="true" />
-            {t("bonusLink.play")}
+          <Button size="lg" block onClick={unlock}>
+            {t("challenge.solveYourself")}
           </Button>
           <p className="text-center text-sm text-balance text-muted">{t("bonusLink.pitch")}</p>
         </div>
       </Card>
+      {watching && ghost && (
+        <Suspense fallback={null}>
+          <FriendRaceDialog
+            puzzle={shape}
+            solves={[{ id: ghost.userId, name: ghost.name, color: ghost.color, seconds: ghost.seconds, events: ghost.events }]}
+            letters={false}
+            shareRef={{ bonusDay: day }}
+            cta={{ label: t("challenge.solveYourself"), onClick: unlock }}
+            onForward={forward}
+            onClose={() => setWatching(false)}
+          />
+        </Suspense>
+      )}
     </FlowPage>
   );
 }
