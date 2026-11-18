@@ -8,6 +8,8 @@ interface StudioPopoverProps {
   /** Which edge of the trigger the panel lines up with. */
   align?: "left" | "right";
   className?: string;
+  /** A 44 px trigger, for touch screens outside the studio's dense toolbars. */
+  large?: boolean;
   children: ReactNode;
 }
 
@@ -16,7 +18,7 @@ interface StudioPopoverProps {
  * keeps its instructions and legends here, so they cost no height until asked
  * for; Escape, a click outside or a second click closes it.
  */
-export function StudioPopover({ label, icon, align = "right", className = "", children }: StudioPopoverProps) {
+export function StudioPopover({ label, icon, align = "right", className = "", large, children }: StudioPopoverProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLSpanElement>(null);
@@ -43,7 +45,7 @@ export function StudioPopover({ label, icon, align = "right", className = "", ch
         title={label}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className="inline-flex size-9 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500 aria-expanded:bg-surface-sunken aria-expanded:text-ink"
+        className={`inline-flex ${large ? "size-11 rounded-xl" : "size-9 rounded-lg"} items-center justify-center text-muted hover:bg-surface-sunken hover:text-ink active:bg-line focus-visible:outline-2 focus-visible:outline-brand-500 aria-expanded:bg-surface-sunken aria-expanded:text-ink`}
         onClick={() => setOpen((v) => !v)}
       >
         {icon}

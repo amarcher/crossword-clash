@@ -1251,11 +1251,11 @@
   },
   "friendRace": {
     "title": "La carrera",
-    "subtitle": "Cómo resolvió cada quien {{title}}, como si todos hubieran empezado a la vez. A velocidad {{speed}}×.",
+    "subtitle": "Repetición conjunta",
     "showing": "Quién está en la carrera",
     "lanesTitle": "La recta final",
     "firstTitle": "Quién llegó primero",
-    "firstBody": "Cada casilla toma el color de quien la llenó antes.",
+    "firstBody": "La cuadrícula: cada casilla toma el color de quien la rellenó primero.",
     "gridLabel": "La cuadrícula, coloreada según quién llenó primero cada casilla",
     "standingsLabel": "Casillas en las que cada quien fue primero",
     "scrub": "Reloj de la carrera",
@@ -1270,12 +1270,16 @@
     "shareSent": "Compartido",
     "short_one": "Tu carrera con {{name}}",
     "short_other": "Tu carrera con {{count}} amigos",
-    "subtitleOne": "Cómo resolvió {{name}} {{title}}. A velocidad {{speed}}×.",
+    "subtitleOne": "La resolución de {{name}}, repetida",
     "shareTooMany": "Un clip compartido muestra hasta {{max}} personas. Oculta algunas y vuelve a compartir.",
     "sharedSubtitle": "La carrera que te han enviado: cada casilla toma el color de quien la rellenó primero. Resuélvelo para ver las letras.",
     "viewLabel": "Cómo se muestra la cuadrícula",
     "viewBoth": "Los dos",
-    "bothBody": "Las letras de {{a}} según entraron. Una marca en la esquina señala cada casilla que {{b}} tenía rellena.",
+    "bothBody": "Los dos: las letras de {{a}} según entraron, con una marca en la esquina de cada casilla que {{b}} tenía rellena.",
+    "subtitleTwo": "Repetición cara a cara",
+    "legendLabel": "Cómo leer la carrera",
+    "legendLanes": "Los carriles: cuánto de la cuadrícula había rellenado cada jugador.",
+    "legendSpeed": "A velocidad {{speed}}×, como si todos hubieran empezado a la vez.",
     "sharedSolver": "Jugador {{n}}"
   }
 }

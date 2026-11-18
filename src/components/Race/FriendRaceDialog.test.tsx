@@ -107,6 +107,16 @@ describe("FriendRaceDialog", () => {
     expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
+  it("says which puzzle and how it was replayed, and keeps the legend behind a button", () => {
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann]} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);
+    expect(screen.getByTestId("race-puzzle").textContent).toBe("Daily Mini · Nov 16 · Tiny");
+    expect(screen.getByText("Replayed head-to-head")).toBeTruthy();
+    expect(screen.queryByText(/takes the color/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "How to read the race" }));
+    expect(screen.getByRole("note").textContent).toContain("each square takes the color of whoever filled it first");
+    expect(screen.getByRole("note").textContent).toContain("Played at 4× speed");
+  });
+
   it("opens a big circle on its first eight, and says why nine cannot be shared", async () => {
     const many = Array.from({ length: 10 }, (_, i): RaceSolve => ({ ...ann, id: `f${i}`, name: `f${i}`, seconds: 12 + i }));
     render(<FriendRaceDialog puzzle={puzzle} solves={many} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);

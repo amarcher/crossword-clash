@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
+import { Check, CircleHelp, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
 import { Button } from "../ui";
 import { CrosswordGrid } from "../CrosswordGrid";
+import { StudioPopover } from "../Studio/StudioPopover";
 import { blendOnWhite } from "../CrosswordGrid/Cell";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { formatDuration } from "../../lib/soloStats";
+import { formatShareDay } from "../../lib/shareBlock";
 import { replaySpeed, whiteCellCount } from "../../lib/race";
 import { firstToSquare, progressAt, raceLane, raceShareCode, raceShareOrder, RACE_SHOWN_AT_FIRST, runningOrder, squaresFirst, type RaceSolve } from "../../lib/friendRace";
 import { cellsAt, dotsAt } from "../../lib/replayCells";
@@ -31,6 +33,7 @@ interface FriendRaceDialogProps {
 /** Squares in a lane's track. */
 const TRACK = 24;
 const NO_HIGHLIGHT = new Set<string>();
+const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
 
 /**
  * The race (friendRace.ts): everyone's recorded solve of one puzzle on one
@@ -46,12 +49,16 @@ const NO_HIGHLIGHT = new Set<string>();
  * the first's letters filling in, the second's squares as the corner mark a
  * live race draws (what the head-to-head replay used to be).
  *
+ * The dialog says which puzzle and little else (Andrew, 2026-11-17): how to
+ * read the lanes and the grid is behind the "?" beside Close, so it costs no
+ * height, and the lanes sit right above the grid.
+ *
  * Share (a puzzle with a link of its own, up to eight solvers showing) sends
  * that link carrying a clip of the grid filling in by who got there first,
  * and the solvers' names, so it reads the same to each of them. No letters.
  */
 export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, onClose }: FriendRaceDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const handleEscape = useCallback(() => onClose(), [onClose]);
@@ -144,6 +151,8 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
   const canShowBoth = letters && lanes.length === 2;
   const showBoth = both && canShowBoth;
   const [a, b] = lanes.map((l) => l.solve);
+  // Which puzzle: "Daily Mini · Nov 17 · Bread Basket" for a daily, the title alone otherwise.
+  const about = [...(shareRef && "day" in shareRef ? [t(SLOT_LABEL[shareRef.slot]), formatShareDay(shareRef.day, i18n.language)] : []), puzzle.title].filter(Boolean).join(" · ");
   const counts = squaresFirst(first, lanes.length, ms);
   const standings = lanes.map((_, i) => i).sort((a, b) => counts[b] - counts[a] || a - b);
 
@@ -152,11 +161,20 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
       <div className="lf-fade-in absolute inset-0 bg-stage/60 backdrop-blur-[2px]" onClick={onClose} />
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="lf-pop-in relative flex max-h-full w-full max-w-md flex-col sm:max-w-3xl overflow-hidden rounded-2xl border border-line bg-surface text-ink shadow-overlay">
         <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+          <div className="flex items-start gap-1">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-muted" data-testid="race-puzzle">{about}</p>
               <h2 id={titleId} className="font-display text-lg font-bold leading-snug tracking-tight">{solves.length === 2 ? t("ghostRace.raceTitle", { a: solves[0].name, b: solves[1].name }) : t("friendRace.title")}</h2>
-              <p className="text-sm text-muted text-balance">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name, title: puzzle.title, speed }) : t("friendRace.subtitle", { title: puzzle.title, speed })}</p>
+              <p className="text-sm text-muted">{solves.length === 1 ? t("friendRace.subtitleOne", { name: solves[0].name }) : t(solves.length === 2 ? "friendRace.subtitleTwo" : "friendRace.subtitle")}</p>
             </div>
+            <StudioPopover label={t("friendRace.legendLabel")} icon={<CircleHelp className="size-5" aria-hidden="true" />} className="-mt-2 ml-auto shrink-0" large>
+              <ul className="grid gap-1.5">
+                <li>{t("friendRace.legendLanes")}</li>
+                <li>{t("friendRace.firstBody")}</li>
+                {canShowBoth && <li>{t("friendRace.bothBody", { a: a.name, b: b.name })}</li>}
+                <li>{t("friendRace.legendSpeed", { speed })}</li>
+              </ul>
+            </StudioPopover>
             <button type="button" onClick={onClose} aria-label={t("ghostRace.close")} className="-mr-2 -mt-2 grid size-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-surface-sunken active:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-brand-500">
               <X className="size-5" aria-hidden="true" />
             </button>
@@ -182,11 +200,26 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             </div>
           )}
 
-          {/* Side by side where there is room, so the lanes and the grid are watched together. */}
-          <div className="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-            <section className="min-w-0">
-              <h3 className="text-sm font-bold">{t("friendRace.lanesTitle")}</h3>
-              <ol className="mt-1.5 grid gap-2">
+          {canShowBoth && (
+            <div role="group" aria-label={t("friendRace.viewLabel")} className="mt-3 flex gap-1.5">
+              {([false, true] as const).map((v) => (
+                <button
+                  key={String(v)}
+                  type="button"
+                  aria-pressed={both === v}
+                  onClick={() => setBoth(v)}
+                  className={`min-h-11 rounded-full border px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${both === v ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted"}`}
+                >
+                  {t(v ? "friendRace.viewBoth" : "friendRace.firstTitle")}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Side by side where there is room; on a phone the lanes sit right above the grid. */}
+          <div className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            <section className="min-w-0" aria-label={t("friendRace.lanesTitle")}>
+              <ol className="grid gap-2">
                 {lanes.map(({ solve }, i) => {
                   const place = order.indexOf(i);
                   const done = ms >= solve.seconds * 1000;
@@ -220,34 +253,16 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
               </ol>
             </section>
 
-            <section className="min-w-0">
-              {canShowBoth ? (
-                <div role="group" aria-label={t("friendRace.viewLabel")} className="flex gap-1.5">
-                  {([false, true] as const).map((v) => (
-                    <button
-                      key={String(v)}
-                      type="button"
-                      aria-pressed={both === v}
-                      onClick={() => setBoth(v)}
-                      className={`min-h-11 rounded-full border px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${both === v ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted"}`}
-                    >
-                      {t(v ? "friendRace.viewBoth" : "friendRace.firstTitle")}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <h3 className="text-sm font-bold">{t("friendRace.firstTitle")}</h3>
-              )}
-              <p className={`text-xs text-muted text-balance ${canShowBoth ? "mt-1.5" : ""}`}>{showBoth ? t("friendRace.bothBody", { a: a.name, b: b.name }) : t("friendRace.firstBody")}</p>
+            <section className="min-w-0" aria-label={t(showBoth ? "friendRace.viewBoth" : "friendRace.firstTitle")}>
               {showBoth ? (
-                <div className="mx-auto mt-2 w-fit" style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 24rem), 21rem)" } as React.CSSProperties}>
+                <div className="mx-auto w-fit" style={{ "--native-grid-size": "min(calc(100vw - 4.5rem), calc(100svh - 24rem), 21rem)" } as React.CSSProperties}>
                   <CrosswordGrid puzzle={puzzle} playerCells={cellsAt(a, ms, puzzle.width)} selectedCell={null} highlightedCells={NO_HIGHLIGHT} onCellClick={() => undefined} interactive={false} playerColorMap={{ replay: a.color }} ghostTints={dotsAt(b, ms, puzzle.width)} />
                 </div>
               ) : (
               <div
                 role="img"
                 aria-label={t("friendRace.gridLabel")}
-                className="mx-auto mt-2 grid gap-px overflow-hidden rounded-md border-2 border-ink bg-ink"
+                className="mx-auto grid gap-px overflow-hidden rounded-md border-2 border-ink bg-ink"
                 style={{ gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`, maxWidth: "min(100%, calc(100svh - 20rem))", minWidth: "min(100%, 14rem)" }}
               >
                 {puzzle.cells.flat().map((cell) => {
