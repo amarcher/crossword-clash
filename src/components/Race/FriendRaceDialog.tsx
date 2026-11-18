@@ -178,14 +178,19 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   </span>
                   {t("friendRace.legendLanes")}
                 </li>
-                <li className="flex items-center gap-2.5">
-                  <span className="mx-1.5 size-3 shrink-0 rounded-[3px] ring-1 ring-inset ring-ink/20" style={{ backgroundColor: blendOnWhite(a.color, 0.4) }} aria-hidden="true" />
-                  {t("friendRace.firstBody")}
-                </li>
-                {canShowBoth && (
+                {/* The grid's marks, for the reading that is showing. */}
+                {(showBoth ? [a] : lanes.map((l) => l.solve)).map((solve) => (
+                  <li key={solve.id} className="flex items-center gap-2.5">
+                    <span className="mx-0.5 grid size-5 shrink-0 place-items-center rounded-[3px] text-[11px] font-bold leading-none text-ink ring-1 ring-inset ring-ink/25" style={{ backgroundColor: blendOnWhite(solve.color, showBoth ? 0.18 : letters ? 0.4 : 0.6) }} aria-hidden="true">
+                      {letters && "A"}
+                    </span>
+                    {t(showBoth ? "friendRace.legendLetters" : "friendRace.legendFirst", { name: solve.name })}
+                  </li>
+                ))}
+                {showBoth && (
                   <li className="flex items-center gap-2.5">
-                    <span className="mx-1.5 size-3 shrink-0 rounded-[3px] border border-line-strong bg-surface" aria-hidden="true">
-                      <span className="block size-full opacity-85" style={{ backgroundColor: b.color, clipPath: "polygon(100% 20%, 100% 100%, 20% 100%)" }} />
+                    <span className="mx-0.5 size-5 shrink-0 overflow-hidden rounded-[3px] bg-surface ring-1 ring-inset ring-ink/25" aria-hidden="true">
+                      <span className="block size-full opacity-85" style={{ backgroundColor: b.color, clipPath: "polygon(100% 45%, 100% 100%, 45% 100%)" }} />
                     </span>
                     {t("friendRace.bothBody", { b: b.name })}
                   </li>
