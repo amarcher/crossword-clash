@@ -768,7 +768,8 @@ export function CompletionModal({
           </>
         )}
 
-        {onSignIn && (
+        {/* One way to an account per finish: the board's own button stands in for this card. */}
+        {onSignIn && boardJoin?.kind !== "account" && (
           <div
             data-testid="account-hook"
             className={`mb-5 flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm ${

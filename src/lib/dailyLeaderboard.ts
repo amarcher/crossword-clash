@@ -372,23 +372,23 @@ export async function prepareDailyResult(
 
 const PARKED_KEY = "crossword-clash:parked-finish";
 
-/** Keep a finish that is parked for want of an account (this tab only); anything else clears it. */
+/** Keep a finish that is parked for want of an account (today only: loadParkedFinish drops an older one); anything else clears it. */
 export function saveParkedFinish(pending: PendingDailyResult | null): void {
   try {
     if (pending && !pending.posted && !pending.postingHold) {
-      sessionStorage.setItem(PARKED_KEY, JSON.stringify({ day: pending.day, slot: pending.slot, entry: pending.entry, gameId: pending.gameId }));
+      localStorage.setItem(PARKED_KEY, JSON.stringify({ day: pending.day, slot: pending.slot, entry: pending.entry, gameId: pending.gameId }));
     } else if (!pending || pending.posted) {
-      sessionStorage.removeItem(PARKED_KEY);
+      localStorage.removeItem(PARKED_KEY);
     }
   } catch {
     // Storage is a convenience here: without it the finish is simply not carried across a reload.
   }
 }
 
-/** Today's parked finish, if this tab kept one. */
+/** Today's parked finish, if this device kept one. */
 export function loadParkedFinish(): PendingDailyResult | null {
   try {
-    const raw = sessionStorage.getItem(PARKED_KEY);
+    const raw = localStorage.getItem(PARKED_KEY);
     if (!raw) return null;
     const kept = JSON.parse(raw) as Partial<PendingDailyResult>;
     const entry = kept.entry;
