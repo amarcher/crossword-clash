@@ -12,8 +12,9 @@ import { useGame } from "../contexts/GameContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
-import { fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../lib/bonus";
-import { useRaceCandidates } from "../hooks/useRace";
+import { BOARD_CARDS, cachedBonusCards, fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../lib/bonus";
+import { prefetchRaceCandidates, useRaceCandidates } from "../hooks/useRace";
+import { loadPublishedIndex } from "../lib/dailyIndex";
 import { useRaceName } from "../hooks/useRaceName";
 import { fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, saveRaceIntent } from "../lib/race";
 import { RACE_SELF_COLOR, type RaceSolve } from "../lib/friendRace";
@@ -74,14 +75,20 @@ export function BonusLeaderboardScreen() {
   const today = todayKey();
 
   // Released bonuses up to today, oldest first: the days the stepper walks.
-  const [cards, setCards] = useState<BonusCard[] | null>(supabase ? null : []);
+  // Cards fetched earlier this session (the daily boards ask ahead) draw at once; the fetch corrects them.
+  const released = useCallback((rows: BonusCard[]) => rows.filter((c) => c.day <= today).reverse(), [today]);
+  const [cards, setCards] = useState<BonusCard[] | null>(() => {
+    if (!supabase) return [];
+    const kept = cachedBonusCards(BOARD_CARDS);
+    return kept ? released(kept) : null;
+  });
   useEffect(() => {
     let live = true;
-    void fetchBonusCards(120).then((rows) => live && setCards(rows.filter((c) => c.day <= today).reverse()));
+    void fetchBonusCards(BOARD_CARDS).then((rows) => live && setCards(released(rows)));
     return () => {
       live = false;
     };
-  }, [today]);
+  }, [released]);
 
   const asked = params.get("day");
   const day = asked && cards?.some((c) => c.day === asked) ? asked : today;
@@ -123,7 +130,12 @@ export function BonusLeaderboardScreen() {
   useEffect(() => {
     if (!supabase) return;
     prefetchDailyLeaderboards(day, ["bonus"]);
-  }, [day]);
+    // And the daily tabs' race buttons, as the daily boards do for each other.
+    if (!user) return;
+    void loadPublishedIndex(todayKey())
+      .then((entries) => entries && prefetchRaceCandidates(entries.filter((e) => e.day === day).map((e) => e.identity)))
+      .catch(() => {});
+  }, [day, user]);
 
   // A day already fetched this session shows that answer while the fetch corrects it.
   const loaded = !supabase ? [] : entries?.day === day ? entries.rows : cachedDailyLeaderboard(day, "bonus");
