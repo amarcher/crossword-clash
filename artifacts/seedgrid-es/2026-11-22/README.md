@@ -394,3 +394,7 @@ Not in the list: phrases. Every multi-word entry (the three 15×15 themers) was 
 - `scripts/seedgrid/es/fill.mts` ranks fills by the two Spanish rules before list score, and with `strict` drops any fill that breaks one.
 - `scripts/seedgrid/es/finish.mts` writes each puzzle and runs the checks printed at the end of each `review.md`. `scripts/seedgrid/es/readme.py` rebuilds this file's puzzle sections from them.
 - Puzzle sources: `scripts/seedgrid/es/puzzles/*.json` (`mini-canto.json` is the first mini, kept for reference).
+
+## Play links
+
+`enlaces.md` holds one play link per puzzle and the instructions for the reviewer, in Spanish. The links point at the PR preview, which needs a Vercel sign-in; the `#puzzle=` part works on any host that has the Ñ typing.
