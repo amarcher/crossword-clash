@@ -76,7 +76,13 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
   const friends = candidates.filter((c) => c.friend);
 
   // "ask": how to play. "pick": which finished solves. "count": 3-2-1.
-  const [step, setStep] = useState<"ask" | "pick" | "count" | null>(null);
+  // The first frame already shows the answer where it is known without the list: the options
+  // when a room can be made (the list only adds a row to them), the count when nothing can be
+  // offered. Only a list that decides the screen is waited for, and that wait never shows the count
+  // (Andrew, 2026-11-19: the countdown flashed before the options).
+  const [step, setStep] = useState<"ask" | "pick" | "count" | null>(() =>
+    answered ? "count" : !race && !live ? "count" : live && !race?.ready && !race?.preselect.length ? "ask" : null,
+  );
   const [picked, setPicked] = useState<string[]>([]);
   // Decided once, when the wait ends: a list that answers after the count is running does not pull the card back.
   useEffect(() => {
@@ -147,7 +153,8 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
         {step === "ask" ? (
           <div data-testid="start-ask">
             <p className="mt-1 text-sm text-muted">{t("soloStart.ask")}</p>
-            <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-2.5">
+            {/* Equal rows: Play solo is as tall as a race option with names under it. */}
+            <div className="mt-4 grid auto-rows-fr grid-cols-[minmax(0,1fr)] gap-2.5">
               <button type="button" onClick={() => setStep("count")} className={`${option} border-brand-600 bg-brand-600 text-white hover:bg-brand-700`}>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">{t("soloStart.solo")}</span>
@@ -215,11 +222,15 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
             ) : (
               detail && <p className="mt-1 text-sm text-muted">{detail}</p>
             )}
-            <p className={`mt-4 font-display text-6xl leading-none font-bold tabular-nums ${step ? "text-brand-600" : "text-line-strong"}`} aria-hidden="true">{Math.max(1, left)}</p>
+            {step ? (
+              <p className="mt-4 font-display text-6xl leading-none font-bold tabular-nums text-brand-600" aria-hidden="true">{Math.max(1, left)}</p>
+            ) : (
+              <p className="mt-4 grid h-[3.75rem] place-items-center" data-testid="start-waiting"><Loader2 className="size-7 animate-spin text-muted motion-reduce:animate-none" aria-hidden="true" /></p>
+            )}
             {/* The numeral says it; the sentence is for a screen reader. */}
             <p className="sr-only" role="status">{step ? t("soloStart.starting", { count: Math.max(1, left) }) : t("soloStart.gettingReady")}</p>
             <div className="mt-6 grid gap-3">
-              <Button size="lg" onClick={onStart}>{t("soloStart.startNow")}</Button>
+              {step && <Button size="lg" onClick={onStart}>{t("soloStart.startNow")}</Button>}
               <Button variant="secondary" size="lg" onClick={onBack}>{t("soloStart.back")}</Button>
             </div>
           </>
