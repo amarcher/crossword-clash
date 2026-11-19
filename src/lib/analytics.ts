@@ -69,6 +69,7 @@ export type AnalyticsEvent =
   | "friend_link_shared"
   | "friend_link_opened"
   | "leaderboard_filter"
+  | "board_join"
   /** A website visitor on iOS followed the App Store link. Param `placement`. */
   | "app_store_click"
   /** A phone visitor closed our own get-the-app banner (AppStoreBanner). Params `placement`, `store` (ios | android). */

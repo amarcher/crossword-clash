@@ -4,6 +4,7 @@ import { useSoloProgress } from "../hooks/useSoloProgress";
 import { formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useBoardJoin } from "../hooks/useBoardJoin";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { CalendarDays, CircleCheck, Flame, Hash, Newspaper, PencilRuler, Smartphone, Swords, Trophy, Tv, Upload, Users } from "lucide-react";
 import { Title } from "../components/Title";
@@ -169,7 +170,9 @@ export function MenuScreen() {
   // Pushes run inside the site cross-fade; the play screen gets a plain fade
   // (no bar to morph into) and the grid itself is never a named element.
   const navigate = useTransitionNavigate();
-  const { handleSoloPuzzleLoaded, setSoloTheme } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme, pendingDailyResult } = useGame();
+  // A sign-in started from a finish returns here: the finish it was for posts now (useBoardJoin).
+  useBoardJoin(pendingDailyResult);
   // Multiplayer needs a Supabase user. Whether Supabase is configured at all is
   // known synchronously, so hiding the friends UI in an offline build costs no
   // layout shift; whether auth has resolved is not, so while it is pending (or

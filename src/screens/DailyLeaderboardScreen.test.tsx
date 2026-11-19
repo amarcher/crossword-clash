@@ -354,12 +354,14 @@ it("asks even a previously named guest to sign and keeps that finish out of the 
   expect(screen.getAllByRole("row").some(r => r.textContent?.includes("Remembered name"))).toBe(false);
 });
 
-it("does not offer signing or add a private row when account posting is disabled", async () => {
+it("offers the choice of who may watch, and no name form or private row, to an account that hides its solves", async () => {
   const p = pending(80, "Private result", false);
   p.postingHold = "disabled";
   p.resolve(); game.pendingDailyResult = p; renderBoard();
   await screen.findByText("Ada");
-  expect(screen.getByText(/Solo leaderboard posting is off/)).toBeTruthy();
+  // An account that hides its solves is asked who may watch (the one choice that puts it on the board).
+  expect(screen.getByText("Add me to the leaderboard")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Everyone can watch" })).toBeTruthy();
   expect(screen.queryByPlaceholderText("Your name")).toBeNull();
   expect(screen.getAllByRole("row").some(r => r.textContent?.includes("Private result"))).toBe(false);
 });

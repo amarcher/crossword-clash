@@ -7,7 +7,7 @@ import { decodeChallengeParams, loadChallenge, saveChallenge, clearChallenge, ty
 import { loadMpSession } from "../lib/sessionPersistence";
 import { isRealPlayerName, loadPlayerName } from "../lib/playerName";
 import { useMaybeAccount } from "./AccountContext";
-import type { PendingDailyResult } from "../lib/dailyLeaderboard";
+import { loadParkedFinish, saveParkedFinish, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import { clearProgress, filledCells, getProgress, saveAttempt, whiteCellCount, type SaveAttemptResult } from "../lib/soloProgress";
 import { requestSoloStart, rememberSoloLanding } from "../lib/soloSession";
@@ -210,7 +210,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const timer = loadSoloTimer();
     return !!timer?.completed && timer.key === puzzleIdentity(saved);
   });
-  const [pendingDailyResult, setPendingDailyResult] = useState<PendingDailyResult | null>(null);
+  // A finish parked for want of an account survives the sign-in round trip (a provider
+  // redirect reloads the page), so making the account still posts it (useBoardJoin).
+  const [pendingDailyResult, setPendingDailyResult] = useState<PendingDailyResult | null>(loadParkedFinish);
+  useEffect(() => {
+    saveParkedFinish(pendingDailyResult);
+  }, [pendingDailyResult]);
   const [reopenedSolved, setReopenedSolved] = useState<{ key: string; seconds: number } | null>(null);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);

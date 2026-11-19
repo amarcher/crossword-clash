@@ -123,7 +123,6 @@ describe("AccountScreen (/account)", () => {
     expect(navigate).toHaveBeenCalledWith("/menu", { replace: true });
     expect(openAccount).toHaveBeenCalledWith({ placement: "account-page" });
     expect(screen.queryByText("ada_l")).toBeNull();
-    expect(screen.queryByRole("switch", { name: "Leaderboard eligible" })).toBeNull();
   });
 
   it("waits for the session before deciding, and offers nothing where accounts aren't available", () => {
@@ -144,7 +143,8 @@ describe("AccountScreen (/account)", () => {
     renderScreen();
     expect(screen.getByText("ada_l")).toBeTruthy();
     expect(screen.getByText("Ada Lovelace")).toBeTruthy();
-    expect(screen.getByRole("switch", { name: "Leaderboard eligible" })).toBeTruthy();
+    expect(screen.queryByRole("switch", { name: "Leaderboard eligible" })).toBeNull();
+    expect(screen.getByText("Who sees your solves")).toBeTruthy();
     expect(screen.getByText("Signed in with Google")).toBeTruthy();
     expect(screen.getByText("Daily streak").parentElement!.parentElement!.textContent).toContain("3 days");
     expect(screen.getByText("Solves synced").parentElement!.parentElement!.textContent).toContain("7");
@@ -295,4 +295,3 @@ describe("AccountScreen (/account)", () => {
 
 vi.mock("../components/Push", () => ({ ReminderSwitch: () => null, NotificationSettings: () => null }));
 
-vi.mock("../lib/leaderboardPreference", () => ({ fetchSoloLeaderboardPreference: async () => true, saveSoloLeaderboardPreference: vi.fn(async () => {}) }));

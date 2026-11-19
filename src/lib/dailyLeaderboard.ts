@@ -11,7 +11,7 @@
  */
 
 import type { User } from "@supabase/supabase-js";
-import { fetchSoloLeaderboardPreference } from "./leaderboardPreference";
+import { fetchRaceVisibility } from "./race";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "./supabaseClient";
 import { dayKey, puzzleIdentity } from "./soloStats";
@@ -346,26 +346,62 @@ export function postDailyResult(
   return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, ...entry }) };
 }
 
-/** Prepare a solo finish without treating a remembered guest name as permission to post. */
-export async function prepareSoloDailyResult(
+/**
+ * Prepare a finish for the board under the one rule (Andrew, 2026-11-19; the
+ * server holds it too, migration 20261202000000): being on a board means your
+ * solve can be watched. A player with no account is never posted (the finish
+ * is parked until they make one); an account whose solves are hidden from
+ * everyone is held ("disabled") until it chooses who may watch.
+ */
+export async function prepareDailyResult(
   day: string,
   slot: BoardSlot,
   entry: DailyResultEntry,
   user: Pick<User, "id" | "is_anonymous">,
+  gameId: string | null = null,
 ): Promise<PendingDailyResult> {
-  const parked: PendingDailyResult = { day, slot, entry, gameId: null, posted: false, settled: Promise.resolve() };
+  const parked: PendingDailyResult = { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
   if (user.is_anonymous) return parked;
   try {
-    if (!await fetchSoloLeaderboardPreference(user.id)) return { ...parked, postingHold: "disabled" };
-    return postDailyResult(day, slot, entry);
+    if ((await fetchRaceVisibility(user.id)) === "hidden") return { ...parked, postingHold: "disabled" };
+    return postDailyResult(day, slot, entry, gameId);
   } catch {
     return { ...parked, postingHold: "unavailable" };
   }
 }
 
-/** Copy used on both the finish and the board while a solo result remains private. */
+const PARKED_KEY = "crossword-clash:parked-finish";
+
+/** Keep a finish that is parked for want of an account (this tab only); anything else clears it. */
+export function saveParkedFinish(pending: PendingDailyResult | null): void {
+  try {
+    if (pending && !pending.posted && !pending.postingHold) {
+      sessionStorage.setItem(PARKED_KEY, JSON.stringify({ day: pending.day, slot: pending.slot, entry: pending.entry, gameId: pending.gameId }));
+    } else if (!pending || pending.posted) {
+      sessionStorage.removeItem(PARKED_KEY);
+    }
+  } catch {
+    // Storage is a convenience here: without it the finish is simply not carried across a reload.
+  }
+}
+
+/** Today's parked finish, if this tab kept one. */
+export function loadParkedFinish(): PendingDailyResult | null {
+  try {
+    const raw = sessionStorage.getItem(PARKED_KEY);
+    if (!raw) return null;
+    const kept = JSON.parse(raw) as Partial<PendingDailyResult>;
+    const entry = kept.entry;
+    if (kept.day !== todayKey() || !kept.slot || !entry || typeof entry.userId !== "string" || typeof entry.displayName !== "string" || !Number.isFinite(entry.seconds)) return null;
+    return { day: kept.day, slot: kept.slot, entry, gameId: kept.gameId ?? null, posted: false, settled: Promise.resolve() };
+  } catch {
+    return null;
+  }
+}
+
+/** Copy used on both the finish and the board while a result is held. A "disabled" hold has the join prompt instead (useBoardJoin). */
 export function dailyPostingNotice(pending: PendingDailyResult | null | undefined): string | null {
-  if (!pending?.postingHold) return null;
+  if (!pending?.postingHold || pending.postingHold === "disabled") return null;
   return `leaderboardSettings.${pending.postingHold}`;
 }
 
