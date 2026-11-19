@@ -1,0 +1,10 @@
+This build (1.1.4, build 61) makes the room the place where the puzzle is shown and changed. Please check:
+
+1. Play: tap "Play" on a puzzle you haven't started. "How do you want to play?" should be the very first thing you see, with no flash of the countdown. "Play solo" should be the same height as the race options.
+2. Race friends, then "Start" (or "Challenge" on a friend): you should land straight in the room, under your username, on today's first daily you haven't solved.
+3. The room shows its puzzle: a card with the grid, title and size. As host, tap "Change".
+4. Pick a puzzle: under today's dailies you should see Past puzzles, Community puzzles, Import from NYT and Bring your own puzzle. Open one, tap "Pick", and you should be back in the same room, with the same code, showing the new puzzle. Please try each of the four.
+5. After changing the puzzle, a friend you had already invited needs inviting again from the list.
+6. Finish a puzzle: the replay clip above "Share" should arrive without pushing the buttons down the page.
+7. Daily Plus leaderboard: it should show your streak, and "Everyone / Friends" if you have friends, like the other leaderboards.
+8. Everything from build 60 still applies.
