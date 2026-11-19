@@ -1237,7 +1237,9 @@
   "friendRace": {
     "title": "The race",
     "subtitle": "Replayed together",
-    "showing": "Who is in the race",
+    "showing": "Left out of the race",
+    "hide": "Hide {{name}}",
+    "addFriend": "Add {{name}} as a friend",
     "lanesTitle": "Down the stretch",
     "firstTitle": "Who got there first",
     "legendFirst": "{{name}} was first to the square",
