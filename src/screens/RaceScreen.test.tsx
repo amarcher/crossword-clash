@@ -10,7 +10,7 @@ const navigate = vi.fn();
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 type Stub = { title: string; width: number; height: number; cells: { row: number; col: number; solution: string | null }[][] };
-const game = { urlPuzzle: null as Stub | null, setUrlPuzzle: vi.fn() };
+const game = { urlPuzzle: null as Stub | null, setUrlPuzzle: vi.fn(), handleSoloPuzzleLoaded: vi.fn(async () => true) };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 const account = { user: null as { id: string } | null, profile: null as { username: string } | null, available: true, openAccount: vi.fn() };
 vi.mock("../contexts/AccountContext", () => ({ useAccountContext: () => account, useMaybeAccount: () => null }));
@@ -168,6 +168,23 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     best.times = {};
     solved.solves = {};
     solved.recorded = [];
+  });
+
+  it("arriving from Play's Race friends live, Play solo now goes back to the puzzle and straight to its countdown", async () => {
+    const { consumeSoloChosen } = await import("../lib/soloSession");
+    game.urlPuzzle = { title: "Shapes and shadows", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
+    renderScreen();
+    expect(screen.queryByRole("button", { name: "Play solo now" })).toBeNull();
+    cleanup();
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/race", state: { fromPlay: true } }]}>
+        <RaceScreen />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Play solo now" }));
+    await vi.waitFor(() => expect(navigate).toHaveBeenLastCalledWith("/solo/play"));
+    expect(game.handleSoloPuzzleLoaded).toHaveBeenCalledWith(game.urlPuzzle);
+    expect(consumeSoloChosen()).toBe(true);
   });
 
   it("puts invites from friends first; Join marks the invite seen and lands on the join screen with the code", () => {

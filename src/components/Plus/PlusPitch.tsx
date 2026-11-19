@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Archive, ChartLine, Flag, Flame, Grid3x3, Mic, PencilRuler } from "lucide-react";
+import { Archive, ChartLine, Flame, Grid3x3, Mic, PencilRuler } from "lucide-react";
 import { formatUsd, PLUS_ANNUAL_USD, PLUS_MONTHLY_USD } from "../../lib/plus";
 import { useStorePrices } from "../../hooks/useStorePrices";
 import { useFreeMonth } from "../../hooks/useFreeMonth";
@@ -16,7 +16,6 @@ export function PlusPitch({ children }: { children?: React.ReactNode }) {
   const { t } = useTranslation();
   const benefits = [
     { icon: Grid3x3, text: t("plus.benefitBonus") },
-    { icon: Flag, text: t("plus.benefitRace") },
     { icon: Archive, text: t("plus.benefitArchive") },
     { icon: ChartLine, text: t("plus.benefitStats") },
     { icon: PencilRuler, text: t("plus.benefitStudio") },

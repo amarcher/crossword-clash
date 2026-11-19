@@ -1,4 +1,6 @@
 import { useCallback, useMemo } from "react";
+import { useLocation } from "react-router";
+import { requestSoloChosen } from "../lib/soloSession";
 import { useTranslation } from "react-i18next";
 import { Share2, Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
@@ -64,6 +66,17 @@ export function RaceScreen() {
     },
     [game.urlPuzzle, friends.active, navigate],
   );
+
+  const fromPlay = !!(useLocation().state as { fromPlay?: boolean } | null)?.fromPlay;
+  const playSolo = async () => {
+    const puzzle = game.urlPuzzle;
+    if (!puzzle) return;
+    track("race_action", { action: "play-solo", signed_in: friends.active });
+    requestSoloChosen();
+    if ((await game.handleSoloPuzzleLoaded(puzzle)) === false) return;
+    game.setUrlPuzzle(null);
+    navigate("/solo/play");
+  };
 
   const openInvite = useCallback(
     (invite: RoomInvite) => {
@@ -231,6 +244,12 @@ export function RaceScreen() {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid" aria-busy={!friends.ready || undefined}>
         {blocks.map(render)}
       </div>
+      {/* Arrived from Play's "Race friends live": the way back to the puzzle alone is always here, so nobody waits on a friend. */}
+      {fromPlay && game.urlPuzzle && (
+        <Button variant="secondary" size="lg" block className="mt-5" onClick={() => void playSolo()}>
+          {t("race.playSoloNow")}
+        </Button>
+      )}
     </PageShell>
   );
 }

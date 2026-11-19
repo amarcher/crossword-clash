@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Flag, Loader2 } from "lucide-react";
-import { PlusSeal } from "../ui/PlusBadge";
 import { Button } from "../ui";
 import { formatDuration } from "../../lib/soloStats";
 import { MAX_GHOSTS, type RaceCandidate } from "../../lib/race";
@@ -9,23 +8,21 @@ import { ModePreview } from "../GameLobby/ModePreview";
 
 interface RaceStarterProps {
   candidates: RaceCandidate[];
-  /** The viewer holds Plus: a free player's Race opens the pitch instead of the picker. */
-  plus: boolean;
   /** Ids to tick and open the picker with (a Race tap on the daily board). */
   preselect: string[];
   onStart: (userIds: string[]) => Promise<boolean>;
-  onPitch: () => void;
 }
 
 /**
  * The offer above an untouched grid when someone's solve of this puzzle can
  * be raced (race.ts): friends first, then the fastest public solvers. A tap
- * opens a short picker (up to MAX_GHOSTS); a free player gets the Plus pitch.
+ * opens a short picker (up to MAX_GHOSTS). Shown only when the puzzle opened
+ * without the start card (SoloStartGate), which asks this first.
  */
-export function RaceStarter({ candidates, plus, preselect, onStart, onPitch }: RaceStarterProps) {
+export function RaceStarter({ candidates, preselect, onStart }: RaceStarterProps) {
   const { t } = useTranslation();
   const valid = preselect.filter((id) => candidates.some((c) => c.userId === id));
-  const [open, setOpen] = useState(valid.length > 0 && plus);
+  const [open, setOpen] = useState(valid.length > 0);
   const [picked, setPicked] = useState<string[]>(valid.length ? valid : candidates.slice(0, 1).map((c) => c.userId));
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -58,10 +55,8 @@ export function RaceStarter({ candidates, plus, preselect, onStart, onPitch }: R
           <Button
             variant="soft"
             size="sm"
-            onClick={() => (plus ? setOpen(true) : onPitch())}
-            aria-label={plus ? t("ghostRace.raceButton") : t("ghostRace.raceWithPlus")}
+            onClick={() => setOpen(true)}
           >
-            {!plus && <PlusSeal size="1rem" />}
             {t("ghostRace.raceButton")}
           </Button>
         )}

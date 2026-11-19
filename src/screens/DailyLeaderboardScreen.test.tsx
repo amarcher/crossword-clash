@@ -238,14 +238,12 @@ describe("DailyLeaderboardScreen", () => {
     expect(screen.getByTestId("group-line").textContent).toBe("Played as a group" + "Group games count for your streak but aren't ranked here.");
   });
 
-  it("not solved: keeps the play button and races today's puzzle itself", async () => {
+  it("not solved: Play is the one button; racing it is asked after Play", async () => {
     renderBoard();
     await screen.findByText("Ada");
     expect(screen.queryByTestId("solved-line")).toBeNull();
     expect(screen.getByRole("button", { name: /Play today's Mini/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
-    expect(game.setUrlPuzzle).toHaveBeenCalledWith(daily.puzzle);
-    expect(navigate).toHaveBeenCalledWith("/host-game/name");
+    expect(screen.queryByRole("button", { name: /Race friends/ })).toBeNull();
   });
 
   it("keeps an unsigned finish on this device and posts it under the name signed through the shared form", async () => {

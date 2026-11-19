@@ -27,7 +27,7 @@ const key = puzzleIdentity(puzzle);
 const tile = () =>
   render(
     <MemoryRouter>
-      <DailyHero slot="mini" daily={{ puzzle } as never} multiplayer={false} disabled={false} onPlay={() => {}} onRace={() => {}} />
+      <DailyHero slot="mini" daily={{ puzzle } as never} multiplayer={false} onPlay={() => {}} />
     </MemoryRouter>,
   );
 
