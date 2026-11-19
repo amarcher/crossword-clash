@@ -105,5 +105,8 @@ export function usePickPuzzle(intent: PickerIntent) {
     [intent, user, username, mp, game, navigate, t],
   );
 
-  return { choose, busy, error };
+  /** A puzzle that could not be fetched before `choose`: the same message. */
+  const fail = useCallback(() => setError(t("picker.error")), [t]);
+
+  return { choose, busy, error, fail };
 }

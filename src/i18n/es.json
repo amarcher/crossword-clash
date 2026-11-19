@@ -755,6 +755,10 @@
     "missingBody": "No hay nada publicado para ese día. Los crucigramas de hoy están en el menú."
   },
   "picker": {
+    "freshNone": "No queda ninguno de este tamaño",
+    "freshRoom": "Nuevos para todos",
+    "freshSolo": "Nuevos para ti",
+    "size": "Tamaño",
     "title": "Elige un crucigrama",
     "subtitleRace": "Todos compiten en el mismo crucigrama nuevo. Recibirás un código de sala para compartir.",
     "subtitleNext": "La sala conserva su código: los jugadores te siguen al nuevo crucigrama.",

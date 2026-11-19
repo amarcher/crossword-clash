@@ -56,6 +56,16 @@ vi.mock("../lib/sessionPersistence", () => ({
 }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 
+// Past dailies nobody about to play has finished (useFreshPuzzles), per size and room.
+const freshEntry = { day: "2026-10-30", slot: "midi" as const, title: "Night Shift", theme: "Jobs", author: "", width: 9, height: 9, clues: 30, identity: "k-night", blocks: ".#/.." };
+const useFreshPuzzles = vi.fn((slot: string, _gameId: string | null) => (slot === "midi" ? [freshEntry] : []));
+vi.mock("../hooks/useFreshPuzzles", () => ({ useFreshPuzzles: (slot: string, gameId: string | null) => useFreshPuzzles(slot, gameId) }));
+const fetchDailyForDay = vi.fn(async (_day: string, _slot: string) => midi as unknown);
+vi.mock("../lib/dailyFeed", async (original) => ({
+  ...(await original<typeof import("../lib/dailyFeed")>()),
+  fetchDailyForDay: (day: string, slot: string) => fetchDailyForDay(day, slot),
+}));
+
 /** The midi's "Pick" (the mini is listed first). */
 function pickMidi() {
   const dailiesSection = screen.getByRole("region", { name: "Today's dailies" });
@@ -86,6 +96,30 @@ afterEach(() => {
 });
 
 describe("PuzzlePickerScreen", () => {
+  it("offers past dailies of the chosen size that nobody in the room has finished, and picks one for the room", async () => {
+    game.gameId = "game-1";
+    mp.shareCode = "ABCDEF";
+    mp.isHost = true;
+    renderPicker("next");
+    const section = screen.getByRole("region", { name: "New to everyone here" });
+    expect(useFreshPuzzles).toHaveBeenLastCalledWith("midi", "game-1");
+    fireEvent.click(within(within(section).getByText("Night Shift").closest("li")!).getByRole("button", { name: "Pick" }));
+    await waitFor(() => expect(createNextGame).toHaveBeenCalled());
+    expect(fetchDailyForDay).toHaveBeenCalledWith("2026-10-30", "midi");
+
+    // Another size asks again; with none left the switch stays.
+    fireEvent.click(within(section).getByRole("radio", { name: "Large" }));
+    expect(useFreshPuzzles).toHaveBeenLastCalledWith("large", "game-1");
+    expect(within(section).getByText("None left in this size")).toBeTruthy();
+    expect(within(section).getByRole("radio", { name: "Mini" })).toBeTruthy();
+  });
+
+  it("with no room to keep, asks only about the player", () => {
+    renderPicker("race");
+    expect(screen.getByRole("region", { name: "New to you" })).toBeTruthy();
+    expect(useFreshPuzzles).toHaveBeenLastCalledWith("midi", null);
+  });
+
   it("lists only today's unsolved dailies, never the puzzle just finished", () => {
     game.puzzle = mini.puzzle;
     game.isComplete = true;
