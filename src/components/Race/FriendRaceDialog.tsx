@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, CircleHelp, EyeOff, FastForward, Pause, Play, RotateCcw, Share2, X } from "lucide-react";
+import { Check, CircleHelp, EyeOff, FastForward, Pause, Play, RotateCcw, Share2, UserPlus, X } from "lucide-react";
 import { Button } from "../ui";
 import { CrosswordGrid } from "../CrosswordGrid";
 import { StudioPopover } from "../Studio/StudioPopover";
@@ -40,8 +40,19 @@ interface FriendRaceDialogProps {
   cta?: { label: string; onClick: () => void };
   /** Pass the link on, for a viewer with a `cta`: the quiet icon. Answers how it went, for the toast. */
   onForward?: () => Promise<"shared" | "copied" | "failed" | "dismissed">;
+  /**
+   * Solvers (by `id`) the viewer could ask to be friends, and the asking
+   * (SharedRace: a shared race's solvers the viewer does not know yet). Each
+   * gets "Add friend" on their lane; it resolves false when the request failed.
+   */
+  friendable?: ReadonlySet<string>;
+  onAddFriend?: (solve: RaceSolve) => Promise<boolean>;
   onClose: () => void;
 }
+
+/** A lane's name as the control that shows or hides its solver: small and raised, with a full-height touch target. */
+const NAME_CHIP =
+  "relative inline-flex h-6 min-w-0 items-center gap-1 rounded-full border px-2 text-xs font-semibold before:absolute before:-inset-x-1 before:-inset-y-2.5 focus-visible:outline-2 focus-visible:outline-brand-500";
 
 /** Squares in a lane's track. */
 const TRACK = 24;
@@ -56,8 +67,10 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
  * grid each had settled; a lane keeps its row for the whole race and only its
  * place number changes, since rows trading places was jarring. The grid
  * takes the colour of whoever settled each square first, with the count of
- * squares each was first to. Names at the top show or hide a solver, and both
- * readings are worked out again for whoever is left.
+ * squares each was first to. With three or more, a lane's name is the chip
+ * that hides its solver (Andrew, 2026-11-18: no separate row of names), the
+ * hidden ones wait under the lanes, and both readings are worked out again
+ * for whoever is left.
  *
  * Two solvers with their letters can also be watched as both solves at once:
  * the first's letters filling in, the second's squares as the corner mark a
@@ -71,7 +84,7 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
  * that link carrying a clip of the grid filling in by who got there first,
  * and the solvers' names, so it reads the same to each of them. No letters.
  */
-export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, clip, cta, onForward, onClose }: FriendRaceDialogProps) {
+export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, clip, cta, onForward, friendable, onAddFriend, onClose }: FriendRaceDialogProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -161,6 +174,27 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
     }
   };
 
+  // "Add friend" on a lane: asked, then "Requested" (or back to the button when it failed).
+  const [asked, setAsked] = useState<Record<string, "busy" | "sent">>({});
+  const addFriend = async (solve: RaceSolve) => {
+    if (!onAddFriend || asked[solve.id]) return;
+    setAsked((prev) => ({ ...prev, [solve.id]: "busy" }));
+    const ok = await onAddFriend(solve).catch(() => false);
+    setAsked((prev) => {
+      const next = { ...prev };
+      if (ok) next[solve.id] = "sent";
+      else delete next[solve.id];
+      return next;
+    });
+    if (!ok) {
+      setToast(t("friends.errorGeneric"));
+      setTimeout(() => setToast(null), 2200);
+    }
+  };
+  // With three or more, a lane's name shows or hides its solver.
+  const pick = solves.length > 2;
+  const benched = solves.filter((s) => hidden.has(s.id));
+
   const order = runningOrder(lanes, ms, total);
   // Both solves on one board, for a head-to-head whose recordings carry their letters.
   const [both, setBoth] = useState(false);
@@ -236,26 +270,6 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
             </button>
           </div>
 
-          {solves.length > 2 && (
-            <div role="group" aria-label={t("friendRace.showing")} className="-mx-1 mt-3 flex flex-wrap gap-1.5 px-1">
-              {solves.map((s) => {
-                const on = !hidden.has(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => toggle(s.id)}
-                    className={`inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${on ? "border-line-strong bg-surface text-ink" : "border-line bg-surface-sunken text-muted line-through"}`}
-                  >
-                    <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: on ? s.color : "transparent", boxShadow: on ? undefined : "inset 0 0 0 1.5px currentColor" }} aria-hidden="true" />
-                    <span className="truncate">{s.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           {canShowBoth && (
             <div role="group" aria-label={t("friendRace.viewLabel")} className="mt-3 flex gap-1.5">
               {([false, true] as const).map((v) => (
@@ -285,9 +299,29 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   return (
                     <li key={solve.id} data-testid="race-lane">
                       {/* A fixed height: the finish check is taller than the row's text and grew the dialog as each solver finished. */}
-                      <div className="flex h-4 items-center gap-2 text-xs leading-4">
+                      <div className="flex h-6 items-center gap-2 text-xs leading-4">
                         {!alone && <span className="w-3 shrink-0 tabular-nums text-muted">{place + 1}</span>}
-                        <span className="min-w-0 flex-1 truncate font-semibold">{solve.name}</span>
+                        {pick ? (
+                          <button type="button" aria-pressed="true" onClick={() => toggle(solve.id)} title={t("friendRace.hide", { name: solve.name })} className={`${NAME_CHIP} border-line bg-surface text-ink shadow-raised active:shadow-none`}>
+                            <span className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: solve.color }} aria-hidden="true" />
+                            <span className="truncate">{solve.name}</span>
+                          </button>
+                        ) : (
+                          <span className="min-w-0 truncate font-semibold">{solve.name}</span>
+                        )}
+                        {friendable?.has(solve.id) &&
+                          (asked[solve.id] === "sent" ? (
+                            <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2 font-semibold text-brand-700">
+                              <Check className="size-3" aria-hidden="true" />
+                              {t("friends.requested")}
+                            </span>
+                          ) : (
+                            <button type="button" onClick={() => void addFriend(solve)} disabled={asked[solve.id] === "busy"} aria-label={t("friendRace.addFriend", { name: solve.name })} data-testid="race-add-friend" className={`${NAME_CHIP} shrink-0 border-brand-200 bg-surface text-brand-700 shadow-raised active:shadow-none disabled:opacity-60`}>
+                              <UserPlus className="size-3" aria-hidden="true" />
+                              {t("friends.addFriend")}
+                            </button>
+                          ))}
+                        <span className="flex-1" />
                         {/* Squares this solver was first to, so far: the grid's count, on the solver's own row. */}
                         {!alone && (
                           <span data-testid="race-standing" title={t("friendRace.standingsLabel")} className="inline-flex items-center gap-1 tabular-nums text-muted">
@@ -319,6 +353,17 @@ export function FriendRaceDialog({ puzzle, solves, letters, shareRef: givenRef, 
                   );
                 })}
               </ol>
+              {/* Solvers left out of the race: a tap on a name brings them back. */}
+              {benched.length > 0 && (
+                <div role="group" aria-label={t("friendRace.showing")} className="mt-3 flex flex-wrap gap-x-1.5 gap-y-2.5">
+                  {benched.map((s) => (
+                    <button key={s.id} type="button" aria-pressed="false" onClick={() => toggle(s.id)} className={`${NAME_CHIP} max-w-full border-line bg-surface-sunken text-muted line-through`}>
+                      <span className="size-2 shrink-0 rounded-[2px]" style={{ boxShadow: "inset 0 0 0 1.5px currentColor" }} aria-hidden="true" />
+                      <span className="truncate">{s.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="min-w-0" aria-label={t(showBoth ? "friendRace.viewBoth" : "friendRace.firstTitle")}>

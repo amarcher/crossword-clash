@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
+import { useFriends } from "../../contexts/FriendsContext";
 import { useBestTimes, useSolveHistory } from "../../hooks/useSolveHistory";
 import { useRaceName } from "../../hooks/useRaceName";
 import type { RaceSolve } from "../../lib/friendRace";
@@ -75,11 +76,15 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
       }
       const mine = userId ? await loadViewerRace(userId, puzzleKey, best, ownName, locked).catch(() => null) : null;
       if (!alive) return;
-      if (mine) {
+      // The viewer's own race stands in only when it has everyone the link names: a
+      // sender whose friends the viewer does not all know is shown their race, as sent.
+      const named = names?.length === clip.colors.length;
+      const have = new Set(mine?.solves.map((s) => s.name.toLowerCase()));
+      const covers = !named || (names as readonly string[]).every((n) => have.has(n.toLowerCase()));
+      if (mine && covers) {
         setShown({ solves: mine.solves, letters: mine.letters, clip: false });
       } else {
         // The clip as lanes: each solver's squares are the ones they were first to, on the clip's one clock.
-        const named = names?.length === clip.colors.length;
         const seconds = Math.max(1, clip.seconds, Math.ceil(Math.max(...clip.claims.map((c) => c.ms)) / 1000));
         const solves = clip.colors.map((c, i): RaceSolve => ({
           id: `solver-${i}`,
@@ -90,7 +95,7 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
         }));
         setShown({ solves, letters: false, clip: true });
       }
-      track("shared_race_opened", { view: mine ? "race" : "clip", racers: mine ? mine.solves.length : clip.colors.length });
+      track("shared_race_opened", { view: mine && covers ? "race" : "clip", racers: mine && covers ? mine.solves.length : clip.colors.length });
     })();
     return () => {
       alive = false;
@@ -98,10 +103,28 @@ export function SharedRace({ puzzle, puzzleKey, shareId, names, shareRef, onSolv
     // eslint-disable-next-line react-hooks/exhaustive-deps -- opened once per link and viewer; `best`, the names, `t` and `onClose` are read when it opens
   }, [loading, userId, shareId, puzzleKey, puzzle.width, puzzle.height]);
 
+  // The link's solvers the viewer could befriend: named by username in the link, and not
+  // the viewer, a friend, or someone already asked. Only for an account that can ask.
+  const friends = useFriends();
+  const known = new Set([ownName, ...friends.friendships.friends.map((f) => f.username), ...friends.friendships.outgoing.map((f) => f.username)].map((n) => n.toLowerCase()));
+  const friendable =
+    shown?.clip && friends.active && friends.ready
+      ? new Set(shown.solves.filter((s) => /^[A-Za-z0-9_]{3,20}$/.test(s.name) && !known.has(s.name.toLowerCase())).map((s) => s.id))
+      : undefined;
+  const addFriend = async (solve: RaceSolve) => {
+    try {
+      const outcome = await friends.request(solve.name);
+      track("friend_request_sent", { method: "shared_race", outcome });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   if (!shown) return null;
   return (
     <Suspense fallback={null}>
-      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} cta={(shown.clip || locked) && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
+      <FriendRaceDialog puzzle={puzzle} solves={shown.solves} letters={shown.letters} clip={shown.clip} shareRef={shareRef} friendable={friendable?.size ? friendable : undefined} onAddFriend={addFriend} cta={(shown.clip || locked) && onSolve && unsolved ? { label: t("challenge.solveYourself"), onClick: onSolve } : undefined} onClose={onClose} />
     </Suspense>
   );
 }

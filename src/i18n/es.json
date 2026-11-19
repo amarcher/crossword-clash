@@ -1237,7 +1237,9 @@
   "friendRace": {
     "title": "La carrera",
     "subtitle": "Repetición conjunta",
-    "showing": "Quién está en la carrera",
+    "showing": "Fuera de la carrera",
+    "hide": "Ocultar a {{name}}",
+    "addFriend": "Añadir a {{name}} como amigo",
     "lanesTitle": "La recta final",
     "firstTitle": "Quién llegó primero",
     "legendFirst": "{{name}} llegó primero a la casilla",

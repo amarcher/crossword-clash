@@ -86,6 +86,40 @@ describe("FriendRaceDialog", () => {
     expect(lanes()).toEqual(["1YouSquares each solver was first to: 40:20Y"]);
   });
 
+  it("a lane's name is the chip that hides its solver; hidden solvers wait under the lanes and come back on a tap", () => {
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters onClose={() => {}} />);
+    // No separate row of names: the only "ann" button is the one on ann's lane.
+    const chip = screen.getByRole("button", { name: "ann" });
+    expect(chip.closest("[data-testid=race-lane]")).toBeTruthy();
+    expect(chip.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("group", { name: "Left out of the race" })).toBeNull();
+    fireEvent.click(chip);
+    const benched = screen.getByRole("group", { name: "Left out of the race" });
+    expect(benched.textContent).toBe("ann");
+    expect(screen.getByRole("button", { name: "ann" }).getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "ann" }));
+    expect(screen.getAllByTestId("race-lane")).toHaveLength(3);
+    cleanup();
+    // Two solvers are the whole race: their names are not controls.
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann]} letters onClose={() => {}} />);
+    expect(screen.queryByRole("button", { name: "ann" })).toBeNull();
+  });
+
+  it("offers Add friend on the lanes it is told to, and says Requested once asked", async () => {
+    const onAddFriend = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true);
+    render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters={false} clip friendable={new Set(["ann"])} onAddFriend={onAddFriend} onClose={() => {}} />);
+    expect(screen.getAllByTestId("race-add-friend")).toHaveLength(1);
+    const add = screen.getByRole("button", { name: "Add ann as a friend" });
+    expect(add.closest("[data-testid=race-lane]")?.textContent).toContain("ann");
+    // A request that fails says so and leaves the button.
+    await act(async () => fireEvent.click(add));
+    expect(screen.getByRole("status").textContent).toBe("That didn't go through. Please try again.");
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Add ann as a friend" })));
+    expect(onAddFriend).toHaveBeenLastCalledWith(ann);
+    expect(screen.queryByTestId("race-add-friend")).toBeNull();
+    expect(screen.getAllByTestId("race-lane")[1].textContent).toContain("Requested");
+  });
+
   it("shares the puzzle's link carrying a clip of whoever is showing; no Share without a link to send", async () => {
     render(<FriendRaceDialog puzzle={puzzle} solves={[you, ann, bo]} letters shareRef={{ day: "2026-11-16", slot: "mini" }} onClose={() => {}} />);
     await act(async () => {
