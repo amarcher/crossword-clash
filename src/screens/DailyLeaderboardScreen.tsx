@@ -410,15 +410,6 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const guestWatchable = useMemo(() => new Set((entries ?? []).map((e) => e.userId).filter((id) => id !== user?.id)), [entries, user]);
   const openAccount = account?.openAccount;
   const signInToWatch = useCallback(() => openAccount?.({ placement: "board-watch" }), [openAccount]);
-  const raceRow = useCallback(
-    (userId: string) => {
-      if (!puzzleKey || !account) return;
-      saveRaceIntent({ key: puzzleKey, userIds: [userId] });
-      track("leaderboard_race", { slot, past });
-      navigate(dailyPath(day, slot));
-    },
-    [puzzleKey, account, slot, past, navigate, day],
-  );
 
   // While the server answers, the viewer's posted finish is already a row
   // (rank unknown yet, drawn as "–").
@@ -481,6 +472,31 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     game.setSoloTheme(daily.theme);
     navigate("/solo/play");
   }, [game, daily, slot, navigate]);
+  // Race on a row opens the puzzle itself, on its start card with that player
+  // ticked (Andrew, 2026-11-19: the daily's page in between was a detour, and
+  // its Leaderboard button led straight back here).
+  const [racing, setRacing] = useState(false);
+  const raceRow = useCallback(
+    async (userId: string) => {
+      if (!puzzleKey || !account || racing) return;
+      setRacing(true);
+      const found = daily ?? (await fetchDailyForDay(day, slot));
+      if (!found) {
+        setRacing(false);
+        navigate(dailyPath(day, slot));
+        return;
+      }
+      saveRaceIntent({ key: puzzleKey, userIds: [userId] });
+      track("leaderboard_race", { slot, past });
+      if ((await game.handleSoloPuzzleLoaded(found.puzzle)) === false) {
+        setRacing(false);
+        return;
+      }
+      game.setSoloTheme(found.theme);
+      navigate("/solo/play");
+    },
+    [puzzleKey, account, racing, daily, day, slot, past, game, navigate],
+  );
 
   // Race before the viewer has solved the puzzle; Watch after, here on the
   // board (Andrew, 2026-11-16: see how anyone on it solved). The viewer's own
