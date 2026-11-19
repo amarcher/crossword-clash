@@ -310,7 +310,6 @@ export function BonusLeaderboardScreen() {
         </div>
         {past && (
           <p className="-mt-1 text-center text-xs text-muted">
-            {t("leaderboard.pastNote")}{" "}
             <button type="button" onClick={() => goToDay(today)} className="font-semibold text-brand-700 underline-offset-2 hover:underline">
               {t("leaderboard.backToToday")}
             </button>

@@ -422,7 +422,7 @@ export function AccountScreen() {
                   {recent.map((row) => (
                     <li key={`${row.puzzle_key}:${row.completed_day}`} className="flex items-center gap-3.5 px-4 py-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold leading-snug text-ink">{row.title}</p>
+                        <p className="truncate font-semibold leading-snug text-ink">{row.title?.trim() || t("account.untitled")}</p>
                         <p className="mt-0.5 flex items-center gap-2 text-sm leading-snug text-muted">
                           <span>{solveDate(row.completed_day, locale, today)}</span>
                           <SourceChip row={row} />
