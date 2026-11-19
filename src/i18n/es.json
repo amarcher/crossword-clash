@@ -953,7 +953,7 @@
     "manageWithRequests_one": "{{count}} solicitud",
     "manageWithRequests_other": "{{count}} solicitudes",
     "challenge": "Retar",
-    "watchSolve": "Ver solución",
+    "watchSolve": "Ver",
     "watchSolveOf": "Ver la solución de @{{name}}",
     "raceTheirSolve": "Competir contra su solución",
     "watchFailed": "No se pudo cargar esa solución. Toca para reintentar.",

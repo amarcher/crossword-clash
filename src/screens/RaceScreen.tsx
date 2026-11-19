@@ -129,7 +129,7 @@ export function RaceScreen() {
               <PersonList className="mt-3">
                 {friends.friendships.friends.map((f) => (
                   <PersonRow key={f.userId} username={f.username}>
-                    {/* "Watch solve" says they solved it; the chip stands alone only when no solve was kept to watch. */}
+                    {/* "Watch" (the leaderboard rows' word) says they solved it; the chip stands alone only when no solve was kept to watch. */}
                     {game.urlPuzzle && puzzleKey && recorded.has(f.userId) ? (
                       <WatchSolveButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} friendId={f.userId} friendName={f.username} />
                     ) : solveChip(friendSolves[f.userId]) ? (

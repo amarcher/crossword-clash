@@ -953,7 +953,7 @@
     "manageWithRequests_one": "{{count}} request",
     "manageWithRequests_other": "{{count}} requests",
     "challenge": "Challenge",
-    "watchSolve": "Watch solve",
+    "watchSolve": "Watch",
     "watchSolveOf": "Watch @{{name}}'s solve",
     "raceTheirSolve": "Race their solve",
     "watchFailed": "That solve couldn't be loaded. Tap to try again.",
