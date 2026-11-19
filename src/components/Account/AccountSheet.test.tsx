@@ -7,9 +7,12 @@ import { AccountSheet } from "./AccountSheet";
 import type { AccountContextValue } from "../../contexts/AccountContext";
 
 const deleteAccount = vi.fn();
+const signInWith = vi.fn();
 vi.mock("../../lib/account", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../lib/account")>()),
   deleteAccount: () => deleteAccount(),
+  signInWith: (...args: unknown[]) => signInWith(...args),
+  fetchEnabledProviders: async () => ({ google: true, apple: true, facebook: false }),
 }));
 const navigate = vi.fn();
 vi.mock("../../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
@@ -57,6 +60,17 @@ afterEach(() => {
 });
 
 describe("AccountSheet delete", () => {
+  it("says one plain line when a provider refuses, never the provider's own text", async () => {
+    signInWith.mockRejectedValue(new Error("Google Sign-In failed: [16] Account reauth failed. See Logcat tag GoogleProvider"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    renderSheet("account", { user: null, profile: null });
+    await waitFor(() => expect(screen.getByRole("button", { name: /Google/ })).toHaveProperty("disabled", false));
+    fireEvent.click(screen.getByRole("button", { name: /Google/ }));
+    expect(await screen.findByText("Couldn't sign in. Try again.")).toBeTruthy();
+    expect(screen.queryByText(/Logcat/)).toBeNull();
+    warn.mockRestore();
+  });
+
   it("asks before deleting, and Cancel closes the sheet", () => {
     renderSheet();
     expect(screen.getByRole("heading", { name: "Delete your account?" })).toBeTruthy();
