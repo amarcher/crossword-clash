@@ -17,6 +17,14 @@ vi.mock("../contexts/AccountContext", () => ({ useAccountContext: () => account,
 const friends = vi.hoisted(() => ({ value: {} as FriendsContextValue }));
 vi.mock("../contexts/FriendsContext", () => ({ useFriends: () => friends.value }));
 
+const solved = vi.hoisted(() => ({ solves: {} as Record<string, { mode: string; day: string }>, recorded: [] as { userId: string; username: string; seconds: number; friend: boolean }[] }));
+vi.mock("../hooks/useFriendSolves", () => ({ useFriendSolves: () => solved.solves }));
+vi.mock("../hooks/useRace", () => ({ useRaceCandidates: () => solved.recorded }));
+const best = vi.hoisted(() => ({ times: {} as Record<string, number> }));
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => best.times }));
+vi.mock("../components/Friends/SendTimeButton", () => ({ SendTimeButton: ({ friendName, seconds }: { friendName: string; seconds: number }) => <button>Send time {friendName} {seconds}</button> }));
+vi.mock("../components/Race/WatchSolveButton", () => ({ WatchSolveButton: ({ friendName }: { friendName: string }) => <button>Watch {friendName}</button> }));
+
 const { RaceScreen } = await import("./RaceScreen");
 
 function friendsValue(over: Partial<FriendsContextValue> = {}): FriendsContextValue {
@@ -134,6 +142,32 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     expect(sessionStorage.getItem("crossword-clash:pending-challenge")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "change" }));
     expect(game.setUrlPuzzle).toHaveBeenCalledWith(null);
+  });
+
+  it("a friend who already solved the chip's puzzle is offered as a solve to watch, not a live challenge", () => {
+    game.urlPuzzle = { title: "Shapes and shadows", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
+    const bo = { userId: "b", username: "bo", since: "2026-10-01T00:00:00Z" };
+    const cy = { userId: "c", username: "cy", since: "2026-10-01T00:00:00Z" };
+    friends.value = friendsValue({ friendships: { friends: [alicia, bo, cy], incoming: [], outgoing: [] } });
+    // alicia solved it and her solve was kept; bo solved it with nothing kept; cy has not.
+    solved.solves = { a: { mode: "solo", day: "2026-11-18" }, b: { mode: "solo", day: "2026-11-18" } };
+    solved.recorded = [{ userId: "a", username: "alicia", seconds: 60, friend: true }];
+    renderScreen();
+    expect(screen.getByRole("button", { name: "Watch alicia" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Challenge" })).toHaveLength(1);
+    // The chip stands alone only where there is no solve to watch.
+    expect(screen.getAllByText("Solved")).toHaveLength(1);
+    // Once the viewer has solved it too, the friend who has not is sent the viewer's time instead of a live room.
+    cleanup();
+    game.urlPuzzle = { ...game.urlPuzzle, ref: { day: "2026-11-18", slot: "mini" } } as typeof game.urlPuzzle;
+    best.times = new Proxy({}, { get: () => 62 });
+    renderScreen();
+    expect(screen.queryByRole("button", { name: "Challenge" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Send time cy 62" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Watch alicia" })).toBeTruthy();
+    best.times = {};
+    solved.solves = {};
+    solved.recorded = [];
   });
 
   it("puts invites from friends first; Join marks the invite seen and lands on the join screen with the code", () => {

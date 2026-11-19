@@ -6,3 +6,4 @@ export { Avatar, PersonList, PersonRow, personColor } from "./PersonRow";
 export { SolveChip } from "./SolveChip";
 export { PendingRequests } from "./PendingRequests";
 export { RaceFriendSuggestions } from "./RaceFriendSuggestions";
+export { SendTimeButton } from "./SendTimeButton";

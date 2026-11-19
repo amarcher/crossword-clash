@@ -4,16 +4,19 @@ import { Share2, Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
-import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
+import { CodeJoinCard, PersonList, PersonRow, SendTimeButton, SolveChip } from "../components/Friends";
+import { useBestTimes } from "../hooks/useSolveHistory";
 import { useShareFriendLink } from "../components/Friends/InviteFriendCard";
 import { useFriendSolves } from "../hooks/useFriendSolves";
+import { useRaceCandidates } from "../hooks/useRace";
+import { WatchSolveButton } from "../components/Race/WatchSolveButton";
 import { puzzleIdentity } from "../lib/soloStats";
 import { todayKey } from "../lib/dailyLeaderboard";
 import { formatShareDay } from "../lib/shareBlock";
 import { useAccountContext } from "../contexts/AccountContext";
 import { useGame } from "../contexts/GameContext";
 import { useFriends } from "../contexts/FriendsContext";
-import { inviteJoinPath, raceBlocks, setPendingChallenge, type RoomInvite } from "../lib/friends";
+import { inviteJoinPath, raceBlocks, setPendingChallenge, solveChip, type RoomInvite } from "../lib/friends";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { prefetchOnIntent } from "../routeModules";
 import { track } from "../lib/analytics";
@@ -42,7 +45,16 @@ export function RaceScreen() {
 
   // Start a room: the chip's puzzle goes to the host flow; otherwise the picker chooses one.
   // The daily chip's puzzle: friends who already finished it wear a chip on their Challenge row (spec §3.8).
-  const friendSolves = useFriendSolves(game.urlPuzzle ? puzzleIdentity(game.urlPuzzle) : null);
+  const puzzleKey = game.urlPuzzle ? puzzleIdentity(game.urlPuzzle) : null;
+  const friendSolves = useFriendSolves(puzzleKey);
+  // A friend who has finished it is not someone to bring into a live room: their row
+  // offers their recorded solve instead (Watch), when one was kept.
+  const candidates = useRaceCandidates(puzzleKey, !!puzzleKey);
+  // And a puzzle the viewer has finished is no live race either: a friend who has not
+  // solved it is sent the viewer's time to race, as from the finish screen.
+  const bestTimes = useBestTimes();
+  const ownSeconds = puzzleKey ? bestTimes[puzzleKey] : undefined;
+  const recorded = useMemo(() => new Set(candidates.filter((c) => c.friend).map((c) => c.userId)), [candidates]);
 
   const startRoom = useCallback(
     (friendId: string | null) => {
@@ -122,11 +134,19 @@ export function RaceScreen() {
               <PersonList className="mt-3">
                 {friends.friendships.friends.map((f) => (
                   <PersonRow key={f.userId} username={f.username}>
-                    <SolveChip solve={friendSolves[f.userId]} />
-                    <Button size="sm" onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
-                      <Swords className="size-4" aria-hidden="true" />
-                      {t("race.challenge")}
-                    </Button>
+                    {/* "Watch" (the leaderboard rows' word) says they solved it; the chip stands alone only when no solve was kept to watch. */}
+                    {game.urlPuzzle && puzzleKey && recorded.has(f.userId) ? (
+                      <WatchSolveButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} friendId={f.userId} friendName={f.username} />
+                    ) : solveChip(friendSolves[f.userId]) ? (
+                      <SolveChip solve={friendSolves[f.userId]} />
+                    ) : game.urlPuzzle?.ref && puzzleKey && typeof ownSeconds === "number" ? (
+                      <SendTimeButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} linkRef={game.urlPuzzle.ref} seconds={ownSeconds} friendId={f.userId} friendName={f.username} />
+                    ) : (
+                      <Button size="sm" onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
+                        <Swords className="size-4" aria-hidden="true" />
+                        {t("race.challenge")}
+                      </Button>
+                    )}
                   </PersonRow>
                 ))}
               </PersonList>
