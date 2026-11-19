@@ -1,0 +1,11 @@
+This build (1.1.4, build 56) changes how a puzzle starts and how you share. Please check:
+
+1. Starting a puzzle: tap "Play" on a puzzle you haven't started. You should see the grid blurred behind a card that counts 3, 2, 1 and then starts the clock. "Start now" skips the count. "Go back" returns you with nothing started. Resuming a puzzle goes straight in.
+2. Sharing: every share now sends just a link, and the link's preview plays your solve. The finish screen shows that preview exactly as it will arrive: the clip with a line such as "Archer solved the Nov 18 Daily Mini in 1:02" under it. Try sharing a finish and a race into Messages and compare.
+3. "Challenge a friend" (was "Send to a friend") on the finish screen sends your time to a friend inside the app; they get a notification and can race your solve.
+4. Daily Plus sharing: finish the Daily Plus and share it, or send it to a friend. Someone without Plus should see your squares fill in (never letters) and get the Plus offer when they tap "Let me solve it".
+5. Daily Plus leaderboard: rows now have "Race" and "Watch", and there is a friends' race button.
+6. Leaderboards: switching between Mini, Midi, Large and Daily Plus should no longer flash a loading message, and the "Watch the race" button should not pop in late and push the page down.
+7. Moving between screens: screens should cross-fade instead of cutting.
+8. After a race replay, a finisher's time appearing should not make the card jump.
+9. Everything from build 54 still applies.
