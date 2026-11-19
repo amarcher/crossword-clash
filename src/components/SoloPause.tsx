@@ -23,13 +23,14 @@ export function SoloPause({ title, seconds, error, idle = false, onResume, onExi
         <h1 id="solo-pause-title" className="font-display text-3xl font-bold text-ink">{t("soloPause.paused")}</h1>
         <p className="mt-3 break-words text-lg font-semibold text-ink">{title}</p>
         <p data-testid="pause-clock" className="mt-1 text-lg tabular-nums text-ink-soft">{formatDuration(seconds)}</p>
-        <p className="mt-4 text-sm text-muted" role={error ? "alert" : undefined}>{t(error ? "soloPause.saveError" : "soloPause.saved")}</p>
+        {/* Only what the player could not have guessed: a failed save, or a pause they did not ask for. */}
+        {error && <p className="mt-4 text-sm text-muted" role="alert">{t("soloPause.saveError")}</p>}
         <div className="mt-7 grid gap-3">
           <Button size="lg" onClick={onResume}>{t("soloPause.resume")}</Button>
           {error ? <Button variant="secondary" size="lg" onClick={onRetry}>{t("soloPause.retry")}</Button>
             : <Button variant="secondary" size="lg" onClick={onExit}>{t("soloPause.exit")}</Button>}
         </div>
-        <p className="mt-5 text-xs text-muted">{t(idle ? "soloPause.idleHint" : "soloPause.clockHint")}</p>
+        {idle && <p className="mt-5 text-xs text-muted">{t("soloPause.idleHint")}</p>}
       </div>
     </div>
   );

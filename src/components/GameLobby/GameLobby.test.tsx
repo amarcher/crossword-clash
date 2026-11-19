@@ -98,7 +98,7 @@ describe("GameLobby", () => {
   });
 
   describe("how it works hint", () => {
-    it("shows the numbered hint for the host", () => {
+    it("tells the host where the code is entered, and nothing more", () => {
       render(
         <GameLobby
           shareCode="ABC123"
@@ -108,10 +108,9 @@ describe("GameLobby", () => {
           onCloseRoom={() => {}}
         />,
       );
-      expect(
-        screen.getByText("Friends scan the QR code or enter the code at crosswordclash.com."),
-      ).toBeDefined();
-      expect(screen.getByText("When everyone's in, press Start.")).toBeDefined();
+      expect(screen.getByText("Enter it at crosswordclash.com")).toBeDefined();
+      expect(screen.queryByText("When everyone's in, press Start.")).toBeNull();
+      expect(screen.queryByText("Share the code below to invite players")).toBeNull();
     });
 
     it("does not show the hint for non-host", () => {
@@ -125,7 +124,7 @@ describe("GameLobby", () => {
         />,
       );
       expect(
-        screen.queryByText("Friends scan the QR code or enter the code at crosswordclash.com."),
+        screen.queryByText("Enter it at crosswordclash.com"),
       ).toBeNull();
     });
   });

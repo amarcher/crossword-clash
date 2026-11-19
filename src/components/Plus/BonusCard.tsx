@@ -72,19 +72,19 @@ export function BonusCard() {
 
   return (
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
-      {/* The ribbon, as on the dailies: Plus is marked with the badge's seal, then the theme. */}
-      <div className={`flex min-h-8 flex-wrap items-center gap-x-2.5 border-b px-5 py-1.5 sm:px-6 ${solved ? "border-brand-200" : "border-line"}`}>
+      {/* As on the dailies: the label (Plus marked with the badge's seal), then the theme as a badge, no rule under it. */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
         <Eyebrow className="inline-flex shrink-0 items-center gap-1">
           {t("bonus.eyebrow")}
           <PlusBadge interactive={false} size="1.15em" />
         </Eyebrow>
         {card.theme && (
-          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={card.theme}>
+          <span data-theme className="max-w-full min-w-0 truncate rounded-full bg-gold-50 px-2.5 py-0.5 text-xs leading-5 font-semibold text-gold-700 ring-1 ring-gold-100" title={card.theme}>
             {card.theme}
           </span>
         )}
       </div>
-      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
+      <div className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {solved ? (
