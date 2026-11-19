@@ -49,7 +49,7 @@ describe("PuzzleReady", () => {
   afterEach(cleanup);
 
   it("shows the NYT return-loop hook only for bookmarklet imports", () => {
-    const base = { onPlaySolo: vi.fn(), onHostGame: vi.fn(), onHostOnTV: vi.fn(), showHostOptions: false };
+    const base = { onPlaySolo: vi.fn(), onHostOnTV: vi.fn(), showHostOptions: false };
     const { queryByText, rerender, getByText } = render(<PuzzleReady puzzle={makePuzzle()} {...base} />);
     expect(getByText("Puzzle imported")).toBeTruthy();
     expect(queryByText(/click the bookmark again/)).toBeNull();
@@ -67,7 +67,6 @@ describe("PuzzleReady", () => {
       <PuzzleReady
         puzzle={makePuzzle()}
         onPlaySolo={() => {}}
-        onHostGame={() => {}}
         onHostOnTV={() => {}}
         showHostOptions
       />,
@@ -82,7 +81,6 @@ describe("PuzzleReady", () => {
       <PuzzleReady
         puzzle={makePuzzle()}
         onPlaySolo={() => {}}
-        onHostGame={() => {}}
         onHostOnTV={() => {}}
         showHostOptions
       />,
@@ -93,7 +91,7 @@ describe("PuzzleReady", () => {
   });
 
   it("links a daily to its board, that day's for a past one; an import has no board", () => {
-    const props = { onPlaySolo: () => {}, onHostGame: () => {}, onHostOnTV: () => {}, showHostOptions: true };
+    const props = { onPlaySolo: () => {}, onHostOnTV: () => {}, showHostOptions: true };
     const { rerender } = render(<PuzzleReady {...props} puzzle={{ ...makePuzzle(), ref: { day: "2020-01-01", slot: "midi" } }} />);
     expect(screen.getByRole("link", { name: "Leaderboard" }).getAttribute("href")).toBe("/daily/leaderboard/midi?day=2020-01-01");
     rerender(<PuzzleReady {...props} puzzle={makePuzzle()} />);
@@ -106,7 +104,6 @@ describe("PuzzleReady", () => {
       <PuzzleReady
         puzzle={makePuzzle()}
         onPlaySolo={onPlaySolo}
-        onHostGame={() => {}}
         onHostOnTV={() => {}}
         showHostOptions
       />,
@@ -116,29 +113,12 @@ describe("PuzzleReady", () => {
     expect(onPlaySolo).toHaveBeenCalledOnce();
   });
 
-  it("calls onHostGame when Start a room is clicked", () => {
-    const onHostGame = vi.fn();
-    render(
-      <PuzzleReady
-        puzzle={makePuzzle()}
-        onPlaySolo={() => {}}
-        onHostGame={onHostGame}
-        onHostOnTV={() => {}}
-        showHostOptions
-      />,
-    );
-
-    fireEvent.click(screen.getByText("Start a room"));
-    expect(onHostGame).toHaveBeenCalledOnce();
-  });
-
   it("calls onHostOnTV when Start a room on a TV is clicked", () => {
     const onHostOnTV = vi.fn();
     render(
       <PuzzleReady
         puzzle={makePuzzle()}
         onPlaySolo={() => {}}
-        onHostGame={() => {}}
         onHostOnTV={onHostOnTV}
         showHostOptions
       />,
@@ -153,7 +133,6 @@ describe("PuzzleReady", () => {
       <PuzzleReady
         puzzle={makePuzzle()}
         onPlaySolo={() => {}}
-        onHostGame={() => {}}
         onHostOnTV={() => {}}
         showHostOptions={false}
       />,

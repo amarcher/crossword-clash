@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { isTvIntent, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
-import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine, Swords } from "lucide-react";
+import { Check, EyeOff, Flag, Link2, MoreHorizontal, PencilLine } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { ReportDialog } from "../components/ReportDialog";
 import { Button, Card, MiniGridThumb, PlusBadgeFor, TransitionLink } from "../components/ui";
@@ -37,7 +37,7 @@ export function CommunityPuzzleScreen() {
   const { t, i18n } = useTranslation();
   const navigate = useTransitionNavigate();
   const { shortId = "" } = useParams<{ shortId: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, setUrlChallenge } = useGame();
   const replaceRoute = useNavigate();
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -166,7 +166,6 @@ export function CommunityPuzzleScreen() {
   const date = row ? new Date(row.published_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" }) : "";
   // Reached from the TV's chooser: the one action hands the puzzle to the TV (tvHandoff.ts).
   const tv = isTvIntent(params);
-  const canRace = (Boolean(user) || authLoading) && !tv;
 
   let body: React.ReactNode;
   if (state.kind === "loading") {
@@ -238,12 +237,6 @@ export function CommunityPuzzleScreen() {
           <Button size="lg" onClick={() => void load(tv ? "tv" : "play")} disabled={!puzzle || busy !== null} className="sm:flex-1" aria-busy={busy === "play" || busy === "tv" || undefined}>
             {busy === "play" || busy === "tv" ? t("community.loadingPuzzle") : tv ? t("importer.hostOnTv") : typeof best === "number" ? t("community.playAgain") : progress ? t("community.resume") : t("community.playSolo")}
           </Button>
-          {canRace && (
-            <Button variant="secondary" size="lg" onClick={() => void load("race")} disabled={!puzzle || busy !== null || authLoading} className="sm:flex-1">
-              <Swords className="size-4" aria-hidden="true" />
-              {t("community.raceFriends")}
-            </Button>
-          )}
           <div ref={rootRef} className="relative sm:ml-auto">
             <button
               ref={menuButtonRef}

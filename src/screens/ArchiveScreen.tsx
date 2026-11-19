@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
-import { Check, ChevronLeft, ChevronRight, Clock, Flame, Lock, Play, Swords, Trophy } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Flame, Lock, Play, Trophy } from "lucide-react";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
 import { PageShell } from "../components/PageShell";
 import { Button, Eyebrow, TransitionLink } from "../components/ui";
 import { PlusNudge } from "../components/Plus/PlusNudge";
 import { BonusArchive } from "../components/Plus/BonusArchive";
-import { useAuth } from "../contexts/AuthContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useGame, loadSavedSession } from "../contexts/GameContext";
 import { useBestTimes, useRepairOffer } from "../hooks/useSolveHistory";
@@ -125,8 +124,7 @@ export function ArchiveScreen() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
   const navigate = useTransitionNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme } = useGame();
   const today = dayKey(new Date());
   // Anonymous visitors play the last ANONYMOUS_ARCHIVE_DAYS days, free accounts
   // FREE_ACCOUNT_ARCHIVE_DAYS once Plus is live, Plus everything (archive.ts,
@@ -243,17 +241,6 @@ export function ArchiveScreen() {
     },
     [load, handleSoloPuzzleLoaded, setSoloTheme, navigate],
   );
-  const race = useCallback(
-    async (item: ArchiveItem) => {
-      const daily = await load(item);
-      if (!daily) return;
-      track("mode_selected", { mode: "archive-race", slot: item.slot });
-      // The daily race path: HostNameScreen consumes urlPuzzle and creates the room.
-      setUrlPuzzle(daily.puzzle);
-      navigate("/host-game/name");
-    },
-    [load, setUrlPuzzle, navigate],
-  );
   // Reached from the TV's chooser (`?intent=tv`): the one action hands the
   // puzzle back to the TV layout as the deep link it reads (tvHandoff.ts).
   const [params] = useSearchParams();
@@ -268,7 +255,6 @@ export function ArchiveScreen() {
     [load, navigate],
   );
 
-  const canRace = Boolean(user) || authLoading;
   const dayItems = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
   const navButton =
     "grid size-11 shrink-0 place-items-center rounded-xl text-ink-soft hover:bg-surface-sunken active:bg-line disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-brand-500";
@@ -557,19 +543,6 @@ export function ArchiveScreen() {
                                     ? t("archive.resume")
                                     : t("archive.play")}
                             </Button>
-                            {canRace && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => void race(it)}
-                                disabled={busy !== null || authLoading}
-                                aria-label={t("archive.raceLabel", { title: it.title })}
-                                {...prefetchOnIntent("/host-game/name")}
-                              >
-                                <Swords className="size-4" aria-hidden="true" />
-                                {t("archive.race")}
-                              </Button>
-                            )}
                           </div>
                           )}
                         </li>
