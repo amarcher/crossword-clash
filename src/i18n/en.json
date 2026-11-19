@@ -424,6 +424,9 @@
     "streakDays": "{{count}}-day streak"
   },
   "challenge": {
+    "headingUnsigned": "You've been challenged!",
+    "targetTimeUnsigned": "Solved in {{time}}",
+    "raceButtonUnsigned": "Race this solve",
     "raceReplyNotice": "When you finish, {{name}} sees your time and solve.",
     "shareBack": "Send {{name}} your solve",
     "shareBackCopied": "Link copied: paste it to {{name}}",

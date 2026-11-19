@@ -54,14 +54,15 @@ afterEach(() => {
 });
 
 describe("ChallengeScreen", () => {
-  it("offers to race the sender's solve by default when the link carries their replay, saying they'll see the result", async () => {
+  it("offers to race the sender's solve by default when the link carries their replay", async () => {
     game.urlChallenge = { name: "Andrew", seconds: 612, replay: "E0Gqr8Iw09i", ref: { day: "2026-11-12", slot: "large" } };
     share.fetchReplayShare.mockResolvedValueOnce("CODE");
     share.ghostFromReplay.mockReturnValueOnce({ ...ghost, link: { shareId: "E0Gqr8Iw09i", ref: { day: "2026-11-12", slot: "large" } } });
     renderScreen();
     const race = await screen.findByRole("button", { name: "Race Andrew's solve" });
     expect(share.ghostFromReplay).toHaveBeenCalledWith("CODE", "E0Gqr8Iw09i", "Andrew", { day: "2026-11-12", slot: "large" });
-    expect(screen.getByText(/When you finish, Andrew sees your time and solve/)).toBeTruthy();
+    // The button is the whole offer: no paragraph under it (Andrew, 2026-11-19).
+    expect(screen.queryByText(/When you finish/)).toBeNull();
     expect(screen.getByRole("button", { name: "Just solve it" })).toBeTruthy();
     fireEvent.click(race);
     await screen.findByText("playing");
@@ -97,7 +98,8 @@ describe("ChallengeScreen", () => {
     expect(share.ghostFromReplay).toHaveBeenCalledWith("CODE", "E0Gqr8Iw09i", "Andrew", { bonusDay: "2026-11-18" });
     expect(screen.getByTestId("race-puzzle").textContent).toContain("Daily Plus · Nov 18");
     expect([...dialog.querySelectorAll("span.aspect-square")].map((c) => c.textContent).join("")).toBe("");
-    expect(screen.getByText(/When you finish, Andrew sees your time and solve/)).toBeTruthy();
+    // The button is the whole offer: no paragraph under it (Andrew, 2026-11-19).
+    expect(screen.queryByText(/When you finish/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Let me solve it" }));
     await screen.findByText("playing");
     expect(raceSaved()).toEqual({ ghosts: [linked] });

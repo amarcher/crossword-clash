@@ -152,6 +152,8 @@ export function ChallengeScreen() {
   if (!puzzle || !challenge) {
     return <Navigate to="/" replace />;
   }
+  // A link from a player with no account carries no name: the page then speaks of the solve, not of "A friend".
+  const named = challenge.name !== t("challenge.unsignedName");
 
   return (
     <FlowPage
@@ -160,8 +162,8 @@ export function ChallengeScreen() {
           <Flag className="size-5" aria-hidden="true" />
         </span>
       }
-      title={t("challenge.heading", { name: challenge.name })}
-      subtitle={t("challenge.subtitle", { title: puzzle.title })}
+      title={named ? t("challenge.heading", { name: challenge.name }) : t("challenge.headingUnsigned")}
+      subtitle={puzzle.title}
       onBack={() => navigate("/menu")}
       backLabel={t("completion.backToMenu")}
     >
@@ -170,7 +172,9 @@ export function ChallengeScreen() {
           <MiniGridThumb puzzle={puzzle} className="w-20 shrink-0" />
           <p className="flex items-center gap-2 text-[15px] font-semibold text-ink">
             <Timer className="size-5 shrink-0 text-gold-500" aria-hidden="true" />
-            {t("challenge.targetTime", { name: challenge.name, time: formatDuration(challenge.seconds) })}
+            {named
+              ? t("challenge.targetTime", { name: challenge.name, time: formatDuration(challenge.seconds) })
+              : t("challenge.targetTimeUnsigned", { time: formatDuration(challenge.seconds) })}
           </p>
         </div>
         {ghost === "loading" ? (
@@ -182,11 +186,8 @@ export function ChallengeScreen() {
           <div className="grid gap-2">
             <Button size="lg" block onClick={() => void handleRace()} autoFocus>
               <Flag className="size-4" aria-hidden="true" />
-              {t("challenge.raceButton", { name: challenge.name })}
+              {named ? t("challenge.raceButton", { name: challenge.name }) : t("challenge.raceButtonUnsigned")}
             </Button>
-            <p className="text-center text-sm text-muted">
-              {t("challenge.raceHint", { name: challenge.name })} {ghost.link ? t("challenge.raceReplyNotice", { name: challenge.name }) : null}
-            </p>
             <Button variant="ghost" block onClick={() => void handleAccept()}>
               {t("challenge.justSolve")}
             </Button>
