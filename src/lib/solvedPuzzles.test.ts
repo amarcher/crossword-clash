@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Puzzle } from "../types/puzzle";
 
 const history = vi.hoisted(() => ({ state: null as unknown }));
-vi.mock("./solveHistory", () => ({ getSolveHistoryState: () => history.state }));
+vi.mock("./solveHistory", async (original) => ({ ...(await original<typeof import("./solveHistory")>()), getSolveHistoryState: () => history.state }));
 
-import { solutionCells, solvedSeconds } from "./solvedPuzzles";
+import { playedBefore, solutionCells, solvedSeconds } from "./solvedPuzzles";
+import { recordGroupFinish } from "./groupFinish";
 import { recordSoloCompletion } from "./soloStats";
 
 // The device's stats as a real finish leaves them.
@@ -16,6 +17,28 @@ const local = (bestTimes: Record<string, number>) => {
 beforeEach(() => {
   localStorage.clear();
   history.state = null;
+});
+
+describe("playedBefore", () => {
+  it("is false for an untouched puzzle and true after a timed solve on this device", () => {
+    expect(playedBefore("k")).toBe(false);
+    local({ k: 84 });
+    expect(playedBefore("k")).toBe(true);
+  });
+
+  it("counts a room on a shared grid: on the device that played, and from the account's history elsewhere", () => {
+    recordGroupFinish("k", 316);
+    expect(playedBefore("k")).toBe(true);
+    localStorage.clear();
+    history.state = { userId: "u", status: "ready", rows: [{ puzzle_key: "j", mode: "coop", seconds: null }], summary: { bestTimes: {} } };
+    expect(playedBefore("j")).toBe(true);
+    expect(playedBefore("k")).toBe(false);
+  });
+
+  it("ignores a streak-day marker written by an import", () => {
+    history.state = { userId: "u", status: "ready", rows: [{ puzzle_key: "k", mode: "import", seconds: null }], summary: { bestTimes: {} } };
+    expect(playedBefore("k")).toBe(false);
+  });
 });
 
 describe("solvedSeconds", () => {
