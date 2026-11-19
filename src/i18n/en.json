@@ -755,6 +755,10 @@
     "missingBody": "There is nothing published for that day. Today's puzzles are on the menu."
   },
   "picker": {
+    "freshNone": "None left in this size",
+    "freshRoom": "New to everyone here",
+    "freshSolo": "New to you",
+    "size": "Size",
     "title": "Pick a puzzle",
     "subtitleRace": "Everyone races the same fresh puzzle. You'll get a room code to share.",
     "subtitleNext": "The room keeps its code — players follow you to the new puzzle.",
