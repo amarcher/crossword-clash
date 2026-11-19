@@ -263,16 +263,10 @@ describe("CompletionModal", () => {
     expect(queryByRole("button", { name: "Close" })).toBeNull();
   });
 
-  it("says when the streak already counted today, and nothing when the finish advanced it", () => {
-    const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced={false} />);
+  it("shows the streak with no note under it", () => {
+    const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
     expect(counted.getByText("6-day streak")).toBeTruthy();
-    expect(counted.getByText(/already counted today/)).toBeTruthy();
-    counted.unmount();
-    const advanced = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} streakAdvanced />);
-    expect(advanced.queryByText(/already counted today/)).toBeNull();
-    advanced.unmount();
-    const unknown = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
-    expect(unknown.queryByText(/already counted today/)).toBeNull();
+    expect(counted.queryByText(/already counted today/)).toBeNull();
   });
 
   it("applies dark mode classes when darkMode is true", () => {

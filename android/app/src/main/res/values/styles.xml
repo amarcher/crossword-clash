@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="canvas">#F4F6FA</color>
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -13,6 +14,9 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Behind the system bars where an older WebView (before 140) is inset from them: the app's
+             page color (color-canvas in index.css), not the theme's white or, in dark mode, black. -->
+        <item name="android:windowBackground">@color/canvas</item>
     </style>
 
 

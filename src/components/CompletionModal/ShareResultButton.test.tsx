@@ -105,7 +105,7 @@ describe("ShareResultButton", () => {
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(navigator.share).not.toHaveBeenCalled();
     const input = screen.getByPlaceholderText("Your name");
-    expect(screen.getByTestId("share-block-preview").textContent).toContain("by=A+friend");
+    expect(screen.getByTestId("share-block-preview").textContent).not.toContain("friend");
     fireEvent.change(input, { target: { value: "Sam" } });
     expect(screen.getByTestId("share-block-preview").textContent).toContain("by=Sam");
     fireEvent.keyDown(input, { key: "Enter" });
@@ -113,14 +113,14 @@ describe("ShareResultButton", () => {
     expect(shared!.text).toContain("by=Sam");
   });
 
-  it("shares as 'A friend' when the signature is left blank, and reports a signed name", async () => {
+  it("shares with no name when the signature is left blank", async () => {
     withWebShare();
     const onNameSigned = vi.fn();
     render(<ShareResultButton mode="solo" blockFor={blockFor} challengerName="" hasTime onNameSigned={onNameSigned} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     await waitFor(() => expect(navigator.share).toHaveBeenCalledTimes(1));
-    expect(shared!.text).toContain("by=A+friend");
+    expect(shared!.text).not.toContain("friend");
     expect(onNameSigned).not.toHaveBeenCalled();
   });
 

@@ -71,12 +71,6 @@ interface CompletionModalProps {
   /** Current daily-play streak (omit/0 to hide the streak row). */
   streakCount?: number;
   /**
-   * Whether this finish added today to the streak. `false` adds a note under
-   * the streak row — a second finish on a day that already counted looked like
-   * a streak that failed to move (Andrew, 2026-11-01); omit when unknown.
-   */
-  streakAdvanced?: boolean;
-  /**
    * Present when the finished puzzle came from the NYT bookmarklet: shows the
    * "same time tomorrow" nudge and, when > 0, the NYT streak. This is the
    * bookmarklet's return loop — the whole reason it is worth installing.
@@ -217,7 +211,6 @@ export function CompletionModal({
   previousBest,
   assisted,
   streakCount,
-  streakAdvanced,
   nytHook,
   raceSeconds,
   onViewLeaderboard,
@@ -648,9 +641,6 @@ export function CompletionModal({
                   <Flame className="size-4 text-gold-500" aria-hidden="true" />
                   {t('soloStats.streakDays', { count: streakCount })}
                 </p>
-                {streakAdvanced === false && !assisted && (
-                  <p className={`mt-0.5 text-xs ${textSub}`}>{t('completion.streakCountedToday')}</p>
-                )}
               </div>
             )}
 
