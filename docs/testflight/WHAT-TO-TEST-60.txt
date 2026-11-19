@@ -1,0 +1,7 @@
+This build (1.1.4, build 60) finishes trimming the way into a puzzle for signed-in players. Please check:
+
+1. Community puzzles: each puzzle in the list has a single "Play" button. Racing is asked after you tap it.
+2. Race friends, with no friends yet: "Add friends to race them in a tap" shows two buttons and no paragraph.
+3. Friends: "Invite a friend", "Add by username" and "People you have raced" have no explanatory lines. Tell us if any of them is now unclear.
+4. Past puzzles: the Plus banner is a heading and one button.
+5. Everything from build 59 still applies.
