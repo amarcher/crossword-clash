@@ -95,7 +95,6 @@ export function LobbyInvites({ gameId, players = [], puzzleKey = null }: { gameI
           {error}
         </p>
       )}
-      <p className="mt-3 text-sm text-muted">{t("friends.inviteHint")}</p>
     </Card>
   );
 }

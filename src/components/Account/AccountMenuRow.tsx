@@ -37,7 +37,6 @@ export function AccountMenuRow({ children }: { children?: ReactNode }) {
           icon={UserRound}
           tone="neutral"
           title={t("account.menuRow")}
-          subtitle={t("account.menuRowSubtitle")}
           onClick={() => account.openAccount({ placement: "menu" })}
         />
       )}
@@ -47,7 +46,7 @@ export function AccountMenuRow({ children }: { children?: ReactNode }) {
           icon={MenuSeal}
           tone="gold"
           title={t("plus.title")}
-          subtitle={t(account.plus ? "plus.rowActive" : "plus.rowPitch")}
+          subtitle={account.plus ? t("plus.rowActive") : undefined}
           onClick={() => account.openPaywall({ placement: "menu" })}
         />
       )}

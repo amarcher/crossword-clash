@@ -158,7 +158,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{t("soloStart.raceSolve")}</span>
                     <span className="block truncate text-sm text-muted">
-                      {friends.length ? t("soloStart.solvedBy", { names: nameList(t, friends.map((c) => c.username)), count: friends.length }) : t("soloStart.fastest")}
+                      {friends.length ? nameList(t, friends.map((c) => c.username)) : t("soloStart.fastest")}
                     </span>
                   </span>
                   <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden="true" />
@@ -170,7 +170,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                     <span className="block font-semibold">{t("soloStart.live")}</span>
                     {live.names.length > 0 && (
                       <span className="block truncate text-sm text-muted">
-                        {live.names.length > 2 ? t("soloStart.notSolvedMany", { count: live.names.length }) : t("soloStart.notSolvedBy", { names: nameList(t, live.names), count: live.names.length })}
+                        {nameList(t, live.names)}
                       </span>
                     )}
                   </span>

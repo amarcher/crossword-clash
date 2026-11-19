@@ -75,7 +75,7 @@ describe("AccountMenuRow", () => {
     context.value = account({ openAccount });
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Save your solve history/ });
-    expect(row.textContent).toContain("Free, with Apple or Google");
+    expect(row.textContent).toBe("Save your solve history");
     fireEvent.click(row);
     expect(openAccount).toHaveBeenCalledWith({ placement: "menu" });
   });
@@ -97,7 +97,7 @@ describe("AccountMenuRow", () => {
     context.value = account({ openPaywall });
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
-    expect(row.textContent).toContain("Past dailies, studio, AI host");
+    expect(row.textContent).not.toContain("Past dailies, studio, AI host");
     fireEvent.click(row);
     expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });
   });
