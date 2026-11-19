@@ -77,7 +77,13 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
   const signIn = (provider: AuthProvider) =>
     void act(async () => {
       track("account_sign_in_started", { provider, placement });
-      const outcome = await signInWith(provider, { returnTo });
+      // A provider's own failure text is written for developers (a Google
+      // refusal named Logcat tags and client IDs on Andrew's emulator,
+      // 2026-11-19): it goes to the console, the player gets one plain line.
+      const outcome = await signInWith(provider, { returnTo }).catch((err: unknown) => {
+        console.warn("Sign-in failed:", err);
+        throw new Error(t("account.signInFailed"));
+      });
       // On the web the page navigates away; leave the button busy meanwhile.
       if (outcome === "signed-in") onSignedIn?.();
       if (outcome !== "redirecting") setBusy(false);

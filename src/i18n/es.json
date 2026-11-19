@@ -657,6 +657,7 @@
     "later": "Más tarde",
     "signOut": "Cerrar sesión",
     "close": "Cerrar",
+    "signInFailed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
     "deleteAccount": "Eliminar cuenta",
     "deleteTitle": "¿Eliminar tu cuenta?",
