@@ -28,6 +28,7 @@ import { leaderboardPath, prepareDailyResult, todayKey, type PendingDailyResult 
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
 import { recordGroupFinish } from "../lib/groupFinish";
+import { playedBefore } from "../lib/solvedPuzzles";
 import { rankRaceStandings } from "../lib/raceResults";
 import { progressPercent } from "../lib/raceProgress";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -223,12 +224,21 @@ export function MultiplayerPlayScreen() {
   });
   const dailySubmittedRef = useRef(false);
   const setPendingDailyResult = game.setPendingDailyResult;
+  // Whether the player had finished this puzzle before this game, in any way
+  // (playedBefore): read as the game begins, before its own finish is recorded.
+  const boardKey = puzzle ? puzzleIdentity(puzzle) : null;
+  const playedBeforeRef = useRef(false);
+  useEffect(() => {
+    playedBeforeRef.current = !!boardKey && playedBefore(boardKey);
+  }, [boardKey, game.gameId]);
   useEffect(() => {
     if (dailySubmittedRef.current || !dailySlot || !user) return;
     if (isAsync) {
       if (myFinishSeconds === undefined) return;
       dailySubmittedRef.current = true;
       recordDailyPlay();
+      // The board takes a first solve only: a race on a puzzle already solved posts no time.
+      if (playedBeforeRef.current) return;
       // Parked in context too, so the board awaits the post (audit §3, item 9).
       const entry = { userId: user.id, displayName: game.displayName, mode: "race" as const, seconds: Math.max(0, Math.floor(myFinishSeconds)) };
       // One rule for every finish: an account whose solves can be watched (prepareDailyResult).

@@ -255,12 +255,10 @@ export interface SubmitDailyResultInput {
   gameId?: string | null;
   /** Solo with Autocheck off → false; omitted (races, older callers) means on. */
   autocheck?: boolean;
-  /** Never replace a time the player already has for the day (a finish made before signing in). */
-  firstOnly?: boolean;
 }
 
 /**
- * Record a daily finish, keeping only the player's best time for the day.
+ * Record a daily finish: the player's first for the day, never replaced.
  * Best-effort: failures are logged and swallowed — a leaderboard hiccup must
  * never break the completion flow. A no-op off the production origin
  * (`boardPostsHere`), so previews and dev never write to the live board.
@@ -278,8 +276,11 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
       .eq("user_id", input.userId)
       .maybeSingle();
 
-    if (existing && input.firstOnly) return;
-    if (!shouldReplace(existing?.seconds ?? null, seconds)) return;
+    // The board takes a player's first solve of the day's puzzle (Andrew,
+    // 2026-11-19): a later one was made knowing the answers, so a time already
+    // there stands, whatever the new one is.
+    if (existing) return;
+    if (!shouldReplace(null, seconds)) return;
 
     const row = {
       day: input.day,
@@ -342,12 +343,11 @@ export function postDailyResult(
   slot: BoardSlot,
   entry: DailyResultEntry,
   gameId: string | null = null,
-  firstOnly = false,
 ): PendingDailyResult {
   if (!isRealPlayerName(entry.displayName)) {
     return { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
   }
-  return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, firstOnly, ...entry }) };
+  return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, ...entry }) };
 }
 
 /**
@@ -363,13 +363,12 @@ export async function prepareDailyResult(
   entry: DailyResultEntry,
   user: Pick<User, "id" | "is_anonymous">,
   gameId: string | null = null,
-  firstOnly = false,
 ): Promise<PendingDailyResult> {
   const parked: PendingDailyResult = { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
   if (user.is_anonymous) return parked;
   try {
     if ((await fetchRaceVisibility(user.id)) === "hidden") return { ...parked, postingHold: "disabled" };
-    return postDailyResult(day, slot, entry, gameId, firstOnly);
+    return postDailyResult(day, slot, entry, gameId);
   } catch {
     return { ...parked, postingHold: "unavailable" };
   }

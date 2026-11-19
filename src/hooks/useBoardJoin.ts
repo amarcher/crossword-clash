@@ -28,11 +28,11 @@ export function useBoardJoin(pending: PendingDailyResult | null | undefined): Bo
   const isAccount = !!user && !user.is_anonymous;
 
   const repost = useCallback(
-    (from: PendingDailyResult, firstOnly = false) => {
+    (from: PendingDailyResult) => {
       if (!user || user.is_anonymous) return;
       const entry = { ...from.entry, userId: user.id, displayName: username ?? from.entry.displayName };
       const next: PendingDailyResult = { ...from, entry, posted: false, postingHold: "checking", settled: Promise.resolve() };
-      next.settled = prepareDailyResult(from.day, from.slot, entry, user, from.gameId, firstOnly).then((result) => {
+      next.settled = prepareDailyResult(from.day, from.slot, entry, user, from.gameId).then((result) => {
         setPendingDailyResult((current) => (current === next ? result : current));
         return result.settled;
       });
@@ -46,8 +46,7 @@ export function useBoardJoin(pending: PendingDailyResult | null | undefined): Bo
   useEffect(() => {
     if (!pending || pending.posted || pending.postingHold || !isAccount || !username || reposted.current === pending) return;
     reposted.current = pending;
-    // The account may have solved this already, elsewhere: that time stands, this later one never replaces it.
-    repost(pending, true);
+    repost(pending);
   }, [pending, isAccount, username, repost]);
 
   const [busy, setBusy] = useState(false);

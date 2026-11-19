@@ -1,5 +1,6 @@
 import type { CellState, Puzzle } from "../types/puzzle";
-import { getSolveHistoryState } from "./solveHistory";
+import { getSolveHistoryState, isRecordedFinish } from "./solveHistory";
+import { groupFinishSeconds } from "./groupFinish";
 import { loadSoloStats } from "./soloStats";
 
 /**
@@ -14,6 +15,18 @@ export function solvedSeconds(key: string): number | null {
   const fromAccount = history?.status === "ready" ? history.summary.bestTimes[key] : undefined;
   const seconds = fromAccount ?? loadSoloStats().bestTimes[key];
   return typeof seconds === "number" && Number.isFinite(seconds) ? seconds : null;
+}
+
+/**
+ * Whether this player has finished the puzzle before in any way: a timed solve,
+ * or a room on a shared grid (kept in the account's history with no time, and
+ * on the device that played). A solve after any of them is made knowing the
+ * answers, so it never goes on the day's leaderboard.
+ */
+export function playedBefore(key: string): boolean {
+  if (solvedSeconds(key) !== null || groupFinishSeconds(key) !== null) return true;
+  const history = getSolveHistoryState();
+  return !!history?.rows?.some((row) => row.puzzle_key === key && isRecordedFinish(row));
 }
 
 /**

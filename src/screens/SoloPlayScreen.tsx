@@ -14,7 +14,7 @@ import { SoloTimer } from "../components/SoloTimer";
 import { FinishedBar } from "../components/FinishedBar";
 import { SolvedStrip } from "../components/FinishedBar/SolvedStrip";
 import { useConfirm } from "../components/ConfirmDialog";
-import { solvedSeconds } from "../lib/solvedPuzzles";
+import { playedBefore } from "../lib/solvedPuzzles";
 import { AccountControl } from "../components/Account/AccountControl";
 import { AutocheckSwitch, HapticsSwitch, SoloOptions } from "../components/SoloOptions";
 import { useSoloSettings } from "../lib/soloSettings";
@@ -318,7 +318,8 @@ export function SoloPlayScreen() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     dailySubmittedRef.current = false;
-    solvedBeforeRef.current = !!puzzleKey && solvedSeconds(puzzleKey) !== null;
+    // Solved before in any way, a room included (playedBefore).
+    solvedBeforeRef.current = !!puzzleKey && playedBefore(puzzleKey);
     historyRecordedRef.current = false;
     traceFiledRef.current = false;
     completionReportedRef.current = false;

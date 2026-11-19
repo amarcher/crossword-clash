@@ -66,13 +66,13 @@ describe("board posting by origin", () => {
     expect(calls.some((c) => c.op === "upsert")).toBe(true);
   });
 
-  it("a finish made before signing in never replaces a time the account already has, even a slower one", async () => {
+  it("never replaces a time the player already has for the day, even a slower one: the first solve stands", async () => {
     servedFrom("https://crosswordclash.com");
     results = [{ data: { id: "r1", seconds: 300 }, error: null }];
-    await submitDailyResult({ ...finish, seconds: 10, firstOnly: true });
+    await submitDailyResult({ ...finish, seconds: 10 });
     expect(calls.some((c) => c.op === "upsert")).toBe(false);
     results = [{ data: null, error: null }];
-    await submitDailyResult({ ...finish, seconds: 10, firstOnly: true });
+    await submitDailyResult({ ...finish, seconds: 10 });
     expect(calls.some((c) => c.op === "upsert")).toBe(true);
   });
 
