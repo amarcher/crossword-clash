@@ -646,8 +646,11 @@ export function SoloPlayScreen() {
   // (offline, say), no replay.
   const [replayId, setReplayId] = useState<string | null>(null);
   const replayFiledRef = useRef(false);
+  // Filing has ended, with or without an ID: until then the completion screen holds the clip's place.
+  const [replaySettled, setReplaySettled] = useState(false);
   useEffect(() => {
     setReplayId(null);
+    setReplaySettled(false);
     replayFiledRef.current = false;
   }, [puzzleKey, attempt]);
   // A solve reopened later shares with the replay this device filed for it,
@@ -689,7 +692,8 @@ export function SoloPlayScreen() {
     const trace = recorder.take();
     const code = trace ? encodeReplay(puzzle, trace.events, soloResult.finishSeconds, trace.marks) : null;
     void (async () => {
-      const id = code ? await createReplayShare(code) : null;
+      const id = code ? await createReplayShare(code).catch(() => null) : null;
+      setReplaySettled(true);
       if (id) {
         setReplayId(id);
         if (puzzleKey) rememberReplay(puzzleKey, id, soloResult.finishSeconds);
@@ -1133,6 +1137,7 @@ export function SoloPlayScreen() {
         challengeOutcome={challengeOutcome}
         raceResults={race.length && soloResult ? raceResults(race, soloResult.finishSeconds) : undefined}
         replayId={replayId ?? undefined}
+        replayPending={!!soloResult && freshResult && !!(puzzleRef || linkGhost) && !soloResult.assisted && !replaySettled}
         shareBack={
           linkGhost?.link && replayId && soloResult
             ? {

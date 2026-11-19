@@ -8,6 +8,8 @@ import { importNativeNytPuzzle, loadNativeNytImport, nativeNytImportAvailable } 
 import { isPuzzleDate, nytPuzzleUrl } from "../lib/nytImport";
 import type { NytPuzzleKind } from "../lib/nytImport";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
+import { useSearchParams } from "react-router";
+import { pickIntent, usePickPuzzle } from "../hooks/usePickPuzzle";
 
 function newYorkDate(): string {
   const parts = new Intl.DateTimeFormat("en", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -27,6 +29,10 @@ export function NytImportScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const native = nativeNytImportAvailable();
+  // Picking for a room (`?pick=`, from the room's puzzle picker): Continue makes it the room's puzzle.
+  const [params] = useSearchParams();
+  const pick = pickIntent(params);
+  const picker = usePickPuzzle(pick ?? "race");
 
   async function openImporter() {
     if (busy || !isPuzzleDate(date)) return;
@@ -90,8 +96,9 @@ export function NytImportScreen() {
           <h2 className="mt-2 font-display text-xl font-bold tracking-tight text-ink">{saved.title}</h2>
           <p className="mt-1 text-sm text-muted tabular-nums">{saved.author} · {saved.width}×{saved.height}</p>
           <p className="mt-3 text-sm text-ink-soft">{t("nytImport.local")}</p>
-          <Button size="lg" block className="mt-4" onClick={() => {
-            game.setUrlPuzzle(saved); navigate("/puzzle-ready");
+          <Button size="lg" block className="mt-4" disabled={picker.busy !== null} onClick={() => {
+            if (pick) void picker.choose(saved, "nyt");
+            else { game.setUrlPuzzle(saved); navigate("/puzzle-ready"); }
           }}>{t("nytImport.continue")}</Button>
         </Card>}
       </div>

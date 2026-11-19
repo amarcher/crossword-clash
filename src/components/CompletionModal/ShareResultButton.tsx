@@ -35,6 +35,8 @@ interface ShareResultButtonProps {
   onNameSigned?: (name: string) => void;
   /** The solve's replay clip, when the link carries it (or the solve is the player's own). */
   clip?: { id: string; race?: boolean };
+  /** The clip is being filed and will replace the text preview: its place is held meanwhile. */
+  clipPending?: boolean;
   /** A community puzzle's title, which its link's preview names. */
   communityTitle?: string;
   darkMode?: boolean;
@@ -81,6 +83,7 @@ export function ShareResultButton({
   legend,
   onNameSigned,
   clip,
+  clipPending,
   communityTitle,
   darkMode,
 }: ShareResultButtonProps) {
@@ -153,6 +156,8 @@ export function ShareResultButton({
           clip and the title under it, in step with the name being signed. Otherwise the text block. */}
       {linkOnly ? (
         <ReplayPreview id={clip?.id} race={clip?.race} title={linkPreviewTitle(block.link, communityTitle)} darkMode={darkMode} />
+      ) : clipPending && !clip ? (
+        <ReplayPreview pending darkMode={darkMode} />
       ) : (
         <>
           {clip && <ReplayPreview id={clip.id} race={clip.race} darkMode={darkMode} />}

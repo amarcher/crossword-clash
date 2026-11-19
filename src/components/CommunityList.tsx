@@ -15,6 +15,8 @@ interface CommunityListProps {
   busy: string | null;
   onPlay: (entry: CommunityPuzzle) => void;
   onRace?: (entry: CommunityPuzzle) => void;
+  /** Picking for a room: the button says Pick. */
+  pick?: boolean;
   /** Serving the TV's chooser: the card's action is "Host on TV" and its links keep `?intent=tv`. */
   tv?: boolean;
   raceDisabled?: boolean;
@@ -29,7 +31,7 @@ interface CommunityListProps {
  * puzzle's page), the author (a link to theirs), the note, plays and solves,
  * and Play solo + Race friends.
  */
-export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, onRace, raceDisabled, showAuthor = true, tv = false }: CommunityListProps) {
+export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, onRace, raceDisabled, showAuthor = true, tv = false, pick = false }: CommunityListProps) {
   const link = (path: string) => (tv ? withTvIntent(path) : path);
   const { t } = useTranslation();
   return (
@@ -81,7 +83,7 @@ export function CommunityList({ entries, bestTimes, inProgress, busy, onPlay, on
             <p className="mt-2 text-xs text-subtle tabular-nums">{t("community.stats", { plays: entry.plays, solves: entry.solves })}</p>
             <div className="mt-auto flex gap-2 pt-4">
               <Button variant={isSolved ? "secondary" : "soft"} onClick={() => onPlay(entry)} disabled={busy !== null} className="flex-1">
-                {isBusy ? t("community.loadingPuzzle") : tv ? t("importer.hostOnTv") : isSolved ? t("community.playAgain") : resumable ? t("community.resume") : t("community.playSolo")}
+                {isBusy ? t("community.loadingPuzzle") : pick ? t("picker.pick") : tv ? t("importer.hostOnTv") : isSolved ? t("community.playAgain") : resumable ? t("community.resume") : t("community.playSolo")}
               </Button>
               {onRace && (
                 <Button variant="ghost" onClick={() => onRace(entry)} disabled={busy !== null || raceDisabled}>

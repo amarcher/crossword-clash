@@ -1,57 +1,36 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { displayTheme } from "../lib/dailyFeed";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, Loader2, Newspaper, Upload, Users } from "lucide-react";
+import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { PageShell } from "../components/PageShell";
-import { Button, Card, Eyebrow, MiniGridThumb } from "../components/ui";
-import { useAuth } from "../contexts/AuthContext";
-import { useGame, STORAGE_KEY } from "../contexts/GameContext";
-import { useMultiplayerContext } from "../contexts/MultiplayerContext";
+import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
+import { useGame } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { useTodaysDailies } from "../hooks/useNextUp";
 import { unsolvedDailies } from "../lib/nextUp";
-import { createNextGame, uploadPuzzle } from "../lib/puzzleService";
-import { clearMpSession, saveMpSession } from "../lib/sessionPersistence";
-import { clearSoloTimer, puzzleIdentity } from "../lib/soloStats";
-import { clearChallenge } from "../lib/challenge";
-import { tStatic } from "../i18n/i18n";
-import { track } from "../lib/analytics";
+import { puzzleIdentity } from "../lib/soloStats";
 import type { DailySlot } from "../lib/dailyFeed";
-import type { Puzzle } from "../types/puzzle";
-import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
+import { pickerPath, usePickPuzzle, type PickerIntent } from "../hooks/usePickPuzzle";
 
-/** What picking a puzzle means: host it fresh (name → lobby), or make it the room's next game. */
-export type PickerIntent = "race" | "next";
+export { pickerPath };
+export type { PickerIntent };
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
 
-export function pickerPath(intent: PickerIntent): string {
-  return `/pick-puzzle?intent=${intent}`;
-}
-
 /**
- * The fresh-puzzle picker (navigation audit §2): today's dailies the solver
- * hasn't finished. Reached from a finish, so it never offers the puzzle just
- * solved and never sends anyone to the file importer.
- *
- * - `intent=race` hands the choice to the existing host flow as `urlPuzzle`
- *   (HostNameScreen: name → room), after tearing down the finished solo or
- *   room state the way the old "Play live" bridge did.
- * - `intent=next` keeps the room: the puzzle is uploaded and `createNextGame`
- *   is called with ITS id — the room code stays and the other players follow
- *   the `new_game` broadcast to the lobby. Falls back to the race path when
- *   there is no room to keep.
+ * The puzzle picker for a room: today's dailies the solver hasn't finished,
+ * then past puzzles and community puzzles, each opened in pick mode (`?pick=`)
+ * so its button picks for the room (Andrew, 2026-11-19: not only today's).
+ * It never offers the puzzle just solved. What a pick does is `usePickPuzzle`.
  */
 export function PuzzlePickerScreen() {
   const { t } = useTranslation();
-  const navigate = useTransitionNavigate();
   const goBack = useNavigate();
   const [params] = useSearchParams();
   const intent: PickerIntent = params.get("intent") === "next" ? "next" : "race";
-  const { user } = useAuth();
   const game = useGame();
-  const mp = useMultiplayerContext();
 
   // The puzzle on screen when the picker opened has just been finished: it is
   // never offered, even before the stats catch up.
@@ -60,52 +39,7 @@ export function PuzzlePickerScreen() {
   const bestTimes = useBestTimes();
   const openDailies = useMemo(() => unsolvedDailies(dailies, bestTimes, finishedKey), [dailies, bestTimes, finishedKey]);
   const dailiesSettled = dailies.mini !== undefined && dailies.midi !== undefined && dailies.large !== undefined;
-
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const choose = useCallback(
-    async (puzzle: Puzzle, key: string, slot?: DailySlot) => {
-      setError(null);
-      setBusy(key);
-      try {
-        // Only the host of a live room has a room to keep; a code alone may
-        // be a leftover from a room someone else closed.
-        const keepRoom = intent === "next" && !!user && !!mp.shareCode && !!game.gameId && mp.isHost;
-        track("mode_selected", { mode: keepRoom ? "next-puzzle" : "picker-race", slot });
-        if (keepRoom) {
-          const puzzleId = await uploadPuzzle(puzzle);
-          if (!puzzleId) throw new Error("upload failed");
-          const displayName = game.displayName.trim() || tStatic("common.defaultPlayerName");
-          const result = await createNextGame(puzzleId, user.id, mp.shareCode!, { displayName });
-          if (!result) throw new Error("next game failed");
-          game.loadPuzzle(puzzle);
-          mp.broadcastNewGame(result.gameId);
-          game.setGameId(result.gameId);
-          game.setCompletionModalDismissed(false);
-          saveMpSession({ gameId: result.gameId, shareCode: result.shortCode, displayName: game.displayName });
-          navigate(`/lobby/${result.gameId}`, { replace: true });
-          return;
-        }
-        // A fresh room: drop the finished solo/room state so the host flow
-        // starts clean — the solved puzzle is never re-raced live.
-        game.reset();
-        game.setGameId(null);
-        game.setIsMultiplayer(false);
-        localStorage.removeItem(STORAGE_KEY);
-        clearMpSession();
-        clearSoloTimer();
-        clearChallenge();
-        game.setCompletionModalDismissed(false);
-        game.setUrlPuzzle(puzzle);
-        navigate("/host-game/name", { replace: true });
-      } catch {
-        setError(t("picker.error"));
-        setBusy(null);
-      }
-    },
-    [intent, user, mp, game, navigate, t],
-  );
+  const { choose, busy, error } = usePickPuzzle(intent);
 
   return (
     <PageShell width="5xl" bar={{ backLabel: t("picker.back"), onBack: () => goBack(-1) }}>
@@ -162,6 +96,13 @@ export function PuzzlePickerScreen() {
           </p>
         )}
       </section>
+
+      <ListGroup className="mb-8">
+        <ListRow icon={CalendarDays} to={`/archive?pick=${intent}`} title={t("menu.pastPuzzles")} />
+        <ListRow icon={Users} to={`/puzzles?pick=${intent}`} title={t("menu.communityPuzzles")} />
+        {nativeNytImportAvailable() && <ListRow icon={Newspaper} tone="neutral" to={`/nyt-import?pick=${intent}`} title={t("nytImport.title")} />}
+        <ListRow icon={Upload} tone="neutral" to={`/solo/import?pick=${intent}`} title={t("menu.ownPuzzle")} />
+      </ListGroup>
     </PageShell>
   );
 }

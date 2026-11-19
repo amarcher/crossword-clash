@@ -7,6 +7,10 @@ import type { FriendsContextValue } from "../contexts/FriendsContext";
 import type { RoomInvite } from "../lib/friends";
 
 const navigate = vi.fn();
+const pickPuzzle = vi.hoisted(() => ({ choose: vi.fn(), busy: null as string | null, error: null as string | null }));
+vi.mock("../hooks/usePickPuzzle", async (orig) => ({ ...(await orig<typeof import("../hooks/usePickPuzzle")>()), usePickPuzzle: () => pickPuzzle }));
+const today = vi.hoisted(() => ({ dailies: {} as Record<string, unknown> }));
+vi.mock("../hooks/useNextUp", () => ({ useTodaysDailies: () => today.dailies }));
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 type Stub = { title: string; width: number; height: number; cells: { row: number; col: number; solution: string | null }[][] };
@@ -132,13 +136,23 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
   });
 
-  it("with the daily tile's puzzle as the chip, Challenge and Start go straight to the host name screen", () => {
+  it("Start opens the room at once on today's first unsolved daily", () => {
+    const mini = { title: "Honest Abe", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
+    today.dailies = { mini: { puzzle: mini }, midi: null, large: null };
+    pickPuzzle.choose.mockClear();
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    expect(pickPuzzle.choose).toHaveBeenCalledWith(mini, "default");
+    today.dailies = {};
+  });
+
+  it("with the daily tile's puzzle as the chip, Challenge and Start open the room on it", () => {
     game.urlPuzzle = { title: "Shapes and shadows", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
     friends.value = friendsValue({ friendships: { friends: [alicia], incoming: [], outgoing: [] } });
     renderScreen();
     expect(screen.getByText("Racing: Shapes and shadows")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    expect(navigate).toHaveBeenLastCalledWith("/host-game/name");
+    expect(pickPuzzle.choose).toHaveBeenLastCalledWith(game.urlPuzzle, "default");
     expect(sessionStorage.getItem("crossword-clash:pending-challenge")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "change" }));
     expect(game.setUrlPuzzle).toHaveBeenCalledWith(null);

@@ -108,6 +108,21 @@ describe("SoloStartGate", () => {
     expect(screen.queryByTestId("start-ask")).toBeNull();
   });
 
+  it("shows the options on the first frame when a room can be made, before the list answers; the list then adds its row", () => {
+    const live = { names: [], onChoose: vi.fn() };
+    const { rerender } = render(<SoloStartGate title="Mouse House" race={raceWith({ ready: false, candidates: [] })} live={live} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByTestId("start-ask")).toBeTruthy();
+    expect(screen.queryByTestId("start-ask-race")).toBeNull();
+    rerender(<SoloStartGate title="Mouse House" race={raceWith()} live={live} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByTestId("start-ask-race")).toBeTruthy();
+  });
+
+  it("never shows the count while a list that decides the screen is awaited", () => {
+    render(<SoloStartGate title="Mouse House" race={raceWith({ ready: false, candidates: [] })} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByTestId("start-waiting")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Start now" })).toBeNull();
+  });
+
   it("waits briefly for the list, then counts without it; an answer after that does not pull the card back", () => {
     const onStart = vi.fn();
     const { rerender } = render(<SoloStartGate title="Mouse House" race={raceWith({ ready: false, candidates: [] })} onStart={onStart} onBack={vi.fn()} />);

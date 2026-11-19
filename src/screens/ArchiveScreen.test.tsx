@@ -12,6 +12,8 @@ import type { TransferPuzzle } from "../lib/puzzleNormalizer";
 import type { Puzzle } from "../types/puzzle";
 
 const navigate = vi.fn();
+const pickPuzzle = vi.hoisted(() => ({ choose: vi.fn(), busy: null as string | null, error: null as string | null }));
+vi.mock("../hooks/usePickPuzzle", async (orig) => ({ ...(await orig<typeof import("../hooks/usePickPuzzle")>()), usePickPuzzle: () => pickPuzzle }));
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
@@ -209,6 +211,15 @@ describe("ArchiveScreen (/archive)", () => {
     expect(screen.getByRole("link", { name: "Back to the TV" }).getAttribute("href")).toBe("/host/import");
     fireEvent.click(screen.getByRole("button", { name: "Host Bard on Screen on TV" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
+  });
+
+  it("in pick mode, a day's one action picks its puzzle for the room", async () => {
+    pickPuzzle.choose.mockClear();
+    renderScreen("/archive?pick=next");
+    await waitFor(() => expect(screen.getByText("Bard on Screen")).toBeTruthy());
+    fireEvent.click(screen.getAllByRole("button", { name: "Pick" })[0]);
+    await waitFor(() => expect(pickPuzzle.choose).toHaveBeenCalledTimes(1));
+    expect(game.handleSoloPuzzleLoaded).not.toHaveBeenCalled();
   });
 
   it("gives a day's puzzle one Play button; racing it is asked after Play", async () => {

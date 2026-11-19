@@ -17,7 +17,9 @@ import { useAccountContext } from "../contexts/AccountContext";
 import { useGame } from "../contexts/GameContext";
 import { useFriends } from "../contexts/FriendsContext";
 import { inviteJoinPath, raceBlocks, setPendingChallenge, solveChip, type RoomInvite } from "../lib/friends";
-import { pickerPath } from "./PuzzlePickerScreen";
+import { pickerPath, usePickPuzzle } from "../hooks/usePickPuzzle";
+import { useTodaysDailies } from "../hooks/useNextUp";
+import { unsolvedDailies } from "../lib/nextUp";
 import { prefetchOnIntent } from "../routeModules";
 import { track } from "../lib/analytics";
 
@@ -56,13 +58,21 @@ export function RaceScreen() {
   const ownSeconds = puzzleKey ? bestTimes[puzzleKey] : undefined;
   const recorded = useMemo(() => new Set(candidates.filter((c) => c.friend).map((c) => c.userId)), [candidates]);
 
+  // Start and Challenge open the room at once (Andrew, 2026-11-19): on the puzzle brought here,
+  // else today's first daily the player hasn't solved. The room shows the puzzle and is where it
+  // is changed. With nothing to default to, the picker asks.
+  const dailies = useTodaysDailies();
+  const fallback = useMemo(() => unsolvedDailies(dailies, bestTimes, null)[0]?.daily.puzzle ?? null, [dailies, bestTimes]);
+  const room = usePickPuzzle("race");
   const startRoom = useCallback(
     (friendId: string | null) => {
       setPendingChallenge(friendId);
       track("race_action", { action: friendId ? "challenge" : "start", signed_in: friends.active });
-      navigate(game.urlPuzzle ? "/host-game/name" : pickerPath("race"));
+      const puzzle = game.urlPuzzle ?? fallback;
+      if (puzzle) void room.choose(puzzle, "default");
+      else navigate(pickerPath("race"));
     },
-    [game.urlPuzzle, friends.active, navigate],
+    [game.urlPuzzle, fallback, room, friends.active, navigate],
   );
 
   const openInvite = useCallback(
@@ -142,7 +152,7 @@ export function RaceScreen() {
                     ) : game.urlPuzzle?.ref && puzzleKey && typeof ownSeconds === "number" ? (
                       <SendTimeButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} linkRef={game.urlPuzzle.ref} seconds={ownSeconds} friendId={f.userId} friendName={f.username} />
                     ) : (
-                      <Button size="sm" onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
+                      <Button size="sm" disabled={room.busy !== null} onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
                         <Swords className="size-4" aria-hidden="true" />
                         {t("race.challenge")}
                       </Button>
@@ -185,7 +195,7 @@ export function RaceScreen() {
               <h2 className="font-semibold text-ink">{t("race.startTitle")}</h2>
               {game.urlPuzzle && <p className="truncate text-sm text-muted">{game.urlPuzzle.title}</p>}
             </div>
-            <Button variant={index === 0 ? "primary" : "secondary"} onClick={() => startRoom(null)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
+            <Button variant={index === 0 ? "primary" : "secondary"} disabled={room.busy !== null} onClick={() => startRoom(null)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
               {t("race.start")}
             </Button>
           </Card>

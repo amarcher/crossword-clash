@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronLeft, ChevronRight, Flag, Loader2, Lock, Trophy, WifiOff } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Lock, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell } from "../components/PageShell";
 import { BoardTable } from "../components/Leaderboard/BoardTable";
 import { BoardTabs } from "../components/Leaderboard/BoardTabs";
@@ -10,7 +10,10 @@ import { PlusBadge } from "../components/ui/PlusBadge";
 import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useMaybeAccount } from "../contexts/AccountContext";
-import { useBestTimes } from "../hooks/useSolveHistory";
+import { useBestTimes, useStreaks } from "../hooks/useSolveHistory";
+import { friendsEnabled } from "../lib/friends";
+import { useFriends } from "../contexts/FriendsContext";
+import { readFriendsOnly, subscribeFriendsOnly, writeFriendsOnly } from "../lib/boardPrefs";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { BOARD_CARDS, cachedBonusCards, fetchBonusCards, loadBonusPuzzle, shapePuzzle, type BonusCard } from "../lib/bonus";
 import { prefetchRaceCandidates, useRaceCandidates } from "../hooks/useRace";
@@ -72,6 +75,22 @@ export function BonusLeaderboardScreen() {
   const account = useMaybeAccount();
   const navigate = useTransitionNavigate();
   const bestTimes = useBestTimes();
+  const { daily: streak } = useStreaks();
+  // Everyone or friends only, as on a daily's board and remembered with it (Andrew, 2026-11-19:
+  // the Plus board looks like the others).
+  const friends = useFriends();
+  const friendIds = useMemo(
+    () => (friendsEnabled() && friends.active ? friends.friendships.friends.map((f) => f.userId) : []),
+    [friends.active, friends.friendships.friends],
+  );
+  const canFilter = !!user && friendIds.length > 0;
+  const friendsOnly = useSyncExternalStore(subscribeFriendsOnly, readFriendsOnly, () => false);
+  const chooseFriendsOnly = (on: boolean) => {
+    writeFriendsOnly(on);
+    track("leaderboard_filter", { friends_only: on, slot: "bonus" });
+  };
+  const only = useMemo(() => (canFilter && friendsOnly && user ? [user.id, ...friendIds] : null), [canFilter, friendsOnly, user, friendIds]);
+  const onlyKey = only ? only.join(",") : "";
   const today = todayKey();
 
   // Released bonuses up to today, oldest first: the days the stepper walks.
@@ -105,15 +124,15 @@ export function BonusLeaderboardScreen() {
 
   const pending = past ? null : pendingResultFor(game.pendingDailyResult, day, "bonus");
   const own = pending?.posted ? pending.entry : null;
-  const [entries, setEntries] = useState<{ day: string; rows: RankedDailyEntry[] } | null>(null);
+  const [entries, setEntries] = useState<{ day: string; only: string; rows: RankedDailyEntry[] } | null>(null);
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
     const load = async () => {
       // A finish posted from this tab lands before the board is read.
       if (pending) await pending.settled;
-      const rows = await fetchDailyLeaderboard(day, "bonus");
-      if (alive) setEntries({ day, rows });
+      const rows = await fetchDailyLeaderboard(day, "bonus", 50, only);
+      if (alive) setEntries({ day, only: onlyKey, rows });
     };
     void load();
     const onVisible = () => {
@@ -124,7 +143,8 @@ export function BonusLeaderboardScreen() {
       alive = false;
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [day, pending]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `only` by its key
+  }, [day, pending, onlyKey]);
 
   // Fetch the other tabs' boards ahead of the tap, so switching draws at once.
   useEffect(() => {
@@ -138,7 +158,7 @@ export function BonusLeaderboardScreen() {
   }, [day, user]);
 
   // A day already fetched this session shows that answer while the fetch corrects it.
-  const loaded = !supabase ? [] : entries?.day === day ? entries.rows : cachedDailyLeaderboard(day, "bonus");
+  const loaded = !supabase ? [] : entries?.day === day && entries.only === onlyKey ? entries.rows : cachedDailyLeaderboard(day, "bonus", 50, only);
   const shown = useMemo<RankedDailyEntry[] | null>(() => {
     if (loaded !== null) return own ? mergeOwnResult(loaded, own) : loaded;
     return own ? [{ ...own, rank: 0 }] : null;
@@ -247,11 +267,18 @@ export function BonusLeaderboardScreen() {
             <PlusBadge interactive={false} size="0.8em" />
           </h1>
           {card && <p className="mt-1.5 truncate text-sm text-muted">{card.theme ? `${card.title} · ${card.theme}` : card.title}</p>}
+          {streak > 0 && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1 text-sm font-semibold text-gold-700 ring-1 ring-gold-100">
+              <Flame className="size-4" aria-hidden="true" />
+              {t("soloStats.streakDays", { count: streak })}
+            </p>
+          )}
         </div>
 
         <BoardTabs active="bonus" day={past ? day : null} />
 
-        <div data-testid="board-day" className="flex items-center justify-center gap-1">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <div data-testid="board-day" className="flex items-center gap-1">
           <button type="button" className={STEP_BUTTON} onClick={() => previous && goToDay(previous.day)} disabled={!previous} aria-label={t("leaderboard.previousDay")}>
             <ChevronLeft className="size-5" aria-hidden="true" />
           </button>
@@ -261,6 +288,25 @@ export function BonusLeaderboardScreen() {
           <button type="button" className={STEP_BUTTON} onClick={() => next && goToDay(next.day)} disabled={!next} aria-label={t("leaderboard.nextDay")}>
             <ChevronRight className="size-5" aria-hidden="true" />
           </button>
+        </div>
+          {canFilter && (
+            <div role="group" aria-label={t("leaderboard.whose")} className="inline-flex rounded-xl bg-surface-sunken p-1 ring-1 ring-line">
+              {([false, true] as const).map((on) => (
+                <button
+                  key={String(on)}
+                  type="button"
+                  aria-pressed={friendsOnly === on}
+                  onClick={() => chooseFriendsOnly(on)}
+                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${
+                    friendsOnly === on ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {on && <Users className="size-4" aria-hidden="true" />}
+                  {t(on ? "leaderboard.friends" : "leaderboard.everyone")}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {past && (
           <p className="-mt-1 text-center text-xs text-muted">
@@ -281,7 +327,7 @@ export function BonusLeaderboardScreen() {
               <BoardMessage icon={<Loader2 className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />}>{t("leaderboard.loading")}</BoardMessage>
             </div>
           ) : rows.length === 0 ? (
-            <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(past ? "leaderboard.emptyPast" : "bonus.boardEmpty")}</BoardMessage>
+            <BoardMessage icon={<Trophy className="size-5" aria-hidden="true" />}>{t(only ? "leaderboard.emptyFriends" : past ? "leaderboard.emptyPast" : "bonus.boardEmpty")}</BoardMessage>
           ) : (
             <BoardTable
               rows={rows}
