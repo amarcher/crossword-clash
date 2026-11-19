@@ -150,6 +150,8 @@ interface CompletionModalProps {
   raceResults?: RaceResult[];
   /** The finished daily's replay share ID (replayShare.ts): previewed above Share, and carried by the daily link. */
   replayId?: string;
+  /** The replay is being filed: the share preview holds the clip's place until `replayId` arrives. */
+  replayPending?: boolean;
   /**
    * After racing a shared link's sender: send them this solve back, in the
    * thread the link came from (their name, this solve's own link, the verdict).
@@ -232,6 +234,7 @@ export function CompletionModal({
   challengeOutcome,
   raceResults,
   replayId,
+  replayPending,
   shareBack,
   replays,
   onWatchReplay,
@@ -809,6 +812,7 @@ export function CompletionModal({
               legend={shareLegend}
               // A room's clip is shown only when the link can carry it; a time trial's is the player's own solve.
               clip={replayId && (linkRef || !isMultiplayer) ? { id: replayId, race: isMultiplayer && !isAsync } : undefined}
+              clipPending={replayPending && !replayId && !!(linkRef || !isMultiplayer)}
               communityTitle={linkRef && "shortId" in linkRef ? challengePuzzle.title : undefined}
               onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}

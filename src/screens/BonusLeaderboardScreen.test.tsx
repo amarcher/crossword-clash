@@ -22,7 +22,10 @@ vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }
 const navigate = vi.hoisted(() => vi.fn());
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 const best = vi.hoisted(() => ({ value: {} as Record<string, number> }));
-vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => best.value }));
+const social = vi.hoisted(() => ({ streak: 0, friends: [] as { userId: string; username: string }[] }));
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => best.value, useStreaks: () => ({ daily: social.streak, nyt: 0 }) }));
+vi.mock("../contexts/FriendsContext", () => ({ useFriends: () => ({ active: social.friends.length > 0, friendships: { friends: social.friends, incoming: [], outgoing: [] } }) }));
+vi.mock("../lib/friends", async (orig) => ({ ...(await orig<typeof import("../lib/friends")>()), friendsEnabled: () => true }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("../components/PageShell", () => ({ PageShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("../components/ui/PlusBadge", () => ({ PlusBadge: () => null, PlusBadgeFor: () => null }));
@@ -58,6 +61,9 @@ beforeEach(() => {
   races.candidates = [];
   races.fetchFriendRace.mockReset();
   races.saveRaceIntent.mockClear();
+  social.streak = 0;
+  social.friends = [];
+  localStorage.clear();
 });
 afterEach(cleanup);
 
@@ -65,11 +71,21 @@ describe("BonusLeaderboardScreen", () => {
   it("shows today's bonus times to a free player, with the pitch in place of Play", async () => {
     show();
     expect(await screen.findByText("alicia")).toBeTruthy();
-    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith(TODAY, "bonus");
+    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith(TODAY, "bonus", 50, null);
     expect(screen.getByText("Tempting Fate · Superstitions")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Unlock with Plus" }));
     expect(account.value.openPaywall).toHaveBeenCalledWith({ placement: "bonus-board", feature: "bonus", returnTo: "/bonus/leaderboard" });
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
+  });
+
+  it("has the streak and the Everyone / Friends filter of a daily's board", async () => {
+    social.streak = 4;
+    social.friends = [{ userId: "b", username: "sam" }];
+    show();
+    expect(await screen.findByText("alicia")).toBeTruthy();
+    expect(screen.getByText("4-day streak")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Friends" }));
+    await waitFor(() => expect(board.fetchDailyLeaderboard).toHaveBeenLastCalledWith(TODAY, "bonus", 50, ["me", "b"]));
   });
 
   it("plays today's bonus for Plus", async () => {
@@ -87,7 +103,7 @@ describe("BonusLeaderboardScreen", () => {
     best.value = { "past-key": 360 };
     show("/bonus/leaderboard?day=2026-11-12");
     expect(await screen.findByText("Your 6:00 would have placed #2 of 3")).toBeTruthy();
-    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith("2026-11-12", "bonus");
+    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith("2026-11-12", "bonus", 50, null);
     expect(screen.getByText("Not on the board")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Play/ })).toBeNull();
   });
@@ -129,9 +145,9 @@ describe("BonusLeaderboardScreen", () => {
   it("falls back to today for a day with no bonus, and steps back a day", async () => {
     show("/bonus/leaderboard?day=2026-10-01");
     await screen.findByText("alicia");
-    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith(TODAY, "bonus");
+    expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith(TODAY, "bonus", 50, null);
     fireEvent.click(screen.getByRole("button", { name: "Previous day" }));
-    await waitFor(() => expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith("2026-11-12", "bonus"));
+    await waitFor(() => expect(board.fetchDailyLeaderboard).toHaveBeenCalledWith("2026-11-12", "bonus", 50, null));
     expect(await screen.findByText("Grounds for Arrest · Coffee")).toBeTruthy();
   });
 });

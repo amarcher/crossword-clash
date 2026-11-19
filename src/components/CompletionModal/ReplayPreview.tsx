@@ -11,10 +11,20 @@ import { SHARE_URL } from "../../lib/resultCard";
  * clip (none filed, or it can't load) the title and site stand alone; without
  * a title (a link that doesn't unfurl as the solve) the clip keeps its caption.
  */
-export function ReplayPreview({ id, race, title, darkMode }: { id?: string | null; race?: boolean; title?: string | null; darkMode?: boolean }) {
+export function ReplayPreview({ id, race, title, darkMode, pending }: { id?: string | null; race?: boolean; title?: string | null; darkMode?: boolean; pending?: boolean }) {
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   const src = id && !failed ? `${SHARE_URL}/api/replay?s=${id}` : null;
+  // The clip is still being filed: hold its place at the size it will arrive at, so nothing
+  // below it moves when it does (Andrew, 2026-11-19).
+  if (!src && pending) {
+    return (
+      <div data-testid="replay-preview-pending" aria-hidden="true" className={`mb-1 overflow-hidden rounded-2xl ${darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line"}`}>
+        <div className={`aspect-video w-full animate-pulse motion-reduce:animate-none ${darkMode ? "bg-white/10" : "bg-surface-sunken"}`} />
+        <div className={`h-[3.25rem] ${darkMode ? "bg-white/5" : "bg-surface-sunken"}`} />
+      </div>
+    );
+  }
   if (!src && !title) return null;
   const ring = darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line";
   return (
