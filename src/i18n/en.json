@@ -958,6 +958,8 @@
     "raceTheirSolve": "Race their solve",
     "watchFailed": "That solve couldn't be loaded. Tap to try again.",
     "watchRetry": "Try again",
+    "sendTime": "Send time",
+    "sendTimeTo": "Send @{{name}} your time to race",
     "noFriendsYet": "No friends yet. Add some and they'll show up here.",
     "addFriendsTitle": "Add friends to race them in a tap",
     "addFriendsBody": "Send your link, find people by username, or add the people you have already raced. Friends can invite you straight into a room.",

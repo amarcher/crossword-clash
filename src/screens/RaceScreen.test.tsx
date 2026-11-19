@@ -20,6 +20,9 @@ vi.mock("../contexts/FriendsContext", () => ({ useFriends: () => friends.value }
 const solved = vi.hoisted(() => ({ solves: {} as Record<string, { mode: string; day: string }>, recorded: [] as { userId: string; username: string; seconds: number; friend: boolean }[] }));
 vi.mock("../hooks/useFriendSolves", () => ({ useFriendSolves: () => solved.solves }));
 vi.mock("../hooks/useRace", () => ({ useRaceCandidates: () => solved.recorded }));
+const best = vi.hoisted(() => ({ times: {} as Record<string, number> }));
+vi.mock("../hooks/useSolveHistory", () => ({ useBestTimes: () => best.times }));
+vi.mock("../components/Friends/SendTimeButton", () => ({ SendTimeButton: ({ friendName, seconds }: { friendName: string; seconds: number }) => <button>Send time {friendName} {seconds}</button> }));
 vi.mock("../components/Race/WatchSolveButton", () => ({ WatchSolveButton: ({ friendName }: { friendName: string }) => <button>Watch {friendName}</button> }));
 
 const { RaceScreen } = await import("./RaceScreen");
@@ -154,6 +157,15 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     expect(screen.getAllByRole("button", { name: "Challenge" })).toHaveLength(1);
     // The chip stands alone only where there is no solve to watch.
     expect(screen.getAllByText("Solved")).toHaveLength(1);
+    // Once the viewer has solved it too, the friend who has not is sent the viewer's time instead of a live room.
+    cleanup();
+    game.urlPuzzle = { ...game.urlPuzzle, ref: { day: "2026-11-18", slot: "mini" } } as typeof game.urlPuzzle;
+    best.times = new Proxy({}, { get: () => 62 });
+    renderScreen();
+    expect(screen.queryByRole("button", { name: "Challenge" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Send time cy 62" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Watch alicia" })).toBeTruthy();
+    best.times = {};
     solved.solves = {};
     solved.recorded = [];
   });

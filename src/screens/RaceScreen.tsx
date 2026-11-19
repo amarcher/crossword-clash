@@ -4,7 +4,8 @@ import { Share2, Swords, UserPlus, Users } from "lucide-react";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, TransitionLink } from "../components/ui";
-import { CodeJoinCard, PersonList, PersonRow, SolveChip } from "../components/Friends";
+import { CodeJoinCard, PersonList, PersonRow, SendTimeButton, SolveChip } from "../components/Friends";
+import { useBestTimes } from "../hooks/useSolveHistory";
 import { useShareFriendLink } from "../components/Friends/InviteFriendCard";
 import { useFriendSolves } from "../hooks/useFriendSolves";
 import { useRaceCandidates } from "../hooks/useRace";
@@ -49,6 +50,10 @@ export function RaceScreen() {
   // A friend who has finished it is not someone to bring into a live room: their row
   // offers their recorded solve instead (Watch), when one was kept.
   const candidates = useRaceCandidates(puzzleKey, !!puzzleKey);
+  // And a puzzle the viewer has finished is no live race either: a friend who has not
+  // solved it is sent the viewer's time to race, as from the finish screen.
+  const bestTimes = useBestTimes();
+  const ownSeconds = puzzleKey ? bestTimes[puzzleKey] : undefined;
   const recorded = useMemo(() => new Set(candidates.filter((c) => c.friend).map((c) => c.userId)), [candidates]);
 
   const startRoom = useCallback(
@@ -134,6 +139,8 @@ export function RaceScreen() {
                       <WatchSolveButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} friendId={f.userId} friendName={f.username} />
                     ) : solveChip(friendSolves[f.userId]) ? (
                       <SolveChip solve={friendSolves[f.userId]} />
+                    ) : game.urlPuzzle?.ref && puzzleKey && typeof ownSeconds === "number" ? (
+                      <SendTimeButton puzzle={game.urlPuzzle} puzzleKey={puzzleKey} linkRef={game.urlPuzzle.ref} seconds={ownSeconds} friendId={f.userId} friendName={f.username} />
                     ) : (
                       <Button size="sm" onClick={() => startRoom(f.userId)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
                         <Swords className="size-4" aria-hidden="true" />

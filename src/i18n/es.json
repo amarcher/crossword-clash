@@ -958,6 +958,8 @@
     "raceTheirSolve": "Competir contra su solución",
     "watchFailed": "No se pudo cargar esa solución. Toca para reintentar.",
     "watchRetry": "Reintentar",
+    "sendTime": "Enviar tiempo",
+    "sendTimeTo": "Enviar tu tiempo a @{{name}} para competir",
     "noFriendsYet": "Aún no tienes amigos. Añade algunos y aparecerán aquí.",
     "addFriendsTitle": "Añade amigos para retarlos con un toque",
     "addFriendsBody": "Envía tu enlace, busca personas por nombre de usuario o añade a quienes ya has competido. Los amigos pueden invitarte directamente a una sala.",
