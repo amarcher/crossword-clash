@@ -1,0 +1,11 @@
+This build (1.1.4, build 62) ties the leaderboard to who may watch your solves. Please check:
+
+1. Account screen: "Who sees your solves" with Everyone, Friends and Nobody replaces the "Leaderboard eligible" switch. Friends puts your times on your friends' leaderboards only; Nobody keeps you off every leaderboard.
+2. Signed out, finish a daily: you should see one button, "Create an account to post your time", and no name form. It opens a sheet titled "Post your time". After you sign in, that finish should appear on the leaderboard under your username, even if you closed the app in between (same day).
+3. Signed in with solves set to Nobody, finish a daily: "Add me to the leaderboard" with "Everyone can watch" and "Friends only". Either choice should post that finish.
+4. Signed out, after solving, open the leaderboard: other rows show "Watch", which asks you to sign in.
+5. Signed out, share your time: the card and the link read "I solved…", with no "A friend".
+6. Open a shared solve link: the challenge page has just the puzzle, the time, "Race …'s solve" and "Just solve it", with no paragraph under the button.
+7. First open, signed out: no notification question. It comes after you sign in; the reminder question still comes after your first daily.
+8. The finish screen no longer says "Your streak already counted today".
+9. Everything from build 61 still applies.
