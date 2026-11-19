@@ -1,0 +1,10 @@
+This build (1.1.4, build 58) is a trial of one way into a puzzle. Please check:
+
+1. One Play button: on the home screen each daily has a single "Play" button. The "Race friends" button beside it is gone. The theme is a gold badge again and the line under "DAILY MINI" is gone.
+2. How do you want to play? Tap "Play" on a puzzle you haven't started. Before any countdown, a card over the blurred grid asks how you want to play: "Play solo", "Race a finished solve" (when a friend or anyone else has a solve to race) and "Race friends live".
+3. Play solo: counts 3, 2, 1 and starts. The countdown should always be the last thing before the grid.
+4. Race a finished solve: opens a list with times. Tick up to three and tap "Race 1 solve". The countdown says who you are racing, and their squares fill beside yours from the same start. This no longer needs Plus: please try it on an account without Plus.
+5. Race friends live: creates a room straight away under your username and opens the lobby. Invite friends from the lobby's list (friends who already solved the puzzle have a "Solved" chip) or share the room code. While you are alone in the room, "Play solo now" closes it and takes you to the countdown.
+6. Leaderboard rows: "Race" and "Watch" on a regular daily's leaderboard no longer need Plus. The Daily Plus is unchanged.
+7. Race friends screen (from the home screen): with a puzzle picked, a friend who has already solved it shows "Watch" instead of "Challenge". If you have solved it and they haven't, their row shows "Send time".
+8. Everything from build 57 still applies.
