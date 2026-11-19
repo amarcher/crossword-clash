@@ -1,0 +1,10 @@
+This build (1.1.4, build 59) trims the way into a puzzle. Please check:
+
+1. Home screen: every row under the dailies is its title only, with no second line.
+2. One Play button everywhere: Past puzzles, a community puzzle's page and an imported puzzle's page each have a single "Play" button, like the dailies. Racing is asked after you tap it.
+3. How do you want to play? The card after "Play" is shorter. Under "Race a finished solve" and "Race friends live" you should see only friends' names, never a cut-off sentence.
+4. Back from a room: tap "Play", then "Race friends live", then go back before the room starts. You should land on the "How do you want to play?" card, not on a "Paused" screen at 0:00.
+5. Race friends, Start a room, Join a room, the lobby and the pause screen have less explanatory text. Tell us about any screen where you no longer know what to do.
+6. Lobby: the room code now has one line under it ("Enter it at crosswordclash.com"), and the invite list has no paragraph under it.
+7. Daily Plus tile: the theme is a gold badge, matching the dailies.
+8. Everything from build 58 still applies.
