@@ -129,7 +129,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
     return () => window.clearTimeout(timer);
   }, [left, counting]);
 
-  const option = "flex min-h-16 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
+  const option = "flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
 
   return (
     <div
@@ -151,7 +151,6 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
               <button type="button" onClick={() => setStep("count")} className={`${option} border-brand-600 bg-brand-600 text-white hover:bg-brand-700`}>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">{t("soloStart.solo")}</span>
-                  <span className="block text-sm text-white/80">{t("soloStart.soloBody")}</span>
                 </span>
               </button>
               {candidates.length > 0 && (
@@ -159,7 +158,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{t("soloStart.raceSolve")}</span>
                     <span className="block truncate text-sm text-muted">
-                      {friends.length ? t("soloStart.solvedBy", { names: nameList(t, friends.map((c) => c.username)), count: friends.length }) : t("soloStart.fastest")}
+                      {friends.length ? nameList(t, friends.map((c) => c.username)) : t("soloStart.fastest")}
                     </span>
                   </span>
                   <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden="true" />
@@ -169,9 +168,11 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                 <button type="button" data-testid="start-ask-live" disabled={opening} aria-busy={opening || undefined} onClick={() => void openLive()} className={`${option} border-line-strong bg-surface text-ink hover:bg-surface-sunken`}>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{t("soloStart.live")}</span>
-                    <span className="block truncate text-sm text-muted">
-                      {live.names.length > 2 ? t("soloStart.notSolvedMany", { count: live.names.length }) : live.names.length ? t("soloStart.notSolvedBy", { names: nameList(t, live.names), count: live.names.length }) : t("soloStart.liveBody")}
-                    </span>
+                    {live.names.length > 0 && (
+                      <span className="block truncate text-sm text-muted">
+                        {nameList(t, live.names)}
+                      </span>
+                    )}
                   </span>
                   {opening ? <Loader2 className="size-5 shrink-0 animate-spin text-muted motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden="true" />}
                 </button>
@@ -182,7 +183,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
         ) : step === "pick" ? (
           <div data-testid="start-race-pick" className="mt-1">
             <p className="text-sm font-semibold text-ink">{t("soloStart.raceSolve")}</p>
-            <p className="mt-1 text-xs leading-snug text-balance text-muted">{t("soloStart.pickBody", { max: MAX_GHOSTS })}</p>
+            <p className="mt-0.5 text-xs text-muted">{t("soloStart.pickBody", { max: MAX_GHOSTS })}</p>
             <ul className="mt-3 flex max-h-[min(13.75rem,38dvh)] flex-col overflow-y-auto rounded-xl border border-line text-left">
               {candidates.map((c) => {
                 const on = picked.includes(c.userId);
@@ -214,8 +215,9 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
             ) : (
               detail && <p className="mt-1 text-sm text-muted">{detail}</p>
             )}
-            <p className="mt-4 font-display text-6xl leading-none font-bold text-brand-600 tabular-nums" aria-hidden="true">{Math.max(1, left)}</p>
-            <p className="mt-2 text-sm text-muted" role="status">{step ? t("soloStart.starting", { count: Math.max(1, left) }) : t("soloStart.gettingReady")}</p>
+            <p className={`mt-4 font-display text-6xl leading-none font-bold tabular-nums ${step ? "text-brand-600" : "text-line-strong"}`} aria-hidden="true">{Math.max(1, left)}</p>
+            {/* The numeral says it; the sentence is for a screen reader. */}
+            <p className="sr-only" role="status">{step ? t("soloStart.starting", { count: Math.max(1, left) }) : t("soloStart.gettingReady")}</p>
             <div className="mt-6 grid gap-3">
               <Button size="lg" onClick={onStart}>{t("soloStart.startNow")}</Button>
               <Button variant="secondary" size="lg" onClick={onBack}>{t("soloStart.back")}</Button>

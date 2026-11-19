@@ -54,7 +54,6 @@ import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidateList, useSolveRecorder } from "../hooks/useRace";
 import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
-import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
@@ -160,7 +159,9 @@ export function SoloPlayScreen() {
   const [soloChosen, setSoloChosen] = useState(false);
   const takeSoloStart = useCallback((k: string) => {
     const start = consumeSoloStart(k);
-    const attempt = start ? getProgress(k) : null;
+    // However an untouched puzzle is reached (Play, Back from a room's name screen, a reload),
+    // it opens on the start card, never on "Paused" at 0:00.
+    const attempt = getProgress(k);
     if (!attempt || isStarted(attempt)) return start;
     setSoloChosen(consumeSoloChosen());
     setStartGate(true);
@@ -440,25 +441,6 @@ export function SoloPlayScreen() {
     },
     [puzzleKey, raceCandidates, recorder],
   );
-  const startRace = useCallback(
-    async (userIds: string[]): Promise<boolean> => {
-      if (!(await loadGhosts(userIds))) return false;
-      // The race starts with the grid untouched: both clocks from zero.
-      restartTimer();
-      requestAnimationFrame(() => gridInputRef.current?.focus());
-      return true;
-    },
-    [loadGhosts, restartTimer],
-  );
-  // The start card (SoloStartGate) asks who to race before its countdown; the strip
-  // above the grid is only for an untouched puzzle that opened without the card.
-  const gatedRef = useRef(false);
-  if (startGate) gatedRef.current = true;
-  useEffect(() => {
-    gatedRef.current = false;
-  }, [puzzleKey, attempt]);
-  const showRaceStarter =
-    !startGate && !gatedRef.current && raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
 
   // Watching a recorded solve, letters and all, once this one is finished.
   const [replay, setReplay] = useState<ReplaySolve[] | null>(null);
@@ -1000,14 +982,6 @@ export function SoloPlayScreen() {
               <SolvedStrip onSolveAgain={handleSolveAgain} />
             )}
             {racing && <RaceGhosts ghosts={race} frames={ghostFrames} totalCells={totalWhiteCells} />}
-            {showRaceStarter && (
-              <RaceStarter
-                key={`${puzzleKey}:${raceIntent.join(",")}`}
-                candidates={raceCandidates}
-                preselect={raceIntent}
-                onStart={startRace}
-              />
-            )}
           </>
         }
         grid={

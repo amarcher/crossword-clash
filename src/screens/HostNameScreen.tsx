@@ -125,7 +125,6 @@ export function HostNameScreen() {
   return (
     <FlowPage
       title={t('hostName.heading')}
-      subtitle={game.urlPuzzle ? t('hostName.subtitleCreate') : t('hostName.subtitlePick')}
       onBack={handleReset}
       backLabel={t("completion.backToMenu")}
     >

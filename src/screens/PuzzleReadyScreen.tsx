@@ -46,12 +46,6 @@ export function PuzzleReadyScreen() {
     navigate("/solo/play");
   }, [game, navigate]);
 
-  const handleHostGame = useCallback(() => {
-    if (!game.urlPuzzle) return;
-    game.loadPuzzle(game.urlPuzzle);
-    navigate("/host-game/name");
-  }, [game, navigate]);
-
   const handleHostOnTV = useCallback(() => {
     if (!game.urlPuzzle) return;
     const hash = compressPuzzleToHash(game.urlPuzzle);
@@ -75,7 +69,6 @@ export function PuzzleReadyScreen() {
         showHostOptions={!!user}
         nytStreak={nytStreak}
         onPlaySolo={handlePlaySolo}
-        onHostGame={handleHostGame}
         onHostOnTV={handleHostOnTV}
         onBack={handleBack}
       />

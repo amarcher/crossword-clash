@@ -87,7 +87,7 @@ export function JoinGame({ onJoin, onBack, loading, error, initialCode, connecti
   };
 
   return (
-    <FlowPage title={t("join.title")} subtitle={t("join.subtitle")} onBack={onBack} backLabel={t("completion.backToMenu")}>
+    <FlowPage title={t("join.title")} onBack={onBack} backLabel={t("completion.backToMenu")}>
       <form onSubmit={handleSubmit} className="grid gap-5" autoComplete="off">
         <div>
           <label htmlFor="join-game-code" className="mb-1.5 block text-sm font-semibold text-ink-soft">

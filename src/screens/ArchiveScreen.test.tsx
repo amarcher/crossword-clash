@@ -211,14 +211,10 @@ describe("ArchiveScreen (/archive)", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
   });
 
-  it("Race hands the day's puzzle to the host flow", async () => {
+  it("gives a day's puzzle one Play button; racing it is asked after Play", async () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText("Bard on Screen")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: "Race a friend on Bard on Screen" }));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/host-game/name"));
-    expect(game.setUrlPuzzle).toHaveBeenCalledTimes(1);
-    expect(game.setUrlPuzzle.mock.calls[0][0]).toMatchObject({ title: "Bard on Screen" });
-    expect(game.handleSoloPuzzleLoaded).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Race/ })).toBeNull();
   });
 
   it("offers to resume the saved solo game and marks it in progress", async () => {

@@ -19,7 +19,7 @@ export function sanitizeCode(raw: string): string {
  * the name field and the join itself live. Always on the screen, never behind
  * a link: the code is the one path that works for everyone.
  */
-export function CodeJoinCard({ first, onJoin }: { first: boolean; onJoin?: (code: string) => void }) {
+export function CodeJoinCard({ onJoin }: { onJoin?: (code: string) => void }) {
   const { t } = useTranslation();
   const navigate = useTransitionNavigate();
   const [code, setCode] = useState("");
@@ -38,7 +38,6 @@ export function CodeJoinCard({ first, onJoin }: { first: boolean; onJoin?: (code
   return (
     <Card className="p-5">
       <Eyebrow as="h2">{t("race.codeHeading")}</Eyebrow>
-      {first && <p className="mt-1 text-sm text-muted">{t("race.codeIntro")}</p>}
       <form onSubmit={submit} className="mt-3 grid gap-3" autoComplete="off">
         <div className="relative">
           <div aria-hidden="true" className="flex justify-between gap-2 sm:justify-start sm:gap-2.5">
@@ -81,7 +80,6 @@ export function CodeJoinCard({ first, onJoin }: { first: boolean; onJoin?: (code
         <Button type="submit" size="lg" block disabled={!ready} {...prefetchOnIntent("/join")}>
           {t("race.join")}
         </Button>
-        <p className="text-center text-sm text-muted">{t("race.scanHint")}</p>
       </form>
     </Card>
   );

@@ -315,7 +315,6 @@ export function MenuScreen() {
                         ) : null}
                       </span>
                     }
-                    subtitle={t("menu.raceHubSubtitle")}
                     disabled={disabled}
                     onClick={() => track("mode_selected", { mode: "race" })}
                   />
@@ -325,7 +324,6 @@ export function MenuScreen() {
                       icon={Users}
                       to="/host-game/name"
                       title={t("menu.startGame")}
-                      subtitle={t("menu.startGameSubtitle")}
                       disabled={disabled}
                       onClick={() => track("mode_selected", { mode: "host" })}
                     />
@@ -333,7 +331,6 @@ export function MenuScreen() {
                       icon={Hash}
                       to="/join"
                       title={t("menu.joinGame")}
-                      subtitle={t("menu.joinGameSubtitle")}
                       disabled={disabled}
                       onClick={() => track("mode_selected", { mode: "join" })}
                     />
@@ -344,7 +341,6 @@ export function MenuScreen() {
                   icon={Tv}
                   to="/host"
                   title={t("menu.tvMode")}
-                  subtitle={t("menu.tvModeHint")}
                   disabled={disabled}
                   className="max-md:hidden"
                   onClick={() => track("mode_selected", { mode: "tv" })}
@@ -367,7 +363,6 @@ export function MenuScreen() {
                 icon={CalendarDays}
                 to="/archive"
                 title={t("menu.pastPuzzles")}
-                subtitle={t("menu.pastPuzzlesSubtitle")}
                 onClick={() => track("mode_selected", { mode: "archive" })}
               />
               {communityEnabled() && (
@@ -375,7 +370,6 @@ export function MenuScreen() {
                   icon={Users}
                   to="/puzzles"
                   title={t("menu.communityPuzzles")}
-                  subtitle={t("menu.communityPuzzlesSubtitle")}
                   onClick={() => track("mode_selected", { mode: "community" })}
                 />
               )}
@@ -386,7 +380,6 @@ export function MenuScreen() {
                   icon={Newspaper}
                   href="/install-bookmarklet"
                   title={nytStreak > 0 ? t("menu.nytTileStreak", { count: nytStreak }) : t("menu.nytTile")}
-                  subtitle={t("menu.nytTileSubtitle")}
                   onClick={() => track("mode_selected", { mode: "nyt" })}
                 />
               )}
@@ -396,7 +389,6 @@ export function MenuScreen() {
                   tone="neutral"
                   to="/nyt-import"
                   title={t("nytImport.title")}
-                  subtitle={t("menu.nytImportSubtitle")}
                   onClick={() => track("mode_selected", { mode: "import" })}
                 />
               )}
@@ -405,7 +397,6 @@ export function MenuScreen() {
                 tone="neutral"
                 to="/solo/import"
                 title={t("menu.ownPuzzle")}
-                subtitle={t("menu.ownPuzzleSubtitle")}
                 onClick={() => track("mode_selected", { mode: "solo" })}
               />
             </ListGroup>
@@ -424,7 +415,6 @@ export function MenuScreen() {
                     icon={Smartphone}
                     href={iosAppUrl}
                     title={t("menu.iosApp")}
-                    subtitle={t("menu.iosAppSubtitle")}
                     onClick={() => track("app_store_click", { placement: "menu" })}
                   />
                 )}
@@ -433,7 +423,6 @@ export function MenuScreen() {
                     icon={Smartphone}
                     href={androidAppUrl}
                     title={t("menu.androidApp")}
-                    subtitle={t("menu.androidAppSubtitle")}
                     onClick={() => track("play_store_click", { placement: "menu" })}
                   />
                 )}
@@ -445,7 +434,6 @@ export function MenuScreen() {
                     icon={PencilRuler}
                     to="/studio"
                     title={t("menu.buildPuzzle")}
-                    subtitle={t("menu.buildPuzzleSubtitle")}
                     onClick={() => track("mode_selected", { mode: "studio" })}
                   />
                 )}

@@ -49,8 +49,8 @@ describe("SoloStartGate", () => {
     const live = { names: ["ben", "julie"], onChoose: vi.fn() };
     render(<SoloStartGate title="Mouse House" race={race} live={live} onStart={onStart} onBack={vi.fn()} />);
     expect(screen.getByText("How do you want to play?")).toBeTruthy();
-    expect(screen.getByText("ayang329 and Minna solved this")).toBeTruthy();
-    expect(screen.getByText("ben and julie haven't solved it yet")).toBeTruthy();
+    expect(screen.getByText("ayang329 and Minna")).toBeTruthy();
+    expect(screen.getByText("ben and julie")).toBeTruthy();
     act(() => { vi.advanceTimersByTime(10_000); });
     expect(onStart).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).toBeNull();
@@ -87,16 +87,16 @@ describe("SoloStartGate", () => {
   it("Race friends live leaves for the live room, offered even when nobody has a solve to race", () => {
     const live = { names: ["ben"], onChoose: vi.fn() };
     render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={live} onStart={vi.fn()} onBack={vi.fn()} />);
-    expect(screen.getByText("ben hasn't solved it yet")).toBeTruthy();
+    expect(screen.getByText("ben")).toBeTruthy();
     expect(screen.queryByTestId("start-ask-race")).toBeNull();
     fireEvent.click(screen.getByTestId("start-ask-live"));
     expect(live.onChoose).toHaveBeenCalledTimes(1);
   });
 
-  it("offers a live room to a player with no friends, as a room to share by code", () => {
+  it("offers a live room to a player with no friends, under its name alone", () => {
     render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={{ names: [], onChoose: vi.fn() }} onStart={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByText("How do you want to play?")).toBeTruthy();
-    expect(screen.getByText("Start a room and share the code")).toBeTruthy();
+    expect(screen.getByTestId("start-ask-live").textContent).toBe("Race friends live");
   });
 
   it("with nobody to race either way, and when solo was already chosen, it is the countdown alone", () => {

@@ -184,11 +184,7 @@ export function RaceScreen() {
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold text-ink">{t("race.startTitle")}</h2>
-              <p className="text-sm text-muted">
-                {game.urlPuzzle
-                  ? t("race.startBodyPuzzle", { title: game.urlPuzzle.title })
-                  : t(friends.active && friends.friendships.friends.length > 0 ? "race.startBodyFriends" : "race.startBody")}
-              </p>
+              {game.urlPuzzle && <p className="truncate text-sm text-muted">{game.urlPuzzle.title}</p>}
             </div>
             <Button variant={index === 0 ? "primary" : "secondary"} onClick={() => startRoom(null)} {...prefetchOnIntent(game.urlPuzzle ? "/host-game/name" : "/pick-puzzle")}>
               {t("race.start")}
@@ -196,13 +192,12 @@ export function RaceScreen() {
           </Card>
         );
       case "code":
-        return <CodeJoinCard key={block} first={index === 0} onJoin={() => track("race_action", { action: "join-code", signed_in: friends.active })} />;
+        return <CodeJoinCard key={block} onJoin={() => track("race_action", { action: "join-code", signed_in: friends.active })} />;
       case "signIn":
         return (
           <Card key={block} className="flex items-center gap-3 p-4 pl-5">
             <div className="min-w-0 flex-1">
               <h2 className="font-semibold text-ink">{t(account.user && !account.profile ? "race.usernameTitle" : "race.signInTitle")}</h2>
-              <p className="text-sm text-muted">{t(account.user && !account.profile ? "race.usernameBody" : "race.signInBody")}</p>
             </div>
             {account.available && (
               <Button variant="secondary" onClick={signIn}>
@@ -218,7 +213,6 @@ export function RaceScreen() {
     <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
       <header className="mb-5 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("race.title")}</h1>
-        <p className="mt-1 text-sm text-muted">{t("race.subtitle")}</p>
         {game.urlPuzzle && (
           <p className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700">
             <span className="truncate">{t("race.racingChip", { title: game.urlPuzzle.title })}</span>

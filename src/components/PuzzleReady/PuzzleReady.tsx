@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Check, Newspaper, Trophy, Tv, Users } from "lucide-react";
+import { CalendarDays, Check, Newspaper, Trophy, Tv } from "lucide-react";
 import { FlowPage } from "../Flow";
 import { AdSlot } from "../AdSlot";
-import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../ui";
+import { Button, Card, ListGroup, ListRow, MiniGridThumb, TransitionLink } from "../ui";
 import type { Puzzle } from "../../types/puzzle";
 import { formatShareDay } from "../../lib/shareBlock";
 import { leaderboardPath, todayKey } from "../../lib/dailyLeaderboard";
@@ -12,7 +12,6 @@ const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow
 interface PuzzleReadyProps {
   puzzle: Puzzle;
   onPlaySolo: () => void;
-  onHostGame: () => void;
   onHostOnTV: () => void;
   /** When false, only show Play Solo (e.g. no Supabase connection) */
   showHostOptions: boolean;
@@ -30,7 +29,6 @@ interface PuzzleReadyProps {
 export function PuzzleReady({
   puzzle,
   onPlaySolo,
-  onHostGame,
   onHostOnTV,
   showHostOptions,
   onBack,
@@ -109,26 +107,11 @@ export function PuzzleReady({
             {t("menu.playSolo")}
           </Button>
 
+          {/* One Play button: racing friends is asked after it (SoloStartGate). A TV has no Play, so it keeps its row. */}
           {showHostOptions && (
-            <section className="grid gap-3">
-              <Eyebrow as="h2" className="px-1">{t("puzzleReady.friendsHeading")}</Eyebrow>
-              <ListGroup>
-                <ListRow
-                  icon={Users}
-                  title={t("menu.hostAsPlayer")}
-                  subtitle={t("menu.hostAsPlayerSubtitle")}
-                  onClick={onHostGame}
-                />
-                <ListRow
-                  icon={Tv}
-                  tone="neutral"
-                  title={t("menu.hostAsTV")}
-                  subtitle={t("menu.hostAsTVSubtitle")}
-                  onClick={onHostOnTV}
-                  className="max-md:hidden"
-                />
-              </ListGroup>
-            </section>
+            <ListGroup className="max-md:hidden">
+              <ListRow icon={Tv} tone="neutral" title={t("menu.hostAsTV")} onClick={onHostOnTV} />
+            </ListGroup>
           )}
         </div>
       </div>

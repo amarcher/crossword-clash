@@ -156,7 +156,6 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
         ) : undefined
       }
       title={isHost ? t("lobby.title") : t("lobby.guestTitle")}
-      subtitle={isHost ? t("lobby.shareInvite") : t("lobby.guestSubtitle")}
     >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2 lg:items-start lg:gap-x-6">
         {/* The most important line on the page leads (Andrew, 2026-10-30): the host's Start,
@@ -316,10 +315,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
                 {linkCopied ? t("lobby.inviteLinkCopied") : canShare ? t("lobby.shareInviteAction") : t("lobby.copyInviteLink")}
               </Button>
               {isHost && (
-                <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-muted marker:text-subtle">
-                  <li>{t("lobby.howItWorksStep1")}</li>
-                  <li>{t("lobby.howItWorksStep2")}</li>
-                </ol>
+                <p className="mt-3 text-center text-sm text-muted">{t("lobby.enterAt")}</p>
               )}
             </Card>
 
@@ -334,7 +330,6 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
               </div>
               <div className="min-w-0 lg:text-center">
                 <p className="font-semibold text-ink">{t("lobby.scanToJoin")}</p>
-                <p className="mt-0.5 text-sm text-muted">{t("lobby.qrHint")}</p>
               </div>
             </Card>
           </section>
