@@ -1,0 +1,3 @@
+<en-US>
+Picking a puzzle for a room now suggests past dailies that nobody in the room has finished, by size. The leaderboard keeps your first solve of a daily: a later, faster solve no longer replaces it.
+</en-US>
