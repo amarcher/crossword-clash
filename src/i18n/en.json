@@ -346,6 +346,7 @@
     "raceFreshHint": "Pick a puzzle, invite by link"
   },
   "boardJoin": {
+    "sheetTitle": "Post your time",
       "create": "Create an account to post your time",
       "title": "Add me to the leaderboard",
       "everyone": "Everyone can watch",

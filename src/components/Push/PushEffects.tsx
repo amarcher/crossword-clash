@@ -54,7 +54,10 @@ type Ask = "first" | "reminder";
 export function PushEffects() {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
-  const sessionUserId = useMaybeAccount()?.sessionUserId ?? null;
+  const account = useMaybeAccount();
+  const sessionUserId = account?.sessionUserId ?? null;
+  // The first-open ask is about friends, so it waits for an account: a guest has none to hear from.
+  const hasAccount = !!account?.user;
   const [ask, setAsk] = useState<Ask | null>(null);
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export function PushEffects() {
   // The first-open ask: one per device, never twice in a session either.
   const firstAskStarted = useRef(false);
   useEffect(() => {
-    if (!pushAvailable() || !sessionUserId || firstAskStarted.current || asked(PUSH_FIRST_ASK_KEY)) return;
+    if (!pushAvailable() || !sessionUserId || !hasAccount || firstAskStarted.current || asked(PUSH_FIRST_ASK_KEY)) return;
     const timer = window.setTimeout(async () => {
       if (firstAskStarted.current) return;
       firstAskStarted.current = true;
@@ -88,7 +91,7 @@ export function PushEffects() {
       }
     }, FIRST_ASK_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [sessionUserId]);
+  }, [sessionUserId, hasAccount]);
 
   // The reminder ask: when a daily's finish dialog closes, never over it.
   useEffect(() => {

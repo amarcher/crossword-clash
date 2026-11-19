@@ -27,8 +27,8 @@ vi.mock("../../lib/push", () => ({
   savePushPrefs: push.savePushPrefs,
   startPushTaps: () => () => {},
 }));
-const account = vi.hoisted(() => ({ sessionUserId: "u1" as string | null }));
-vi.mock("../../contexts/AccountContext", () => ({ useMaybeAccount: () => ({ sessionUserId: account.sessionUserId }) }));
+const account = vi.hoisted(() => ({ sessionUserId: "u1" as string | null, guest: false }));
+vi.mock("../../contexts/AccountContext", () => ({ useMaybeAccount: () => ({ sessionUserId: account.sessionUserId, user: account.sessionUserId && !account.guest ? { id: account.sessionUserId } : null }) }));
 const track = vi.hoisted(() => vi.fn());
 vi.mock("../../lib/analytics", () => ({ track }));
 
@@ -55,6 +55,7 @@ beforeEach(() => {
   push.registerPushToken.mockClear();
   push.savePushPrefs.mockClear();
   account.sessionUserId = "u1";
+  account.guest = false;
   track.mockClear();
 });
 afterEach(() => {
@@ -147,6 +148,14 @@ describe("PushEffects first-open ask", () => {
 
     push.available = true;
     account.sessionUserId = null;
+    renderEffects();
+    await elapse(FIRST_ASK_DELAY_MS + 1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(localStorage.getItem(PUSH_FIRST_ASK_KEY)).toBeNull();
+  });
+
+  it("waits for an account: a guest has no friends to hear from", async () => {
+    account.guest = true;
     renderEffects();
     await elapse(FIRST_ASK_DELAY_MS + 1);
     expect(screen.queryByRole("dialog")).toBeNull();
