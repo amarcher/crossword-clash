@@ -1,0 +1,12 @@
+This build (1.1.4, build 64) adds puzzle suggestions for rooms, makes the leaderboard take your first solve only, and sends Race on a leaderboard row straight into the puzzle. Please check:
+
+1. Race friends, Start a room, then Change: under today's dailies there is "New to everyone here" with Mini, Midi and Large. It lists up to three past dailies that nobody in the room, or invited to it, has finished. Pick one and the room should return to the lobby with that puzzle.
+2. The same page reached without a room (Leaderboard, Race friends) reads "New to you" and lists past dailies you have not finished.
+3. Leaderboard, first solve only: after you have a time for a daily, solving it again faster (on your own or in a time-trial room) should not change your time.
+4. A daily you already finished in a room should not post a time when you later solve it on your own.
+5. A failed sign-in shows "Couldn't sign in. Try again." and nothing longer.
+6. Past leaderboards show "Back to today" with no sentence before it. Changing a room's puzzle has no sentence under the title. The Plus row for a subscriber reads "Subscriber".
+7. Account, recent solves: a puzzle with no title reads "Untitled puzzle".
+8. Leaderboard, before you have solved that daily: tap Race beside a player. The puzzle should open at once on a card with that player ticked ("Race 1 solve" / "Go back"), with no page in between. Go back should return to the leaderboard in one tap.
+9. Opening any fresh puzzle: the grid should be blurred behind the start card from the first moment, never readable first.
+10. Everything from build 62 still applies.
