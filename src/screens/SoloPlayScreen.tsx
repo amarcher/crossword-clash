@@ -34,7 +34,7 @@ import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { getProgress, isStarted, saveAttempt } from "../lib/soloProgress";
-import { consumeSoloChosen, consumeSoloStart, rememberSoloLanding } from "../lib/soloSession";
+import { consumeSoloChosen, consumeSoloStart, peekSoloChosen, rememberSoloLanding } from "../lib/soloSession";
 import { watchSoloLifecycle } from "../lib/soloLifecycle";
 import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
@@ -53,7 +53,7 @@ import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
 import { useGhosts, useRaceCandidateList, useSolveRecorder } from "../hooks/useRace";
-import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
+import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, peekRaceIntent, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
 import { ReplayDialog, type ReplaySolve } from "../components/Race/ReplayDialog";
 import { FriendRaceDialog } from "../components/Race/FriendRaceDialog";
@@ -156,8 +156,14 @@ export function SoloPlayScreen() {
   // A puzzle with nothing on it yet opens behind the start countdown
   // (SoloStartGate): the clock waits for it, so no time passes before the
   // grid can be read. A resumed attempt starts at once, as before.
-  const [startGate, setStartGate] = useState(false);
-  const [soloChosen, setSoloChosen] = useState(false);
+  // The gate is up on the very first frame (the same test takeSoloStart makes
+  // when the clock asks, an effect later): the grid is never shown unblurred
+  // before its start card (Andrew, 2026-11-19).
+  const [startGate, setStartGate] = useState(() => {
+    const untouched = key ? getProgress(key) : null;
+    return !!untouched && !isStarted(untouched);
+  });
+  const [soloChosen, setSoloChosen] = useState(peekSoloChosen);
   const takeSoloStart = useCallback((k: string) => {
     const start = consumeSoloStart(k);
     // However an untouched puzzle is reached (Play, Back from a room's name screen, a reload),
@@ -378,10 +384,13 @@ export function SoloPlayScreen() {
     setRace(puzzleKey ? loadRace(puzzleKey)?.ghosts ?? [] : []);
   }, [puzzleKey, attempt]);
   // A Race tap on the daily board names who to race once the puzzle opens.
-  const [raceIntent, setRaceIntent] = useState<string[]>([]);
+  // Known on the first frame, as the start card is: it decides the card's first step.
+  const [intent, setIntent] = useState(() => ({ key: puzzleKey, ids: puzzleKey ? peekRaceIntent(puzzleKey) : [] }));
   useEffect(() => {
-    setRaceIntent(puzzleKey ? takeRaceIntent(puzzleKey) : []);
+    const taken = puzzleKey ? takeRaceIntent(puzzleKey) : [];
+    setIntent((now) => (now.key === puzzleKey ? now : { key: puzzleKey, ids: taken }));
   }, [puzzleKey]);
+  const raceIntent = intent.ids;
   const { rows: raceCandidates, ready: raceCandidatesReady } = useRaceCandidateList(puzzleKey, !reopened);
   const racing = race.length > 0 && !isComplete;
   const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);

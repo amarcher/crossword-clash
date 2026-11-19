@@ -10,6 +10,8 @@ export function consumeSoloStart(key: string): boolean {
 // "Play solo now" on Race friends: the start card has already been answered, so it goes straight to its count.
 let soloChosen = false;
 export function requestSoloChosen(): void { soloChosen = true; }
+/** The same answer without taking it: for the first frame, before the clock asks. */
+export function peekSoloChosen(): boolean { return soloChosen; }
 export function consumeSoloChosen(): boolean {
   const chosen = soloChosen;
   soloChosen = false;

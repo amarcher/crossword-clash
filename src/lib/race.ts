@@ -273,11 +273,17 @@ export function saveRaceIntent(intent: RaceIntent | null): void {
   write(session(), INTENT_KEY, intent);
 }
 
-export function takeRaceIntent(key: string): string[] {
+/** Who a Race tap named for this puzzle, left in place (takeRaceIntent clears it). */
+export function peekRaceIntent(key: string): string[] {
   const intent = read<RaceIntent>(session(), INTENT_KEY);
   if (!intent || intent.key !== key) return [];
-  write(session(), INTENT_KEY, null);
   return Array.isArray(intent.userIds) ? intent.userIds.slice(0, MAX_GHOSTS) : [];
+}
+
+export function takeRaceIntent(key: string): string[] {
+  const ids = peekRaceIntent(key);
+  if (read<RaceIntent>(session(), INTENT_KEY)?.key === key) write(session(), INTENT_KEY, null);
+  return ids;
 }
 
 // --- Impure: the server ---
