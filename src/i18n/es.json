@@ -424,6 +424,9 @@
     "streakDays": "Racha de {{count}} días"
   },
   "challenge": {
+    "headingUnsigned": "¡Te han desafiado!",
+    "targetTimeUnsigned": "Resuelto en {{time}}",
+    "raceButtonUnsigned": "Compite contra esta partida",
     "raceReplyNotice": "Cuando termines, {{name}} verá tu tiempo y tu partida.",
     "shareBack": "Envía tu partida a {{name}}",
     "shareBackCopied": "Enlace copiado: pégaselo a {{name}}",
