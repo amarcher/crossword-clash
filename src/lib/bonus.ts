@@ -39,14 +39,34 @@ export async function fetchBonusCard(day: string = dayKey(new Date())): Promise<
   }
 }
 
+/** How many days back the Daily Plus leaderboard's stepper reaches. */
+export const BOARD_CARDS = 120;
+
+// The last answer per limit this session: a screen opened again (or after
+// `prefetchBonusCards`) draws at once and is corrected by the fresh read.
+const cardCache = new Map<number, BonusCard[]>();
+
+/** The cards as last fetched this session, or null when they have not been. */
+export function cachedBonusCards(limit = 60): BonusCard[] | null {
+  return cardCache.get(limit) ?? null;
+}
+
+/** Test seam: forget the cached cards. */
+export function clearBonusCardCache(): void {
+  cardCache.clear();
+}
+
 /** Released bonus cards, newest first (the archive's rows). */
 export async function fetchBonusCards(limit = 60): Promise<BonusCard[]> {
   if (!supabase) return [];
   try {
     const { data, error } = await supabase.from("bonus_cards").select(CARD_COLUMNS).order("day", { ascending: false }).limit(limit);
-    return error ? [] : ((data ?? []) as BonusCard[]);
+    if (error) return cardCache.get(limit) ?? [];
+    const rows = (data ?? []) as BonusCard[];
+    cardCache.set(limit, rows);
+    return rows;
   } catch {
-    return [];
+    return cardCache.get(limit) ?? [];
   }
 }
 

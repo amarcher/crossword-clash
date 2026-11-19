@@ -28,6 +28,7 @@ import {
   withUnpostedTime,
   type RankedDailyEntry,
 } from "../lib/dailyLeaderboard";
+import { BOARD_CARDS, fetchBonusCards } from "../lib/bonus";
 import { knownPublishedIndex, loadPublishedIndex, type DailyIndexEntry } from "../lib/dailyIndex";
 import { friendsEnabled } from "../lib/friends";
 import { useFriends } from "../contexts/FriendsContext";
@@ -208,6 +209,18 @@ export function DailyLeaderboardScreen() {
   }, [day, onlyKey, shownKey]);
   // So are the friends' race buttons of every tab, which would otherwise
   // arrive after the board and push the page down.
+  // And the Daily Plus tab's cards (its title, day stepper and Play button wait on them), with its race button.
+  useEffect(() => {
+    if (!supabase) return;
+    let live = true;
+    void fetchBonusCards(BOARD_CARDS).then((cards) => {
+      const card = cards.find((c) => c.day === day);
+      if (live && user && card) prefetchRaceCandidates([card.identity]);
+    });
+    return () => {
+      live = false;
+    };
+  }, [day, user]);
   useEffect(() => {
     if (!supabase || !user) return;
     let live = true;
