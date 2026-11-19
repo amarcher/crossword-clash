@@ -34,18 +34,21 @@ import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { getProgress, isStarted, saveAttempt } from "../lib/soloProgress";
-import { consumeSoloStart, rememberSoloLanding } from "../lib/soloSession";
+import { consumeSoloChosen, consumeSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { watchSoloLifecycle } from "../lib/soloLifecycle";
 import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
 import { SoloStartGate } from "../components/SoloStartGate";
 import { useFriends } from "../contexts/FriendsContext";
+import { useFriendSolves } from "../hooks/useFriendSolves";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
+import { uploadPuzzle, createGame } from "../lib/puzzleService";
+import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
@@ -154,10 +157,12 @@ export function SoloPlayScreen() {
   // (SoloStartGate): the clock waits for it, so no time passes before the
   // grid can be read. A resumed attempt starts at once, as before.
   const [startGate, setStartGate] = useState(false);
+  const [soloChosen, setSoloChosen] = useState(false);
   const takeSoloStart = useCallback((k: string) => {
     const start = consumeSoloStart(k);
     const attempt = start ? getProgress(k) : null;
     if (!attempt || isStarted(attempt)) return start;
+    setSoloChosen(consumeSoloChosen());
     setStartGate(true);
     return false;
   }, []);
@@ -375,10 +380,42 @@ export function SoloPlayScreen() {
     setRaceIntent(puzzleKey ? takeRaceIntent(puzzleKey) : []);
   }, [puzzleKey]);
   const { rows: raceCandidates, ready: raceCandidatesReady } = useRaceCandidateList(puzzleKey, !reopened);
-  const plus = account.plus;
   const racing = race.length > 0 && !isComplete;
   const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);
-  const openRacePitch = useCallback(() => account.openPaywall({ placement: "race", feature: "race" }), [account]);
+  // "Race friends live" on the start card: the room is made at once under the account's
+  // username and the lobby is where friends are invited (Andrew, 2026-11-19). A player with
+  // no username yet is asked for a name first, as before (the host name screen).
+  const username = account.profile?.username;
+  const openLiveRoom = useCallback(async () => {
+    if (!puzzle || !user) return;
+    track("mode_selected", { mode: "play-live" });
+    rememberSoloLanding("menu");
+    if (username) {
+      const puzzleId = await uploadPuzzle(puzzle);
+      const room = puzzleId ? await createGame(puzzleId, user.id, { multiplayer: true, displayName: username }) : null;
+      if (room) {
+        game.setDisplayName(username);
+        savePlayerName(username);
+        game.loadPuzzle(puzzle);
+        game.setGameId(room.gameId);
+        game.setIsMultiplayer(true);
+        game.setCompletionModalDismissed(false);
+        game.setUrlPuzzle(null);
+        setStartGate(false);
+        navigate(`/lobby/${room.gameId}`);
+        return;
+      }
+    }
+    setStartGate(false);
+    game.setUrlPuzzle(puzzle);
+    navigate("/host-game/name");
+  }, [puzzle, user, username, game, navigate]);
+  // Friends who have not solved this puzzle, for that row's line.
+  const friendSolves = useFriendSolves(startGate ? puzzleKey : null);
+  const liveFriends = useMemo(
+    () => (friends.active ? friends.friendships.friends.filter((f) => !friendSolves[f.userId] && !raceCandidates.some((c) => c.userId === f.userId)).map((f) => f.username) : []),
+    [friends.active, friends.friendships.friends, friendSolves, raceCandidates],
+  );
   // The picked solves, loaded and set beside the grid; the clock is the caller's to start.
   const loadGhosts = useCallback(
     async (userIds: string[]): Promise<boolean> => {
@@ -463,10 +500,6 @@ export function SoloPlayScreen() {
         }
         return;
       }
-      if (!plus) {
-        openRacePitch();
-        return;
-      }
       try {
         let trace = await fetchSolveTrace(userId, puzzleKey);
         // The finish this unlocks may still be on its way to the server: one more try.
@@ -481,7 +514,7 @@ export function SoloPlayScreen() {
         // A replay that can't load just doesn't open.
       }
     },
-    [puzzleKey, puzzle, plus, openRacePitch, replayable, race, withMine],
+    [puzzleKey, puzzle, replayable, race, withMine],
   );
 
   // The race (friendRace.ts): this solve and every friend's recorded one on a
@@ -971,10 +1004,8 @@ export function SoloPlayScreen() {
               <RaceStarter
                 key={`${puzzleKey}:${raceIntent.join(",")}`}
                 candidates={raceCandidates}
-                plus={plus}
                 preselect={raceIntent}
                 onStart={startRace}
-                onPitch={openRacePitch}
               />
             )}
           </>
@@ -1086,13 +1117,9 @@ export function SoloPlayScreen() {
         <SoloStartGate
           title={puzzle.title}
           detail={t("menu.dailyMeta", { width: puzzle.width, height: puzzle.height, count: puzzle.clues.length })}
-          race={{ ready: raceCandidatesReady, candidates: raceCandidates, plus, preselect: raceIntent, onPick: loadGhosts, onPitch: openRacePitch }}
-          onLive={friends.active && friends.friendships.friends.length > 0 ? () => {
-            setStartGate(false);
-            rememberSoloLanding("menu");
-            game.setUrlPuzzle(puzzle);
-            navigate("/race");
-          } : undefined}
+          answered={soloChosen}
+          race={{ ready: raceCandidatesReady, candidates: raceCandidates, preselect: raceIntent, onPick: loadGhosts }}
+          live={supabase && user ? { names: liveFriends, onChoose: openLiveRoom } : undefined}
           onStart={() => { setStartGate(false); handleResume(); }}
           onBack={() => {
             setStartGate(false);

@@ -41,48 +41,71 @@ describe("SoloStartGate", () => {
     { userId: "a", username: "ayang329", seconds: 97, friend: true },
     { userId: "m", username: "Minna", seconds: 125, friend: true },
   ];
-  const raceWith = (over = {}) => ({ ready: true, candidates: who, plus: true, preselect: [] as string[], onPick: vi.fn(async () => true), onPitch: vi.fn(), ...over });
+  const raceWith = (over = {}) => ({ ready: true, candidates: who, preselect: [] as string[], onPick: vi.fn(async () => true), ...over });
 
-  it("asks who to race before any counting, with Play solo as the default; the count is the last thing", async () => {
+  it("asks how to play before any counting; Play solo then counts, the last thing before the grid", () => {
     const onStart = vi.fn();
     const race = raceWith();
-    render(<SoloStartGate title="Mouse House" race={race} onStart={onStart} onBack={vi.fn()} />);
-    expect(screen.getByText("ayang329 and 1 other friend solved this")).toBeTruthy();
+    const live = { names: ["ben", "julie"], onChoose: vi.fn() };
+    render(<SoloStartGate title="Mouse House" race={race} live={live} onStart={onStart} onBack={vi.fn()} />);
+    expect(screen.getByText("How do you want to play?")).toBeTruthy();
+    expect(screen.getByText("ayang329 and Minna solved this")).toBeTruthy();
+    expect(screen.getByText("ben and julie haven't solved it yet")).toBeTruthy();
     act(() => { vi.advanceTimersByTime(10_000); });
     expect(onStart).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Play solo" }));
+    fireEvent.click(screen.getByRole("button", { name: /Play solo/ }));
     expect(race.onPick).not.toHaveBeenCalled();
     expect(screen.getByRole("status").textContent).toBe("Starting in 3…");
     tick(3);
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it("loads the ticked solves, then counts; a solve that will not load keeps the choice open", async () => {
+  it("Race a finished solve opens the list; the ticked solves load, then it counts saying who; a failed load keeps the list", async () => {
     const onStart = vi.fn();
-    const race = raceWith({ preselect: ["m"], onPick: vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true) });
+    const race = raceWith({ onPick: vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true) });
     render(<SoloStartGate title="Mouse House" race={race} onStart={onStart} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("start-ask-race"));
+    expect((screen.getByRole("button", { name: "Pick a solve" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("checkbox", { name: /Minna/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /ayang329/ }));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Race 2 solves" })); });
     expect(race.onPick).toHaveBeenLastCalledWith(["m", "a"]);
     expect(screen.getByRole("alert").textContent).toBe("Couldn't load that solve. Try again.");
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Race 2 solves" })); });
-    expect(screen.getByRole("status").textContent).toBe("Starting in 3…");
+    expect(screen.getByText("Racing Minna and ayang329")).toBeTruthy();
     tick(3);
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
-  it("without Plus counts straight away, the offer one line that stops the count for the pitch", () => {
-    const onStart = vi.fn();
-    const race = raceWith({ plus: false });
-    render(<SoloStartGate title="Mouse House" race={race} onStart={onStart} onBack={vi.fn()} />);
+  it("opens on the list with the racer ticked after a Race tap on a leaderboard row", () => {
+    render(<SoloStartGate title="Mouse House" race={raceWith({ preselect: ["m"] })} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Race 1 solve" })).toBeTruthy();
+    expect((screen.getByRole("checkbox", { name: /Minna/ }) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("Race friends live leaves for the live room, offered even when nobody has a solve to race", () => {
+    const live = { names: ["ben"], onChoose: vi.fn() };
+    render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={live} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText("ben hasn't solved it yet")).toBeTruthy();
+    expect(screen.queryByTestId("start-ask-race")).toBeNull();
+    fireEvent.click(screen.getByTestId("start-ask-live"));
+    expect(live.onChoose).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers a live room to a player with no friends, as a room to share by code", () => {
+    render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={{ names: [], onChoose: vi.fn() }} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText("How do you want to play?")).toBeTruthy();
+    expect(screen.getByText("Start a room and share the code")).toBeTruthy();
+  });
+
+  it("with nobody to race either way, and when solo was already chosen, it is the countdown alone", () => {
+    const { unmount } = render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} onStart={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByRole("status").textContent).toBe("Starting in 3…");
-    fireEvent.click(screen.getByTestId("start-race-pitch"));
-    expect(race.onPitch).toHaveBeenCalledTimes(1);
-    act(() => { vi.advanceTimersByTime(10_000); });
-    expect(onStart).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Start" }));
-    expect(onStart).toHaveBeenCalledTimes(1);
+    unmount();
+    render(<SoloStartGate title="Mouse House" answered race={raceWith({ ready: false })} live={{ names: ["ben"], onChoose: vi.fn() }} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByRole("status").textContent).toBe("Starting in 3…");
+    expect(screen.queryByTestId("start-ask")).toBeNull();
   });
 
   it("waits briefly for the list, then counts without it; an answer after that does not pull the card back", () => {
@@ -92,15 +115,8 @@ describe("SoloStartGate", () => {
     act(() => { vi.advanceTimersByTime(1200); });
     expect(screen.getByRole("status").textContent).toBe("Starting in 3…");
     rerender(<SoloStartGate title="Mouse House" race={raceWith()} onStart={onStart} onBack={vi.fn()} />);
-    expect(screen.queryByTestId("start-race-pick")).toBeNull();
+    expect(screen.queryByTestId("start-ask")).toBeNull();
     tick(3);
     expect(onStart).toHaveBeenCalledTimes(1);
-  });
-
-  it("offers a live race with a friend when there is someone to ask", () => {
-    const onLive = vi.fn();
-    render(<SoloStartGate title="Mouse House" onLive={onLive} onStart={vi.fn()} onBack={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Race a friend live" }));
-    expect(onLive).toHaveBeenCalledTimes(1);
   });
 });

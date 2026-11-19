@@ -4,7 +4,6 @@ import { Loader2, PlayCircle } from "lucide-react";
 import { Button } from "../ui";
 import { useAuth } from "../../contexts/AuthContext";
 import { useGame } from "../../contexts/GameContext";
-import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useRaceName } from "../../hooks/useRaceName";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
@@ -29,7 +28,6 @@ export function WatchSolveButton({ puzzle, puzzleKey, friendId, friendName }: { 
   const { t } = useTranslation();
   const { user } = useAuth();
   const game = useGame();
-  const account = useMaybeAccount();
   const navigate = useTransitionNavigate();
   const best = useBestTimes()[puzzleKey];
   const ownName = useRaceName();
@@ -58,11 +56,6 @@ export function WatchSolveButton({ puzzle, puzzleKey, friendId, friendName }: { 
   };
 
   const raceThem = async () => {
-    if (!account) return;
-    if (!account.plus) {
-      account.openPaywall({ placement: "race_friend_solve", feature: "race" });
-      return;
-    }
     saveRaceIntent({ key: puzzleKey, userIds: [friendId] });
     track("race_action", { action: "race-solve", signed_in: true });
     if ((await game.handleSoloPuzzleLoaded(puzzle)) === false) return;

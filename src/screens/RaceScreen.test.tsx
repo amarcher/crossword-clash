@@ -10,7 +10,7 @@ const navigate = vi.fn();
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
 type Stub = { title: string; width: number; height: number; cells: { row: number; col: number; solution: string | null }[][] };
-const game = { urlPuzzle: null as Stub | null, setUrlPuzzle: vi.fn() };
+const game = { urlPuzzle: null as Stub | null, setUrlPuzzle: vi.fn(), handleSoloPuzzleLoaded: vi.fn(async () => true) };
 vi.mock("../contexts/GameContext", () => ({ useGame: () => game }));
 const account = { user: null as { id: string } | null, profile: null as { username: string } | null, available: true, openAccount: vi.fn() };
 vi.mock("../contexts/AccountContext", () => ({ useAccountContext: () => account, useMaybeAccount: () => null }));

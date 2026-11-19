@@ -15,23 +15,22 @@ const candidates: RaceCandidate[] = [
 ];
 
 describe("RaceStarter", () => {
-  it("names the friend who solved it; a free player's Race opens the Plus pitch", () => {
-    const onPitch = vi.fn();
-    render(<RaceStarter candidates={candidates} plus={false} preselect={[]} onStart={vi.fn()} onPitch={onPitch} />);
+  it("names the friend who solved it; Race opens the picker for every player", () => {
+    render(<RaceStarter candidates={candidates} preselect={[]} onStart={vi.fn()} />);
     expect(screen.getByText("sam solved this. Race their solve")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Race with Plus" }));
-    expect(onPitch).toHaveBeenCalled();
     expect(screen.queryByRole("checkbox")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Race" }));
+    expect(screen.getAllByRole("checkbox").length).toBeGreaterThan(0);
   });
 
   it("offers the fastest public solvers when no friend has solved it", () => {
-    render(<RaceStarter candidates={candidates.slice(1)} plus preselect={[]} onStart={vi.fn()} onPitch={vi.fn()} />);
+    render(<RaceStarter candidates={candidates.slice(1)} preselect={[]} onStart={vi.fn()} />);
     expect(screen.getByText("Race the fastest solvers")).toBeTruthy();
   });
 
   it("lets Plus pick up to three and starts the race with them", async () => {
     const onStart = vi.fn(async () => true);
-    render(<RaceStarter candidates={candidates} plus preselect={[]} onStart={onStart} onPitch={vi.fn()} />);
+    render(<RaceStarter candidates={candidates} preselect={[]} onStart={onStart} />);
     fireEvent.click(screen.getByRole("button", { name: "Race" }));
     const boxes = screen.getAllByRole("checkbox") as HTMLInputElement[];
     // The friend is ticked to start with; two more fill the race and the fourth can't be added.
@@ -44,7 +43,7 @@ describe("RaceStarter", () => {
   });
 
   it("opens with a board's preselected player ticked, and says so when a solve can't load", async () => {
-    render(<RaceStarter candidates={candidates} plus preselect={["p2"]} onStart={async () => false} onPitch={vi.fn()} />);
+    render(<RaceStarter candidates={candidates} preselect={["p2"]} onStart={async () => false} />);
     const boxes = screen.getAllByRole("checkbox") as HTMLInputElement[];
     expect(boxes.map((b) => b.checked)).toEqual([false, false, true, false]);
     fireEvent.click(screen.getByRole("button", { name: "Start race" }));

@@ -50,20 +50,17 @@ interface DailyHeroProps {
   slot: DailySlot;
   /** Null paints the loading placeholder, sized exactly like the loaded tile. */
   daily: DailyMini | null;
-  /** Whether a "Race friends" button exists at all (multiplayer configured). */
+  /** Multiplayer is configured: a solved tile links its friends' race. */
   multiplayer: boolean;
-  /** Race friends is disabled (not unmounted) until auth has a user. */
-  disabled: boolean;
   /** Shown in the footer when positive (the mini carries the daily streak). */
   streak?: number;
   onPlay: () => void;
-  onRace: () => void;
 }
 
 const SLOT_EYEBROW = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const satisfies Record<DailySlot, string>;
 
 /** One daily's front-door tile: ribbon (eyebrow + theme), title, size line, thumb, actions, board link. */
-export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPlay, onRace }: DailyHeroProps) {
+export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: DailyHeroProps) {
   const { t } = useTranslation();
   const label = t(SLOT_EYEBROW[slot]);
   const progress = useSoloProgress();
@@ -86,19 +83,18 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
-      {/* The ribbon: which daily this is and its theme, across the card's full width so a
-          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off).
-          No fill of its own (Andrew, 2026-11-16): white on an open card, and the card's blue once
-          the puzzle is solved, so Play is the card's only strong colour. */}
-      <div className={`flex min-h-8 flex-wrap items-center gap-x-2.5 border-b px-5 py-1.5 sm:px-6 ${solved || raced ? "border-brand-200" : "border-line"}`}>
+      {/* Which daily this is and its theme, across the card's full width so a long theme wraps
+          under the label, never cut off. No rule under it (Andrew, 2026-11-19: clutter), and the
+          theme is a badge again, not plain text. */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
         <Eyebrow className="shrink-0">{label}</Eyebrow>
         {displayTheme(daily) && (
-          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={displayTheme(daily)}>
+          <span data-theme className="max-w-full min-w-0 truncate rounded-full bg-gold-50 px-2.5 py-0.5 text-xs leading-5 font-semibold text-gold-700 ring-1 ring-gold-100" title={displayTheme(daily)}>
             {displayTheme(daily)}
           </span>
         )}
       </div>
-      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
+      <div className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
         <div className="min-w-0 flex-1">
           {daily ? (
             <>
@@ -145,19 +141,6 @@ export function DailyHero({ slot, daily, multiplayer, disabled, streak = 0, onPl
         <Button size="lg" variant={(solved || raced) && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
           {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : raced ? "menu.dailyPlaySolo" : "menu.dailyPlay")}
         </Button>
-        {multiplayer && (
-          <Button
-            variant="secondary"
-            size="lg"
-            className="flex-1"
-            onClick={onRace}
-            disabled={disabled || !daily}
-            {...prefetchOnIntent(friendsEnabled() ? "/race" : "/host-game/name")}
-          >
-            <Swords className="size-4.5" aria-hidden="true" />
-            {t("menu.raceFriends")}
-          </Button>
-        )}
       </div>
       {/* The whole strip opens the board, not just the words (Andrew, 2026-11-16): the link's ::after covers it. */}
       <div className="relative flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
@@ -186,7 +169,7 @@ export function MenuScreen() {
   // Pushes run inside the site cross-fade; the play screen gets a plain fade
   // (no bar to morph into) and the grid itself is never a named element.
   const navigate = useTransitionNavigate();
-  const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
+  const { handleSoloPuzzleLoaded, setSoloTheme } = useGame();
   // Multiplayer needs a Supabase user. Whether Supabase is configured at all is
   // known synchronously, so hiding the friends UI in an offline build costs no
   // layout shift; whether auth has resolved is not, so while it is pending (or
@@ -222,21 +205,6 @@ export function MenuScreen() {
       navigate("/solo/play");
     },
     [handleSoloPuzzleLoaded, setSoloTheme, navigate],
-  );
-
-  const raceDaily = useCallback(
-    (daily: DailyMini | null | undefined, slot: DailySlot) => {
-      track("mode_selected", { mode: "daily-race", slot });
-      // Hand the daily to the existing host flow (name → lobby with share
-      // code/QR) — everyone is released into the SAME puzzle at the same instant
-      // when the host starts. Same lobby mechanic as any imported puzzle.
-      if (!daily) return;
-      setUrlPuzzle(daily.puzzle);
-      // With friends on, the Race friends screen (docs/friends-spec.md §3.6)
-      // takes the daily as its chip: challenge a friend, or start the room.
-      navigate(friendsEnabled() ? "/race" : "/host-game/name");
-    },
-    [setUrlPuzzle, navigate],
   );
   // The menu row's badge: open invites the player has not seen, else friend
   // requests waiting for an answer (a push for either lands on /race/friends).
@@ -291,19 +259,15 @@ export function MenuScreen() {
             slot="mini"
             daily={dailyMini}
             multiplayer={multiplayer}
-            disabled={disabled}
             streak={streak}
             onPlay={() => void playDaily(dailyMini, "mini")}
-            onRace={() => raceDaily(dailyMini, "mini")}
           />
           {dailyMidi !== null && (
             <DailyHero
               slot="midi"
               daily={dailyMidi ?? null}
               multiplayer={multiplayer}
-              disabled={disabled}
               onPlay={() => void playDaily(dailyMidi, "midi")}
-              onRace={() => raceDaily(dailyMidi, "midi")}
             />
           )}
           {dailyLarge !== null && (
@@ -311,9 +275,7 @@ export function MenuScreen() {
               slot="large"
               daily={dailyLarge ?? null}
               multiplayer={multiplayer}
-              disabled={disabled}
               onPlay={() => void playDaily(dailyLarge, "large")}
-              onRace={() => raceDaily(dailyLarge, "large")}
             />
           )}
           <BonusCard />

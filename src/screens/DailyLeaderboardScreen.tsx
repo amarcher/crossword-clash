@@ -406,10 +406,6 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const raceRow = useCallback(
     (userId: string) => {
       if (!puzzleKey || !account) return;
-      if (!account.plus) {
-        account.openPaywall({ placement: "leaderboard_race", feature: "race" });
-        return;
-      }
       saveRaceIntent({ key: puzzleKey, userIds: [userId] });
       track("leaderboard_race", { slot, past });
       navigate(dailyPath(day, slot));
@@ -487,10 +483,6 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const watchRow = useCallback(
     async (userId: string) => {
       if (!puzzleKey || !account) return;
-      if (!account.plus) {
-        account.openPaywall({ placement: "leaderboard_watch", feature: "race" });
-        return;
-      }
       try {
         const [board, theirs, mine] = await Promise.all([
           daily?.puzzle ?? fetchDailyForDay(day, slot).then((d) => d?.puzzle ?? null),
@@ -540,19 +532,10 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   }, [puzzleKey, raceLoading, daily, day, slot, user, solvedSeconds, ownName, past]);
 
   const raceFriends = useCallback(() => {
-    if (solved || playedAsGroup) {
-      // Already solved: a fresh puzzle through the picker, never this one.
-      track("mode_selected", { mode: "daily-race-fresh", slot });
-      navigate(pickerPath("race"));
-      return;
-    }
-    track("mode_selected", { mode: "daily-race", slot });
-    // Hand the daily to the existing host flow (name → lobby) — the
-    // same mechanic used for imported puzzles, no import step.
-    if (!daily) return;
-    game.setUrlPuzzle(daily.puzzle);
-    navigate("/host-game/name");
-  }, [game, daily, slot, solved, playedAsGroup, navigate]);
+    // Already solved: a fresh puzzle through the picker, never this one.
+    track("mode_selected", { mode: "daily-race-fresh", slot });
+    navigate(pickerPath("race"));
+  }, [slot, navigate]);
 
   const theme = past ? info?.theme || info?.title || "" : displayTheme(daily);
   const emptyMessage = only ? "leaderboard.emptyFriends" : past ? "leaderboard.emptyPast" : "leaderboard.empty";
@@ -672,8 +655,9 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
               {t(PLAY_TODAY[slot])}
             </Button>
           )}
-          {user && (
-            <Button size="lg" variant={solved || playedAsGroup ? "primary" : "secondary"} block onClick={raceFriends} disabled={!solved && !daily}>
+          {/* One Play button per puzzle: racing this one is asked after Play (SoloStartGate). Once it is solved, this opens a fresh one. */}
+          {user && (solved || playedAsGroup) && (
+            <Button size="lg" block onClick={raceFriends}>
               <Swords className="size-4.5" aria-hidden="true" />
               {t("leaderboard.raceFriends")}
             </Button>
