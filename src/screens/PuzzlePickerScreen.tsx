@@ -46,7 +46,6 @@ export function PuzzlePickerScreen() {
       <div className="pb-5 pt-4 text-center sm:pt-6">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("picker.title")}</h1>
         {/* Starting a room needs no telling; a room already open is told its code stays. */}
-        {intent === "next" && <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">{t("picker.subtitleNext")}</p>}
       </div>
 
       {error && (

@@ -118,7 +118,8 @@ describe("AccountMenuRow", () => {
     context.value = account({ user, plus: true, openPaywall });
     render(<AccountMenuRow />);
     const row = screen.getByRole("button", { name: /Crossword Clash Plus/ });
-    expect(row.textContent).toContain("tap to manage");
+    expect(row.textContent).toContain("Subscriber");
+    expect(row.textContent).not.toContain("tap to manage");
     expect(row.textContent).not.toContain("Past dailies, studio, AI host");
     fireEvent.click(row);
     expect(openPaywall).toHaveBeenCalledWith({ placement: "menu" });

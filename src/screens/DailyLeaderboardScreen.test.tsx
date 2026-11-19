@@ -402,7 +402,8 @@ describe("past boards (?day=)", () => {
 
     // The day is named, the board is final, and nothing can be posted or played for rank.
     expect(screen.getByText("Old One")).toBeTruthy();
-    expect(screen.getByText(/A past day's board is final/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Back to today" })).toBeTruthy();
+    expect(screen.queryByText(/board is final/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Play today's Mini" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
     expect(screen.queryByPlaceholderText("Your name")).toBeNull();
