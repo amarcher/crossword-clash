@@ -49,7 +49,6 @@ export function InviteFriendCard({ username, className = "" }: { username: strin
   return (
     <Card className={`p-5 ${className}`} data-testid="invite-friend">
       <Eyebrow as="h2">{t("friends.linkHeading")}</Eyebrow>
-      <p className="mt-1 text-sm text-muted">{t("friends.linkHint")}</p>
       <div className="mt-3 flex flex-wrap gap-2.5">
         <Button onClick={() => void share()} disabled={busy} aria-busy={busy || undefined}>
           <Share2 className="size-4" aria-hidden="true" />

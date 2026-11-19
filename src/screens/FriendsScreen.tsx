@@ -174,7 +174,6 @@ export function FriendsScreen() {
     <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("race.title"), backTo: "/race" }}>
       <header className="mb-5 pt-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("friends.title")}</h1>
-        <p className="mt-1 text-sm text-muted">{t("friends.subtitle")}</p>
       </header>
       {children}
     </PageShell>
@@ -254,7 +253,6 @@ export function FriendsScreen() {
 
       <Card className="p-5">
         <Eyebrow as="h2">{t("friends.racedHeading")}</Eyebrow>
-        <p className="mt-1 text-sm text-muted">{t("friends.racedHint")}</p>
         {opponents === null ? (
           <p className="mt-3 text-sm text-muted">{t("friends.loading")}</p>
         ) : opponents.filter((o) => relation(o.userId) !== "friend").length === 0 ? (

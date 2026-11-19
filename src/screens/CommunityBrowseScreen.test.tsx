@@ -119,12 +119,10 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
   });
 
-  it("races through the host flow", async () => {
+  it("gives each puzzle one Play button; racing it is asked after Play", async () => {
     renderAt("/puzzles");
     await screen.findByText("Puzzle 1");
-    fireEvent.click(screen.getAllByRole("button", { name: "Race friends" })[1]);
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/host-game/name"));
-    expect(game.setUrlPuzzle).toHaveBeenCalledWith(expect.objectContaining({ origin: "community" }));
+    expect(screen.queryByRole("button", { name: "Race friends" })).toBeNull();
   });
 
   it("offers Load more after a full page and appends the next", async () => {

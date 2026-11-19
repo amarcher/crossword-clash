@@ -164,7 +164,6 @@ export function RaceScreen() {
               </span>
               <div className="min-w-0 flex-1">
                 <h2 className="font-semibold text-ink">{t("race.addFriendsTitle")}</h2>
-                <p className="mt-1 text-sm text-muted">{t("race.addFriendsBody")}</p>
               </div>
             </div>
             <div className="mt-4 grid gap-2.5">

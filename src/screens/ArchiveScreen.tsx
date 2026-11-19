@@ -298,7 +298,6 @@ export function ArchiveScreen() {
               <PlusNudge
                 className="mt-4"
                 title={t("archive.plusNudgeTitle", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(`${entries[0].day}T12:00:00`)) })}
-                body={t("archive.plusNudgeBody")}
                 placement="archive"
                 feature="archive"
                 returnTo="/archive"
