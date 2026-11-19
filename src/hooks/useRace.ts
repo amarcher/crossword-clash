@@ -148,25 +148,53 @@ export function useGhosts(ghosts: readonly Ghost[], getElapsedMs: () => number, 
   return { ms, frames, tints };
 }
 
+// The last answer per puzzle this session: a board revisited (or prefetched,
+// below) draws its race buttons at once and is corrected by the fresh read,
+// so they never arrive late and push the page down.
+const candidateCache = new Map<string, RaceCandidate[]>();
+
+/** Ask ahead for puzzles about to be shown (the leaderboard's other tabs). Best-effort. */
+export function prefetchRaceCandidates(puzzleKeys: readonly string[]): void {
+  for (const key of puzzleKeys) {
+    if (candidateCache.has(key)) continue;
+    fetchRaceCandidates(key)
+      .then((rows) => candidateCache.set(key, rows))
+      .catch(() => {});
+  }
+}
+
+/** Sign-out and tests: forget every answer. */
+export function clearRaceCandidateCache(): void {
+  candidateCache.clear();
+}
+
 /**
  * The friends who have a raceable recording of this puzzle (race.ts), asked
- * once per puzzle while the viewer is an account with a username. Empty
- * otherwise and when the read fails: the Race button is an offer, never a gate.
+ * once per visit while the viewer is an account with a username; the last
+ * answer shows meanwhile. Empty otherwise and when the read fails: the Race
+ * button is an offer, never a gate.
  */
 export function useRaceCandidates(puzzleKey: string | null, enabled: boolean): RaceCandidate[] {
   const { active } = useFriends();
   const [state, setState] = useState<{ key: string; rows: RaceCandidate[] } | null>(null);
   useEffect(() => {
+    if (!active) candidateCache.clear();
+  }, [active]);
+  useEffect(() => {
     if (!active || !enabled || !puzzleKey) return;
     let live = true;
     fetchRaceCandidates(puzzleKey)
-      .then((rows) => live && setState({ key: puzzleKey, rows }))
-      .catch(() => live && setState({ key: puzzleKey, rows: [] }));
+      .then((rows) => {
+        candidateCache.set(puzzleKey, rows);
+        if (live) setState({ key: puzzleKey, rows });
+      })
+      .catch(() => live && setState({ key: puzzleKey, rows: candidateCache.get(puzzleKey) ?? [] }));
     return () => {
       live = false;
     };
   }, [active, enabled, puzzleKey]);
-  return active && enabled && puzzleKey && state?.key === puzzleKey ? state.rows : EMPTY;
+  if (!active || !enabled || !puzzleKey) return EMPTY;
+  return state?.key === puzzleKey ? state.rows : candidateCache.get(puzzleKey) ?? EMPTY;
 }
 
 const EMPTY: RaceCandidate[] = [];

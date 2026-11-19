@@ -104,6 +104,16 @@ export function formatDay(day: string): string {
   );
 }
 
+/**
+ * "Archer solved the Nov 18 Daily Mini in 1:02": a shared solve's title, a
+ * plain statement with no ask (Andrew, 2026-11-18). The finish screen shows
+ * the sender this same line before they share: src/lib/linkPreview.ts holds a
+ * copy, and its test fails when the two differ.
+ */
+export function solveTitle(who: string, what: string, time: string): string {
+  return `${who || "I"} solved ${what} in ${time}`;
+}
+
 /** Meta tags for the daily link, as [name, content] (property for og:, name for the rest). */
 export interface HeadTags {
   title: string;
@@ -204,15 +214,14 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
     }
     const date = formatDay(day);
-    const who = by || "I";
-    pageTitle = time
-      ? `${who} solved the ${label} for ${date} in ${time} — beat my time`
-      : `Play the ${label} for ${date} on Crossword Clash`;
-    description = time
-      ? `Same puzzle, your clock. Tap to race ${by ? `${by}'s` : "this"} time on Crossword Clash.`
-      : "Tap to play this daily on Crossword Clash — solo, or race friends live.";
     const replay = clean(url, "r", 11);
     const hasReplay = REPLAY_ID.test(replay);
+    pageTitle = time ? solveTitle(by, `the ${date} ${label}`, time) : `Play the ${label} for ${date} on Crossword Clash`;
+    description = time
+      ? hasReplay
+        ? `Race ${by ? `${by}'s` : "this"} solve on Crossword Clash.`
+        : "Same puzzle, your clock. Compare times on Crossword Clash."
+      : "Tap to play this daily on Crossword Clash, solo or racing friends live.";
     // A shared race (FriendRaceDialog): the clip is everyone's solve on one grid, and the link opens it.
     const isRace = hasReplay && !time;
     const racers = isRace ? raceCount(url) : 0;
@@ -231,7 +240,7 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("heading", `${label} · ${date}`);
     if (by) og.set("title", by);
     if (time) og.set("metric", time);
-    og.set("detail", time ? "Beat my time" : "Play it");
+    og.set("detail", time ? "Compare times" : "Play it");
     og.set("glyph", time ? "⏱" : "🧩");
 
     // With a replay the preview plays the solve (og:video), its last frame as the poster.
@@ -252,10 +261,7 @@ export default async function handler(req: Request): Promise<Response> {
     const replay = clean(url, "r", 11);
     const hasReplay = REPLAY_ID.test(replay);
     const date = formatDay(day);
-    const who = by || "I";
-    pageTitle = time
-      ? `${who} solved the Daily Plus for ${date} in ${time} — ${hasReplay ? "race my solve" : "beat my time"}`
-      : `The Daily Plus for ${date} on Crossword Clash`;
+    pageTitle = time ? solveTitle(by, `the ${date} Daily Plus`, time) : `The Daily Plus for ${date} on Crossword Clash`;
     description = hasReplay && time
       ? `Watch ${by ? `${by}'s` : "this"} solve square by square, then race it. The Daily Plus is an extra crossword every day with Crossword Clash Plus.`
       : "The Daily Plus is an extra crossword every day with Crossword Clash Plus.";
@@ -277,7 +283,7 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("heading", `Daily Plus · ${date}`);
     if (by) og.set("title", by);
     if (time) og.set("metric", time);
-    og.set("detail", time ? (hasReplay ? "Race my solve" : "Beat my time") : "Play it");
+    og.set("detail", time ? (hasReplay ? "Race my solve" : "Compare times") : "Play it");
     og.set("glyph", time ? "⏱" : "🧩");
     const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
     const image = hasReplay ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;
@@ -295,9 +301,8 @@ export default async function handler(req: Request): Promise<Response> {
     const replay = clean(url, "r", 11);
     const hasReplay = REPLAY_ID.test(replay);
     const named = facts ? `“${facts.title}”` : "a community crossword";
-    const who = by || "I";
     pageTitle = time
-      ? `${who} solved ${named} in ${time} — ${hasReplay ? "race my solve" : "beat my time"}`
+      ? solveTitle(by, named, time)
       : facts
         ? `${named} by @${facts.author} — Crossword Clash`
         : "A community crossword on Crossword Clash";
@@ -322,7 +327,7 @@ export default async function handler(req: Request): Promise<Response> {
     og.set("heading", "Community puzzle");
     if (facts) og.set("title", facts.title);
     if (time) og.set("metric", time);
-    og.set("detail", time ? (hasReplay ? `Race ${by || "my"}${by ? "'s" : ""} solve` : "Beat my time") : facts ? `by @${facts.author} · ${facts.width}×${facts.height}` : "Play it");
+    og.set("detail", time ? (hasReplay ? `Race ${by || "my"}${by ? "'s" : ""} solve` : "Compare times") : facts ? `by @${facts.author} · ${facts.width}×${facts.height}` : "Play it");
     og.set("glyph", time ? "⏱" : "🧩");
     const replayUrl = hasReplay ? `${origin}/api/replay?s=${replay}` : "";
     const image = replayUrl ? `${replayUrl}&poster=1` : `${origin}/api/og?${og.toString()}`;

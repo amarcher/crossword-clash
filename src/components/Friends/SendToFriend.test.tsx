@@ -57,7 +57,7 @@ describe("SendToFriend", () => {
   it("opens the friends list on tap and sends the daily link as a beat invite, flipping the row to Sent", async () => {
     render(<SendToFriend link={link} />);
     expect(screen.queryByText("@alicia")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Send to a friend" }));
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
     expect(screen.getByText("@alicia")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(friends.value.beat).toHaveBeenCalledWith("a", link));
@@ -71,7 +71,7 @@ describe("SendToFriend", () => {
       }),
     });
     render(<SendToFriend link={link} />);
-    fireEvent.click(screen.getByRole("button", { name: "Send to a friend" }));
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "That's a lot of requests for one day. Try again tomorrow.");
     expect(screen.getByRole("button", { name: "Send" })).toBeTruthy();
@@ -84,7 +84,7 @@ describe("SendToFriend", () => {
       }),
     });
     render(<SendToFriend link="/bonus/2026-11-18?beat=102&by=Archer" />);
-    fireEvent.click(screen.getByRole("button", { name: "Send to a friend" }));
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", "This one can't be sent to friends yet. Share the link instead.");
   });

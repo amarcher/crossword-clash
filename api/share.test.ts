@@ -79,7 +79,7 @@ describe("Daily Plus link", () => {
     // The shell only: the puzzle is Plus only and never read here.
     expect(calls).toEqual(["https://x.test/index.html"]);
     const html = await res.text();
-    expect(meta(html, "og:title")).toBe("Archer solved the Daily Plus for Nov 18 in 1:42 — race my solve");
+    expect(meta(html, "og:title")).toBe("Archer solved the Nov 18 Daily Plus in 1:42");
     expect(meta(html, "og:description")).toContain("Crossword Clash Plus");
     expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
     expect(meta(html, "og:video:secure_url")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
@@ -93,7 +93,7 @@ describe("Daily Plus link", () => {
 
   it("falls back to a card without a replay, or with an r that isn't a share ID", async () => {
     const html = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&beat=102&by=Archer&r=%22%3E%3Cscript%3Exyz"))).text();
-    expect(meta(html, "og:title")).toBe("Archer solved the Daily Plus for Nov 18 in 1:42 — beat my time");
+    expect(meta(html, "og:title")).toBe("Archer solved the Nov 18 Daily Plus in 1:42");
     expect(meta(html, "og:video")).toBeNull();
     expect(meta(html, "og:url")).toBe("https://x.test/bonus/2026-11-18?beat=102&by=Archer");
     const image = new URL(meta(html, "og:image")!);
@@ -103,7 +103,7 @@ describe("Daily Plus link", () => {
     expect(image.searchParams.get("title")).toBe("Archer");
     // No name and no time: the unsigned solver, and the plain card.
     const unsigned = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18&beat=60"))).text();
-    expect(meta(unsigned, "og:title")).toBe("I solved the Daily Plus for Nov 18 in 1:00 — beat my time");
+    expect(meta(unsigned, "og:title")).toBe("I solved the Nov 18 Daily Plus in 1:00");
     const plain = await (await handler(new Request("https://x.test/api/share?t=bonus&day=2026-11-18"))).text();
     expect(meta(plain, "og:title")).toBe("The Daily Plus for Nov 18 on Crossword Clash");
     expect(meta(plain, "og:url")).toBe("https://x.test/bonus/2026-11-18");
@@ -156,7 +156,7 @@ describe("daily link", () => {
     expect(res.status).toBe(200);
     expect(calls).toEqual(["https://x.test/index.html"]);
     const html = await res.text();
-    expect(meta(html, "og:title")).toBe("Archer solved the Daily Mini for Oct 20 in 1:42 — beat my time");
+    expect(meta(html, "og:title")).toBe("Archer solved the Oct 20 Daily Mini in 1:42");
     expect(meta(html, "og:url")).toBe("https://x.test/daily/2026-10-20/mini?beat=102&by=Archer");
     const image = new URL(meta(html, "og:image")!);
     expect(image.pathname).toBe("/api/og");
@@ -224,7 +224,7 @@ describe("daily link", () => {
     const res = await handler(new Request("https://x.test/api/share?t=daily&day=2026-10-20&slot=midi&beat=60"));
     const html = await res.text();
     expect(res.status).toBe(200);
-    expect(meta(html, "og:title")).toBe("I solved the Daily Midi for Oct 20 in 1:00 — beat my time");
+    expect(meta(html, "og:title")).toBe("I solved the Oct 20 Daily Midi in 1:00");
     expect(html).toContain('http-equiv="refresh" content="0;url=https://x.test/"');
   });
 
@@ -302,7 +302,7 @@ describe("community puzzle link", () => {
   it("plays the sender's solve for a race link, and names their time", async () => {
     const res = await handler(new Request("https://x.test/api/share?t=puzzle&id=ab12cd34&beat=75&by=Archer&r=VJ0ncnWyJ9j"));
     const html = await res.text();
-    expect(meta(html, "og:title")).toBe("Archer solved “Farm” in 1:15 — race my solve");
+    expect(meta(html, "og:title")).toBe("Archer solved “Farm” in 1:15");
     expect(meta(html, "og:video")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j");
     expect(meta(html, "og:image")).toBe("https://x.test/api/replay?s=VJ0ncnWyJ9j&poster=1");
     expect(meta(html, "og:url")).toBe("https://x.test/puzzles/ab12cd34?beat=75&by=Archer&r=VJ0ncnWyJ9j");
@@ -313,7 +313,7 @@ describe("community puzzle link", () => {
     const res = await handler(new Request("https://x.test/api/share?t=puzzle&id=ab12cd34&beat=75"));
     const html = await res.text();
     expect(res.status).toBe(200);
-    expect(meta(html, "og:title")).toBe("I solved a community crossword in 1:15 — beat my time");
+    expect(meta(html, "og:title")).toBe("I solved a community crossword in 1:15");
     expect(html).toContain("/assets/index-abc.js");
   });
 

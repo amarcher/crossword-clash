@@ -15,7 +15,6 @@ import { playWinSound } from "../../lib/winSound";
 import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
-import { ReplayPreview } from "./ReplayPreview";
 import { ShareBackButton } from "./ShareBackButton";
 import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
@@ -798,8 +797,6 @@ export function CompletionModal({
               </button>
             </div>
           )}
-          {/* A room's clip is shown only when the link can carry it; a time trial's is the player's own solve. */}
-          {replayId && (linkRef || !isMultiplayer) && <ReplayPreview id={replayId} race={isMultiplayer && !isAsync} darkMode={darkMode} />}
           {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
           {challengePuzzle && (
             <ShareResultButton
@@ -810,6 +807,9 @@ export function CompletionModal({
               puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
               daily={(!!refDaily || !!refBonus) && !isMultiplayer}
               legend={shareLegend}
+              // A room's clip is shown only when the link can carry it; a time trial's is the player's own solve.
+              clip={replayId && (linkRef || !isMultiplayer) ? { id: replayId, race: isMultiplayer && !isAsync } : undefined}
+              communityTitle={linkRef && "shortId" in linkRef ? challengePuzzle.title : undefined}
               onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
               darkMode={darkMode}
             />

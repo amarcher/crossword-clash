@@ -379,7 +379,7 @@ it("a signed-in solver who opted out sees a private finish without a posting for
   await screen.findByText(/Solo leaderboard posting is off/);
   expect(game.pendingDailyResult).toMatchObject({ posted: false, postingHold: "disabled" });
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
-  expect(screen.getByTestId("share-block-preview")).toBeTruthy();
+  expect(screen.getByTestId("share-result")).toBeTruthy();
 });
 
 it("a signed-in solver with the default setting posts after the preference resolves", async () => {
