@@ -21,6 +21,8 @@ interface GameLobbyProps {
   onStartGame: () => void;
   onCloseRoom: () => void;
   onLeave?: () => void;
+  /** The host, alone in the room, gives up waiting: close it and play the puzzle solo. */
+  onPlaySolo?: () => void;
   wrongAnswerTimeout?: number;
   onWrongAnswerTimeoutChange?: (value: number) => void;
   raceMode?: RaceMode;
@@ -37,7 +39,7 @@ interface GameLobbyProps {
   solves?: Record<string, PriorSolve>;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost, solves = {} }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, onPlaySolo, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost, solves = {} }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -161,9 +163,17 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             or a joiner's "waiting for the host" status. Right above the roster, never a bottom bar. */}
         <div className={column}>
           {isHost ? (
-            <Button size="lg" block onClick={onStartGame} disabled={needMore}>
-              {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
-            </Button>
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
+              <Button size="lg" block onClick={onStartGame} disabled={needMore}>
+                {needMore ? t("lobby.needMorePlayers", { count: 2 - players.length }) : t("lobby.startGame")}
+              </Button>
+              {/* Nobody has to wait on a friend: while the host is alone, the puzzle is one tap away. */}
+              {needMore && onPlaySolo && (
+                <Button variant="secondary" size="lg" block onClick={onPlaySolo}>
+                  {t("lobby.playSoloNow")}
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
               <p

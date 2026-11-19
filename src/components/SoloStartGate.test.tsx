@@ -93,6 +93,12 @@ describe("SoloStartGate", () => {
     expect(live.onChoose).toHaveBeenCalledTimes(1);
   });
 
+  it("offers a live room to a player with no friends, as a room to share by code", () => {
+    render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={{ names: [], onChoose: vi.fn() }} onStart={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText("How do you want to play?")).toBeTruthy();
+    expect(screen.getByText("Start a room and share the code")).toBeTruthy();
+  });
+
   it("with nobody to race either way, and when solo was already chosen, it is the countdown alone", () => {
     const { unmount } = render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} onStart={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByRole("status").textContent).toBe("Starting in 3…");

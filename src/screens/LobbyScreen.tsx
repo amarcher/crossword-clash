@@ -1,4 +1,6 @@
 import { puzzleIdentity } from "../lib/soloStats";
+import { requestSoloChosen } from "../lib/soloSession";
+import { track } from "../lib/analytics";
 import { useCallback, useEffect, useMemo } from "react";
 import { useRoomSolves } from "../hooks/useRoomSolves";
 import { Navigate, useNavigate } from "react-router";
@@ -73,6 +75,25 @@ export function LobbyScreen() {
     exit("/menu");
   }, [mp, game, exit, confirm]);
 
+  // "Play solo now": the host, alone, closes the room and goes to the puzzle's countdown.
+  const handlePlaySolo = useCallback(async () => {
+    const puzzle = game.puzzle;
+    if (!puzzle) return;
+    track("mode_selected", { mode: "lobby-solo" });
+    await mp.closeRoom();
+    game.reset();
+    game.setGameId(null);
+    game.setIsMultiplayer(false);
+    localStorage.removeItem(STORAGE_KEY);
+    clearMpSession();
+    requestSoloChosen();
+    if ((await game.handleSoloPuzzleLoaded(puzzle)) === false) {
+      exit("/menu");
+      return;
+    }
+    exit("/solo/play", { replace: true });
+  }, [mp, game, exit]);
+
   const handleLeave = useCallback(async () => {
     await mp.leaveGame();
     game.reset();
@@ -105,6 +126,7 @@ export function LobbyScreen() {
       onStartGame={handleStartGame}
       onCloseRoom={handleCloseRoom}
       onLeave={handleLeave}
+      onPlaySolo={mp.isHost ? () => void handlePlaySolo() : undefined}
       wrongAnswerTimeout={game.wrongAnswerTimeout}
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
       raceMode={mp.isHost ? game.raceMode : mp.lobbySettings ? resolveRaceMode(mp.lobbySettings) : undefined}

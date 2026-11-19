@@ -47,6 +47,8 @@ import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultF
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
+import { uploadPuzzle, createGame } from "../lib/puzzleService";
+import { supabase } from "../lib/supabaseClient";
 import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
@@ -380,7 +382,35 @@ export function SoloPlayScreen() {
   const { rows: raceCandidates, ready: raceCandidatesReady } = useRaceCandidateList(puzzleKey, !reopened);
   const racing = race.length > 0 && !isComplete;
   const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);
-  // Friends who have not solved this puzzle: the ones a live room is for (the start card's third row).
+  // "Race friends live" on the start card: the room is made at once under the account's
+  // username and the lobby is where friends are invited (Andrew, 2026-11-19). A player with
+  // no username yet is asked for a name first, as before (the host name screen).
+  const username = account.profile?.username;
+  const openLiveRoom = useCallback(async () => {
+    if (!puzzle || !user) return;
+    track("mode_selected", { mode: "play-live" });
+    rememberSoloLanding("menu");
+    if (username) {
+      const puzzleId = await uploadPuzzle(puzzle);
+      const room = puzzleId ? await createGame(puzzleId, user.id, { multiplayer: true, displayName: username }) : null;
+      if (room) {
+        game.setDisplayName(username);
+        savePlayerName(username);
+        game.loadPuzzle(puzzle);
+        game.setGameId(room.gameId);
+        game.setIsMultiplayer(true);
+        game.setCompletionModalDismissed(false);
+        game.setUrlPuzzle(null);
+        setStartGate(false);
+        navigate(`/lobby/${room.gameId}`);
+        return;
+      }
+    }
+    setStartGate(false);
+    game.setUrlPuzzle(puzzle);
+    navigate("/host-game/name");
+  }, [puzzle, user, username, game, navigate]);
+  // Friends who have not solved this puzzle, for that row's line.
   const friendSolves = useFriendSolves(startGate ? puzzleKey : null);
   const liveFriends = useMemo(
     () => (friends.active ? friends.friendships.friends.filter((f) => !friendSolves[f.userId] && !raceCandidates.some((c) => c.userId === f.userId)).map((f) => f.username) : []),
@@ -1089,15 +1119,7 @@ export function SoloPlayScreen() {
           detail={t("menu.dailyMeta", { width: puzzle.width, height: puzzle.height, count: puzzle.clues.length })}
           answered={soloChosen}
           race={{ ready: raceCandidatesReady, candidates: raceCandidates, preselect: raceIntent, onPick: loadGhosts }}
-          live={liveFriends.length > 0 ? {
-            names: liveFriends,
-            onChoose: () => {
-              setStartGate(false);
-              rememberSoloLanding("menu");
-              game.setUrlPuzzle(puzzle);
-              navigate("/race", { state: { fromPlay: true } });
-            },
-          } : undefined}
+          live={supabase && user ? { names: liveFriends, onChoose: openLiveRoom } : undefined}
           onStart={() => { setStartGate(false); handleResume(); }}
           onBack={() => {
             setStartGate(false);

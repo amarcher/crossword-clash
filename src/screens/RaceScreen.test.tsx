@@ -170,23 +170,6 @@ describe("RaceScreen (/race, spec §3.6)", () => {
     solved.recorded = [];
   });
 
-  it("arriving from Play's Race friends live, Play solo now goes back to the puzzle and straight to its countdown", async () => {
-    const { consumeSoloChosen } = await import("../lib/soloSession");
-    game.urlPuzzle = { title: "Shapes and shadows", width: 1, height: 1, cells: [[{ row: 0, col: 0, solution: "A" }]] };
-    renderScreen();
-    expect(screen.queryByRole("button", { name: "Play solo now" })).toBeNull();
-    cleanup();
-    render(
-      <MemoryRouter initialEntries={[{ pathname: "/race", state: { fromPlay: true } }]}>
-        <RaceScreen />
-      </MemoryRouter>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Play solo now" }));
-    await vi.waitFor(() => expect(navigate).toHaveBeenLastCalledWith("/solo/play"));
-    expect(game.handleSoloPuzzleLoaded).toHaveBeenCalledWith(game.urlPuzzle);
-    expect(consumeSoloChosen()).toBe(true);
-  });
-
   it("puts invites from friends first; Join marks the invite seen and lands on the join screen with the code", () => {
     friends.value = friendsValue({ friendships: { friends: [alicia], incoming: [], outgoing: [] }, openInvites: [invite], invites: [invite] });
     renderScreen();

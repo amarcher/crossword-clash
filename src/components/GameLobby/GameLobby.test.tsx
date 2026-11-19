@@ -33,6 +33,15 @@ describe("GameLobby prior solves", () => {
 });
 
 describe("GameLobby", () => {
+  it("offers the host Play solo now while alone in the room, and not once someone has joined", () => {
+    const onPlaySolo = vi.fn();
+    const { rerender } = render(<GameLobby shareCode="ABC123" players={mockPlayers.slice(0, 1)} isHost={true} onStartGame={vi.fn()} onCloseRoom={vi.fn()} onPlaySolo={onPlaySolo} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play solo now" }));
+    expect(onPlaySolo).toHaveBeenCalledTimes(1);
+    rerender(<GameLobby shareCode="ABC123" players={mockPlayers} isHost={true} onStartGame={vi.fn()} onCloseRoom={vi.fn()} onPlaySolo={onPlaySolo} />);
+    expect(screen.queryByRole("button", { name: "Play solo now" })).toBeNull();
+  });
+
   describe("QR code", () => {
     it("renders QR code when shareCode is provided", () => {
       render(

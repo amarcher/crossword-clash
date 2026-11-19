@@ -24,9 +24,10 @@ export interface StartGateRace {
 
 /** A live room with friends who have not solved the puzzle yet. */
 export interface StartGateLive {
-  /** Their usernames, for the row's line. */
+  /** Friends who have not solved it, for the row's line; none still offers a room to share by code. */
   names: string[];
-  onChoose: () => void;
+  /** Create the room and leave for its lobby; resolves once this card can be let go. */
+  onChoose: () => void | Promise<void>;
 }
 
 interface SoloStartGateProps {
@@ -52,10 +53,11 @@ function nameList(t: (key: string, o?: Record<string, unknown>) => string, names
  * how to play (Andrew, 2026-11-19). The grid is on screen, blurred, behind
  * it. With someone to race, the card offers Play solo, a finished solve to
  * race (friends first, up to MAX_GHOSTS, picked from a list) and a live room
- * with friends who have not solved it. Then it counts 3-2-1 and starts the
- * clock: the countdown is always the last thing before the grid, and no
- * clock time is spent choosing. With nobody to race either way the card is
- * the countdown alone. "Start now" skips the count; "Go back" leaves with
+ * (its lobby is where friends are invited; without friends it is a room to
+ * share by code). Then it counts 3-2-1 and starts the clock: the countdown is
+ * always the last thing before the grid, and no clock time is spent choosing.
+ * Where no room can be made (no backend) and nobody's solve can be raced,
+ * the card is the countdown alone. "Start now" skips the count; "Go back" leaves with
  * nothing started.
  */
 export function SoloStartGate({ title, detail, race, live, answered, onStart, onBack }: SoloStartGateProps) {
@@ -100,6 +102,17 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
     }
     setRacing(picked.map((id) => candidates.find((c) => c.userId === id)?.username ?? "").filter(Boolean));
     setStep("count");
+  };
+
+  const [opening, setOpening] = useState(false);
+  const openLive = async () => {
+    if (!live || opening) return;
+    setOpening(true);
+    try {
+      await live.onChoose();
+    } finally {
+      setOpening(false);
+    }
   };
 
   const counting = step === "count";
@@ -153,14 +166,14 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                 </button>
               )}
               {live && (
-                <button type="button" data-testid="start-ask-live" onClick={live.onChoose} className={`${option} border-line-strong bg-surface text-ink hover:bg-surface-sunken`}>
+                <button type="button" data-testid="start-ask-live" disabled={opening} aria-busy={opening || undefined} onClick={() => void openLive()} className={`${option} border-line-strong bg-surface text-ink hover:bg-surface-sunken`}>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{t("soloStart.live")}</span>
                     <span className="block truncate text-sm text-muted">
                       {live.names.length > 2 ? t("soloStart.notSolvedMany", { count: live.names.length }) : live.names.length ? t("soloStart.notSolvedBy", { names: nameList(t, live.names), count: live.names.length }) : t("soloStart.liveBody")}
                     </span>
                   </span>
-                  <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden="true" />
+                  {opening ? <Loader2 className="size-5 shrink-0 animate-spin text-muted motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden="true" />}
                 </button>
               )}
             </div>

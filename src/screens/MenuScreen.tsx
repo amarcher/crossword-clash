@@ -83,19 +83,18 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
     <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
-      {/* The ribbon: which daily this is and its theme, across the card's full width so a
-          long theme reads whole (Andrew, 2026-11-16; as a chip beside the eyebrow it was cut off).
-          No fill of its own (Andrew, 2026-11-16): white on an open card, and the card's blue once
-          the puzzle is solved, so Play is the card's only strong colour. */}
-      <div className={`flex min-h-8 flex-wrap items-center gap-x-2.5 border-b px-5 py-1.5 sm:px-6 ${solved || raced ? "border-brand-200" : "border-line"}`}>
+      {/* Which daily this is and its theme, across the card's full width so a long theme wraps
+          under the label, never cut off. No rule under it (Andrew, 2026-11-19: clutter), and the
+          theme is a badge again, not plain text. */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
         <Eyebrow className="shrink-0">{label}</Eyebrow>
         {displayTheme(daily) && (
-          <span data-theme className="max-w-full min-w-0 truncate text-[13px] leading-5 font-semibold text-ink" title={displayTheme(daily)}>
+          <span data-theme className="max-w-full min-w-0 truncate rounded-full bg-gold-50 px-2.5 py-0.5 text-xs leading-5 font-semibold text-gold-700 ring-1 ring-gold-100" title={displayTheme(daily)}>
             {displayTheme(daily)}
           </span>
         )}
       </div>
-      <div className="flex items-start gap-5 px-5 pt-3.5 pb-4 sm:px-6 sm:pt-4 sm:pb-6">
+      <div className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
         <div className="min-w-0 flex-1">
           {daily ? (
             <>
