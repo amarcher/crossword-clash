@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
+import { pickIntent, usePickPuzzle } from "../hooks/usePickPuzzle";
 import { isTvIntent, TV_CHOOSER_PATH, TV_INTENT, tvHostPath, withTvIntent } from "../lib/tvHandoff";
 import { useTranslation } from "react-i18next";
 import { EyeOff, Search, Users } from "lucide-react";
@@ -65,6 +66,9 @@ export function CommunityBrowseScreen() {
   // Reached from the TV's chooser: every card offers "Host on TV" and the
   // intent rides along through filters and links (tvHandoff.ts).
   const tv = isTvIntent(params);
+  // Picking for a room (`?pick=`, from the room's puzzle picker): the one action picks it.
+  const pick = pickIntent(params);
+  const picker = usePickPuzzle(pick ?? "race");
   const setFilters = useCallback(
     (next: BrowseFilters) => {
       const out = browseParams({ ...next, author: username ? null : next.author }, uiLang);
@@ -150,7 +154,10 @@ export function CommunityBrowseScreen() {
         if (!row) throw new Error("gone");
         const puzzle = toPlayablePuzzle(row);
         track("puzzle_imported", { import_source: "community", title: puzzle.title, size: `${puzzle.width}x${puzzle.height}` });
-        if (what === "play") {
+        if (what === "play" && pick) {
+          await picker.choose(puzzle, entry.short_id);
+          setBusy(null);
+        } else if (what === "play") {
           if (await handleSoloPuzzleLoaded(puzzle) === false) return;
           setSoloTheme(null);
           navigate("/solo/play");
@@ -167,7 +174,7 @@ export function CommunityBrowseScreen() {
         setBusy(null);
       }
     },
-    [handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, navigate, t],
+    [handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, navigate, t, pick, picker],
   );
 
   const chipBase =
@@ -275,6 +282,7 @@ export function CommunityBrowseScreen() {
                 onPlay={(entry) => void load(entry, tv ? "tv" : "play")}
                 showAuthor={!username}
                 tv={tv}
+                pick={!!pick}
               />
             )}
             <p role="status" aria-live="polite" className="mt-4 text-center text-xs text-subtle">

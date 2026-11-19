@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
+import { pickIntent, usePickPuzzle } from "../hooks/usePickPuzzle";
 import { isTvIntent, TV_CHOOSER_PATH, tvHostPath } from "../lib/tvHandoff";
 import { Check, ChevronLeft, ChevronRight, Clock, Flame, Lock, Play, Trophy } from "lucide-react";
 import { leaderboardPath } from "../lib/dailyLeaderboard";
@@ -229,17 +230,26 @@ export function ArchiveScreen() {
     },
     [t],
   );
+  // Picking for a room (`?pick=`, from the room's puzzle picker): the one action picks it.
+  const [pickParams] = useSearchParams();
+  const roomPick = pickIntent(pickParams);
+  const picker = usePickPuzzle(roomPick ?? "race");
   const play = useCallback(
     async (item: ArchiveItem) => {
       const daily = await load(item);
       if (!daily) return;
+      if (roomPick) {
+        await picker.choose(daily.puzzle, item.identity, item.slot);
+        setBusy(null);
+        return;
+      }
       track("mode_selected", { mode: "archive", slot: item.slot, status: item.status });
       // The daily path: straight into solo play, no import step.
       if (await handleSoloPuzzleLoaded(daily.puzzle) === false) return;
       setSoloTheme(daily.theme || null);
       navigate("/solo/play");
     },
-    [load, handleSoloPuzzleLoaded, setSoloTheme, navigate],
+    [load, handleSoloPuzzleLoaded, setSoloTheme, navigate, roomPick, picker],
   );
   // Reached from the TV's chooser (`?intent=tv`): the one action hands the
   // puzzle back to the TV layout as the deep link it reads (tvHandoff.ts).
@@ -294,7 +304,7 @@ export function ArchiveScreen() {
           <>
             {/* The backlog is the Plus benefit this page sells (spec §5.1): one pitch
                 up top for everyone without Plus, not only on a locked day. */}
-            {entries && (
+            {entries && !roomPick && (
               <PlusNudge
                 className="mt-4"
                 title={t("archive.plusNudgeTitle", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(`${entries[0].day}T12:00:00`)) })}
@@ -303,7 +313,7 @@ export function ArchiveScreen() {
                 returnTo="/archive"
               />
             )}
-            {resume && (
+            {resume && !roomPick && (
               <section className="mt-4 flex items-center gap-3 rounded-2xl bg-gold-50 p-3 ring-1 ring-gold-100" aria-label={t("archive.resumeEyebrow")}>
                 <ShapeThumb blocks={resume.blocks} className="w-12 shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -536,6 +546,8 @@ export function ArchiveScreen() {
                             >
                               {busy === it.identity
                                 ? t("archive.loadingPuzzle")
+                                : roomPick
+                                  ? t("picker.pick")
                                 : it.status === "solved"
                                   ? t("archive.view")
                                   : it.status === "inprogress"
@@ -553,7 +565,8 @@ export function ArchiveScreen() {
             </div>
           </>
         )}
-        <BonusArchive />
+        {/* Picking for a room lists only what can be picked. */}
+        {!roomPick && <BonusArchive />}
       </div>
     </PageShell>
   );

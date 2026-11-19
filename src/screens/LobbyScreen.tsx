@@ -16,6 +16,7 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { LobbyInvites } from "../components/Friends";
 import { useFriends } from "../contexts/FriendsContext";
 import { friendsEnabled, NUDGE_BACKOFF_MS } from "../lib/friends";
+import { pickerPath } from "../hooks/usePickPuzzle";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 export function LobbyScreen() {
@@ -127,6 +128,8 @@ export function LobbyScreen() {
       onCloseRoom={handleCloseRoom}
       onLeave={handleLeave}
       onPlaySolo={mp.isHost ? () => void handlePlaySolo() : undefined}
+      puzzle={game.puzzle}
+      onChangePuzzle={() => navigate(pickerPath("next"))}
       wrongAnswerTimeout={game.wrongAnswerTimeout}
       onWrongAnswerTimeoutChange={game.setWrongAnswerTimeout}
       raceMode={mp.isHost ? game.raceMode : mp.lobbySettings ? resolveRaceMode(mp.lobbySettings) : undefined}

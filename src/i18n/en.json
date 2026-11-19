@@ -180,6 +180,7 @@
     "dailyBadge": "{{slot}} · {{date}}"
   },
   "lobby": {
+    "changePuzzle": "Change",
     "shareInvite": "Share the code below to invite players",
     "modeHeading": "Game mode",
     "modeVersus": "Compete",

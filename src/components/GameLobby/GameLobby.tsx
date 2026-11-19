@@ -9,7 +9,8 @@ import { RaceModeSelector } from "./RaceModeSelector";
 import { ModePreview } from "./ModePreview";
 import { RACE_MODE_OPTIONS } from "../../lib/gameSettings";
 import { FlowPage } from "../Flow";
-import { Button, Card, Eyebrow, PlusName } from "../ui";
+import { Button, Card, Eyebrow, MiniGridThumb, PlusName } from "../ui";
+import type { Puzzle } from "../../types/puzzle";
 import { buildRaceInviteUrl } from "../../lib/shareLinks";
 import { formatCountdown, FriendsError, nextNudgeAt } from "../../lib/friends";
 import type { Player, RaceMode } from "../../types/game";
@@ -23,6 +24,10 @@ interface GameLobbyProps {
   onLeave?: () => void;
   /** The host, alone in the room, gives up waiting: close it and play the puzzle solo. */
   onPlaySolo?: () => void;
+  /** The room's puzzle, shown to everyone in it (Andrew, 2026-11-19: the room says what is about to be played). */
+  puzzle?: Puzzle;
+  /** The host's way to another puzzle; the room and its code stay. */
+  onChangePuzzle?: () => void;
   wrongAnswerTimeout?: number;
   onWrongAnswerTimeoutChange?: (value: number) => void;
   raceMode?: RaceMode;
@@ -39,7 +44,7 @@ interface GameLobbyProps {
   solves?: Record<string, PriorSolve>;
 }
 
-export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, onPlaySolo, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost, solves = {} }: GameLobbyProps) {
+export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom, onLeave, onPlaySolo, puzzle, onChangePuzzle, wrongAnswerTimeout, onWrongAnswerTimeoutChange, raceMode, onRaceModeChange, invites, onNudgeHost, solves = {} }: GameLobbyProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -139,7 +144,7 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
   const column = shareCode ? "lg:col-start-1" : "lg:col-span-2 lg:mx-auto lg:w-full lg:max-w-md";
   // A joiner is shown the mode the host has picked, once the host has said it.
   const guestMode = !isHost && raceMode !== undefined ? RACE_MODE_OPTIONS.find((o) => o.value === raceMode) : undefined;
-  const joinRows = showSettings || guestMode ? "lg:row-span-3" : "lg:row-span-2";
+  const joinRows = ["lg:row-span-2", "lg:row-span-3", "lg:row-span-4"][(showSettings || guestMode ? 1 : 0) + (puzzle ? 1 : 0)];
 
   return (
     <FlowPage
@@ -199,6 +204,21 @@ export function GameLobby({ shareCode, players, isHost, onStartGame, onCloseRoom
             </div>
           )}
         </div>
+
+        {puzzle && (
+          <section className={column} data-testid="lobby-puzzle">
+            <Card className="flex items-center gap-4 p-4">
+              <MiniGridThumb puzzle={puzzle} className="w-14 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-display text-lg leading-snug font-bold text-ink">{puzzle.title}</p>
+                <p className="truncate text-sm text-muted tabular-nums">{puzzle.width}×{puzzle.height}</p>
+              </div>
+              {isHost && onChangePuzzle && (
+                <Button variant="secondary" size="sm" onClick={onChangePuzzle} className="shrink-0">{t("lobby.changePuzzle")}</Button>
+              )}
+            </Card>
+          </section>
+        )}
 
         {/* Who is here: first on the page, so a phone shows the roster above the fold. */}
         <section className={column}>

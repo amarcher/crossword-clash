@@ -8,6 +8,8 @@ import type { CommunityPuzzle, CommunityPuzzleFull } from "../lib/communityPuzzl
 import type { TransferPuzzle } from "../lib/puzzleNormalizer";
 
 const navigate = vi.fn();
+const pickPuzzle = vi.hoisted(() => ({ choose: vi.fn(), busy: null as string | null, error: null as string | null }));
+vi.mock("../hooks/usePickPuzzle", async (orig) => ({ ...(await orig<typeof import("../hooks/usePickPuzzle")>()), usePickPuzzle: () => pickPuzzle }));
 vi.mock("../hooks/useTransitionNavigate", () => ({ useTransitionNavigate: () => navigate }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "me" }, loading: false }) }));
 vi.mock("../lib/analytics", () => ({ track: vi.fn() }));
@@ -117,6 +119,14 @@ describe("CommunityBrowseScreen (/puzzles)", () => {
     expect(screen.getByRole("link", { name: "Back to the TV" }).getAttribute("href")).toBe("/host/import");
     fireEvent.click(hosts[0]);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith(expect.stringMatching(/^\/host#puzzle=/)));
+  });
+
+  it("in pick mode, a puzzle's one action picks it for the room", async () => {
+    pickPuzzle.choose.mockClear();
+    renderAt("/puzzles?pick=next");
+    await screen.findByText("Puzzle 1");
+    fireEvent.click(screen.getAllByRole("button", { name: "Pick" })[0]);
+    await waitFor(() => expect(pickPuzzle.choose).toHaveBeenCalledWith(expect.objectContaining({ origin: "community" }), expect.any(String)));
   });
 
   it("gives each puzzle one Play button; racing it is asked after Play", async () => {
