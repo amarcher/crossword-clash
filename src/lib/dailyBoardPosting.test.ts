@@ -66,6 +66,16 @@ describe("board posting by origin", () => {
     expect(calls.some((c) => c.op === "upsert")).toBe(true);
   });
 
+  it("a finish made before signing in never replaces a time the account already has, even a slower one", async () => {
+    servedFrom("https://crosswordclash.com");
+    results = [{ data: { id: "r1", seconds: 300 }, error: null }];
+    await submitDailyResult({ ...finish, seconds: 10, firstOnly: true });
+    expect(calls.some((c) => c.op === "upsert")).toBe(false);
+    results = [{ data: null, error: null }];
+    await submitDailyResult({ ...finish, seconds: 10, firstOnly: true });
+    expect(calls.some((c) => c.op === "upsert")).toBe(true);
+  });
+
   it("writes nothing from a preview deployment, not even the lookup", async () => {
     servedFrom("https://crossword-clash-git-leaderboard-amarchers-projects.vercel.app");
     expect(boardPostsHere()).toBe(false);

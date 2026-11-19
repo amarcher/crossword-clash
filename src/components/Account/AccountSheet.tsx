@@ -111,7 +111,9 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
             ? name
             : placement === "board-join"
               ? t("boardJoin.sheetTitle")
-              : t("account.sheetTitle");
+              : placement === "board-watch"
+                ? t("boardJoin.watchSheetTitle")
+                : t("account.sheetTitle");
 
   return (
     <div
@@ -153,7 +155,7 @@ export function AccountSheet({ account, initialView, initialError, returnTo, pla
               </>
             ) : user ? (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.signedInBody")}</p>
-            ) : placement === "board-join" ? null : (
+            ) : placement === "board-join" || placement === "board-watch" ? null : (
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{t("account.sheetBody")}</p>
             )}
           </div>

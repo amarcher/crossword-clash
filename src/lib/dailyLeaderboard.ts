@@ -255,6 +255,8 @@ export interface SubmitDailyResultInput {
   gameId?: string | null;
   /** Solo with Autocheck off → false; omitted (races, older callers) means on. */
   autocheck?: boolean;
+  /** Never replace a time the player already has for the day (a finish made before signing in). */
+  firstOnly?: boolean;
 }
 
 /**
@@ -276,6 +278,7 @@ export async function submitDailyResult(input: SubmitDailyResultInput): Promise<
       .eq("user_id", input.userId)
       .maybeSingle();
 
+    if (existing && input.firstOnly) return;
     if (!shouldReplace(existing?.seconds ?? null, seconds)) return;
 
     const row = {
@@ -339,11 +342,12 @@ export function postDailyResult(
   slot: BoardSlot,
   entry: DailyResultEntry,
   gameId: string | null = null,
+  firstOnly = false,
 ): PendingDailyResult {
   if (!isRealPlayerName(entry.displayName)) {
     return { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
   }
-  return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, ...entry }) };
+  return { day, slot, entry, gameId, posted: true, settled: submitDailyResult({ day, slot, gameId, firstOnly, ...entry }) };
 }
 
 /**
@@ -359,12 +363,13 @@ export async function prepareDailyResult(
   entry: DailyResultEntry,
   user: Pick<User, "id" | "is_anonymous">,
   gameId: string | null = null,
+  firstOnly = false,
 ): Promise<PendingDailyResult> {
   const parked: PendingDailyResult = { day, slot, entry, gameId, posted: false, settled: Promise.resolve() };
   if (user.is_anonymous) return parked;
   try {
     if ((await fetchRaceVisibility(user.id)) === "hidden") return { ...parked, postingHold: "disabled" };
-    return postDailyResult(day, slot, entry, gameId);
+    return postDailyResult(day, slot, entry, gameId, firstOnly);
   } catch {
     return { ...parked, postingHold: "unavailable" };
   }

@@ -406,6 +406,11 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const solvedHere = !!own || !!privateFinish || (!!entries && !!user && entries.some((e) => e.userId === user.id));
   const raceCandidates = useRaceCandidates(puzzleKey, true);
   const candidateIds = useMemo(() => new Set(raceCandidates.map((c) => c.userId)), [raceCandidates]);
+  // Watching takes an account. A solver without one still sees Watch on every other row: it opens sign-in.
+  const guest = !!user?.is_anonymous && !!account?.available;
+  const guestWatchable = useMemo(() => new Set((entries ?? []).map((e) => e.userId).filter((id) => id !== user?.id)), [entries, user]);
+  const openAccount = account?.openAccount;
+  const signInToWatch = useCallback(() => openAccount?.({ placement: "board-watch" }), [openAccount]);
   const raceRow = useCallback(
     (userId: string) => {
       if (!puzzleKey || !account) return;
@@ -571,8 +576,8 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
               userId={user?.id}
               raceable={canWatch ? undefined : candidateIds}
               onRace={raceRow}
-              watchable={canWatch ? candidateIds : undefined}
-              onWatch={watchRow}
+              watchable={canWatch ? (guest ? guestWatchable : candidateIds) : undefined}
+              onWatch={guest ? signInToWatch : watchRow}
             />
             {loading && (
               <p role="status" className="flex items-center justify-center gap-2 border-t border-line px-4 py-2.5 text-center text-xs text-muted">

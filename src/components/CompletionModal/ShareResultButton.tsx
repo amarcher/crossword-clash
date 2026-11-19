@@ -95,9 +95,8 @@ export function ShareResultButton({
   const presetName = challengerName.trim();
   const hasRealName = isRealPlayerName(presetName);
   const [name, setName] = useState(hasRealName ? presetName : "");
-  const unsigned = t("challenge.unsignedName");
-
-  const effectiveName = (hasRealName ? presetName : name.trim()) || unsigned;
+  // No name, no name in the link: it then unfurls as "I solved…" and lands on the nameless challenge page.
+  const effectiveName = hasRealName ? presetName : name.trim();
   const block = useMemo(() => blockFor(effectiveName), [blockFor, effectiveName]);
 
   const linkOnly = block.text === block.link;
@@ -119,7 +118,7 @@ export function ShareResultButton({
           savePlayerName(typedName);
           onNameSigned?.(typedName);
         }
-        const finalName = (hasRealName ? presetName : typedName) || unsigned;
+        const finalName = hasRealName ? presetName : typedName;
         const toSend = blockFor(finalName);
         const result = await shareText(
           { text: toSend.text, body: toSend.body, url: toSend.link, title: t("completion.shareTitle") },
@@ -140,7 +139,7 @@ export function ShareResultButton({
         setBusy(false);
       }
     },
-    [busy, hasRealName, presetName, unsigned, blockFor, onNameSigned, t, flash, mode, hasTime, puzzleSize],
+    [busy, hasRealName, presetName, blockFor, onNameSigned, t, flash, mode, hasTime, puzzleSize],
   );
 
   const handlePrimary = useCallback(() => {

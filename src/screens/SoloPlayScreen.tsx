@@ -1126,7 +1126,6 @@ export function SoloPlayScreen() {
         previousBest={shownResult?.previousBest}
         assisted={assisted}
         streakCount={shownResult?.streak}
-        streakAdvanced={shownResult?.streakAdvanced}
         nytHook={fromNyt ? { streak: shownResult?.nytStreak ?? nytStreak ?? 0 } : undefined}
         onViewLeaderboard={boardView ? handleViewLeaderboard : undefined}
         dailySlot={dailySlot ?? undefined}
