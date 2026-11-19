@@ -84,11 +84,15 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
     answered ? "count" : !race && !live ? "count" : live && !race?.ready && !race?.preselect.length ? "ask" : null,
   );
   const [picked, setPicked] = useState<string[]>([]);
+  // Opened on the list by a Race tap that named someone: Go back leaves, as it came (the
+  // options were never shown). Reached from the options, it returns to them.
+  const [named, setNamed] = useState(false);
   // Decided once, when the wait ends: a list that answers after the count is running does not pull the card back.
   useEffect(() => {
     if (!known || step) return;
     const ticked = race?.ready ? race.preselect.filter((id) => race.candidates.some((c) => c.userId === id)).slice(0, MAX_GHOSTS) : [];
     setPicked(ticked);
+    setNamed(ticked.length > 0);
     setStep(answered ? "count" : ticked.length > 0 ? "pick" : candidates.length > 0 || live ? "ask" : "count");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided at the moment the wait ends
   }, [known]);
@@ -212,7 +216,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
                 {busy && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {picked.length > 0 ? t("soloStart.race", { count: picked.length }) : t("soloStart.pickOne")}
               </Button>
-              <Button variant="secondary" size="lg" onClick={() => setStep("ask")} disabled={busy}>{t("soloStart.back")}</Button>
+              <Button variant="secondary" size="lg" onClick={() => (named ? onBack() : setStep("ask"))} disabled={busy}>{t("soloStart.back")}</Button>
             </div>
           </div>
         ) : (

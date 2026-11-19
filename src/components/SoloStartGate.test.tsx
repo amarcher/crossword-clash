@@ -84,6 +84,20 @@ describe("SoloStartGate", () => {
     expect((screen.getByRole("checkbox", { name: /Minna/ }) as HTMLInputElement).checked).toBe(true);
   });
 
+  it("Go back from a list opened by a Race tap leaves the puzzle; from a list reached through the options it returns to them", () => {
+    const onBack = vi.fn();
+    const first = render(<SoloStartGate title="Mouse House" race={raceWith({ preselect: ["m"] })} onStart={vi.fn()} onBack={onBack} />);
+    fireEvent.click(screen.getByRole("button", { name: "Go back" }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    render(<SoloStartGate title="Mouse House" race={raceWith()} onStart={vi.fn()} onBack={onBack} />);
+    fireEvent.click(screen.getByTestId("start-ask-race"));
+    fireEvent.click(screen.getByRole("button", { name: "Go back" }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("start-ask-race")).toBeTruthy();
+  });
+
   it("Race friends live leaves for the live room, offered even when nobody has a solve to race", () => {
     const live = { names: ["ben"], onChoose: vi.fn() };
     render(<SoloStartGate title="Mouse House" race={raceWith({ candidates: [] })} live={live} onStart={vi.fn()} onBack={vi.fn()} />);
