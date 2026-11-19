@@ -24,13 +24,14 @@ vi.mock("../lib/supabaseClient", () => ({ supabase: null }));
 // Filing a finish's replay: nothing without Supabase, as in the app, unless a test gives it an ID.
 const replays = vi.hoisted(() => ({ create: vi.fn(async (): Promise<string | null> => null) }));
 vi.mock("../lib/replayShare", async original => ({ ...await original<typeof import("../lib/replayShare")>(), createReplayShare: replays.create }));
-const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn(), username: null as string | null, profileReady: true }));
+const posting = vi.hoisted(() => ({ user: null as User | null, daily: false, preference: vi.fn(), setVisibility: vi.fn(), openAccount: vi.fn(), sheet: false, username: null as string | null, profileReady: true }));
+vi.mock("../lib/race", async original => ({ ...await original<typeof import("../lib/race")>(), fetchRaceVisibility: posting.preference, setRaceVisibility: posting.setVisibility }));
 vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: posting.user, loading: false }) }));
-vi.mock("../lib/leaderboardPreference", () => ({ fetchSoloLeaderboardPreference: posting.preference }));
+
 vi.mock("../lib/dailyLeaderboard", async original => ({ ...await original<typeof import("../lib/dailyLeaderboard")>(), boardPostsHere: () => true }));
 vi.mock("../contexts/AccountContext", () => ({
   useAccountContext: () => ({ user: null, available: false, ready: true, profileReady: posting.profileReady, profile: posting.username ? { username: posting.username } : null, openAccount: vi.fn() }),
-  useMaybeAccount: () => (posting.username ? { profile: { username: posting.username } } : null),
+  useMaybeAccount: () => (posting.username || posting.sheet ? { available: true, openAccount: posting.openAccount, profile: posting.username ? { username: posting.username } : null } : null),
 }));
 // The start countdown (SoloStartGate.test.tsx) is skipped: these tests begin at "Start now".
 vi.mock("../components/SoloStartGate", async () => {
@@ -125,7 +126,10 @@ beforeEach(() => {
   track.mockClear();
   posting.user = null;
   posting.daily = false;
-  posting.preference.mockReset().mockResolvedValue(true);
+  posting.preference.mockReset().mockResolvedValue("everyone");
+  posting.setVisibility.mockReset().mockResolvedValue(undefined);
+  posting.openAccount.mockReset();
+  posting.sheet = false;
 });
 afterEach(() => {
   cleanup();
@@ -362,38 +366,47 @@ async function finishDaily(anonymous: boolean) {
   await screen.findByRole("dialog", { name: "Puzzle complete" });
 }
 
-it("a guest who already has a name must explicitly post each solo finish", async () => {
+it("a player with no account is offered one in place of a name form, and the finish posts once they have it", async () => {
+  posting.sheet = true;
   await finishDaily(true);
-  await screen.findByText("Add your name to post your time to today's board");
+  fireEvent.click(await screen.findByRole("button", { name: "Create an account to post your time" }));
+  expect(posting.openAccount).toHaveBeenCalledWith({ placement: "board-join" });
+  expect(screen.queryByPlaceholderText("Your name")).toBeNull();
   expect(game.pendingDailyResult?.posted).toBe(false);
-  expect(screen.getByPlaceholderText("Your name")).toHaveProperty("value", "");
-  fireEvent.change(screen.getByPlaceholderText("Your name"), { target: { value: "Guest entry" } });
-  fireEvent.click(screen.getByRole("button", { name: "Post" }));
-  await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
-  expect(game.pendingDailyResult?.entry.displayName).toBe("Guest entry");
+  posting.user = { id: "me", is_anonymous: false } as User;
+  posting.username = "archer";
+  try {
+    act(() => game.setSoloTheme("signed in"));
+    await waitFor(() => expect(game.pendingDailyResult).toMatchObject({ posted: true, entry: { displayName: "archer" } }));
+  } finally {
+    posting.username = null;
+  }
 });
 
-it("a signed-in solver who opted out sees a private finish without a posting form", async () => {
-  posting.preference.mockResolvedValue(false);
+it("an account that hides its solves is asked who may watch, and choosing posts the finish", async () => {
+  posting.preference.mockResolvedValue("hidden");
   await finishDaily(false);
-  await screen.findByText(/Solo leaderboard posting is off/);
+  await screen.findByText("Add me to the leaderboard");
   expect(game.pendingDailyResult).toMatchObject({ posted: false, postingHold: "disabled" });
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
-  expect(screen.getByTestId("share-result")).toBeTruthy();
+  posting.preference.mockResolvedValue("friends");
+  fireEvent.click(screen.getByRole("button", { name: "Friends only" }));
+  expect(posting.setVisibility).toHaveBeenCalledWith("me", "friends");
+  await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
 });
 
 it("a signed-in solver with the default setting posts after the preference resolves", async () => {
-  let resolve!:(enabled: boolean) => void;
-  posting.preference.mockReturnValue(new Promise<boolean>(r => { resolve = r; }));
+  let resolve!:(who: string) => void;
+  posting.preference.mockReturnValue(new Promise<string>(r => { resolve = r; }));
   await finishDaily(false);
   expect(game.pendingDailyResult).toMatchObject({ posted: false, postingHold: "checking" });
   expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
-  await act(async () => { resolve(true); });
+  await act(async () => { resolve("everyone"); });
   await waitFor(() => expect(game.pendingDailyResult?.posted).toBe(true));
 });
 
 it("an account whose profile arrives after the finish posts under its username, with no form asking for one", async () => {
-  posting.preference.mockResolvedValue(true);
+  posting.preference.mockResolvedValue("everyone");
   posting.user = { id: "me", is_anonymous: false } as User;
   posting.daily = true;
   posting.profileReady = false;

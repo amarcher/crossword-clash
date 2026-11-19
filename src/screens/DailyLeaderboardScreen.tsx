@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Flag, Flame, Loader2, Swords, Trophy, Users, WifiOff } from "lucide-react";
 import { PageShell, type ShellWidth } from "../components/PageShell";
 import { BoardSignForm } from "../components/BoardSignForm";
+import { BoardJoinPrompt } from "../components/BoardJoinPrompt";
+import { useBoardJoin } from "../hooks/useBoardJoin";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useRaceName } from "../hooks/useRaceName";
@@ -365,6 +367,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   const own = pending?.posted ? pending.entry : null;
   const privateFinish = pending && !pending.posted ? pending.entry : null;
   const postingNotice = dailyPostingNotice(pending);
+  const boardJoin = useBoardJoin(past ? null : pending);
 
   // null = loading; [] = loaded empty. A board already fetched this session
   // starts from that answer, and the fetch below corrects it.
@@ -425,7 +428,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
   // default-name row from an older client; held results cannot be posted.
   const myEntry = shown?.find((e) => e.userId === user?.id);
   const signEntry = privateFinish ?? myEntry;
-  const needsName = !past && !!signEntry && !pending?.postingHold && (privateFinish || !isRealPlayerName(signEntry.displayName)) && postsHere;
+  const needsName = !past && !!user && !user.is_anonymous && !!signEntry && !pending?.postingHold && (privateFinish || !isRealPlayerName(signEntry.displayName)) && postsHere;
   const unposted = !!pending && !pending.posted;
   const [signedAs, setSignedAs] = useState<string | null>(null);
   const saveName = useCallback(
@@ -595,6 +598,8 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
       )}
 
       {postingNotice && postsHere && <p role="status" className="text-center text-sm text-muted">{t(postingNotice)}</p>}
+
+      {boardJoin && postsHere && <BoardJoinPrompt join={boardJoin} />}
 
       {(needsName || signedAs) && signEntry && !pending?.postingHold && (
         <BoardSignForm currentName={signEntry.displayName} signedAs={signedAs} unposted={unposted} onSign={saveName} />

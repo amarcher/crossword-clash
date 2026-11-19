@@ -345,6 +345,12 @@
     "seeStats": "See your stats",
     "raceFreshHint": "Pick a puzzle, invite by link"
   },
+  "boardJoin": {
+      "create": "Create an account to post your time",
+      "title": "Add me to the leaderboard",
+      "everyone": "Everyone can watch",
+      "friends": "Friends only"
+  },
   "leaderboardSettings": {
     "retry": "Try again",
     "title": "Leaderboards",
@@ -1165,11 +1171,11 @@
     "replayPause": "Pause",
     "replayAgain": "Watch again",
     "close": "Close",
-    "visibilityTitle": "Who can race and replay your solves",
-    "visibilityBody": "Friends can watch your finished solves in the race, and Plus players can race a recording of them. Anyone who hasn't solved the puzzle sees which squares you filled, never your letters.",
-    "visibilityEveryone": "Anyone",
-    "visibilityFriends": "Friends only",
-    "visibilityHidden": "No one",
+    "visibilityTitle": "Who sees your solves",
+    "visibilityBody": "Your leaderboard times go to the same people, with your finished solve to watch or race.",
+    "visibilityEveryone": "Everyone",
+    "visibilityFriends": "Friends",
+    "visibilityHidden": "Nobody",
     "visibilitySaveFailed": "Couldn't save that. Try again."
   },
   "raceReplies": {

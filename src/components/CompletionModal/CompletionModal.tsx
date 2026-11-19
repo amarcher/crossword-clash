@@ -22,6 +22,8 @@ import { ReminderSwitch } from "../Push";
 import { DAILY_FINISH_CLOSED_EVENT } from "../../lib/push";
 import type { DailySlot } from "../../lib/dailyFeed";
 import { BoardSignForm } from "../BoardSignForm";
+import { BoardJoinPrompt } from "../BoardJoinPrompt";
+import type { BoardJoin } from "../../hooks/useBoardJoin";
 import { buildShareBlock, claimantLegend, MAX_ROW_WIDTH, type ShareBlock } from "../../lib/shareBlock";
 import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
@@ -111,6 +113,8 @@ interface CompletionModalProps {
    */
   boardNotPosted?: boolean;
   dailyPostingNotice?: string;
+  /** The finish is not on the board: the way onto it (an account, or who may watch). */
+  boardJoin?: BoardJoin;
   /**
    * Async ("time trial") mode: per-player standings ranked by finish time.
    * When present the player table shows times instead of cells/clues, and
@@ -222,6 +226,7 @@ export function CompletionModal({
   dailySign,
   boardNotPosted,
   dailyPostingNotice,
+  boardJoin,
   raceStandings,
   coop,
   players,
@@ -678,6 +683,7 @@ export function CompletionModal({
                 className="mb-5"
               />
             )}
+            {boardJoin && <BoardJoinPrompt join={boardJoin} darkMode={darkMode} className="mb-5" />}
             {dailyPostingNotice && <p role="status" className={`mb-5 text-center text-sm ${darkMode ? "text-white/70" : "text-muted"}`}>{dailyPostingNotice}</p>}
 
             {boardNotPosted && (

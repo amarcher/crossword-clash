@@ -345,6 +345,12 @@
     "seeStats": "Estadísticas",
     "raceFreshHint": "Elige uno e invita por enlace"
   },
+  "boardJoin": {
+      "create": "Crea una cuenta para publicar tu tiempo",
+      "title": "Añádeme a la clasificación",
+      "everyone": "Todos pueden ver",
+      "friends": "Solo amigos"
+  },
   "leaderboardSettings": {
     "retry": "Intentar de nuevo",
     "title": "Clasificaciones",
@@ -1165,10 +1171,10 @@
     "replayPause": "Pausa",
     "replayAgain": "Ver de nuevo",
     "close": "Cerrar",
-    "visibilityTitle": "Quién puede competir contra tus partidas y verlas",
-    "visibilityBody": "Tus amigos pueden ver tus partidas terminadas en la carrera, y los jugadores Plus pueden competir contra una grabación de ellas. Quien no haya resuelto el crucigrama ve qué casillas llenaste, nunca tus letras.",
-    "visibilityEveryone": "Cualquiera",
-    "visibilityFriends": "Solo amigos",
+    "visibilityTitle": "Quién ve tus resoluciones",
+    "visibilityBody": "Tus tiempos en la clasificación llegan a las mismas personas, con tu resolución terminada para verla o competir contra ella.",
+    "visibilityEveryone": "Todos",
+    "visibilityFriends": "Amigos",
     "visibilityHidden": "Nadie",
     "visibilitySaveFailed": "No se pudo guardar. Inténtalo de nuevo."
   },

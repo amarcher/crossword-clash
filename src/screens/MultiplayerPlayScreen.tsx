@@ -24,7 +24,7 @@ import { clearMpSession } from "../lib/sessionPersistence";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { useTodaysDailySlot } from "../hooks/useDailyMini";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { leaderboardPath, postDailyResult, todayKey } from "../lib/dailyLeaderboard";
+import { leaderboardPath, prepareDailyResult, todayKey, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { recordDailyPlay, recordNytPlay, formatDuration, puzzleIdentity } from "../lib/soloStats";
 import { recordSolve } from "../lib/solveHistory";
 import { recordGroupFinish } from "../lib/groupFinish";
@@ -231,7 +231,13 @@ export function MultiplayerPlayScreen() {
       recordDailyPlay();
       // Parked in context too, so the board awaits the post (audit §3, item 9).
       const entry = { userId: user.id, displayName: game.displayName, mode: "race" as const, seconds: Math.max(0, Math.floor(myFinishSeconds)) };
-      setPendingDailyResult(postDailyResult(todayKey(), dailySlot, entry, game.gameId));
+      // One rule for every finish: an account whose solves can be watched (prepareDailyResult).
+      const pending: PendingDailyResult = { day: todayKey(), slot: dailySlot, entry, gameId: game.gameId, posted: false, postingHold: "checking", settled: Promise.resolve() };
+      pending.settled = prepareDailyResult(pending.day, dailySlot, entry, user, game.gameId).then((result) => {
+        setPendingDailyResult((current) => (current === pending ? result : current));
+        return result.settled;
+      });
+      setPendingDailyResult(pending);
       return;
     }
     if (gameStatus !== "completed") return;

@@ -43,7 +43,7 @@ import { useFriends } from "../contexts/FriendsContext";
 import { useFriendSolves } from "../hooks/useFriendSolves";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
-import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
+import { boardPostsHere, leaderboardPath, prepareDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
 import { isRealPlayerName, savePlayerName } from "../lib/playerName";
 import { loadChallenge, clearChallenge, compareToChallenge } from "../lib/challenge";
 import { useSoloTimer } from "../hooks/useSoloTimer";
@@ -63,6 +63,7 @@ import { createReplayShare, fetchReplayShare, letteredReplay, rememberReplay, re
 import { replyToRace } from "../lib/raceReplies";
 import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
+import { useBoardJoin } from "../hooks/useBoardJoin";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
 
 /** The viewer's own solve beside someone else's in a race replay: the brand blue. */
@@ -298,7 +299,7 @@ export function SoloPlayScreen() {
     const entry = { userId: user.id, displayName, mode: "solo" as const, seconds: Math.max(0, Math.floor(soloResult.finishSeconds)), autocheck: !usedFreeTyping };
     const day = todayKey();
     const pending: PendingDailyResult = { day, slot: boardSlot, entry, gameId: null, posted: false, postingHold: "checking", settled: Promise.resolve() };
-    pending.settled = prepareSoloDailyResult(day, boardSlot, entry, user).then(result => {
+    pending.settled = prepareDailyResult(day, boardSlot, entry, user).then(result => {
       setPendingDailyResult(current => current === pending ? result : current);
       return result.settled;
     });
@@ -780,8 +781,11 @@ export function SoloPlayScreen() {
     [game, pendingDaily],
   );
   const boardNotPosted = !!boardSlot && !!user && !!soloResult && !boardPostsHere();
+  // A player with no account is offered one, and an account that hides its solves is offered the
+  // choice of who may watch: either way the finish then posts (useBoardJoin).
+  const boardJoin = useBoardJoin(boardNotPosted || !soloResult ? null : pendingDaily);
   const dailySign =
-    boardSlot && user && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
+    boardSlot && user && !user.is_anonymous && soloResult && !boardNotPosted && pendingDaily && !pendingDaily.postingHold && (boardSignedAs || !pendingDaily.posted || !isRealPlayerName(game.displayName))
       ? { signedAs: boardSignedAs, onSign: handleSignBoard, unposted: !pendingDaily?.posted }
       : undefined;
 
@@ -1129,6 +1133,7 @@ export function SoloPlayScreen() {
         puzzleRef={puzzleRef ?? undefined}
         dailySign={dailySign}
         boardNotPosted={boardNotPosted}
+        boardJoin={boardJoin ?? undefined}
         dailyPostingNotice={!boardNotPosted && dailyPostingNotice(pendingDaily) ? t(dailyPostingNotice(pendingDaily)!) : undefined}
         challengePuzzle={puzzle}
         playerCells={playerCells}

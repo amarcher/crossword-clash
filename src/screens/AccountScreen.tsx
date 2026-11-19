@@ -1,4 +1,3 @@
-import { LeaderboardSettings } from "../components/Account/LeaderboardSettings";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpen, CalendarDays, ChartLine, Check, ChevronRight, Clock, Flame, Globe, LogOut, Newspaper, Pencil, Play, UserPlus, Users } from "lucide-react";
@@ -181,7 +180,8 @@ export function AccountScreen() {
             </Button>
           </Card>
 
-          <LeaderboardSettings key={user.id} userId={user.id} />
+          {/* One setting for the board and for watching (Andrew, 2026-11-19): who sees your solves. */}
+          <RaceVisibilityCard key={user.id} userId={user.id} />
 
           {/* The apps only: notification switches (docs/friends-spec.md §3.3). */}
           <NotificationSettings placement="account" />
@@ -297,7 +297,6 @@ export function AccountScreen() {
                       {friends.friendships.friends.length === 0 ? t("race.addFriends") : t("account.manageFriends")}
                     </Button>
                   </Card>
-                  {userId && <RaceVisibilityCard userId={userId} />}
                 </>
               )}
             </section>
