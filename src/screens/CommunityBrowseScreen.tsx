@@ -9,7 +9,6 @@ import { Button, Select, TransitionLink } from "../components/ui";
 import { PlusNudge } from "../components/Plus/PlusNudge";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { plusEnabled } from "../lib/plus";
-import { useAuth } from "../contexts/AuthContext";
 import { useGame } from "../contexts/GameContext";
 import { useBestTimes } from "../hooks/useSolveHistory";
 import { useHiddenAuthors } from "../hooks/useHiddenAuthors";
@@ -52,7 +51,6 @@ export function CommunityBrowseScreen() {
   const navigate = useTransitionNavigate();
   const { username } = useParams<{ username?: string }>();
   const [params, setParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
   const { handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle } = useGame();
   // "Make your own" is a studio link for a subscriber and the Plus pitch for everyone else (PlusNudge decides the rest).
   const account = useMaybeAccount();
@@ -172,7 +170,6 @@ export function CommunityBrowseScreen() {
     [handleSoloPuzzleLoaded, setSoloTheme, setUrlPuzzle, navigate, t],
   );
 
-  const canRace = Boolean(user) || authLoading;
   const chipBase =
     "inline-flex shrink-0 items-center justify-center gap-1.5 min-h-11 md:min-h-9 px-3.5 rounded-full text-sm font-semibold border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500";
   const chipOn = `${chipBase} bg-ink text-white border-ink`;
@@ -276,8 +273,6 @@ export function CommunityBrowseScreen() {
                 inProgress={inProgress}
                 busy={busy}
                 onPlay={(entry) => void load(entry, tv ? "tv" : "play")}
-                onRace={canRace && !tv ? (entry) => void load(entry, "race") : undefined}
-                raceDisabled={authLoading}
                 showAuthor={!username}
                 tv={tv}
               />
@@ -302,7 +297,7 @@ export function CommunityBrowseScreen() {
         </span>
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{username ? t("community.authorTitle", { author: username }) : t("community.title")}</h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-muted sm:text-base">
-          {username ? (status === "ready" && done ? t("community.authorSubtitle", { count: rows.length }) : "") : t("community.subtitle")}
+          {username ? (status === "ready" && done ? t("community.authorSubtitle", { count: rows.length }) : "") : ""}
         </p>
         {username && authorId && !authorHidden && (
           <button

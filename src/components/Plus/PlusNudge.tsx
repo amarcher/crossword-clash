@@ -6,7 +6,7 @@ import { Button } from "../ui";
 
 interface PlusNudgeProps {
   title: string;
-  body: string;
+  body?: string;
   /** Where the pitch sits, for the funnel (`paywall_viewed { placement }`). */
   placement: string;
   feature: PlusFeature;
@@ -34,7 +34,7 @@ export function PlusNudge({ title, body, placement, feature, returnTo, className
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-semibold leading-snug text-ink">{title}</p>
-        <p className="mt-0.5 text-sm leading-snug text-muted">{body}</p>
+        {body && <p className="mt-0.5 text-sm leading-snug text-muted">{body}</p>}
       </div>
       <Button size="sm" onClick={() => account.openPaywall({ placement, feature, returnTo })}>
         {t("plus.about")}
