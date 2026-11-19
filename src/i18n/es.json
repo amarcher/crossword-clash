@@ -3,7 +3,21 @@
     "starting_one": "Empieza en {{count}}…",
     "starting_other": "Empieza en {{count}}…",
     "startNow": "Empezar ya",
-    "back": "Volver"
+    "back": "Volver",
+    "gettingReady": "Preparando…",
+    "ready": "Cuando quieras.",
+    "start": "Empezar",
+    "offerFriend": "{{name}} ya lo resolvió",
+    "offerPublic": "Otros ya lo resolvieron",
+    "pickBody": "Lleva hasta {{max}} contigo: su solución avanza junto a la tuya desde el mismo inicio. Ves qué casillas llenaron, nunca sus letras.",
+    "solo": "Jugar solo",
+    "race_one": "Competir contra {{count}} solución",
+    "race_other": "Competir contra {{count}} soluciones",
+    "pitchFriends_zero": "Compite contra {{name}}",
+    "pitchFriends_one": "Compite contra {{name}} y {{count}} más",
+    "pitchFriends_other": "Compite contra {{name}} y {{count}} más",
+    "live": "Competir en vivo con un amigo",
+    "pitchPublic": "Compite contra los más rápidos"
   },
   "soloPause": {
     "loadError": "No se pudo cargar este crucigrama. Tu progreso sigue aquí; inténtalo de nuevo cuando tengas conexión.",

@@ -39,6 +39,7 @@ import { watchSoloLifecycle } from "../lib/soloLifecycle";
 import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
 import { SoloStartGate } from "../components/SoloStartGate";
+import { useFriends } from "../contexts/FriendsContext";
 import { pickerPath } from "./PuzzlePickerScreen";
 import { usePlayInsights } from "../hooks/usePlayInsights";
 import { boardPostsHere, leaderboardPath, prepareSoloDailyResult, pendingResultFor, dailyPostingNotice, signDailyResult, todayKey, type BoardSlot, type PendingDailyResult } from "../lib/dailyLeaderboard";
@@ -48,7 +49,7 @@ import { useSoloTimer } from "../hooks/useSoloTimer";
 import { track } from "../lib/analytics";
 import type { PuzzleClue, PuzzleRef } from "../types/puzzle";
 import { firstEmptyCell, getFilledClues } from "../lib/gridUtils";
-import { useGhosts, useRaceCandidates, useSolveRecorder } from "../hooks/useRace";
+import { useGhosts, useRaceCandidateList, useSolveRecorder } from "../hooks/useRace";
 import { clearTrace, fetchOwnSolveTrace, fetchSolveTrace, GHOST_COLORS, loadRace, raceResults, saveRace, saveSolveTrace, takeRaceIntent, type Ghost } from "../lib/race";
 import { RaceStarter } from "../components/Race/RaceStarter";
 import { RaceGhosts } from "../components/Race/RaceGhosts";
@@ -74,6 +75,7 @@ export function SoloPlayScreen() {
   const mp = useMultiplayerContext();
   const { user } = useAuth();
   const account = useAccountContext();
+  const friends = useFriends();
 
   const {
     puzzle,
@@ -372,12 +374,13 @@ export function SoloPlayScreen() {
   useEffect(() => {
     setRaceIntent(puzzleKey ? takeRaceIntent(puzzleKey) : []);
   }, [puzzleKey]);
-  const raceCandidates = useRaceCandidates(puzzleKey, !reopened);
+  const { rows: raceCandidates, ready: raceCandidatesReady } = useRaceCandidateList(puzzleKey, !reopened);
   const plus = account.plus;
   const racing = race.length > 0 && !isComplete;
   const { frames: ghostFrames, tints: ghostTintMap } = useGhosts(race, getElapsedMs, timerRunning && !isComplete, width);
   const openRacePitch = useCallback(() => account.openPaywall({ placement: "race", feature: "race" }), [account]);
-  const startRace = useCallback(
+  // The picked solves, loaded and set beside the grid; the clock is the caller's to start.
+  const loadGhosts = useCallback(
     async (userIds: string[]): Promise<boolean> => {
       if (!puzzleKey) return false;
       try {
@@ -391,20 +394,34 @@ export function SoloPlayScreen() {
         if (ghosts.length === 0) return false;
         saveRace({ key: puzzleKey, ghosts });
         setRace(ghosts);
-        // The race starts with the grid untouched: both clocks from zero.
-        restartTimer();
         recorder.reset();
         track("race_started", { ghosts: ghosts.length, friends: ghosts.filter((g) => raceCandidates.find((c) => c.userId === g.userId)?.friend).length });
-        requestAnimationFrame(() => gridInputRef.current?.focus());
         return true;
       } catch {
         return false;
       }
     },
-    [puzzleKey, raceCandidates, restartTimer, recorder],
+    [puzzleKey, raceCandidates, recorder],
   );
+  const startRace = useCallback(
+    async (userIds: string[]): Promise<boolean> => {
+      if (!(await loadGhosts(userIds))) return false;
+      // The race starts with the grid untouched: both clocks from zero.
+      restartTimer();
+      requestAnimationFrame(() => gridInputRef.current?.focus());
+      return true;
+    },
+    [loadGhosts, restartTimer],
+  );
+  // The start card (SoloStartGate) asks who to race before its countdown; the strip
+  // above the grid is only for an untouched puzzle that opened without the card.
+  const gatedRef = useRef(false);
+  if (startGate) gatedRef.current = true;
+  useEffect(() => {
+    gatedRef.current = false;
+  }, [puzzleKey, attempt]);
   const showRaceStarter =
-    raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
+    !startGate && !gatedRef.current && raceCandidates.length > 0 && race.length === 0 && !isComplete && !reopened && filled === 0 && !solvedBeforeRef.current;
 
   // Watching a recorded solve, letters and all, once this one is finished.
   const [replay, setReplay] = useState<ReplaySolve[] | null>(null);
@@ -1069,6 +1086,13 @@ export function SoloPlayScreen() {
         <SoloStartGate
           title={puzzle.title}
           detail={t("menu.dailyMeta", { width: puzzle.width, height: puzzle.height, count: puzzle.clues.length })}
+          race={{ ready: raceCandidatesReady, candidates: raceCandidates, plus, preselect: raceIntent, onPick: loadGhosts, onPitch: openRacePitch }}
+          onLive={friends.active && friends.friendships.friends.length > 0 ? () => {
+            setStartGate(false);
+            rememberSoloLanding("menu");
+            game.setUrlPuzzle(puzzle);
+            navigate("/race");
+          } : undefined}
           onStart={() => { setStartGate(false); handleResume(); }}
           onBack={() => {
             setStartGate(false);

@@ -175,8 +175,13 @@ export function clearRaceCandidateCache(): void {
  * button is an offer, never a gate.
  */
 export function useRaceCandidates(puzzleKey: string | null, enabled: boolean): RaceCandidate[] {
+  return useRaceCandidateList(puzzleKey, enabled).rows;
+}
+
+/** The same list with whether it has answered (or there is nothing to ask): the start card waits on it. */
+export function useRaceCandidateList(puzzleKey: string | null, enabled: boolean): { rows: RaceCandidate[]; ready: boolean } {
   const { active } = useFriends();
-  const [state, setState] = useState<{ key: string; rows: RaceCandidate[] } | null>(null);
+  const [state, setState] = useState<{ key: string; rows: RaceCandidate[]; ready: true } | null>(null);
   useEffect(() => {
     if (!active) candidateCache.clear();
   }, [active]);
@@ -186,15 +191,19 @@ export function useRaceCandidates(puzzleKey: string | null, enabled: boolean): R
     fetchRaceCandidates(puzzleKey)
       .then((rows) => {
         candidateCache.set(puzzleKey, rows);
-        if (live) setState({ key: puzzleKey, rows });
+        if (live) setState({ key: puzzleKey, rows, ready: true });
       })
-      .catch(() => live && setState({ key: puzzleKey, rows: candidateCache.get(puzzleKey) ?? [] }));
+      .catch(() => live && setState({ key: puzzleKey, rows: candidateCache.get(puzzleKey) ?? [], ready: true }));
     return () => {
       live = false;
     };
   }, [active, enabled, puzzleKey]);
-  if (!active || !enabled || !puzzleKey) return EMPTY;
-  return state?.key === puzzleKey ? state.rows : candidateCache.get(puzzleKey) ?? EMPTY;
+  if (!active || !enabled || !puzzleKey) return NONE;
+  if (state?.key === puzzleKey) return state;
+  const cached = candidateCache.get(puzzleKey);
+  return cached ? { rows: cached, ready: true } : PENDING;
 }
 
-const EMPTY: RaceCandidate[] = [];
+const NONE = { rows: [] as RaceCandidate[], ready: true };
+const PENDING = { rows: [] as RaceCandidate[], ready: false };
+

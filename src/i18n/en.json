@@ -3,7 +3,21 @@
     "starting_one": "Starting in {{count}}…",
     "starting_other": "Starting in {{count}}…",
     "startNow": "Start now",
-    "back": "Go back"
+    "back": "Go back",
+    "gettingReady": "Getting ready…",
+    "ready": "Ready when you are.",
+    "start": "Start",
+    "offerFriend": "{{name}} solved this",
+    "offerPublic": "Others have solved this",
+    "pickBody": "Bring up to {{max}} along: their solve plays beside yours from the same start. You see which squares they've filled, never their letters.",
+    "solo": "Play solo",
+    "race_one": "Race {{count}} solve",
+    "race_other": "Race {{count}} solves",
+    "pitchFriends_zero": "Race {{name}}'s solve",
+    "pitchFriends_one": "Race {{name}} and {{count}} more",
+    "pitchFriends_other": "Race {{name}} and {{count}} more",
+    "live": "Race a friend live",
+    "pitchPublic": "Race the fastest solvers"
   },
   "soloPause": {
     "loadError": "This saved puzzle couldn't be loaded. Your progress is still here; try again when you're online.",
