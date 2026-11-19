@@ -14,7 +14,7 @@ export function BoardJoinPrompt({ join, darkMode, className = "" }: { join: Boar
     return (
       <div data-testid="board-join" className={className}>
         <Button variant="secondary" size="lg" block onClick={join.onCreate}>
-          <Trophy className="size-4" aria-hidden="true" />
+          <Trophy className="size-4 shrink-0" aria-hidden="true" />
           {t("boardJoin.create")}
         </Button>
       </div>
