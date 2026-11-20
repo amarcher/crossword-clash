@@ -1,0 +1,3 @@
+<en-US>
+Every puzzle now starts behind a short countdown, including resumed solves and rooms, where the host can call the start off. The finish dialog no longer closes by itself after the last letter.
+</en-US>
