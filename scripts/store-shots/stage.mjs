@@ -38,6 +38,11 @@ export async function stageRace(page, p, { own = 248, friends = [["maya", 231], 
   await page.route("**/rest/v1/rpc/race_candidates", (r) => r.fulfill({ json: fr.map((f) => ({ user_id: f.user_id, username: f.username, seconds: f.seconds, friend: true })) }));
   await page.route("**/rest/v1/rpc/friend_race", (r) => r.fulfill({ json: fr.map((f) => ({ ...f, with_letters: true })) }));
   await page.route("**/rest/v1/solve_traces*", (r) => r.fulfill({ json: mine }));
+  // Racing a finished solve asks for one recording at a time, without its letters.
+  await page.route("**/rest/v1/rpc/solve_trace", (r) => {
+    const f = fr.find((x) => x.user_id === r.request().postDataJSON().p_user);
+    return r.fulfill({ json: f ? [{ seconds: f.seconds, events: f.events.map(([ms, c]) => [ms, c, "1"]), with_letters: false }] : [] });
+  });
   return { fr, mine };
 }
 /** Rewrite the daily board with invented names and times; `selfId` gets `selfName` at rank `selfRank`. */
@@ -52,6 +57,28 @@ export async function stageBoard(page, { selfId, selfName = "archer", times, sel
     const out = times.map((seconds, i) => i === selfRank - 1
       ? { ...t, id: uid(900), user_id: selfId, display_name: selfName, seconds, mode: "solo" }
       : { ...t, id: uid(100 + i), user_id: uid(100 + i), display_name: NAMES[n++ % NAMES.length], seconds, mode: modes[i] ?? "solo" });
+    await route.fulfill({ status: 200, headers: res.headers(), json: out });
+  });
+}
+/** Invented community puzzles for the browse page: titles and authors only, in the
+ * shape of the list's own rows (the first real row is the template). */
+export const COMMUNITY = [
+  ["Garden Party", "maya", 5, 10, "easy", 212, 164],
+  ["Road Trip Snacks", "theo", 9, 30, "medium", 148, 87],
+  ["Night Owls", "priya", 15, 76, "hard", 96, 31],
+  ["Rainy Day Mini", "jules", 5, 10, "easy", 301, 255],
+  ["Bake Sale", "nora", 7, 18, "medium", 77, 52],
+  ["Camping Trip", "leo", 9, 32, "medium", 64, 40],
+];
+export async function stageCommunity(page) {
+  await page.route("**/rest/v1/community_puzzles*", async (route) => {
+    const res = await route.fetch(); let rows;
+    try { rows = await res.json(); } catch { return route.fulfill({ response: res }); }
+    if (!Array.isArray(rows) || rows.length === 0 || !("short_id" in rows[0])) return route.fulfill({ response: res });
+    const out = COMMUNITY.map(([title, author, side, clue_count, difficulty, plays, solves], i) => ({
+      ...rows[0], id: uid(500 + i), short_id: `store${String(i).padStart(3, "0")}`, author_id: uid(500 + i), author, studio_id: `store-${i}`,
+      title, notes: null, difficulty, lang: "en", width: side, height: side, clue_count, puzzle_key: `store:${i}`, plays, solves,
+    }));
     await route.fulfill({ status: 200, headers: res.headers(), json: out });
   });
 }

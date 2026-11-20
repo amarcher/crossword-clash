@@ -69,6 +69,36 @@ reel (1080×1920, 30 fps). Its music was synthesized for it, so nothing is
 licensed. It is a marketing video, not an App Preview: it shows a TV, device
 frames and store badges, which App Previews do not allow.
 
+## Screenshots for the next version (November 20, 2026)
+
+Every set was rebuilt with `pnpm store:shots` after two tiles were added:
+`race-a-solve` ("Race anyone's finished solve": a midi being raced against
+three finished solves, their squares marked as they fill) and `community`
+("Solve what players make": the community list). The studio tile now ends
+"Then publish it." Apple's sets hold ten tiles; Play takes eight per device,
+so the Play sets leave out the leaderboard and the archive
+(`tilesFor` in `scripts/store-shots/compose.mjs`).
+
+| | Apple (10) | Play (8) |
+| --- | --- | --- |
+| Race friends on one grid | 01 | 01 |
+| Three new crosswords a day | 02 | 02 |
+| Race anyone's finished solve | 03 | 03 |
+| See who got there first | 04 | 04 |
+| Game night on the big screen | 05 | 05 |
+| Climb the daily leaderboard | 06 | |
+| Solve what players make | 07 | 06 |
+| Make your own crossword (Plus) | 08 | 07 |
+| Know your solving stats (Plus) | 09 | 08 |
+| Play every past daily (Plus) | 10 | |
+
+The community list's six puzzles are invented (`COMMUNITY` in `stage.mjs`),
+like the names on the board: on the day of the capture the real list held one
+puzzle. The solve being raced shows 13 Across in its clue bar because the
+puzzle's other early clues name a film, a band and a team. A capture's visits
+are no longer recorded as play (`play_sessions`, `narrator_sessions` and
+`solo_progress` writes are blocked in `cap.mjs`). Nothing is uploaded yet.
+
 ## Regenerating the screenshots (`pnpm store:shots`)
 
 Added November 18, 2026 with the two iPhone Duo sets (Apple requires Duo
@@ -80,7 +110,7 @@ before any submission:
 pnpm store:shots                      # all six sets, into the docs folders
 pnpm store:shots duoOuter,duoInner    # only those sets
 pnpm store:shots --out /tmp/tiles     # somewhere else, to look before replacing
-pnpm store:shots --no-room            # skip the room; tiles 01 and 04 stay as they are
+pnpm store:shots --no-room            # skip the room; its two tiles stay as they are
 ```
 
 Sets: `iphone`, `ipad`, `duoOuter`, `duoInner` (this folder) and `android`,

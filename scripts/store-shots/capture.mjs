@@ -2,10 +2,12 @@
 import { copyFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { open, SHOW_DAY, RACE_DAY } from "./cap.mjs";
-import { feed, stageRace, stageBoard } from "./stage.mjs";
+import { feed, stageRace, stageBoard, stageCommunity, synthSolve } from "./stage.mjs";
 
 const PRODUCTION = "https://crosswordclash.com";
 const draft = JSON.parse(readFileSync(new URL("./studio-draft.json", import.meta.url), "utf8"));
+/** The race day midi's clue shown while racing finished solves; read the clue before changing the day. */
+const SAFE_CLUE = 13;
 const brief = (e) => String(e).split("\n")[0].slice(0, 200);
 
 /** The Plus test account under the name the staged board gives it, so its row, its
@@ -18,7 +20,8 @@ async function asArcher(page) {
   });
 }
 
-/** Menu, board, stats and archive, then the race and the studio (in the tablets' tighter viewport). */
+/** Menu, board, stats, archive and the community list, a race against finished solves,
+ * then the replayed race and the studio (in the tablets' tighter viewport). */
 export async function captureScenes(url, dev, raw) {
   const out = join(raw, dev);
   // A failed step must leave no older capture behind for the composer to pick up.
@@ -29,6 +32,7 @@ export async function captureScenes(url, dev, raw) {
     try {
       await asArcher(s.page);
       await stageRace(s.page, feed(RACE_DAY, "midi"));
+      await stageCommunity(s.page);
       await stageBoard(s.page, { selfId: s.userId, times: [231, 248, 263, 312, 345, 402, 471, 536], selfRank: 2 });
       for (const [label, fn] of steps) {
         try { await fn(s); } catch (e) { failed.push(`${dev} ${label}: ${brief(e)}`); }
@@ -46,6 +50,35 @@ export async function captureScenes(url, dev, raw) {
   ]);
 
   await session({ tight: true }, [
+    ["community", async (s) => { await s.go("/puzzles"); await s.shot("community"); }],
+    // Racing three finished solves of the race day's midi, a little under halfway.
+    ["ghosts", async (s) => {
+      const p = feed(RACE_DAY, "midi");
+      await s.go(`/daily/${RACE_DAY}/midi`, 3000);
+      await s.tap(s.page.getByRole("button", { name: "Play", exact: true }));
+      await s.tap(s.page.getByTestId("start-ask-race"));
+      await s.page.waitForTimeout(800);
+      for (const name of ["maya", "theo", "priya"]) await s.tap(s.page.getByRole("checkbox", { name: new RegExp(name) }));
+      await s.tap(s.page.getByRole("button", { name: "Race 3 solves" }));
+      await s.page.waitForTimeout(1500);
+      const white = [...p.grid.keys()].filter((i) => p.grid[i] !== ".");
+      const nth = new Map(white.map((i, n) => [i, n]));
+      const cells = s.page.locator('[role="gridcell"]:not([aria-hidden])');
+      const mine = synthSolve(p, 977, 248).events.map((e) => e[1]).slice(0, Math.floor(white.length * 0.45));
+      for (const [n, i] of mine.entries()) {
+        await s.tap(cells.nth(nth.get(i)));
+        await s.tap(s.page.getByRole("button", { name: p.grid[i], exact: true }).first());
+        // The solves being raced move on the racer's clock; under a minute at a time, or the game pauses itself.
+        if (n % 6 === 5) await s.page.clock.runFor(22000);
+      }
+      await s.page.clock.runFor(3000);
+      // A clue that names nobody's film, band or team in the clue bar (13 Across).
+      await s.tap(cells.nth(nth.get(p.gridnums.indexOf(SAFE_CLUE))));
+      const down = s.page.getByRole("button", { name: /^Direction: Down/ });
+      if (await down.count()) await s.tap(down.first());
+      await s.page.waitForTimeout(600);
+      await s.shot("ghosts");
+    }],
     ["race", async (s) => {
       await s.go(`/daily/leaderboard/midi?day=${RACE_DAY}`);
       await s.tap(s.page.getByTestId("the-race").last());
