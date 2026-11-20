@@ -79,6 +79,9 @@ export interface HostContextValue {
       direction: "across" | "down",
     ) => void;
     startGame: (settings?: GameSettings) => Promise<void>;
+    startsAtMs: number | null;
+    beginStart: () => void;
+    cancelStart: () => void;
     closeRoom: () => Promise<void>;
     broadcastNewGame: (newGameId: string) => void;
     leaveGame: () => Promise<void>;
@@ -521,6 +524,15 @@ export function HostLayout() {
       navigate(`/host/spectate/${gameId}`);
     }
   }, [multiplayer, wrongAnswerTimeout, puzzle, gameId, navigate, tts.narratorEngine]);
+  // Start begins the count the TV and every player watch (RoomStartGate); the game starts when it ends.
+  const startRef = useRef(handleStartGame);
+  startRef.current = handleStartGame;
+  const startsAtMs = multiplayer.startsAtMs;
+  useEffect(() => {
+    if (startsAtMs === null) return;
+    const id = window.setTimeout(() => void startRef.current(), Math.max(0, startsAtMs - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [startsAtMs]);
 
   const handleCloseRoom = useCallback(async () => {
     const ok = await confirm({

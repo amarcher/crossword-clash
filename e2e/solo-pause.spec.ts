@@ -40,12 +40,14 @@ for (const width of [375, 1280]) {
     await context.setOffline(true);
     const row = page.getByRole("region", { name: "Continue playing" }).locator("div.border-t").filter({ hasText: imported.title });
     await row.getByRole("button", { name: "Resume", exact: true }).click();
+    await startNow(page);
     await expect(gridCell(page, first.row, first.col)).toHaveAttribute("aria-label", new RegExp(`${first.solution}$`));
     await expect(page.getByRole("dialog", { name: "Paused" })).toHaveCount(0);
     await context.setOffline(false);
     await page.reload();
     await expect(page.getByRole("dialog", { name: "Paused" })).toBeVisible();
     await page.getByRole("button", { name: "Resume", exact: true }).click();
+    await startNow(page);
     await expect(gridCell(page, first.row, first.col)).toHaveAttribute("aria-label", new RegExp(`${first.solution}$`));
     expect(errors).toEqual([]);
   });
@@ -71,6 +73,7 @@ test("hidden tab freezes the clock and returns paused; browser Back preserves wo
   });
   await expect(page.getByTestId("pause-clock")).toHaveText(clock!);
   await page.getByRole("button", { name: "Resume", exact: true }).click();
+  await startNow(page);
   await page.goBack();
   await expect(page).toHaveURL(/\/puzzle-ready/);
   await page.goForward();

@@ -2,6 +2,8 @@
 // browser Forward restore paused; an explicit Play/Resume starts immediately.
 let requestedKey: string | null = null;
 export function requestSoloStart(key: string): void { requestedKey = key; }
+/** The same answer without taking it: for the first frame, before the clock asks. */
+export function peekSoloStart(key: string): boolean { return requestedKey === key; }
 export function consumeSoloStart(key: string): boolean {
   const start = requestedKey === key;
   requestedKey = null;

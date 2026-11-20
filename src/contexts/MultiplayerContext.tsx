@@ -24,6 +24,10 @@ interface MultiplayerContextValue {
     direction: "across" | "down",
   ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
+  /** ms epoch at which the room's start count ends, or null when none is running. */
+  startsAtMs: number | null;
+  beginStart: () => void;
+  cancelStart: () => void;
   closeRoom: () => Promise<void>;
   broadcastNewGame: (newGameId: string) => void;
   leaveGame: () => Promise<void>;

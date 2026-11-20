@@ -1,10 +1,11 @@
 import { puzzleIdentity } from "../lib/soloStats";
 import { requestSoloChosen } from "../lib/soloSession";
 import { track } from "../lib/analytics";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRoomSolves } from "../hooks/useRoomSolves";
 import { Navigate, useNavigate } from "react-router";
 import { GameLobby } from "../components/GameLobby";
+import { RoomStartGate } from "../components/RoomStartGate";
 import { useGame, STORAGE_KEY } from "../contexts/GameContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useMultiplayerContext } from "../contexts/MultiplayerContext";
@@ -50,6 +51,15 @@ export function LobbyScreen() {
       navigate(`/play/${game.gameId}`);
     }
   }, [mp, game.wrongAnswerTimeout, game.raceMode, game.puzzle, game.gameId, navigate]);
+  // Start begins the count everyone watches (RoomStartGate); the game starts when it ends.
+  const start = useRef(handleStartGame);
+  start.current = handleStartGame;
+  const { startsAtMs } = mp;
+  useEffect(() => {
+    if (!mp.isHost || startsAtMs === null) return;
+    const id = window.setTimeout(() => void start.current(), Math.max(0, startsAtMs - Date.now()));
+    return () => window.clearTimeout(id);
+  }, [mp.isHost, startsAtMs]);
 
   // Joiners see the mode before Start: the host says it on every change, and
   // again when the roster changes, so someone who just arrived hears it too.
@@ -118,13 +128,24 @@ export function LobbyScreen() {
 
   if (!game.puzzle) return <Navigate to="/" replace />;
 
+  if (startsAtMs !== null) {
+    return (
+      <RoomStartGate
+        puzzle={game.puzzle}
+        detail={tStatic("menu.dailyMeta", { width: game.puzzle.width, height: game.puzzle.height, count: game.puzzle.clues.length })}
+        startsAtMs={startsAtMs}
+        onCancel={mp.isHost ? mp.cancelStart : undefined}
+      />
+    );
+  }
+
   return (
     <GameLobby
       shareCode={mp.shareCode}
       players={mp.players}
       solves={solves}
       isHost={mp.isHost}
-      onStartGame={handleStartGame}
+      onStartGame={mp.beginStart}
       onCloseRoom={handleCloseRoom}
       onLeave={handleLeave}
       onPlaySolo={mp.isHost ? () => void handlePlaySolo() : undefined}

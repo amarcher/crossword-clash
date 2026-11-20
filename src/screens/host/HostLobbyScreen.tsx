@@ -9,6 +9,7 @@ import { TTSSettingsModal } from "../../components/TTSControls";
 import { unlockNarratorAudio } from "../../lib/narrator/audioUnlock";
 import { track } from "../../lib/analytics";
 import { buttonClass, MiniGridThumb } from "../../components/ui";
+import { RoomStartGate } from "../../components/RoomStartGate";
 import { useRoomSolves } from "../../hooks/useRoomSolves";
 import { priorSolveChip } from "../../lib/roomSolves";
 import { puzzleIdentity } from "../../lib/soloStats";
@@ -21,7 +22,7 @@ import { WRONG_ANSWER_TIMEOUT_OPTIONS } from "../../lib/gameSettings";
 export function HostLobbyScreen() {
   const { t } = useTranslation();
   const host = useHostContext();
-  const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleStartGame, handleCloseRoom, tts } = host;
+  const { multiplayer, joinUrl, wrongAnswerTimeout, setWrongAnswerTimeout, handleCloseRoom, tts } = host;
 
   useBeforeUnload(true);
   // A shared screen nobody touches: keep it from dimming while players join.
@@ -41,6 +42,9 @@ export function HostLobbyScreen() {
 
   return (
     <div className="tv-stage">
+      {multiplayer.startsAtMs !== null && host.puzzle && (
+        <RoomStartGate tv puzzle={host.puzzle} startsAtMs={multiplayer.startsAtMs} onCancel={multiplayer.cancelStart} />
+      )}
       <div className="tv-lobby">
         {/* Join column */}
         <section className="tv-card tv-lobby-join flex min-h-0 flex-col items-center justify-between text-center" style={{ padding: "calc(var(--u) * 2)" }}>
@@ -171,7 +175,7 @@ export function HostLobbyScreen() {
               onClick={() => {
                 // The tap the host's voice needs (audioUnlock.ts).
                 unlockNarratorAudio();
-                handleStartGame();
+                multiplayer.beginStart();
               }}
               disabled={!canStart}
               className={buttonClass("primary", "lg", "tv-t-lg h-auto! min-h-14 flex-1 py-4")}

@@ -52,9 +52,11 @@ test("multiplayer: host and player race, claims sync across clients", async ({ b
     await expect(start).toBeEnabled();
     await start.click();
 
-    // Both land on the grid.
-    await expect(host.getByRole("grid").first()).toBeVisible({ timeout: 20_000 });
-    await expect(player.getByRole("grid").first()).toBeVisible({ timeout: 20_000 });
+    // Both watch the start count, then land on the grid.
+    await expect(host.getByTestId("room-start-gate")).toBeVisible();
+    await expect(player.getByTestId("room-start-gate")).toBeVisible();
+    await expect(host.getByRole("grid").first()).toBeVisible({ timeout: 30_000 });
+    await expect(player.getByRole("grid").first()).toBeVisible({ timeout: 30_000 });
 
     // Player claims the first white cell. Multiplayer rejects wrong letters (no
     // lockout by default), so cycle A–Z until the claim sticks — no need to
