@@ -1,6 +1,7 @@
 import type { NavigateFunction, NavigateOptions } from "react-router";
 import { prefetchRoute } from "../routeModules";
 import { nextRouteCommit } from "./routeCommit";
+import { pageIsScrolled } from "./pageScroll";
 import { canViewTransition, withViewTransition } from "./viewTransition";
 
 /**
@@ -52,7 +53,12 @@ export function navigateWithTransition(
 
 async function run(navigate: NavigateFunction, to: string, options: NavigateOptions): Promise<void> {
   const chunk = prefetchRoute(to);
-  if (!canViewTransition()) {
+  // A fade never starts from a scrolled page. An app's web view draws the incoming
+  // page, live during the fade, one frame at the old scroll offset: the puzzle's
+  // start card showed a row too high and jumped into place (Andrew, 2026-11-20;
+  // recorded in the simulator, and gone with a plain navigation). Putting the page
+  // at the top first, inside the fade's update, did not remove that frame.
+  if (!canViewTransition() || pageIsScrolled()) {
     await navigate(to, options);
     return;
   }
