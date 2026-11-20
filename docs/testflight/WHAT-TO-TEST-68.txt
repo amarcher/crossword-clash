@@ -1,0 +1,7 @@
+This build (1.1.4, build 68) makes the finish dialog open at its full size instead of growing as its parts arrive. Please check:
+
+1. Finish a daily you have not solved before: the dialog should appear with the time, the streak, a box where the replay clip goes, Share, and Up next all in place. When the clip arrives it should fill its box, and nothing below it should move.
+2. Watch the first second closely: no line should appear and disappear, and Up next should not gain a row after the dialog is open.
+3. Finish a second daily the same day, and one from Past puzzles: the same.
+4. Share your time still sends the link, and the clip in the dialog plays.
+5. Everything from build 67 still applies.
