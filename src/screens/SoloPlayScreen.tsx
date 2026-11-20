@@ -799,6 +799,17 @@ export function SoloPlayScreen() {
     [game, pendingDaily],
   );
   const boardNotPosted = !!boardSlot && !!user && !!soloResult && !boardPostsHere();
+  // "Checking…" usually lasts a moment: shown at once it added a line to the finish dialog and
+  // took it away again. It is said only once the check has run long; the other notices at once.
+  const heldNotice = boardNotPosted ? null : dailyPostingNotice(pendingDaily);
+  const checking = pendingDaily?.postingHold === "checking";
+  const [checkingLong, setCheckingLong] = useState(false);
+  useEffect(() => {
+    if (!checking) { setCheckingLong(false); return; }
+    const timer = window.setTimeout(() => setCheckingLong(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, [checking]);
+  const postingNotice = checking && !checkingLong ? null : heldNotice;
   // A player with no account is offered one, and an account that hides its solves is offered the
   // choice of who may watch: either way the finish then posts (useBoardJoin).
   const boardJoin = useBoardJoin(boardNotPosted || !soloResult ? null : pendingDaily);
@@ -1140,7 +1151,8 @@ export function SoloPlayScreen() {
       {paused && !startGate && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
         onResume={() => setStartGate("pause")} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
-        open={showCompletionModal}
+        // The result follows the last letter by a frame; opened without it, the dialog drew once with no time, streak or clip.
+        open={showCompletionModal && (!!soloResult || !puzzleKey)}
         puzzleTitle={puzzle.title}
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
@@ -1158,7 +1170,7 @@ export function SoloPlayScreen() {
         dailySign={dailySign}
         boardNotPosted={boardNotPosted}
         boardJoin={boardJoin ?? undefined}
-        dailyPostingNotice={!boardNotPosted && dailyPostingNotice(pendingDaily) ? t(dailyPostingNotice(pendingDaily)!) : undefined}
+        dailyPostingNotice={postingNotice ? t(postingNotice) : undefined}
         challengePuzzle={puzzle}
         playerCells={playerCells}
         wrongCells={shareWrongCells}

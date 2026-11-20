@@ -154,7 +154,7 @@ export function ShareResultButton({
       {/* The preview shows what will be sent. A link sent alone is shown as it unfurls: the
           clip and the title under it, in step with the name being signed. Otherwise the text block. */}
       {linkOnly ? (
-        <ReplayPreview id={clip?.id} race={clip?.race} title={linkPreviewTitle(block.link, communityTitle)} darkMode={darkMode} />
+        <ReplayPreview id={clip?.id} race={clip?.race} title={linkPreviewTitle(block.link, communityTitle)} pending={clipPending && !clip} darkMode={darkMode} />
       ) : clipPending && !clip ? (
         <ReplayPreview pending darkMode={darkMode} />
       ) : (

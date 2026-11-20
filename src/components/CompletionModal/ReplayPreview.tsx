@@ -16,8 +16,10 @@ export function ReplayPreview({ id, race, title, darkMode, pending }: { id?: str
   const [failed, setFailed] = useState(false);
   const src = id && !failed ? `${SHARE_URL}/api/replay?s=${id}` : null;
   // The clip is still being filed: hold its place at the size it will arrive at, so nothing
-  // below it moves when it does (Andrew, 2026-11-19).
-  if (!src && pending) {
+  // below it moves when it does (Andrew, 2026-11-19). With the title already known the caption
+  // is the real one, and only the picture is held (Andrew, 2026-11-20).
+  const held = !src && !!pending;
+  if (held && !title) {
     return (
       <div data-testid="replay-preview-pending" aria-hidden="true" className={`mb-1 overflow-hidden rounded-2xl ${darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line"}`}>
         <div className={`aspect-video w-full animate-pulse motion-reduce:animate-none ${darkMode ? "bg-white/10" : "bg-surface-sunken"}`} />
@@ -29,6 +31,7 @@ export function ReplayPreview({ id, race, title, darkMode, pending }: { id?: str
   const ring = darkMode ? "ring-1 ring-stage-line" : "ring-1 ring-line";
   return (
     <figure data-testid="replay-preview" className={title ? `mb-1 overflow-hidden rounded-2xl ${ring}` : "mb-1"}>
+      {held && <div data-testid="replay-preview-pending" aria-hidden="true" className={`aspect-video w-full animate-pulse motion-reduce:animate-none ${darkMode ? "bg-white/10" : "bg-line/60"}`} />}
       {src && (
         <video
           src={src}
