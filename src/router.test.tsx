@@ -156,6 +156,24 @@ describe("IndexRedirect", () => {
     expect(screen.getByTestId("menu-screen")).toBeTruthy();
   });
 
+  it("does not swap the menu for a puzzle saved after mount (Play pressed on /)", () => {
+    // Play saves the puzzle before it navigates; a redirect read mid-press replaced "/"
+    // in history with the puzzle, so the start card's Go back had no menu to return to.
+    const { rerender } = renderInRouter(IndexRedirect);
+    expect(screen.getByTestId("menu-screen")).toBeTruthy();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ puzzle: makeMockPuzzle() }));
+    rerender(
+      <MemoryRouter initialEntries={["/test-start"]}>
+        <Routes>
+          <Route path="/test-start" element={<IndexRedirect />} />
+          <Route path="/solo/play" element={<div data-testid="navigated-to">/solo/play</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTestId("navigated-to")).toBeNull();
+    expect(screen.getByTestId("menu-screen")).toBeTruthy();
+  });
+
   it("redirects to /importing when import hash is present", () => {
     mockUseGame.mockReturnValue({ urlPuzzle: null });
     mockHasImportHash.mockReturnValue(true);

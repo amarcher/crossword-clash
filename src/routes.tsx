@@ -39,6 +39,17 @@ function IndexRedirect() {
   // friends") must not be hijacked into /puzzle-ready.
   const [landingPuzzle] = useState(() => game.urlPuzzle);
   const [landingChallenge] = useState(() => game.urlChallenge);
+  // Likewise the saved solo puzzle: only one waiting when "/" first rendered is
+  // reopened. Pressing Play on the menu shown here saves one too, and reading
+  // that mid-press replaced "/" with the puzzle, so Go back had no menu to reach.
+  const [resumeSolo] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return !!raw && !!JSON.parse(raw)?.puzzle && !soloLandingIsMenu();
+    } catch {
+      return false;
+    }
+  });
 
   // Check for URL puzzle (hash already consumed by GameProvider init)
   if (landingPuzzle && game.urlPuzzle) {
@@ -68,16 +79,8 @@ function IndexRedirect() {
   }
 
   // Check for saved solo session
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const saved = JSON.parse(raw);
-      if (saved?.puzzle && !soloLandingIsMenu()) {
-        return <Navigate to="/solo/play" replace />;
-      }
-    }
-  } catch {
-    // ignore
+  if (resumeSolo) {
+    return <Navigate to="/solo/play" replace />;
   }
 
   return <MenuScreen />;

@@ -148,7 +148,7 @@ export function SoloStartGate({ title, detail, race, live, answered, onStart, on
       aria-modal="true"
       aria-labelledby="solo-start-title"
       data-testid="solo-start-gate"
-      className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-canvas/50 p-6 backdrop-blur-lg"
+      className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center overflow-y-auto bg-canvas/50 p-6"
       style={{ paddingTop: "max(24px, env(safe-area-inset-top))", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
     >
       <div className={`w-full rounded-3xl border border-line bg-surface p-6 text-center shadow-overlay ${step === "ask" || step === "pick" ? "max-w-sm" : "max-w-xs"}`}>
