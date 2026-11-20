@@ -99,16 +99,16 @@ puzzle's other early clues name a film, a band and a team. A capture's visits
 are no longer recorded as play (`play_sessions`, `narrator_sessions` and
 `solo_progress` writes are blocked in `cap.mjs`).
 
-## 1.1.4 (November 20, 2026): prepared with build 69, not submitted
+## 1.1.4 (November 20, 2026): sent for review with build 69
 
 Through the App Store Connect API, on Andrew's go-ahead: version 1.1.4 created
 (release after approval), build 69 attached, the description, promotional
 text, `whats-new-1.1.4.txt` and the review notes saved, and three screenshot
 sets of ten uploaded and processed: 6.9" iPhone, 13" iPad and iPhone Duo.
 Apple has one Duo slot (`APP_IPHONE_DUO`) of ten pictures that accepts both
-the outer and the inner size; it holds the ten inner-display tiles, and the
-outer set in `screenshots/iphone-duo-outer/` is not uploaded. Nothing has been
-sent for review.
+the outer and the inner size. At Andrew's request it holds a mix in tile order:
+outer for 01, 02, 06, 09 and 10, inner for 03, 04, 05, 07 and 08. The version
+was then submitted for review (state after the submit: WAITING_FOR_REVIEW).
 
 ## Regenerating the screenshots (`pnpm store:shots`)
 

@@ -241,7 +241,8 @@ Done by Claude, nothing submitted or rolled out:
 
 - **November 20, 2026:** 40 (1.1.4) uploaded through the console to the
   internal testing draft (it replaced the unpublished 39) with
-  `whats-new-1.1.4.txt`; saved as a draft, not rolled out. The store listing's
+  `whats-new-1.1.4.txt`, then rolled out to internal testing on Andrew's
+  say-so. Not promoted to production. The store listing's
   phone, 7-inch and 10-inch screenshot slots were replaced with the eight new
   tiles each (`screenshots/phone`, `screenshots/tablet-10`: the leaderboard is
   in, the community list and the archive are out) and saved as draft changes,
