@@ -1,20 +1,26 @@
 // Store tiles: a headline over the capture on the site's crossword backdrop,
 // at each store's exact pixel size.
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "@playwright/test";
 import { DEVICES } from "./cap.mjs";
 
-export const TILES = [
-  { id: "01-race-friends", shot: "room-mid", title: "Race friends<br>on one grid", sub: "Every square goes to whoever gets it first." },
-  { id: "02-dailies", shot: "menu", title: "Three new<br>crosswords a day", sub: "A mini, a midi and a full-size. Free." },
-  { id: "03-the-race", shot: "race", title: "See who got<br>there first", sub: "Your friends' solves, replayed on one clock." },
-  { id: "04-tv", shot: "room-mid", tv: true, title: "Game night on<br>the big screen", sub: "The board on your TV. Everyone plays from their own device." },
-  { id: "05-leaderboard", shot: "board", title: "Climb the<br>daily leaderboard", sub: "Solve today's puzzle and see where you land." },
-  { id: "06-studio", shot: "studio", plus: true, title: "Make your<br>own crossword", sub: "Lay out, fill and clue it in the studio. Then race friends on it." },
-  { id: "07-stats", shot: "stats", plus: true, title: "Know your<br>solving stats", sub: "Trends, ranks and head-to-heads with friends." },
-  { id: "08-archive", shot: "archive", plus: true, title: "Play every<br>past daily", sub: "The whole archive, whenever you like." },
+/** Every tile, in store order. Apple shows up to ten per set; Play takes eight, so
+ * the Play sets leave out the two marked `apple`. */
+const ALL = [
+  { name: "race-friends", shot: "room-mid", title: "Race friends<br>on one grid", sub: "Every square goes to whoever gets it first." },
+  { name: "dailies", shot: "menu", title: "Three new<br>crosswords a day", sub: "A mini, a midi and a full-size. Free." },
+  { name: "race-a-solve", shot: "ghosts", title: "Race anyone's<br>finished solve", sub: "Their squares fill in as you go, on your clock." },
+  { name: "the-race", shot: "race", title: "See who got<br>there first", sub: "Everyone's solves, replayed on one clock." },
+  { name: "tv", shot: "room-mid", tv: true, title: "Game night on<br>the big screen", sub: "The board on your TV. Everyone plays from their own device." },
+  { name: "leaderboard", shot: "board", apple: true, title: "Climb the<br>daily leaderboard", sub: "Solve today's puzzle and see where you land." },
+  { name: "community", shot: "community", title: "Solve what<br>players make", sub: "Crosswords made by players. Play one, or race a friend on it." },
+  { name: "studio", shot: "studio", plus: true, title: "Make your<br>own crossword", sub: "Lay out, fill and clue it in the studio. Then publish it." },
+  { name: "stats", shot: "stats", plus: true, title: "Know your<br>solving stats", sub: "Trends, ranks and head-to-heads with friends." },
+  { name: "archive", shot: "archive", plus: true, apple: true, title: "Play every<br>past daily", sub: "The whole archive, whenever you like." },
 ];
+/** A set's tiles, numbered in order: `01-race-friends` … */
+export const tilesFor = (dev) => ALL.filter((t) => DEVICES[dev].platform === "ios" || !t.apple).map((t, i) => ({ ...t, id: `${String(i + 1).padStart(2, "0")}-${t.name}` }));
 
 const css = readFileSync("src/index.css", "utf8");
 const backdrop = css.match(/url\("(data:image\/svg\+xml,[^"]+)"\)/)[1];
@@ -38,7 +44,7 @@ const html = (t, dev, W, H) => {
     </div>${body}</div>`;
 };
 
-/** Writes the eight tiles of each device into `outFor(dev)`. The page is the site's
+/** Writes the tiles of each device into `outFor(dev)`. The page is the site's
  * own (for its fonts); a tile whose capture is missing is skipped and reported, and
  * without `room` the two room tiles are left as they are. */
 export async function compose(url, devs, raw, outFor, { room = true } = {}) {
@@ -53,7 +59,18 @@ export async function compose(url, devs, raw, outFor, { room = true } = {}) {
       await page.route("**/__store/**", (r) => r.fulfill({ path: join(raw, r.request().url().split("/__store/")[1]) }));
       await page.goto(url + "/support");
       await page.waitForTimeout(1200);
-      for (const t of TILES) {
+      const tiles = tilesFor(dev);
+      // A tile that moved or left the set must not stay behind under its old number.
+      // Without the room, a room tile keeps its picture and takes its new number.
+      const ids = new Set(tiles.map((t) => `${t.id}.png`));
+      for (const f of readdirSync(out)) {
+        const name = /^\d\d-(.+)\.png$/.exec(f)?.[1];
+        if (!name || ids.has(f)) continue;
+        const now = tiles.find((t) => t.name === name);
+        if (!room && now?.shot === "room-mid") renameSync(join(out, f), join(out, `${now.id}.png`));
+        else rmSync(join(out, f));
+      }
+      for (const t of tiles) {
         if (!room && t.shot === "room-mid") continue;
         const needs = [t.shot, ...(t.tv ? ["tv-game-mid"] : [])].filter((n) => !existsSync(join(raw, dev, `${n}.png`)));
         if (needs.length) { skipped.push(`${dev} ${t.id}: no ${needs.join(", ")} capture`); continue; }

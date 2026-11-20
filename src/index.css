@@ -147,7 +147,10 @@
   --native-grid-size: min(100cqw, 100cqh);
 }
 .native-game-clues { display: none; }
-.native-game-controls { flex: none; background: #dde2ea; }
+/* The edge keys' press areas reach 40px past the keys (below); clipped here, or they
+   make the fixed layout 36px wider than the screen and a focus scrolls it sideways
+   (seen at the iPhone Duo's inner width, 2026-11-20). */
+.native-game-controls { flex: none; background: #dde2ea; overflow-x: clip; }
 .native-clue-bar { min-height: 60px; background: var(--color-brand-50); border-top: 1px solid var(--color-brand-100); }
 .native-clue-bar > button { min-height: 60px; }
 .native-clue-bar > button > span.line-clamp-2 {

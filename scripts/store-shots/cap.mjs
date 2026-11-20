@@ -69,6 +69,9 @@ export async function open(url, as, device, out, opts = {}) {
   // Native mode makes the app post daily times even from localhost (boardPostsHere);
   // no scene finishes a ranked solve today, and none added later may post one.
   await page.route("**/rest/v1/daily_results*", (r) => (r.request().method() === "GET" ? r.fallback() : r.abort()));
+  // A capture is not a player: its visits never reach the play counts, and the
+  // puzzles it types into leave no saved progress on the test accounts.
+  await page.route(/\/rest\/v1\/(play_sessions|narrator_sessions|solo_progress)\b/, (r) => (r.request().method() === "GET" ? r.fallback() : r.abort()));
   const shot = async (name) => { await page.screenshot({ path: join(out, `${name}.png`) }); };
   const go = async (path, wait = 2200) => {
     await page.goto(url + path);

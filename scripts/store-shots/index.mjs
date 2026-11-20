@@ -3,7 +3,7 @@
 //   pnpm store:shots                      every set
 //   pnpm store:shots duoOuter,duoInner    only those sets
 //   pnpm store:shots --out /tmp/tiles     write the tiles elsewhere (a dry run for the docs folders)
-//   pnpm store:shots --no-room            skip the room (tiles 01 and 04 are then left as they are)
+//   pnpm store:shots --no-room            skip the room (its two tiles are then left as they are)
 //   pnpm store:shots --url http://localhost:5173   use a dev server that is already running
 //
 // Sets: iphone, ipad, duoOuter, duoInner (docs/app-store/screenshots) and android,
@@ -74,7 +74,7 @@ try {
   }
   const outFor = (dev) => (outRoot ? join(resolve(outRoot), dev) : resolve(DEVICES[dev].out));
   problems.push(...(await compose(url, devs, raw, outFor, { room })));
-  if (!room) console.log("Room skipped: tiles 01 and 04 were not rewritten.");
+  if (!room) console.log("Room skipped: the two room tiles were not rewritten.");
   for (const dev of devs) console.log(`${dev}: ${outFor(dev)}`);
 } finally {
   server?.kill();
