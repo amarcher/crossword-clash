@@ -259,6 +259,12 @@ export function CompletionModal({
   }, [dismiss]);
 
   useFocusTrap(open ? modalRef : { current: null }, handleEscape);
+  // A tap outside closes the dialog only when the press began there. The last letter is typed
+  // as the finger lands on a key (PuzzleKeyboard); the dialog is up before it lifts, and a
+  // phone hands that tap's click to whatever is under it by then: where the card did not cover
+  // the key, that was this backdrop, and the dialog closed unseen (Andrew, 2026-11-19).
+  const pressedOutside = useRef(false);
+  useEffect(() => { if (!open) pressedOutside.current = false; }, [open]);
 
   // One-shot celebration: confetti + win chime fire exactly once, on the
   // transition into the completed state. Initialised to `open` so a finished
@@ -431,7 +437,12 @@ export function CompletionModal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-stage/60 backdrop-blur-[2px]"
-        onClick={dismiss}
+        onPointerDown={() => { pressedOutside.current = true; }}
+        onClick={() => {
+          if (!pressedOutside.current) return;
+          pressedOutside.current = false;
+          dismiss?.();
+        }}
       />
 
       {/* Confetti — mounted only during the one-shot celebration window */}

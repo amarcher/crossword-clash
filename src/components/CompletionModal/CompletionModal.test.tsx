@@ -72,6 +72,18 @@ describe("CompletionModal", () => {
     expect(container.innerHTML).toBe("");
   });
 
+  it("closes on a tap outside only when the press began outside (the last letter's tap must not close it)", () => {
+    const onClose = vi.fn();
+    const { container } = render(<CompletionModal {...SOLO_PROPS} onClose={onClose} />);
+    const backdrop = container.querySelector(".backdrop-blur-\\[2px\\]")!;
+    // The click a phone makes of a tap that began on a key, before the dialog was there.
+    fireEvent.click(backdrop);
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.pointerDown(backdrop);
+    fireEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("renders solo variant with score", () => {
     const { getByText } = render(<CompletionModal {...SOLO_PROPS} />);
     expect(getByText("Puzzle complete")).toBeTruthy();

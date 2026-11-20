@@ -25,6 +25,11 @@ interface TrackedPresence {
 }
 
 /** A player is away only when every presence of theirs (two tabs, say) is hidden. */
+/** Seconds counted in a room between the host's Start and the grid: time for the host to call it off. */
+export const ROOM_START_SECONDS = 10;
+/** How long past its end a count waits for the host's start before the room is let go. */
+const START_GIVE_UP_MS = 8000;
+
 export function presenceStateToPlayers(
   state: RealtimePresenceState<TrackedPresence>,
   gameId: string,
@@ -93,6 +98,12 @@ interface UseMultiplayerReturn {
     direction: "across" | "down",
   ) => void;
   startGame: (settings?: GameSettings) => Promise<void>;
+  /** ms epoch at which the room's start count ends, or null when none is running. */
+  startsAtMs: number | null;
+  /** The host starts the count every player sees before the grid (ROOM_START_SECONDS). */
+  beginStart: () => void;
+  /** The host calls the count off: everyone is back in the room. */
+  cancelStart: () => void;
   /** The host tells the lobby what it has chosen so far, so joiners see the mode before Start. */
   announceLobbySettings: (settings: GameSettings) => void;
   /** What the host last announced while the room waits; null until it has (or from a host on an older build). */
@@ -172,6 +183,19 @@ export function useMultiplayer({
   const [newGameId, setNewGameId] = useState<string | null>(null);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [lobbySettings, setLobbySettings] = useState<GameSettings | null>(null);
+  // The start count (Andrew, 2026-11-19: no grid appears without one). It runs while the room
+  // still waits: the host's device starts the game when it ends, so a player on a build
+  // without the count simply stays in the lobby until then and nobody starts early.
+  const [starting, setStarting] = useState<{ gameId: string | null; at: number; mine: boolean } | null>(null);
+  const startsAtMs = starting !== null && starting.gameId === gameId && gameStatus === "waiting" ? starting.at : null;
+  const startingRef = useRef(starting);
+  startingRef.current = starting;
+  // A count whose host never started the game (their app closed mid-count) lets go of the room.
+  useEffect(() => {
+    if (startsAtMs === null) return;
+    const id = window.setTimeout(() => setStarting(null), Math.max(0, startsAtMs - Date.now()) + START_GIVE_UP_MS);
+    return () => window.clearTimeout(id);
+  }, [startsAtMs]);
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const hydrated = hydratedFor !== null && hydratedFor === gameId;
   // Race clock (ms epoch). Seeded by broadcast timestamps for live clients and
@@ -374,7 +398,19 @@ export function useMultiplayer({
       // flash). Once warmed, an empty sync means everyone legitimately left.
       if (fromPresence.length > 0 || presenceRef.current !== null) presenceRef.current = fromPresence;
       refreshRoster();
+      // Someone arriving mid-count hears it too.
+      const now = startingRef.current;
+      if (now?.mine && now.gameId === gameId && now.at > Date.now()) {
+        void channel.send({ type: "broadcast", event: "game_starting", payload: { inMs: now.at - Date.now() } }).catch(() => {});
+      }
     });
+
+    // Sent as time remaining, not a clock reading: two devices' clocks need not agree.
+    channel.on("broadcast", { event: "game_starting" }, ({ payload }) => {
+      if (typeof payload?.inMs !== "number") return;
+      setStarting({ gameId, at: Date.now() + Math.max(0, Math.min(payload.inMs, ROOM_START_SECONDS * 1000)), mine: false });
+    });
+    channel.on("broadcast", { event: "game_start_cancelled" }, () => setStarting(null));
 
     // The host's choices while the room waits (a hint for the lobby; game_started carries the real ones).
     channel.on("broadcast", { event: "lobby_settings" }, ({ payload }) => {
@@ -384,6 +420,7 @@ export function useMultiplayer({
     });
 
     channel.on("broadcast", { event: "game_started" }, ({ payload }) => {
+      setStarting(null);
       setGameStatus("active");
       if (payload?.settings) {
         setGameSettings(payload.settings);
@@ -707,6 +744,7 @@ export function useMultiplayer({
   const startGame = useCallback(async (settings?: GameSettings) => {
     const resolvedSettings = settings ?? DEFAULT_GAME_SETTINGS;
     const success = await startGameOnServer(gameId, resolvedSettings);
+    setStarting(null);
     if (success) {
       const startedAt = Date.now();
       setGameSettings(resolvedSettings);
@@ -721,6 +759,17 @@ export function useMultiplayer({
         .catch(() => {});
     }
   }, [gameId, setGameStatus]);
+
+  const beginStart = useCallback(() => {
+    setStarting({ gameId, at: Date.now() + ROOM_START_SECONDS * 1000, mine: true });
+    void channelRef.current
+      ?.send({ type: "broadcast", event: "game_starting", payload: { inMs: ROOM_START_SECONDS * 1000 } })
+      .catch(() => {});
+  }, [gameId]);
+  const cancelStart = useCallback(() => {
+    setStarting(null);
+    void channelRef.current?.send({ type: "broadcast", event: "game_start_cancelled", payload: {} }).catch(() => {});
+  }, []);
 
   const announceLobbySettings = useCallback((settings: GameSettings) => {
     void channelRef.current
@@ -789,6 +838,9 @@ export function useMultiplayer({
     claimCell,
     broadcastWrongLetter,
     startGame,
+    startsAtMs,
+    beginStart,
+    cancelStart,
     announceLobbySettings,
     lobbySettings,
     closeRoom,

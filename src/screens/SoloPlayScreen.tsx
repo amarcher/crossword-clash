@@ -34,7 +34,7 @@ import { useNextUp } from "../hooks/useNextUp";
 import type { NextUpItem } from "../lib/nextUp";
 import { fetchDailyForDay } from "../lib/dailyFeed";
 import { getProgress, isStarted, saveAttempt } from "../lib/soloProgress";
-import { consumeSoloChosen, consumeSoloStart, peekSoloChosen, rememberSoloLanding } from "../lib/soloSession";
+import { consumeSoloChosen, consumeSoloStart, peekSoloChosen, peekSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { watchSoloLifecycle } from "../lib/soloLifecycle";
 import { SoloNavigationGuard } from "../components/SoloNavigationGuard";
 import { SoloPause } from "../components/SoloPause";
@@ -153,25 +153,33 @@ export function SoloPlayScreen() {
   // solution and the visit is a look at it, not a finish — nothing below
   // records, posts or reports it. "Clear and solve again" ends that state.
   const openedSolved = !!key && game.reopenedSolved?.key === key;
-  // A puzzle with nothing on it yet opens behind the start countdown
-  // (SoloStartGate): the clock waits for it, so no time passes before the
-  // grid can be read. A resumed attempt starts at once, as before.
-  // The gate is up on the very first frame (the same test takeSoloStart makes
-  // when the clock asks, an effect later): the grid is never shown unblurred
-  // before its start card (Andrew, 2026-11-19).
-  const [startGate, setStartGate] = useState(() => {
-    const untouched = key ? getProgress(key) : null;
-    return !!untouched && !isStarted(untouched);
+  // Every way onto an unfinished grid passes the start card (SoloStartGate):
+  // the clock waits for it, so no time passes before the grid can be read.
+  // A puzzle with nothing on it yet is asked how to play first; an attempt
+  // resumed (Resume on the menu, the Paused card, "Clear & redo") gets the
+  // count alone (Andrew, 2026-11-19: Resume dropped straight onto a running
+  // clock). The gate is up on the very first frame (the same test
+  // takeSoloStart makes when the clock asks, an effect later): the grid is
+  // never shown unblurred before its card.
+  // "fresh": asked how to play. "resume": the count alone. "pause": the same, reached from the Paused card.
+  const [startGate, setStartGate] = useState<"fresh" | "resume" | "pause" | null>(() => {
+    const attempt = key ? getProgress(key) : null;
+    if (!key || !attempt) return null;
+    if (!isStarted(attempt)) return "fresh";
+    return peekSoloStart(key) ? "resume" : null;
   });
   const [soloChosen, setSoloChosen] = useState(peekSoloChosen);
   const takeSoloStart = useCallback((k: string) => {
     const start = consumeSoloStart(k);
+    const attempt = getProgress(k);
+    if (!attempt) return start;
     // However an untouched puzzle is reached (Play, Back from a room's name screen, a reload),
     // it opens on the start card, never on "Paused" at 0:00.
-    const attempt = getProgress(k);
-    if (!attempt || isStarted(attempt)) return start;
-    setSoloChosen(consumeSoloChosen());
-    setStartGate(true);
+    if (!isStarted(attempt)) {
+      setSoloChosen(consumeSoloChosen());
+      setStartGate("fresh");
+    } else if (start) setStartGate("resume");
+    // Not asked for (a reload, browser Forward): "Paused", whose Resume counts in.
     return false;
   }, []);
   const { getElapsedSeconds, getElapsedMs, running: timerRunning, idlePaused, result: soloResult, fresh: freshResult, pause, resume, save: saveTimer, saveFailed: timerSaveFailed, restart: restartTimer } = useSoloTimer(
@@ -413,17 +421,17 @@ export function SoloPlayScreen() {
         game.setIsMultiplayer(true);
         game.setCompletionModalDismissed(false);
         game.setUrlPuzzle(null);
-        setStartGate(false);
+        setStartGate(null);
         navigate(`/lobby/${room.gameId}`);
         return;
       }
     }
-    setStartGate(false);
+    setStartGate(null);
     game.setUrlPuzzle(puzzle);
     navigate("/host-game/name");
   }, [puzzle, user, username, game, navigate]);
   // Friends who have not solved this puzzle, for that row's line.
-  const friendSolves = useFriendSolves(startGate ? puzzleKey : null);
+  const friendSolves = useFriendSolves(startGate === "fresh" ? puzzleKey : null);
   const liveFriends = useMemo(
     () => (friends.active ? friends.friendships.friends.filter((f) => !friendSolves[f.userId] && !raceCandidates.some((c) => c.userId === f.userId)).map((f) => f.username) : []),
     [friends.active, friends.friendships.friends, friendSolves, raceCandidates],
@@ -879,13 +887,16 @@ export function SoloPlayScreen() {
     });
     if (!ok || !restartSolo()) return;
     restartTimer();
+    // The emptied grid starts as every grid does: behind the count, the clock at zero until it ends.
+    pause();
+    setStartGate("resume");
     recorder.reset();
     saveRace(null);
     setRace([]);
     setAttempt((n) => n + 1);
     track("solo_solve_again", { size: puzzle ? `${puzzle.width}x${puzzle.height}` : undefined });
     requestAnimationFrame(() => gridInputRef.current?.focus());
-  }, [confirm, t, restartSolo, restartTimer, puzzle, recorder]);
+  }, [confirm, t, restartSolo, restartTimer, pause, puzzle, recorder]);
 
   // "Up next" (audit §2, item 8): today's other dailies, then yesterday's.
   // A daily loads straight into this screen, the same path the menu's
@@ -1109,12 +1120,14 @@ export function SoloPlayScreen() {
         <SoloStartGate
           title={puzzle.title}
           detail={t("menu.dailyMeta", { width: puzzle.width, height: puzzle.height, count: puzzle.clues.length })}
-          answered={soloChosen}
-          race={{ ready: raceCandidatesReady, candidates: raceCandidates, preselect: raceIntent, onPick: loadGhosts }}
-          live={supabase && user ? { names: liveFriends, onChoose: openLiveRoom } : undefined}
-          onStart={() => { setStartGate(false); handleResume(); }}
+          answered={startGate !== "fresh" || soloChosen}
+          race={startGate === "fresh" ? { ready: raceCandidatesReady, candidates: raceCandidates, preselect: raceIntent, onPick: loadGhosts } : undefined}
+          live={startGate === "fresh" && supabase && user ? { names: liveFriends, onChoose: openLiveRoom } : undefined}
+          onStart={() => { setStartGate(null); handleResume(); }}
           onBack={() => {
-            setStartGate(false);
+            setStartGate(null);
+            // From the Paused card, back to it.
+            if (startGate === "pause") return;
             rememberSoloLanding("menu");
             // Back to wherever Play was pressed; a puzzle opened with no page behind it goes to the menu.
             if (window.history.state?.idx > 0) window.history.back();
@@ -1123,7 +1136,7 @@ export function SoloPlayScreen() {
         />
       )}
       {paused && !startGate && !account.sheetOpen && <SoloPause title={puzzle.title} seconds={getElapsedSeconds()} error={saveFailed || timerSaveFailed || !!game.soloSaveError} idle={idlePaused}
-        onResume={handleResume} onExit={handleExit} onRetry={checkpoint} />}
+        onResume={() => setStartGate("pause")} onExit={handleExit} onRetry={checkpoint} />}
       <CompletionModal
         open={showCompletionModal}
         puzzleTitle={puzzle.title}
