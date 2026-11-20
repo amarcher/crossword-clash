@@ -1,0 +1,13 @@
+Race a finished solve. Tap Play on a daily and pick whose solves to race. Their squares fill in on your grid as you go, on your clock, so a friend who solved this morning can still be raced tonight.
+
+One Play button. It asks how you want to play: on your own, against finished solves, or in a room with friends.
+
+Every puzzle starts behind a 3-2-1 countdown, so the clock never runs before you can see the grid.
+
+Sharing sends a link, and the link's preview plays your solve.
+
+You choose who sees your solves: everyone, friends or nobody.
+
+Rooms suggest past dailies that nobody in the room has finished.
+
+Leaderboards have tabs for the Mini, Midi, Large and Daily Plus, and count your first solve of each puzzle.

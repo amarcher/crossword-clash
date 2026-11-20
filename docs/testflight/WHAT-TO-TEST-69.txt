@@ -1,0 +1,5 @@
+This build (1.1.4, build 69) is the one meant for the App Store. It fixes the play screen sliding sideways on wide screens. Please check:
+
+1. On an iPad or a folding phone's inner screen, open any puzzle and type letters, including Q and P at the ends of the top row: the screen should stay put, with the title and every key fully in view.
+2. On an iPhone the keyboard should look and press as before, edge keys included.
+3. Everything from build 68 still applies.

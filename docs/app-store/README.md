@@ -76,7 +76,7 @@ Every set was rebuilt with `pnpm store:shots` after two tiles were added:
 three finished solves, their squares marked as they fill) and `community`
 ("Solve what players make": the community list). The studio tile now ends
 "Then publish it." Apple's sets hold ten tiles; Play takes eight per device,
-so the Play sets leave out the leaderboard and the archive
+so the Play sets leave out the community list and the archive
 (`tilesFor` in `scripts/store-shots/compose.mjs`).
 
 | | Apple (10) | Play (8) |
@@ -86,8 +86,8 @@ so the Play sets leave out the leaderboard and the archive
 | Race anyone's finished solve | 03 | 03 |
 | See who got there first | 04 | 04 |
 | Game night on the big screen | 05 | 05 |
-| Climb the daily leaderboard | 06 | |
-| Solve what players make | 07 | 06 |
+| Climb the daily leaderboard | 06 | 06 |
+| Solve what players make | 07 | |
 | Make your own crossword (Plus) | 08 | 07 |
 | Know your solving stats (Plus) | 09 | 08 |
 | Play every past daily (Plus) | 10 | |
