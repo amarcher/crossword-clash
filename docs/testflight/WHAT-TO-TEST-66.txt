@@ -1,0 +1,8 @@
+This build (1.1.4, build 66) stops the grid showing clearly for a moment before the start card, and fixes Go back after Play from a fresh launch. Please check:
+
+1. On a leaderboard, tap Race on someone's row: the puzzle should arrive already blurred behind the card. At no point should the grid be readable before the count ends.
+2. The same from the home page's Play and Resume, from Past puzzles, and from Pause then Resume: blurred from the first moment.
+3. Close the app fully and open it. Tap Play on the home page, then Go back on the card: you should be on the home page, not on a Paused card.
+4. After the count, the grid, the clue bar and the keyboard should be sharp and in their usual places.
+5. Race friends, Start game: the 10-second card's grid shape is blurred from the first moment too.
+6. Everything from build 65 still applies.
