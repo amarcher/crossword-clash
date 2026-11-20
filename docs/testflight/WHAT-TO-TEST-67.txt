@@ -1,0 +1,7 @@
+This build (1.1.4, build 67) removes the flash when a puzzle is opened from a page that is scrolled down. Please check:
+
+1. On the home page, scroll down a little, then tap Play (or Resume) on a puzzle: the start card should appear in its place at once, with the grid blurred behind it. It should not show higher up for a moment and then jump.
+2. The same from a leaderboard scrolled down (tap Race on a row) and from Past puzzles scrolled down.
+3. From the top of a page, the move into a puzzle still fades as before, with the grid blurred from the first moment.
+4. Go back from the start card returns to the page you came from, at the place you had scrolled to.
+5. Everything from build 66 still applies.
