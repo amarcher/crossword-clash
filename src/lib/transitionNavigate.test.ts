@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { navigateWithTransition, TRANSITION_WAIT_MS } from "./transitionNavigate";
 import { prefetchRoute } from "../routeModules";
 import { nextRouteCommit } from "./routeCommit";
+import { pageIsScrolled } from "./pageScroll";
 import { canViewTransition, withViewTransition } from "./viewTransition";
 
 vi.mock("../routeModules", () => ({ prefetchRoute: vi.fn() }));
 vi.mock("./routeCommit", () => ({ nextRouteCommit: vi.fn(async () => {}) }));
+vi.mock("./pageScroll", () => ({ pageIsScrolled: vi.fn(() => false) }));
 vi.mock("./viewTransition", () => ({
   canViewTransition: vi.fn(() => true),
   withViewTransition: vi.fn(async (update: () => Promise<void>) => {
@@ -13,6 +15,7 @@ vi.mock("./viewTransition", () => ({
   }),
 }));
 
+const mockScrolled = vi.mocked(pageIsScrolled);
 const mockPrefetch = vi.mocked(prefetchRoute);
 const mockCan = vi.mocked(canViewTransition);
 const mockWith = vi.mocked(withViewTransition);
@@ -21,6 +24,7 @@ const mockCommit = vi.mocked(nextRouteCommit);
 beforeEach(() => {
   vi.useFakeTimers();
   mockCan.mockReturnValue(true);
+  mockScrolled.mockReturnValue(false);
   mockPrefetch.mockReturnValue(null);
   mockCommit.mockImplementation(async () => {});
 });
@@ -52,6 +56,14 @@ describe("navigateWithTransition", () => {
     await vi.advanceTimersByTimeAsync(1);
     await done;
     expect(order).toEqual(["wait-armed", "navigated", "committed"]);
+  });
+
+  it("navigates plainly from a scrolled page: the fade drew the new page a frame at the old offset", async () => {
+    mockScrolled.mockReturnValue(true);
+    const navigate = vi.fn(async () => {});
+    await navigateWithTransition(navigate, "/solo/play");
+    expect(mockWith).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith("/solo/play", {});
   });
 
   it("keeps replace and other options alongside flushSync", async () => {
