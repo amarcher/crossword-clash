@@ -76,7 +76,7 @@ Every set was rebuilt with `pnpm store:shots` after two tiles were added:
 three finished solves, their squares marked as they fill) and `community`
 ("Solve what players make": the community list). The studio tile now ends
 "Then publish it." Apple's sets hold ten tiles; Play takes eight per device,
-so the Play sets leave out the leaderboard and the archive
+so the Play sets leave out the community list and the archive
 (`tilesFor` in `scripts/store-shots/compose.mjs`).
 
 | | Apple (10) | Play (8) |
@@ -86,8 +86,8 @@ so the Play sets leave out the leaderboard and the archive
 | Race anyone's finished solve | 03 | 03 |
 | See who got there first | 04 | 04 |
 | Game night on the big screen | 05 | 05 |
-| Climb the daily leaderboard | 06 | |
-| Solve what players make | 07 | 06 |
+| Climb the daily leaderboard | 06 | 06 |
+| Solve what players make | 07 | |
 | Make your own crossword (Plus) | 08 | 07 |
 | Know your solving stats (Plus) | 09 | 08 |
 | Play every past daily (Plus) | 10 | |
@@ -97,7 +97,18 @@ like the names on the board: on the day of the capture the real list held one
 puzzle. The solve being raced shows 13 Across in its clue bar because the
 puzzle's other early clues name a film, a band and a team. A capture's visits
 are no longer recorded as play (`play_sessions`, `narrator_sessions` and
-`solo_progress` writes are blocked in `cap.mjs`). Nothing is uploaded yet.
+`solo_progress` writes are blocked in `cap.mjs`).
+
+## 1.1.4 (November 20, 2026): prepared with build 69, not submitted
+
+Through the App Store Connect API, on Andrew's go-ahead: version 1.1.4 created
+(release after approval), build 69 attached, the description, promotional
+text, `whats-new-1.1.4.txt` and the review notes saved, and three screenshot
+sets of ten uploaded and processed: 6.9" iPhone, 13" iPad and iPhone Duo.
+Apple has one Duo slot (`APP_IPHONE_DUO`) of ten pictures that accepts both
+the outer and the inner size; it holds the ten inner-display tiles, and the
+outer set in `screenshots/iphone-duo-outer/` is not uploaded. Nothing has been
+sent for review.
 
 ## Regenerating the screenshots (`pnpm store:shots`)
 

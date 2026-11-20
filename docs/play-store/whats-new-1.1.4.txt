@@ -1,0 +1,9 @@
+<en-US>
+Race a finished solve: tap Play on a daily and pick whose solves to race. Their squares fill in on your grid as you go, on your clock.
+
+One Play button asks how you want to play, and every puzzle starts behind a 3-2-1 countdown.
+
+Sharing sends a link whose preview plays your solve. You choose who sees your solves: everyone, friends or nobody.
+
+Rooms suggest past dailies nobody there has finished. Leaderboards have tabs for each daily and count your first solve.
+</en-US>
