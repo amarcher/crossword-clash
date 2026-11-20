@@ -1,0 +1,10 @@
+This build (1.1.4, build 65) puts a countdown in front of every grid and fixes a finish dialog that could close before it was seen. Please check:
+
+1. Start a puzzle, type a few letters, Pause, Save & exit. On the home page tap Resume: the puzzle should open blurred behind a 3-2-1 card (Start now / Go back), and the clock should not move until the count ends.
+2. In a puzzle, Pause, then Resume: the same 3-2-1 card. Go back on it should return to Paused.
+3. On a solved puzzle, "Clear & redo": the empty grid should start behind the same count.
+4. Race friends, Start a room, have a second player join, then Start game: both players should see a 10-second count over a blurred grid, then land on the puzzle together. Only the host has Go back; it should return everyone to the room with nothing started.
+5. Hosting on a TV: Start game shows the same count on the TV and on every phone, and Go back on the TV returns to the TV's room screen.
+6. Finish a puzzle with the on-screen keyboard, several times, ending on different keys (top row and bottom row): the finish dialog should appear and stay every time.
+7. A player on an older build in the room sees no count: they wait in the lobby and start with everyone else.
+8. Everything from build 64 still applies.
