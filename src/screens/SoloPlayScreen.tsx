@@ -950,8 +950,10 @@ export function SoloPlayScreen() {
   return (
     <>
       {dataRouter && <SoloNavigationGuard saveBeforeLeave={saveBeforeLeave} />}
-      {/* Behind the start countdown the grid stays drawn, blurred past reading by the gate's backdrop. */}
-      <div inert={paused} aria-hidden={paused || undefined} className={paused && !startGate ? "hidden" : undefined}>
+      {/* Behind the start countdown the grid stays drawn, blurred past reading. The blur is on the grid itself:
+          a route cross-fade's snapshot of the new page leaves out a backdrop filter, which showed the grid sharp.
+          A filter makes this box what the app's fixed layout measures against, so it fills the screen itself. */}
+      <div inert={paused} aria-hidden={paused || undefined} className={startGate ? (isComplete ? undefined : "fixed inset-0 overflow-hidden blur-lg") : paused ? "hidden" : undefined} data-testid="solo-board">
       <GameLayout
         keyboard={<PuzzleKeyboard actions={guardedActions} disabled={isComplete || clueSheetOpen} />}
         header={

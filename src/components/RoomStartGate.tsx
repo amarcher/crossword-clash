@@ -31,14 +31,14 @@ export function RoomStartGate({ puzzle, detail, startsAtMs, onCancel, tv = false
 
   return (
     <div className={`fixed inset-0 z-40 grid place-items-center overflow-hidden ${tv ? "bg-stage" : "bg-canvas"}`}>
-      <MiniGridThumb puzzle={puzzle} className="w-[min(92vw,80dvh)]" />
+      <MiniGridThumb puzzle={puzzle} className="w-[min(92vw,80dvh)] blur-lg" />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-labelledby="room-start-title"
         data-testid="room-start-gate"
-        className={`absolute inset-0 z-10 flex items-center justify-center p-6 backdrop-blur-lg ${tv ? "bg-stage/50" : "bg-canvas/50"}`}
+        className={`absolute inset-0 z-10 flex items-center justify-center p-6 ${tv ? "bg-stage/50" : "bg-canvas/50"}`}
         style={{ paddingTop: "max(24px, env(safe-area-inset-top))", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
       >
         <div
