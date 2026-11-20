@@ -239,6 +239,14 @@ Done by Claude, nothing submitted or rolled out:
   to internal testing with `whats-new-1.1.4-internal-35.txt` (the consistency
   and audit passes, #320 to #328). Not promoted to production.
 
+- **November 20, 2026:** 40 (1.1.4) uploaded through the console to the
+  internal testing draft (it replaced the unpublished 39) with
+  `whats-new-1.1.4.txt`; saved as a draft, not rolled out. The store listing's
+  phone, 7-inch and 10-inch screenshot slots were replaced with the eight new
+  tiles each (`screenshots/phone`, `screenshots/tablet-10`: the leaderboard is
+  in, the community list and the archive are out) and saved as draft changes,
+  not sent for review. The Foldable Screenshots slot is empty.
+
 ## Uploading without the API
 
 The play-publisher service-account key and `play-upload.mjs` live on the
