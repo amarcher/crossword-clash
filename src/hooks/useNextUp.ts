@@ -56,8 +56,10 @@ export function useNextUp(finishedKey: string | null, enabled = true): NextUpIte
     () => (enabled ? unsolvedDailies(dailies, bestTimes, finishedKey) : []),
     [enabled, dailies, bestTimes, finishedKey],
   );
-  // Yesterday's dailies fill the rows today's can't.
-  const yesterday = useYesterdayDailies(enabled && settled && openDailies.length < NEXT_UP_MAX);
+  // Yesterday's dailies fill the rows today's can't. They are read as soon as today's are
+  // known, before the finish: read only then, their row arrived after the finish dialog had
+  // opened and pushed it taller (Andrew, 2026-11-20).
+  const yesterday = useYesterdayDailies(settled);
 
   return useMemo(() => {
     if (!enabled) return [];
