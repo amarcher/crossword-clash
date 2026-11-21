@@ -10,9 +10,12 @@
 import { supabase } from "./supabaseClient";
 import type { DailySlot } from "./dailyFeed";
 
+/** A daily's slot, or the Daily Plus (daily_results files it under 'bonus'). */
+export type StatsSlot = DailySlot | "bonus";
+
 export interface DailyResult {
   day: string;
-  slot: DailySlot;
+  slot: StatsSlot;
   seconds: number;
   solvers: number;
   /** Share of the other solvers that day who were slower, 0–1; null when alone, and for a caller without Plus. */
@@ -57,8 +60,8 @@ export async function fetchStats(since: string, plus: boolean): Promise<StatsDat
   return {
     slowClueCount: typeof clueCount?.data === "number" ? clueCount.data : null,
     results: (results.data ?? [])
-      .filter((r) => r.slot === "mini" || r.slot === "midi" || r.slot === "large")
-      .map((r) => ({ day: r.day, slot: r.slot as DailySlot, seconds: r.seconds, solvers: r.solvers, fasterThan: r.faster_than === null ? null : Number(r.faster_than) })),
+      .filter((r) => r.slot === "mini" || r.slot === "midi" || r.slot === "large" || r.slot === "bonus")
+      .map((r) => ({ day: r.day, slot: r.slot as StatsSlot, seconds: r.seconds, solvers: r.solvers, fasterThan: r.faster_than === null ? null : Number(r.faster_than) })),
     headToHead: (h2h.data ?? []).map((r) => ({ friendId: r.friend_id, username: r.username, played: r.played, wins: r.wins, losses: r.losses, ties: r.ties })),
     slowClues: (clues?.data ?? []).map((r) => ({ puzzleTitle: r.puzzle_title, clue: r.clue, seconds: r.seconds, day: r.played_on })),
   };

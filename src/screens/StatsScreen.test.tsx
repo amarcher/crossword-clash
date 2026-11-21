@@ -60,6 +60,7 @@ describe("StatsScreen", () => {
     stats.fetchStats.mockResolvedValue({ results: [], headToHead: [], slowClues: [], slowClueCount: 0 });
     renderPage();
     expect(await screen.findByText("Solve a daily to see your times here.")).toBeTruthy();
+    expect(screen.queryByRole("radio", { name: "Daily Plus" })).toBeNull(); // no Plus, no Daily Plus time: three tabs
     expect(screen.getByText("Solve the same dailies as a friend to see who's ahead.")).toBeTruthy();
     expect(screen.queryByText(/Ranked on/)).toBeNull();
     expect(screen.queryByText(/took you over a minute/)).toBeNull();
@@ -72,6 +73,7 @@ describe("StatsScreen", () => {
         { day: "2026-11-09", slot: "mini", seconds: 60, solvers: 10, fasterThan: 0.5 },
         { day: "2026-11-10", slot: "mini", seconds: 90, solvers: 10, fasterThan: 0.7 },
         { day: "2026-11-10", slot: "large", seconds: 700, solvers: 5, fasterThan: 0.2 },
+        { day: "2026-11-10", slot: "bonus", seconds: 125, solvers: 4, fasterThan: 1 },
       ],
       headToHead: [{ friendId: "f", username: "alicia", played: 3, wins: 2, losses: 1, ties: 0 }],
       slowClues: [],
@@ -86,5 +88,9 @@ describe("StatsScreen", () => {
     expect(screen.queryByRole("button", { name: /Unlock/ })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "Daily Large" }));
     expect(screen.getAllByText("11:40").length).toBeGreaterThan(0);
+    // The Daily Plus is a fourth tab with the same figures.
+    fireEvent.click(screen.getByRole("radio", { name: "Daily Plus" }));
+    expect(screen.getAllByText("2:05").length).toBeGreaterThan(0);
+    expect(screen.getByText("100%")).toBeTruthy();
   });
 });
