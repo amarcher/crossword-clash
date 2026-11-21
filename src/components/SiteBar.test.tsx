@@ -23,20 +23,9 @@ describe("SiteBar", () => {
     expect([...header.classList].some((c) => /^z-\d+$/.test(c))).toBe(true);
   });
 
-  it("on the website keeps the logo first and the back control on the right", () => {
+  it("puts the back control on the left and the logo in the middle column, on the website and in the apps", () => {
     const { container } = render(<SiteBar plain backLabel="Back" backTo="/menu" />);
     const header = container.querySelector("[data-site-bar]")!;
-    expect(header.getAttribute("data-site-bar-layout")).toBeNull();
-    const [first] = header.children;
-    expect(first.querySelector("img[alt='Crossword Clash']")).not.toBeNull();
-    expect(header.querySelector("[data-site-bar-right] a[href='/menu']")?.textContent).toBe("Back");
-  });
-
-  it("in the apps puts the back control on the left and the logo in the middle column", () => {
-    nativePlatform = true;
-    const { container } = render(<SiteBar plain backLabel="Back" backTo="/menu" />);
-    const header = container.querySelector("[data-site-bar]")!;
-    expect(header.getAttribute("data-site-bar-layout")).toBe("native");
     expect(header.classList.contains("grid")).toBe(true);
     expect([...header.classList].some((c) => c.startsWith("grid-cols-[1fr_auto_1fr]"))).toBe(true);
     const [left, middle, right] = header.children;

@@ -447,7 +447,7 @@ export function CompletionModal({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md max-h-[min(90dvh,100%)] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-6 sm:p-8`}
+        className={`modal-enter scroll-quiet outline-none relative z-20 w-full max-w-md md:max-w-3xl max-h-[min(96dvh,100%)] overflow-y-auto overscroll-contain rounded-3xl ${bg} shadow-overlay p-5 sm:p-6`}
         role="dialog"
         aria-modal="true"
         aria-label={t('completion.ariaLabel')}
@@ -470,18 +470,20 @@ export function CompletionModal({
           </button>
         )}
 
-        {/* Trophy */}
-        <div className="mb-4 flex justify-center">
-          <span className={`trophy-pulse grid size-14 place-items-center rounded-full ${darkMode ? "bg-gold-500/15" : "bg-gold-50 ring-1 ring-gold-100"}`}>
-            <Trophy className="size-7 text-gold-500" strokeWidth={2} aria-hidden="true" />
+        {/* Trophy and title share a line: the dialog is meant to fit a screen without scrolling (Andrew, 2026-11-20). */}
+        <div className={`flex items-center justify-center gap-3 ${isMultiplayer ? "mb-1" : "mb-3"}`}>
+          <span className={`trophy-pulse grid size-10 shrink-0 place-items-center rounded-full ${darkMode ? "bg-gold-500/15" : "bg-gold-50 ring-1 ring-gold-100"}`}>
+            <Trophy className="size-5 text-gold-500" strokeWidth={2} aria-hidden="true" />
           </span>
+          <h2 className={`font-display text-2xl font-bold tracking-tight ${text}`}>
+            {t('completion.puzzleComplete')}
+          </h2>
         </div>
 
-        {/* Title */}
-        <h2 className={`font-display text-2xl font-bold tracking-tight text-center mb-1 ${text}`}>
-          {t('completion.puzzleComplete')}
-        </h2>
-
+        {/* From md up the dialog is two columns, the result and its Share beside what to do next, so it
+            fits a laptop screen without scrolling; a phone keeps one column in the same order. */}
+        <div className="md:grid md:grid-cols-2 md:items-start md:gap-x-6 md:[&:has(>div:nth-child(2):empty)]:grid-cols-1">
+        <div className="min-w-0">
         {isMultiplayer ? (
           <>
             {/* Outcome line: async → fastest finisher (or waiting), co-op →
@@ -595,60 +597,72 @@ export function CompletionModal({
           </>
         ) : (
           <>
-            {/* Solo stats */}
-            <p className={`text-center mb-4 ${textSub}`}>
-              {t('completion.cellsFilled', { score: soloScore ?? totalCells, total: totalCells })}
-            </p>
+            {/* Solo stats: the count of squares only when it says something (a finish short of the grid). */}
+            {soloScore !== undefined && soloScore < totalCells && (
+              <p className={`text-center mb-4 ${textSub}`}>
+                {t('completion.cellsFilled', { score: soloScore, total: totalCells })}
+              </p>
+            )}
 
-            {finishSeconds !== undefined && (() => {
+            {(() => {
               // Celebrate only a genuine record — beating a time that was
               // already on record. The first-ever solve is a best-of-one, not
               // an achievement, so it reads as a plain "your time".
               const celebrateBest = !assisted && isNewBest === true && previousBest != null;
+              const hasStreak = streakCount !== undefined && streakCount > 0;
+              if (finishSeconds === undefined && !hasStreak) return null;
+              const tile = "rounded-xl px-3 py-2 text-center";
+              // The time and the streak sit side by side, each a tile; one alone takes the row.
               return (
-                <div
-                  className={`mb-4 rounded-xl px-4 py-3 text-center ${
-                    celebrateBest
-                      ? darkMode
-                        ? "bg-gold-500/15 ring-1 ring-gold-500/40"
-                        : "bg-gold-50 ring-1 ring-gold-100"
-                      : tableBg
-                  }`}
-                >
-                  <div className={`font-display text-4xl font-bold tracking-tight tabular-nums ${text}`}>
-                    {formatDuration(finishSeconds)}
-                  </div>
-                  <div
-                    className={`mt-0.5 text-sm font-medium ${
-                      celebrateBest
-                        ? darkMode
-                          ? "text-gold-400"
-                          : "text-gold-700"
-                        : textSub
-                    }`}
-                  >
-                    {assisted
-                      ? t('autocheck.solvedWithReveals')
-                      : celebrateBest
-                      ? t('soloStats.newBestBeat', { time: formatDuration(previousBest as number) })
-                      : isNewBest
-                        ? t('soloStats.timerLabel')
-                        : bestSeconds !== undefined
-                          ? t('soloStats.bestTime', { time: formatDuration(bestSeconds) })
-                          : t('soloStats.timerLabel')}
-                  </div>
+                <div className="mb-3 grid grid-cols-2 gap-2 [&>*:only-child]:col-span-2">
+                  {finishSeconds !== undefined && (
+                    <div
+                      className={`${tile} ${
+                        celebrateBest
+                          ? darkMode
+                            ? "bg-gold-500/15 ring-1 ring-gold-500/40"
+                            : "bg-gold-50 ring-1 ring-gold-100"
+                          : tableBg
+                      }`}
+                    >
+                      <div className={`font-display text-3xl font-bold tracking-tight tabular-nums ${text}`}>
+                        {formatDuration(finishSeconds)}
+                      </div>
+                      <div
+                        className={`mt-0.5 text-xs font-medium text-balance ${
+                          celebrateBest
+                            ? darkMode
+                              ? "text-gold-400"
+                              : "text-gold-700"
+                            : textSub
+                        }`}
+                      >
+                        {assisted
+                          ? t('autocheck.solvedWithReveals')
+                          : celebrateBest
+                          ? t('soloStats.newBestBeat', { time: formatDuration(previousBest as number) })
+                          : isNewBest
+                            ? t('soloStats.timerLabel')
+                            : bestSeconds !== undefined
+                              ? t('soloStats.bestTime', { time: formatDuration(bestSeconds) })
+                              : t('soloStats.timerLabel')}
+                      </div>
+                    </div>
+                  )}
+                  {hasStreak && (
+                    <div className={`${tile} ${tableBg}`} aria-label={t('soloStats.streakDays', { count: streakCount })}>
+                      <div className={`flex items-center justify-center gap-1.5 font-display text-3xl font-bold tracking-tight tabular-nums ${text}`} aria-hidden="true">
+                        <Flame className="size-6 text-gold-500" />
+                        {streakCount}
+                      </div>
+                      <div className={`mt-0.5 text-xs font-medium ${darkMode ? "text-gold-400" : "text-gold-700"}`} aria-hidden="true">
+                        {t('soloStats.streakLabel', { count: streakCount })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
-
-            {streakCount !== undefined && streakCount > 0 && (
-              <div className="mb-5 text-center">
-                <p className={`flex items-center justify-center gap-1.5 text-sm font-semibold ${darkMode ? "text-gold-400" : "text-gold-700"}`}>
-                  <Flame className="size-4 text-gold-500" aria-hidden="true" />
-                  {t('soloStats.streakDays', { count: streakCount })}
-                </p>
-              </div>
-            )}
 
             {nytHook && (
               <div
@@ -788,7 +802,7 @@ export function CompletionModal({
             then "Up next" and the fresh-puzzle race; "Back
             to menu" is the quiet exit. The importer is never offered here —
             the game header keeps "Load different puzzle". */}
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2 max-md:mb-2">
           {/* One Share: the spoiler-free block (previewed above its button),
               whose link is the challenge. Needs the puzzle for the rows. */}
           {onWatchRoomReplay && (
@@ -821,6 +835,9 @@ export function CompletionModal({
               darkMode={darkMode}
             />
           )}
+        </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2">
           {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
               (docs/friends-spec.md §3.2). Renders nothing without friends. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
@@ -907,6 +924,7 @@ export function CompletionModal({
             </button>
           )}
         </div>
+        </div>
 
         {/* Ad */}
         <div className="mt-4 flex justify-center empty:hidden">
@@ -950,16 +968,17 @@ function ModalRow({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-h-14 w-full items-center gap-3 px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 ${
+      className={`group flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500 ${
         darkMode ? "hover:bg-white/5 active:bg-white/10" : "hover:bg-surface-sunken/70 active:bg-surface-sunken"
       }`}
     >
-      <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${ROW_TONES[tone][darkMode ? "dark" : "light"]}`}>
-        <Icon className="size-4.5" strokeWidth={2} aria-hidden="true" />
+      <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${ROW_TONES[tone][darkMode ? "dark" : "light"]}`}>
+        <Icon className="size-4" strokeWidth={2} aria-hidden="true" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className={`block truncate text-sm font-semibold leading-snug ${darkMode ? "text-white" : "text-ink"}`}>{title}</span>
-        {subtitle && <span className={`mt-0.5 block truncate text-xs leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>{subtitle}</span>}
+      {/* One line: the title, then its detail in the room that is left (the dialog fits a screen, Andrew 2026-11-20). */}
+      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+        <span className={`shrink-0 text-sm font-semibold leading-snug ${darkMode ? "text-white" : "text-ink"}`}>{title}</span>
+        {subtitle && <span className={`min-w-0 truncate text-xs leading-snug ${darkMode ? "text-white/60" : "text-muted"}`}>{subtitle}</span>}
       </span>
       <ChevronRight className={`size-4 shrink-0 transition-transform group-hover:translate-x-0.5 ${darkMode ? "text-white/40" : "text-subtle"}`} aria-hidden="true" />
     </button>

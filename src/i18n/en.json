@@ -375,7 +375,6 @@
     "offline": "Connect to see the global board — your streak is safe on this device.",
     "you": "You",
     "time": "Time",
-    "modeSolo": "Solo",
     "modeRace": "Live race",
     "playToday": "Play today's Mini",
     "playTodayLarge": "Play today's Large",
@@ -418,7 +417,9 @@
     "newBest": "New best!",
     "newBestBeat": "New best — beat {{time}}",
     "streakDays_one": "{{count}}-day streak",
-    "streakDays": "{{count}}-day streak"
+    "streakDays": "{{count}}-day streak",
+    "streakLabel_one": "day streak",
+    "streakLabel": "day streak"
   },
   "challenge": {
     "headingUnsigned": "You've been challenged!",

@@ -65,7 +65,7 @@ export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch 
               <td className="w-full max-w-0 px-2 py-2.5">
                 <div className="flex min-w-0 items-center gap-2">
                   {/* The viewer's unposted time is simply "You": beside its chip a name had no room. */}
-                  <span className={e.unposted ? "shrink-0" : "truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
+                  <span className={e.unposted ? "shrink-0" : "min-w-[4ch] truncate"}>{e.unposted ? t("leaderboard.you") : e.displayName}</span>
                   {!e.unposted && <PlusBadgeFor userId={e.userId} />}
                   {isMe && !e.unposted && (
                     <span className="shrink-0 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
@@ -77,40 +77,41 @@ export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch 
                       {t("leaderboard.notOnBoard")}
                     </span>
                   ) : (
-                    // Both tags are quiet: the brand colour on a row belongs to its action.
-                    <span className="hidden shrink-0 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted min-[380px]:inline">
-                      {e.mode === "race" ? t("leaderboard.modeRace") : t("leaderboard.modeSolo")}
-                    </span>
+                    // A solo time is the ordinary one and carries no tag (the tag cost the name its room, Andrew 2026-11-20).
+                    e.mode === "race" && (
+                      <span className="hidden shrink-0 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted min-[380px]:inline">
+                        {t("leaderboard.modeRace")}
+                      </span>
+                    )
                   )}
                   {e.autocheck === false && (
                     <span className="shrink-0 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
                       {t("autocheck.noAutocheck")}
                     </span>
                   )}
+                  {/* The row's action sits in the name column, at its far end: in the time column it took its width from every row, the viewer's own (which has none) included, and cut their name short (Andrew, 2026-11-20). */}
+                  <span className="ml-auto inline-flex shrink-0 items-center gap-2 empty:hidden">
+                    {!isMe && onRace && raceable?.has(e.userId) && (
+                      <button
+                        type="button"
+                        onClick={() => onRace(e.userId)}
+                        aria-label={t("ghostRace.raceRow", { name: e.displayName })}
+                        className={ROW_ACTION}
+                      >
+                        <Flag className="size-3.5" aria-hidden="true" />
+                        {t("ghostRace.raceButton")}
+                      </button>
+                    )}
+                    {!isMe && onWatch && watchable?.has(e.userId) && (
+                      <button type="button" onClick={() => onWatch(e.userId)} aria-label={t("ghostRace.watchRow", { name: e.displayName })} className={ROW_ACTION}>
+                        <Play className="size-3.5" aria-hidden="true" />
+                        {t("ghostRace.watchButton")}
+                      </button>
+                    )}
+                  </span>
                 </div>
               </td>
-              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right tabular-nums">
-                <span className="inline-flex items-center justify-end gap-2">
-                  {!isMe && onRace && raceable?.has(e.userId) && (
-                    <button
-                      type="button"
-                      onClick={() => onRace(e.userId)}
-                      aria-label={t("ghostRace.raceRow", { name: e.displayName })}
-                      className={ROW_ACTION}
-                    >
-                      <Flag className="size-3.5" aria-hidden="true" />
-                      {t("ghostRace.raceButton")}
-                    </button>
-                  )}
-                  {!isMe && onWatch && watchable?.has(e.userId) && (
-                    <button type="button" onClick={() => onWatch(e.userId)} aria-label={t("ghostRace.watchRow", { name: e.displayName })} className={ROW_ACTION}>
-                      <Play className="size-3.5" aria-hidden="true" />
-                      {t("ghostRace.watchButton")}
-                    </button>
-                  )}
-                  {formatDuration(e.seconds)}
-                </span>
-              </td>
+              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right tabular-nums">{formatDuration(e.seconds)}</td>
             </tr>
           );
         })}

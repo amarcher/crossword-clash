@@ -375,7 +375,6 @@
     "offline": "Conéctate para ver la clasificación global — tu racha está guardada en este dispositivo.",
     "you": "Tú",
     "time": "Tiempo",
-    "modeSolo": "Solo",
     "modeRace": "En vivo",
     "playToday": "Jugar el Mini de hoy",
     "playTodayLarge": "Jugar el Grande de hoy",
@@ -418,7 +417,9 @@
     "newBest": "¡Nuevo récord!",
     "newBestBeat": "¡Nuevo récord! Superaste {{time}}",
     "streakDays_one": "Racha de {{count}} día",
-    "streakDays": "Racha de {{count}} días"
+    "streakDays": "Racha de {{count}} días",
+    "streakLabel_one": "día de racha",
+    "streakLabel": "días de racha"
   },
   "challenge": {
     "headingUnsigned": "¡Te han desafiado!",

@@ -84,10 +84,12 @@ describe("CompletionModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders solo variant with score", () => {
-    const { getByText } = render(<CompletionModal {...SOLO_PROPS} />);
+  it("renders the solo variant, counting squares only for a finish short of the grid", () => {
+    const { getByText, queryByText, rerender } = render(<CompletionModal {...SOLO_PROPS} />);
     expect(getByText("Puzzle complete")).toBeTruthy();
-    expect(getByText("8/8 squares filled")).toBeTruthy();
+    expect(queryByText(/squares filled/)).toBeNull();
+    rerender(<CompletionModal {...SOLO_PROPS} soloScore={6} />);
+    expect(getByText("6/8 squares filled")).toBeTruthy();
   });
 
   it("shows the NYT 'same time tomorrow' hook only for bookmarklet puzzles", () => {
@@ -277,7 +279,7 @@ describe("CompletionModal", () => {
 
   it("shows the streak with no note under it", () => {
     const counted = render(<CompletionModal {...SOLO_PROPS} finishSeconds={90} streakCount={6} />);
-    expect(counted.getByText("6-day streak")).toBeTruthy();
+    expect(counted.getByLabelText("6-day streak")).toBeTruthy();
     expect(counted.queryByText(/already counted today/)).toBeNull();
   });
 
