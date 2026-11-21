@@ -603,7 +603,7 @@ export interface Database {
       /** How many of the caller's clues took over a minute (the free stats page's teaser). */
       my_slow_clue_count: { Args: { p_since: string | null }; Returns: number };
       /** The caller's ten slowest clues from their play sessions (Plus). */
-      my_slow_clues: { Args: { p_since: string | null }; Returns: { puzzle_title: string; clue: string; seconds: number; played_on: string }[] };
+      my_slow_clues: { Args: { p_since: string | null }; Returns: { puzzle_title: string; clue: string; seconds: number; played_on: string; puzzle_key: string | null; clue_text: string | null; answer: string | null }[] };
       /** Repairs the caller's daily streak (Plus): yesterday, missed right after a streak, counts again; true when it now does. */
       repair_streak: { Args: { p_day: string; p_puzzle_key: string; p_today: string }; Returns: boolean };
       /** The sender marks replies to their links seen. */

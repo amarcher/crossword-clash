@@ -38,9 +38,9 @@ describe("play session tracker", () => {
 
     const r = t.record(sec(20));
     const byKey = Object.fromEntries(r.clues.map((c) => [c.k, c]));
-    expect(byKey["1A"]).toEqual({ k: "1A", n: 3, f: 2, s: 10, w: 1, x: 0, o: 1 });
+    expect(byKey["1A"]).toEqual({ k: "1A", n: 3, f: 2, s: 10, w: 1, x: 0, o: 1, d: 8 });
     // BOW: its B came from 1-Across.
-    expect(byKey["1D"]).toMatchObject({ f: 12, s: 15, x: 1, o: 2 });
+    expect(byKey["1D"]).toMatchObject({ f: 12, s: 15, x: 1, o: 2, d: 3 });
     expect(r).toMatchObject({ id: "s1", cells_filled: 5, cells_at_start: 0, wrong_letters: 1, completed: false, white_cells: 9, elapsed_seconds: 20 });
     // Inputs at 2, 5, 10, 12 and 15 s: 3 + 5 + 2 + 3 active seconds.
     expect(r.active_seconds).toBe(13);
@@ -51,6 +51,22 @@ describe("play session tracker", () => {
     t.selectClue(clue(1, "across"), sec(0));
     t.selectClue(clue(4, "across"), sec(600));
     expect(t.record(sec(600)).active_seconds).toBe(60);
+  });
+
+  it("times a clue by the seconds spent on it, not from first look to solve", () => {
+    const t = new PlaySessionTracker(puzzle, {}, meta, T0);
+    let cells: Record<string, CellState> = {};
+    t.selectClue(clue(1, "across"), sec(0)); // a look
+    t.selectClue(clue(1, "down"), sec(4)); // skipped
+    cells = fill(cells, ["1,0", "2,0"]);
+    t.cellsChanged(cells, "down", null, sec(30)); // 1-Down still wants its first square
+    t.selectClue(clue(1, "across"), sec(31)); // back to it
+    cells = fill(cells, ["0,0", "0,1", "0,2"]);
+    t.cellsChanged(cells, "across", null, sec(36));
+    const byKey = Object.fromEntries(t.record(sec(40)).clues.map((c) => [c.k, c]));
+    // First seen at 0 and solved at 36, but only 4 + 5 seconds were spent on it.
+    expect(byKey["1A"]).toMatchObject({ f: 0, s: 36, d: 9 });
+    expect(byKey["1D"]).toMatchObject({ d: 27 });
   });
 
   it("attributes another player's letters as not the clue's own", () => {

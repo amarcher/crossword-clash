@@ -43,6 +43,13 @@ export interface ClueRecord {
   x?: number;
   /** Solve order within the visit. */
   o?: number;
+  /**
+   * Seconds spent with the clue selected before it was complete, idle gaps
+   * capped as `active` is. Since 2026-11-21: `s - f` also counts the time spent
+   * on other clues after a first look, and time away (Andrew read 24:47 on a
+   * three-letter clue as the time it took him).
+   */
+  d?: number;
 }
 
 export interface PlaySessionRecord {
@@ -96,6 +103,8 @@ export class PlaySessionTracker {
   private solvedCount = 0;
   private completed = false;
   private interactions = 0;
+  /** The clue the player is on, whose `d` the time until the next input belongs to. */
+  private current: string | null = null;
 
   constructor(
     private readonly puzzle: Puzzle,
@@ -120,7 +129,12 @@ export class PlaySessionTracker {
   }
 
   private touch(now: number) {
-    if (this.lastInput !== null) this.active += Math.min(IDLE_GAP_SECONDS, Math.max(0, (now - this.lastInput) / 1000));
+    if (this.lastInput !== null) {
+      const gap = Math.min(IDLE_GAP_SECONDS, Math.max(0, (now - this.lastInput) / 1000));
+      this.active += gap;
+      const on = this.current ? this.records.get(this.current) : undefined;
+      if (on && on.s === undefined && on.x === undefined) on.d = (on.d ?? 0) + gap;
+    }
     this.lastInput = now;
     this.interactions++;
   }
@@ -134,7 +148,9 @@ export class PlaySessionTracker {
     if (!clue) return;
     const record = this.records.get(clueKey(clue));
     if (record && record.f === undefined) record.f = this.at(now);
+    // The time up to this move belongs to the clue being left.
     this.touch(now);
+    this.current = record ? record.k : null;
   }
 
   /** A wrong letter was rejected while `clue` was selected. */
@@ -200,7 +216,9 @@ export class PlaySessionTracker {
       wrong_letters: this.wrong,
       active_seconds: Math.round(this.active),
       elapsed_seconds: this.at(now),
-      clues: [...this.records.values()].filter((r) => r.f !== undefined || r.s !== undefined || r.w > 0),
+      clues: [...this.records.values()]
+        .filter((r) => r.f !== undefined || r.s !== undefined || r.w > 0)
+        .map((r) => (r.d === undefined ? r : { ...r, d: Math.round(r.d) })),
       started_at: new Date(this.startedAt).toISOString(),
     };
   }
