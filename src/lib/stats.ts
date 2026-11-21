@@ -69,8 +69,27 @@ export async function fetchStats(since: string, plus: boolean): Promise<StatsDat
       .filter((r) => r.slot === "mini" || r.slot === "midi" || r.slot === "large" || r.slot === "bonus")
       .map((r) => ({ day: r.day, slot: r.slot as StatsSlot, seconds: r.seconds, solvers: r.solvers, fasterThan: r.faster_than === null ? null : Number(r.faster_than) })),
     headToHead: (h2h.data ?? []).map((r) => ({ friendId: r.friend_id, username: r.username, played: r.played, wins: r.wins, losses: r.losses, ties: r.ties })),
-    slowClues: (clues?.data ?? []).map((r) => ({ puzzleTitle: r.puzzle_title, clue: r.clue, seconds: r.seconds, day: r.played_on, puzzleKey: r.puzzle_key ?? null, text: r.clue_text ?? undefined, answer: r.answer ?? undefined })),
+    slowClues: (clues?.data ?? []).map(slowClueOf),
   };
+}
+
+type SlowClueRow = { puzzle_title: string; clue: string; seconds: number; played_on: string; puzzle_key: string | null; clue_text: string | null; answer: string | null };
+const slowClueOf = (r: SlowClueRow): SlowClue => ({ puzzleTitle: r.puzzle_title, clue: r.clue, seconds: r.seconds, day: r.played_on, puzzleKey: r.puzzle_key ?? null, text: r.clue_text ?? undefined, answer: r.answer ?? undefined });
+
+/**
+ * A Plus caller's slowest clues on one kind of puzzle, with their words and
+ * answers. The server holds no daily, so a slot's puzzles are named to it by
+ * key from the published index. Null when it cannot be asked (no index, or a
+ * server from before the per-kind list): the page keeps the list for every puzzle.
+ */
+export async function fetchSlowCluesFor(since: string, slot: StatsSlot, today: string): Promise<SlowClue[] | null> {
+  if (!supabase) return null;
+  const index = slot === "bonus" ? [] : await loadPublishedIndex(today);
+  if (!index) return null;
+  const keys = index.filter((e) => e.slot === slot).map((e) => e.identity);
+  const { data, error } = await supabase.rpc("my_slow_clues_for", { p_since: since, p_kind: slot, p_keys: slot === "bonus" ? null : keys });
+  if (error) return null;
+  return withClueText((data ?? []).map(slowClueOf), today);
 }
 
 /**

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 
-const stats = vi.hoisted(() => ({ fetchStats: vi.fn(), withClueText: vi.fn(async (c: unknown[]) => c) }));
+const stats = vi.hoisted(() => ({ fetchStats: vi.fn(), fetchSlowCluesFor: vi.fn(async (): Promise<unknown[] | null> => null), withClueText: vi.fn(async (c: unknown[]) => c) }));
 vi.mock("../lib/stats", async (orig) => ({ ...(await orig<typeof import("../lib/stats")>()), ...stats }));
 const account = vi.hoisted(() => ({ value: { ready: true, plusReady: true, available: true, plus: false, openPaywall: vi.fn() } }));
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => account.value }));
@@ -82,7 +82,7 @@ describe("StatsScreen", () => {
       ],
       slowClueCount: null,
     });
-    stats.withClueText.mockImplementationOnce(async (c: unknown[]) => [{ ...(c[0] as object), text: "In the zone", answer: "LOCKEDIN" }, c[1]]);
+    stats.withClueText.mockImplementation(async (c: unknown[]) => [{ ...(c[0] as object), text: "In the zone", answer: "LOCKEDIN" }, c[1]]);
     renderPage();
     expect(await screen.findByText("1:15")).toBeTruthy(); // the mini average
     expect(stats.fetchStats).toHaveBeenLastCalledWith(expect.any(String), true);
@@ -97,8 +97,13 @@ describe("StatsScreen", () => {
     expect(screen.getByText("LOCKEDIN")).toBeTruthy();
     expect(screen.queryByText(/Flow State/)).toBeNull();
     expect(screen.getByText(/My import/)).toBeTruthy();
-    // The Daily Plus is a fourth tab with the same figures.
+    // The Daily Plus is a fourth tab with the same figures, and its own slowest clues.
+    stats.fetchSlowCluesFor.mockResolvedValueOnce([{ puzzleTitle: "Plus one", clue: "1A", seconds: 80, day: "2026-11-10", text: "Extra helping", answer: "SECONDS" }]);
     fireEvent.click(screen.getByRole("radio", { name: "Daily Plus" }));
+    expect(await screen.findByText("Extra helping")).toBeTruthy();
+    expect(stats.fetchSlowCluesFor).toHaveBeenLastCalledWith(expect.any(String), "bonus", expect.any(String));
+    expect(screen.queryByText("In the zone")).toBeNull();
+    stats.withClueText.mockImplementation(async (c: unknown[]) => c);
     expect(screen.getAllByText("2:05").length).toBeGreaterThan(0);
     expect(screen.getByText("100%")).toBeTruthy();
   });

@@ -8,7 +8,7 @@ import { useMaybeAccount } from "../contexts/AccountContext";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { countsForDailyStreak } from "../lib/solveHistory";
 import { REPAIR_KEY_PREFIX } from "../lib/streakRepair";
-import { averageByWeekday, calendarWeeks, fetchStats, lastDays, rankedCount, summarizeSlot, withClueText, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
+import { averageByWeekday, calendarWeeks, fetchSlowCluesFor, fetchStats, lastDays, rankedCount, summarizeSlot, withClueText, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
 import { dayKey, formatDuration, shiftDayKey } from "../lib/soloStats";
 import { DAILY_SLOTS } from "../lib/dailyFeed";
 
@@ -71,17 +71,21 @@ export function StatsScreen() {
     };
   }, [known, plus, today]);
 
-  // The slow clues' words and answers arrive after the page: until then, and for a puzzle that is not a daily, a row is its number and puzzle.
+  // The slowest clues follow the tab, like the figures above them. Their words and answers arrive
+  // after the page; when the per-tab list cannot be asked for, the list for every puzzle stands.
   const [slowClues, setSlowClues] = useState<StatsData["slowClues"]>([]);
   useEffect(() => {
     if (!data) return;
     let live = true;
-    setSlowClues(data.slowClues);
-    void withClueText(data.slowClues, today).then((c) => live && setSlowClues(c));
+    const since = shiftDayKey(today, -365);
+    void (plus ? fetchSlowCluesFor(since, slot, today) : Promise.resolve(null)).then(async (own) => {
+      const clues = own ?? (await withClueText(data.slowClues, today));
+      if (live) setSlowClues(clues);
+    });
     return () => {
       live = false;
     };
-  }, [data, today]);
+  }, [data, today, plus, slot]);
 
   const locked = known && !plus;
   const unlockLabel = t("stats.unlock");
