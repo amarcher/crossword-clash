@@ -970,17 +970,15 @@ export function SoloPlayScreen() {
         header={
           <>
             <div className="flex items-center justify-between gap-2">
-              {/* The way out of a solved puzzle is a back arrow on the left, where every page's bar has it (Andrew, 2026-11-20). Mid-solve the way out is Pause, on the right. */}
-              {isComplete && (
-                <button
-                  type="button"
-                  onClick={handleExit}
-                  aria-label={t("completion.backToMenu")}
-                  className="-ml-2 grid size-11 shrink-0 place-items-center rounded-lg text-ink-soft hover:text-brand-700 active:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
-                >
-                  <ArrowLeft className="size-5" aria-hidden="true" />
-                </button>
-              )}
+              {/* The way out is a back arrow on the left, where every page's bar has it (Andrew, 2026-11-20). Mid-solve it saves and leaves in one press; Pause, on the right, stops the clock and stays. */}
+              <button
+                type="button"
+                onClick={handleExit}
+                aria-label={t("completion.backToMenu")}
+                className="-ml-2 grid size-11 shrink-0 place-items-center rounded-lg text-ink-soft hover:text-brand-700 active:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
+              >
+                <ArrowLeft className="size-5" aria-hidden="true" />
+              </button>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-2">
                   <h1 className="font-display text-lg md:text-2xl font-bold tracking-tight text-ink truncate">{puzzle.title}</h1>
@@ -1014,9 +1012,10 @@ export function SoloPlayScreen() {
                 {/* The gear needs header room a phone doesn't have: there the switch sits in the clue sheet. */}
                 <SoloOptions autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="hidden md:block" />
                 {!isComplete && (
-                  <button onClick={handlePause} className={buttonClass("secondary", "md")}>
+                  <button onClick={handlePause} className={buttonClass("secondary", "md", "max-sm:w-11 max-sm:px-0")}>
                     <Pause className="size-4" aria-hidden="true" />
-                    {t("soloPause.pause")}
+                    {/* A phone's header gives the word's room to the puzzle's title; the two bars say it. */}
+                    <span className="max-sm:sr-only">{t("soloPause.pause")}</span>
                   </button>
                 )}
                 <AccountControl placement="play" className="-mr-1.5" />
