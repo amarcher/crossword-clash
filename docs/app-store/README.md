@@ -99,7 +99,7 @@ puzzle's other early clues name a film, a band and a team. A capture's visits
 are no longer recorded as play (`play_sessions`, `narrator_sessions` and
 `solo_progress` writes are blocked in `cap.mjs`).
 
-## 1.1.4 (November 20, 2026): sent for review with build 69
+## 1.1.4 (November 20, 2026): sent for review with build 69; live November 21
 
 Through the App Store Connect API, on Andrew's go-ahead: version 1.1.4 created
 (release after approval), build 69 attached, the description, promotional
@@ -109,6 +109,10 @@ Apple has one Duo slot (`APP_IPHONE_DUO`) of ten pictures that accepts both
 the outer and the inner size. At Andrew's request it holds a mix in tile order:
 outer for 01, 02, 06, 09 and 10, inner for 03, 04, 05, 07 and 08. The version
 was then submitted for review (state after the submit: WAITING_FOR_REVIEW).
+
+**Live on the App Store since November 21, 2026.** Andrew reported the approval;
+the public lookup (`https://itunes.apple.com/lookup?id=6811111993`) shows
+version 1.1.4 released 2026-11-21T19:47:58Z. It is the current iOS release.
 
 ## Regenerating the screenshots (`pnpm store:shots`)
 
