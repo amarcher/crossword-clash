@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { Navigate, UNSAFE_DataRouterContext } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CrosswordGrid, useGridNavigation } from "../components/CrosswordGrid";
-import { Flag, Pause, X } from "lucide-react";
+import { ArrowLeft, Flag, Pause, X } from "lucide-react";
 import { ActiveClueCard, CluePanel } from "../components/CluePanel";
 import { buttonClass } from "../components/ui";
 import { MobileClueBar, MobileClueSheet } from "../components/ClueBar";
@@ -970,7 +970,18 @@ export function SoloPlayScreen() {
         header={
           <>
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
+              {/* The way out of a solved puzzle is a back arrow on the left, where every page's bar has it (Andrew, 2026-11-20). Mid-solve the way out is Pause, on the right. */}
+              {isComplete && (
+                <button
+                  type="button"
+                  onClick={handleExit}
+                  aria-label={t("completion.backToMenu")}
+                  className="-ml-2 grid size-11 shrink-0 place-items-center rounded-lg text-ink-soft hover:text-brand-700 active:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
+                >
+                  <ArrowLeft className="size-5" aria-hidden="true" />
+                </button>
+              )}
+              <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-2">
                   <h1 className="font-display text-lg md:text-2xl font-bold tracking-tight text-ink truncate">{puzzle.title}</h1>
                   {soloTheme && (
@@ -1002,21 +1013,12 @@ export function SoloPlayScreen() {
                 )}
                 {/* The gear needs header room a phone doesn't have: there the switch sits in the clue sheet. */}
                 <SoloOptions autocheck={autocheck} onAutocheckChange={handleAutocheckChange} className="hidden md:block" />
-                <button
-                  onClick={isComplete ? handleExit : handlePause}
-                  className={buttonClass("secondary", "md")}
-                >
-                  {!isComplete && <Pause className="size-4" aria-hidden="true" />}
-                  {/* A phone's header has no room for "Choose another puzzle" beside the finish chip: it pushed the title off the row. */}
-                  {isComplete ? (
-                    <>
-                      <span className="lg:hidden">{t("soloPause.chooseShort")}</span>
-                      <span className="max-lg:hidden">{t("soloPause.choose")}</span>
-                    </>
-                  ) : (
-                    t("soloPause.pause")
-                  )}
-                </button>
+                {!isComplete && (
+                  <button onClick={handlePause} className={buttonClass("secondary", "md")}>
+                    <Pause className="size-4" aria-hidden="true" />
+                    {t("soloPause.pause")}
+                  </button>
+                )}
                 <AccountControl placement="play" className="-mr-1.5" />
               </div>
             </div>
