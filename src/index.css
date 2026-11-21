@@ -97,11 +97,19 @@
   }
   h1, h2, h3 { text-wrap: balance; }
   /* Tailwind v4's preflight leaves buttons on the arrow cursor (v3 gave them the
-     hand). Anything clickable shows the hand; a disabled button keeps the arrow.
-     A utility class (cursor-default, cursor-grab…) still wins over this layer. */
+     hand). Anything clickable shows the hand: buttons, links, the roles drawn on
+     other elements, and the form controls a press changes (a checkbox, a radio,
+     a slider, a file picker, a select) with the label that presses them. A
+     disabled control keeps the arrow, and so does a text field's label (a press
+     there only moves the caret). A utility class (cursor-default, cursor-grab…)
+     still wins over this layer. Audited page by page 2026-11-20 (Andrew). */
+  a[href],
   button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  summary {
+  select:not(:disabled),
+  summary,
+  input:is([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="submit"], [type="button"]):not(:disabled),
+  label:has(input:is([type="checkbox"], [type="radio"], [type="file"]):not(:disabled)),
+  :is([role="button"], [role="link"], [role="tab"], [role="radio"], [role="switch"], [role="checkbox"], [role="menuitem"], [role="option"]):not([aria-disabled="true"], :disabled) {
     cursor: pointer;
   }
 }
