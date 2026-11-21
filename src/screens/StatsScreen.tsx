@@ -8,11 +8,13 @@ import { useMaybeAccount } from "../contexts/AccountContext";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { countsForDailyStreak } from "../lib/solveHistory";
 import { REPAIR_KEY_PREFIX } from "../lib/streakRepair";
-import { averageByWeekday, calendarWeeks, fetchStats, lastDays, rankedCount, summarizeSlot, type DailyResult, type StatsData } from "../lib/stats";
+import { averageByWeekday, calendarWeeks, fetchStats, lastDays, rankedCount, summarizeSlot, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
 import { dayKey, formatDuration, shiftDayKey } from "../lib/soloStats";
-import { DAILY_SLOTS, type DailySlot } from "../lib/dailyFeed";
+import { DAILY_SLOTS } from "../lib/dailyFeed";
 
-const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow" } as const;
+const SLOT_LABEL = { mini: "menu.dailyMiniEyebrow", midi: "menu.dailyMidiEyebrow", large: "menu.dailyLargeEyebrow", bonus: "bonus.eyebrow" } as const;
+/** Four tabs do not fit a phone under their full names: there they go by the short one. */
+const SLOT_SHORT = { mini: "leaderboard.tabMini", midi: "leaderboard.tabMidi", large: "leaderboard.tabLarge", bonus: "leaderboard.tabPlus" } as const;
 
 /** A free player's chart covers this many days; Plus has the year. */
 const FREE_CHART_DAYS = 30;
@@ -55,7 +57,7 @@ export function StatsScreen() {
   const known = (!!account?.ready && !!account?.plusReady) || account?.available === false || !account;
   const [data, setData] = useState<StatsData | null>(null);
   const [failed, setFailed] = useState(false);
-  const [slot, setSlot] = useState<DailySlot>("mini");
+  const [slot, setSlot] = useState<StatsSlot>("mini");
 
   useEffect(() => {
     if (!known) return;
@@ -72,6 +74,8 @@ export function StatsScreen() {
   const locked = known && !plus;
   const unlockLabel = t("stats.unlock");
   const unlock = () => account?.openPaywall({ placement: "stats", feature: "stats", returnTo: "/stats" });
+  // The Daily Plus has a tab for a subscriber, and for anyone with a Daily Plus time on record.
+  const slots: StatsSlot[] = plus || data?.results.some((r) => r.slot === "bonus") ? [...DAILY_SLOTS, "bonus"] : [...DAILY_SLOTS];
   const slotResults = useMemo(() => (data ? data.results.filter((r) => r.slot === slot) : []), [data, slot]);
   const charted = useMemo(() => (locked ? lastDays(slotResults, today, FREE_CHART_DAYS) : slotResults), [locked, slotResults, today]);
   const summary = summarizeSlot(slotResults);
@@ -97,17 +101,25 @@ export function StatsScreen() {
           <p className="mt-1 text-sm text-muted">{t("stats.subtitle")}</p>
         </div>
 
-        <div role="radiogroup" aria-label={t("stats.slot")} className="grid grid-cols-3 gap-1 rounded-xl bg-surface-sunken p-1 sm:w-80">
-          {DAILY_SLOTS.map((s) => (
+        <div role="radiogroup" aria-label={t("stats.slot")} className={`grid gap-1 rounded-xl bg-surface-sunken p-1 ${slots.length === 4 ? "grid-cols-4 sm:w-[27rem]" : "grid-cols-3 sm:w-80"}`}>
+          {slots.map((s) => (
             <button
               key={s}
               type="button"
               role="radio"
               aria-checked={slot === s}
+              aria-label={t(SLOT_LABEL[s])}
               onClick={() => setSlot(s)}
               className={`min-h-10 cursor-pointer rounded-lg px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${slot === s ? "bg-surface text-ink shadow-card" : "text-muted hover:text-ink"}`}
             >
-              {t(SLOT_LABEL[s])}
+              {slots.length === 4 ? (
+                <>
+                  <span className="sm:hidden">{t(SLOT_SHORT[s])}</span>
+                  <span className="max-sm:hidden">{t(SLOT_LABEL[s])}</span>
+                </>
+              ) : (
+                t(SLOT_LABEL[s])
+              )}
             </button>
           ))}
         </div>
