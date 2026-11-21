@@ -27,11 +27,18 @@ export function solveTitle(who: string, what: string, time: string): string {
   return `${who || "I"} solved ${what} in ${time}`;
 }
 
+/** "archer vs minna" for two named solvers; else how many raced (api/share.ts `raceHeadline`). */
+function raceHeadline(racers: number, names: string[]): string {
+  if (names.length === 2) return `${names[0]} vs ${names[1]}`;
+  return racers === 2 ? "A head-to-head race" : racers > 2 ? `A ${racers}-way race` : "A race";
+}
+
 /**
  * The title a solve's share link (dailyChallenge.ts `buildPuzzleLink`) will
  * unfurl with, or null for a link that is not a timed solve of a daily, a
  * Daily Plus or a community puzzle. `communityTitle` is the puzzle's own
- * title, which the server looks up from the link's id.
+ * title, which the server looks up from the link's id. A shared race (a clip
+ * with no time to beat) is titled by who raced.
  */
 export function linkPreviewTitle(link: string, communityTitle?: string | null): string | null {
   let url: URL;
@@ -41,13 +48,25 @@ export function linkPreviewTitle(link: string, communityTitle?: string | null): 
     return null;
   }
   const beat = url.searchParams.get("beat") ?? "";
+  const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\/(mini|midi|large)$/.exec(url.pathname);
+  const bonus = /^\/bonus\/(\d{4}-\d{2}-\d{2})$/.exec(url.pathname);
+  const community = /^\/puzzles\/[a-z0-9]{8}$/.test(url.pathname);
+  const named = communityTitle?.trim() ? `“${communityTitle.trim()}”` : "a community crossword";
+  if (beat === "" && /^[A-Za-z0-9_-]{11}$/.test(url.searchParams.get("r") ?? "")) {
+    const n = Number(url.searchParams.get("race") ?? "");
+    const racers = Number.isInteger(n) && n >= 1 && n <= 8 ? n : 0;
+    const names = (url.searchParams.get("who") ?? "").split(",").map((w) => w.replace(/\s+/g, " ").trim().slice(0, 20)).filter(Boolean);
+    const headline = raceHeadline(racers, racers > 0 && names.length === racers ? names : []);
+    if (daily) return `${headline} on the ${SLOT_LABEL[daily[2]]} for ${formatDay(daily[1])}`;
+    if (bonus) return `${headline} on the Daily Plus for ${formatDay(bonus[1])}`;
+    if (community) return `${headline} on ${named}`;
+    return null;
+  }
   if (!/^\d{1,6}$/.test(beat)) return null;
   const time = formatSeconds(Number(beat));
   const who = (url.searchParams.get("by") ?? "").trim();
-  const daily = /^\/daily\/(\d{4}-\d{2}-\d{2})\/(mini|midi|large)$/.exec(url.pathname);
   if (daily) return solveTitle(who, `the ${formatDay(daily[1])} ${SLOT_LABEL[daily[2]]}`, time);
-  const bonus = /^\/bonus\/(\d{4}-\d{2}-\d{2})$/.exec(url.pathname);
   if (bonus) return solveTitle(who, `the ${formatDay(bonus[1])} Daily Plus`, time);
-  if (/^\/puzzles\/[a-z0-9]{8}$/.test(url.pathname)) return solveTitle(who, communityTitle?.trim() ? `“${communityTitle.trim()}”` : "a community crossword", time);
+  if (community) return solveTitle(who, named, time);
   return null;
 }

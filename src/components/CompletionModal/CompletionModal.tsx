@@ -146,6 +146,8 @@ interface CompletionModalProps {
   replayId?: string;
   /** The replay is being filed: the share preview holds the clip's place until `replayId` arrives. */
   replayPending?: boolean;
+  /** A shared-grid race: the names of the players who hold squares, in the clip's order (roomReplayOrder). */
+  raceWho?: string[];
   /**
    * After racing a shared link's sender: send them this solve back, in the
    * thread the link came from (their name, this solve's own link, the verdict).
@@ -228,6 +230,7 @@ export function CompletionModal({
   raceResults,
   replayId,
   replayPending,
+  raceWho,
   shareBack,
   replays,
   onWatchReplay,
@@ -368,14 +371,25 @@ export function CompletionModal({
   const shareDaily = refDaily ? t(SLOT_EYEBROW[refDaily.slot]) : undefined;
   const shareStreak = streakCount && streakCount > 0 ? t("soloStats.streakDays", { count: streakCount }) : undefined;
 
+  // Who a versus room's link names: the players holding squares, in the clip's order when the room gave it.
+  const sharedWho = useMemo(
+    () => (!players?.length || isAsync || coop ? undefined : raceWho ?? [...players].sort((a, b) => b.cellsClaimed - a.cellsClaimed).filter((p) => p.cellsClaimed > 0).map((p) => p.displayName)),
+    [players, isAsync, coop, raceWho],
+  );
+
   // The spoiler-free result block for a given challenger name: the link
   // carries the name (and the ghost time), so it is rebuilt when one is signed.
   const blockFor = useCallback(
     (name: string): ShareBlock => {
       const puzzle = challengePuzzle as Puzzle;
       // A bonus is Plus only: its link is its day's (linkRef) or, in a room, the site, never the puzzle in a #puzzle= hash.
+      // A shared grid raced by several is nobody's own solve: its link is the race's ("a vs b on …"),
+      // never "<sharer> solved it in <the room's time>" (which it said of a player with no squares).
+      // One player holding every square did solve it, so the time is signed with their name.
       const link = linkRef
-        ? buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name, replay: replayId })
+        ? sharedWho && sharedWho.length > 1
+          ? buildPuzzleLink(SHARE_URL, linkRef, { replay: replayId, race: sharedWho.length, who: sharedWho })
+          : buildPuzzleLink(SHARE_URL, linkRef, { seconds: shareSeconds, name: sharedWho?.[0] ?? name, replay: replayId })
         : puzzle.origin === "bonus"
           ? `${SHARE_URL}/`
           : shareSeconds !== undefined
@@ -404,7 +418,7 @@ export function CompletionModal({
         },
       });
     },
-    [challengePuzzle, linkRef, refDaily, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayId],
+    [challengePuzzle, linkRef, refDaily, shareSeconds, shareDaily, shareStreak, shareStanding, playerCells, wrongCells, playerColors, t, i18n.language, isMultiplayer, replayId, sharedWho],
   );
 
   if (!open) return null;
@@ -417,6 +431,43 @@ export function CompletionModal({
   const tableBg = darkMode ? "bg-white/5" : "bg-surface-sunken";
   const tableText = darkMode ? "text-white/80" : "text-ink-soft";
   const tableHeader = darkMode ? "text-white/50" : "text-subtle";
+
+  const shareActions = (
+    <div className="flex flex-col gap-2 max-md:mb-2">
+          {/* One Share: the spoiler-free block (previewed above its button),
+              whose link is the challenge. Needs the puzzle for the rows. */}
+          {onWatchRoomReplay && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={onWatchRoomReplay}
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
+              >
+                <PlayCircle className="size-4" aria-hidden="true" />
+                {t("roomReplay.watch")}
+              </button>
+            </div>
+          )}
+          {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
+          {challengePuzzle && (
+            <ShareResultButton
+              mode={isMultiplayer ? "multiplayer" : "solo"}
+              blockFor={blockFor}
+              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
+              hasTime={shareSeconds !== undefined}
+              puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
+              daily={(!!refDaily || !!refBonus) && !isMultiplayer}
+              legend={shareLegend}
+              // A room's clip is shown only when the link can carry it; a time trial's is the player's own solve.
+              clip={replayId && (linkRef || !isMultiplayer) ? { id: replayId, race: isMultiplayer && !isAsync } : undefined}
+              clipPending={replayPending && !replayId && !!(linkRef || !isMultiplayer)}
+              communityTitle={linkRef && "shortId" in linkRef ? challengePuzzle.title : undefined}
+              onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
+              darkMode={darkMode}
+            />
+          )}
+        </div>
+  );
 
   return (
     <div
@@ -480,29 +531,33 @@ export function CompletionModal({
           </h2>
         </div>
 
+        {isMultiplayer && (
+          <>
+          {/* Outcome line: async → fastest finisher (or waiting), co-op →
+              team finish, versus → most squares solved (the line says so:
+              players asked whether it was squares or clues — it is squares). */}
+          <p className={`text-center mb-4 ${textSub}`}>
+            {isAsync
+              ? asyncAllDone
+                ? asyncTie
+                  ? t('completion.tie')
+                  : t('completion.wins', { name: asyncWinner?.displayName ?? '' })
+                : t('completion.waitingOthers')
+              : coop
+                ? t('completion.coopSolved')
+                : isTie
+                  ? t('completion.tieSquares', { count: winner.cellsClaimed })
+                  : t('completion.winsSquares', { name: winner.displayName, count: winner.cellsClaimed })}
+          </p>
+          </>
+        )}
+
         {/* From md up the dialog is two columns, the result and its Share beside what to do next, so it
             fits a laptop screen without scrolling; a phone keeps one column in the same order. */}
         <div className="md:grid md:grid-cols-2 md:items-start md:gap-x-6 md:[&:has(>div:nth-child(2):empty)]:grid-cols-1">
         <div className="min-w-0">
         {isMultiplayer ? (
           <>
-            {/* Outcome line: async → fastest finisher (or waiting), co-op →
-                team finish, versus → most squares solved (the line says so:
-                players asked whether it was squares or clues — it is squares). */}
-            <p className={`text-center mb-5 ${textSub}`}>
-              {isAsync
-                ? asyncAllDone
-                  ? asyncTie
-                    ? t('completion.tie')
-                    : t('completion.wins', { name: asyncWinner?.displayName ?? '' })
-                  : t('completion.waitingOthers')
-                : coop
-                  ? t('completion.coopSolved')
-                  : isTie
-                    ? t('completion.tieSquares', { count: winner.cellsClaimed })
-                    : t('completion.winsSquares', { name: winner.displayName, count: winner.cellsClaimed })}
-            </p>
-
             {/* Headline time: your own finish (async) or the shared race time. */}
             {raceSeconds != null && (
               <div className={`mb-5 rounded-xl px-4 py-3 text-center ${tableBg}`}>
@@ -802,42 +857,11 @@ export function CompletionModal({
             then "Up next" and the fresh-puzzle race; "Back
             to menu" is the quiet exit. The importer is never offered here —
             the game header keeps "Load different puzzle". */}
-        <div className="flex flex-col gap-2 max-md:mb-2">
-          {/* One Share: the spoiler-free block (previewed above its button),
-              whose link is the challenge. Needs the puzzle for the rows. */}
-          {onWatchRoomReplay && (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={onWatchRoomReplay}
-                className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-brand-500 ${darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-100"}`}
-              >
-                <PlayCircle className="size-4" aria-hidden="true" />
-                {t("roomReplay.watch")}
-              </button>
-            </div>
-          )}
-          {shareBack && <ShareBackButton {...shareBack} darkMode={darkMode} />}
-          {challengePuzzle && (
-            <ShareResultButton
-              mode={isMultiplayer ? "multiplayer" : "solo"}
-              blockFor={blockFor}
-              challengerName={(challengerName ?? "").trim() || t("common.defaultPlayerName")}
-              hasTime={shareSeconds !== undefined}
-              puzzleSize={puzzleSize ?? `${challengePuzzle.width}x${challengePuzzle.height}`}
-              daily={(!!refDaily || !!refBonus) && !isMultiplayer}
-              legend={shareLegend}
-              // A room's clip is shown only when the link can carry it; a time trial's is the player's own solve.
-              clip={replayId && (linkRef || !isMultiplayer) ? { id: replayId, race: isMultiplayer && !isAsync } : undefined}
-              clipPending={replayPending && !replayId && !!(linkRef || !isMultiplayer)}
-              communityTitle={linkRef && "shortId" in linkRef ? challengePuzzle.title : undefined}
-              onNameSigned={dailySign?.unposted ? undefined : dailySign?.onSign}
-              darkMode={darkMode}
-            />
-          )}
-        </div>
+        {!isMultiplayer && shareActions}
         </div>
         <div className="flex min-w-0 flex-col gap-2">
+          {/* A room: the standings fill the first column, so the replay and its Share lead the second. */}
+          {isMultiplayer && shareActions}
           {/* A finish of a linkable puzzle (any daily, a community puzzle) with friends: the race-my-solve link delivered in-app
               (docs/friends-spec.md §3.2). Renders nothing without friends. */}
           {/* The apps, after a daily: the reminder switch in context (docs/friends-spec.md §3.3). */}
@@ -906,7 +930,6 @@ export function CompletionModal({
                 icon={Swords}
                 tone="brand"
                 title={t('completion.nextPuzzleSameRoom')}
-                subtitle={t('completion.nextPuzzleSameRoomHint')}
                 onClick={onNextPuzzle}
                 darkMode={darkMode}
               />

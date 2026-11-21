@@ -540,14 +540,15 @@ describe("CompletionModal", () => {
     expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("src")).toContain("/api/replay?s=E0Gqr8Iw09i");
     expect(getByTestId("replay-preview").querySelector("video")?.getAttribute("aria-label")).toBe("The race, replayed");
     expect(screen.queryByTestId("share-block-preview")).toBeNull();
+    // A shared grid is nobody's own solve: the link is the race's, named for the players who hold squares.
+    expect(getByTestId("link-preview-title").textContent).toMatch(/^Alice vs Bob on the Daily Mini for \w+ \d+crosswordclash\.com$/);
     unmount();
-    // Without a filed replay the link unfurls as a card: the preview is its title and the site, with no clip.
-    const plain = render(
-      <CompletionModal {...SOLO_PROPS} players={makePlayers()} currentUserId="alice" dailySlot="mini" raceSeconds={90}
-        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Alice" />,
+    // One player holding every square did solve it: the time is theirs, whoever shares it.
+    const sole = render(
+      <CompletionModal {...SOLO_PROPS} players={[{ ...makePlayers()[0], cellsClaimed: 8 }, { ...makePlayers()[1], cellsClaimed: 0 }]} currentUserId="bob" dailySlot="mini" raceSeconds={90}
+        challengePuzzle={fakePuzzle("Deep Blue", 5)} playerCells={{}} playerColors={{ alice: "#3b82f6", bob: "#ef4444" }} challengerName="Bob" />,
     );
-    expect(plain.getByTestId("replay-preview").querySelector("video")).toBeNull();
-    expect(plain.getByTestId("link-preview-title").textContent).toMatch(/^Alice solved the \w+ \d+ Daily Mini in 1:30crosswordclash\.com$/);
+    expect(sole.getByTestId("link-preview-title").textContent).toMatch(/^Alice solved the \w+ \d+ Daily Mini in 1:30crosswordclash\.com$/);
   });
 
   it("shares a Daily Plus finish as its day's link alone, with the replay, under 'Share your time'", async () => {

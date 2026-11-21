@@ -65,6 +65,13 @@ export function roomReplayAt(replay: RoomReplay, ms: number): { cells: Record<st
   return { cells, counts };
 }
 
+/** The room's claimants in the clip's order: most squares held first, the sharer first among equals. */
+export function roomReplayOrder(replay: RoomReplay, selfId?: string | null): string[] {
+  const held = new Map<string, number>();
+  for (const e of replay.events) held.set(e.playerId, (held.get(e.playerId) ?? 0) + 1);
+  return [...held.keys()].sort((a, b) => held.get(b)! - held.get(a)! || Number(b === selfId) - Number(a === selfId) || a.localeCompare(b));
+}
+
 /**
  * The room's replay as a share code (encodeRaceReplay), for the clip a shared
  * link plays (Andrew, 2026-11-16: a finished race shared the emoji squares,
@@ -79,9 +86,7 @@ export function roomReplayCode(
   colorMap: Readonly<Record<string, string>>,
   selfId?: string | null,
 ): string | null {
-  const held = new Map<string, number>();
-  for (const e of replay.events) held.set(e.playerId, (held.get(e.playerId) ?? 0) + 1);
-  const order = [...held.keys()].sort((a, b) => held.get(b)! - held.get(a)! || Number(b === selfId) - Number(a === selfId) || a.localeCompare(b));
+  const order = roomReplayOrder(replay, selfId);
   if (order.length > MAX_RACE_PLAYERS || order.some((id) => !colorMap[id])) return null;
   const claims = replay.events.map((e) => {
     const [row, col] = e.key.split(",").map(Number);
