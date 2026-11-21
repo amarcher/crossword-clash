@@ -35,7 +35,7 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { track } from "../lib/analytics";
 import type { PuzzleClue } from "../types/puzzle";
 import { firstEmptyCell } from "../lib/gridUtils";
-import { buildRoomReplay, roomReplayCode } from "../lib/roomReplay";
+import { buildRoomReplay, roomReplayCode, roomReplayOrder } from "../lib/roomReplay";
 import { createReplayShare } from "../lib/replayShare";
 import { resolvePuzzleRef } from "../lib/gameSettings";
 import { encodeReplay } from "../lib/replayCode";
@@ -118,6 +118,12 @@ export function MultiplayerPlayScreen() {
     () => (roomReplay && puzzle && playerColorMap ? roomReplayCode(puzzle, roomReplay, playerColorMap, user?.id) : null),
     [roomReplay, puzzle, playerColorMap, user?.id],
   );
+  // Who the shared link names: the versus room's claimants, in the clip's order.
+  const raceWho = useMemo(() => {
+    if (!roomReplay || isCoop) return undefined;
+    const names = roomReplayOrder(roomReplay, user?.id).map((id) => playerResults?.find((p) => p.userId === id)?.displayName ?? "");
+    return names.every(Boolean) ? names : undefined;
+  }, [roomReplay, isCoop, user?.id, playerResults]);
   // A time trial is each player's own solve, so its clip is the solo one (replayCode.ts): this
   // device records the letters going in on the race clock and files them at the finish. Kept
   // under the room's own key, apart from a solo recording of the same puzzle.
@@ -579,6 +585,7 @@ export function MultiplayerPlayScreen() {
         onClose={() => setCompletionModalDismissed(true)}
         onSignIn={account.available && account.ready && !account.user ? handleSignIn : undefined}
         replayId={raceShareId}
+        raceWho={raceWho}
         onWatchRoomReplay={
           roomReplay
             ? () => {

@@ -32,6 +32,15 @@ describe("linkPreviewTitle", () => {
     expect(linkPreviewTitle(bonus)).toBe(await served("t=bonus&day=2026-11-18&beat=3725&by=Archer"));
   });
 
+  it("titles a shared race by who raced, as the server does", async () => {
+    const two = buildPuzzleLink("https://crosswordclash.com", { day: "2026-11-18", slot: "midi" }, { replay: "E0Gqr8Iw09i", race: 2, who: ["archer", "minna"] });
+    expect(linkPreviewTitle(two)).toBe("archer vs minna on the Daily Midi for Nov 18");
+    expect(linkPreviewTitle(two)).toBe(await served("t=daily&day=2026-11-18&slot=midi&r=E0Gqr8Iw09i&race=2&who=archer,minna"));
+    const three = buildPuzzleLink("https://crosswordclash.com", { bonusDay: "2026-11-18" }, { replay: "E0Gqr8Iw09i", race: 3, who: ["a", "b", "c"] });
+    expect(linkPreviewTitle(three)).toBe("A 3-way race on the Daily Plus for Nov 18");
+    expect(linkPreviewTitle(three)).toBe(await served("t=bonus&day=2026-11-18&r=E0Gqr8Iw09i&race=3&who=a,b,c"));
+  });
+
   it("names a community puzzle by its title, and nothing for a link that is not a timed solve", () => {
     const link = buildPuzzleLink("https://crosswordclash.com", { shortId: "ab12cd34" }, { seconds: 75, name: "Sam" });
     expect(linkPreviewTitle(link, "Farm")).toBe("Sam solved “Farm” in 1:15");

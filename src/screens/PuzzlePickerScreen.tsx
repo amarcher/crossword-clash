@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { displayTheme } from "../lib/dailyFeed";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Loader2, Newspaper, Sparkles, Upload, Users } from "lucide-react";
+import { CalendarDays, ChevronRight, Loader2, Newspaper, Sparkles, Upload, Users } from "lucide-react";
 import { nativeNytImportAvailable } from "../lib/nativeNytImport";
 import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow, ListGroup, ListRow, MiniGridThumb } from "../components/ui";
@@ -92,20 +92,21 @@ export function PuzzlePickerScreen() {
                     <MiniGridThumb puzzle={daily.puzzle} className="w-16 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <Eyebrow>{t(SLOT_EYEBROW[slot])}</Eyebrow>
-                      <p className="mt-0.5 truncate font-display text-lg font-bold leading-snug text-ink">{daily.puzzle.title}</p>
-                      <p className="truncate text-sm text-muted tabular-nums">
+                      <p className="mt-0.5 text-pretty font-display text-lg font-bold leading-snug text-ink">{daily.puzzle.title}</p>
+                      <p className="text-pretty text-sm text-muted tabular-nums">
                         {daily.puzzle.width}×{daily.puzzle.height}
                         {displayTheme(daily) ? ` · ${displayTheme(daily)}` : ""}
                       </p>
                     </div>
                     <Button
-                      variant="soft"
+                      variant="ghost"
                       onClick={() => void choose(daily.puzzle, key, slot)}
                       disabled={busy !== null}
-                      className="shrink-0 after:absolute after:inset-0 after:rounded-2xl"
+                      aria-label={busy === key ? t("picker.setting") : t("picker.pick")}
+                      // The whole card is the press target, so it ends in a row's chevron and the title keeps the width.
+                      className="-mr-2 shrink-0 px-2 text-subtle after:absolute after:inset-0 after:rounded-2xl"
                     >
-                      {busy === key && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-                      {busy === key ? t("picker.setting") : t("picker.pick")}
+                      {busy === key ? <Loader2 className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight className="size-5" aria-hidden="true" />}
                     </Button>
                   </Card>
                 </li>
@@ -136,20 +137,21 @@ export function PuzzlePickerScreen() {
                 <Card className="relative flex h-full items-center gap-4 p-4 transition-[box-shadow,border-color] duration-150 hover:border-line-strong hover:shadow-raised">
                   <ShapeThumb blocks={entry.blocks} className="w-12 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-lg font-bold leading-snug text-ink">{entry.title}</p>
-                    <p className="truncate text-sm text-muted tabular-nums">
+                    <p className="text-pretty font-display text-lg font-bold leading-snug text-ink">{entry.title}</p>
+                    <p className="text-pretty text-sm text-muted tabular-nums">
                       {dayLabel.format(new Date(`${entry.day}T12:00:00`))}
                       {entry.theme ? ` · ${entry.theme}` : ""}
                     </p>
                   </div>
                   <Button
-                    variant="soft"
+                    variant="ghost"
                     onClick={() => void chooseFresh(entry)}
                     disabled={busy !== null}
-                    className="shrink-0 after:absolute after:inset-0 after:rounded-2xl"
+                    aria-label={busy === entry.identity ? t("picker.setting") : t("picker.pick")}
+                    // The whole card is the press target, so it ends in a row's chevron and the title keeps the width.
+                    className="-mr-2 shrink-0 px-2 text-subtle after:absolute after:inset-0 after:rounded-2xl"
                   >
-                    {busy === entry.identity && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-                    {busy === entry.identity ? t("picker.setting") : t("picker.pick")}
+                    {busy === entry.identity ? <Loader2 className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight className="size-5" aria-hidden="true" />}
                   </Button>
                 </Card>
               </li>
