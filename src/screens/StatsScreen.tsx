@@ -8,7 +8,7 @@ import { useMaybeAccount } from "../contexts/AccountContext";
 import { useSolveHistory } from "../hooks/useSolveHistory";
 import { countsForDailyStreak } from "../lib/solveHistory";
 import { REPAIR_KEY_PREFIX } from "../lib/streakRepair";
-import { averageByWeekday, calendarWeeks, fetchStats, lastDays, rankedCount, summarizeSlot, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
+import { averageByWeekday, calendarWeeks, fetchStats, lastDays, rankedCount, summarizeSlot, withClueText, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
 import { dayKey, formatDuration, shiftDayKey } from "../lib/soloStats";
 import { DAILY_SLOTS } from "../lib/dailyFeed";
 
@@ -70,6 +70,18 @@ export function StatsScreen() {
       live = false;
     };
   }, [known, plus, today]);
+
+  // The slow clues' words and answers arrive after the page: until then, and for a puzzle that is not a daily, a row is its number and puzzle.
+  const [slowClues, setSlowClues] = useState<StatsData["slowClues"]>([]);
+  useEffect(() => {
+    if (!data) return;
+    let live = true;
+    setSlowClues(data.slowClues);
+    void withClueText(data.slowClues, today).then((c) => live && setSlowClues(c));
+    return () => {
+      live = false;
+    };
+  }, [data, today]);
 
   const locked = known && !plus;
   const unlockLabel = t("stats.unlock");
@@ -216,13 +228,19 @@ export function StatsScreen() {
               <Locked cta={unlockLabel} onUnlock={unlock}>
                 {t("stats.slowCluesTeaser", { count: data.slowClueCount ?? 0 })}
               </Locked>
-            ) : data && data.slowClues.length > 0 ? (
-              <ol className="mt-3 grid gap-2 text-sm">
-                {data.slowClues.map((c, i) => (
+            ) : data && slowClues.length > 0 ? (
+              <ol className="mt-3 grid gap-2.5 text-sm">
+                {slowClues.map((c, i) => (
                   <li key={`${c.puzzleTitle}-${c.clue}-${i}`} className="flex items-baseline gap-3">
-                    <span className="min-w-0 flex-1 truncate text-ink">
-                      <span className="font-semibold">{c.clue}</span> · {c.puzzleTitle}
-                    </span>
+                    {c.text && c.answer ? (
+                      <span className="min-w-0 flex-1 text-pretty text-ink">
+                        {c.text} <span className="ml-1 text-xs font-bold tracking-wider text-ink-soft">{c.answer}</span>
+                      </span>
+                    ) : (
+                      <span className="min-w-0 flex-1 text-pretty text-ink">
+                        <span className="font-semibold">{c.clue}</span> · {c.puzzleTitle}
+                      </span>
+                    )}
                     <span className="shrink-0 tabular-nums text-ink-soft">{formatDuration(c.seconds)}</span>
                   </li>
                 ))}

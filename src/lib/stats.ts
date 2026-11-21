@@ -8,7 +8,8 @@
  * there are. The rest is pure arithmetic here, tested in stats.test.ts.
  */
 import { supabase } from "./supabaseClient";
-import type { DailySlot } from "./dailyFeed";
+import { fetchDailyForDay, type DailySlot } from "./dailyFeed";
+import { loadPublishedIndex, type DailyIndexEntry } from "./dailyIndex";
 
 /** A daily's slot, or the Daily Plus (daily_results files it under 'bonus'). */
 export type StatsSlot = DailySlot | "bonus";
@@ -37,6 +38,9 @@ export interface SlowClue {
   clue: string;
   seconds: number;
   day: string;
+  /** The clue as written and its answer, once its daily has been found (`withClueText`). */
+  text?: string;
+  answer?: string;
 }
 
 export interface StatsData {
@@ -67,7 +71,38 @@ export async function fetchStats(since: string, plus: boolean): Promise<StatsDat
   };
 }
 
+/**
+ * The slow clues with their words and answers. A play session names its puzzle
+ * by title and its clue by number, so each daily is found in the published
+ * index by title and read from the feed. A clue whose puzzle is not a daily
+ * (an import, a community puzzle), or cannot be read, comes back as it was.
+ */
+export async function withClueText(clues: readonly SlowClue[], today: string): Promise<SlowClue[]> {
+  const index = clues.length ? await loadPublishedIndex(today) : null;
+  if (!index) return [...clues];
+  const puzzles = new Map<string, ReturnType<typeof fetchDailyForDay>>();
+  return Promise.all(
+    clues.map(async (c) => {
+      const entry = dailyTitled(index, c.puzzleTitle, c.day);
+      if (!entry) return c;
+      const key = `${entry.day}/${entry.slot}`;
+      if (!puzzles.has(key)) puzzles.set(key, fetchDailyForDay(entry.day, entry.slot).catch(() => null));
+      const daily = await puzzles.get(key);
+      const m = /^(\d+)([AD])$/.exec(c.clue);
+      const found = m && daily?.puzzle.clues.find((p) => p.number === Number(m[1]) && p.direction === (m[2] === "A" ? "across" : "down"));
+      return found ? { ...c, text: found.text, answer: found.answer } : c;
+    }),
+  );
+}
+
 // --- Pure ---
+
+/** The daily with this title: the latest one published on or before the day it was played, else the earliest. */
+export function dailyTitled(index: readonly DailyIndexEntry[], title: string, playedOn: string): DailyIndexEntry | null {
+  const named = index.filter((e) => e.title === title).sort((a, b) => a.day.localeCompare(b.day));
+  if (named.length === 0) return null;
+  return named.filter((e) => e.day <= playedOn).pop() ?? named[0];
+}
 
 export interface SlotSummary {
   count: number;

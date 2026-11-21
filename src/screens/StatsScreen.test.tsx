@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 
-const stats = vi.hoisted(() => ({ fetchStats: vi.fn() }));
+const stats = vi.hoisted(() => ({ fetchStats: vi.fn(), withClueText: vi.fn(async (c: unknown[]) => c) }));
 vi.mock("../lib/stats", async (orig) => ({ ...(await orig<typeof import("../lib/stats")>()), ...stats }));
 const account = vi.hoisted(() => ({ value: { ready: true, plusReady: true, available: true, plus: false, openPaywall: vi.fn() } }));
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => account.value }));
@@ -76,9 +76,13 @@ describe("StatsScreen", () => {
         { day: "2026-11-10", slot: "bonus", seconds: 125, solvers: 4, fasterThan: 1 },
       ],
       headToHead: [{ friendId: "f", username: "alicia", played: 3, wins: 2, losses: 1, ties: 0 }],
-      slowClues: [],
+      slowClues: [
+        { puzzleTitle: "Flow State", clue: "37A", seconds: 95, day: "2026-11-10" },
+        { puzzleTitle: "My import", clue: "4D", seconds: 70, day: "2026-11-10" },
+      ],
       slowClueCount: null,
     });
+    stats.withClueText.mockImplementationOnce(async (c: unknown[]) => [{ ...(c[0] as object), text: "In the zone", answer: "LOCKEDIN" }, c[1]]);
     renderPage();
     expect(await screen.findByText("1:15")).toBeTruthy(); // the mini average
     expect(stats.fetchStats).toHaveBeenLastCalledWith(expect.any(String), true);
@@ -88,6 +92,11 @@ describe("StatsScreen", () => {
     expect(screen.queryByRole("button", { name: /Unlock/ })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "Daily Large" }));
     expect(screen.getAllByText("11:40").length).toBeGreaterThan(0);
+    // A slow clue is the clue and its answer; one whose puzzle is not a daily keeps its number and puzzle.
+    expect(await screen.findByText("In the zone")).toBeTruthy();
+    expect(screen.getByText("LOCKEDIN")).toBeTruthy();
+    expect(screen.queryByText(/Flow State/)).toBeNull();
+    expect(screen.getByText(/My import/)).toBeTruthy();
     // The Daily Plus is a fourth tab with the same figures.
     fireEvent.click(screen.getByRole("radio", { name: "Daily Plus" }));
     expect(screen.getAllByText("2:05").length).toBeGreaterThan(0);
