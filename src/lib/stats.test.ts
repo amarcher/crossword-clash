@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { averageByWeekday, calendarWeeks, lastDays, rankedCount, summarizeSlot, weekdayOf, type DailyResult } from "./stats";
+import { averageByWeekday, calendarWeeks, dailyTitled, lastDays, rankedCount, summarizeSlot, weekdayOf, type DailyResult } from "./stats";
 
 const r = (day: string, seconds: number, fasterThan: number | null = null): DailyResult => ({ day, slot: "mini", seconds, solvers: 10, fasterThan });
 
@@ -32,5 +32,14 @@ describe("stats arithmetic", () => {
     expect(weeks[1][2].state).toBe("none");
     expect(weeks[1][4].state).toBe("future");
     expect(weeks[0][0].day).toBe("2026-11-02");
+  });
+
+  it("finds a slow clue's daily by title: the latest one on or before the day it was played", () => {
+    const e = (day: string, title: string) => ({ day, slot: "large" as const, title, theme: "", author: "", width: 15, height: 15, clues: 70, identity: day, blocks: "" });
+    const index = [e("2026-10-20", "Flow State"), e("2026-11-12", "Flow State"), e("2026-11-13", "Other")];
+    expect(dailyTitled(index, "Flow State", "2026-11-01")?.day).toBe("2026-10-20");
+    expect(dailyTitled(index, "Flow State", "2026-11-20")?.day).toBe("2026-11-12");
+    expect(dailyTitled(index, "Flow State", "2026-10-01")?.day).toBe("2026-10-20");
+    expect(dailyTitled(index, "Nope", "2026-11-20")).toBeNull();
   });
 });
