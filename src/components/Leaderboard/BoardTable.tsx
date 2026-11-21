@@ -89,30 +89,29 @@ export function BoardTable({ rows, userId, raceable, onRace, watchable, onWatch 
                       {t("autocheck.noAutocheck")}
                     </span>
                   )}
+                  {/* The row's action sits in the name column, at its far end: in the time column it took its width from every row, the viewer's own (which has none) included, and cut their name short (Andrew, 2026-11-20). */}
+                  <span className="ml-auto inline-flex shrink-0 items-center gap-2 empty:hidden">
+                    {!isMe && onRace && raceable?.has(e.userId) && (
+                      <button
+                        type="button"
+                        onClick={() => onRace(e.userId)}
+                        aria-label={t("ghostRace.raceRow", { name: e.displayName })}
+                        className={ROW_ACTION}
+                      >
+                        <Flag className="size-3.5" aria-hidden="true" />
+                        {t("ghostRace.raceButton")}
+                      </button>
+                    )}
+                    {!isMe && onWatch && watchable?.has(e.userId) && (
+                      <button type="button" onClick={() => onWatch(e.userId)} aria-label={t("ghostRace.watchRow", { name: e.displayName })} className={ROW_ACTION}>
+                        <Play className="size-3.5" aria-hidden="true" />
+                        {t("ghostRace.watchButton")}
+                      </button>
+                    )}
+                  </span>
                 </div>
               </td>
-              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right tabular-nums">
-                <span className="inline-flex items-center justify-end gap-2">
-                  {!isMe && onRace && raceable?.has(e.userId) && (
-                    <button
-                      type="button"
-                      onClick={() => onRace(e.userId)}
-                      aria-label={t("ghostRace.raceRow", { name: e.displayName })}
-                      className={ROW_ACTION}
-                    >
-                      <Flag className="size-3.5" aria-hidden="true" />
-                      {t("ghostRace.raceButton")}
-                    </button>
-                  )}
-                  {!isMe && onWatch && watchable?.has(e.userId) && (
-                    <button type="button" onClick={() => onWatch(e.userId)} aria-label={t("ghostRace.watchRow", { name: e.displayName })} className={ROW_ACTION}>
-                      <Play className="size-3.5" aria-hidden="true" />
-                      {t("ghostRace.watchButton")}
-                    </button>
-                  )}
-                  {formatDuration(e.seconds)}
-                </span>
-              </td>
+              <td className="whitespace-nowrap py-2.5 pl-2 pr-4 text-right tabular-nums">{formatDuration(e.seconds)}</td>
             </tr>
           );
         })}

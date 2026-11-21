@@ -84,7 +84,7 @@ const WIDE_GRID: Record<number, { grid: string; width: ShellWidth }> = {
   1: { grid: "", width: "2xl" },
   2: { grid: "lg:grid-cols-2 lg:gap-6", width: "5xl" },
   // Three boards reach past the shell on a screen with the room, so the site bar stays where every page has it.
-  3: { grid: "lg:grid-cols-3 lg:gap-5 min-[1400px]:-mx-24 min-[1400px]:gap-6", width: "5xl" },
+  3: { grid: "lg:grid-cols-3 lg:gap-5 min-[1300px]:-mx-24 min-[1300px]:gap-6", width: "5xl" },
 };
 
 
