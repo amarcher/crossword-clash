@@ -218,7 +218,7 @@ describe("CompletionModal", () => {
     expect(queryByRole("button", { name: "See your stats" })).toBeNull();
   });
 
-  it("shows the leaderboard and Save image as the secondary row; the share link itself is the challenge", () => {
+  it("shows the leaderboard as the secondary row and no Save image; the share link itself is the challenge", () => {
     const onViewLeaderboard = vi.fn();
     const { getByRole, queryByRole } = render(
       <CompletionModal
@@ -232,7 +232,7 @@ describe("CompletionModal", () => {
     );
     fireEvent.click(getByRole("button", { name: "Leaderboard" }));
     expect(onViewLeaderboard).toHaveBeenCalledOnce();
-    expect(getByRole("button", { name: "Save image" })).toBeTruthy();
+    expect(queryByRole("button", { name: "Save image" })).toBeNull();
     expect(queryByRole("button", { name: /Challenge a friend/ })).toBeNull();
     expect(screen.queryByTestId("share-block-preview")).toBeNull();
   });

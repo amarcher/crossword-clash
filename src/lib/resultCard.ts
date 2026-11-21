@@ -1,41 +1,12 @@
 /**
- * Shareable result card — the testable core.
- *
- * Everything that *decides* something (the download filename, the viewer's
- * standing, and the text laid out on the card) is a PURE function here,
- * unit-tested in resultCard.test.ts. The canvas drawing lives in
- * resultCardCanvas.ts; the card is the "Save image" secondary action, while
- * what "Share" sends is the text block from shareBlock.ts.
+ * What a shared result needs that is not the link itself: the site's address
+ * and the viewer's standing in a race. Pure, unit-tested in resultCard.test.ts.
  */
 
-import { formatDuration } from "./soloStats";
-
-/** The canonical link shared alongside the card image. */
+/** The site's address, the base of every shared link. */
 export const SHARE_URL = "https://crosswordclash.com";
 
 export type ShareMode = "solo" | "multiplayer";
-
-/**
- * The `method` dimension of the `result_shared` analytics event. The text
- * block goes out as "native" (the app's share sheet), "webshare" or "copy"
- * (see shareSheet.ts); the canvas card as "image" (shared as a file) or
- * "download".
- */
-export type ShareMethod = "native" | "webshare" | "copy" | "image" | "download";
-
-/**
- * A filesystem-safe PNG filename derived from the puzzle title, e.g.
- * "Monday Mini" → "crossword-clash-monday-mini.png". Falls back to a generic
- * name when the title is empty or has no usable characters.
- */
-export function buildResultFilename(puzzleTitle: string | undefined): string {
-  const slug = (puzzleTitle ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-  return slug ? `crossword-clash-${slug}.png` : "crossword-clash-result.png";
-}
 
 /** Minimal shape needed to rank a player — a scored entry from the scoreboard. */
 export interface StandingPlayer {
@@ -79,123 +50,4 @@ export function computeViewerStanding(
     won: rank === 1 && sameTop === 1,
     tiedForFirst: rank === 1 && sameTop > 1,
   };
-}
-
-export interface ResultCardInput {
-  mode: ShareMode;
-  puzzleTitle?: string;
-  /** Solo: finish time in whole seconds. */
-  finishSeconds?: number;
-  /** Solo: best time on record, in whole seconds. */
-  bestSeconds?: number;
-  /** Solo: whether this finish beat a previously-recorded best. */
-  isNewBest?: boolean;
-  /** Multiplayer: winning player's display name. */
-  winnerName?: string;
-  /** Multiplayer: whether the game ended tied. */
-  isTie?: boolean;
-  /**
-   * Multiplayer: the viewing player's own standing. When present, the card and
-   * caption brag this personal placement instead of naming the winner. Absent
-   * for spectators, who keep the winner/tie card.
-   */
-  viewerStanding?: ViewerStanding;
-  /** Multiplayer co-op: a team finish — no winner, handshake framing. */
-  coop?: boolean;
-}
-
-/**
- * Localized fragments injected by the caller so this module stays free of i18n
- * yet produces fully-localized output the canvas and share text can use.
- */
-export interface ResultCardLabels {
-  /** Brand tag drawn on the card, e.g. "crosswordclash.com". */
-  tag: string;
-  /** Heading, e.g. "Solved!". */
-  heading: string;
-  /** Note shown when a new personal best was set, e.g. "New best! 🎉". */
-  newBest: string;
-  /** Already-interpolated best-time note, e.g. "best: 3:10". */
-  best: string;
-  /** Already-interpolated winner line, e.g. "Alex wins!". */
-  winner: string;
-  /** Tie line, e.g. "It's a tie!". */
-  tie: string;
-  /**
-   * Already-interpolated personal standing line, e.g. "Victory! #1 of 4" or
-   * "Finished #3 of 5". Used when `viewerStanding` is set on the input.
-   */
-  standing?: string;
-  /** Co-op team-finish line, e.g. "Solved together!". */
-  coop?: string;
-}
-
-export interface ResultCardText {
-  heading: string;
-  title: string;
-  /** The headline metric — finish time (solo) or outcome (multiplayer). */
-  metric: string;
-  /** Optional secondary note (best time / new best). */
-  detail?: string;
-  tag: string;
-  /** Outcome glyph drawn on the card — never a trophy for a non-winner. */
-  glyph: string;
-}
-
-/**
- * The emoji that headlines the card. A trophy only for an actual win (solo
- * finish, or 1st in multiplayer); a handshake for a tie-for-first; a puzzle
- * piece for any other multiplayer placement — so a non-winner's shared card
- * never wears a trophy it didn't earn.
- */
-export function resultGlyph(input: ResultCardInput): string {
-  if (input.mode !== "multiplayer") return "🏆";
-  if (input.coop) return "🤝";
-  const s = input.viewerStanding;
-  if (s) {
-    if (s.won) return "🏆";
-    if (s.tiedForFirst) return "🤝";
-    return "🧩";
-  }
-  // Spectator / winner-card fallback (no per-viewer standing).
-  return input.isTie ? "🤝" : "🏆";
-}
-
-/**
- * Compose the text laid out on the result card. Pure: no DOM, no i18n, no clock.
- */
-export function composeCardText(
-  input: ResultCardInput,
-  labels: ResultCardLabels,
-): ResultCardText {
-  const title = (input.puzzleTitle ?? "").trim() || "Crossword";
-
-  const glyph = resultGlyph(input);
-
-  if (input.mode === "multiplayer") {
-    const metric = input.coop
-      ? labels.coop ?? labels.heading
-      : input.viewerStanding && labels.standing
-        ? labels.standing
-        : input.isTie
-          ? labels.tie
-          : labels.winner;
-    // Race time (when measured) rides along as the secondary detail line.
-    const detail =
-      input.finishSeconds !== undefined
-        ? formatDuration(input.finishSeconds)
-        : undefined;
-    return { heading: labels.heading, title, metric, detail, tag: labels.tag, glyph };
-  }
-
-  const metric =
-    input.finishSeconds !== undefined ? formatDuration(input.finishSeconds) : "";
-  const detail =
-    input.isNewBest === true
-      ? labels.newBest
-      : input.bestSeconds !== undefined
-        ? labels.best
-        : undefined;
-
-  return { heading: labels.heading, title, metric, detail, tag: labels.tag, glyph };
 }

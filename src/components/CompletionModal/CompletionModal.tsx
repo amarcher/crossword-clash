@@ -16,7 +16,6 @@ import { computeViewerStanding, SHARE_URL } from "../../lib/resultCard";
 import { Confetti } from "./Confetti";
 import { ShareResultButton } from "./ShareResultButton";
 import { ShareBackButton } from "./ShareBackButton";
-import { SaveImageButton } from "./SaveImageButton";
 import { RaceFriendSuggestions, SendToFriend } from "../Friends";
 import { ReminderSwitch } from "../Push";
 import { DAILY_FINISH_CLOSED_EVENT } from "../../lib/push";
@@ -29,7 +28,6 @@ import { buildPuzzleLink } from "../../lib/dailyChallenge";
 import { buildChallengeUrl } from "../../lib/challenge";
 import { compressPuzzleToHash } from "../../lib/puzzleUrl";
 import { todayKey } from "../../lib/dailyLeaderboard";
-import { Capacitor } from "@capacitor/core";
 import { track } from "../../lib/analytics";
 import type { NextUpItem } from "../../lib/nextUp";
 import { AdSlot } from "../AdSlot";
@@ -50,8 +48,6 @@ export interface PlayerResult {
 
 interface CompletionModalProps {
   open: boolean;
-  /** Puzzle title, used on the shareable result card. */
-  puzzleTitle?: string;
   totalCells: number;
   totalClues: number;
   soloScore?: number;
@@ -201,7 +197,6 @@ interface CompletionModalProps {
 
 export function CompletionModal({
   open,
-  puzzleTitle,
   totalCells,
   totalClues,
   soloScore,
@@ -789,8 +784,8 @@ export function CompletionModal({
         )}
 
         {/* Actions (navigation audit §1 + §2): Share is the one primary, its
-            block previewed above it and its link the challenge; then the board
-            and "Save image"; then "Up next" and the fresh-puzzle race; "Back
+            block previewed above it and its link the challenge; then the board;
+            then "Up next" and the fresh-puzzle race; "Back
             to menu" is the quiet exit. The importer is never offered here —
             the game header keeps "Load different puzzle". */}
         <div className="flex flex-col gap-2.5">
@@ -837,7 +832,7 @@ export function CompletionModal({
               darkMode={darkMode}
             />
           )}
-          {(onViewLeaderboard || onSeeStats || (challengePuzzle && !Capacitor.isNativePlatform())) && (
+          {(onViewLeaderboard || onSeeStats) && (
             <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
               {onViewLeaderboard && (
                 <button onClick={onViewLeaderboard} className={buttonClass(darkMode ? "stage" : "secondary", "md", "w-full")}>
@@ -850,22 +845,6 @@ export function CompletionModal({
                   <ChartLine className="size-4" aria-hidden="true" />
                   {t('completion.seeStats')}
                 </button>
-              )}
-              {/* The canvas card stays as a secondary "Save image" (the app's
-                  WebView cannot save a blob; the plugin for that comes later). */}
-              {challengePuzzle && !Capacitor.isNativePlatform() && (
-                <SaveImageButton
-                  mode={isMultiplayer ? "multiplayer" : "solo"}
-                  puzzleTitle={puzzleTitle}
-                  finishSeconds={shareSeconds}
-                  bestSeconds={bestSeconds}
-                  isNewBest={isNewBest}
-                  winnerName={shareWinnerName}
-                  isTie={shareIsTie}
-                  coop={coop}
-                  viewerStanding={viewerStanding ?? undefined}
-                  darkMode={darkMode}
-                />
               )}
             </div>
           )}
