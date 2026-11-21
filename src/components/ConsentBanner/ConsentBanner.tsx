@@ -137,7 +137,7 @@ function ConsentToggle({
   const id = useId();
   return (
     <li className="flex items-center gap-3 px-4 py-3">
-      <label htmlFor={id} className="min-w-0 flex-1">
+      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
         <span className="block text-sm font-semibold text-ink">{label}</span>
         <span className="block text-sm text-muted">{hint}</span>
       </label>
