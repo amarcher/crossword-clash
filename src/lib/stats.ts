@@ -38,6 +38,8 @@ export interface SlowClue {
   clue: string;
   seconds: number;
   day: string;
+  /** The session's puzzle (`puzzleIdentity`), which names a daily exactly. */
+  puzzleKey?: string | null;
   /** The clue as written and its answer, once its daily has been found (`withClueText`). */
   text?: string;
   answer?: string;
@@ -67,23 +69,25 @@ export async function fetchStats(since: string, plus: boolean): Promise<StatsDat
       .filter((r) => r.slot === "mini" || r.slot === "midi" || r.slot === "large" || r.slot === "bonus")
       .map((r) => ({ day: r.day, slot: r.slot as StatsSlot, seconds: r.seconds, solvers: r.solvers, fasterThan: r.faster_than === null ? null : Number(r.faster_than) })),
     headToHead: (h2h.data ?? []).map((r) => ({ friendId: r.friend_id, username: r.username, played: r.played, wins: r.wins, losses: r.losses, ties: r.ties })),
-    slowClues: (clues?.data ?? []).map((r) => ({ puzzleTitle: r.puzzle_title, clue: r.clue, seconds: r.seconds, day: r.played_on })),
+    slowClues: (clues?.data ?? []).map((r) => ({ puzzleTitle: r.puzzle_title, clue: r.clue, seconds: r.seconds, day: r.played_on, puzzleKey: r.puzzle_key ?? null, text: r.clue_text ?? undefined, answer: r.answer ?? undefined })),
   };
 }
 
 /**
- * The slow clues with their words and answers. A play session names its puzzle
- * by title and its clue by number, so each daily is found in the published
- * index by title and read from the feed. A clue whose puzzle is not a daily
- * (an import, a community puzzle), or cannot be read, comes back as it was.
+ * The slow clues with their words and answers. The server sends both for a
+ * Daily Plus and a community puzzle, which it holds. A daily is found in the
+ * published index by the session's puzzle key (by title for a server that
+ * sends none) and read from the feed. An import, which nobody holds, or a
+ * daily that cannot be read, comes back as it was.
  */
 export async function withClueText(clues: readonly SlowClue[], today: string): Promise<SlowClue[]> {
-  const index = clues.length ? await loadPublishedIndex(today) : null;
+  const index = clues.some((c) => !c.text) ? await loadPublishedIndex(today) : null;
   if (!index) return [...clues];
   const puzzles = new Map<string, ReturnType<typeof fetchDailyForDay>>();
   return Promise.all(
     clues.map(async (c) => {
-      const entry = dailyTitled(index, c.puzzleTitle, c.day);
+      if (c.text && c.answer) return c;
+      const entry = c.puzzleKey ? index.find((e) => e.identity === c.puzzleKey) : dailyTitled(index, c.puzzleTitle, c.day);
       if (!entry) return c;
       const key = `${entry.day}/${entry.slot}`;
       if (!puzzles.has(key)) puzzles.set(key, fetchDailyForDay(entry.day, entry.slot).catch(() => null));
