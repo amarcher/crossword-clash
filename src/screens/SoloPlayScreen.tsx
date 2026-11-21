@@ -1153,7 +1153,6 @@ export function SoloPlayScreen() {
       <CompletionModal
         // The result follows the last letter by a frame; opened without it, the dialog drew once with no time, streak or clip.
         open={showCompletionModal && (!!soloResult || !puzzleKey)}
-        puzzleTitle={puzzle.title}
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         soloScore={score}

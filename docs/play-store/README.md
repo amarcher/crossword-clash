@@ -11,7 +11,7 @@ locks to that account on first upload.
   `6294983081887284734` (sign in as the Fable Designer Google login, not the
   personal one; the console then lands on `/console/u/<n>/`).
 - Live since October 13, 2026: release **2 (1.0.0)**, all 178 countries.
-- Latest: **33 (1.1.3)**, sent for review November 17, 2026; see "History" below.
+- Latest: **40 (1.1.4)**, in production since November 20, 2026; see "History" below.
 
 ## What is in this folder
 
@@ -242,7 +242,9 @@ Done by Claude, nothing submitted or rolled out:
 - **November 20, 2026:** 40 (1.1.4) uploaded through the console to the
   internal testing draft (it replaced the unpublished 39) with
   `whats-new-1.1.4.txt`, then rolled out to internal testing on Andrew's
-  say-so. Not promoted to production. The store listing's
+  say-so. The same evening it was promoted to production at 100% in all
+  countries and sent for review together with the three screenshot slots;
+  Andrew confirmed it live that night. The store listing's
   phone, 7-inch and 10-inch screenshot slots were replaced with the eight new
   tiles each (`screenshots/phone`, `screenshots/tablet-10`: the leaderboard is
   in, the community list and the archive are out) and saved as draft changes,

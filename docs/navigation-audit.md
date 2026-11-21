@@ -50,10 +50,10 @@ screen" you hit on the phone.
   `ChallengeScreen` with `?beat=&by=`; `api/share.ts` answers the same path
   for crawlers with the result's OG tags spliced into the real index.html.
   `ShareResultButton` is the one Share (preview + sign-first prompt +
-  button); `ChallengeFriendButton` is gone; `SaveImageButton` keeps the
-  canvas card (hidden in the apps). `shareText` picks `@capacitor/share` in
+  button); `ChallengeFriendButton` is gone, and so is `SaveImageButton`
+  with its canvas card (removed November 20, 2026). `shareText` picks `@capacitor/share` in
   the app, `navigator.share({ text })` on the web, else clipboard + "Result
-  copied". Still open: the PNG in the apps (`@capacitor/filesystem`).
+  copied".
 
 ## 1. Sharing — the viral loop
 

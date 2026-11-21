@@ -202,7 +202,6 @@ export function HostSpectateScreen() {
       />
       <CompletionModal
         open={showCompletionModal}
-        puzzleTitle={puzzle.title}
         totalCells={totalWhiteCells}
         totalClues={puzzle.clues.length}
         players={playerResults}
