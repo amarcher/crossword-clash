@@ -13,6 +13,9 @@ no bonus row simply has no card.
 - One free `--theme` per day (a broad subject, not a mashup); `--context` for the day's hooks.
 - `--reject` the day's mini, midi and large answers of 4+ letters, and `--day <date>` so the clue
   writer sees the feed's recent clues for each answer (the 14-day no-repeat rule).
+- Theme answers never share a run of more than three letters (no SNOW ANGEL with SNOW GLOBE); the
+  CLI refuses such sets. Prefer a matched pair of equal length: three-entry sets tend to fall back to
+  a lopsided or choppy grid. Reject a build whose grid is asymmetric or mostly three-letter words.
 - Titles never repeat an entry; the CLI's title is a suggestion — check it against the themers it
   actually placed (the first build's "Knock on Wood" placed MIRROR IMAGE and CRACK OF DAWN and
   shipped as "Tempting Fate").

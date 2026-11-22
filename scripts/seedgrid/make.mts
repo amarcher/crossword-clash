@@ -10,7 +10,7 @@
  *   pnpm seedgrid --size 7 --no-llm             # grid only, no API calls
  *
  * Flags: --size N, --symmetry rotational|mirror|diagonal|none, --min-score 49|50,
- * --max-shared 3, --difficulty easy|medium|hard (clue register, default medium),
+ * --max-shared 3 (also the longest run two theme entries may share; --allow-shared lifts that for a hidden-word theme), --difficulty easy|medium|hard (clue register, default medium),
  * --context "…" (dated hooks — holidays, anniversaries, events — the clue writer may use where an entry fits),
  * --title, --author, --dict extra.dict (repeatable), --reject "nest, nemo" (entries the
  * engine may never use, e.g. the same day's other dailies' answers), --day YYYY-MM-DD (the
@@ -35,6 +35,7 @@ import { clueProblems, cluesRequest, CONSTRUCTOR, timelyContext, type ClueRow, t
 import { defaultSlotFor } from "../../src/lib/dailyFeed";
 import { feedUses, loadFeed, parseDay, recentForGrid } from "./feedHistory.mts";
 import { toIpuz, type ClueSet } from "../../src/lib/seedgrid/ipuz";
+import { sharedRuns } from "../../src/lib/seedgrid/themedLarge";
 import { callJson, DEFAULT_MODEL, usage } from "./claude.mts";
 
 // ---- CLI ----
@@ -53,6 +54,8 @@ const theme = flag("theme") ?? "";
 let symmetry = (flag("symmetry") ?? "rotational") as Symmetry;
 let minScore = Number(flag("min-score") ?? 50);
 const maxShared = Number(flag("max-shared") ?? 3);
+// A deliberately hidden word (ARIA in SECRETARIAT and LIBERTARIAN) is the one reason to allow it.
+const allowShared = !!flags["allow-shared"];
 const model = flag("model") ?? DEFAULT_MODEL;
 const difficulty = (flag("difficulty") ?? "medium") as Difficulty;
 const extraContext = flag("context") ?? "";
@@ -108,6 +111,7 @@ Propose 4 alternative sets of theme entries ("seeds") for a ${size ? `${size}×$
 - Each set is either 2 entries of the SAME length, or 3 entries where two share a length and the third has an odd length (it sits in the center row). Each entry is 5–${maxLen} letters once spaces are removed. Grids lay theme entries out symmetrically, so these length rules matter.
 - Entries must be real, in-the-language words, phrases, or names, written normally ("devil ray").
 - Every entry in a set must fit the theme exactly; the set should feel clever, with an aha.
+- No two entries in a set may share a run of more than ${maxShared} letters. That rules out a repeated word (SNOW ANGEL / SNOW GLOBE, SMART COOKIE / TOUGH COOKIE, HOLIDAY INN / THE HOLIDAY) and a shared ending (STARSTRUCK / MOONSTRUCK): the link between the entries must be their meaning or a piece of wordplay, never the same word twice.
 - title: the puzzle's name, ideally a pun that ties the set together. explanation: one sentence.`,
     schema: {
       type: "object",
@@ -269,9 +273,24 @@ async function main() {
   const sizeFlag = flag("size") ? Number(flag("size")) : undefined;
   if (flags.seeds) {
     seedSets = [flag("seeds")!.split(",").map(normalizeEntry).filter(Boolean)];
+    const shared = allowShared ? [] : sharedRuns(seedSets[0], maxShared);
+    if (shared.length) {
+      console.error(`Theme entries share a run longer than ${maxShared} letters: ${shared.map((r) => `${r.a} / ${r.b} (${r.run})`).join("; ")}. Pick other seeds, or pass --allow-shared for a deliberately hidden word.`);
+      process.exit(1);
+    }
   } else if (theme && useLlm) {
     log(`Brainstorming seed sets for "${theme}"…`);
-    const sets = await proposeSeedSets(sizeFlag);
+    const proposed = await proposeSeedSets(sizeFlag);
+    // Andrew, 2026-11-22: theme answers never share a run of more than three letters.
+    const runsOf = (s: SeedSet) => (allowShared ? [] : sharedRuns(s.seeds.map(normalizeEntry), maxShared));
+    const sets = proposed.filter((s) => runsOf(s).length === 0);
+    const refused = proposed.filter((s) => runsOf(s).length > 0);
+    for (const s of refused) log(`  refused ${s.title}: ${runsOf(s).map((r) => `${r.a} / ${r.b} share ${r.run}`).join("; ")}`);
+    if (refused.length) notes.push("## Seed sets refused (shared run)", ...refused.map((s) => `- **${s.title}**: ${s.seeds.join(", ")} — ${runsOf(s).map((r) => r.run).join(", ")}`), "");
+    if (!sets.length) {
+      console.error("Every proposed set repeats a word across its theme entries. Run again, narrow the theme, or pass --seeds.");
+      process.exit(1);
+    }
     for (const s of sets) log(`  ${s.title}: ${s.seeds.join(", ")} — ${s.explanation}`);
     notes.push("## Seed sets proposed", ...sets.map((s) => `- **${s.title}**: ${s.seeds.join(", ")} — ${s.explanation}`), "");
     // Easiest layouts first: fewer seeds, then pairs of equal length.
