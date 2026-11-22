@@ -1,0 +1,8 @@
+This build (1.1.5, build 70) is the first after 1.1.4 went live. Please check:
+
+1. Stats: solve a daily, then open Stats. "Slowest clues" lists the clue and its answer with the time you spent on it, and follows the tab you are on (Daily Mini, Midi, Large, Daily Plus). It starts empty and fills from solves made in this build.
+2. After a race on a shared grid, close the finish and open the puzzle again from the menu or the leaderboard ("View"): you should land on the room's final board with its standings, "Watch the replay" and Share. "Play solo" clears it for your own attempt.
+3. On the leaderboard, rows for a puzzle you finished in a room say Watch, not Race.
+4. The finish dialog fits the screen without scrolling. In a room it shares the race ("A vs B on the Daily Midi"), not one player's time.
+5. While solving, the back arrow at the top left saves and leaves; Pause is an icon on phones.
+6. Pick a puzzle: titles are no longer cut off.
