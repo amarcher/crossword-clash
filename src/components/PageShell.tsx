@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { SiteBar, type SiteBarProps } from "./SiteBar";
 
 /** Content column tokens (Tailwind max-w-*). */
-export type ShellWidth = "md" | "2xl" | "3xl" | "4xl" | "5xl" | "7xl";
+export type ShellWidth = "md" | "2xl" | "3xl" | "4xl" | "5xl" | "7xl" | "full";
 
 // Spelled out so Tailwind's scanner sees every class.
 const MAX_W: Record<ShellWidth, string> = {
@@ -12,6 +12,7 @@ const MAX_W: Record<ShellWidth, string> = {
   "4xl": "max-w-4xl",
   "5xl": "max-w-5xl",
   "7xl": "max-w-7xl",
+  full: "max-w-7xl min-[100rem]:max-w-none",
 };
 const MAX_W_MD: Record<ShellWidth, string> = {
   md: "md:max-w-md",
@@ -20,6 +21,7 @@ const MAX_W_MD: Record<ShellWidth, string> = {
   "4xl": "md:max-w-4xl",
   "5xl": "md:max-w-5xl",
   "7xl": "md:max-w-7xl",
+  full: "md:max-w-none",
 };
 const MAX_W_LG: Record<ShellWidth, string> = {
   md: "lg:max-w-md",
@@ -28,6 +30,7 @@ const MAX_W_LG: Record<ShellWidth, string> = {
   "4xl": "lg:max-w-4xl",
   "5xl": "lg:max-w-5xl",
   "7xl": "lg:max-w-7xl",
+  full: "lg:max-w-none",
 };
 
 /** The one horizontal gutter: 16px on phones, 24px from md. GameLayout's header uses it too. */
@@ -44,7 +47,7 @@ export function pageColumnClass(width: ShellWidth, widthLg?: ShellWidth, widthMd
  * page (and where the menu puts its own) however narrow the content below is.
  */
 function barColumnClass(width: ShellWidth, widthLg?: ShellWidth, widthMd?: ShellWidth): string {
-  if (width === "7xl" || widthLg === "7xl") return pageColumnClass(width, widthLg, widthMd);
+  if (width === "7xl" || widthLg === "7xl" || width === "full") return pageColumnClass(width, widthLg, widthMd);
   return `mx-auto w-full ${MAX_W[width]} md:max-w-5xl ${PAGE_GUTTER}`;
 }
 

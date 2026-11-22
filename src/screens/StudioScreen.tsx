@@ -62,6 +62,8 @@ const CLASSIFY_BATCH = 4;
 const CLASSIFY_MS = 250;
 /** Tailwind's `lg`: from here up the studio is the three-column desk; below it, one screen with tabs. */
 const DESKTOP_QUERY = "(min-width: 64rem)";
+/** Wider than any iPad (1366): a Mac window or a desktop monitor. The desk fills it. */
+const WIDE_QUERY = "(min-width: 100rem)";
 /** A secondary tool's label: hidden on a narrow phone and in a narrow desk centre, where the icon and its title stand alone. */
 const TOOL_LABEL = "max-sm:sr-only @max-[28rem]:sr-only";
 
@@ -115,6 +117,7 @@ export function StudioScreen() {
   const studioToken = useStudioToken();
   const navigate = useTransitionNavigate();
   const desktop = useMediaQuery(DESKTOP_QUERY);
+  const wide = useMediaQuery(WIDE_QUERY);
   const [tab, setTab] = useState<StudioTab>("grid");
   // The desk's right column: the word list or the clues.
   const [sideTab, setSideTab] = useState<"words" | "clues">("words");
@@ -583,8 +586,8 @@ export function StudioScreen() {
       input={gridInput}
     />
   );
-  // Squares stop growing at 4rem, so a mini is a tidy block rather than a wall of 115 px squares.
-  const gridCap = `${state.grid.width * 4}rem`;
+  // Squares stop growing at 4rem (7rem on a wide window), so a mini is a tidy block rather than a wall of 115 px squares.
+  const gridCap = `${state.grid.width * (wide ? 7 : 4)}rem`;
 
   const gridPanel = desktop ? (
     // The desk's centre: title and tools on top, then the grid as large as the space left allows.
@@ -673,9 +676,10 @@ export function StudioScreen() {
   );
 
   // The desk's right column: the word list and the clues share it, a tab each, both kept mounted.
+  // On a wide window (a Mac, a desktop monitor) there is room for both, side by side, and no tabs.
   const sidePanel = (
-    <aside aria-label="Words and clues" className="flex min-h-0 flex-col gap-2">
-      <div role="tablist" aria-label="Words or clues" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sunken p-1">
+    <aside aria-label="Words and clues" className={wide ? "grid min-h-0 grid-cols-2 gap-4" : "flex min-h-0 flex-col gap-2"}>
+      <div role="tablist" hidden={wide} aria-label="Words or clues" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-sunken p-1">
         {(["words", "clues"] as const).map((id) => (
           <button
             key={id}
@@ -692,10 +696,10 @@ export function StudioScreen() {
           </button>
         ))}
       </div>
-      <Card id="studio-side-panel-words" role="tabpanel" aria-labelledby="studio-side-tab-words" hidden={sideTab !== "words"} className="flex min-h-0 flex-1 flex-col p-4">
+      <Card id="studio-side-panel-words" {...(wide ? { role: "region", "aria-label": "Words" } : { role: "tabpanel", "aria-labelledby": "studio-side-tab-words" })} hidden={!wide && sideTab !== "words"} className="flex min-h-0 flex-1 flex-col p-4">
         {candidatePanel}
       </Card>
-      <div id="studio-side-panel-clues" role="tabpanel" aria-labelledby="studio-side-tab-clues" hidden={sideTab !== "clues"} className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl">
+      <div id="studio-side-panel-clues" {...(wide ? { role: "region", "aria-label": "Clues" } : { role: "tabpanel", "aria-labelledby": "studio-side-tab-clues" })} hidden={!wide && sideTab !== "clues"} className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl">
         {cluePanel}
       </div>
     </aside>
@@ -853,7 +857,7 @@ export function StudioScreen() {
 
   return (
     <PageShell
-      width="7xl"
+      width="full"
       background="canvas"
       bar={{
         backLabel: "Back to menu",
@@ -870,7 +874,7 @@ export function StudioScreen() {
         <main className="mt-3 flex flex-col gap-4">
           {engineNotice}
           {/* The desk is one screen tall and never scrolls as a page: each column scrolls on its own. */}
-          <div className="grid h-[calc(100dvh-7rem)] min-h-[32rem] grid-cols-[15rem_minmax(0,1fr)_22rem] gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_24rem]">
+          <div className="grid h-[calc(100dvh-7rem)] min-h-[32rem] grid-cols-[15rem_minmax(0,1fr)_22rem] gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_24rem] min-[100rem]:grid-cols-[18rem_minmax(0,1fr)_minmax(44rem,40%)]">
             {setupPanel}
             {gridPanel}
             {sidePanel}

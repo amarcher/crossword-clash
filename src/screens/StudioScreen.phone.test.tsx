@@ -82,11 +82,11 @@ function seedCompleteDraft() {
   localStorage.setItem("crossword-clash:studio", JSON.stringify(s));
 }
 
-function matchMedia(desktop: boolean) {
+function matchMedia(desktop: boolean, wide = false) {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
-    value: (query: string) => ({ matches: desktop && query.includes("min-width"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
+    value: (query: string) => ({ matches: query.includes("100rem") ? wide : desktop && query.includes("min-width"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
   });
 }
 
@@ -340,5 +340,13 @@ describe("StudioScreen on a desktop", () => {
     fireEvent.click(within(tabs).getByRole("tab", { name: /Clues/ }));
     expect(screen.getByRole("tabpanel", { name: /Clues/ })).toBeTruthy();
     expect(screen.queryByRole("tabpanel", { name: "Words" })).toBeNull();
+  });
+
+  it("shows the words and the clues side by side, with no tabs, on a window wider than any iPad", () => {
+    matchMedia(true, true);
+    renderStudio();
+    expect(screen.queryByRole("tablist", { name: "Words or clues" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Words" })).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Clues" })).getByRole("button", { name: /Export \.ipuz/ })).toBeTruthy();
   });
 });

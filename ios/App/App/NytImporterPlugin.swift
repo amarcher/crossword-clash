@@ -6,6 +6,19 @@ class ClashViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(NytImporterPlugin())
     }
+
+    // On a Mac ("Designed for iPad") the web layer cannot tell it is not on an
+    // iPad. Say so before the page loads: the play screen then never shows its
+    // own keyboard (src/lib/platform.ts, isMacApp).
+    override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
+        let configuration = super.webViewConfiguration(for: instanceConfiguration)
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            configuration.userContentController.addUserScript(
+                WKUserScript(source: "window.CrosswordClashOnMac = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+            )
+        }
+        return configuration
+    }
 }
 
 @objc(NytImporterPlugin)
