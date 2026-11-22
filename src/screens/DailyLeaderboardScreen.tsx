@@ -499,10 +499,34 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
     [puzzleKey, account, racing, daily, day, slot, past, game, navigate],
   );
 
+  // Finished in a room: the line that says so, and View, which opens the puzzle on that
+  // room's result (RoomResultScreen), today's board and a past day's alike.
+  const viewGroup = async () => {
+    const found = daily ?? (await fetchDailyForDay(day, slot));
+    if (!found || (await game.handleSoloPuzzleLoaded(found.puzzle)) === false) return;
+    game.setSoloTheme(found.theme);
+    navigate("/solo/play");
+  };
+  const groupLine = (
+    <>
+      <p data-testid="group-line" className="rounded-xl bg-brand-50 px-4 py-3 text-center text-sm text-brand-700 ring-1 ring-brand-100">
+        <span className="flex items-center justify-center gap-2 font-semibold tabular-nums">
+          <Check className="size-4 shrink-0" aria-hidden="true" />
+          {groupSeconds !== null ? t("leaderboard.groupPlayedIn", { time: formatDuration(groupSeconds) }) : t("leaderboard.groupPlayed")}
+        </span>
+        <span className="mt-0.5 block text-pretty">{t("leaderboard.groupNotRanked")}</span>
+      </p>
+      <Button size="lg" variant="secondary" block onClick={() => void viewGroup()}>
+        {t("menu.dailyView")}
+      </Button>
+    </>
+  );
+
   // Race before the viewer has solved the puzzle; Watch after, here on the
   // board (Andrew, 2026-11-16: see how anyone on it solved). The viewer's own
   // solve plays with it when the account has a recording of it kept.
-  const canWatch = solvedHere || solved;
+  // A finish in a room counts: the answers are known, so the rows are watched, not raced (Andrew, 2026-11-21).
+  const canWatch = solvedHere || solved || playedAsGroup;
   const [watching, setWatching] = useState<{ puzzle: Puzzle; solves: ReplaySolve[] } | null>(null);
   const watchRow = useCallback(
     async (userId: string) => {
@@ -640,6 +664,8 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
                   : `${t("leaderboard.solvedIn", { time: formatDuration(solvedSeconds) })}${myRank !== null ? ` · ${t("leaderboard.rankThatDay", { rank: myRank })}` : ""}`}
               </span>
             </p>
+          ) : playedAsGroup ? (
+            groupLine
           ) : (
             info && (
               <Button size="lg" variant="secondary" block onClick={() => navigate(`/archive?day=${day}`)}>
@@ -664,18 +690,7 @@ function SlotBoard({ slot, day, past, info, only, daily, labelled }: SlotBoardPr
               </span>
             </p>
           ) : playedAsGroup ? (
-            <>
-              <p data-testid="group-line" className="rounded-xl bg-brand-50 px-4 py-3 text-center text-sm text-brand-700 ring-1 ring-brand-100">
-                <span className="flex items-center justify-center gap-2 font-semibold tabular-nums">
-                  <Check className="size-4 shrink-0" aria-hidden="true" />
-                  {groupSeconds !== null ? t("leaderboard.groupPlayedIn", { time: formatDuration(groupSeconds) }) : t("leaderboard.groupPlayed")}
-                </span>
-                <span className="mt-0.5 block text-pretty">{t("leaderboard.groupNotRanked")}</span>
-              </p>
-              <Button size="lg" variant="secondary" block onClick={playToday} disabled={!daily}>
-                {t("menu.dailyPlaySolo")}
-              </Button>
-            </>
+            groupLine
           ) : (
             <Button size="lg" block onClick={playToday} disabled={!daily}>
               {t(PLAY_TODAY[slot])}

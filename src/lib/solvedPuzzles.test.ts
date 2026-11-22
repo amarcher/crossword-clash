@@ -5,7 +5,7 @@ import type { Puzzle } from "../types/puzzle";
 const history = vi.hoisted(() => ({ state: null as unknown }));
 vi.mock("./solveHistory", async (original) => ({ ...(await original<typeof import("./solveHistory")>()), getSolveHistoryState: () => history.state }));
 
-import { playedBefore, solutionCells, solvedSeconds } from "./solvedPuzzles";
+import { playedAsGroup, playedBefore, solutionCells, solvedSeconds } from "./solvedPuzzles";
 import { recordGroupFinish } from "./groupFinish";
 import { recordSoloCompletion } from "./soloStats";
 
@@ -38,6 +38,24 @@ describe("playedBefore", () => {
   it("ignores a streak-day marker written by an import", () => {
     history.state = { userId: "u", status: "ready", rows: [{ puzzle_key: "k", mode: "import", seconds: null }], summary: { bestTimes: {} } };
     expect(playedBefore("k")).toBe(false);
+  });
+});
+
+describe("playedAsGroup", () => {
+  it("is a room's finish with no solve of one's own: from this device, or the account's history", () => {
+    expect(playedAsGroup("k")).toBe(false);
+    recordGroupFinish("k", 126);
+    expect(playedAsGroup("k")).toBe(true);
+    localStorage.clear();
+    history.state = { userId: "u", status: "ready", rows: [{ puzzle_key: "k", mode: "versus", seconds: null }, { puzzle_key: "t", mode: "async", seconds: 90 }], summary: { bestTimes: {} } };
+    expect(playedAsGroup("k")).toBe(true);
+    expect(playedAsGroup("t")).toBe(false);
+  });
+
+  it("ends once the puzzle has a time of one's own", () => {
+    recordGroupFinish("k", 126);
+    local({ k: 84 });
+    expect(playedAsGroup("k")).toBe(false);
   });
 });
 

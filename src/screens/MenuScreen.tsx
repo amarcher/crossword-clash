@@ -74,7 +74,8 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
   const solved = typeof best === "number";
   // Finished in a room (a shared grid has no personal time, so no best): the
   // tile says the day is done instead of offering it as untouched (Andrew,
-  // 2026-11-14). Solo is still open, for a time of one's own.
+  // 2026-11-14), and View opens the room's result (RoomResultScreen), where
+  // solo is still open for a time of one's own.
   const { rows } = useSolveHistory();
   const raced = !solved && !!key && !!rows?.some((r) => r.puzzle_key === key && r.mode !== "solo" && r.mode !== "import");
   const attempt = key ? progress[key] : undefined;
@@ -140,7 +141,7 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
       <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
         <Button size="lg" variant={(solved || raced) && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
-          {t(resumable ? "soloPause.resume" : solved ? "menu.dailyView" : raced ? "menu.dailyPlaySolo" : "menu.dailyPlay")}
+          {t(resumable ? "soloPause.resume" : solved || raced ? "menu.dailyView" : "menu.dailyPlay")}
         </Button>
       </div>
       {/* The whole strip opens the board, not just the words (Andrew, 2026-11-16): the link's ::after covers it. */}

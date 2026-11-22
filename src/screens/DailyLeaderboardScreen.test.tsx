@@ -226,7 +226,7 @@ describe("DailyLeaderboardScreen", () => {
     expect(screen.queryByTestId("solved-line")).toBeNull();
     expect(screen.getByTestId("group-line").textContent).toBe("Played as a group in 5:16Group games count for your streak but aren't ranked here.");
     expect(screen.queryByRole("button", { name: /Play today's Mini/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Play solo" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Race friends/ }));
     expect(navigate).toHaveBeenCalledWith("/pick-puzzle?intent=race");
   });

@@ -151,7 +151,7 @@ export const routes: RouteObject[] = [
           { path: "menu", Component: MenuScreen },
           { path: "nyt-import", lazy: () => m.nytImport().then((s) => ({ Component: s.NytImportScreen })) },
           { path: "solo/import", lazy: () => m.soloImport().then((s) => ({ Component: s.SoloImportScreen })) },
-          { path: "solo/play", lazy: () => m.soloPlay().then((s) => ({ Component: s.SoloPlayScreen })) },
+          { path: "solo/play", lazy: () => m.soloPlay().then((s) => ({ Component: s.SoloPlayRoute })) },
           // Someone raced a daily the viewer shared: the inbox and the race-reply push land here (raceReplies.ts).
           { path: "reply/:id", lazy: () => m.raceReply().then((s) => ({ Component: s.RaceReplyScreen })) },
           { path: "stats", lazy: () => m.stats().then((s) => ({ Component: s.StatsScreen })) },

@@ -12,7 +12,7 @@ import { loadSoloTimer, puzzleIdentity } from "../lib/soloStats";
 import { clearProgress, filledCells, getProgress, saveAttempt, whiteCellCount, type SaveAttemptResult } from "../lib/soloProgress";
 import { requestSoloStart, rememberSoloLanding } from "../lib/soloSession";
 import { useSoloSettings } from "../lib/soloSettings";
-import { solutionCells, solvedSeconds } from "../lib/solvedPuzzles";
+import { playedAsGroup, solutionCells, solvedSeconds } from "../lib/solvedPuzzles";
 import type { Puzzle, CellState, CellCoord, Direction, PuzzleClue } from "../types/puzzle";
 import type { RaceMode } from "../types/game";
 import type { Claim, PuzzleAction, Rejection } from "../hooks/usePuzzle";
@@ -140,6 +140,12 @@ interface GameContextValue {
    */
   reopenedSolved: { key: string; seconds: number } | null;
   /**
+   * Set while the puzzle on screen is one finished in a room and never solved
+   * alone: `/solo/play` shows that room's result (RoomResultScreen) in place
+   * of the solo screen, until `restartSolo` starts an attempt of one's own.
+   */
+  reopenedRoom: { key: string } | null;
+  /**
    * The explicit clear: empties the solved grid on screen and starts a new
    * attempt at the same puzzle. False when the attempt could not be saved.
    */
@@ -217,6 +223,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     saveParkedFinish(pendingDailyResult);
   }, [pendingDailyResult]);
   const [reopenedSolved, setReopenedSolved] = useState<{ key: string; seconds: number } | null>(null);
+  const [reopenedRoom, setReopenedRoom] = useState<{ key: string } | null>(null);
   const [importFailed, setImportFailed] = useState(false);
   const [wrongAnswerTimeout, setWrongAnswerTimeout] = useState(0);
   const [raceMode, setRaceMode] = useState<RaceMode>("versus");
@@ -284,6 +291,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (restoredCells && Object.keys(restoredCells).length > 0) {
         const cellScore = Object.values(restoredCells).filter((c) => c.correct).length;
         dispatch({ type: "HYDRATE_CELLS", cells: restoredCells, score: cellScore });
+      } else if (playedAsGroup(puzzleIdentity(saved.puzzle))) {
+        // A reload on a room's result: the same look at it, not an empty solo grid.
+        setReopenedRoom({ key: puzzleIdentity(saved.puzzle) });
       }
     }
   }, [loadPuzzle, dispatch, initialJoinCode]);
@@ -355,12 +365,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // grid with the finished header, whose Share can re-open the modal.
         setCompletionModalDismissed(true);
         setReopenedSolved({ key, seconds: best });
+        setReopenedRoom(null);
         fileBufferRef.current = null;
         setSoloTheme(progress?.theme ?? null);
         if (loadChallenge()?.key !== key) clearChallenge();
         return true;
       }
       setReopenedSolved(null);
+      // Finished in a room, with no attempt of one's own under way: it opens on
+      // that room's result (Andrew, 2026-11-21: there was no way back to the
+      // board or its replay, only an empty grid). The grid stays empty here;
+      // the result screen reads the room's.
+      if (!options?.replay && !attempted && playedAsGroup(key)) {
+        if (progress && !clearProgress(key)) { setSoloSaveError("storage"); return false; }
+        setSoloSaveError(null);
+        rememberSoloLanding("play");
+        loadPuzzle(p);
+        setGameId(null);
+        setIsMultiplayer(false);
+        setCompletionModalDismissed(true);
+        setReopenedRoom({ key });
+        fileBufferRef.current = null;
+        setSoloTheme(progress?.theme ?? null);
+        if (loadChallenge()?.key !== key) clearChallenge();
+        return true;
+      }
+      setReopenedRoom(null);
       const result = saveAttempt({
         ...progress, key, puzzle: p, cells: progress?.cells ?? {},
         elapsedMs: progress?.elapsedMs ?? 0, updatedAt: Date.now(),
@@ -424,6 +454,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSoloSaveError(null);
     requestSoloStart(key);
     setReopenedSolved(null);
+    setReopenedRoom(null);
     setCompletionModalDismissed(false);
     // A new object, so everything latched to "this puzzle" by identity (the
     // wrong-cell list, the grid's fill animations) starts over with it.
@@ -472,6 +503,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     consumeInitialJoinCode,
     handleSoloPuzzleLoaded,
     reopenedSolved,
+    reopenedRoom,
     restartSolo,
   };
 
