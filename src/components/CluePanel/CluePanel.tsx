@@ -27,7 +27,7 @@ export const CluePanel = memo(function CluePanel({
   const downClues = clues.filter((c) => c.direction === "down");
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 md:gap-5 md:h-full md:min-h-0">
+    <div className="clue-panel flex flex-col xl:flex-row gap-4 md:gap-5 md:h-full md:min-h-0">
       <ClueList
         title={t('cluePanel.across')}
         clues={acrossClues}

@@ -89,3 +89,14 @@ export function isAndroidBrowser(
   if (!/Android/.test(nav.userAgent)) return false;
   return !/Silk\/|\bKF[A-Z]{2,}/.test(nav.userAgent);
 }
+
+/**
+ * True in the iPhone/iPad app running on a Mac ("Designed for iPad" on Apple
+ * silicon). The web layer cannot tell that from an iPad, so the native side
+ * says so: `ClashViewController` injects `window.CrosswordClashOnMac = true`
+ * before the page loads when `ProcessInfo.isiOSAppOnMac`. A Mac always has a
+ * keyboard, so the play screen never shows its own keys there.
+ */
+export function isMacApp(win: unknown = typeof window === "undefined" ? undefined : window): boolean {
+  return (win as { CrosswordClashOnMac?: unknown } | undefined)?.CrosswordClashOnMac === true;
+}

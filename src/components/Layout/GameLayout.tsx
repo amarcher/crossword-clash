@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PAGE_GUTTER } from "../PageShell";
 import { setHardwareKeyboard, useHardwareKeyboard } from "../../lib/inputModality";
 import { useKeyboardInset } from "../../hooks/useKeyboardInset";
+import { isMacApp } from "../../lib/platform";
 
 interface GameLayoutProps {
   header: ReactNode;
@@ -18,11 +19,15 @@ interface GameLayoutProps {
  * and a footer with the clue bar and the in-app keyboard. Once a physical
  * keyboard is used the in-app keys give way to a "Show keyboard" button, and
  * where the clue list is on screen the clue bar goes too (Tab, Space and the
- * arrows do its job) — see `inputModality.ts`.
+ * arrows do its job) — see `inputModality.ts`. On a Mac (`isMacApp`) there is
+ * always a keyboard: the in-app keys and the button that brings them back are
+ * never drawn, so the board does not resize at the first key press.
  */
 export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard }: GameLayoutProps) {
   const { t } = useTranslation();
-  const hardware = useHardwareKeyboard();
+  const mac = isMacApp();
+  const used = useHardwareKeyboard();
+  const hardware = mac || used;
   return (
     <div className="native-game-layout" data-keyboard={hardware ? "hardware" : "screen"}>
       <header className="native-game-header">{header}</header>
@@ -32,7 +37,7 @@ export function NativeGameLayout({ header, grid, clues, mobileClueBar, keyboard 
       </main>
       <footer className="native-game-controls">
         {mobileClueBar}
-        {hardware && keyboard ? (
+        {mac ? null : hardware && keyboard ? (
           <div className="native-keyboard-toggle">
             <button type="button" onClick={() => setHardwareKeyboard(false)}>
               <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none">

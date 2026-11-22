@@ -236,6 +236,24 @@
   /* With the clue list on screen and a physical keyboard (Tab, Space, arrows), the clue bar only repeats the list. */
   .native-game-layout[data-keyboard="hardware"] .native-clue-bar { display: none; }
 }
+/* Landscape with room for both: the board is a full-height square at the left
+   edge and the clues take everything beside it, on a Mac window and on an iPad
+   alike (Andrew, 2026-11-21). The clue column is a container, so its lists go
+   side by side and its type grows with the room it actually has, whatever the
+   screen: an iPad with the keys up has a short board and a wide column. */
+@media (min-width: 768px) and (orientation: landscape) and (min-height: 601px) {
+  .native-grid-slot { flex: none; height: 100%; aspect-ratio: 1; max-width: calc(100% - 300px); }
+  .native-game-clues { flex: 1; width: auto; container: clues / inline-size; }
+}
+@container clues (min-width: 560px) {
+  .native-game-clues .clue-panel { flex-direction: row; }
+}
+@container clues (min-width: 800px) {
+  .native-game-clues .clue-panel li { font-size: 18px; padding: 8px 12px; gap: 10px; }
+  .native-game-clues .clue-panel h2 { font-size: 13px; padding-inline: 12px; }
+  .native-game-clues .active-clue-card { padding: 16px 20px; }
+  .native-game-clues .active-clue-card > p:last-child { font-size: 26px; }
+}
 @media (orientation: landscape) and (max-height: 600px) {
   .native-game-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); grid-template-rows: auto minmax(0, 1fr); }
   .native-game-header { grid-column: 1 / -1; }

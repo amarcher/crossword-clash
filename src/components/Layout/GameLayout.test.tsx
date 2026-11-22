@@ -53,6 +53,22 @@ describe("NativeGameLayout", () => {
   });
 });
 
+describe("NativeGameLayout on a Mac", () => {
+  afterEach(() => {
+    delete (window as { CrosswordClashOnMac?: boolean }).CrosswordClashOnMac;
+  });
+
+  it("never draws the in-app keys or the Show keyboard button, from the first render", () => {
+    (window as { CrosswordClashOnMac?: boolean }).CrosswordClashOnMac = true;
+    const { container } = renderLayout();
+    expect(container.querySelector(".native-game-layout")?.getAttribute("data-keyboard")).toBe("hardware");
+    expect(screen.queryByRole("group", { name: "Crossword keyboard" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show keyboard" })).toBeNull();
+    // Still mounted for a window narrower than the clue list's breakpoint.
+    expect(screen.getByText("1. A clue")).toBeTruthy();
+  });
+});
+
 describe("GameLayout on the web", () => {
   class FakeViewport extends EventTarget {
     height = 800;
