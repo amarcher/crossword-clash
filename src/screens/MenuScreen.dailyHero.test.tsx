@@ -39,6 +39,15 @@ afterEach(() => {
 });
 
 describe("the menu's daily tile", () => {
+  it("carries the card-frame hooks the wide menu lays out (index.css), the thumbnail first in its box", () => {
+    const { container } = tile();
+    const card = screen.getByRole("region", { name: "Daily Mini" });
+    expect(card.hasAttribute("data-menu-card")).toBe(true);
+    for (const part of ["head", "body", "text", "title", "thumb", "actions", "foot"]) expect(card.querySelectorAll(`[data-card-${part}]`)).toHaveLength(1);
+    expect(card.querySelector("[data-card-title]")!.textContent).toBe("Liftoff");
+    expect(container.querySelector("[data-card-thumb] > :first-child")!.getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("unsolved: the size line, an empty thumbnail and Play", () => {
     const { container } = tile();
     expect(screen.getByText("2×2 · 1 clues")).toBeTruthy();

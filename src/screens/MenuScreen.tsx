@@ -84,11 +84,11 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
   return (
     // A named region, so the two dailies' identical "Play" buttons can be told
     // apart by assistive tech and by the e2e suite.
-    <Card role="region" aria-label={label} className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
+    <Card role="region" aria-label={label} data-menu-card className={`overflow-hidden ${solved || raced ? "bg-brand-50! border-brand-200!" : ""}`} aria-busy={!daily} data-solved={solved || undefined} data-raced={raced || undefined}>
       {/* Which daily this is and its theme, across the card's full width so a long theme wraps
           under the label, never cut off. No rule under it (Andrew, 2026-11-19: clutter), and the
           theme is a badge again, not plain text. */}
-      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
+      <div data-card-head className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
         <Eyebrow className="shrink-0">{label}</Eyebrow>
         {displayTheme(daily) && (
           <span data-theme className="max-w-full min-w-0 truncate rounded-full bg-gold-50 px-2.5 py-0.5 text-xs leading-5 font-semibold text-gold-700 ring-1 ring-gold-100" title={displayTheme(daily)}>
@@ -96,11 +96,11 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
           </span>
         )}
       </div>
-      <div className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
-        <div className="min-w-0 flex-1">
+      <div data-card-body className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
+        <div data-card-text className="min-w-0 flex-1">
           {daily ? (
             <>
-              <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
+              <h1 data-card-title className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">
                 {daily.puzzle.title}
               </h1>
               {solved ? (
@@ -132,20 +132,23 @@ export function DailyHero({ slot, daily, multiplayer, streak = 0, onPlay }: Dail
             </div>
           )}
         </div>
-        {daily ? (
-          <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-20 shrink-0 sm:w-28 lg:w-36" />
-        ) : (
-          <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
-        )}
+        {/* The wrapper is what a wide menu sizes (index.css, "The menu on a wide window"); on a phone it is just the thumb's box. */}
+        <div data-card-thumb className="shrink-0">
+          {daily ? (
+            <MiniGridThumb puzzle={daily.puzzle} solved={solved || raced} className="w-20 shrink-0 sm:w-28 lg:w-36" />
+          ) : (
+            <div className="aspect-square w-24 shrink-0 animate-pulse rounded-lg bg-surface-sunken sm:w-28 lg:w-36" aria-hidden="true" />
+          )}
+        </div>
       </div>
-      <div className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
+      <div data-card-actions className="flex gap-2.5 px-5 pb-5 sm:px-6 sm:pb-6">
         {/* Buttons, not links, so they warm their screens' chunks by hand. */}
         <Button size="lg" variant={(solved || raced) && !resumable ? "secondary" : "primary"} className="flex-1" onClick={onPlay} disabled={!daily} {...prefetchOnIntent("/solo/play")}>
           {t(resumable ? "soloPause.resume" : solved || raced ? "menu.dailyView" : "menu.dailyPlay")}
         </Button>
       </div>
       {/* The whole strip opens the board, not just the words (Andrew, 2026-11-16): the link's ::after covers it. */}
-      <div className="relative flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
+      <div data-card-foot className="relative flex items-center justify-between gap-3 border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
         <TransitionLink
           to={leaderboardPath(slot)}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot })}
@@ -228,7 +231,10 @@ export function MenuScreen() {
   );
 
   return (
-    <div className={`min-h-app crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
+    // The class hooks (menu-page, menu-top, …) place everything on a wide
+    // window, where the menu is one screen tall (index.css); a phone and any
+    // window below lg never match those rules and lay out as plain blocks.
+    <div className={`menu-page min-h-app crossword-bg pb-8 pt-3 sm:pt-4 ${PAGE_GUTTER}`}>
       {/* The top bar: the account avatar (or "Sign in") at the right, the one
           place the menu has for it. The row is always 44px tall so the wordmark
           sits at the same height before and after the control appears. The
@@ -239,26 +245,31 @@ export function MenuScreen() {
           (dialogs, toasts) do read the inset themselves, since they sit
           outside #root's padding. */}
       {/* Phone browsers with no app banner of their own: Android, and iOS outside Safari. */}
-      <AppStoreBanner className="-mx-4 -mt-3 mb-1 sm:-mt-4 md:-mx-6" />
-      <div className="mx-auto flex min-h-11 w-full max-w-md items-center justify-end lg:max-w-5xl">
+      <AppStoreBanner className="menu-banner -mx-4 -mt-3 mb-1 sm:-mt-4 md:-mx-6" />
+      <div className="menu-top mx-auto flex min-h-11 w-full max-w-md items-center justify-end lg:max-w-5xl">
         <AccountControl placement="menu" />
       </div>
       {/* The wordmark constructs via a one-shot Lottie on the first menu visit of
           the session; later visits show its final frame (see Title). */}
-      <Title animate className="mb-6 mt-1 sm:mb-10 sm:mt-3" />
-      {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
-      <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
-      <SignedOutNotice className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
-      <SoloContinue />
+      <Title animate className="menu-title mb-6 mt-1 sm:mb-10 sm:mt-3" />
+      {/* Notices above the dailies; on a wide window, the top of the right rail.
+          The wrapper has no box of its own, so its children's margins collapse
+          through it exactly as before. */}
+      <div className="menu-notices">
+        {/* The apps only: a newer build is live in the store (see useAppUpdate). */}
+        <UpdateBanner className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
+        <SignedOutNotice className="mx-auto mb-6 w-full max-w-md lg:max-w-5xl" />
+        <SoloContinue />
+      </div>
 
-      <div className="mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+      <div className="menu-grid mx-auto grid w-full max-w-md gap-8 lg:max-w-5xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
         {/* Front door: today's dailies. Never gated on auth loading; the mini
             waits only for the daily feed's first answer of the day (see
             useDailyMini). The large's slot is reserved with a placeholder tile
             while its feed is still unknown (undefined) and collapses only once
             the feed says there is none today (null), so a published large never
             pushes the page down after first paint. */}
-        <div className="grid gap-4 lg:sticky lg:top-8">
+        <div className="menu-dailies grid gap-4 lg:sticky lg:top-8">
           <DailyHero
             slot="mini"
             daily={dailyMini}
@@ -285,7 +296,7 @@ export function MenuScreen() {
           <BonusCard />
         </div>
 
-        <div className="grid gap-8">
+        <div className="menu-lists grid gap-8">
           <StreakRepairCard />
           <RaceRepliesCard />
           {multiplayer && (
@@ -447,7 +458,7 @@ export function MenuScreen() {
         </div>
       </div>
 
-      <div className="mx-auto mt-10 flex w-full max-w-md flex-col items-center gap-3 lg:max-w-5xl">
+      <div className="menu-foot mx-auto mt-10 flex w-full max-w-md flex-col items-center gap-3 lg:max-w-5xl">
         <AdSlot placement="menu-bottom" />
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <LanguageSwitcher />
