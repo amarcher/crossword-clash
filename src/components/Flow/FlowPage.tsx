@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { PageShell } from "../PageShell";
+import { useRouteDialog } from "../RouteDialog/RouteDialog";
 
 interface FlowPageProps {
   title: ReactNode;
@@ -24,18 +25,15 @@ interface FlowPageProps {
  */
 export function FlowPage({ title, subtitle, eyebrow, onBack, backLabel, action, wide, children }: FlowPageProps) {
   const { t } = useTranslation();
+  const dialog = useRouteDialog();
   return (
     <PageShell
       width="md"
       widthLg={wide ? "5xl" : undefined}
       bar={{ onBack, backLabel: onBack ? (backLabel ?? t("common.back")) : undefined, right: action }}
+      heading={{ title, eyebrow, variant: "flow", extra: subtitle && <p className="mt-1.5 text-[15px] leading-snug text-muted">{subtitle}</p> }}
     >
-      <header className="mt-4 sm:mt-6">
-        {eyebrow && <div className="mb-1">{eyebrow}</div>}
-        <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{title}</h1>
-        {subtitle && <p className="mt-1.5 text-[15px] leading-snug text-muted">{subtitle}</p>}
-      </header>
-      <div className="mt-6">{children}</div>
+      <div className={dialog ? undefined : "mt-6"}>{children}</div>
     </PageShell>
   );
 }

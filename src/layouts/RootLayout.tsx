@@ -1,6 +1,6 @@
 import { SoloSaveNotice } from "../components/SoloSaveNotice";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AuthProvider } from "../contexts/AuthContext";
 import { AccountProvider } from "../contexts/AccountContext";
@@ -21,6 +21,8 @@ import { rejoinGame } from "../lib/puzzleService";
 import { ToastViewport } from "../components/ToastViewport";
 import { usePageViews } from "../hooks/usePageViews";
 import { startAppLinks } from "../lib/appLinks";
+import { DialogOutlet } from "../components/RouteDialog";
+import { MenuScreen } from "../screens/MenuScreen";
 
 /**
  * Inner component that handles routing side effects:
@@ -228,7 +230,8 @@ export function RootLayout() {
           <MultiplayerProvider>
             <FriendsProvider>
               <RoutingEffects>
-                <Outlet />
+                {/* The page, and on wide windows a dialog route over it (a cold load: over the menu). */}
+                <DialogOutlet fallback={<MenuScreen />} />
                   <SoloSaveNotice />
               </RoutingEffects>
               <InviteBanner />

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { SiteBar, type SiteBarProps } from "./SiteBar";
+import { RouteDialogPage, useRouteDialog } from "./RouteDialog/RouteDialog";
 
 /** Content column tokens (Tailwind max-w-*). */
 export type ShellWidth = "md" | "2xl" | "3xl" | "4xl" | "5xl" | "7xl" | "full";
@@ -70,7 +71,41 @@ interface PageShellProps {
    * page in `pageColumnClass`.
    */
   below?: ReactNode;
+  /**
+   * The page's title, drawn as its h1 (with `extra` under it). A screen whose
+   * route opens as a dialog on wide windows (`handle: DIALOG_ROUTE`) must pass
+   * it: there the title moves into the dialog's title row.
+   */
+  heading?: PageHeading;
   children: ReactNode;
+}
+
+export interface PageHeading {
+  title: ReactNode;
+  /** Above the title (FlowPage's eyebrow). */
+  eyebrow?: ReactNode;
+  /** Under the title (a chip, a subtitle). */
+  extra?: ReactNode;
+  /** `flow`: the pre-play flows' smaller title (FlowPage). */
+  variant?: "page" | "flow";
+}
+
+function PageHeader({ heading }: { heading: PageHeading }) {
+  if (heading.variant === "flow") {
+    return (
+      <header className="mt-4 sm:mt-6">
+        {heading.eyebrow && <div className="mb-1">{heading.eyebrow}</div>}
+        <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{heading.title}</h1>
+        {heading.extra}
+      </header>
+    );
+  }
+  return (
+    <header className="mb-5 pt-3">
+      <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{heading.title}</h1>
+      {heading.extra}
+    </header>
+  );
 }
 
 /**
@@ -79,7 +114,27 @@ interface PageShellProps {
  * bar's edges are the content's. From md up the bar keeps one width across
  * pages (`barColumnClass`) and the content is centred under it.
  */
-export function PageShell({ width, widthMd, widthLg, bar, background = "crossword", grow, as = "div", below, children }: PageShellProps) {
+export function PageShell({ width, widthMd, widthLg, bar, background = "crossword", grow, as = "div", below, heading, children }: PageShellProps) {
+  const dialog = useRouteDialog();
+  if (dialog) {
+    // Inside a route dialog: no site bar, the title in the dialog's title row.
+    // A back step to another screen stays (Friends → Race friends); the menu
+    // is the page underneath, which Close returns to.
+    const back = bar?.backLabel && !bar.onBack && bar.backTo && bar.backTo !== "/menu" ? { label: bar.backLabel, to: bar.backTo } : undefined;
+    const wide = (widthLg ?? widthMd ?? width) !== "md";
+    return (
+      <RouteDialogPage title={heading?.title} width={wide ? "wide" : "narrow"} back={back} action={bar?.right}>
+        {(heading?.eyebrow || heading?.extra) && (
+          <div className="-mt-1 mb-5">
+            {heading.eyebrow}
+            {heading.extra}
+          </div>
+        )}
+        {children}
+        {below}
+      </RouteDialogPage>
+    );
+  }
   const Root = as;
   return (
     <Root
@@ -91,6 +146,7 @@ export function PageShell({ width, widthMd, widthLg, bar, background = "crosswor
         <SiteBar {...bar} />
       </div>
       <div data-page-column className={`${pageColumnClass(width, widthLg, widthMd)} ${grow ? "flex flex-1 flex-col" : ""}`}>
+        {heading && <PageHeader heading={heading} />}
         {children}
       </div>
       {below}

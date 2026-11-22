@@ -219,18 +219,23 @@ export function RaceScreen() {
   };
 
   return (
-    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}>
-      <header className="mb-5 pt-3">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("race.title")}</h1>
-        {game.urlPuzzle && (
+    <PageShell
+      width="md"
+      widthMd="5xl"
+      widthLg="5xl"
+      bar={{ backLabel: t("completion.backToMenu"), backTo: "/menu" }}
+      heading={{
+        title: t("race.title"),
+        extra: game.urlPuzzle && (
           <p className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700">
             <span className="truncate">{t("race.racingChip", { title: game.urlPuzzle.title })}</span>
             <button type="button" onClick={() => game.setUrlPuzzle(null)} className="-my-3 shrink-0 py-3 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-500">
               {t("race.changePuzzle")}
             </button>
           </p>
-        )}
-      </header>
+        ),
+      }}
+    >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:block md:columns-2 md:gap-5 md:[&>*]:mb-5 md:[&>*]:break-inside-avoid" aria-busy={!friends.ready || undefined}>
         {blocks.map(render)}
       </div>
