@@ -34,8 +34,8 @@ const html = (t, dev, W, H) => {
   const chip = t.plus ? `<div style="display:inline-block;background:#f5bd2c;color:#141a26;font:800 ${(wide ? 1.9 : 2.6) * u}px 'Figtree Variable',sans-serif;letter-spacing:.14em;padding:${0.9 * u}px ${2.2 * u}px;border-radius:999px;margin-bottom:${2.2 * u}px">CROSSWORD CLASH PLUS</div><br>` : "";
   const device = (src, w, r = wide ? 3.2 : 7, bez = wide ? 0.8 : 1.2) => `<div style="width:${w * u}px;padding:${bez * u}px;border-radius:${r * u}px;background:#0b0f1a;box-shadow:0 ${5 * u}px ${11 * u}px rgba(20,26,38,.28),0 ${1.2 * u}px ${2.6 * u}px rgba(20,26,38,.22),inset 0 0 0 ${0.18 * u}px #2a3247"><img src="/__store/${dev}/${src}.png" style="display:block;width:100%;border-radius:${(r - bez) * u}px;background:#fff"></div>`;
   const body = t.tv
-    ? `<div style="display:flex;flex-direction:column;align-items:center">${device("tv-game-mid", 92, 2.6, 1.3)}<div style="margin-top:${-9 * u}px">${device(t.shot, wide ? 40 : 54)}</div></div>`
-    : `<div style="display:flex;justify-content:center">${device(t.shot, wide ? 78 : 80)}</div>`;
+    ? `<div style="position:relative;display:flex;flex-direction:column;align-items:center">${device("tv-game-mid", 92, 2.6, 1.3)}<div style="margin-top:${-9 * u}px">${device(t.shot, wide ? 40 : 54)}</div></div>`
+    : `<div style="position:relative;display:flex;justify-content:center">${device(t.shot, wide ? 78 : 80)}</div>`;
   return `<div id="tile" style="position:fixed;inset:0;z-index:99999;width:${W}px;height:${H}px;overflow:hidden;background:${bg}">
     <div style="position:absolute;inset:0;background-image:url(&quot;${pattern(t.plus ? "%23fff" : "%23000", t.plus ? 0.055 : 0.06)}&quot;);background-size:${40 * u}px ${40 * u}px;mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 45%,rgba(0,0,0,.2) 100%)"></div>
     <div style="position:relative;text-align:center;padding:${(wide ? 6.5 : 10) * u}px ${6 * u}px ${(wide ? 4.5 : 6.5) * u}px;color:${ink}">
