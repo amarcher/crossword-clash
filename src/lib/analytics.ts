@@ -45,6 +45,8 @@ export type AnalyticsEvent =
   /** A solver opened the Stats page from somewhere other than the account page. Param `from` (completion). */
   | "stats_opened"
   | "room_replay_opened"
+  /** A puzzle finished in a room was opened again on that room's result (RoomResultScreen). Param `size`. */
+  | "room_result_opened"
   /** A recorded solve was replayed after the finish. Params `racing`: the viewer's own solve played with it; `placement`: "leaderboard" from a board row. */
   | "replay_watched"
   /** The race (friendRace.ts) opened. Params `racers`, `own`: the viewer's solve is in it; from a daily board `slot`, `past`; from the finish dialog `placement`: "completion". */

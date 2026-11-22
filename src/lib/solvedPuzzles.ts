@@ -30,6 +30,18 @@ export function playedBefore(key: string): boolean {
 }
 
 /**
+ * Finished in a room on a shared grid and never solved alone: the account's
+ * history keeps such a finish with no time, and the device that played keeps
+ * the room's. The puzzle opens on that room's result (roomResult.ts).
+ */
+export function playedAsGroup(key: string): boolean {
+  if (solvedSeconds(key) !== null) return false;
+  if (groupFinishSeconds(key) !== null) return true;
+  const history = getSolveHistoryState();
+  return !!history?.rows?.some((row) => row.puzzle_key === key && row.seconds === null && (row.mode === "versus" || row.mode === "coop"));
+}
+
+/**
  * The grid of a solved puzzle: every white square with its solution. A finish
  * deletes the attempt's cells (soloProgress.ts keeps only unfinished puzzles),
  * and the letters of a solved crossword are its solution, so the filled grid

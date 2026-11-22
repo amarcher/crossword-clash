@@ -47,11 +47,11 @@ describe("the menu's daily tile", () => {
     expect(container.querySelector("[data-solved]")).toBeNull();
   });
 
-  it("finished in a room: says so, fills the thumbnail and tints the tile, and Play becomes Play solo", () => {
+  it("finished in a room: says so, fills the thumbnail and tints the tile, and Play becomes View (the room's result)", () => {
     state.rows = [{ puzzle_key: key, mode: "versus" }];
     const { container } = tile();
     expect(screen.getByText("Finished in a race")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Play solo" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Daily Mini" }).hasAttribute("data-raced")).toBe(true);
     expect(container.querySelector("[data-solved]")).toBeTruthy();
   });

@@ -65,6 +65,7 @@ import { buildPuzzleLink } from "../lib/dailyChallenge";
 import { SHARE_URL } from "../lib/resultCard";
 import { useBoardJoin } from "../hooks/useBoardJoin";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
+import { RoomResultScreen } from "./RoomResultScreen";
 
 /** The viewer's own solve beside someone else's in a race replay: the brand blue. */
 const MY_REPLAY_COLOR = "#3a6bf0";
@@ -1205,4 +1206,11 @@ export function SoloPlayScreen() {
       {friendRace && <FriendRaceDialog puzzle={puzzle} solves={friendRace.solves} letters={friendRace.letters} shareRef={puzzleRef} onClose={() => setFriendRace(null)} />}
     </>
   );
+}
+
+/** `/solo/play`: a puzzle finished in a room and never solved alone opens on that room's result; everything else is the solo screen. */
+export function SoloPlayRoute() {
+  const { puzzle, reopenedRoom } = useGame();
+  if (puzzle && reopenedRoom && reopenedRoom.key === puzzleIdentity(puzzle)) return <RoomResultScreen puzzle={puzzle} />;
+  return <SoloPlayScreen />;
 }
