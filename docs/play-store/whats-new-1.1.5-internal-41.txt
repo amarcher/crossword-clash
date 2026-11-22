@@ -1,0 +1,3 @@
+<en-US>
+Stats: slowest clues show the clue, its answer and the time spent on it, per daily. A puzzle finished in a room opens on that room's final board, with its replay and share. Leaderboard rows say Watch after a room finish. Back arrow while solving.
+</en-US>
