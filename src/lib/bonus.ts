@@ -26,6 +26,18 @@ export interface BonusCard {
   identity: string;
 }
 
+// The apps read the site's files from the site, as the daily feed does.
+const ART_ORIGIN = import.meta.env?.MODE === "mobile" ? "https://crosswordclash.com" : "";
+
+/**
+ * The drawing behind a day's Daily Plus card: a file Andrew picked ahead of
+ * time (`public/plus-art/<day>.webp`, trimmed to the ink on white). A day
+ * without one has no file, and the card shows its plain layout.
+ */
+export function bonusArtUrl(day: string, origin: string = ART_ORIGIN): string {
+  return `${origin}/plus-art/${day}.webp`;
+}
+
 const CARD_COLUMNS = "day, title, theme, author, width, height, blocks, identity";
 
 /** A bonus card for a day (today by default), or null when there is none or it can't be read. */

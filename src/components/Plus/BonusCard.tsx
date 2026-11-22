@@ -7,7 +7,7 @@ import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
-import { fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
+import { bonusArtUrl, fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
 import { leaderboardPath } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
 import { formatDuration } from "../../lib/soloStats";
@@ -28,6 +28,9 @@ export function BonusCard() {
   const [card, setCard] = useState<Card_ | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  // The day's drawing, once it has loaded: a day without one (a 404, or the
+  // SPA shell answering for the path) keeps the plain card.
+  const [art, setArt] = useState<string | null>(null);
   const on = plusEnabled() && !!account?.available;
 
   useEffect(() => {
@@ -70,6 +73,19 @@ export function BonusCard() {
     navigate("/solo/play");
   };
 
+  const thumb = (badge: string, icon: string) => (
+    <div className="relative">
+      <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
+      {!plus && (
+        <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+          <span className={`grid place-items-center rounded-full bg-surface/95 text-gold-700 shadow-card ring-1 ring-gold-100 ${badge}`}>
+            <Lock className={icon} />
+          </span>
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
       {/* As on the dailies: the label (Plus marked with the badge's seal), then the theme as a badge, no rule under it. */}
@@ -96,18 +112,22 @@ export function BonusCard() {
             <p className="mt-1 text-sm text-muted tabular-nums">{t(plus ? "bonus.meta" : "bonus.metaLocked", { width: card.width, height: card.height })}
             </p>
           )}
+          {art && <div className="mt-3 w-11 sm:w-12">{thumb("size-6", "size-3.5")}</div>}
         </div>
-        {/* Locked for a viewer without Plus: the grid's shape shows through, a padlock over it. */}
-        <div className="relative w-20 shrink-0 sm:w-28 lg:w-36">
-          <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
-          {!plus && (
-            <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
-              <span className="grid size-10 place-items-center rounded-full bg-surface/95 text-gold-700 shadow-card ring-1 ring-gold-100">
-                <Lock className="size-5" />
-              </span>
-            </span>
-          )}
-        </div>
+        {/* The grid's shape, a padlock over it for a viewer without Plus. With a drawing it is a
+            small stamp under the title and the drawing takes this place: decoration (no alt),
+            multiplied onto the card so its white is the card's own fill. */}
+        {!art && <div className="w-20 shrink-0 sm:w-28 lg:w-36">{thumb("size-10", "size-5")}</div>}
+        <img
+          src={bonusArtUrl(card.day)}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          data-art
+          className={art ? "aspect-square w-28 shrink-0 object-contain mix-blend-multiply sm:w-40 lg:w-44" : "hidden"}
+          onLoad={() => setArt(card.day)}
+          onError={() => setArt(null)}
+        />
       </div>
       <div className="grid gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
         <Button size="lg" variant={solved ? "secondary" : "primary"} block onClick={() => void play()} disabled={busy} aria-busy={busy || undefined}>
