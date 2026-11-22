@@ -132,6 +132,16 @@ describe("StudioScreen on a phone", () => {
     expect(within(panel("grid")).queryByText(/tightest square/)).toBeNull();
   });
 
+  it("keeps the tools right under the grid, above the word chips and the clue bar, and the strip at a fixed height", async () => {
+    renderStudio();
+    const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
+    const fill = within(panel("grid")).getByRole("button", { name: "Fill" });
+    // Fill comes before everything whose height changes with the selection, so it never moves.
+    expect(fill.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(fill.compareDocumentPosition(screen.getByLabelText("Clue for 1 Across")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(strip.className).toMatch(/min-h-\[5\.375rem\]/);
+  });
+
   it("writes a word from the strip under the grid without leaving the Grid tab", async () => {
     renderStudio();
     const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
