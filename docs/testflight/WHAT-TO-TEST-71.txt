@@ -1,0 +1,7 @@
+This build (1.1.5, build 71) changes how the app uses a wide screen. Please check:
+
+1. On a Mac (the iPad app from TestFlight on an Apple silicon Mac): open a daily. There is no on-screen keyboard and no "Show keyboard" bar, and the board does not move or resize when you type the first letter.
+2. On a Mac or an iPad held sideways: the board is a square at the left edge, as tall as the space allows, and the clues fill everything to its right. On an iPad the on-screen keys are where they were, at the same size.
+3. On a wide clue column, Across and Down sit side by side; on a Mac window the clues and the current clue are in larger type.
+4. Studio on a Mac (Plus): the desk fills the window, with the word list and the clues side by side instead of behind tabs.
+5. iPad upright and iPhone: nothing should have changed.
