@@ -250,6 +250,10 @@ Done by Claude, nothing submitted or rolled out:
   in, the community list and the archive are out) and saved as draft changes,
   not sent for review. The Foldable Screenshots slot is empty.
 
+- **November 21, 2026:** 41 (1.1.5) uploaded through the console and rolled out
+  to internal testing; iOS 1.1.5 (70) went to TestFlight's Development group the
+  same day. First build that records time on each clue (`d`) for Stats.
+
 ## Uploading without the API
 
 The play-publisher service-account key and `play-upload.mjs` live on the
