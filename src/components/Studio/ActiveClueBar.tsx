@@ -48,17 +48,19 @@ export function ActiveClueBar({ slotLabel, answer, clue, onChange, onPrev, onNex
       }}
       onPointerCancel={() => (touch.current = null)}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-end gap-1">
         <button type="button" className={STEP} aria-label="Previous entry" onClick={onPrev}>
           <ChevronLeft className="size-5" aria-hidden="true" />
         </button>
-        <label className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex w-16 shrink-0 flex-col text-xs leading-tight">
-            <span className="font-semibold text-ink-soft">{slotLabel}</span>
-            <span className="truncate font-mono text-muted">{answer}</span>
+        {/* The entry sits on its own line above the input and wraps: beside the
+            input it had a 4rem column, which cut a nine-letter word to GAMENIG…. */}
+        <label className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex flex-wrap items-baseline gap-x-2 px-1 text-xs leading-tight">
+            <span className="shrink-0 font-semibold text-ink-soft">{slotLabel}</span>
+            <span className="min-w-0 font-mono tracking-wider break-all text-muted" data-testid="active-clue-answer">{answer}</span>
           </span>
           <input
-            className="h-10 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500"
+            className="h-10 w-full min-w-0 shrink-0 rounded-lg border border-line-strong bg-surface px-2 text-base text-ink placeholder:text-subtle focus-visible:outline-2 focus-visible:outline-brand-500"
             aria-label={`Clue for ${slotLabel}`}
             placeholder="Write a clue"
             value={clue}

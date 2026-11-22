@@ -24,13 +24,18 @@ export function stripCount(length: number): number {
  * were more, 2026-11-11), then "All N words" for the full list. Proven-
  * impossible and rejected words are left out; approvals and rejections stay on
  * the full list. Once the entry is written it shrinks to the "Other words"
- * link alone, to leave the room to the clue bar.
+ * link alone. The strip keeps the height of two chip rows whatever it holds
+ * (`STRIP_HEIGHT`), so the clue bar under it never moves while the constructor
+ * types (Andrew, 2026-11-22: everything
+ * under the grid bounced with each keystroke).
  */
+const STRIP_HEIGHT = "min-h-[5.375rem]";
+
 export function CandidateStrip({ slotLabel, words, viability, rejected, onPlace, onMore, filled = false }: CandidateStripProps) {
   const usable = (words ?? []).filter((o) => viability[o.word] !== "nogood" && !rejected.includes(o.word));
   const top = filled ? [] : usable.slice(0, stripCount(usable[0]?.word.length ?? 5));
   return (
-    <div role="group" aria-label={`Words for ${slotLabel}`} className="flex flex-wrap items-center gap-1.5">
+    <div role="group" aria-label={`Words for ${slotLabel}`} className={`flex flex-wrap content-start items-center gap-1.5 ${STRIP_HEIGHT}`}>
       {words === null && !filled && <span className="min-h-10 py-2.5 text-sm text-muted">Looking for words…</span>}
       {words?.length === 0 && <span className="min-h-10 py-2.5 text-sm text-muted">No word fits every crossing.</span>}
       {top.map(({ word }) => (

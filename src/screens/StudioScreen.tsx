@@ -610,6 +610,9 @@ export function StudioScreen() {
       <div ref={gridBox} className="mx-auto w-full" style={{ maxWidth: `min(${gridCap}, max(16rem, calc(100dvh - 31rem)))` }}>
         {grid}
       </div>
+      {/* The tools sit right under the grid, above everything whose height changes with the
+          selection (the word chips, the clue bar, notes), so Fill never moves and stays on a small screen. */}
+      {toolbar}
       {slot && key && (
         <CandidateStrip
           slotLabel={slotLabel}
@@ -632,7 +635,6 @@ export function StudioScreen() {
           options={clueOptionsFor(state, slot)}
         />
       )}
-      {toolbar}
       {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
       {blockedNote}
       {statsLine}
