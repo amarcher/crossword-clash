@@ -1,0 +1,6 @@
+This build (1.1.5, build 72) changes the studio on a phone. Please check:
+
+1. Studio on a phone (Plus): Fill and the other tools sit right under the grid, and they no longer jump as you place black squares or type.
+2. The word you're cluing is shown in full above the clue box (it used to be cut off, e.g. GAMENIG…).
+3. Try building a puzzle on a small phone: place black squares, type entries, fill, and write clues.
+4. Studio on an iPad or a Mac, and everything outside the studio: nothing should have changed.

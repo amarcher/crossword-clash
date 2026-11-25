@@ -16,6 +16,7 @@
     "store:shots": "node scripts/store-shots/index.mjs",
     "build:daily-index": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/build-daily-index.mts",
     "daily:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-daily-puzzle.mts",
+    "plus:art": "node scripts/plus-art.mjs",
     "bonus:add": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/add-bonus-puzzle.mts",
     "seedgrid": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/make.mts",
     "seedgrid:dict": "node --experimental-strip-types --import ./scripts/ts-resolve-hook.mjs scripts/seedgrid/build-dict.mts",

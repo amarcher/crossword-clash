@@ -1,19 +1,24 @@
 import type { Puzzle } from "../../types/puzzle";
 
 /**
- * The four corner squares follow the frame's rounding (6px outer radius less
- * the 1px frame), so no square corner pokes past it.
+ * The frame's rounding scales with the thumbnail: 5% of its width, at most
+ * 6px. A fixed 6px swallowed the corner squares of a small stamp (a 44px 11×11
+ * has 3px squares) and cut into the grid's own border (Andrew, 2026-11-24).
+ * The four corner squares follow it less the 1px frame — `cqi` here is the
+ * frame's width, since the frame is their size container — so no square
+ * corner pokes past it.
  */
 function cornerClass(row: number, col: number, width: number, height: number): string {
   const top = row === 0;
   const bottom = row === height - 1;
   const left = col === 0;
   const right = col === width - 1;
+  // Written out in full so Tailwind finds them.
   return [
-    top && left && "rounded-tl-[5px]",
-    top && right && "rounded-tr-[5px]",
-    bottom && left && "rounded-bl-[5px]",
-    bottom && right && "rounded-br-[5px]",
+    top && left && "rounded-tl-[max(0px,min(5px,calc(5cqi-1px)))]",
+    top && right && "rounded-tr-[max(0px,min(5px,calc(5cqi-1px)))]",
+    bottom && left && "rounded-bl-[max(0px,min(5px,calc(5cqi-1px)))]",
+    bottom && right && "rounded-br-[max(0px,min(5px,calc(5cqi-1px)))]",
   ]
     .filter(Boolean)
     .join(" ");
@@ -38,7 +43,7 @@ export function MiniGridThumb({ puzzle, className = "", style, solved = false }:
     <div
       aria-hidden="true"
       data-solved={solved || undefined}
-      className={`relative grid gap-px rounded-md bg-ink p-px ${className}`}
+      className={`@container relative grid gap-px rounded-[min(6px,5%)] bg-ink p-px ${className}`}
       style={{ ...style, gridTemplateColumns: `repeat(${puzzle.width}, minmax(0, 1fr))`, aspectRatio: `${puzzle.width} / ${puzzle.height}` }}
     >
       {puzzle.cells.flat().map((cell) => (

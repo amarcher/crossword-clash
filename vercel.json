@@ -54,7 +54,7 @@
       "destination": "/api/daily?day=:day"
     },
     {
-      "source": "/((?!api/)(?!assets/)(?!daily-puzzles/).*)",
+      "source": "/((?!api/)(?!assets/)(?!daily-puzzles/)(?!plus-art/).*)",
       "destination": "/index.html"
     }
   ],
