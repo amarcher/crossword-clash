@@ -4,7 +4,7 @@ import { render, screen, cleanup, fireEvent, act, within } from "@testing-librar
 import { createMemoryRouter, Link, RouterProvider, useLocation } from "react-router";
 import { useState } from "react";
 import "../../i18n/i18n";
-import { DIALOG_QUERY, DIALOG_ROUTE, DialogOutlet } from "./RouteDialog";
+import { DIALOG_QUERY, DIALOG_ROUTE, DialogOutlet, useOnDialogClose } from "./RouteDialog";
 import { PageShell } from "../PageShell";
 import { FlowPage } from "../Flow";
 
@@ -53,10 +53,13 @@ function Friends() {
   );
 }
 
+let joinCloses = 0;
 function Join() {
+  useOnDialogClose(() => joinCloses++);
   return (
     <FlowPage title="Join a room" onBack={() => {}} backLabel="Back to menu">
       <input aria-label="Room code" autoFocus />
+      <Link to="/other">Joined</Link>
     </FlowPage>
   );
 }
@@ -101,6 +104,7 @@ afterEach(() => {
   cleanup();
   delete (window as { matchMedia?: unknown }).matchMedia;
   menuMounts = 0;
+  joinCloses = 0;
 });
 
 describe("route dialogs", () => {
@@ -194,5 +198,30 @@ describe("route dialogs", () => {
     expect(document.activeElement).toBe(close);
     fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(last);
+  });
+
+  it("tells the screen when its dialog is closed (Close, Escape, the backdrop), never when it navigates on", async () => {
+    viewport(true);
+    const router = renderAt(["/menu"]);
+    await act(() => router.navigate("/join"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    expect(joinCloses).toBe(1);
+    await act(() => router.navigate("/join"));
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await act(() => router.navigate("/join"));
+    fireEvent.click(screen.getByTestId("route-dialog-backdrop"));
+    expect(joinCloses).toBe(3);
+    // Leaving by its own navigation (a join landing in its lobby) is not a close.
+    await act(() => router.navigate("/join"));
+    fireEvent.click(screen.getByRole("link", { name: "Joined" }));
+    expect(where()).toBe("/other");
+    expect(joinCloses).toBe(3);
+  });
+
+  it("closes nothing on a phone, where the screen is a page", () => {
+    viewport(false);
+    renderAt(["/join"]);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(joinCloses).toBe(0);
   });
 });

@@ -1,1 +1,1 @@
-export { DIALOG_ROUTE, DIALOG_QUERY, DialogOutlet, RouteDialogPage, isDialogRoute, useRouteDialog } from "./RouteDialog";
+export { DIALOG_ROUTE, DIALOG_QUERY, DialogOutlet, RouteDialogPage, isDialogRoute, useOnDialogClose, useRouteDialog } from "./RouteDialog";

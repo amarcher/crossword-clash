@@ -26,6 +26,8 @@ export function isDialogRoute(matches: UIMatch[]): boolean {
 interface RouteDialogValue {
   titleId: string;
   close: () => void;
+  /** Work a screen needs done when the dialog closes (the close button, Escape, the backdrop); null removes it. */
+  setOnClose: (fn: (() => void) | null) => void;
 }
 
 const RouteDialogContext = createContext<RouteDialogValue | null>(null);
@@ -33,6 +35,25 @@ const RouteDialogContext = createContext<RouteDialogValue | null>(null);
 /** Non-null while the screen is rendered inside a route dialog: PageShell draws the dialog's chrome then. */
 export function useRouteDialog(): RouteDialogValue | null {
   return useContext(RouteDialogContext);
+}
+
+/**
+ * Runs `fn` when the route dialog this screen is in is closed — never when the
+ * screen leaves by navigating on (a join landing in its lobby), and nothing on
+ * a phone, where the screen is a page and its own Back does the work.
+ */
+export function useOnDialogClose(fn: () => void): void {
+  const dialog = useRouteDialog();
+  const fnRef = useRef(fn);
+  useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
+  const setOnClose = dialog?.setOnClose;
+  useEffect(() => {
+    if (!setOnClose) return;
+    setOnClose(() => fnRef.current());
+    return () => setOnClose(null);
+  }, [setOnClose]);
 }
 
 interface Background {
@@ -117,10 +138,15 @@ function RouteDialogFrame({ onClose, children }: { onClose: () => void; children
   // The control that opened the dialog, read before the dialog commits (the
   // screen inside may focus its own field in that commit, as Join does).
   const [opener] = useState(() => (typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null)));
-  const closeRef = useRef(onClose);
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    closeRef.current = onClose;
+    onCloseRef.current = onClose;
   }, [onClose]);
+  const beforeCloseRef = useRef<(() => void) | null>(null);
+  const closeRef = useRef(() => {
+    beforeCloseRef.current?.();
+    onCloseRef.current();
+  });
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -162,7 +188,11 @@ function RouteDialogFrame({ onClose, children }: { onClose: () => void; children
     if (panel && !panel.contains(document.activeElement)) panel.focus();
   }, [key]);
 
-  const value = { titleId, close: useCallback(() => closeRef.current(), []) };
+  const close = useCallback(() => closeRef.current(), []);
+  const setOnClose = useCallback((fn: (() => void) | null) => {
+    beforeCloseRef.current = fn;
+  }, []);
+  const value = { titleId, close, setOnClose };
   return (
     <RouteDialogContext.Provider value={value}>
       <div className="fixed inset-0 z-[60] flex items-center justify-center overscroll-contain p-8">
