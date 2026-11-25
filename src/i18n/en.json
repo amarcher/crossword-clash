@@ -1215,7 +1215,6 @@
     "loadFailed": "Couldn't load the Daily Plus. Check your connection and try again.",
     "archiveHeading": "Daily Plus puzzles",
     "unlock": "Unlock",
-    "metaLocked": "{{width}}×{{height}} · for Plus members",
     "boardTitle": "Daily Plus leaderboard",
     "boardEmpty": "No Daily Plus times yet today. Be the first!",
     "boardNone": "There was no Daily Plus that day.",

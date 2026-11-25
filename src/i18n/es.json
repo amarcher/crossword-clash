@@ -1215,7 +1215,6 @@
     "loadFailed": "No se pudo cargar el Plus del día. Revisa tu conexión e inténtalo de nuevo.",
     "archiveHeading": "Crucigramas Plus del día",
     "unlock": "Desbloquear",
-    "metaLocked": "{{width}}×{{height}} · para miembros Plus",
     "boardTitle": "Clasificación del Plus del día",
     "boardEmpty": "Aún no hay tiempos del Plus del día. ¡Sé el primero!",
     "boardNone": "Ese día no hubo Plus del día.",

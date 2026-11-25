@@ -1,0 +1,10 @@
+This build (1.1.5, build 73) is the one meant for the App Store. New since the App Store version (1.1.4). Please try:
+
+1. Daily Plus (Plus): the menu card shows the day's drawing beside the title, with a small grid stamp under the size.
+2. Race friends on one grid, then close the finish. Open the puzzle again from the menu or the leaderboard ("View"): you should see the room's final board, the standings, "Watch the replay" and Share. "Play solo" clears it for your own try.
+3. After finishing a puzzle in a room, the leaderboard's rows say Watch, not Race.
+4. Stats (Plus): "Slowest clues" shows the clue, its answer and the time you spent on it, per daily.
+5. On an iPad held sideways or a Mac: the board is a tall square at the left with the clues beside it. On a Mac there are no on-screen keys; type on your keyboard.
+6. Studio (Plus) on a phone: the tools sit under the grid and stay still while you work; the word you're cluing is never cut off.
+
+Anything confusing, slow or broken: send a screenshot from TestFlight.

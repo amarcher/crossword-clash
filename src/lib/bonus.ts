@@ -11,7 +11,7 @@ import { normalizeTransferPuzzle, type TransferPuzzle } from "./puzzleNormalizer
 import { dayKey } from "./soloStats";
 import type { Puzzle } from "../types/puzzle";
 
-export { blocksOf, shapePuzzle } from "./bonusShape";
+export { blocksOf, clueCount, shapePuzzle } from "./bonusShape";
 
 export interface BonusCard {
   day: string;
@@ -24,6 +24,18 @@ export interface BonusCard {
   blocks: string;
   /** puzzleIdentity() of the puzzle: solve history and progress are keyed by it. */
   identity: string;
+}
+
+// The apps read the site's files from the site, as the daily feed does.
+const ART_ORIGIN = import.meta.env?.MODE === "mobile" ? "https://crosswordclash.com" : "";
+
+/**
+ * The drawing behind a day's Daily Plus card: a file Andrew picked ahead of
+ * time (`public/plus-art/<day>.webp`, trimmed to the ink on white). A day
+ * without one has no file, and the card shows its plain layout.
+ */
+export function bonusArtUrl(day: string, origin: string = ART_ORIGIN): string {
+  return `${origin}/plus-art/${day}.webp`;
 }
 
 const CARD_COLUMNS = "day, title, theme, author, width, height, blocks, identity";
