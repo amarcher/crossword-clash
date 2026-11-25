@@ -11,7 +11,7 @@ import { normalizeTransferPuzzle, type TransferPuzzle } from "./puzzleNormalizer
 import { dayKey } from "./soloStats";
 import type { Puzzle } from "../types/puzzle";
 
-export { blocksOf, shapePuzzle } from "./bonusShape";
+export { blocksOf, clueCount, shapePuzzle } from "./bonusShape";
 
 export interface BonusCard {
   day: string;

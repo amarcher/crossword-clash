@@ -30,6 +30,8 @@ describe("BonusCard", () => {
   it("shows today's bonus to everyone, and a free player gets the pitch instead of the puzzle", async () => {
     render(<BonusCard />, { wrapper: MemoryRouter });
     expect(await screen.findByText("Grounds for Arrest")).toBeTruthy();
+    // The dailies' size line, the clues counted from the shape (3 across, 3 down).
+    expect(screen.getByText("3×3 · 6 clues")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Unlock with Plus" }));
     expect(account.value.openPaywall).toHaveBeenCalledWith({ placement: "bonus", feature: "bonus" });
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();

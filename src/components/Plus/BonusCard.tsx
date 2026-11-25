@@ -7,7 +7,7 @@ import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
-import { bonusArtUrl, fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
+import { bonusArtUrl, clueCount, fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
 import { leaderboardPath } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
 import { formatDuration } from "../../lib/soloStats";
@@ -109,8 +109,9 @@ export function BonusCard() {
               {t("menu.dailySolvedIn", { time: formatDuration(best) })}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-muted tabular-nums">{t(plus ? "bonus.meta" : "bonus.metaLocked", { width: card.width, height: card.height })}
-            </p>
+            // The dailies' line (Andrew, 2026-11-24: the longer "an extra puzzle for Plus" wrapped beside
+            // the drawing and made the card tall). The padlock and the button say it is Plus.
+            <p className="mt-1 text-sm text-muted tabular-nums">{t("menu.dailyMeta", { width: card.width, height: card.height, count: clueCount(card) })}</p>
           )}
           {art && <div className="mt-3 w-11 sm:w-12">{thumb("size-6", "size-3.5")}</div>}
         </div>
