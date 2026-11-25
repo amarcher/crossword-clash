@@ -10,6 +10,7 @@ import { clearMpSession } from "../lib/sessionPersistence";
 import { savePlayerName } from "../lib/playerName";
 import { tStatic } from "../i18n/i18n";
 import { useTransitionNavigate } from "../hooks/useTransitionNavigate";
+import { useOnDialogClose } from "../components/RouteDialog";
 
 export function JoinScreen() {
   const navigate = useTransitionNavigate();
@@ -24,6 +25,15 @@ export function JoinScreen() {
   // and runs the moment the user arrives (instead of silently doing nothing).
   const [waitingForAuth, setWaitingForAuth] = useState(false);
   const pendingJoin = useRef<{ code: string; displayName: string } | null>(null);
+  // Cleared when the player leaves (Back, the dialog's close): a join still in
+  // flight then never loads its room or navigates after they have gone.
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
 
   // The link's code, else the one the page was opened with — read once, and
   // the page's copy consumed, so a later visit to Join starts blank instead
@@ -54,6 +64,7 @@ export function JoinScreen() {
       setJoinError(null);
 
       const result = await joinGame(code, userId, displayName);
+      if (!live.current) return;
       if (!result) {
         setJoinError(tStatic('join.notFound'));
         setJoinLoading(false);
@@ -116,7 +127,21 @@ export function JoinScreen() {
     else if (!user) setJoinError(tStatic('join.connectFailed'));
   }, [waitingForAuth, user, authLoading, runJoin]);
 
+  // Closing the dialog abandons a half-finished join, as Back to menu does on
+  // a phone (Andrew, 2026-11-25: cleared), but leaves the page underneath —
+  // which stays mounted — alone: no reset of its puzzle, no solo session wiped.
+  const abandonJoin = useCallback(() => {
+    live.current = false;
+    pendingJoin.current = null;
+    game.setGameId(null);
+    game.setIsMultiplayer(false);
+    clearMpSession();
+  }, [game]);
+  useOnDialogClose(abandonJoin);
+
   const handleBack = useCallback(() => {
+    live.current = false;
+    pendingJoin.current = null;
     game.reset();
     game.setGameId(null);
     game.setIsMultiplayer(false);

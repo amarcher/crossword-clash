@@ -10,6 +10,7 @@ import { communityEnabled } from "./lib/community";
 import { friendsEnabled } from "./lib/friends";
 import { RouteErrorScreen } from "./screens/RouteErrorScreen";
 import { NotFoundScreen } from "./screens/NotFoundScreen";
+import { DIALOG_ROUTE } from "./components/RouteDialog";
 
 // MenuScreen + HostMenuScreen are imported statically because the index-route
 // resolvers below render them inline as the fallback. Every other screen is
@@ -155,7 +156,7 @@ export const routes: RouteObject[] = [
           // Someone raced a daily the viewer shared: the inbox and the race-reply push land here (raceReplies.ts).
           { path: "reply/:id", lazy: () => m.raceReply().then((s) => ({ Component: s.RaceReplyScreen })) },
           { path: "stats", lazy: () => m.stats().then((s) => ({ Component: s.StatsScreen })) },
-          { path: "join", lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
+          { path: "join", handle: DIALOG_ROUTE, lazy: () => m.join().then((s) => ({ Component: s.JoinScreen })) },
           { path: "bonus/leaderboard", lazy: () => m.bonusLeaderboard().then((s) => ({ Component: s.BonusLeaderboardScreen })) },
           // A Daily Plus finish's share link by its day: the challenge for Plus, the solve and the pitch for everyone else.
           { path: "bonus/:day", lazy: () => m.bonusLink().then((s) => ({ Component: s.BonusLinkScreen })) },
@@ -179,8 +180,9 @@ export const routes: RouteObject[] = [
           // Friends (docs/friends-spec.md §3.6), behind the launch switch: the Race friends screen and the friends list.
           ...(friendsEnabled()
             ? [
-                { path: "race", lazy: () => m.race().then((s) => ({ Component: s.RaceScreen })) },
-                { path: "race/friends", lazy: () => m.friends().then((s) => ({ Component: s.FriendsScreen })) },
+                // A dialog over the page underneath on wide windows, a page on phones (components/RouteDialog).
+                { path: "race", handle: DIALOG_ROUTE, lazy: () => m.race().then((s) => ({ Component: s.RaceScreen })) },
+                { path: "race/friends", handle: DIALOG_ROUTE, lazy: () => m.friends().then((s) => ({ Component: s.FriendsScreen })) },
                 // The "add me" link a player shares: one Add button for whoever opens it.
                 { path: "add/:username", lazy: () => m.addFriend().then((s) => ({ Component: s.AddFriendScreen })) },
               ]

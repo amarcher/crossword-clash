@@ -53,7 +53,8 @@
   "common": {
     "defaultPlayerName": "Jugador",
     "back": "Volver",
-    "loadingPage": "Cargando la página…"
+    "loadingPage": "Cargando la página…",
+    "close": "Cerrar"
   },
   "menu": {
     "friendsHeading": "Juega con amigos",

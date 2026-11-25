@@ -171,10 +171,7 @@ export function FriendsScreen() {
   };
 
   const shell = (children: React.ReactNode) => (
-    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("race.title"), backTo: "/race" }}>
-      <header className="mb-5 pt-3">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">{t("friends.title")}</h1>
-      </header>
+    <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("race.title"), backTo: "/race" }} heading={{ title: t("friends.title") }}>
       {children}
     </PageShell>
   );
