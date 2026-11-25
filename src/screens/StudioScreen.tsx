@@ -17,7 +17,7 @@ import { EngineError } from "../components/Studio/EngineError";
 import { WordListDownload } from "../components/Studio/WordListDownload";
 import { StudioPopover } from "../components/Studio/StudioPopover";
 import { StudioSection } from "../components/Studio/StudioSection";
-import { CandidateStrip } from "../components/Studio/CandidateStrip";
+import { CandidateStrip, STRIP_HEIGHT } from "../components/Studio/CandidateStrip";
 import { ActiveClueBar } from "../components/Studio/ActiveClueBar";
 import { WordSheet } from "../components/Studio/WordSheet";
 import { StudioTabBar, studioPanelId, studioTabId, type StudioTab } from "../components/Studio/StudioTabBar";
@@ -482,6 +482,26 @@ export function StudioScreen() {
   const toolSize = desktop ? "sm" : "md";
 
   // Fill first (the one primary action), then the grid tools; the help and legends wait behind "?".
+  // AI clues, offered where the constructor is looking once there's something to clue; the draft runs in the clue panel, which opens.
+  // On a phone it sits under the clue bar: in the toolbar it wrapped onto a second row and pushed the strip and clue bar down.
+  const draftButton =
+    complete && missingClues > 0 ? (
+      <Button
+        variant="soft"
+        size={toolSize}
+        disabled={busy !== null}
+        title="Write a clue for every entry without one, with AI"
+        className={desktop ? "" : "self-start"}
+        onClick={() => {
+          if (desktop) setSideTab("clues");
+          else setTab("clues");
+          cluePanelRef.current?.draftAll();
+        }}
+      >
+        <Sparkles className="size-4" aria-hidden="true" /> Draft {missingClues === slots.length ? "all" : missingClues} clues
+      </Button>
+    ) : null;
+
   const toolbar = (
     <div className="flex flex-wrap items-center gap-1.5">
       {busy ? (
@@ -502,22 +522,7 @@ export function StudioScreen() {
       <Button variant="ghost" size={toolSize} aria-pressed={showHeat} onClick={() => setShowHeat((v) => !v)} className={showHeat ? "bg-surface-sunken text-ink" : ""} title="Heatmap: how many words fit through each square">
         <Flame className="size-4" aria-hidden="true" /> <span className={TOOL_LABEL}>Heatmap</span>
       </Button>
-      {/* AI clues, offered where the constructor is looking once there's something to clue; the draft runs in the clue panel, which opens. */}
-      {complete && missingClues > 0 && (
-        <Button
-          variant="soft"
-          size={toolSize}
-          disabled={busy !== null}
-          title="Write a clue for every entry without one, with AI"
-          onClick={() => {
-            if (desktop) setSideTab("clues");
-            else setTab("clues");
-            cluePanelRef.current?.draftAll();
-          }}
-        >
-          <Sparkles className="size-4" aria-hidden="true" /> Draft {missingClues === slots.length ? "all" : missingClues} clues
-        </Button>
-      )}
+      {desktop && draftButton}
       {desktop && playTestButton()}
       {desktop && publishButton()}
       <StudioPopover label="How the studio works" icon={<CircleHelp className="size-4" aria-hidden="true" />} className="ml-auto">
@@ -613,7 +618,7 @@ export function StudioScreen() {
       {/* The tools sit right under the grid, above everything whose height changes with the
           selection (the word chips, the clue bar, notes), so Fill never moves and stays on a small screen. */}
       {toolbar}
-      {slot && key && (
+      {slot && key ? (
         <CandidateStrip
           slotLabel={slotLabel}
           words={slotWords}
@@ -623,6 +628,12 @@ export function StudioScreen() {
           onMore={() => setSheetOpen(true)}
           filled={!slotText(state.grid, slot).includes(".")}
         />
+      ) : (
+        // On a black square there is no entry: hold the strip's and clue bar's place so nothing below them jumps up.
+        <div aria-hidden="true" inert className="invisible flex flex-col gap-2" data-testid="under-grid-placeholder">
+          <div className={STRIP_HEIGHT} />
+          <ActiveClueBar slotLabel="No entry" answer="." clue="" onChange={() => {}} onPrev={() => {}} onNext={() => {}} options={[]} />
+        </div>
       )}
       {slot && key && (
         <ActiveClueBar
@@ -635,6 +646,7 @@ export function StudioScreen() {
           options={clueOptionsFor(state, slot)}
         />
       )}
+      {draftButton}
       {message && <p role="status" className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-ink-soft">{message}</p>}
       {blockedNote}
       {statsLine}
