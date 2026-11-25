@@ -73,8 +73,9 @@ export function BonusCard() {
     navigate("/solo/play");
   };
 
-  const thumb = (badge: string, icon: string) => (
-    <div className="relative">
+  // The grid first in its box: the wide menu (index.css) sizes the box's first child and lays the padlock over it.
+  const thumb = (box: string, badge: string, icon: string, frame?: boolean) => (
+    <div data-card-thumb={frame ? "" : undefined} className={`relative ${box}`}>
       <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
       {!plus && (
         <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
@@ -87,9 +88,11 @@ export function BonusCard() {
   );
 
   return (
-    <Card role="region" aria-label={t("bonus.eyebrow")} className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
+    // The data-card-* hooks are the dailies' (DailyHero's) card frame: on a wide window the menu
+    // sizes this card like them (index.css). The thumbnail's box sizes its first child.
+    <Card role="region" aria-label={t("bonus.eyebrow")} data-menu-card className={`overflow-hidden ${solved ? "bg-brand-50! border-brand-200!" : ""}`} data-solved={solved || undefined}>
       {/* As on the dailies: the label (Plus marked with the badge's seal), then the theme as a badge, no rule under it. */}
-      <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
+      <div data-card-head className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-5 pt-4 sm:px-6 sm:pt-5">
         <Eyebrow className="inline-flex shrink-0 items-center gap-1">
           {t("bonus.eyebrow")}
           <PlusBadge interactive={false} size="1.15em" />
@@ -100,9 +103,9 @@ export function BonusCard() {
           </span>
         )}
       </div>
-      <div className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
-        <div className="min-w-0 flex-1">
-          <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
+      <div data-card-body className="flex items-start gap-5 px-5 pt-2 pb-4 sm:px-6 sm:pt-2.5 sm:pb-6">
+        <div data-card-text className="min-w-0 flex-1">
+          <h2 data-card-title className="font-display text-[28px] font-bold leading-tight tracking-tight text-ink sm:text-[32px]">{card.title}</h2>
           {solved ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-700 tabular-nums">
               <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
@@ -113,24 +116,25 @@ export function BonusCard() {
             // the drawing and made the card tall). The padlock and the button say it is Plus.
             <p className="mt-1 text-sm text-muted tabular-nums">{t("menu.dailyMeta", { width: card.width, height: card.height, count: clueCount(card) })}</p>
           )}
-          {art && <div className="mt-3 w-11 sm:w-12">{thumb("size-6", "size-3.5")}</div>}
+          {art && thumb("mt-3 w-11 sm:w-12", "size-6", "size-3.5")}
         </div>
         {/* The grid's shape, a padlock over it for a viewer without Plus. With a drawing it is a
             small stamp under the title and the drawing takes this place: decoration (no alt),
             multiplied onto the card so its white is the card's own fill. */}
-        {!art && <div className="w-20 shrink-0 sm:w-28 lg:w-36">{thumb("size-10", "size-5")}</div>}
+        {!art && thumb("w-20 shrink-0 sm:w-28 lg:w-36", "size-10", "size-5", true)}
         <img
           src={bonusArtUrl(card.day)}
           alt=""
           aria-hidden="true"
           decoding="async"
           data-art
+          data-card-art={art ? "" : undefined}
           className={art ? "aspect-square w-28 shrink-0 object-contain mix-blend-multiply sm:w-40 lg:w-44" : "hidden"}
           onLoad={() => setArt(card.day)}
           onError={() => setArt(null)}
         />
       </div>
-      <div className="grid gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
+      <div data-card-actions className="grid gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
         <Button size="lg" variant={solved ? "secondary" : "primary"} block onClick={() => void play()} disabled={busy} aria-busy={busy || undefined}>
           {busy ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : !plus && <Lock className="size-4" aria-hidden="true" />}
           {plus ? t(solved ? "menu.dailyView" : "menu.dailyPlay") : t("bonus.playWithPlus")}
@@ -143,7 +147,7 @@ export function BonusCard() {
       </div>
       {/* The bonus board is open to everyone, like the dailies': the times are public, the puzzle is not. */}
       {/* The whole strip opens the board, as on the dailies. */}
-      <div className="relative flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
+      <div data-card-foot className="relative flex items-center border-t border-line bg-surface-sunken/60 px-5 py-2.5 hover:bg-surface-sunken sm:px-6">
         <TransitionLink
           to={leaderboardPath("bonus")}
           onClick={() => track("mode_selected", { mode: "leaderboard", slot: "bonus" })}

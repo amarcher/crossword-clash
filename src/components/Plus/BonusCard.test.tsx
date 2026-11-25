@@ -37,6 +37,16 @@ describe("BonusCard", () => {
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
   });
 
+  it("wears the dailies' card frame, so the wide menu sizes it like them (index.css)", async () => {
+    render(<BonusCard />, { wrapper: MemoryRouter });
+    const card = await screen.findByRole("region", { name: "Daily Plus" });
+    expect(card.hasAttribute("data-menu-card")).toBe(true);
+    for (const part of ["head", "body", "text", "title", "thumb", "actions", "foot"]) expect(card.querySelectorAll(`[data-card-${part}]`)).toHaveLength(1);
+    expect(card.querySelector("[data-card-title]")!.textContent).toBe("Grounds for Arrest");
+    // The thumbnail first in its box: the layout sizes the box's first child.
+    expect(card.querySelector("[data-card-thumb] > :first-child")!.className).toContain("grid");
+  });
+
   it("loads and plays it for Plus", async () => {
     account.value = { ...account.value, plus: true };
     const puzzle = { title: "Grounds for Arrest", origin: "bonus" };

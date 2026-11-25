@@ -13,10 +13,12 @@ import { applyPageMeta, pageMetaFor } from "./lib/pageMeta";
 import { normalizePathname } from "./lib/prerender";
 import { router } from "./router";
 import { Capacitor } from "@capacitor/core";
+import { isMacApp } from "./lib/platform";
 import { startDeviceData } from "./lib/deviceData";
 import { supabase } from "./lib/supabaseClient";
 
 document.documentElement.classList.toggle("native-app", Capacitor.isNativePlatform());
+document.documentElement.classList.toggle("mac-app", isMacApp());
 
 // Keep <html lang> in sync with the active language
 document.documentElement.lang = i18n.language;
