@@ -30,6 +30,8 @@ describe("BonusCard", () => {
   it("shows today's bonus to everyone, and a free player gets the pitch instead of the puzzle", async () => {
     render(<BonusCard />, { wrapper: MemoryRouter });
     expect(await screen.findByText("Grounds for Arrest")).toBeTruthy();
+    // The dailies' size line, the clues counted from the shape (3 across, 3 down).
+    expect(screen.getByText("3×3 · 6 clues")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Unlock with Plus" }));
     expect(account.value.openPaywall).toHaveBeenCalledWith({ placement: "bonus", feature: "bonus" });
     expect(bonus.loadBonusPuzzle).not.toHaveBeenCalled();
@@ -55,6 +57,26 @@ describe("BonusCard", () => {
     expect(bonus.loadBonusPuzzle).toHaveBeenCalledWith("2026-11-13");
     expect(game.handleSoloPuzzleLoaded).toHaveBeenCalledWith(puzzle);
     expect(game.setSoloTheme).toHaveBeenCalledWith("Coffee");
+  });
+
+  it("shows the day's drawing once it loads, with the grid as a small stamp, and the plain card without one", async () => {
+    const { container } = render(<BonusCard />, { wrapper: MemoryRouter });
+    await screen.findByText("Grounds for Arrest");
+    const art = container.querySelector("img[data-art]") as HTMLImageElement;
+    expect(art.getAttribute("src")).toBe("/plus-art/2026-11-13.webp");
+    expect(art.getAttribute("alt")).toBe("");
+    expect(art.className).toBe("hidden");
+    // Plain card: the thumbnail at full size. With the drawing: a small stamp under the title.
+    const has = (cls: string) => container.querySelector(`div.${cls}`) !== null;
+    expect(has("w-20")).toBe(true);
+    fireEvent.load(art);
+    expect(art.className).toContain("mix-blend-multiply");
+    expect(has("w-20")).toBe(false);
+    expect(has("w-11")).toBe(true);
+    fireEvent.error(art);
+    expect(art.className).toBe("hidden");
+    expect(has("w-20")).toBe(true);
+    expect(has("w-11")).toBe(false);
   });
 
   it("says so when the bonus can't be loaded, and renders nothing on a day without one", async () => {

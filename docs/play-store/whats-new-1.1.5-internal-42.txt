@@ -1,0 +1,3 @@
+<en-US>
+Daily Plus card shows the day's drawing. A puzzle finished in a room opens on that room's final board, with its replay and share. Stats: slowest clues with the clue, answer and time. Wide screens: a full-height board with the clues beside it. Studio on a phone keeps its tools under the grid.
+</en-US>

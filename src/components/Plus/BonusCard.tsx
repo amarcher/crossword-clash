@@ -7,7 +7,7 @@ import { useMaybeAccount } from "../../contexts/AccountContext";
 import { useGame } from "../../contexts/GameContext";
 import { useBestTimes } from "../../hooks/useSolveHistory";
 import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
-import { fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
+import { bonusArtUrl, clueCount, fetchBonusCard, loadBonusPuzzle, shapePuzzle, type BonusCard as Card_ } from "../../lib/bonus";
 import { leaderboardPath } from "../../lib/dailyLeaderboard";
 import { plusEnabled } from "../../lib/plus";
 import { formatDuration } from "../../lib/soloStats";
@@ -28,6 +28,9 @@ export function BonusCard() {
   const [card, setCard] = useState<Card_ | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  // The day's drawing, once it has loaded: a day without one (a 404, or the
+  // SPA shell answering for the path) keeps the plain card.
+  const [art, setArt] = useState<string | null>(null);
   const on = plusEnabled() && !!account?.available;
 
   useEffect(() => {
@@ -70,6 +73,20 @@ export function BonusCard() {
     navigate("/solo/play");
   };
 
+  // The grid first in its box: the wide menu (index.css) sizes the box's first child and lays the padlock over it.
+  const thumb = (box: string, badge: string, icon: string, frame?: boolean) => (
+    <div data-card-thumb={frame ? "" : undefined} className={`relative ${box}`}>
+      <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
+      {!plus && (
+        <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+          <span className={`grid place-items-center rounded-full bg-surface/95 text-gold-700 shadow-card ring-1 ring-gold-100 ${badge}`}>
+            <Lock className={icon} />
+          </span>
+        </span>
+      )}
+    </div>
+  );
+
   return (
     // The data-card-* hooks are the dailies' (DailyHero's) card frame: on a wide window the menu
     // sizes this card like them (index.css). The thumbnail's box sizes its first child.
@@ -95,21 +112,27 @@ export function BonusCard() {
               {t("menu.dailySolvedIn", { time: formatDuration(best) })}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-muted tabular-nums">{t(plus ? "bonus.meta" : "bonus.metaLocked", { width: card.width, height: card.height })}
-            </p>
+            // The dailies' line (Andrew, 2026-11-24: the longer "an extra puzzle for Plus" wrapped beside
+            // the drawing and made the card tall). The padlock and the button say it is Plus.
+            <p className="mt-1 text-sm text-muted tabular-nums">{t("menu.dailyMeta", { width: card.width, height: card.height, count: clueCount(card) })}</p>
           )}
+          {art && thumb("mt-3 w-11 sm:w-12", "size-6", "size-3.5")}
         </div>
-        {/* Locked for a viewer without Plus: the grid's shape shows through, a padlock over it. */}
-        <div data-card-thumb className="relative w-20 shrink-0 sm:w-28 lg:w-36">
-          <MiniGridThumb puzzle={shapePuzzle(card)} solved={solved} className={plus ? "" : "opacity-60"} />
-          {!plus && (
-            <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
-              <span className="grid size-10 place-items-center rounded-full bg-surface/95 text-gold-700 shadow-card ring-1 ring-gold-100">
-                <Lock className="size-5" />
-              </span>
-            </span>
-          )}
-        </div>
+        {/* The grid's shape, a padlock over it for a viewer without Plus. With a drawing it is a
+            small stamp under the title and the drawing takes this place: decoration (no alt),
+            multiplied onto the card so its white is the card's own fill. */}
+        {!art && thumb("w-20 shrink-0 sm:w-28 lg:w-36", "size-10", "size-5", true)}
+        <img
+          src={bonusArtUrl(card.day)}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          data-art
+          data-card-art={art ? "" : undefined}
+          className={art ? "aspect-square w-28 shrink-0 object-contain mix-blend-multiply sm:w-40 lg:w-44" : "hidden"}
+          onLoad={() => setArt(card.day)}
+          onError={() => setArt(null)}
+        />
       </div>
       <div data-card-actions className="grid gap-2 px-5 pb-5 sm:px-6 sm:pb-6">
         <Button size="lg" variant={solved ? "secondary" : "primary"} block onClick={() => void play()} disabled={busy} aria-busy={busy || undefined}>

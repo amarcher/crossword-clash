@@ -132,6 +132,43 @@ describe("StudioScreen on a phone", () => {
     expect(within(panel("grid")).queryByText(/tightest square/)).toBeNull();
   });
 
+  it("keeps the tools right under the grid, above the word chips and the clue bar, and the strip at a fixed height", async () => {
+    renderStudio();
+    const strip = await screen.findByRole("group", { name: "Words for 1 Across" });
+    const fill = within(panel("grid")).getByRole("button", { name: "Fill" });
+    // Fill comes before everything whose height changes with the selection, so it never moves.
+    expect(fill.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(fill.compareDocumentPosition(screen.getByLabelText("Clue for 1 Across")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(strip.className).toMatch(/min-h-\[5\.375rem\]/);
+  });
+
+  it("holds the strip's and clue bar's place on a black square, hidden from everyone", async () => {
+    renderStudio();
+    await screen.findByRole("group", { name: "Words for 1 Across" });
+    expect(screen.queryByTestId("under-grid-placeholder")).toBeNull();
+    fireEvent.click(within(panel("grid")).getByRole("button", { name: "Toggle black square" }));
+    const holder = await screen.findByTestId("under-grid-placeholder");
+    expect(screen.queryByRole("group", { name: /Words for/ })).toBeNull();
+    expect(holder.getAttribute("aria-hidden")).toBe("true");
+    expect(holder.hasAttribute("inert")).toBe(true);
+    expect(holder.className).toMatch(/invisible/);
+    // The same pieces as the real thing: a strip-tall box and a two-line clue bar.
+    expect(holder.querySelector(".min-h-\\[5\\.375rem\\]")).toBeTruthy();
+    expect(holder.querySelector("input")).toBeTruthy();
+    const fill = within(panel("grid")).getByRole("button", { name: "Fill" });
+    expect(fill.compareDocumentPosition(holder) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("puts Draft clues under the clue bar on a phone, never in the toolbar above it", () => {
+    seedCompleteDraft();
+    renderStudio();
+    const draft = within(panel("grid")).getByRole("button", { name: /Draft all clues/ });
+    const clueInput = within(panel("grid")).getByLabelText("Clue for 1 Across");
+    expect(clueInput.compareDocumentPosition(draft) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const fill = within(panel("grid")).getByRole("button", { name: "New fill" });
+    expect(fill.parentElement?.contains(draft)).toBe(false);
+  });
+
   it("writes a word from the strip under the grid without leaving the Grid tab", async () => {
     renderStudio();
     const strip = await screen.findByRole("group", { name: "Words for 1 Across" });

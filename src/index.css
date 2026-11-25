@@ -796,21 +796,28 @@ input[type="date"]::-webkit-date-and-time-value {
     grid-template-areas: "head head" "body body" "actions foot";
   }
   [data-menu-card] > [data-card-head] { grid-area: head; }
+  /* The body: the title beside the grid, the pair centred in the card's
+     height. The grid is capped (Andrew, 2026-11-24: grids filling the cards
+     read as too much), at about 176 px; a Plus card's drawing takes the
+     grid's place and is given more room, up to 256 px, since it is the
+     picture of the card. */
   [data-menu-card] > [data-card-body] {
     grid-area: body;
     min-height: 0;
-    align-items: stretch;
-    gap: 1.25rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
     padding-bottom: 1rem;
   }
   [data-menu-card] [data-card-title] { font-size: clamp(1.375rem, 0.75rem + 3cqi, 2.25rem); }
-  /* The thumbnail's box takes its share of the body and the grid inside it
-     the largest square that fits; centred, so the Plus card's padlock (laid
-     over the whole box) stays on the grid. */
+  /* The thumbnail's box: a square, and the grid inside it the largest square
+     that fits; centred, so the Plus card's padlock (laid over the whole box)
+     stays on the grid. */
   [data-menu-card] [data-card-thumb] {
-    flex: 0 0 46%;
-    width: auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    width: clamp(6.5rem, 28cqi, 11rem);
+    height: clamp(6.5rem, 28cqi, 11rem);
+    max-height: 100%;
     container-type: size;
     display: grid;
     place-items: center;
@@ -819,6 +826,12 @@ input[type="date"]::-webkit-date-and-time-value {
   [data-menu-card] [data-card-thumb] > :first-child { width: min(100cqw, 100cqh); }
   /* The Plus card's padlock layer, drawn over the thumbnail's own square. */
   [data-menu-card] [data-card-thumb] > :not(:first-child) { position: relative; z-index: 1; inset: auto; width: min(100cqw, 100cqh); aspect-ratio: 1 / 1; }
+  [data-menu-card] [data-card-art] {
+    flex: 0 0 auto;
+    width: clamp(9rem, 40cqi, 16rem);
+    height: clamp(9rem, 40cqi, 16rem);
+    max-height: 100%;
+  }
   [data-menu-card] > [data-card-actions] { grid-area: actions; align-self: center; padding: 0 0 1.25rem 1.5rem; }
   [data-menu-card] > [data-card-actions] button { flex: none; width: auto; min-width: 10rem; }
   [data-menu-card] > [data-card-foot] {
@@ -831,14 +844,13 @@ input[type="date"]::-webkit-date-and-time-value {
     background: transparent;
   }
 
-  /* A tall card: the thumbnail on top, the title under it with two lines
-     kept for it, so the grids of a row line up whatever their titles; the
-     pair centred between the label and Play. A short card keeps the
-     thumbnail beside the title, where it is bigger. */
+  /* A tall, narrow card (four in a row on a squarer window): the grid or
+     drawing on top, centred, the title under it with two lines kept for it,
+     so the grids of a row line up whatever their titles. Still capped. */
   @container menu-card (max-aspect-ratio: 5 / 4) and (min-height: 26rem) {
-    [data-menu-card] > [data-card-body] { flex-direction: column-reverse; justify-content: center; gap: 0.75rem; }
-    /* As tall as the card is wide (less its padding), shrinking when the card is short. */
-    [data-menu-card] [data-card-thumb] { flex: 0 1 calc(100cqw - 3rem); }
+    [data-menu-card] > [data-card-body] { flex-direction: column-reverse; align-items: stretch; justify-content: center; gap: 0.75rem; }
+    [data-menu-card] [data-card-thumb] { align-self: center; width: clamp(6.5rem, 55cqi, 11rem); height: clamp(6.5rem, 55cqi, 11rem); }
+    [data-menu-card] [data-card-art] { align-self: center; width: clamp(9rem, 70cqi, 16rem); height: clamp(9rem, 70cqi, 16rem); }
     [data-menu-card] [data-card-text] { flex: none; min-height: calc(2 * 1.25 * clamp(1.375rem, 0.75rem + 3cqi, 2.25rem) + 1.75rem); }
   }
   [data-menu-card] [data-card-title] {
