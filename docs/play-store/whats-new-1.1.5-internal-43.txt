@@ -1,0 +1,3 @@
+<en-US>
+Wide screens: the menu fits on one screen, with a larger Daily Plus drawing. Race friends, Friends and Join open as dialogs over the menu.
+</en-US>

@@ -1,0 +1,7 @@
+This build (1.1.5, build 74) is for testing: phones are the same as build 73; wide windows change. On an iPad held sideways or a Mac, please try:
+
+1. The menu fits on one screen: the daily cards sit side by side with smaller grids, and the Daily Plus drawing is larger.
+2. On a Mac the app fills the window edge to edge.
+3. Race friends, Friends and Join open as dialogs over the menu. Close Join halfway through: nothing is left half-joined.
+
+Anything confusing, slow or broken: send a screenshot from TestFlight.
