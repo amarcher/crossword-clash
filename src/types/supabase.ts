@@ -600,6 +600,8 @@ export interface Database {
       my_daily_results: { Args: { p_since: string | null }; Returns: { day: string; slot: string; seconds: number; solvers: number; faster_than: number | string | null }[] };
       /** Each accepted friend and the dailies both finished; the wins, losses and ties only for Plus. */
       my_head_to_head: { Args: { p_since: string | null }; Returns: { friend_id: string; username: string; played: number; wins: number | null; losses: number | null; ties: number | null }[] };
+      /** my_head_to_head per daily slot (one row per friend and slot). */
+      my_head_to_head_by_slot: { Args: { p_since: string | null }; Returns: { friend_id: string; username: string; slot: string; played: number; wins: number | null; losses: number | null; ties: number | null }[] };
       /** How many of the caller's clues took over a minute (the free stats page's teaser). */
       my_slow_clue_count: { Args: { p_since: string | null }; Returns: number };
       /** The caller's ten slowest clues from their play sessions (Plus). */

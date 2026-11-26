@@ -10,6 +10,9 @@
 import { supabase } from "./supabaseClient";
 import { fetchDailyForDay, type DailySlot } from "./dailyFeed";
 import { loadPublishedIndex, type DailyIndexEntry } from "./dailyIndex";
+import { fetchBonusCards } from "./bonus";
+import { countsForDailyStreak, type SolveRow } from "./solveHistory";
+import { REPAIR_KEY_PREFIX } from "./streakRepair";
 
 /** A daily's slot, or the Daily Plus (daily_results files it under 'bonus'). */
 export type StatsSlot = DailySlot | "bonus";
@@ -25,6 +28,8 @@ export interface DailyResult {
 
 export interface HeadToHead {
   friendId: string;
+  /** The daily the record is for; absent on the all-dailies list. */
+  slot?: StatsSlot;
   username: string;
   played: number;
   /** The record is Plus: null for a free caller, who is told only `played`. */
@@ -48,6 +53,8 @@ export interface SlowClue {
 export interface StatsData {
   results: DailyResult[];
   headToHead: HeadToHead[];
+  /** One record per friend and daily, or null from a server without the per-daily list (then `headToHead` stands for every tab). */
+  headToHeadBySlot?: HeadToHead[] | null;
   slowClues: SlowClue[];
   /** A free caller's teaser: how many clues took over a minute. Null for Plus (who has the clues) and when unknown. */
   slowClueCount: number | null;
@@ -56,9 +63,10 @@ export interface StatsData {
 /** Everything the page shows since a day. A caller without Plus gets their own times and the counts behind the locked cards. */
 export async function fetchStats(since: string, plus: boolean): Promise<StatsData> {
   if (!supabase) return { results: [], headToHead: [], slowClues: [], slowClueCount: null };
-  const [results, h2h, clues, clueCount] = await Promise.all([
+  const [results, h2h, bySlot, clues, clueCount] = await Promise.all([
     supabase.rpc("my_daily_results", { p_since: since }),
     supabase.rpc("my_head_to_head", { p_since: since }),
+    supabase.rpc("my_head_to_head_by_slot", { p_since: since }),
     plus ? supabase.rpc("my_slow_clues", { p_since: since }) : null,
     plus ? null : supabase.rpc("my_slow_clue_count", { p_since: since }),
   ]);
@@ -66,11 +74,33 @@ export async function fetchStats(since: string, plus: boolean): Promise<StatsDat
   return {
     slowClueCount: typeof clueCount?.data === "number" ? clueCount.data : null,
     results: (results.data ?? [])
-      .filter((r) => r.slot === "mini" || r.slot === "midi" || r.slot === "large" || r.slot === "bonus")
+      .filter((r) => isStatsSlot(r.slot))
       .map((r) => ({ day: r.day, slot: r.slot as StatsSlot, seconds: r.seconds, solvers: r.solvers, fasterThan: r.faster_than === null ? null : Number(r.faster_than) })),
     headToHead: (h2h.data ?? []).map((r) => ({ friendId: r.friend_id, username: r.username, played: r.played, wins: r.wins, losses: r.losses, ties: r.ties })),
+    headToHeadBySlot: bySlot.error
+      ? null
+      : (bySlot.data ?? []).filter((r) => isStatsSlot(r.slot)).map((r) => ({ friendId: r.friend_id, username: r.username, slot: r.slot as StatsSlot, played: r.played, wins: r.wins, losses: r.losses, ties: r.ties })),
     slowClues: (clues?.data ?? []).map(slowClueOf),
   };
+}
+
+const isStatsSlot = (s: string): boolean => s === "mini" || s === "midi" || s === "large" || s === "bonus";
+
+/** How many days of Daily Plus cards are asked for to name the calendar's puzzles (it shows 26 weeks). */
+const CALENDAR_BONUS_CARDS = 200;
+
+/**
+ * The puzzle keys of one daily (`puzzleIdentity`), so the calendar can follow
+ * the tab: a daily's from the published index, the Daily Plus's from its cards.
+ * Null when they cannot be read; the calendar then shows every daily together.
+ */
+export async function slotPuzzleKeys(slot: StatsSlot, today: string): Promise<Set<string> | null> {
+  if (slot === "bonus") {
+    const cards = await fetchBonusCards(CALENDAR_BONUS_CARDS);
+    return cards.length ? new Set(cards.map((c) => c.identity)) : null;
+  }
+  const index = await loadPublishedIndex(today);
+  return index ? new Set(index.filter((e) => e.slot === slot).map((e) => e.identity)) : null;
 }
 
 type SlowClueRow = { puzzle_title: string; clue: string; seconds: number; played_on: string; puzzle_key: string | null; clue_text: string | null; answer: string | null };
@@ -119,6 +149,29 @@ export async function withClueText(clues: readonly SlowClue[], today: string): P
 }
 
 // --- Pure ---
+
+/** A tab's head-to-head records: its own rows when the server sent them per daily, else the all-dailies list. */
+export function headToHeadFor(data: Pick<StatsData, "headToHead" | "headToHeadBySlot">, slot: StatsSlot): HeadToHead[] {
+  return data.headToHeadBySlot ? data.headToHeadBySlot.filter((h) => h.slot === slot) : data.headToHead;
+}
+
+/**
+ * The days the calendar marks: solved (a finish that counts for the streak)
+ * and repaired (a repair marker), each limited to `keys` when given, so a tab
+ * shows the days its own daily was solved or repaired with.
+ */
+export function calendarDays(rows: readonly Pick<SolveRow, "puzzle_key" | "mode" | "source" | "completed_day">[], keys: ReadonlySet<string> | null): { solved: Set<string>; repaired: Set<string> } {
+  const solved = new Set<string>();
+  const repaired = new Set<string>();
+  for (const r of rows) {
+    const repair = r.puzzle_key.startsWith(REPAIR_KEY_PREFIX);
+    const key = repair ? r.puzzle_key.slice(REPAIR_KEY_PREFIX.length) : r.puzzle_key;
+    if (keys && !keys.has(key)) continue;
+    if (repair) repaired.add(r.completed_day);
+    else if (countsForDailyStreak(r)) solved.add(r.completed_day);
+  }
+  return { solved, repaired };
+}
 
 /** The daily with this title: the latest one published on or before the day it was played, else the earliest. */
 export function dailyTitled(index: readonly DailyIndexEntry[], title: string, playedOn: string): DailyIndexEntry | null {

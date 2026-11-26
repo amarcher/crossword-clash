@@ -4,11 +4,12 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import "../i18n/i18n";
 
-const stats = vi.hoisted(() => ({ fetchStats: vi.fn(), fetchSlowCluesFor: vi.fn(async (): Promise<unknown[] | null> => null), withClueText: vi.fn(async (c: unknown[]) => c) }));
+const stats = vi.hoisted(() => ({ fetchStats: vi.fn(), fetchSlowCluesFor: vi.fn(async (): Promise<unknown[] | null> => null), withClueText: vi.fn(async (c: unknown[]) => c), slotPuzzleKeys: vi.fn(async (): Promise<Set<string> | null> => null) }));
 vi.mock("../lib/stats", async (orig) => ({ ...(await orig<typeof import("../lib/stats")>()), ...stats }));
 const account = vi.hoisted(() => ({ value: { ready: true, plusReady: true, available: true, plus: false, openPaywall: vi.fn() } }));
 vi.mock("../contexts/AccountContext", () => ({ useMaybeAccount: () => account.value }));
-vi.mock("../hooks/useSolveHistory", () => ({ useSolveHistory: () => ({ rows: null, signedIn: false, loading: false, summary: null, failed: false }) }));
+const history = vi.hoisted(() => ({ rows: null as unknown[] | null }));
+vi.mock("../hooks/useSolveHistory", () => ({ useSolveHistory: () => ({ rows: history.rows, signedIn: false, loading: false, summary: null, failed: false }) }));
 vi.mock("../components/PageShell", () => ({ PageShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 
 const { StatsScreen } = await import("./StatsScreen");
@@ -106,5 +107,44 @@ describe("StatsScreen", () => {
     stats.withClueText.mockImplementation(async (c: unknown[]) => c);
     expect(screen.getAllByText("2:05").length).toBeGreaterThan(0);
     expect(screen.getByText("100%")).toBeTruthy();
+  });
+
+  it("follows the tab with the head-to-head records and the days solved", async () => {
+    account.value = { ...account.value, plus: true };
+    const day = (ago: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - ago);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    history.rows = [
+      { puzzle_key: "mini-a", title: "", source: "daily", mode: "solo", seconds: 40, completed_day: day(1), completed_at: "" },
+      { puzzle_key: "mini-b", title: "", source: "daily", mode: "solo", seconds: 40, completed_day: day(3), completed_at: "" },
+      { puzzle_key: "large-a", title: "", source: "daily", mode: "solo", seconds: 600, completed_day: day(2), completed_at: "" },
+    ];
+    stats.slotPuzzleKeys.mockImplementation(async (slot?: unknown) => new Set(slot === "large" ? ["large-a"] : ["mini-a", "mini-b"]));
+    stats.fetchStats.mockResolvedValue({
+      results: [{ day: day(1), slot: "mini", seconds: 40, solvers: 3, fasterThan: 0.5 }],
+      headToHead: [{ friendId: "f", username: "alicia", played: 30, wins: 10, losses: 20, ties: 0 }],
+      headToHeadBySlot: [
+        { friendId: "f", username: "alicia", slot: "mini", played: 5, wins: 4, losses: 1, ties: 0 },
+        { friendId: "g", username: "sam", slot: "large", played: 2, wins: 0, losses: 2, ties: 0 },
+      ],
+      slowClues: [],
+      slowClueCount: null,
+    });
+    const { container } = renderPage();
+    expect(await screen.findByText("4 · 1")).toBeTruthy();
+    expect(screen.queryByText("@sam")).toBeNull();
+    expect(screen.queryByText("10 · 20")).toBeNull(); // the all-dailies record is not any tab's
+    const solved = () => container.querySelectorAll('svg[aria-label="Days solved"] rect.fill-brand-500').length;
+    await vi.waitFor(() => expect(solved()).toBe(2));
+    fireEvent.click(screen.getByRole("radio", { name: "Daily Large" }));
+    expect(await screen.findByText("@sam")).toBeTruthy();
+    expect(screen.getByText("0 · 2")).toBeTruthy();
+    expect(screen.queryByText("@alicia")).toBeNull();
+    await vi.waitFor(() => expect(solved()).toBe(1));
+    fireEvent.click(screen.getByRole("radio", { name: "Daily Midi" }));
+    expect(await screen.findByText("Solve the same dailies as a friend to see who's ahead.")).toBeTruthy();
+    history.rows = null;
   });
 });
