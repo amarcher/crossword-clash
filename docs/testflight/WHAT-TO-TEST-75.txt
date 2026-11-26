@@ -1,0 +1,6 @@
+This build (1.1.5, build 75) is for testing. It is build 74 plus one change to the stats page. Signed in, open Your stats and switch between Mini, Midi, Large and Daily Plus:
+
+1. Head-to-head with friends shows each friend's record for the selected daily only. A friend you have never shared that daily with is not listed.
+2. The days-solved calendar marks only the days you finished the selected daily.
+
+Anything confusing, slow or broken: send a screenshot from TestFlight.
