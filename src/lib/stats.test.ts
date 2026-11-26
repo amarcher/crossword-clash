@@ -43,3 +43,31 @@ describe("stats arithmetic", () => {
     expect(dailyTitled(index, "Nope", "2026-11-20")).toBeNull();
   });
 });
+
+describe("per-tab head-to-head and calendar", () => {
+  const all = [{ friendId: "f", username: "a", played: 9, wins: 5, losses: 4, ties: 0 }];
+  it("picks the tab's records, or the all-dailies list from a server without them", async () => {
+    const { headToHeadFor } = await import("./stats");
+    const bySlot = [
+      { friendId: "f", username: "a", slot: "mini" as const, played: 2, wins: 1, losses: 1, ties: 0 },
+      { friendId: "f", username: "a", slot: "large" as const, played: 7, wins: 4, losses: 3, ties: 0 },
+    ];
+    expect(headToHeadFor({ headToHead: all, headToHeadBySlot: bySlot }, "large")).toEqual([bySlot[1]]);
+    expect(headToHeadFor({ headToHead: all, headToHeadBySlot: bySlot }, "midi")).toEqual([]);
+    expect(headToHeadFor({ headToHead: all, headToHeadBySlot: null }, "midi")).toBe(all);
+    expect(headToHeadFor({ headToHead: all }, "mini")).toBe(all);
+  });
+
+  it("marks the days a tab's daily was solved or repaired with, and every daily without keys", async () => {
+    const { calendarDays } = await import("./stats");
+    const rows: Parameters<typeof calendarDays>[0] = [
+      { puzzle_key: "m1", mode: "solo", source: "daily", completed_day: "2026-11-01" },
+      { puzzle_key: "l1", mode: "solo", source: "daily", completed_day: "2026-11-02" },
+      { puzzle_key: "repair:m2", mode: "import", source: "daily", completed_day: "2026-11-03" },
+      { puzzle_key: "nyt", mode: "import", source: "nyt", completed_day: "2026-11-04" },
+    ];
+    expect(calendarDays(rows, new Set(["m1", "m2"]))).toEqual({ solved: new Set(["2026-11-01"]), repaired: new Set(["2026-11-03"]) });
+    expect(calendarDays(rows, new Set(["l1"]))).toEqual({ solved: new Set(["2026-11-02"]), repaired: new Set() });
+    expect(calendarDays(rows, null)).toEqual({ solved: new Set(["2026-11-01", "2026-11-02"]), repaired: new Set(["2026-11-03"]) });
+  });
+});

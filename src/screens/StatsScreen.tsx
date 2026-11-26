@@ -6,9 +6,7 @@ import { PageShell } from "../components/PageShell";
 import { Button, Card, Eyebrow } from "../components/ui";
 import { useMaybeAccount } from "../contexts/AccountContext";
 import { useSolveHistory } from "../hooks/useSolveHistory";
-import { countsForDailyStreak } from "../lib/solveHistory";
-import { REPAIR_KEY_PREFIX } from "../lib/streakRepair";
-import { averageByWeekday, calendarWeeks, fetchSlowCluesFor, fetchStats, lastDays, rankedCount, summarizeSlot, withClueText, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
+import { averageByWeekday, calendarDays, calendarWeeks, fetchSlowCluesFor, fetchStats, headToHeadFor, lastDays, rankedCount, slotPuzzleKeys, summarizeSlot, withClueText, type DailyResult, type StatsData, type StatsSlot } from "../lib/stats";
 import { dayKey, formatDuration, shiftDayKey } from "../lib/soloStats";
 import { DAILY_SLOTS } from "../lib/dailyFeed";
 
@@ -102,12 +100,25 @@ export function StatsScreen() {
     return Array.from({ length: 7 }, (_, i) => f.format(new Date(Date.UTC(2026, 10, 9 + i))));
   }, [i18n.language]);
 
+  // The calendar follows the tab too (Andrew, 2026-11-25): a day is marked when that daily was solved
+  // (or repaired with) on it. Its puzzles are named by key; until they are, or if they cannot be, every daily counts.
+  const [slotKeys, setSlotKeys] = useState<{ slot: StatsSlot; keys: Set<string> | null } | null>(null);
+  useEffect(() => {
+    let live = true;
+    slotPuzzleKeys(slot, today).then(
+      (keys) => live && setSlotKeys({ slot, keys }),
+      () => live && setSlotKeys({ slot, keys: null }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [slot, today]);
   const calendar = useMemo(() => {
-    if (!history.rows) return null;
-    const solved = new Set(history.rows.filter((r) => countsForDailyStreak(r) && !r.puzzle_key.startsWith(REPAIR_KEY_PREFIX)).map((r) => r.completed_day));
-    const repaired = new Set(history.rows.filter((r) => r.puzzle_key.startsWith(REPAIR_KEY_PREFIX)).map((r) => r.completed_day));
+    if (!history.rows || slotKeys?.slot !== slot) return null;
+    const { solved, repaired } = calendarDays(history.rows, slotKeys.keys);
     return calendarWeeks(solved, repaired, today);
-  }, [history.rows, today]);
+  }, [history.rows, slotKeys, slot, today]);
+  const headToHead = useMemo(() => (data ? headToHeadFor(data, slot) : []), [data, slot]);
 
   return (
     <PageShell width="md" widthMd="5xl" widthLg="5xl" bar={{ backLabel: t("completion.backToMenu") }}>
@@ -197,7 +208,7 @@ export function StatsScreen() {
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
           <Card className="p-5">
             <Eyebrow as="h2">{t("stats.headToHead")}</Eyebrow>
-            {data && data.headToHead.length > 0 ? (
+            {data && headToHead.length > 0 ? (
               <table className="mt-3 w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-semibold uppercase tracking-[0.08em] text-subtle">
@@ -206,7 +217,7 @@ export function StatsScreen() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {data.headToHead.map((h) => (
+                  {headToHead.map((h) => (
                     <tr key={h.friendId}>
                       <td className="py-2 font-semibold text-ink">@{h.username}</td>
                       <td className="py-2 text-right tabular-nums text-ink-soft">
@@ -219,7 +230,7 @@ export function StatsScreen() {
             ) : (
               <p className="mt-3 text-sm text-muted">{data ? t("stats.noFriends") : t("stats.loading")}</p>
             )}
-            {locked && data && data.headToHead.length > 0 && (
+            {locked && data && headToHead.length > 0 && (
               <Locked cta={unlockLabel} onUnlock={unlock}>
                 {t("stats.headToHeadTeaser")}
               </Locked>
